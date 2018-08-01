@@ -1,15 +1,12 @@
-defaults:
+account_info:
   companies: ["", "cgl-cglumberjack", 'VFX']
   company: cgl-cglumberjack
   user: tmikota
-
-
 logging:
     level: debug
     format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'
     debug:
         format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'
-
 paths:
   root: 'D:'
   code_root: C:\Users\tmiko\PycharmProjects\core_tools

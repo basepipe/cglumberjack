@@ -109,7 +109,7 @@ class PathObject(object):
         #self.path_from_attrs()
 
     def get_company(self, path_string):
-        companies = app_config()['defaults']['companies']
+        companies = app_config()['account_info']['companies']
         for c in companies:
             if c in path_string:
                 self.safe_attr_set('company', c)

@@ -9,30 +9,30 @@ def test_can_call_app_config():
 
 
 def test_has_user_default():
-    app_config()['defaults']['user']
+    app_config()['account_info']['user']
     assert True
 
 
 def test_has_company():
-    app_config()['defaults']['company']
+    app_config()['account_info']['company']
     assert True
 
 
 def test_has_companies():
-    app_config()['defaults']['companies']
+    app_config()['account_info']['companies']
     assert True
 
 
 def test_companies_is_list():
-    if type(app_config()['defaults']['companies']) == list:
+    if type(app_config()['account_info']['companies']) == list:
         assert True
     else:
         assert False
 
 
 def test_has_company_in_companies():
-    company = app_config()['defaults']['company']
-    if company in app_config()['defaults']['companies']:
+    company = app_config()['account_info']['company']
+    if company in app_config()['account_info']['companies']:
         assert True
     else:
         assert False
