@@ -38,6 +38,19 @@ def test_has_company_in_companies():
         assert False
 
 
+def test_has_user_directory():
+    app_config()['account_info']['user_directory']
+    assert True
+
+
+def test_user_directory_exists():
+    if os.path.exists(app_config()['account_info']['user_directory']):
+        assert True
+    else:
+        print "Does Not Exist %s" % app_config()['account_info']['user_directory']
+        assert False
+
+
 def test_has_paths():
     app_config()['paths']
     assert True

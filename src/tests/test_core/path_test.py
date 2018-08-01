@@ -1,6 +1,5 @@
 import pytest
 from core.path import PathObject
-from core.config import app_config
 
 path = r'D:\cgl-cglumberjack\source\Library\assets\Library\cement\tex\publish\001.000\high\cement_material.sbsar'
 

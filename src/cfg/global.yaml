@@ -2,6 +2,7 @@ account_info:
   companies: ["", "cgl-cglumberjack", 'VFX']
   company: cgl-cglumberjack
   user: tmikota
+  user_directory: C:\Users\tmiko\Documents\CG_Lumberjack
 logging:
     level: debug
     format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'
