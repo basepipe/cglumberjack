@@ -1,0 +1,10 @@
+
+location: default
+default: global.yaml
+dev: F:\FSU\python_env\global.yaml
+mac_dev: /Users/tmikota/Documents/cg_lumberjack/global.yaml
+tom_dev: C:\Users\tmikota\OneDrive\cglumberjack\global.yaml
+jack_dev: C:\Users\Jack\Documents\lumbermill\global.yaml
+kaleb_dev: F:\FSU\python_env\global.yaml
+kaleb_remote: F:\FSU\python_env\global_remote.yaml
+network: Z:\CGlumberjack\release\latest\core_tools
