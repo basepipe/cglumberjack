@@ -1,7 +1,8 @@
 account_info:
   companies: ["", "cgl-cglumberjack", 'VFX']
   company: cgl-cglumberjack
-  user: tmikota
+  user: PADL_dev
+  user_favorites: ['PADL_dev', 'tmiko', 'tmikota']
   user_directory: C:\Users\tmiko\Documents\CG_Lumberjack
 logging:
     level: debug
