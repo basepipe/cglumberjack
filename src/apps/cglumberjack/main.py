@@ -567,7 +567,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
              'company': self.company,
              'project': '*',
              'context': 'source'}
-        current_path = PathObject(d).path
+        current_path = PathObject(d)
         projects = glob.glob(current_path)
         if not projects:
             print 'no projects'
