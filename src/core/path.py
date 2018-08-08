@@ -85,12 +85,13 @@ class PathObject(object):
             logging.error('No company attr found in %s - invalid dict' % path_object)
             return
         for key in path_object:
+            self.data[key] = path_object[key]
             setattr(self, key, path_object[key])
 
     def get_template(self):
         self.template = []
-        if self.scope:
-            if self.context:
+        if self.context:
+            if self.scope:
                 try:
                     path_template = app_config()['templates'][self.scope][self.context]['path'].split('/')
                     if path_template[-1] == '':
@@ -107,7 +108,7 @@ class PathObject(object):
                     logging.error("No valid scope (assets/shots) or context (source/render) on pathObject")
                     return
             else:
-                self.template = ['company', 'scope', 'project']
+                self.template = ['company', 'context', 'project', 'scope']
         else:
             self.template = ['company']
 
@@ -148,21 +149,11 @@ class PathObject(object):
             path_parts.pop(0)
         path_parts.insert(0, self.company)
         self.set_attr('context', path_parts[1].lower())
-        self.set_attr('scope', path_parts[3].lower())
-
-        try:
-            path_template = app_config()['templates'][self.scope][self.context]['path'].split('/')
-            if path_template[-1] == '':
-                path_template.pop(-1)
-            version_template = app_config()['templates'][self.scope][self.context]['version'].split('/')
-            template = path_template + version_template
-        except KeyError:
-            logging.error("No valid scope (assets/shots) or context (source/render) - invalid production path: %s" %
-                          path_)
-            return
-
+        if len(path_parts) > 3:
+            self.set_attr('scope', path_parts[3].lower())
+        self.get_template()
         self.data = {}
-        for i, attr in enumerate(template):
+        for i, attr in enumerate(self.template):
             if attr:
                 attr = attr.replace('{', '').replace('}', '')
                 try:
@@ -170,7 +161,7 @@ class PathObject(object):
                         pass
                     elif attr == self.scope:
                         pass
-                    elif attr == 'filename.ext':
+                    elif attr == 'filename':
                         self.set_attr('filename', path_parts[i])
                         filename_base, ext = os.path.splitext(path_parts[i])
                         self.set_attr('filename_base', filename_base)
@@ -347,16 +338,16 @@ class PathObject(object):
             pass
         pass
 
+import glob
 
-dict_ = {'shot': 'cement', 'seq': 'Library', 'frame': None, 'minor_version': '000', 'filename_base': 'cement_material',
-        'filename': 'cement_material.sbsar', 'version': '001.000', 'asset': 'cement', 'scope': 'assets',
-        'render_pass': None, 'type': 'Library', 'cam': None, 'company': 'cgl-cglumberjack', 'aov': None,
-        'user': 'publish', 'task': 'tex', 'shotname': None, 'major_version': '001', 'project': 'Library',
-        'ext': 'sbsar', 'context': 'source', 'resolution': 'high'}
 
-path = r'D:\cgl-cglumberjack\source\Library\assets\Library\cement\tex\publish\001.000\high\cement_material.sbsar'
+path = r'D:\cgl-cglumberjack\source\apartment\assets\Prop\*\tex\publish\*\high\*'
+assets = []
+for each in glob.glob(path):
+    print each
+    obj_ = PathObject(each)
+    if obj_.asset not in assets:
+        assets.append(obj_.asset)
 
-obj = PathObject(dict_)
-
-# TODO - derive tests that will test the SHIT out of this code on a ton of different file paths and dictionaries.
-
+for each in assets:
+    print each
