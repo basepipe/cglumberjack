@@ -184,7 +184,6 @@ class PathObject(object):
             self.set_attr('minor_version', minor_version.replace('.', ''))
 
     def set_path(self, root=False):
-        # TODO: this should set, path, source, and render, and probably give a root option for each one for convenience.
         self.get_template()
         keep_if = self.context_list + self.scope_list
         path_string = ''
@@ -331,23 +330,9 @@ class PathObject(object):
         pass
 
     def set_shotname(self):
-        # TODO - for this to be useful it'll have to be a seperation of shotname and assetname based off context
         if self.context == 'shots':
             self.set_attr('shotname', '%s_%s' % (self.seq, self.shot))
         if self.context == 'assets':
+            self.set_attr('assetname', '%s_%s' % (self.seq, self.shot))
             pass
         pass
-
-import glob
-
-
-path = r'D:\cgl-cglumberjack\source\apartment\assets\Prop\*\tex\publish\*\high\*'
-assets = []
-for each in glob.glob(path):
-    print each
-    obj_ = PathObject(each)
-    if obj_.asset not in assets:
-        assets.append(obj_.asset)
-
-for each in assets:
-    print each

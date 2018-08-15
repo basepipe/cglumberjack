@@ -273,7 +273,7 @@ def test_dict4_to_path():
     obj = PathObject(asset_path4_dict)
     assert asset_path4 == obj.path_root
 
-
+ 
 def test_dict5_to_path():
     obj = PathObject(asset_path5_dict)
     assert asset_path5 == obj.path_root
