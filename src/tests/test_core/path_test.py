@@ -310,6 +310,7 @@ def test_dict11_to_path():
     obj = PathObject(asset_path11_dict)
     assert asset_path11 == obj.path_root
 
+
 def test_dict12_to_path(): 
     obj = PathObject(asset_path12_dict)
     assert asset_path12 == obj.path_root
