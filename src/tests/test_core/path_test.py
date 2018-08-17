@@ -97,10 +97,8 @@ asset_path12_dict = {'shot': None, 'seq': None, 'frame': None, 'minor_version': 
                      'company': None, 'aov': None, 'user': None, 'task': None, 'resolution': None,
                      'shotname': None, 'major_version': None, 'project': None, 'context': None}
 
-# TODO - derive tests that will test the POOP out of this code on a ton of different file paths and dictionaries.
 
-
-def test_can_call_PathObject():
+def test_can_call_path_object():
     PathObject(path)
     assert True
 
@@ -157,6 +155,7 @@ def test_path_to_dict():
             if attr == dict_[attr]:
                 assert True
 
+
 def test_path2_to_dict():
     obj = PathObject(asset_path2)
     dict_ = asset_path2_dict
@@ -165,6 +164,7 @@ def test_path2_to_dict():
             if attr == dict_[attr]:
                 assert True
 
+
 def test_path3_to_dict():
     obj = PathObject(asset_path3)
     dict_ = asset_path3_dict
@@ -172,6 +172,7 @@ def test_path3_to_dict():
         if attr in obj.get_attrs_from_config():
             if attr == dict_[attr]:
                 assert True
+
 
 def test_path4_to_dict():
     obj = PathObject(asset_path4)
@@ -189,6 +190,7 @@ def test_path5_to_dict():
         if attr in obj.get_attrs_from_config():
             if attr == dict_[attr]:
                 assert True
+
 
 def test_path6_to_dict():
     obj = PathObject(asset_path6)
