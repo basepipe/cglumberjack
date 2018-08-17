@@ -1,6 +1,7 @@
 import os
 import sys
 import yaml
+import shutil
 
 
 class Configuration(object):
@@ -10,9 +11,12 @@ class Configuration(object):
 
     """
     LOADED_CONFIG = {}
+    user_dir = os.path.expanduser("~")
+    cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
 
     def __init__(self):
         if not Configuration.LOADED_CONFIG:
+            self.make_cglumberjack_dir()
             global_cfg, app_cfg = self._find_config_file()
             cfg = {}
             if os.path.isfile(global_cfg):
@@ -21,7 +25,22 @@ class Configuration(object):
                 cfg.update(self._load_yaml(app_cfg))
             Configuration.LOADED_CONFIG['app'] = cfg
 
+    def make_cglumberjack_dir(self):
+        base = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cfg", "global.yaml")
+        to_path = os.path.join(self.cg_lumberjack_dir, 'global.yaml')
+        print base
+        if os.path.exists(self.cg_lumberjack_dir):
+            if 'global.yaml' not in os.listdir(self.cg_lumberjack_dir):
+                shutil.copy2(base, to_path)
+        else:
+            os.makedirs(self.cg_lumberjack_dir)
+            shutil.copy2(base, to_path)
+
     def _find_config_file(self):
+        # TODO - check to see if user directory exists
+        # TODO - check to see if global.yaml is in the user directory
+        # TODO - if it is not in the user directory we should copy global.yaml over to it.
+
         base = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                             "cfg")
         app_name = os.path.basename(sys.argv[0])
