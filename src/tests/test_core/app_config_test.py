@@ -3,7 +3,21 @@ import os
 from core.config import app_config
 
 
+def test_src_is_sources_root():
+    import core
+    this_path = __file__.split('src')[0]
+    core_path = core.__file__.split('src')[0]
+    if this_path == core_path:
+        assert True
+    else:
+        print 'The Root of this File: %s \n' \
+              'does not match the root of the "core" module path %s\n' \
+              'try setting "src" as "Sources Root" in pycharm' % (this_path, core_path)
+        assert False
+
+
 def test_can_call_app_config():
+    print 'app config:', app_config()
     app_config()
     assert True
 

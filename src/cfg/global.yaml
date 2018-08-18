@@ -1,17 +1,17 @@
 account_info:
   companies: ["", "cgl-cglumberjack", 'VFX']
   company: cgl-cglumberjack
-  user: PADL_dev
+  user: tmikota
   user_favorites: ['PADL_dev', 'tmiko', 'tmikota']
-  user_directory: C:\Users\tmiko\Documents\CG_Lumberjack
+  user_directory: C:\Users\tmikota\Documents\cglumberjack
 logging:
     level: debug
     format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'
     debug:
         format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'
 paths:
-  root: 'D:'
-  code_root: C:\Users\tmiko\PycharmProjects\core_tools
+  root: 'Z:'
+  code_root: C:\Users\tmikota\PycharmProjects\cglumberjack
   ffmpeg: C:\ffmpeg\bin\ffmpeg.exe
   oiiotool: C:\OpenImageIO-1.5.0-OCIO\bin\oiiotool.exe
   ffprobe: C:\ffmpeg\bin\ffprobe.exe
