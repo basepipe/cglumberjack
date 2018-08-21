@@ -9,7 +9,7 @@ from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
-from core.path import PathObject
+from core.path import PathObject, create_production_data
 from asset_ingestor_widget import AssetIngestor
 
 
@@ -206,11 +206,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.shot = '*'
         self.seq = '*'
         self.user = '*'
-        self.user_default = app_config()['account_info']['user']
+        #self.user_default = app_config()['account_info']['user']
+        self.user_default = 'PADL_dev'
         self.version = ''
         self.task = ''
         self.resolution = ''
         self.current_location = {}
+        self.path_root = ''
+        self.path = ''
         layout = QtWidgets.QVBoxLayout(self)
         self.h_layout = QtWidgets.QHBoxLayout(self)
 
@@ -278,7 +281,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.load_projects()
         # self.load_assets()
         # create connections
-        #self.project_filter.data_table.selected.connect(self.on_project_changed)
+        self.project_filter.data_table.selected.connect(self.on_project_changed)
         #self.company_widget.add_button.clicked.connect(self.on_create_company)
         #self.project_filter.add_button.clicked.connect(self.on_create_project)
         #self.company_widget.combo.currentIndexChanged.connect(self.on_company_changed)
@@ -351,14 +354,15 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location()
         self.load_assets()
 
-    def on_task_selected(self, data):
+    def on_source_selected(self, data):
         # clear everything
-        self.version = self.sender().version
-        self.resolution = self.sender().resolution
-        self.user = self.sender().parent().users.currentText()
-        self.task = self.sender().task
+        object_ = PathObject(self.current_location)
+        object_.set_attr(attr='version', value=self.sender().version)
+        object_.set_attr(attr='resolution', value=self.sender().resolution)
+        object_.set_attr(attr='user', value=self.sender().parent().users.currentText())
+        object_.set_attr(attr='task', value=self.sender().task)
+        self.update_location(object_)
         self.clear_task_selection_except(self.sender().task)
-        self.update_location()
         self.load_render_files()
 
     def on_project_changed(self, data):
@@ -396,27 +400,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def on_main_asset_selected(self, data):
         # data format: ['Project', 'Seq', 'Shot', 'Task', 'User', 'Path']
         if data:
-            path = data[0][1]
-            self.user = ''
-            self.version = ''
-            self.resolution = ''
-            self.current_location = PathParser.dict_from_path(path)
-            self.current_location['task'] = '*'
-            current_path = PathParser.path_from_dict(self.current_location, with_root=True)
-            tasks = glob.glob(current_path)
-            task_list = []
-            for each in tasks:
-                d = PathParser.dict_from_path(each)
-                self.shot = d['shot']
-                self.seq = d['seq']
-                if self.project == '*':
-                    self.project = d['project']
-                task_list = self.append_unique_to_list(d['task'], task_list)
+            # reset the GUI
             self.task_layout.tasks = []
             self.clear_layout(self.task_layout)
             self.clear_layout(self.render_layout)
-
-            # this should possibly be its own method (load_tasks) or something like that.
             task_label = QtWidgets.QLabel('<b>Tasks</b>')
             task_add = QtWidgets.QToolButton()
             task_add.setText('+')
@@ -425,43 +412,48 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             task_label_layout.addWidget(task_add)
             task_label_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
                                                             QtWidgets.QSizePolicy.Minimum))
-
             self.task_layout.addLayout(task_label_layout)
-            self.update_location()
-            for each in task_list:
-                if each not in self.task_layout.tasks:
-                    version_location = copy.copy(self.current_location)
-                    task_widget = AssetWidget(self, each)
-                    task_widget.data_table.selected.connect(self.on_task_selected)
-                    task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
-                    task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
-                    task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
-                    task_widget.showall()
-                    task_widget.search_box.hide()
-                    task_widget.hide_button.hide()
-                    task_widget.show_button.show()
-                    # populate this bitch
-                    version_location['task'] = each
-                    version_location['user'] = self.populate_users_combo(task_widget, each)
-                    version_location['version'] = self.populate_versions_combo(task_widget.users,
-                                                                               task_widget.versions,
-                                                                               each)
-                    version_location['resolution'] = self.populate_resolutions_combo(task_widget.users,
-                                                                                     task_widget.versions,
-                                                                                     task_widget.resolutions,
-                                                                                     each)
-                    version_location['filename'] = '*'
-                    task_widget.data_table.task = each
-                    task_widget.data_table.user = version_location['user']
-                    task_widget.data_table.version = version_location['version']
-                    task_widget.data_table.resolution = version_location['resolution']
-                    version_path = PathParser.path_from_dict(version_location, with_root=True)
-                    files_ = glob.glob(version_path)
-                    task_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True), ['Name']))
-                    self.task_layout.addWidget(task_widget)
-                    self.task_layout.tasks.append(each)
-                    self.task_layout.addItem((QtWidgets.QSpacerItem(22, 0, QtWidgets.QSizePolicy.Expanding,
-                                              QtWidgets.QSizePolicy.Minimum)))
+
+            # set our current location
+            path = data[0][1]
+            current = PathObject(path)
+            current.set_attr(attr='task', value='*')
+
+            self.update_location(path_object=current)
+            # Get the list of tasks for the selection
+            task_list = current.glob_project_element('task')
+            for task in task_list:
+                if '.' not in task:
+                    if task not in self.task_layout.tasks:
+                        # version_location = copy.copy(self.current_location)
+                        task_widget = AssetWidget(self, task)
+                        task_widget.showall()
+                        task_widget.search_box.hide()
+                        task_widget.hide_button.hide()
+                        task_widget.show_button.show()
+
+                        # find the version information for the task:
+                        user = self.populate_users_combo(task_widget, current, task)
+                        version = self.populate_versions_combo(task_widget, current, task)
+                        resolution = self.populate_resolutions_combo(task_widget, current, task)
+                        self.task_layout.addWidget(task_widget)
+                        self.task_layout.tasks.append(task)
+                        self.task_layout.addItem((QtWidgets.QSpacerItem(22, 0, QtWidgets.QSizePolicy.Expanding,
+                                                                        QtWidgets.QSizePolicy.Minimum)))
+                        version_obj = current.copy(task=task, user=user, version=version,
+                                                   resolution=resolution, filename='*')
+                        task_widget.data_table.task = version_obj.task
+                        task_widget.data_table.user = version_obj.user
+                        task_widget.data_table.version = version_obj.version
+                        task_widget.data_table.resolution = version_obj.resolution
+                        files_ = version_obj.glob_project_element('filename')
+                        task_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True),
+                                                        ['Name']))
+                        task_widget.data_table.selected.connect(self.on_source_selected)
+                        # task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
+                        # task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
+                        # task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
+
 
     # LOAD FUNCTIONS
 
@@ -485,11 +477,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def load_render_files(self):
         self.clear_layout(self.render_layout)
-        d = copy.copy(self.current_location)
-        d['context'] = 'render'
-        d['filename'] = '*'
-        path = PathParser.path_from_dict(d, with_root=True)
-        label = QtWidgets.QLabel('<b>%s: Exports</b>' % d['task'])
+        current = PathObject(self.current_location)
+        renders = current.copy(context='render', filename='*')
+        print renders.path_root
+        files_ = renders.glob_project_element('filename')
+        label = QtWidgets.QLabel('<b>%s: Exports</b>' % renders.task)
         render_widget = AssetWidget(self, 'Output')
         render_widget.showall()
         render_widget.title.hide()
@@ -497,18 +489,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         render_widget.hide_button.hide()
         self.render_layout.addWidget(label)
         self.render_layout.addWidget(render_widget)
-        files_ = glob.glob(path)
         render_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True), ['Name']))
 
-    def populate_users_combo(self, widget, task):
-
-        d = copy.copy(self.current_location)
-        d['user'] = '*'
-        d['task'] = task
-        items = glob.glob(PathParser.path_from_dict(d, with_root=True))
-        for each in items:
-            d2 = PathParser.dict_from_path(each)
-            widget.users.addItem(d2['user'])
+    def populate_users_combo(self, widget, path_object, task):
+        object_ = path_object.copy(user='*', task=task)
+        users = object_.glob_project_element('user')
+        for each in users:
+            widget.users.addItem(each)
         # set the combo box according to what filters are currently selected.
         widget.users.hide()
         widget.users_label.hide()
@@ -529,45 +516,40 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.user = self.user_default
         return self.user
 
-    def populate_versions_combo(self, user_widget, version_widget, task):
-        version_widget.show()
-        version_widget.clear()
-        d = copy.copy(self.current_location)
-        d['user'] = user_widget.currentText()
-        d['task'] = task
-        d['version'] = '*'
-        items = glob.glob(PathParser.path_from_dict(d, with_root=True))
+    @staticmethod
+    def populate_versions_combo(task_widget, path_object, task):
+        task_widget.versions.show()
+        task_widget.versions.clear()
+        object_ = path_object.copy(user=task_widget.users.currentText(), task=task, version='*')
+        items = object_.glob_project_element('version')
         for each in items:
-            d2 = PathParser.dict_from_path(each)
-            version_widget.insertItem(0, d2['version'])
+            task_widget.versions.insertItem(0, each)
         if len(items) == 1:
-            version_widget.setEnabled(False)
+            task_widget.versions.setEnabled(False)
         else:
-            version_widget.setEnabled(True)
-        version_widget.setCurrentIndex(0)
-        return version_widget.currentText()
+            task_widget.versions.setEnabled(True)
+            task_widget.versions.setCurrentIndex(0)
+        return task_widget.versions.currentText()
 
-    def populate_resolutions_combo(self, user_widget, version_widget, resolution_widget, task):
-        d = copy.copy(self.current_location)
-        d['user'] = user_widget.currentText()
-        d['task'] = task
-        d['version'] = version_widget.currentText()
-        d['resolution'] = '*'
-        items = glob.glob(PathParser.path_from_dict(d, with_root=True))
+    @staticmethod
+    def populate_resolutions_combo(task_widget, path_object, task):
+
+        object_ = path_object.copy(user=task_widget.users.currentText(), task=task, version=task_widget.versions.currentText(),
+                                   resolution='*')
+        items = object_.glob_project_element('resolution')
         for each in items:
-            d2 = PathParser.dict_from_path(each)
-            resolution_widget.addItem(d2['resolution'])
-        index_ = resolution_widget.findText('high')
+            task_widget.resolutions.addItem(each)
+        index_ = task_widget.resolutions.findText('high')
         if index_:
-            resolution_widget.setCurrentIndex(index_)
-        return resolution_widget.currentText()
+            task_widget.resolutions.setCurrentIndex(index_)
+        return task_widget.resolutions.currentText()
 
     def load_projects(self):
         d = {'root': self.root,
              'company': self.company,
              'project': '*',
              'context': 'source'}
-        current_path = PathObject(d)
+        current_path = PathObject(d).path_root
         projects = glob.glob(current_path)
         if not projects:
             print 'no projects'
@@ -597,21 +579,20 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             c = os.path.split(each)[-1]
             if 'cgl-' in c:
                 self.company_widget.combo.addItem(c)
-        print 'company'
         if not company:
             company = self.company
-        print company
         index = self.company_widget.combo.findText(company)
         if index:
             self.company_widget.combo.setCurrentIndex(index)
 
     def load_assets(self):
-        globstring = PathParser.path_from_dict(self.current_location, with_root=True)
+        current = PathObject(self.current_location)
+        items = current.glob_multiple_project_elements(elements=['seq', 'shot'])
         data = []
-        items = glob.glob(globstring)
         temp_ = []
         for each in items:
-            d = PathParser.dict_from_path(each)
+            obj_ = PathObject(each)
+            d = obj_.data
             shot_name = '%s:%s' % (d['seq'], d['shot'])
             if shot_name not in temp_:
                 temp_.append(shot_name)
@@ -656,15 +637,24 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             filter_ = '*'
         return filter_
 
-    def update_location(self):
-        self.current_location = {'company': self.company, 'root': self.root, 'scope': self.scope,
-                                 'context': self.context, 'project': self.project, 'seq': self.seq, 'shot': self.shot,
-                                 'user': self.user, 'version': self.version, 'task': self.task,
-                                 'resolution': self.resolution
-                                 }
-        path_ = PathParser.path_from_dict(self.current_location, with_root=True)
-        self.current_location_line_edit.setText(path_)
-        return path_
+    def update_location(self, path_object=None):
+        if path_object:
+            self.current_location_line_edit.setText(path_object.path_root)
+            self.current_location = path_object.data
+            self.path_root = path_object.path_root
+            self.path = path_object.path
+            return self.path_root
+        else:
+            self.current_location = {'company': self.company, 'root': self.root, 'scope': self.scope,
+                                     'context': self.context, 'project': self.project, 'seq': self.seq, 'shot': self.shot,
+                                     'user': self.user, 'version': self.version, 'task': self.task,
+                                     'resolution': self.resolution
+                                     }
+            path_obj = PathObject(self.current_location)
+            self.path_root = path_obj.path_root
+            self.path = path_obj.path
+            self.current_location_line_edit.setText(self.path_root)
+            return self.path_root
 
     @staticmethod
     def append_unique_to_list(item, item_list):
@@ -679,8 +669,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         output_ = []
         for each in list_:
             if path_filter:
-                filtered = PathParser.dict_from_path(each)
-                output_.append([filtered[path_filter]])
+                filtered = PathObject(each).data[path_filter]
+                output_.append([filtered])
             else:
                 if split_for_file:
                     each = os.path.split(each)[-1]

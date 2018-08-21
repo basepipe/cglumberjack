@@ -85,8 +85,9 @@ class PathObject(object):
             logging.error('No company attr found in %s - invalid dict' % path_object)
             return
         for key in path_object:
+            print key, path_object[key]
             self.data[key] = path_object[key]
-            setattr(self, key, path_object[key])
+            self.set_attr(attr=key, value=path_object[key])
 
     def get_template(self):
         self.template = []
@@ -169,7 +170,7 @@ class PathObject(object):
                     else:
                         self.set_attr(attr, path_parts[i])
                 except IndexError:
-                    logging.info(attr, None)
+                    pass
         if not self.seq:
             self.set_attr('seq', self.type)
         if not self.shot:
@@ -206,7 +207,10 @@ class PathObject(object):
 
     def set_attr(self, attr, value, regex=True):
         if regex:
-            regex = app_config()['rules']['path_variables'][attr]['regex']
+            try:
+                regex = app_config()['rules']['path_variables'][attr]['regex']
+            except KeyError:
+                logging.info('Could not find regex for %s in config, skipping' % attr)
         if value == '*':
             self.__dict__[attr] = value
             self.data[attr] = value
@@ -228,9 +232,12 @@ class PathObject(object):
                         self.data[attr] = value
                 else:
                     if regex:
-                        if not re.match(regex, value):
-                            logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
-                            return
+                        try:
+                            if not re.match(regex, value):
+                                logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
+                                #return
+                        except TypeError:
+                            pass
                     self.__dict__[attr] = value
                     self.data[attr] = value
         if attr == 'shot':
@@ -260,11 +267,14 @@ class PathObject(object):
         value = self.data[attr]
         glob_path = self.path_root.split(value)[0]
         list_ = []
-        for each in glob.glob(os.path.join(glob_path, '*')):
-            list_.append(os.path.split(each)[-1])
+        if not full_path:
+            for each in glob.glob(os.path.join(glob_path, '*')):
+                list_.append(os.path.split(each)[-1])
+        else:
+            list_ = glob.glob(os.path.join(glob_path, '*'))
         return list_
 
-    def glob_multiple_project_elements(self, split_at=None, *args):
+    def glob_multiple_project_elements(self, full_path=False, split_at=None, elements=[]):
         """
 
         :param self:
@@ -284,7 +294,7 @@ class PathObject(object):
             if path_.endswith('\\'):
                 path_ = path_[:-1]
         obj_ = PathObject(path_)
-        for attr in args:
+        for attr in elements:
             obj_.set_attr(attr, '*', regex=False)
         glob_list = glob.glob(obj_.path_root)
         return glob_list
@@ -336,3 +346,7 @@ class PathObject(object):
             self.set_attr('assetname', '%s_%s' % (self.seq, self.shot))
             pass
         pass
+
+
+def create_production_data(*args, **kwargs):
+    pass

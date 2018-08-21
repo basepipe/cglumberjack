@@ -432,7 +432,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if each not in self.task_layout.tasks:
                     version_location = copy.copy(self.current_location)
                     task_widget = AssetWidget(self, each)
-                    task_widget.data_table.selected.connect(self.on_task_selected)
+                    task_widget.data_table.selected.connect(self.on_source_selected)
                     task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
                     task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
                     task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
