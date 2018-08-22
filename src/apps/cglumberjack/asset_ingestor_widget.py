@@ -65,6 +65,9 @@ class AssetIngestor(QtWidgets.QDialog):
             self.path_dict['context'] = 'source'
             self.path_dict['seq'] = ''
             self.path_dict['shot'] = ''
+            self.path_dict['resolution'] = 'high'
+            self.path_dict['user'] = self.current_user
+            self.path_dict['version'] = '000.000'
 
         self.table = AssetIngestTable()
         self.table.setColumnCount(8)
@@ -198,6 +201,7 @@ class AssetIngestor(QtWidgets.QDialog):
     def populate_seq(self, widget):
         widget.clear()
         self.path_dict['seq'] = '*'
+        print 'SEQ'
         print self.path_dict
         print PathObject(self.path_dict).path_root
         seq = PathObject(self.path_dict).glob_project_element('seq')
@@ -250,9 +254,8 @@ class AssetIngestor(QtWidgets.QDialog):
             filename = self.table.item(i, 0).text()
             to_folder = str(self.table.item(i, 6).text())
             to_object = PathObject(to_folder)
-            to_object.new_set_attr(version='000.000')
             next_version = to_object.new_major_version_object()
-            next_version.new_set_attr(filename=filename, resolution='high', user=self.current_user)
+            next_version.new_set_attr(filename=filename)
             CreateProductionData(next_version.data)
             print('copying %s -> %s' % (from_, next_version.path_root))
             shutil.copy2(from_, next_version.path_root)
