@@ -85,7 +85,6 @@ class PathObject(object):
             logging.error('No company attr found in %s - invalid dict' % path_object)
             return
         for key in path_object:
-            print key, path_object[key]
             self.data[key] = path_object[key]
             self.set_attr(attr=key, value=path_object[key])
 
@@ -252,6 +251,10 @@ class PathObject(object):
         elif attr == 'type':
             self.__dict__['seq'] = value
             self.data['seq'] = value
+        elif attr == 'filename':
+            self.__dict__['filename'] = value
+            self.data['filename'] = value
+            self.set_proper_filename()
         self.set_path()
 
     def glob_project_element(self, attr, full_path=False, split=True):
@@ -337,6 +340,11 @@ class PathObject(object):
         pass
 
     def set_proper_filename(self):
+        if self.filename:
+            self.filename_base, self.ext = os.path.splitext(self.filename)
+        else:
+            self.filename_base = ''
+            self.ext = ''
         pass
 
     def set_shotname(self):

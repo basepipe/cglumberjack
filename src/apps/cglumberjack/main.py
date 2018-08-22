@@ -67,6 +67,7 @@ class AssetWidget(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout(self)
+        self.tool_button_layout = QtWidgets.QHBoxLayout(self)
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
@@ -104,7 +105,21 @@ class AssetWidget(QtWidgets.QWidget):
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.data_table.setMinimumHeight(200)
+        self.data_table.setMinimumWidth(340)
+
+        # build the tool button row
+        self.open_button = QtWidgets.QToolButton()
+        self.open_button.setText('Open')
+        self.new_version_button = QtWidgets.QToolButton()
+        self.new_version_button.setText('New Version')
+        self.review_button = QtWidgets.QToolButton()
+        self.review_button.setText('Review')
+        self.publish_button = QtWidgets.QToolButton()
+        self.publish_button.setText('Publish')
+        self.tool_button_layout.addWidget(self.open_button)
+        self.tool_button_layout.addWidget(self.new_version_button)
+        self.tool_button_layout.addWidget(self.review_button)
+        self.tool_button_layout.addWidget(self.publish_button)
 
         # this is where the filter needs to be!
         h_layout.addWidget(self.title)
@@ -119,6 +134,7 @@ class AssetWidget(QtWidgets.QWidget):
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
         v_layout.addWidget(self.data_table, 1)
+        v_layout.addLayout(self.tool_button_layout)
         self.hide_combos()
 
         self.message.hide()
@@ -127,6 +143,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.show_button.clicked.connect(self.on_show_button_clicked)
         self.hide_button.clicked.connect(self.on_hide_button_clicked)
         self.add_button.clicked.connect(self.on_add_button_clicked)
+        self.hide_tool_buttons()
         
     def hide(self):
         self.hide_button.hide()
@@ -150,6 +167,18 @@ class AssetWidget(QtWidgets.QWidget):
         self.title.show()
         if combos:
             self.show_combos()
+
+    def hide_tool_buttons(self):
+        self.open_button.hide()
+        self.new_version_button.hide()
+        self.publish_button.hide()
+        self.review_button.hide()
+
+    def show_tool_buttons(self):
+        self.open_button.show()
+        self.new_version_button.show()
+        self.publish_button.show()
+        self.review_button.show()
             
     def show_combos(self):
         self.users.show()
@@ -239,7 +268,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.radio_user.setChecked(True)
         self.radio_layout.addWidget(self.radio_publishes)
         self.radio_layout.addWidget(self.radio_everyone)
-        self.radio_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+        self.radio_layout.addItem(QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Maximum,
                                                         QtWidgets.QSizePolicy.Minimum))
         # assemble the filter_panel
         self.filter_layout.addLayout(self.user_widget)
@@ -331,9 +360,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.load_assets()
 
     def on_task_version_changed(self):
+        print self.sender().parent()
         self.reload_task_widget(self.sender().parent(), populate_versions=False)
 
     def on_task_user_changed(self):
+        print self.sender().parent()
         self.reload_task_widget(self.sender().parent())
 
     def on_task_resolution_changed(self):
@@ -357,13 +388,29 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def on_source_selected(self, data):
         # clear everything
         object_ = PathObject(self.current_location)
-        object_.set_attr(attr='version', value=self.sender().version)
-        object_.set_attr(attr='resolution', value=self.sender().resolution)
-        object_.set_attr(attr='user', value=self.sender().parent().users.currentText())
+        parent = self.sender().parent()
+        object_.set_attr(attr='version', value=parent.versions.currentText())
+        object_.set_attr(attr='context', value='source')
+        object_.set_attr(attr='resolution', value=parent.resolutions.currentText())
+        object_.set_attr(attr='user', value=parent.users.currentText())
         object_.set_attr(attr='task', value=self.sender().task)
+        try:
+            object_.set_attr(attr='filename', value=data[0][0])
+        except IndexError:
+            # this indicates a selection within the module, but not a specific selected files
+            pass
         self.update_location(object_)
         self.clear_task_selection_except(self.sender().task)
+        self.sender().parent().show_tool_buttons()
         self.load_render_files()
+
+    def on_render_selected(self, data):
+        object_ = PathObject(self.current_location)
+        object_.set_attr(attr='context', value='render')
+        object_.set_attr(attr='filename', value=data[0][0])
+        self.update_location(object_)
+        self.sender().parent().show_tool_buttons()
+        self.clear_task_selection_except()
 
     def on_project_changed(self, data):
         self.project = data[0][0]
@@ -434,12 +481,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
                         # find the version information for the task:
                         user = self.populate_users_combo(task_widget, current, task)
+                        print 0, user
                         version = self.populate_versions_combo(task_widget, current, task)
                         resolution = self.populate_resolutions_combo(task_widget, current, task)
                         self.task_layout.addWidget(task_widget)
                         self.task_layout.tasks.append(task)
-                        self.task_layout.addItem((QtWidgets.QSpacerItem(22, 0, QtWidgets.QSizePolicy.Expanding,
-                                                                        QtWidgets.QSizePolicy.Minimum)))
+                        self.task_layout.addItem((QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Minimum,
+                                                                        QtWidgets.QSizePolicy.Expanding)))
                         version_obj = current.copy(task=task, user=user, version=version,
                                                    resolution=resolution, filename='*')
                         task_widget.data_table.task = version_obj.task
@@ -447,39 +495,36 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         task_widget.data_table.version = version_obj.version
                         task_widget.data_table.resolution = version_obj.resolution
                         files_ = version_obj.glob_project_element('filename')
+                        print 1, version_obj.path_root
                         task_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True),
                                                         ['Name']))
                         task_widget.data_table.selected.connect(self.on_source_selected)
-                        # task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
-                        # task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
-                        # task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
-
+                        task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
+                        task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
+                        task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
 
     # LOAD FUNCTIONS
 
     def reload_task_widget(self, widget, populate_versions=True):
-        self.user = widget.users.currentText()
-        if populate_versions == True:
-            self.version = self.populate_versions_combo(widget.users, widget.versions, widget.label)
+        path_obj = PathObject(self.current_location)
+        path_obj.set_attr(attr='filename', value='*')
+        path_obj.set_attr('user', widget.users.currentText())
+        if populate_versions:
+            path_obj.set_attr('version', self.populate_versions_combo(widget, path_obj, widget.label))
         else:
-            self.version = widget.versions.currentText()
-        self.resolution = widget.resolutions.currentText()
-        self.task = widget.label
-        # load the data table:
-        self.load_files_to_asset_widget(widget)
-        self.update_location()
+            path_obj.set_attr('version', widget.versions.currentText())
+            path_obj.set_attr('resolution', widget.resolutions.currentText())
+        path_obj.set_attr('task', widget.label)
+        self.update_location(path_obj)
+        files_ = path_obj.glob_project_element('filename')
+        print 'files:', files_
+        widget.setup(ListItemModel(self.prep_list_for_table(files_), ['Name']))
         self.clear_layout(self.render_layout)
-
-    def load_files_to_asset_widget(self, widget):
-        version_path = PathParser.path_from_dict(self.current_location, with_root=True)
-        files_ = glob.glob(version_path+'/*')
-        widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True), ['Name']))
 
     def load_render_files(self):
         self.clear_layout(self.render_layout)
         current = PathObject(self.current_location)
         renders = current.copy(context='render', filename='*')
-        print renders.path_root
         files_ = renders.glob_project_element('filename')
         label = QtWidgets.QLabel('<b>%s: Exports</b>' % renders.task)
         render_widget = AssetWidget(self, 'Output')
@@ -489,7 +534,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         render_widget.hide_button.hide()
         self.render_layout.addWidget(label)
         self.render_layout.addWidget(render_widget)
+        self.render_layout.addItem((QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Minimum,
+                                                          QtWidgets.QSizePolicy.Expanding)))
         render_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True), ['Name']))
+        render_widget.data_table.selected.connect(self.on_render_selected)
 
     def populate_users_combo(self, widget, path_object, task):
         object_ = path_object.copy(user='*', task=task)
@@ -514,7 +562,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if index_ != -1:
                 widget.users.setCurrentIndex(index_)
                 self.user = self.user_default
-        return self.user
+        return widget.users.currentText()
 
     @staticmethod
     def populate_versions_combo(task_widget, path_object, task):
@@ -605,7 +653,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     # CLEAR/DELETE FUNCTIONS
 
-    def clear_task_selection_except(self, task):
+    def clear_task_selection_except(self, task=None):
         layout = self.task_layout
         i = -1
         while i <= layout.count():
@@ -614,7 +662,12 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if child:
                 if child.widget():
                     if isinstance(child.widget(), AssetWidget):
-                        if task != child.widget().data_table.task:
+                        if task:
+                            if task != child.widget().data_table.task:
+                                child.widget().hide_tool_buttons()
+                                child.widget().data_table.clearSelection()
+                        else:
+                            child.widget().hide_tool_buttons()
                             child.widget().data_table.clearSelection()
         return
 
@@ -684,6 +737,9 @@ class CGLumberjack(LJMainWindow):
         self.setCentralWidget(CGLumberjackWidget(self))
         self.status_bar = QtWidgets.QStatusBar()
         self.setStatusBar(self.status_bar)
+        w = 400
+        h = 500
+        self.resize(w, h)
         menu_bar = self.menuBar()
         icon = QtGui.QPixmap(":images/'lumberjack.24px.png").scaled(24, 24)
         self.setWindowIcon(icon)
