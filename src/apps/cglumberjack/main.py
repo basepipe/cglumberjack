@@ -9,7 +9,7 @@ from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
-from core.path import PathObject, create_production_data
+from core.path import PathObject, CreateProductionData
 from asset_ingestor_widget import AssetIngestor
 
 
@@ -311,9 +311,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         # self.load_assets()
         # create connections
         self.project_filter.data_table.selected.connect(self.on_project_changed)
-        #self.company_widget.add_button.clicked.connect(self.on_create_company)
-        #self.project_filter.add_button.clicked.connect(self.on_create_project)
-        #self.company_widget.combo.currentIndexChanged.connect(self.on_company_changed)
+        self.company_widget.add_button.clicked.connect(self.on_create_company)
+        self.project_filter.add_button.clicked.connect(self.on_create_project)
+        self.company_widget.combo.currentIndexChanged.connect(self.on_company_changed)
 
 
 
@@ -330,20 +330,25 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def on_create_company(self):
         dialog = InputDialog(title='Create Company', message='Type a Company Name', line_edit=True)
         dialog.exec_()
-        self.company = 'cgl-%s' % dialog.line_edit.text()
-        full_root = r'%s%s' % (self.root, self.company)
-        os.makedirs(full_root)  # TODO is there a way to work this into create_production_data?
-        self.load_companies()
-        self.load_projects()
+        if dialog.button == 'Ok':
+            self.company = 'cgl-%s' % dialog.line_edit.text()
+            d = {'root': self.root,
+                 'company': self.company}
+            CreateProductionData(d)
+            self.load_companies(company=self.company)
+            self.load_projects()
 
     def on_create_project(self):
         dialog = InputDialog(title='Create Project', message='Type a Project Name', line_edit=True)
         dialog.exec_()
-        project_name = dialog.line_edit.text()
-        create_production_data(company=self.company, project=project_name, shotgun=self.do_shotgun, with_root=True)
-        create_production_data(company=self.company, project=project_name, scope='shots', shotgun=self.do_shotgun,
-                               with_root=True)
-        self.load_projects()
+        if dialog.button == 'Ok':
+            project_name = dialog.line_edit.text()
+            self.project = project_name
+            self.update_location()
+            CreateProductionData(self.current_location)
+            self.load_projects()
+        else:
+            pass
 
     def on_create_asset(self):
         # This needs to be properly designed, i need to design the create project and create company dialogs as well
@@ -354,6 +359,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         dialog.exec_()
 
     def on_file_dragged_to_assets(self, data):
+        print self.current_location
         dialog = AssetIngestor(self, path_dict=self.current_location, current_user=self.user_default)
         dialog.on_files_added(data)
         dialog.exec_()
@@ -481,7 +487,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
                         # find the version information for the task:
                         user = self.populate_users_combo(task_widget, current, task)
-                        print 0, user
                         version = self.populate_versions_combo(task_widget, current, task)
                         resolution = self.populate_resolutions_combo(task_widget, current, task)
                         self.task_layout.addWidget(task_widget)
@@ -495,7 +500,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         task_widget.data_table.version = version_obj.version
                         task_widget.data_table.resolution = version_obj.resolution
                         files_ = version_obj.glob_project_element('filename')
-                        print 1, version_obj.path_root
                         task_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True),
                                                         ['Name']))
                         task_widget.data_table.selected.connect(self.on_source_selected)
@@ -597,8 +601,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
              'company': self.company,
              'project': '*',
              'context': 'source'}
-        current_path = PathObject(d).path_root
-        projects = glob.glob(current_path)
+        path_object = PathObject(d)
+        projects = path_object.glob_project_element('project')
+        print projects
         if not projects:
             print 'no projects'
             self.project_filter.search_box.setEnabled(False)
@@ -616,7 +621,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.radio_everyone.setEnabled(True)
             self.radio_publishes.setEnabled(True)
             self.radio_label.setEnabled(True)
-        self.project_filter.setup(ListItemModel(self.prep_list_for_table(projects, path_filter='project'), ['Name']))
+        self.project_filter.setup(ListItemModel(self.prep_list_for_table(projects, split_for_file=True), ['Name']))
         self.update_location()
 
     def load_companies(self, company=None):
@@ -634,11 +639,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.company_widget.combo.setCurrentIndex(index)
 
     def load_assets(self):
+        print 'current location', self.current_location
         current = PathObject(self.current_location)
         items = current.glob_multiple_project_elements(elements=['seq', 'shot'])
         data = []
         temp_ = []
+        print 'ITEMS', items
         for each in items:
+            print each
             obj_ = PathObject(each)
             d = obj_.data
             shot_name = '%s:%s' % (d['seq'], d['shot'])
@@ -717,6 +725,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     @staticmethod
     def prep_list_for_table(list_, path_filter=None, split_for_file=False):
+        print list_
         # TODO - would be awesome to make this smart enough to know what to do with a dict, list, etc...
         list_.sort()
         output_ = []

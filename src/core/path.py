@@ -136,7 +136,7 @@ class PathObject(object):
         companies = app_config()['account_info']['companies']
         for c in companies:
             if c in path_string:
-                self.set_attr('company', c)
+                self.new_set_attr(company=c)
         if not self.company:
             logging.error("No Valid Company defined in path provided - invalid path: %s" % path_string)
             return
@@ -203,6 +203,61 @@ class PathObject(object):
             return self.path_root
         else:
             return self.path
+
+    def new_set_attr(self, **kwargs):
+        for attr in kwargs:
+            value = kwargs[attr]
+
+            try:
+                regex = app_config()['rules']['path_variables'][attr]['regex']
+            except KeyError:
+                logging.info('Could not find regex for %s in config, skipping' % attr)
+            if value == '*':
+                self.__dict__[attr] = value
+                self.data[attr] = value
+            else:
+                if value:
+                    if attr == 'scope':
+                        if value not in self.scope_list:
+                            logging.error('%s not found in %s' % (value, self.scope_list))
+                            return
+                        else:
+                            self.__dict__[attr] = value
+                            self.data[attr] = value
+                    elif attr == 'context':
+                        if value not in self.context_list:
+                            logging.error('%s not found in %s' % (value, self.context_list))
+                            return
+                        else:
+                            self.__dict__[attr] = value
+                            self.data[attr] = value
+                    else:
+                        if regex:
+                            try:
+                                if not re.match(regex, value):
+                                    logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
+                                    # return
+                            except TypeError:
+                                pass
+                        self.__dict__[attr] = value
+                        self.data[attr] = value
+            if attr == 'shot':
+                self.__dict__['asset'] = value
+                self.data['asset'] = value
+            elif attr == 'asset':
+                self.__dict__['shot'] = value
+                self.data['shot'] = value
+            elif attr == 'seq':
+                self.__dict__['type'] = value
+                self.data['type'] = value
+            elif attr == 'type':
+                self.__dict__['seq'] = value
+                self.data['seq'] = value
+            elif attr == 'filename':
+                self.__dict__['filename'] = value
+                self.data['filename'] = value
+                self.set_proper_filename()
+        self.set_path()
 
     def set_attr(self, attr, value, regex=True):
         if regex:
@@ -296,9 +351,12 @@ class PathObject(object):
             path_ = path_.split(self.data[split_entity])[0]
             if path_.endswith('\\'):
                 path_ = path_[:-1]
+        print 'PATH', path_
         obj_ = PathObject(path_)
+        print obj_.path_root
         for attr in elements:
             obj_.set_attr(attr, '*', regex=False)
+        print 'PATH_ROOT', obj_.path_root
         glob_list = glob.glob(obj_.path_root)
         return glob_list
 
@@ -309,17 +367,23 @@ class PathObject(object):
         return new_obj
 
     def next_minor_version_number(self):
-        next_minor = '%03d' % (int(self.minor_version)+1)
+        if not self.minor_version:
+            next_minor = '001'
+        else:
+            next_minor = '%03d' % (int(self.minor_version)+1)
         return '%s.%s' % (self.major_version, next_minor)
 
     def next_major_version_number(self):
-        next_major = '%03d' % (int(self.major_version)+1)
-        return '%s.%s' % (next_major, self.minor_version)
+        if not self.major_version:
+            next_major = '001'
+        else:
+            next_major = '%03d' % (int(self.major_version)+1)
+        return '%s.%s' % (next_major, '000')
 
     def new_major_version_object(self):
         next_major = self.next_major_version_number()
         new_obj = copy.deepcopy(self)
-        new_obj.set_attr('version', next_major)
+        new_obj.new_set_attr(version=next_major)
         return new_obj
 
     def new_minor_version_object(self):
@@ -356,5 +420,65 @@ class PathObject(object):
         pass
 
 
-def create_production_data(*args, **kwargs):
-    pass
+class CreateProductionData(object):
+    def __init__(self, path_object=None, file_system=True, shotgun=False, scene_description=False, do_scope=False):
+        self.path_object = PathObject(path_object)
+        self.do_scope = do_scope
+        if file_system:
+            self.create_folders()
+        if shotgun:
+            self.create_shotgun()
+        if scene_description:
+            self.create_scene_description()
+
+    def create_folders(self):
+        if not self.path_object.root:
+            logging.info('No Root Defined')
+            return
+        if not self.path_object.company:
+            logging.info('No Company Defined')
+            return
+        if not self.path_object.context:
+            self.path_object.new_set_attr(context='source')
+
+        self.safe_makedirs(self.path_object)
+        self.create_other_context(self.path_object)
+        if self.do_scope:
+            self.create_other_scope(self.path_object)
+
+    def create_other_context(self, path_object):
+        d = {'source': 'render', 'render': 'source'}  # TODO this should be in the config somewhere
+        if path_object.context:
+            new_context = d[path_object.context]
+            new_obj = path_object.copy(context=new_context)
+
+            self.safe_makedirs(new_obj)
+
+    def create_other_scope(self, path_object):
+        if path_object.scope:
+            d = {'assets': 'shots', 'shots': 'assets'}
+            if path_object.scope:
+                new_obj = path_object.copy(scope=d[path_object.scope])
+                self.safe_makedirs(new_obj)
+                self.create_other_context(new_obj)
+
+    @staticmethod
+    def safe_makedirs(path_object):
+        if '*' in path_object.path_root:
+            path_ = path_object.path_root.split('*')[0]
+        else:
+            path_ = path_object.path_root
+        if os.path.isfile(path_):
+            path_ = os.path.split(path_)[0]
+        print 'Creating directories: %s' % path_
+        if not os.path.exists(path_):
+            os.makedirs(path_)
+
+    def create_shotgun(self):
+        print self.path_object.path_root
+        print 'No Shotgun Stuff yet'
+
+    def create_scene_description(self):
+        print self.path_object.path_root
+        print 'No Scene Description Yet'
+

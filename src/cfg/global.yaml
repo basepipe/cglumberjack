@@ -1,5 +1,5 @@
 account_info:
-  companies: ["", "cgl-cglumberjack", 'VFX']
+  companies: ["", "cgl-cglumberjack", 'VFX', 'cgl-blobgroup']
   company: cgl-cglumberjack
   user: tmikota
   user_favorites: ['PADL_dev', 'tmiko', 'tmikota']
@@ -162,5 +162,69 @@ helpdesk:
 lumberjack_sync:
   AWS_ACCESS_KEY_ID: 'AKIAJ4HU6QEBIGKH7DRQ'
   AWS_SECRET_ACCESS_KEY: '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'
+asset_categories:
+  Prop: prop
+  Environment: env
+  Vehicle: veh
+  Character: char
+  Production: prod
+  Library: lib
+pipeline_steps:
+  shots:
+    Animatics: amtc
+    Previs: prev
+    Layout: lay
+    Blocking: blocking
+    Keyframe: key
+    Inbetween: inbetween
+    polish: polish
+    Animation: anim
+    Shading & Lighting: lite
+    effects: fx
+    Compositing: comp
+    MatchMove: mm
+    Motion Capture: mcp
+    Matte Painting/Environment: matte
+    Picture Editing: edit
+    Sound Editing: sound
+    Storyboards: boards
+    Color Editing: color
+    Camera: cam
+  assets:
+    Conception/Previs/R&D: ref
+    Modeling/UV: mdl
+    Texturing: tex
+    Shading & Lighting: shd
+    Simulation: sim
+    Rigging: rig
+    Asset Layout: lay
+    Concept: cncpt
+    Audio: aud
+    Transcript: trn
+    Layout: lay
+    Bundle: bndl
+    HDRI: hdri
+default:
+  linear_gamma: 2.2
+  frame_rate: 24
+  working_colorspace: linear
+  output_colorspace: rec709
+  padding: 4
+  reviews: t5h0j5z4q3q2b9h5@fsu-cmpa.slack.com
+  resolution:
+    maya_icon: 24x24
+    retina_icon: 48x48
+    thumb: 200x200
+    thumb_cine: 200x112
+    video_review: 1920x1080
+    image_review: 1920x1080
+    full: 1920x1080
+    half: 960x540
+    third: 640x360
+    quarter: 480x270
+dvp:
+  frame_rate: 24
+
+
 
 
