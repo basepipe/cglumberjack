@@ -359,18 +359,15 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         dialog.exec_()
 
     def on_file_dragged_to_assets(self, data):
-        print self.current_location
         dialog = AssetIngestor(self, path_dict=self.current_location, current_user=self.user_default)
         dialog.on_files_added(data)
         dialog.exec_()
         self.load_assets()
 
     def on_task_version_changed(self):
-        print self.sender().parent()
         self.reload_task_widget(self.sender().parent(), populate_versions=False)
 
     def on_task_user_changed(self):
-        print self.sender().parent()
         self.reload_task_widget(self.sender().parent())
 
     def on_task_resolution_changed(self):
@@ -395,6 +392,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         # clear everything
         object_ = PathObject(self.current_location)
         parent = self.sender().parent()
+        object_.set_attr(attr='root', value=self.root)
         object_.set_attr(attr='version', value=parent.versions.currentText())
         object_.set_attr(attr='context', value='source')
         object_.set_attr(attr='resolution', value=parent.resolutions.currentText())
@@ -412,6 +410,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def on_render_selected(self, data):
         object_ = PathObject(self.current_location)
+        object_.set_attr(attr='root', value=self.root)
         object_.set_attr(attr='context', value='render')
         object_.set_attr(attr='filename', value=data[0][0])
         self.update_location(object_)
@@ -469,8 +468,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
             # set our current location
             path = data[0][1]
-            current = PathObject(path)
+            current = PathObject(str(path))
             current.set_attr(attr='task', value='*')
+            current.set_attr(attr='root', value=self.root)
 
             self.update_location(path_object=current)
             # Get the list of tasks for the selection
@@ -521,7 +521,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         path_obj.set_attr('task', widget.label)
         self.update_location(path_obj)
         files_ = path_obj.glob_project_element('filename')
-        print 'files:', files_
         widget.setup(ListItemModel(self.prep_list_for_table(files_), ['Name']))
         self.clear_layout(self.render_layout)
 
@@ -603,7 +602,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
              'context': 'source'}
         path_object = PathObject(d)
         projects = path_object.glob_project_element('project')
-        print projects
         if not projects:
             print 'no projects'
             self.project_filter.search_box.setEnabled(False)
@@ -639,15 +637,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.company_widget.combo.setCurrentIndex(index)
 
     def load_assets(self):
-        print 'current location', self.current_location
+        self.assets.data_table.clearSpans()
         current = PathObject(self.current_location)
-        items = current.glob_multiple_project_elements(elements=['seq', 'shot'])
+        items = glob.glob(current.path_root)
         data = []
         temp_ = []
-        print 'ITEMS', items
         for each in items:
-            print each
-            obj_ = PathObject(each)
+            obj_ = PathObject(str(each))
             d = obj_.data
             shot_name = '%s:%s' % (d['seq'], d['shot'])
             if shot_name not in temp_:
@@ -725,7 +721,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     @staticmethod
     def prep_list_for_table(list_, path_filter=None, split_for_file=False):
-        print list_
         # TODO - would be awesome to make this smart enough to know what to do with a dict, list, etc...
         list_.sort()
         output_ = []

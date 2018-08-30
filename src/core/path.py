@@ -58,6 +58,7 @@ class PathObject(object):
         self.template = []
 
         if type(path_object) is dict:
+            print 'is dict'
             self.process_dict(path_object)
         elif type(path_object) is str:
             self.process_string(path_object)
@@ -65,7 +66,9 @@ class PathObject(object):
             logging.error('type: %s not expected' % type(path_object))
 
     def process_string(self, path_object):
+        print 'Processing String %s' % path_object
         self.get_company(path_object)
+        print self.company
         self.unpack_path(path_object)
         self.set_data_from_attrs()
         # self.set_shotname()
@@ -468,8 +471,8 @@ class CreateProductionData(object):
             path_ = path_object.path_root.split('*')[0]
         else:
             path_ = path_object.path_root
-        if os.path.isfile(path_):
-            path_ = os.path.split(path_)[0]
+        if os.path.splitext(path_):
+            path_ = os.path.dirname(path_)
         print 'Creating directories: %s' % path_
         if not os.path.exists(path_):
             os.makedirs(path_)
@@ -481,4 +484,3 @@ class CreateProductionData(object):
     def create_scene_description(self):
         print self.path_object.path_root
         print 'No Scene Description Yet'
-

@@ -50,13 +50,16 @@ class AssetIngestor(QtWidgets.QDialog):
         self.setWindowTitle('File Ingestor')
         layout = QtWidgets.QVBoxLayout()
         if not path_dict:
-            self.path_dict['root'] = 'Z://'
-            self.path_dict['company'] = 'VFX'
-            self.path_dict['project'] = 'tom_test'
+            self.path_dict['root'] = 'D:'
+            self.path_dict['company'] = 'cgl-blobgroup'
+            self.path_dict['project'] = 'blobtown'
             self.path_dict['scope'] = 'assets'
             self.path_dict['context'] = 'source'
+            self.path_dict['user'] = 'tmiko'
             self.path_dict['seq'] = ''
             self.path_dict['shot'] = ''
+            self.path_dict['resolution'] = 'high'
+            self.path_dict['version'] = '000.000'
         else:
             self.path_dict['root'] = path_dict['root']
             self.path_dict['company'] = path_dict['company']
@@ -68,6 +71,7 @@ class AssetIngestor(QtWidgets.QDialog):
             self.path_dict['resolution'] = 'high'
             self.path_dict['user'] = self.current_user
             self.path_dict['version'] = '000.000'
+        print self.path_dict
 
         self.table = AssetIngestTable()
         self.table.setColumnCount(8)
@@ -102,8 +106,11 @@ class AssetIngestor(QtWidgets.QDialog):
             scope_combo = AdvComboBox()
             scope_combo.addItems(self.scope_list)
             seq_combo = AdvComboBox()
+            seq_combo.label = 'seq_combo'
             shot_combo = AdvComboBox()
+            shot_combo.label = 'shot_combo'
             task_combo = AdvComboBox()
+            task_combo.label = 'task_combo'
             to_path_item = QtWidgets.QTableWidgetItem('')
             ready_value = QtWidgets.QTableWidgetItem('False')
 
@@ -158,6 +165,7 @@ class AssetIngestor(QtWidgets.QDialog):
     def update_to_path(self, row):
         path_obj = PathObject(self.path_dict)
         path_ = path_obj.path_root
+        print path_, 'tom likes this'
         if self.pass_path_check():
             self.table.item(row, 6).setForeground(QtGui.QColor(0, 255, 0))
             self.table.item(row, 0).setForeground(QtGui.QColor(0, 255, 0))
@@ -201,19 +209,14 @@ class AssetIngestor(QtWidgets.QDialog):
     def populate_seq(self, widget):
         widget.clear()
         self.path_dict['seq'] = '*'
-        print 'SEQ'
-        print self.path_dict
-        print PathObject(self.path_dict).path_root
-        seq = PathObject(self.path_dict).glob_project_element('seq')
-        if seq:
-            for each in seq:
-                dir_, file_ = os.path.split(os.path.dirname(each))
-                widget.addItem(file_)
-        if not seq:
-            if self.path_dict['scope'] == 'assets':
-                asset_categories = app_config()['asset_categories']
-                for full_name in asset_categories:
-                    widget.addItem(asset_categories[full_name])
+        if self.path_dict['scope'] == 'assets':
+            asset_categories = app_config()['asset_categories']
+            for full_name in asset_categories:
+                widget.addItem(asset_categories[full_name])
+        if self.path_dict['scope'] == 'shots':
+            seq = PathObject(self.path_dict).glob_project_element('seq')
+            if seq:
+                widget.addItems(seq)
         self.path_dict['seq'] = widget.currentText()
         self.update_to_path(widget.row)
         self.populate_shot(widget.shot_widget)
