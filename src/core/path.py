@@ -484,17 +484,14 @@ class CreateProductionData(object):
 
     @staticmethod
     def create_project_management_data(path_object, proj_management):
-        # load the template.main thingy
+        # TODO I need multiple levels of globals in order to manage this, how do i say that the pod wants one project
+        # management software
+        # and another studio wants a different kind of project management software by default.
         module = "plugins.project_management.%s.main" % proj_management
         loaded_module = __import__(module, globals(), locals(), 'main', -1)
-        loaded_module.ProjectManagementData(path_object).create_entities_from_path_object()
-        loaded_module.ProjectManagementData(user='bob').create_entities_from_path_object()
-        #print module
+        loaded_module.ProjectManagementData(path_object).create_entities_from_data()
 
 
 path_object = PathObject(path_object=r'D:\cgl-pod_advertising\source\bob_town')
 CreateProductionData(path_object=path_object, proj_management='active_colab', test=True)
 
-#import plugins.project_management.template.main
-#print 'the good stuff'
-#plugins.project_management.template.main.ProjectManagementData()
