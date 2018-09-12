@@ -1,9 +1,14 @@
 account_info:
-  companies: ["", "cgl-cglumberjack", 'VFX', 'cgl-blobgroup', 'cgl-blobbyfun']
+  companies: ["", "cgl-cglumberjack", 'VFX', 'cgl-blobgroup', 'cgl-blobbyfun', 'cgl-pod_advertising']
   company: cgl-cglumberjack
   user: tmikota
   user_favorites: ['PADL_dev', 'tmiko', 'tmikota']
   user_directory: C:\Users\tmiko\Documents\cglumberjack
+companies:
+  pod_advertising:
+    shotgun: False
+    active_colab: True
+    file_system: True
 logging:
     level: debug
     format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'

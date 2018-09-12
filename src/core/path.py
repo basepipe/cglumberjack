@@ -66,9 +66,7 @@ class PathObject(object):
             logging.error('type: %s not expected' % type(path_object))
 
     def process_string(self, path_object):
-        print 'Processing String %s' % path_object
         self.get_company(path_object)
-        print self.company
         self.unpack_path(path_object)
         self.set_data_from_attrs()
         # self.set_shotname()
@@ -424,13 +422,15 @@ class PathObject(object):
 
 
 class CreateProductionData(object):
-    def __init__(self, path_object=None, file_system=True, shotgun=False, scene_description=False, do_scope=False):
+    def __init__(self, path_object=None, file_system=True, proj_management=False,
+                 scene_description=False, do_scope=False, test=False):
+        self.test = test
         self.path_object = PathObject(path_object)
         self.do_scope = do_scope
         if file_system:
             self.create_folders()
-        if shotgun:
-            self.create_shotgun()
+        if proj_management:
+            self.create_project_management_data(path_object, proj_management)
         if scene_description:
             self.create_scene_description()
 
@@ -444,7 +444,7 @@ class CreateProductionData(object):
         if not self.path_object.context:
             self.path_object.new_set_attr(context='source')
 
-        self.safe_makedirs(self.path_object)
+        self.safe_makedirs(self.path_object, test=self.test)
         self.create_other_context(self.path_object)
         if self.do_scope:
             self.create_other_scope(self.path_object)
@@ -466,7 +466,7 @@ class CreateProductionData(object):
                 self.create_other_context(new_obj)
 
     @staticmethod
-    def safe_makedirs(path_object):
+    def safe_makedirs(path_object, test):
         if '*' in path_object.path_root:
             path_ = path_object.path_root.split('*')[0]
         else:
@@ -474,13 +474,19 @@ class CreateProductionData(object):
         if os.path.splitext(path_):
             path_ = os.path.dirname(path_)
         print 'Creating directories: %s' % path_
-        if not os.path.exists(path_):
-            os.makedirs(path_)
-
-    def create_shotgun(self):
-        print self.path_object.path_root
-        print 'No Shotgun Stuff yet'
+        if not test:
+            if not os.path.exists(path_):
+                os.makedirs(path_)
 
     def create_scene_description(self):
         print self.path_object.path_root
-        print 'No Scene Description Yet'
+        print 'Json based Scene Descriptions Not Yet Connected'
+
+    @staticmethod
+    def create_project_management_data(path_object, proj_management):
+        # load the template.main thingy
+        module = "plugins.project_management.%s.main" % proj_management
+        loaded_module = __import__(module, globals(), locals(), 'main', -1)
+        loaded_module.ProjectManagementData(path_object).create_entities_from_path_object()
+        #print module
+
