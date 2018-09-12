@@ -485,6 +485,8 @@ class CreateProductionData(object):
     @staticmethod
     def create_project_management_data(path_object, proj_management):
         # TODO I need multiple levels of globals in order to manage this, how do i say that the pod wants one project
+        # TODO I need to do something that syncs my globals to the cloud in case they get toasted.
+        # TODO it might be a good idea to get this working with shotgun since i already know how complex that one is.
         # management software
         # and another studio wants a different kind of project management software by default.
         module = "plugins.project_management.%s.main" % proj_management
