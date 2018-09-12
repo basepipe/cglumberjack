@@ -4,7 +4,7 @@ from Qt import QtWidgets, QtCore, QtGui
 from core.path import PathObject, CreateProductionData
 from cglui.widgets.combo import AdvComboBox
 from core.config import app_config
-from cglcore.path import icon_path, create_production_data
+from core.path import icon_path
 import shutil
 
 
@@ -99,7 +99,7 @@ class AssetIngestor(QtWidgets.QDialog):
         for i, d in enumerate(data):
             dir_, file_ = os.path.split(d)
             file_item = QtWidgets.QTableWidgetItem(file_)
-            folder_icon = QtWidgets.QIcon(self.icon_path)
+            folder_icon = QtGui.QIcon(self.icon_path)
             if os.path.isdir(d):
                 file_item.setIcon(folder_icon)
             from_path_item = QtWidgets.QTableWidgetItem(d)

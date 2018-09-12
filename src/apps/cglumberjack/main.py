@@ -709,6 +709,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                                      }
             path_obj = PathObject(self.current_location)
             self.path_root = path_obj.path_root
+            print self.path_root
             self.path = path_obj.path
             self.current_location_line_edit.setText(self.path_root)
             return self.path_root

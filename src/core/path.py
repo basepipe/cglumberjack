@@ -11,7 +11,7 @@ import fnmatch
 from string import Formatter
 
 from core.config import app_config
-from cglcore.exceptions import LumberJackException
+#from cglcore.exceptions import LumberJackException
 from cglui.widgets.dialog import InputDialog
 
 
@@ -198,7 +198,11 @@ class PathObject(object):
                 else:
                     if self.__dict__[attr]:
                         path_string = os.path.join(path_string, self.__dict__[attr])
-        self.path_root = '%s\\%s' % (self.root, path_string)
+        # if windows
+        if sys.platform == 'win32':
+            self.path_root = '%s\\%s' % (self.root, path_string)
+        else:
+            self.path_root = os.path.join(self.root, path_string)
         self.path = path_string
         if root:
             return self.path_root
@@ -313,7 +317,7 @@ class PathObject(object):
             self.set_proper_filename()
         self.set_path()
 
-    def glob_project_element(self, attr, full_path=False, split=True):
+    def glob_project_element(self, attr, full_path=False):
         """
         Simple Glob Function.  "I want to return all "projects"" for instance would be written this way:
         glob_project_element(self, 'project')
@@ -323,6 +327,8 @@ class PathObject(object):
         :param full_path: if True returns full paths for everything globbed
         :return: returns list of items, or paths.
         """
+        # this does not account for duplicate values - need a system that does.
+
         value = self.data[attr]
         glob_path = self.path_root.split(value)[0]
         list_ = []
@@ -352,14 +358,38 @@ class PathObject(object):
             path_ = path_.split(self.data[split_entity])[0]
             if path_.endswith('\\'):
                 path_ = path_[:-1]
-        print 'PATH', path_
         obj_ = PathObject(path_)
-        print obj_.path_root
         for attr in elements:
             obj_.set_attr(attr, '*', regex=False)
-        print 'PATH_ROOT', obj_.path_root
         glob_list = glob.glob(obj_.path_root)
         return glob_list
+
+    def glob_multiple(self, *args):
+        glob_object = self.copy()
+        glob_object.eliminate_wild_cards()
+        d = {}
+        highest_index = None
+        for each in args:
+            glob_object.set_attr(attr=each, value='*')
+            index = self.template.index(each)
+            if index > highest_index:
+                highest_index = index
+            d[str(index)] = each
+        split_at = self.template[highest_index]
+        return glob_object.glob_project_element(attr=split_at)
+
+
+    def eliminate_wild_cards(self):
+        """
+        this goes through a path object and changes all items with astrix into empty strings
+        :return:
+        """
+        for key in self.__dict__:
+            if self.__dict__[key] == '*':
+                self.__dict__[key] = ''
+                self.data[key] = ''
+        self.set_path()
+
 
     def copy(self, **kwargs):
         new_obj = copy.deepcopy(self)
@@ -466,7 +496,7 @@ class CreateProductionData(object):
                 self.create_other_context(new_obj)
 
     @staticmethod
-    def safe_makedirs(path_object, test):
+    def safe_makedirs(path_object, test=False):
         if '*' in path_object.path_root:
             path_ = path_object.path_root.split('*')[0]
         else:
@@ -497,3 +527,6 @@ class CreateProductionData(object):
 path_object = PathObject(path_object=r'D:\cgl-pod_advertising\source\bob_town')
 CreateProductionData(path_object=path_object, proj_management='active_colab', test=True)
 
+
+def icon_path():
+    return os.path.join(app_config()['paths']['code_root'], 'resources', 'images')
