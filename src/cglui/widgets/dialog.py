@@ -14,7 +14,7 @@ from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.base import LJDialog
 
-
+file
 class FileTableModel(ListItemModel):
     def data(self, index, role):
         row = index.row()

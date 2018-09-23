@@ -19,6 +19,7 @@ class Configuration(object):
             self.make_cglumberjack_dir()
             global_cfg, app_cfg = self._find_config_file()
             cfg = {}
+            cfg['cg_lumberjack_dir'] = self.cg_lumberjack_dir
             if os.path.isfile(global_cfg):
                 cfg.update(self._load_yaml(global_cfg))
             if os.path.isfile(app_cfg):

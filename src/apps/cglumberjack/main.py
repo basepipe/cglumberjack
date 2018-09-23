@@ -229,6 +229,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.do_shotgun = False  # TODO - add this to the globals
         self.root = app_config()['paths']['root']
         self.company = app_config()['account_info']['company']
+        self.user_root = app_config()['cg_lumberjack_dir']
         self.context = 'source'
         self.project = '*'
         self.scope = 'assets'
@@ -306,6 +307,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         layout.addLayout(self.cl_row)
         layout.addLayout(self.h_layout)
 
+        self.check_default_company_globals()
         self.load_companies()
         self.load_projects()
         # self.load_assets()
@@ -315,7 +317,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.project_filter.add_button.clicked.connect(self.on_create_project)
         self.company_widget.combo.currentIndexChanged.connect(self.on_company_changed)
 
-
+    def check_default_company_globals(self):
+        if self.company:
+            if not os.path.exists(os.path.join(self.user_root, 'companies', self.company)):
+                os.makedirs(os.path.join(self.user_root, 'companies', self.company))
 
     # UI interface Functions / Stuff that happens when buttons get clicked/changed.
     def on_company_changed(self):
@@ -331,12 +336,21 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         dialog = InputDialog(title='Create Company', message='Type a Company Name', line_edit=True)
         dialog.exec_()
         if dialog.button == 'Ok':
-            self.company = 'cgl-%s' % dialog.line_edit.text()
+            self.company = '%s' % dialog.line_edit.text()
             d = {'root': self.root,
                  'company': self.company}
+            self.create_company_globals(dialog.line_edit.text())
             CreateProductionData(d)
             self.load_companies(company=self.company)
             self.load_projects()
+
+    def create_company_globals(self, company):
+        print '##########################################'
+        print 'Creating Company Globlas %s' % company
+        dir_ = os.path.join(self.user_root, 'companies', company)
+        if not os.path.exists(dir_):
+            print '%s doesnt exist, making it' % dir_
+            os.makedirs(dir_)
 
     def on_create_project(self):
         dialog = InputDialog(title='Create Project', message='Type a Project Name', line_edit=True)
@@ -624,17 +638,41 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def load_companies(self, company=None):
         self.company_widget.combo.clear()
-        companies = glob.glob('%s/*' % self.root)
+        companies_dir = os.path.join(self.user_root, 'companies')
+        if os.path.exists(companies_dir):
+            companies = os.listdir(companies_dir)
+            print 'Companies: %s' % companies
+            if not companies:
+                dialog = InputDialog(buttons=['Create Company', 'Find Company'], message='No companies found in Config'
+                                                                                         'location %s:' % companies_dir)
+                dialog.exec_()
+                if dialog.button == 'Create Company':
+                    print 'Create Company pushed'
+                elif dialog.button == 'Find Company':
+                    company_paths = QtWidgets.QFileDialog.getExistingDirectory(self,
+                                                                               'Choose existing company(ies) to add to '
+                                                                               'the registry', self.root,
+                                                                               QtWidgets.QFileDialog.ShowDirsOnly)
+                    company = os.path.split(company_paths)[-1]
+                    companies.append(company)
+                    os.makedirs(os.path.join(companies_dir, company))
+                # ask me to type the name of companies i'm looking for?
+                # ask me to create a company if there are none at all.
+                # Open the location and ask me to choose folders that are companies
+        else:
+            return
+
         self.company_widget.combo.addItem('')
         for each in companies:
             c = os.path.split(each)[-1]
-            if 'cgl-' in c:
-                self.company_widget.combo.addItem(c)
+            self.company_widget.combo.addItem(c)
         if not company:
             company = self.company
         index = self.company_widget.combo.findText(company)
         if index:
             self.company_widget.combo.setCurrentIndex(index)
+        else:
+            self.company_widget.combo.setCurrentIndex(0)
 
     def load_assets(self):
         self.assets.data_table.clearSpans()
@@ -752,9 +790,11 @@ class CGLumberjack(LJMainWindow):
         settings = QtWidgets.QAction('Settings', self)
         settings.setShortcut('Ctrl+,')
         shelves = QtWidgets.QAction('Shelf Builder', self)
+        ingest_dialog = QtWidgets.QAction('Ingest Tool', self)
         # add actions to the file menu
         tools_menu.addAction(settings)
         tools_menu.addAction(shelves)
+        tools_menu.addAction(ingest_dialog)
         # connect signals and slots
         settings.triggered.connect(self.on_settings_clicked)
         shelves.triggered.connect(self.on_shelves_clicked)
