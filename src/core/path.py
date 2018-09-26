@@ -11,7 +11,7 @@ import fnmatch
 from string import Formatter
 
 from core.config import app_config
-from cglcore.exceptions import LumberJackException
+#from cglcore.exceptions import LumberJackException
 from cglui.widgets.dialog import InputDialog
 
 
@@ -58,6 +58,7 @@ class PathObject(object):
         self.template = []
 
         if type(path_object) is dict:
+            print 'is dict'
             self.process_dict(path_object)
         elif type(path_object) is str:
             self.process_string(path_object)
@@ -136,7 +137,7 @@ class PathObject(object):
         companies = app_config()['account_info']['companies']
         for c in companies:
             if c in path_string:
-                self.set_attr('company', c)
+                self.new_set_attr(company=c)
         if not self.company:
             logging.error("No Valid Company defined in path provided - invalid path: %s" % path_string)
             return
@@ -197,12 +198,71 @@ class PathObject(object):
                 else:
                     if self.__dict__[attr]:
                         path_string = os.path.join(path_string, self.__dict__[attr])
-        self.path_root = '%s\\%s' % (self.root, path_string)
+        # if windows
+        if sys.platform == 'win32':
+            self.path_root = '%s\\%s' % (self.root, path_string)
+        else:
+            self.path_root = os.path.join(self.root, path_string)
         self.path = path_string
         if root:
             return self.path_root
         else:
             return self.path
+
+    def new_set_attr(self, **kwargs):
+        for attr in kwargs:
+            value = kwargs[attr]
+
+            try:
+                regex = app_config()['rules']['path_variables'][attr]['regex']
+            except KeyError:
+                logging.info('Could not find regex for %s in config, skipping' % attr)
+            if value == '*':
+                self.__dict__[attr] = value
+                self.data[attr] = value
+            else:
+                if value:
+                    if attr == 'scope':
+                        if value not in self.scope_list:
+                            logging.error('%s not found in %s' % (value, self.scope_list))
+                            return
+                        else:
+                            self.__dict__[attr] = value
+                            self.data[attr] = value
+                    elif attr == 'context':
+                        if value not in self.context_list:
+                            logging.error('%s not found in %s' % (value, self.context_list))
+                            return
+                        else:
+                            self.__dict__[attr] = value
+                            self.data[attr] = value
+                    else:
+                        if regex:
+                            try:
+                                if not re.match(regex, value):
+                                    logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
+                                    # return
+                            except TypeError:
+                                pass
+                        self.__dict__[attr] = value
+                        self.data[attr] = value
+            if attr == 'shot':
+                self.__dict__['asset'] = value
+                self.data['asset'] = value
+            elif attr == 'asset':
+                self.__dict__['shot'] = value
+                self.data['shot'] = value
+            elif attr == 'seq':
+                self.__dict__['type'] = value
+                self.data['type'] = value
+            elif attr == 'type':
+                self.__dict__['seq'] = value
+                self.data['seq'] = value
+            elif attr == 'filename':
+                self.__dict__['filename'] = value
+                self.data['filename'] = value
+                self.set_proper_filename()
+        self.set_path()
 
     def set_attr(self, attr, value, regex=True):
         if regex:
@@ -257,7 +317,7 @@ class PathObject(object):
             self.set_proper_filename()
         self.set_path()
 
-    def glob_project_element(self, attr, full_path=False, split=True):
+    def glob_project_element(self, attr, full_path=False):
         """
         Simple Glob Function.  "I want to return all "projects"" for instance would be written this way:
         glob_project_element(self, 'project')
@@ -267,6 +327,8 @@ class PathObject(object):
         :param full_path: if True returns full paths for everything globbed
         :return: returns list of items, or paths.
         """
+        # this does not account for duplicate values - need a system that does.
+
         value = self.data[attr]
         glob_path = self.path_root.split(value)[0]
         list_ = []
@@ -302,6 +364,33 @@ class PathObject(object):
         glob_list = glob.glob(obj_.path_root)
         return glob_list
 
+    def glob_multiple(self, *args):
+        glob_object = self.copy()
+        glob_object.eliminate_wild_cards()
+        d = {}
+        highest_index = None
+        for each in args:
+            glob_object.set_attr(attr=each, value='*')
+            index = self.template.index(each)
+            if index > highest_index:
+                highest_index = index
+            d[str(index)] = each
+        split_at = self.template[highest_index]
+        return glob_object.glob_project_element(attr=split_at)
+
+
+    def eliminate_wild_cards(self):
+        """
+        this goes through a path object and changes all items with astrix into empty strings
+        :return:
+        """
+        for key in self.__dict__:
+            if self.__dict__[key] == '*':
+                self.__dict__[key] = ''
+                self.data[key] = ''
+        self.set_path()
+
+
     def copy(self, **kwargs):
         new_obj = copy.deepcopy(self)
         for attr in kwargs:
@@ -309,17 +398,23 @@ class PathObject(object):
         return new_obj
 
     def next_minor_version_number(self):
-        next_minor = '%03d' % (int(self.minor_version)+1)
+        if not self.minor_version:
+            next_minor = '001'
+        else:
+            next_minor = '%03d' % (int(self.minor_version)+1)
         return '%s.%s' % (self.major_version, next_minor)
 
     def next_major_version_number(self):
-        next_major = '%03d' % (int(self.major_version)+1)
-        return '%s.%s' % (next_major, self.minor_version)
+        if not self.major_version:
+            next_major = '001'
+        else:
+            next_major = '%03d' % (int(self.major_version)+1)
+        return '%s.%s' % (next_major, '000')
 
     def new_major_version_object(self):
         next_major = self.next_major_version_number()
         new_obj = copy.deepcopy(self)
-        new_obj.set_attr('version', next_major)
+        new_obj.new_set_attr(version=next_major)
         return new_obj
 
     def new_minor_version_object(self):
@@ -356,5 +451,82 @@ class PathObject(object):
         pass
 
 
-def create_production_data(*args, **kwargs):
-    pass
+class CreateProductionData(object):
+    def __init__(self, path_object=None, file_system=True, proj_management=False,
+                 scene_description=False, do_scope=False, test=False):
+        self.test = test
+        self.path_object = PathObject(path_object)
+        self.do_scope = do_scope
+        if file_system:
+            self.create_folders()
+        if proj_management:
+            self.create_project_management_data(path_object, proj_management)
+        if scene_description:
+            self.create_scene_description()
+
+    def create_folders(self):
+        if not self.path_object.root:
+            logging.info('No Root Defined')
+            return
+        if not self.path_object.company:
+            logging.info('No Company Defined')
+            return
+        if not self.path_object.context:
+            self.path_object.new_set_attr(context='source')
+
+        self.safe_makedirs(self.path_object, test=self.test)
+        self.create_other_context(self.path_object)
+        if self.do_scope:
+            self.create_other_scope(self.path_object)
+
+    def create_other_context(self, path_object):
+        d = {'source': 'render', 'render': 'source'}  # TODO this should be in the config somewhere
+        if path_object.context:
+            new_context = d[path_object.context]
+            new_obj = path_object.copy(context=new_context)
+
+            self.safe_makedirs(new_obj)
+
+    def create_other_scope(self, path_object):
+        if path_object.scope:
+            d = {'assets': 'shots', 'shots': 'assets'}
+            if path_object.scope:
+                new_obj = path_object.copy(scope=d[path_object.scope])
+                self.safe_makedirs(new_obj)
+                self.create_other_context(new_obj)
+
+    @staticmethod
+    def safe_makedirs(path_object, test=False):
+        if '*' in path_object.path_root:
+            path_ = path_object.path_root.split('*')[0]
+        else:
+            path_ = path_object.path_root
+        if os.path.splitext(path_):
+            path_ = os.path.dirname(path_)
+        print 'Creating directories: %s' % path_
+        if not test:
+            if not os.path.exists(path_):
+                os.makedirs(path_)
+
+    def create_scene_description(self):
+        print self.path_object.path_root
+        print 'Json based Scene Descriptions Not Yet Connected'
+
+    @staticmethod
+    def create_project_management_data(path_object, proj_management):
+        # TODO I need multiple levels of globals in order to manage this, how do i say that the pod wants one project
+        # TODO I need to do something that syncs my globals to the cloud in case they get toasted.
+        # TODO it might be a good idea to get this working with shotgun since i already know how complex that one is.
+        # management software
+        # and another studio wants a different kind of project management software by default.
+        module = "plugins.project_management.%s.main" % proj_management
+        loaded_module = __import__(module, globals(), locals(), 'main', -1)
+        loaded_module.ProjectManagementData(path_object).create_entities_from_data()
+
+
+path_object = PathObject(path_object=r'D:\cgl-pod_advertising\source\bob_town')
+CreateProductionData(path_object=path_object, proj_management='active_colab', test=True)
+
+
+def icon_path():
+    return os.path.join(app_config()['paths']['code_root'], 'resources', 'images')

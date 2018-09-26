@@ -1,6 +1,6 @@
 import pytest
 from core.path import PathObject
-
+# TODO - change this to be OS agnostic, basiclaly add a 'root' concept, and look at all the slashes going the wrong way
 
 path = r'D:\cgl-cglumberjack\source\Library\assets\Library\cement\tex\publish\001.000\high\cement_material.sbsar'
 path_dict = {'shot': 'cement', 'seq': 'Library', 'frame': None, 'minor_version': '000',
@@ -314,6 +314,9 @@ def test_dict11_to_path():
 def test_dict12_to_path(): 
     obj = PathObject(asset_path12_dict)
     assert asset_path12 == obj.path_root
+
+
+
 
 
 

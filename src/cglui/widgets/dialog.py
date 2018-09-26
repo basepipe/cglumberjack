@@ -5,9 +5,9 @@ import os
 import re
 import datetime
 from cglcore.util import current_user, test_string_against_rules
-from cglcore import lj_mail
+#from cglcore import lj_mail
 from cglcore.config import app_config
-from cglcore import screen_grab
+#from cglcore import screen_grab
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.containers.table import LJTableWidget

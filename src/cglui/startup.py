@@ -9,7 +9,7 @@ from Qt import QtWidgets, QtCore
 
 import Qt
 
-from cglcore.startup import do_app_init
+from core.startup import do_app_init
 from cglui.util import UISettings
 
 
@@ -35,7 +35,7 @@ def _do_qt_init():
     Returns: QtWidgets.Application
 
     """
-    app = QtWidgets.QApplication("")
+    app = QtWidgets.QApplication('')
     return app
 
 

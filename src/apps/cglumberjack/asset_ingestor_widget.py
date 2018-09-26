@@ -1,10 +1,10 @@
 import os
 import glob
 from Qt import QtWidgets, QtCore, QtGui
-from cglcore.path import PathParser
+from core.path import PathObject, CreateProductionData
 from cglui.widgets.combo import AdvComboBox
-from cglcore.config import app_config
-from cglcore.path import icon_path, create_production_data
+from core.config import app_config
+from core.path import icon_path
 import shutil
 
 
@@ -50,19 +50,28 @@ class AssetIngestor(QtWidgets.QDialog):
         self.setWindowTitle('File Ingestor')
         layout = QtWidgets.QVBoxLayout()
         if not path_dict:
-            self.path_dict['root'] = 'Z://'
-            self.path_dict['company'] = 'VFX'
-            self.path_dict['project'] = 'tom_test'
+            self.path_dict['root'] = 'D:'
+            self.path_dict['company'] = 'cgl-blobgroup'
+            self.path_dict['project'] = 'blobtown'
             self.path_dict['scope'] = 'assets'
+            self.path_dict['context'] = 'source'
+            self.path_dict['user'] = 'tmiko'
             self.path_dict['seq'] = ''
             self.path_dict['shot'] = ''
+            self.path_dict['resolution'] = 'high'
+            self.path_dict['version'] = '000.000'
         else:
             self.path_dict['root'] = path_dict['root']
             self.path_dict['company'] = path_dict['company']
             self.path_dict['project'] = path_dict['project']
             self.path_dict['scope'] = 'assets'
+            self.path_dict['context'] = 'source'
             self.path_dict['seq'] = ''
             self.path_dict['shot'] = ''
+            self.path_dict['resolution'] = 'high'
+            self.path_dict['user'] = self.current_user
+            self.path_dict['version'] = '000.000'
+        print self.path_dict
 
         self.table = AssetIngestTable()
         self.table.setColumnCount(8)
@@ -90,15 +99,18 @@ class AssetIngestor(QtWidgets.QDialog):
         for i, d in enumerate(data):
             dir_, file_ = os.path.split(d)
             file_item = QtWidgets.QTableWidgetItem(file_)
-            folder_icon = QtWidgets.QIcon(self.icon_path)
+            folder_icon = QtGui.QIcon(self.icon_path)
             if os.path.isdir(d):
                 file_item.setIcon(folder_icon)
             from_path_item = QtWidgets.QTableWidgetItem(d)
             scope_combo = AdvComboBox()
             scope_combo.addItems(self.scope_list)
             seq_combo = AdvComboBox()
+            seq_combo.label = 'seq_combo'
             shot_combo = AdvComboBox()
+            shot_combo.label = 'shot_combo'
             task_combo = AdvComboBox()
+            task_combo.label = 'task_combo'
             to_path_item = QtWidgets.QTableWidgetItem('')
             ready_value = QtWidgets.QTableWidgetItem('False')
 
@@ -151,7 +163,9 @@ class AssetIngestor(QtWidgets.QDialog):
         self.update_to_path(self.sender().row)
 
     def update_to_path(self, row):
-        path_ = PathParser.path_from_dict(self.path_dict, with_root=True)
+        path_obj = PathObject(self.path_dict)
+        path_ = path_obj.path_root
+        print path_, 'tom likes this'
         if self.pass_path_check():
             self.table.item(row, 6).setForeground(QtGui.QColor(0, 255, 0))
             self.table.item(row, 0).setForeground(QtGui.QColor(0, 255, 0))
@@ -166,19 +180,22 @@ class AssetIngestor(QtWidgets.QDialog):
         self.ingest_path_preflight()
 
     def pass_path_check(self):
-        list_ = [self.path_dict['scope'],
-                 self.path_dict['seq'],
-                 self.path_dict['shot'],
-                 self.path_dict['task'],
-                 ]
-        if '' in list_:
+        try:
+            list_ = [self.path_dict['scope'],
+                     self.path_dict['seq'],
+                     self.path_dict['shot'],
+                     self.path_dict['task'],
+                     ]
+            if '' in list_:
+                return False
+            elif '*' in list_:
+                return False
+            elif None in list_:
+                return False
+            else:
+                return True
+        except KeyError:
             return False
-        elif '*' in list_:
-            return False
-        elif None in list_:
-            return False
-        else:
-            return True
 
     def populate_tasks(self, task_widget):
         scope = self.path_dict['scope']
@@ -190,13 +207,16 @@ class AssetIngestor(QtWidgets.QDialog):
         task_widget.addItems(tasks)
 
     def populate_seq(self, widget):
-        # TODO - should make this so that it
         widget.clear()
         self.path_dict['seq'] = '*'
-        seq = glob.glob(PathParser.path_from_dict(self.path_dict, with_root=True))
-        for each in seq:
-            dir_, file_ = os.path.split(os.path.dirname(each))
-            widget.addItem(file_)
+        if self.path_dict['scope'] == 'assets':
+            asset_categories = app_config()['asset_categories']
+            for full_name in asset_categories:
+                widget.addItem(asset_categories[full_name])
+        if self.path_dict['scope'] == 'shots':
+            seq = PathObject(self.path_dict).glob_project_element('seq')
+            if seq:
+                widget.addItems(seq)
         self.path_dict['seq'] = widget.currentText()
         self.update_to_path(widget.row)
         self.populate_shot(widget.shot_widget)
@@ -205,11 +225,8 @@ class AssetIngestor(QtWidgets.QDialog):
         widget.clear()
         widget.addItem('')
         self.path_dict['shot'] = '*'
-        shot_path = '%s%s' % (PathParser.path_from_dict(self.path_dict, with_root=True, split_at='shot'), '*')
-        shots = glob.glob(shot_path)
-        for each in shots:
-            dir_, file_ = os.path.split(each)
-            widget.addItem(file_)
+        shots = PathObject(self.path_dict).glob_project_element('shot')
+        widget.addItems(shots)
         self.path_dict['shot'] = widget.currentText()
         self.update_to_path(widget.row)
 
@@ -239,16 +256,12 @@ class AssetIngestor(QtWidgets.QDialog):
             from_ = self.table.item(i, 5).text()
             filename = self.table.item(i, 0).text()
             to_folder = str(self.table.item(i, 6).text())
-            # Get Latest Version Number
-            path_dict = PathParser.get_latest_version(to_folder, return_full_path=False)
-            path_dict['resolution'] = 'high'
-            path_dict['user'] = self.current_user
-            new_path = create_production_data(dict_=path_dict, shotgun=False)
-            # Create Production Data
-            # Copy the file to the location
-            full_path = os.path.join(new_path, filename)
-            print('copying %s -> %s' % (from_, full_path))
-            shutil.copy2(from_, full_path)
+            to_object = PathObject(to_folder)
+            next_version = to_object.new_major_version_object()
+            next_version.new_set_attr(filename=filename)
+            CreateProductionData(next_version.data)
+            print('copying %s -> %s' % (from_, next_version.path_root))
+            shutil.copy2(from_, next_version.path_root)
             self.accept()
 
 

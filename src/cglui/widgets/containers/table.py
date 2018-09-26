@@ -135,16 +135,19 @@ class LJTableWidget(QTableView):
             print 'invalid'
             e.ignore()
 
+    '''
+    # TODO - this doesn't work on mac, but does on windows
     def resizeEvent(self, event):
         """ Resize all sections to content and user interactive """
 
         super(LJTableWidget, self).resizeEvent(event)
         header = self.horizontalHeader()
         for column in range(header.count()):
-            self.horizontalHeader().setResizeMode(column, QHeaderView.ResizeToContents)
+            self.horizontalHeader().setResizeMode(column, QHeaderView.ResizeToContents) 
             width = header.sectionSize(column)
             header.setResizeMode(column, QHeaderView.Interactive)
             header.resizeSection(column, width)
+    '''
 
 
 class LJKeyPairTableWidget(LJTableWidget):
