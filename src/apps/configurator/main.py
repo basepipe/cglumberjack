@@ -39,7 +39,7 @@ class Configurator(LJDialog):
         LJDialog.__init__(self, parent)
         self.tabs = QtWidgets.QTabWidget()
 
-        client_label = QtWidgets.QLabel("%s" % "Client")
+        client_label = QtWidgets.QLabel("%s" % "Company")
         client_combo = AdvComboBox()
         client_row = QtWidgets.QHBoxLayout()
         client_row.addWidget(client_label)
@@ -51,9 +51,31 @@ class Configurator(LJDialog):
         project_row.addWidget(project_label)
         project_row.addWidget(project_combo)
 
+        root_label = QtWidgets.QLabel("%s" % 'Root Directory')
+        root_line_edit = QtWidgets.QLineEdit()
+        root_choose = QtWidgets.QToolButton()
+        root_choose.setText('...')
+        # root_label.setMaximumWidth(250)
+        root_row = QtWidgets.QHBoxLayout()
+        root_row.addWidget(root_label)
+        root_row.addWidget(root_line_edit)
+        root_row.addWidget(root_choose)
+
+        config_label = QtWidgets.QLabel("%s" % 'Config Directory')
+        config_line_edit = QtWidgets.QLineEdit()
+        config_choose = QtWidgets.QToolButton()
+        config_choose.setText('...')
+        # config_label.setMaximumWidth(250)
+        config_row = QtWidgets.QHBoxLayout()
+        config_row.addWidget(config_label)
+        config_row.addWidget(config_line_edit)
+        config_row.addWidget(config_choose)
+
         self.inner = QtGui.QVBoxLayout()
         self.layout = QtGui.QVBoxLayout()
         self.layout.addLayout(self.inner)
+        self.layout.addLayout(config_row)
+        self.layout.addLayout(root_row)
         self.layout.addLayout(client_row)
         self.layout.addLayout(project_row)
         self.layout.addWidget(self.tabs)
@@ -192,3 +214,13 @@ class Configurator(LJDialog):
         row.addWidget(edit)
         row.addWidget(edit2)
         return row
+
+
+if __name__ == "__main__":
+    from cglui.startup import do_gui_init
+    app = do_gui_init()
+    mw = Configurator()
+    mw.setWindowTitle('Configurator')
+    mw.show()
+    mw.raise_()
+    app.exec_()
