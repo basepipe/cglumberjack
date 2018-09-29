@@ -171,7 +171,7 @@ class Listener(Thread):
 							tempData["Longitude"] = None
 						if 'EXIF DateTimeOriginal' in exif.keys():
 							# self.dates[item].append(exif['EXIF DateTimeOriginal'])
-							tempData['Date'] = exif['EXIF DateTimeOriginal']
+							tempData['Date'] = str(exif['EXIF DateTimeOriginal']).split()[0]
 						else:
 							# self.dates[item].append(None)
 							tempData['Date'] = None
@@ -181,7 +181,7 @@ class Listener(Thread):
 						# self.dates[item].append(self.ffprobe(file))
 						# self.longitude[item].append(None)
 						# self.latitude[item].append(None)
-						tempData['Date'] = self.ffprobe(file)
+						tempData['Date'] = str(self.ffprobe(file)).split()[0]
 						tempData['Longitude'] = None
 						tempData['Latitude'] = None
 					else:
@@ -196,6 +196,7 @@ class Listener(Thread):
 					temp = pandas.DataFrame(tempData, [0])
 					# self.data.append(temp, ignore_index=True)
 					self.data = self.data.append(temp, sort=True, ignore_index=True)
+					# print self.data
 					# print temp
 					# print self.data
 		else:
@@ -291,11 +292,23 @@ class ImportBrowser(CGQ.LJDialog):
 			temp = QtGui.QStandardItem(item)
 			temp.setEditable(False)
 			self.model.appendRow(temp)
-			for datet in self.devs.loc[self.devs['Drive'] == item].Date.unique():
-				print datet
+			byDrive = self.devs.loc[self.devs['Drive'] == item]
+			# print temp11
+			for datet in byDrive.Date.unique():
+				# print datet
 				temp2 = QtGui.QStandardItem(str(datet))
 				temp2.setEditable(False)
 				temp.appendRow(temp2)
+				byDate = byDrive.loc[byDrive['Date'] == datet]
+				for ftype in byDate.FileType.unique():
+					temp3 = QtGui.QStandardItem(str(ftype))
+					temp3.setEditable(False)
+					temp2.appendRow(temp3)
+					byType = byDate.loc[byDate['FileType'] == ftype]
+					for file in byType.FileName:
+						temp4 = QtGui.QStandardItem(str(file))
+						temp4.setEditable(False)
+						temp3.appendRow(temp4)
 		self.mediaList.update()
 		# self.mediaList.clear()
 		# for item in self.devs:
