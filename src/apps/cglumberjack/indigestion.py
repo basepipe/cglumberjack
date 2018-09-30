@@ -12,36 +12,19 @@ from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets import base as CGQ
 import sys
 from threading import Thread
+import time
 
 outDir = os.getenv("HOME") + "/Ingest/imports/"
 
 class Listener(Thread):
 	def __init__(self, window):
 		super(Listener, self).__init__()
-		# self.diskPaths = []
 		self.window = window
-		self.mediaFiles = {}
-		self.dates = {}
-		self.fileType = {}
-		self.outPaths = {}
-		self.latitude = {}
-		self.longitude = {}
-		self.importTime = {}
-		self.allDisks = []
-		self.data = pandas.DataFrame()
 		self.fileTypes = yaml.load(open(os.getenv("HOME") + "/cglumberjack/src/cfg/global.yaml"))['ext_map']
 		self.fileTypes['.ARW'] = "image"
-		self.disks = self.getDevs()
-		self.prevDisks = self.disks
+		self.disks = []
+		self.prevDisks = []
 		self.data = pandas.DataFrame(columns=["Drive","FileName","FileType","Date","Latitude","Longitude"])
-
-
-
-		for item in self.disks:
-			# print item
-			self.getFiles(item)
-
-		# self.window.updateDevices(self.mediaFiles)
 
 		self.runit = True
 
@@ -50,7 +33,6 @@ class Listener(Thread):
 
 	def run(self):
 
-		self.window.updateDevices(self.data)
 		while self.runit:
 			self.disks = self.getDevs()
 			if len(self.disks) != len(self.prevDisks):
@@ -58,11 +40,17 @@ class Listener(Thread):
 				if len(self.disks) > len(self.prevDisks):
 					for item in self.newMedia:
 						self.getFiles(item)
-						self.window.message("New Media: " + item + "\nMedia Files on Device: " + str(len(self.mediaFiles[item])))
-
+						self.window.message("New Media: " + item + "\nMedia Files on Device: " + str(len(self.data.loc[self.data['Drive'] == item].index)))
+				if len(self.disks) < len(self.prevDisks):
+					difference = [x for x in self.prevDisks if x not in self.disks]
+					for x in difference:
+						temp = self.data.loc[self.data['Drive'] != x]
+						self.data = temp
+						self.window.message("Media " + x + " Disconnected")
 				self.window.updateDevices(self.data)
 
 			self.prevDisks = self.disks
+			time.sleep(1)
 	
 	def ffprobe(self, file):
 		output = os.popen("ffprobe -v quiet -show_entries format_tags=creation_time \"" + file + "\"").read()
@@ -88,17 +76,13 @@ class Listener(Thread):
 
 	def parseDir(self, dir):
 		file = []
-		# print dir
-		# print os.access(dir, os.R_OK)
 		if os.access(dir, os.R_OK):
 			for item in os.listdir(dir):
-				# print item + str(os.path.isdir(item))
 				item = os.path.join(dir, item)
 				if os.access(item, os.R_OK):
 					if os.path.isfile(item):
 						file.append(item)
 					elif os.path.isdir(item):
-						# print item
 						file.extend(self.parseDir(item))
 		return file
 
@@ -122,85 +106,46 @@ class Listener(Thread):
 		disks = []
 		if platform.system() == "Windows":
 			disks = self.listDeviceWin()
-		# elif platform.system() == "Linux":
 		else:
 			disks = self.listDevicesNix()
 		return disks
 
 	def getFiles(self, item):
-		if item not in self.allDisks:
-			self.allDisks.append(item)
-			self.window.message("Getting files from " + item)
-			self.mediaContents = self.parseDir(item)
-			self.mediaFiles[item] = []
-			self.fileType[item] = []
-			self.latitude[item] = []
-			self.longitude[item] = []
-			self.dates[item] = []
-			self.importTime[item] = []
-			self.outPaths[item] = []
-			tempData = {}
-			for file in self.mediaContents:
-				# tempData = pandas.DataFrame(columns=["Drive","FileName","FileType","Date","Latitude","Longitude"])
-				if os.path.splitext(file)[1].lower() in self.fileTypes.keys() or os.path.splitext(file)[1].upper() in self.fileTypes.keys():
-					# print file
-					# self.diskPaths.append(item)
-					# self.mediaFiles[item].append(file)
-					tempData["Drive"] = item
-					tempData["FileName"] = file
-					if os.path.splitext(file)[1].lower() in self.fileTypes.keys():
-						# self.fileType[item].append(self.fileTypes[os.path.splitext(file)[1].lower()])
-						tempData["FileType"] = self.fileTypes[os.path.splitext(file)[1].lower()]
-					else:
-						# self.fileType[item].append(self.fileTypes[os.path.splitext(file)[1].upper()])
-						tempData["FileType"] = self.fileTypes[os.path.splitext(file)[1].upper()]
+		self.window.message("Getting files from " + item)
+		self.mediaContents = self.parseDir(item)
+		tempData = {}
+		for file in self.mediaContents:
+			if os.path.splitext(file)[1].lower() in self.fileTypes.keys() or os.path.splitext(file)[1].upper() in self.fileTypes.keys():
+				tempData["Drive"] = item
+				tempData["FileName"] = file
+				if os.path.splitext(file)[1].lower() in self.fileTypes.keys():
+					tempData["FileType"] = self.fileTypes[os.path.splitext(file)[1].lower()]
+				else:
+					tempData["FileType"] = self.fileTypes[os.path.splitext(file)[1].upper()]
 
-					# if self.fileType[item][-1] == "image":
-					if tempData['FileType'] == "image":
-						f = open(file, 'rb')
-						exif = exifread.process_file(f, details=False)
-						if 'GPS Latitude' in exif.keys():
-							# self.latitude.append(exif['GPS Latitude'])
-							# self.longitude.append(exif['GPS Longitude'])
-							tempData["Latitude"] = exif['GPS Latitude']
-							tempData["Longitude"] = exif['GPS Longitude']
-						else:
-							# self.latitude[item].append(None)
-							# self.longitude[item].append(None)
-							tempData["Latitude"] = None
-							tempData["Longitude"] = None
-						if 'EXIF DateTimeOriginal' in exif.keys():
-							# self.dates[item].append(exif['EXIF DateTimeOriginal'])
-							tempData['Date'] = str(exif['EXIF DateTimeOriginal']).split()[0]
-						else:
-							# self.dates[item].append(None)
-							tempData['Date'] = None
-						f.close()
-					# elif self.fileType[item][-1] == "movie":
-					elif tempData['FileType'] == "movie":
-						# self.dates[item].append(self.ffprobe(file))
-						# self.longitude[item].append(None)
-						# self.latitude[item].append(None)
-						tempData['Date'] = str(self.ffprobe(file)).split()[0]
-						tempData['Longitude'] = None
-						tempData['Latitude'] = None
+				if tempData['FileType'] == "image":
+					f = open(file, 'rb')
+					exif = exifread.process_file(f, details=False)
+					if 'GPS Latitude' in exif.keys():
+						tempData["Latitude"] = exif['GPS Latitude']
+						tempData["Longitude"] = exif['GPS Longitude']
 					else:
-						# self.dates[item].append(None)
+						tempData["Latitude"] = None
+						tempData["Longitude"] = None
+					if 'EXIF DateTimeOriginal' in exif.keys():
+						tempData['Date'] = str(exif['EXIF DateTimeOriginal']).split()[0]
+					else:
 						tempData['Date'] = None
-					# print self.mediaFiles
-					# print self.fileType
-					# print self.dates
-					# print self.latitude
-					# print self.longitude
-					# else:
-					temp = pandas.DataFrame(tempData, [0])
-					# self.data.append(temp, ignore_index=True)
-					self.data = self.data.append(temp, sort=True, ignore_index=True)
-					# print self.data
-					# print temp
-					# print self.data
-		else:
-			self.window.message("Previously parsed drive " + item)
+					f.close()
+				elif tempData['FileType'] == "movie":
+					tempData['Date'] = str(self.ffprobe(file)).split()[0]
+					tempData['Longitude'] = None
+					tempData['Latitude'] = None
+				else:
+					tempData['Date'] = None
+
+				temp = pandas.DataFrame(tempData, [0])
+				self.data = self.data.append(temp, sort=True, ignore_index=True)
 
 	def importFiles(self, items):
 		for item in items:
@@ -231,10 +176,6 @@ class ImportBrowser(CGQ.LJDialog):
 	def __init__(self, parent=None, title="Import Media"):
 		super(ImportBrowser, self).__init__()
 
-		# self.files = []
-		# self.devs = []
-
-
 		self.layout = QtWidgets.QVBoxLayout()
 		self.mediaList = QtWidgets.QTreeView()
 		self.mediaList.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
@@ -262,60 +203,46 @@ class ImportBrowser(CGQ.LJDialog):
 
 	def message(self,mess):
 		self.messages.setText(self.messages.text()+'\n'+mess)
-		self.messages.repaint()
-		self.scrollMessages.update()
-		# self.messages.setText(mess)
-		# self.messages.update()
-		# self.scrollMessages.update()
-		# print self.messages.height()
 		self.scrollMessages.verticalScrollBar().setValue(self.messages.height())
-		
-		
-		# self.update()
 
 	def triggerImport(self):
 		disks = []
 		for item in self.mediaList.selectedItems():
 			disks.append(item.text())
 		self.lister.importFiles(disks)
+
 # "Drive","FileName","FileType","Date","Latitude","Longitude"
 	def updateDevices(self, devs):
 		self.devs = devs
-		# print devs
 		self.repopulate()
 
 	def repopulate(self):
 		self.model.removeRows(0, self.model.rowCount())
 		# for item in self.devs:
-		for item in self.devs.Drive.unique():
-			# print item
-			temp = QtGui.QStandardItem(item)
-			temp.setEditable(False)
-			self.model.appendRow(temp)
-			byDrive = self.devs.loc[self.devs['Drive'] == item]
-			# print temp11
-			for datet in byDrive.Date.unique():
-				# print datet
-				temp2 = QtGui.QStandardItem(str(datet))
-				temp2.setEditable(False)
-				temp.appendRow(temp2)
-				byDate = byDrive.loc[byDrive['Date'] == datet]
-				for ftype in byDate.FileType.unique():
-					temp3 = QtGui.QStandardItem(str(ftype))
-					temp3.setEditable(False)
-					temp2.appendRow(temp3)
-					byType = byDate.loc[byDate['FileType'] == ftype]
-					for file in byType.FileName:
-						temp4 = QtGui.QStandardItem(str(file))
-						temp4.setEditable(False)
-						temp3.appendRow(temp4)
-		self.mediaList.update()
-		# self.mediaList.clear()
-		# for item in self.devs:
-			# temp = QtWidgets.QListWidgetItem(item)
-			# self.mediaList.addItem(temp)
-		# self.mediaList.update()
-		# self.update()
+		if not self.devs.empty:
+			for item in self.devs.Drive.unique():
+				# print item
+				temp = QtGui.QStandardItem(item)
+				temp.setEditable(False)
+				self.model.appendRow(temp)
+				byDrive = self.devs.loc[self.devs['Drive'] == item]
+				# print temp11
+				for datet in byDrive.Date.unique():
+					# print datet
+					# print "Survived 2"
+					temp2 = QtGui.QStandardItem(str(datet))
+					temp2.setEditable(False)
+					temp.appendRow(temp2)
+					byDate = byDrive.loc[byDrive['Date'] == datet]
+					for ftype in byDate.FileType.unique():
+						temp3 = QtGui.QStandardItem(str(ftype))
+						temp3.setEditable(False)
+						temp2.appendRow(temp3)
+						byType = byDate.loc[byDate['FileType'] == ftype]
+						for file in byType.FileName:
+							temp4 = QtGui.QStandardItem(str(file))
+							temp4.setEditable(False)
+							temp3.appendRow(temp4)
 
 	def closeEvent(self, event):
 		self.lister.stop()
