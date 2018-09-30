@@ -218,18 +218,13 @@ class ImportBrowser(CGQ.LJDialog):
 
 	def repopulate(self):
 		self.model.removeRows(0, self.model.rowCount())
-		# for item in self.devs:
 		if not self.devs.empty:
 			for item in self.devs.Drive.unique():
-				# print item
 				temp = QtGui.QStandardItem(item)
 				temp.setEditable(False)
 				self.model.appendRow(temp)
 				byDrive = self.devs.loc[self.devs['Drive'] == item]
-				# print temp11
 				for datet in byDrive.Date.unique():
-					# print datet
-					# print "Survived 2"
 					temp2 = QtGui.QStandardItem(str(datet))
 					temp2.setEditable(False)
 					temp.appendRow(temp2)
