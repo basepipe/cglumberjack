@@ -35,7 +35,7 @@ def _do_qt_init():
     Returns: QtWidgets.Application
 
     """
-    app = QtWidgets.QApplication('')
+    app = QtWidgets.QApplication([])
     return app
 
 

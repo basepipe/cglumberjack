@@ -14,6 +14,8 @@ import sys
 from threading import Thread
 import time
 
+from cglui import startup
+
 outDir = os.getenv("HOME") + "/Ingest/imports/"
 
 class Listener(Thread):
@@ -168,9 +170,6 @@ class Listener(Thread):
 	def getFileList(self, item):
 		return self.mediaFiles[item]
 
-
-
-
 # class ImportBrowser(QtWidgets.QDialog):
 class ImportBrowser(CGQ.LJDialog):
 	def __init__(self, parent=None, title="Import Media"):
@@ -180,6 +179,7 @@ class ImportBrowser(CGQ.LJDialog):
 		self.mediaList = QtWidgets.QTreeView()
 		self.mediaList.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 		self.model = QtGui.QStandardItemModel()
+		self.mediaList.header().hide()
 		self.mediaList.setModel(self.model)
 		self.layout.addWidget(self.mediaList)
 
@@ -190,8 +190,6 @@ class ImportBrowser(CGQ.LJDialog):
 		self.scrollMessages.setFixedHeight(60)
 		self.layout.addWidget(self.scrollMessages)
 
-
-
 		self.importButton = QtWidgets.QPushButton("Import")
 		self.importButton.clicked.connect(self.triggerImport)
 		self.layout.addWidget(self.importButton)
@@ -200,6 +198,8 @@ class ImportBrowser(CGQ.LJDialog):
 		self.lister = Listener(self)
 		
 		self.lister.start()
+
+		startup.do_maya_gui_init(gui=self)
 
 	def message(self,mess):
 		self.messages.setText(self.messages.text()+'\n'+mess)
@@ -245,7 +245,8 @@ class ImportBrowser(CGQ.LJDialog):
 
 
 if __name__ == "__main__":
-	app = QtWidgets.QApplication(sys.argv)
+	app = startup.do_gui_init()
 	dialog = ImportBrowser()
+	dialog.setWindowTitle('Media Ingest')
 	dialog.show()
 	sys.exit(app.exec_())
