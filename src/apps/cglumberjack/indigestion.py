@@ -143,6 +143,10 @@ class Listener(Thread):
 					tempData['Date'] = str(self.ffprobe(file)).split()[0]
 					tempData['Longitude'] = None
 					tempData['Latitude'] = None
+				elif tempData['FileType'] == "audio":
+					tempData['Date'] = str(self.ffprobe(file)).split()[0]
+					tempData['Longitude'] = None
+					tempData['Latitude'] = None
 				else:
 					tempData['Date'] = None
 
