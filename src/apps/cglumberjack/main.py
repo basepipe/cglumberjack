@@ -264,7 +264,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.radio_everyone = QtWidgets.QRadioButton('Everything')
         self.radio_publishes = QtWidgets.QRadioButton('Publishes')
 
-
         self.radio_layout.addWidget(self.radio_user)
         self.radio_user.setChecked(True)
         self.radio_layout.addWidget(self.radio_publishes)
