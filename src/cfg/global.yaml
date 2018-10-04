@@ -147,6 +147,7 @@ ext_map:
   .tex: 'image'
   .pdf: 'pdf'
   .wav: 'audio'
+  .hprj: 'audio'
   .raf: 'image'
 shotgun:
   create_by_default: False

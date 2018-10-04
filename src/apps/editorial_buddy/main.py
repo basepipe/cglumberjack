@@ -4,8 +4,11 @@ import psutil
 import datetime
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.base import LJDialog
+from cglui.widgets.dialog import InputDialog
 from cglui.widgets.project_selection_module import AssetWidget, LabelComboRow, LabelEditRow
 import pandas as pd
+from core.config import app_config
+
 
 
 class PandasModel(QtCore.QAbstractTableModel):
@@ -42,6 +45,7 @@ class ImportBrowser(LJDialog):
         self.right_column = QtWidgets.QVBoxLayout()
         self.ingest_button = QtWidgets.QPushButton()
         self.ingest_button.setText('Ingest')
+        self.source_dict = {}
 
         self.company_chooser = LabelComboRow('Company')
         self.project_chooser = LabelComboRow("Project")
@@ -49,13 +53,11 @@ class ImportBrowser(LJDialog):
         self.video_label = QtWidgets.QLabel("0 Video Files")
         self.audio_label = QtWidgets.QLabel("0 Audio Files")
         self.prores_label = QtWidgets.QLabel("0 Prores Files")
+        self.uncategorized_files = QtWidgets.QLabel("0 Uncategorized Files")
         # TODO - i want drop down menus for tasks for each of these file types so i know where they're all going.
         self.right_column.addLayout(self.company_chooser)
         self.right_column.addLayout(self.project_chooser)
         self.right_column.addLayout(self.capture_date)
-        self.right_column.addWidget(self.prores_label)
-        self.right_column.addWidget(self.video_label)
-        self.right_column.addWidget(self.audio_label)
         self.right_column.addWidget(self.ingest_button)
 
         self.date_list = QtWidgets.QListWidget()
@@ -71,6 +73,19 @@ class ImportBrowser(LJDialog):
         self.file_data = {}
         self.media_sources.itemSelectionChanged.connect(self.on_media_selected)
         self.date_list.itemSelectionChanged.connect(self.on_date_selected)
+
+    def create_category_elements(self):
+        #self.video_label = QtWidgets.QLabel("0 Video Files")
+        #self.audio_label = QtWidgets.QLabel("0 Audio Files")
+        #self.prores_label = QtWidgets.QLabel("0 Prores Files")
+        ##self.uncategorized_files = QtWidgets.QLabel("0 Uncategorized Files")
+        #self.right_column.addWidget(self.prores_label)
+        #self.right_column.addWidget(self.video_label)
+        #self.right_column.addWidget(self.audio_label)
+        for each in sorted(self.data_frame.file_category.unique()):
+            # TODO - need to filter by "date" here as well as by file category
+            count = (self.data_frame['file_category'] == each).sum()
+            print "%s %s files" % (count, each)
 
     def load_media(self):
         disks = []
@@ -88,9 +103,14 @@ class ImportBrowser(LJDialog):
             return mounts
 
     def on_media_selected(self):
+        self.date_list.clear()
         for each in self.media_sources.selectedItems():
+            if each.text() in self.source_dict:
+                self.data_frame = self.source_dict[each.text()]
+            else:
             # need to adjust this for multiple sources
-            self.data_frame = self.local_tree_dataframe(each.text())
+                self.data_frame = self.local_tree_dataframe(each.text())
+                self.source_dict[each.text()] = self.data_frame
             self.date_list.addItems(sorted(self.data_frame.creation_date.unique()))
 
     def on_date_selected(self):
@@ -98,10 +118,8 @@ class ImportBrowser(LJDialog):
         for each in self.date_list.selectedItems():
             df = self.data_frame[self.data_frame['creation_date'].isin([each.text()])]
             self.file_list.addItems(sorted(df.fullpath.tolist()))
-            #view = QtWidgets.QTableView()
-            #model = PandasModel(df)
-            #view.setModel(model)
-            #self.h_layout.addWidget(view)
+        self.create_category_elements()
+
 
     @staticmethod
     def get_creation_date(path_to_file):
@@ -131,11 +149,17 @@ class ImportBrowser(LJDialog):
         for root, _, files in os.walk(folder):
             for filename in files:
                 fullpath = os.path.join(os.path.abspath(root), filename)
+                file_, ext_ = os.path.splitext(filename)
+                ext_ = ext_.lower()
                 ts = self.get_creation_date(fullpath)
                 birth_date = (datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d'))
                 last_modified = os.path.getmtime(fullpath)
-                data.append((filename, fullpath, birth_date, last_modified))
-        return pd.DataFrame(data, columns=['filename', 'fullpath', "creation_date", "last_modified"])
+                try:
+                    file_category = app_config()['ext_map'][ext_]
+                except KeyError:
+                    file_category = 'uncategorized'
+                data.append((filename, fullpath, birth_date, last_modified, file_category))
+        return pd.DataFrame(data, columns=['filename', 'fullpath', "creation_date", "last_modified", "file_category"])
 
 
 if __name__ == "__main__":
