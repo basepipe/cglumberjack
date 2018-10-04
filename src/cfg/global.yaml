@@ -146,6 +146,8 @@ ext_map:
   .tx: 'image'
   .tex: 'image'
   .pdf: 'pdf'
+  .wav: 'audio'
+  .raf: 'image'
 shotgun:
   create_by_default: False
   url: https://fsuada.shotgunstudio.com
