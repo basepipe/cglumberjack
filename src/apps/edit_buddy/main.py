@@ -29,12 +29,12 @@ class PandasModel(QtCore.QAbstractTableModel):
 
 
 class ImportBrowser(LJDialog):
-    def __init__(self, parent=None, title="Import Media"):
+    def __init__(self, parent=None):
         super(ImportBrowser, self).__init__()
 
         self.destination_tree = QtWidgets.QTreeView()
         header = self.destination_tree.header()
-        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        # header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.destination_tree.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.model = QtGui.QStandardItemModel()
         self.model.setColumnCount(2)
