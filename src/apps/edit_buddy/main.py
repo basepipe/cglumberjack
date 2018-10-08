@@ -93,8 +93,7 @@ class ImportBrowser(LJDialog):
         self.media_sources.itemSelectionChanged.connect(self.on_media_selected)
         self.date_list.itemSelectionChanged.connect(self.on_date_selected)
         self.control_center.project_changed.connect(self.on_project_selected)
-        #self.company_chooser.add_button.clicked.connect(self.on_create_company_clicked)
-        #self.project_chooser.add_button.clicked.connect(self.on_create_project_clicked)
+        self.category.line_edit.textChanged.connect(self.on_category_changed)
 
     def hide_middle_column(self):
         self.media_internal.hide()
