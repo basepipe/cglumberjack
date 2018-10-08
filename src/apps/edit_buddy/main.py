@@ -50,6 +50,7 @@ class ImportBrowser(LJDialog):
         self.media_internal = QtWidgets.QLabel('Internal Media')
         self.media_label = QtWidgets.QLabel('Connected Media')
         self.media_sources = QtWidgets.QListWidget()
+        self.media_sources.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.media_sources.setEnabled(False)
         self.control_center = ProjectControlCenter()
         self.control_center.hide_filters()
@@ -178,7 +179,7 @@ class ImportBrowser(LJDialog):
             # need to adjust this for multiple sources
                 self.data_frame = self.local_tree_dataframe(each.text())
                 self.source_dict[each.text()] = self.data_frame
-            self.date_list.addItems(sorted(self.data_frame.creation_date.unique()))
+        self.date_list.addItems(sorted(self.data_frame.creation_date.unique()))
         self.populate_tree()
         self.show_right_column()
 
