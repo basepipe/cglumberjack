@@ -40,7 +40,7 @@ class ImportBrowser(LJDialog):
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.destination_tree.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 
-        self.destination_tree.header().hide()
+        # self.destination_tree.header().hide()
         self.h_layout = QtWidgets.QHBoxLayout()
         self.data_frame = pd.DataFrame()
         self.left_column = QtWidgets.QVBoxLayout()
@@ -120,7 +120,10 @@ class ImportBrowser(LJDialog):
     def populate_tree(self):
         model = QtGui.QStandardItemModel()
         model.setColumnCount(2)
+        model.setHeaderData(0, QtCore.Qt.Horizontal, 'Source')
+        model.setHeaderData(1, QtCore.Qt.Horizontal, 'Destination')
         self.destination_tree.setModel(model)
+        self.destination_tree.setMinimumWidth(600)
         model.removeRows(0, model.rowCount())
         for date in sorted(self.data_frame.creation_date.unique()):
             # Add all the date to the tree widget
