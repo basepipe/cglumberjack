@@ -1,10 +1,7 @@
-import glob
-import copy
 import os
 from Qt import QtWidgets, QtCore, QtGui
 from core.config import app_config
 from cglui.widgets.combo import AdvComboBox
-from cglui.widgets.base import LJMainWindow
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
@@ -219,3 +216,179 @@ class AssetWidget(QtWidgets.QWidget):
 
     def set_title(self, new_title):
         self.title.setText('<b>%s</b>' % new_title.title())
+
+
+class ProjectControlCenter(QtWidgets.QWidget):
+    project_changed = QtCore.Signal(object)
+
+    def __init__(self, parent=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        # Create the Left Panel
+        self.project = None
+        self.root = app_config()['paths']['root']
+        self.company = app_config()['account_info']['company']
+        self.user_root = app_config()['cg_lumberjack_dir']
+        self.user_default = 'tmikota'
+        self.filter_layout = QtWidgets.QVBoxLayout(self)
+        self.user_widget = LabelComboRow('User')
+        self.user_widget.combo.addItem(self.user_default)
+        # company
+        self.company_widget = LabelComboRow('Company')
+        # filters
+        self.project_filter = AssetWidget(self, title="Project")
+        self.project_filter.showall()
+        self.project_filter.add_button.show()
+        self.project_filter.hide_button.hide()
+        self.radio_label = QtWidgets.QLabel('<b>Filter</b>')
+        self.radio_layout = QtWidgets.QHBoxLayout(self)
+        self.radio_user = QtWidgets.QRadioButton('User Assignments')
+        self.radio_everyone = QtWidgets.QRadioButton('Everything')
+        self.radio_publishes = QtWidgets.QRadioButton('Publishes')
+
+        self.radio_layout.addWidget(self.radio_user)
+        self.radio_user.setChecked(True)
+        self.radio_layout.addWidget(self.radio_publishes)
+        self.radio_layout.addWidget(self.radio_everyone)
+        self.radio_layout.addItem(QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Maximum,
+                                                        QtWidgets.QSizePolicy.Minimum))
+        # assemble the filter_panel
+        self.filter_layout.addLayout(self.user_widget)
+        self.filter_layout.addLayout(self.company_widget)
+        self.filter_layout.addWidget(self.radio_label)
+        self.filter_layout.addLayout(self.radio_layout)
+        self.filter_layout.addWidget(self.project_filter)
+
+        self.load_companies()
+        self.load_projects()
+
+        # TODO - Create Company Button
+        # TODO - Create Project Button
+        # TODO - Create User Button
+        self.project_filter.data_table.selected.connect(self.on_project_changed)
+        self.company_widget.add_button.clicked.connect(self.on_create_company)
+        self.project_filter.add_button.clicked.connect(self.on_create_project)
+        self.company_widget.combo.currentIndexChanged.connect(self.on_company_changed)
+
+    def hide_filters(self):
+        self.radio_label.hide()
+        self.radio_user.hide()
+        self.radio_everyone.hide()
+        self.radio_publishes.hide()
+
+    def load_companies(self, company=None):
+        self.company_widget.combo.clear()
+        companies_dir = os.path.join(self.user_root, 'companies')
+        if os.path.exists(companies_dir):
+            companies = os.listdir(companies_dir)
+            print 'Companies: %s' % companies
+            if not companies:
+                dialog = InputDialog(buttons=['Create Company', 'Find Company'], message='No companies found in Config'
+                                                                                         'location %s:' % companies_dir)
+                dialog.exec_()
+                if dialog.button == 'Create Company':
+                    print 'Create Company pushed'
+                elif dialog.button == 'Find Company':
+                    company_paths = QtWidgets.QFileDialog.getExistingDirectory(self,
+                                                                               'Choose existing company(ies) to add to '
+                                                                               'the registry', self.root,
+                                                                               QtWidgets.QFileDialog.ShowDirsOnly)
+                    company = os.path.split(company_paths)[-1]
+                    companies.append(company)
+                    os.makedirs(os.path.join(companies_dir, company))
+                # ask me to type the name of companies i'm looking for?
+                # ask me to create a company if there are none at all.
+                # Open the location and ask me to choose folders that are companies
+        else:
+            return
+
+        self.company_widget.combo.addItem('')
+        for each in companies:
+            c = os.path.split(each)[-1]
+            self.company_widget.combo.addItem(c)
+        if not company:
+            company = self.company
+        index = self.company_widget.combo.findText(company)
+        if index:
+            self.company_widget.combo.setCurrentIndex(index)
+        else:
+            self.company_widget.combo.setCurrentIndex(0)
+
+    def load_projects(self):
+        d = {'root': self.root,
+             'company': self.company,
+             'project': '*',
+             'context': 'source'}
+        path_object = PathObject(d)
+        projects = path_object.glob_project_element('project')
+        if not projects:
+            print 'no projects'
+            self.project_filter.search_box.setEnabled(False)
+            self.project_filter.data_table.setEnabled(False)
+            self.radio_user.setEnabled(False)
+            self.radio_everyone.setEnabled(False)
+            self.radio_publishes.setEnabled(False)
+            self.radio_label.setEnabled(False)
+            self.project_filter.add_button.setText('Create First Project')
+        else:
+            self.project_filter.search_box.setEnabled(True)
+            self.project_filter.data_table.setEnabled(True)
+            self.project_filter.add_button.setText('+')
+            self.radio_user.setEnabled(True)
+            self.radio_everyone.setEnabled(True)
+            self.radio_publishes.setEnabled(True)
+            self.radio_label.setEnabled(True)
+        self.project_filter.setup(ListItemModel(self.prep_list_for_table(projects, split_for_file=True), ['Name']))
+        # self.update_location()
+
+    @staticmethod
+    def prep_list_for_table(list_, path_filter=None, split_for_file=False):
+        # TODO - would be awesome to make this smart enough to know what to do with a dict, list, etc...
+        list_.sort()
+        output_ = []
+        for each in list_:
+            if path_filter:
+                filtered = PathObject(each).data[path_filter]
+                output_.append([filtered])
+            else:
+                if split_for_file:
+                    each = os.path.split(each)[-1]
+                output_.append([each])
+        return output_
+
+    def on_project_changed(self, data):
+        self.project_changed.emit(data[0][0])
+
+
+    def on_create_company(self):
+        dialog = InputDialog(title='Create Company', message='Type a Company Name', line_edit=True)
+        dialog.exec_()
+        if dialog.button == 'Ok':
+            self.company = '%s' % dialog.line_edit.text()
+            d = {'root': self.root,
+                 'company': self.company}
+            self.create_company_globals(dialog.line_edit.text())
+            CreateProductionData(d)
+            self.load_companies(company=self.company)
+            self.load_projects()
+
+    def on_create_project(self):
+        dialog = InputDialog(title='Create Project', message='Type a Project Name', line_edit=True)
+        dialog.exec_()
+        if dialog.button == 'Ok':
+            project_name = dialog.line_edit.text()
+            self.project = project_name
+            self.update_location()
+            CreateProductionData(self.current_location)
+            self.load_projects()
+        else:
+            pass
+
+    def on_company_changed(self):
+        print 'combo changed'
+        self.company = self.company_widget.combo.currentText()
+        self.load_projects()
+        if self.middle_layout:
+            self.clear_layout(self.middle_layout)
+        if self.render_layout:
+            self.clear_layout(self.render_layout)
+

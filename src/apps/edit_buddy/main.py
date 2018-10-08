@@ -2,13 +2,13 @@ import platform
 import os
 import psutil
 import datetime
+import pandas as pd
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.base import LJDialog
 from cglui.widgets.dialog import InputDialog
-from cglui.widgets.project_selection_module import AssetWidget, LabelComboRow, LabelEditRow
-import pandas as pd
+from cglui.widgets.project_selection_module import AssetWidget, LabelComboRow, LabelEditRow, ProjectControlCenter
 from core.config import app_config
-
+from core.path import PathObject, CreateProductionData
 
 
 class PandasModel(QtCore.QAbstractTableModel):
@@ -29,10 +29,13 @@ class PandasModel(QtCore.QAbstractTableModel):
 
 
 class ImportBrowser(LJDialog):
-    def __init__(self, parent=None, title="Import Media"):
-        super(ImportBrowser, self).__init__()
 
+    def __init__(self, parent=None):
+        super(ImportBrowser, self).__init__()
         self.destination_tree = QtWidgets.QTreeView()
+        self.root = None
+        self.company = None
+        self.project = None
         header = self.destination_tree.header()
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.destination_tree.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
@@ -44,14 +47,13 @@ class ImportBrowser(LJDialog):
         self.h_layout = QtWidgets.QHBoxLayout()
         self.data_frame = {}
         self.left_column = QtWidgets.QVBoxLayout()
-        self.media_internal = QtWidgets.QLabel('Internal')
-        self.media_label = QtWidgets.QLabel('Connected')
+        self.media_internal = QtWidgets.QLabel('Internal Media')
+        self.media_label = QtWidgets.QLabel('Connected Media')
         self.media_sources = QtWidgets.QListWidget()
-        #self.left_column.addWidget(self.media_internal)
-        self.company_chooser = LabelComboRow('Company')
-        self.project_chooser = LabelComboRow("Project")
-        self.left_column.addLayout(self.company_chooser)
-        self.left_column.addLayout(self.project_chooser)
+        self.media_sources.setEnabled(False)
+        self.control_center = ProjectControlCenter()
+        self.control_center.hide_filters()
+
         self.left_column.addWidget(self.media_label)
         self.left_column.addWidget(self.media_sources)
 
@@ -60,40 +62,64 @@ class ImportBrowser(LJDialog):
         self.ingest_button.setText('Ingest')
         self.source_dict = {}
 
-
         self.capture_date = LabelEditRow("Capture Date")
-        self.video_label = QtWidgets.QLabel("0 Video Files")
-        self.audio_label = QtWidgets.QLabel("0 Audio Files")
-        self.prores_label = QtWidgets.QLabel("0 Prores Files")
         self.uncategorized_files = QtWidgets.QLabel("0 Uncategorized Files")
         # TODO - i want drop down menus for tasks for each of these file types so i know where they're all going.
 
-        self.right_column.addLayout(self.capture_date)
+        self.right_column.addWidget(self.control_center)
         self.right_column.addWidget(self.ingest_button)
 
         self.date_list = QtWidgets.QListWidget()
         self.file_list = QtWidgets.QListWidget()
-        self.h_layout.addLayout(self.left_column)
-        #self.h_layout.addWidget(self.date_list)
-        self.h_layout.addWidget(self.destination_tree)
         self.h_layout.addLayout(self.right_column)
+        self.h_layout.addLayout(self.left_column)
+        self.h_layout.addWidget(self.destination_tree)
 
         self.setLayout(self.h_layout)
 
         self.load_media()
+        self.hide_middle_column()
+        self.hide_right_column()
         self.file_data = {}
         self.media_sources.itemSelectionChanged.connect(self.on_media_selected)
         self.date_list.itemSelectionChanged.connect(self.on_date_selected)
+        self.control_center.project_changed.connect(self.on_project_selected)
+        #self.company_chooser.add_button.clicked.connect(self.on_create_company_clicked)
+        #self.project_chooser.add_button.clicked.connect(self.on_create_project_clicked)
+
+    def hide_middle_column(self):
+        self.media_internal.hide()
+        self.media_label.hide()
+        self.media_sources.hide()
+
+    def hide_right_column(self):
+        self.destination_tree.hide()
+
+    def show_right_column(self):
+        self.destination_tree.show()
+        
+    def show_middle_column(self):
+        # self.media_internal.show()
+        self.media_label.show()
+        self.media_sources.show()
+
+    def on_create_company_clicked(self):
+        # TODO This needs to be a universal method in some library
+        dialog = InputDialog(title='Create Company', message='Type a Company Name', line_edit=True)
+        dialog.exec_()
+        if dialog.button == 'Ok':
+            self.company = '%s' % dialog.line_edit.text()
+            d = {'root': self.root,
+                 'company': self.company}
+            self.create_company_globals(dialog.line_edit.text())
+            CreateProductionData(d)
+            self.load_companies(company=self.company)
+            self.load_projects()
+
+    def on_create_project_clicked(self):
+        print 'create project'
 
     def populate_tree(self):
-        #self.video_label = QtWidgets.QLabel("0 Video Files")
-        #self.audio_label = QtWidgets.QLabel("0 Audio Files")
-        #self.prores_label = QtWidgets.QLabel("0 Prores Files")
-        ##self.uncategorized_files = QtWidgets.QLabel("0 Uncategorized Files")
-        #self.right_column.addWidget(self.prores_label)
-        #self.right_column.addWidget(self.video_label)
-        #self.right_column.addWidget(self.audio_label)
-        # add date to top level of tree
         self.model.removeRows(0, self.model.rowCount())
         for date in sorted(self.data_frame.creation_date.unique()):
             # Add all the date to the tree widget
@@ -107,25 +133,26 @@ class ImportBrowser(LJDialog):
                 # return list of file names that match the date and the category
                 df = self.data_frame[(self.data_frame['file_category'] == each) & (self.data_frame['creation_date'] == date)]
                 for file_ in sorted(df.fullpath.tolist()):
+                    dir_, file_ = os.path.split(file_)
+                    d = {'root': self.control_center.root,
+                         'company': self.control_center.company,
+                         'context': 'source',
+                         'project': self.project,
+                         'scope': 'assets',
+                         'seq': 'ingestion',
+                         'shot': str(date),
+                         'filename': file_}
+                    path_object = PathObject(d)
                     file_object = QtGui.QStandardItem(str(file_))
                     file_object.setEditable(False)
-                    fc_dest = QtGui.QStandardItem(str('bob'))
+                    fc_dest = QtGui.QStandardItem(path_object.path_root)
                     fc_dest.setEditable(False)
                     fc_object.appendRow([file_object, fc_dest])
                 # TODO - need something for removing the file_category if there are no files in it.
-                # TODO - i need to add a column for the destination file.
                 # TODO - if the destination file exists the node should be grey
                 # TODO - if all the destination files in a task exist the task should be grey
                 # TODO - if all the tasks are grey the date should be grey
                 # TODO - if the task is empty the task should be grey
-
-                # add the file categories to the date object
-                #list_ = ((self.data_frame['file_category'] == each) & (self.data_frame['creation_date'] == date))
-                #this = sorted(list_.fullpath.tolist())
-                #print '\t', this
-                #count = ((self.data_frame['file_category'] == each) & (self.data_frame['creation_date'] == date)).sum()
-                #label = QtWidgets.QLabel("%s %s files" % (count, each))
-                #self.right_column.addWidget(label)
 
     def load_media(self):
         disks = []
@@ -153,6 +180,7 @@ class ImportBrowser(LJDialog):
                 self.source_dict[each.text()] = self.data_frame
             self.date_list.addItems(sorted(self.data_frame.creation_date.unique()))
         self.populate_tree()
+        self.show_right_column()
 
     def on_date_selected(self):
         self.file_list.clear()
@@ -160,6 +188,12 @@ class ImportBrowser(LJDialog):
             df = self.data_frame[self.data_frame['creation_date'].isin([each.text()])]
             self.file_list.addItems(sorted(df.fullpath.tolist()))
         self.populate_tree()
+
+
+    def on_project_selected(self, data):
+        self.project = data
+        self.media_sources.setEnabled(True)
+        self.show_middle_column()
 
 
     @staticmethod

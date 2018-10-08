@@ -27,7 +27,7 @@ class Configuration(object):
             Configuration.LOADED_CONFIG['app'] = cfg
 
     def make_cglumberjack_dir(self):
-        base = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cfg", "global.yaml")
+        base = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cfg", "global_template.yaml")
         to_path = os.path.join(self.cg_lumberjack_dir, 'global.yaml')
         if os.path.exists(self.cg_lumberjack_dir):
             if 'global.yaml' not in os.listdir(self.cg_lumberjack_dir):
