@@ -29,11 +29,13 @@ class PandasModel(QtCore.QAbstractTableModel):
 
 
 class ImportBrowser(LJDialog):
+
     def __init__(self, parent=None):
         super(ImportBrowser, self).__init__()
         self.destination_tree = QtWidgets.QTreeView()
         self.root = None
         self.company = None
+        self.project = None
         header = self.destination_tree.header()
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.destination_tree.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
@@ -48,6 +50,7 @@ class ImportBrowser(LJDialog):
         self.media_internal = QtWidgets.QLabel('Internal Media')
         self.media_label = QtWidgets.QLabel('Connected Media')
         self.media_sources = QtWidgets.QListWidget()
+        self.media_sources.setEnabled(False)
         self.control_center = ProjectControlCenter()
         self.control_center.hide_filters()
 
@@ -75,11 +78,30 @@ class ImportBrowser(LJDialog):
         self.setLayout(self.h_layout)
 
         self.load_media()
+        self.hide_middle_column()
+        self.hide_right_column()
         self.file_data = {}
         self.media_sources.itemSelectionChanged.connect(self.on_media_selected)
         self.date_list.itemSelectionChanged.connect(self.on_date_selected)
+        self.control_center.project_changed.connect(self.on_project_selected)
         #self.company_chooser.add_button.clicked.connect(self.on_create_company_clicked)
         #self.project_chooser.add_button.clicked.connect(self.on_create_project_clicked)
+
+    def hide_middle_column(self):
+        self.media_internal.hide()
+        self.media_label.hide()
+        self.media_sources.hide()
+
+    def hide_right_column(self):
+        self.destination_tree.hide()
+
+    def show_right_column(self):
+        self.destination_tree.show()
+        
+    def show_middle_column(self):
+        # self.media_internal.show()
+        self.media_label.show()
+        self.media_sources.show()
 
     def on_create_company_clicked(self):
         # TODO This needs to be a universal method in some library
@@ -115,7 +137,7 @@ class ImportBrowser(LJDialog):
                     d = {'root': self.control_center.root,
                          'company': self.control_center.company,
                          'context': 'source',
-                         'project': self.control_center.project,
+                         'project': self.project,
                          'scope': 'assets',
                          'seq': 'ingestion',
                          'shot': str(date),
@@ -158,6 +180,7 @@ class ImportBrowser(LJDialog):
                 self.source_dict[each.text()] = self.data_frame
             self.date_list.addItems(sorted(self.data_frame.creation_date.unique()))
         self.populate_tree()
+        self.show_right_column()
 
     def on_date_selected(self):
         self.file_list.clear()
@@ -165,6 +188,12 @@ class ImportBrowser(LJDialog):
             df = self.data_frame[self.data_frame['creation_date'].isin([each.text()])]
             self.file_list.addItems(sorted(df.fullpath.tolist()))
         self.populate_tree()
+
+
+    def on_project_selected(self, data):
+        self.project = data
+        self.media_sources.setEnabled(True)
+        self.show_middle_column()
 
 
     @staticmethod

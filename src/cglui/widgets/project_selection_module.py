@@ -219,6 +219,8 @@ class AssetWidget(QtWidgets.QWidget):
 
 
 class ProjectControlCenter(QtWidgets.QWidget):
+    project_changed = QtCore.Signal(object)
+
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         # Create the Left Panel
@@ -354,9 +356,8 @@ class ProjectControlCenter(QtWidgets.QWidget):
         return output_
 
     def on_project_changed(self, data):
-        self.project = data[0][0]
-        print self.project
-        pass
+        self.project_changed.emit(data[0][0])
+
 
     def on_create_company(self):
         dialog = InputDialog(title='Create Company', message='Type a Company Name', line_edit=True)
