@@ -39,13 +39,10 @@ class ImportBrowser(LJDialog):
         header = self.destination_tree.header()
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.destination_tree.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-        self.model = QtGui.QStandardItemModel()
-        self.model.setColumnCount(2)
-        self.destination_tree.header().hide()
-        self.destination_tree.setModel(self.model)
 
+        self.destination_tree.header().hide()
         self.h_layout = QtWidgets.QHBoxLayout()
-        self.data_frame = {}
+        self.data_frame = pd.DataFrame()
         self.left_column = QtWidgets.QVBoxLayout()
         self.media_internal = QtWidgets.QLabel('Internal Media')
         self.media_label = QtWidgets.QLabel('Connected Media')
@@ -121,12 +118,15 @@ class ImportBrowser(LJDialog):
         print 'create project'
 
     def populate_tree(self):
-        self.model.removeRows(0, self.model.rowCount())
+        model = QtGui.QStandardItemModel()
+        model.setColumnCount(2)
+        self.destination_tree.setModel(model)
+        model.removeRows(0, model.rowCount())
         for date in sorted(self.data_frame.creation_date.unique()):
             # Add all the date to the tree widget
             date_object = QtGui.QStandardItem(str(date))
             date_object.setEditable(False)
-            self.model.appendRow(date_object)
+            model.appendRow(date_object)
             for each in sorted(self.data_frame.file_category.unique()):
                 fc_object = QtGui.QStandardItem(str(each))
                 fc_object.setEditable(False)
@@ -171,17 +171,23 @@ class ImportBrowser(LJDialog):
             return mounts
 
     def on_media_selected(self):
-        self.date_list.clear()
-        for each in self.media_sources.selectedItems():
-            if each.text() in self.source_dict:
-                self.data_frame = self.source_dict[each.text()]
-            else:
-            # need to adjust this for multiple sources
-                self.data_frame = self.local_tree_dataframe(each.text())
-                self.source_dict[each.text()] = self.data_frame
-        self.date_list.addItems(sorted(self.data_frame.creation_date.unique()))
-        self.populate_tree()
-        self.show_right_column()
+        self.source_dict = {}
+        self.data_frame = pd.DataFrame
+        dframes = []
+        if self.media_sources.selectedItems():
+            for each in self.media_sources.selectedItems():
+                df = self.local_tree_dataframe(each.text())
+                self.source_dict[each.text()] = df
+            for key in self.source_dict:
+                dframes.append(self.source_dict[key])
+            if dframes:
+                self.data_frame = pd.concat(dframes)
+                self.date_list.addItems(sorted(df.creation_date.unique()))
+                self.populate_tree()
+                self.show_right_column()
+        else:
+            print 'Nothing Selected'
+            self.hide_right_column()
 
     def on_date_selected(self):
         self.file_list.clear()
