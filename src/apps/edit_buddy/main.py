@@ -172,11 +172,6 @@ class ImportBrowser(LJDialog):
                     fc_dest = QtGui.QStandardItem(path_root)
                     fc_dest.setEditable(False)
                     fc_object.appendRow([file_object, fc_dest])
-                # TODO - need something for removing the file_category if there are no files in it.
-                # TODO - if the destination file exists the node should be grey
-                # TODO - if all the destination files in a task exist the task should be grey
-                # TODO - if all the tasks are grey the date should be grey
-                # TODO - if the task is empty the task should be grey
 
     def load_media(self):
         disks = []
