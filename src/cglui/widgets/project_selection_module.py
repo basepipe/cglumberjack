@@ -218,6 +218,27 @@ class AssetWidget(QtWidgets.QWidget):
         self.title.setText('<b>%s</b>' % new_title.title())
 
 
+class LineEditWidget(QtWidgets.QWidget):
+    def __init__(self, parent=None, read_only=True, label='Label'):
+        QtWidgets.QWidget.__init__(self, parent)
+        # create the current path
+        self.label = QtWidgets.QLabel(label)
+        self.line_edit = QtWidgets.QLineEdit()
+        self.line_edit.setReadOnly(read_only)
+        self.row = QtWidgets.QHBoxLayout()
+        self.row.addWidget(self.label)
+        self.row.addWidget(self.line_edit)
+        self.setLayout(self.row)
+
+    def hide_all(self):
+        self.label.hide()
+        self.line_edit.hide()
+
+    def show_all(self):
+        self.label.show()
+        self.line_edit.show()
+
+
 class ProjectControlCenter(QtWidgets.QWidget):
     project_changed = QtCore.Signal(object)
 

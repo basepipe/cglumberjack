@@ -6,7 +6,7 @@ import pandas as pd
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.base import LJDialog
 from cglui.widgets.dialog import InputDialog
-from cglui.widgets.project_selection_module import AssetWidget, LabelComboRow, LabelEditRow, ProjectControlCenter
+from cglui.widgets.project_selection_module import LineEditWidget, LabelEditRow, ProjectControlCenter, LabelComboRow
 from core.config import app_config
 from core.path import PathObject, CreateProductionData
 
@@ -36,26 +36,37 @@ class ImportBrowser(LJDialog):
         self.root = None
         self.company = None
         self.project = None
+        self.current_location = {}
+
         header = self.destination_tree.header()
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.destination_tree.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.dest_path = LineEditWidget(label='Destination')
+        self.category = LineEditWidget(label='Category', read_only=False)
+        self.category.line_edit.setText('ingestion')
+
+        self.files_column = QtWidgets.QVBoxLayout()
+        self.files_column.addWidget(self.category)
+        self.files_column.addWidget(self.dest_path)
+        self.files_column.addWidget(self.destination_tree)
 
         # self.destination_tree.header().hide()
         self.h_layout = QtWidgets.QHBoxLayout()
         self.data_frame = pd.DataFrame()
-        self.left_column = QtWidgets.QVBoxLayout()
+        self.media_column = QtWidgets.QVBoxLayout()
         self.media_internal = QtWidgets.QLabel('Internal Media')
         self.media_label = QtWidgets.QLabel('Connected Media')
         self.media_sources = QtWidgets.QListWidget()
+        self.media_sources.setMinimumWidth(200)
         self.media_sources.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.media_sources.setEnabled(False)
         self.control_center = ProjectControlCenter()
         self.control_center.hide_filters()
 
-        self.left_column.addWidget(self.media_label)
-        self.left_column.addWidget(self.media_sources)
+        self.media_column.addWidget(self.media_label)
+        self.media_column.addWidget(self.media_sources)
 
-        self.right_column = QtWidgets.QVBoxLayout()
+        self.project_info_column = QtWidgets.QVBoxLayout()
         self.ingest_button = QtWidgets.QPushButton()
         self.ingest_button.setText('Ingest')
         self.source_dict = {}
@@ -64,14 +75,14 @@ class ImportBrowser(LJDialog):
         self.uncategorized_files = QtWidgets.QLabel("0 Uncategorized Files")
         # TODO - i want drop down menus for tasks for each of these file types so i know where they're all going.
 
-        self.right_column.addWidget(self.control_center)
-        self.right_column.addWidget(self.ingest_button)
+        self.project_info_column.addWidget(self.control_center)
+        self.files_column.addWidget(self.ingest_button)
 
         self.date_list = QtWidgets.QListWidget()
         self.file_list = QtWidgets.QListWidget()
-        self.h_layout.addLayout(self.right_column)
-        self.h_layout.addLayout(self.left_column)
-        self.h_layout.addWidget(self.destination_tree)
+        self.h_layout.addLayout(self.project_info_column)
+        self.h_layout.addLayout(self.media_column)
+        self.h_layout.addLayout(self.files_column)
 
         self.setLayout(self.h_layout)
 
@@ -91,9 +102,15 @@ class ImportBrowser(LJDialog):
         self.media_sources.hide()
 
     def hide_right_column(self):
+        self.ingest_button.hide()
+        self.dest_path.hide_all()
+        self.category.hide_all()
         self.destination_tree.hide()
 
     def show_right_column(self):
+        self.ingest_button.show()
+        self.dest_path.show_all()
+        self.category.show_all()
         self.destination_tree.show()
         
     def show_middle_column(self):
@@ -113,6 +130,10 @@ class ImportBrowser(LJDialog):
             CreateProductionData(d)
             self.load_companies(company=self.company)
             self.load_projects()
+
+    def on_category_changed(self):
+        self.current_location['seq'] = self.category.line_edit.text()
+        self.dest_path.line_edit.setText(PathObject(self.current_location).path_root)
 
     def on_create_project_clicked(self):
         print 'create project'
@@ -138,25 +159,19 @@ class ImportBrowser(LJDialog):
                 df = self.data_frame[(self.data_frame['file_category'] == each) & (self.data_frame['creation_date'] == date)]
                 for file_ in sorted(df.fullpath.tolist()):
                     dir_, file_ = os.path.split(file_)
-                    d = {'root': self.control_center.root,
-                         'company': self.control_center.company,
-                         'context': 'source',
-                         'project': self.project,
-                         'scope': 'assets',
-                         'seq': 'ingestion',
-                         'shot': str(date),
-                         'filename': file_}
-                    path_object = PathObject(d)
+                    self.current_location['shot'] = str(date)
+                    self.current_location['filename'] = file_
+                    self.current_location['task'] = 'audio'
+                    self.current_location['resolution'] = 'high'
+                    self.current_location['user'] = 'tmikota'
+                    path_object = PathObject(self.current_location)
+                    path_root = path_object.path_root
+                    path_root = path_root.split(self.category.line_edit.text())[-1]
                     file_object = QtGui.QStandardItem(str(file_))
                     file_object.setEditable(False)
-                    fc_dest = QtGui.QStandardItem(path_object.path_root)
+                    fc_dest = QtGui.QStandardItem(path_root)
                     fc_dest.setEditable(False)
                     fc_object.appendRow([file_object, fc_dest])
-                # TODO - need something for removing the file_category if there are no files in it.
-                # TODO - if the destination file exists the node should be grey
-                # TODO - if all the destination files in a task exist the task should be grey
-                # TODO - if all the tasks are grey the date should be grey
-                # TODO - if the task is empty the task should be grey
 
     def load_media(self):
         disks = []
@@ -204,6 +219,14 @@ class ImportBrowser(LJDialog):
         self.project = data
         self.media_sources.setEnabled(True)
         self.show_middle_column()
+        self.current_location = {'root': self.control_center.root,
+                                 'company': self.control_center.company,
+                                 'context': 'source',
+                                 'project': self.project,
+                                 'scope': 'assets',
+                                 'seq': self.category.line_edit.text()
+                                 }
+        self.dest_path.line_edit.setText(PathObject(self.current_location).path_root)
 
 
     @staticmethod
