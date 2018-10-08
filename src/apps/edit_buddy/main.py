@@ -58,6 +58,7 @@ class ImportBrowser(LJDialog):
         self.media_label = QtWidgets.QLabel('Connected Media')
         self.media_sources = QtWidgets.QListWidget()
         self.media_sources.setMinimumWidth(200)
+        self.media_sources.setMaximumWidth(200)
         self.media_sources.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.media_sources.setEnabled(False)
         self.control_center = ProjectControlCenter()
@@ -143,7 +144,7 @@ class ImportBrowser(LJDialog):
         model.setHeaderData(0, QtCore.Qt.Horizontal, 'Source')
         model.setHeaderData(1, QtCore.Qt.Horizontal, 'Destination')
         self.destination_tree.setModel(model)
-        self.destination_tree.setMinimumWidth(600)
+        self.destination_tree.setMinimumWidth(650)
         model.removeRows(0, model.rowCount())
         for date in sorted(self.data_frame.creation_date.unique()):
             # Add all the date to the tree widget
