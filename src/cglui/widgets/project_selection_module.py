@@ -62,6 +62,7 @@ class AssetWidget(QtWidgets.QWidget):
     def __init__(self, parent, title, filter_string=None):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
+        v_layout.setContentsMargins(0, 0, 0, 0)
         h_layout = QtWidgets.QHBoxLayout(self)
         self.tool_button_layout = QtWidgets.QHBoxLayout(self)
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
@@ -228,6 +229,7 @@ class LineEditWidget(QtWidgets.QWidget):
         self.row = QtWidgets.QHBoxLayout()
         self.row.addWidget(self.label)
         self.row.addWidget(self.line_edit)
+        self.row.setContentsMargins(0,0,0,0)
         self.setLayout(self.row)
 
     def hide_all(self):
