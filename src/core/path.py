@@ -524,8 +524,8 @@ class CreateProductionData(object):
         loaded_module.ProjectManagementData(path_object).create_entities_from_data()
 
 
-path_object = PathObject(path_object=r'D:\cgl-pod_advertising\source\bob_town')
-CreateProductionData(path_object=path_object, proj_management='active_colab', test=True)
+#path_object = PathObject(path_object=r'D:\cgl-pod_advertising\source\bob_town')
+#CreateProductionData(path_object=path_object, proj_management='active_colab', test=True)
 
 
 def icon_path():

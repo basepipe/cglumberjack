@@ -23,7 +23,7 @@ class Listener(Thread):
     def __init__(self, window):
         super(Listener, self).__init__()
         self.window = window
-        self.fileTypes = yaml.load(open(os.getenv("HOME") + "/PycharmProjects/cglumberjack/src/cfg/global.yaml"))['ext_map']
+        #self.fileTypes = yaml.load(open(os.getenv("HOME") + "/PycharmProjects/cglumberjack/src/cfg/global_template.yaml"))['ext_map']
         self.fileTypes['.ARW'] = "image"
         self.disks = []
         self.prevDisks = []
