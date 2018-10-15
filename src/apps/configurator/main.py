@@ -25,6 +25,7 @@ class NewProjectWindow(LJDialog):
         self.newclient_row2.addWidget(self.newclient_label2)
         self.newclient_row2.addWidget(self.newclient_lineedit2)
 
+
         self.buttons = QtWidgets.QHBoxLayout(self)
         self.buttonA = QtWidgets.QPushButton('OK')
         self.buttons.addWidget(self.buttonA)
