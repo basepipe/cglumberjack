@@ -74,7 +74,7 @@ class AssetCreator(LJDialog):
         self.full_root = None
         self.regex = ''
         self.valid_categories_string = ''
-        self.valid_categories = ['default']
+        self.valid_categories = []
         self.get_valid_categories()
         # Environment Stuff
         self.root = app_config()['paths']['root']
@@ -85,6 +85,7 @@ class AssetCreator(LJDialog):
         self.scope_row = QtWidgets.QHBoxLayout()
         self.asset_row = QtWidgets.QHBoxLayout(self)
         self.task_row = QtWidgets.QHBoxLayout(self)
+        self.task_combo = AdvComboBox()
 
         # radio button stuff
         self.shots_radio = QtWidgets.QRadioButton('Shots')
@@ -218,13 +219,13 @@ class AssetCreator(LJDialog):
                 if self.asset_list:
                     self.asset_message_string = 'Click Enter to Create:'
                     for i, _ in enumerate(self.asset_list):
-                        name = '%s:%s' % ('default', self.asset_list[i])
+                        name = '%s:%s' % ('Prop', self.asset_list[i])
                         self.asset_list[i] = name
                         self.asset_message_string = '%s\n%s' % (self.asset_message_string, name)
             else:
                 self.asset_list = []
                 if not self.seq:
-                    self.seq = 'default'
+                    self.seq = 'Prop'
                 self.asset_list.append('%s:%s' % (self.seq, asset_string))
                 self.asset_message_string = 'Click Enter to Create: \n%s' % self.asset_list[0]
 
@@ -299,6 +300,7 @@ class AssetCreator(LJDialog):
         tasks = ['']
         for each in task_list:
             tasks.append(each)
+        print tasks
         print "I'm meant to load tasks in some kind of gui: %s" % tasks
 
     @staticmethod
@@ -312,14 +314,15 @@ class AssetCreator(LJDialog):
     def on_asset_text_enter(self):
         if 'Click Enter' in self.asset_widget.message.text():
             if self.asset_widget.search_box.text() != '':
-                print self.path_object.path_root
-                print "Creating %s: %s" % (self.scope, self.asset_widget.search_box.text())
                 self.path_object.new_set_attr(asset=self.asset_widget.search_box.text())
-                self.path_object.new_set_attr(seq='default')
-                print 'asset_list', self.asset_list
-                print self.path_object.path_root
-                # CreateProductionData(self.path_object.data,
-                #                      project_management=self.project_management)
+                self.path_object.new_set_attr(type='Prop')
+                self.path_object.new_set_attr(task='ref')
+                # self.path_object.new_set_attr(resolution='high')
+                # self.path_object.new_set_attr(version='000.000')
+                # self.path_object.new_set_attr(user='tmikota')
+                print 'Current Path With Root: %s' % self.path_object.path_root
+                CreateProductionData(self.path_object.data,
+                                     project_management=self.project_management)
 
 
 if __name__ == "__main__":

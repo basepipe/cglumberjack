@@ -26,7 +26,7 @@ class ProjectManagementData(object):
     scope = None
     seq = None
     shot = None
-    category = None
+    type = None
     asset = None
     user = None
     time_entry = None
@@ -49,22 +49,23 @@ class ProjectManagementData(object):
                 self.__dict__[key] = path_object.__dict__[key]
         for key in kwargs:
             self.__dict__[key] = kwargs[key]
-
+        print self.__dict__
         print 'Creating Entries for Shotgun:'
 
     def create_project_management_data(self):
-        if self.project:
-            self.project_data = self.entity_exists('project')
-            if not self.project_data:
-                self.project_data = self.create_project()
+        self.project_data = self.entity_exists('project')
+        if not self.project_data:
+            self.project_data = self.create_project()
         if self.scope == 'assets':
-            if self.category:
+            print 'asset pass'
+            if self.type:
+                print 'type = %s' % self.type
                 if self.asset:
                     self.asset_data = self.entity_exists('asset')
+                    print 'Asset Data:', self.asset_data
                     if not self.asset_data:
                         self.asset_data = self.create_asset()
             self.entity_data = self.asset_data
-
         elif self.scope == 'shots':
             if self.seq:
                 self.seq_data = self.entity_exists('seq')
@@ -75,30 +76,34 @@ class ProjectManagementData(object):
                 if not self.shot_data:
                     self.shot_data = self.create_shot()
             self.entity_data = self.shot_data
+        else:
+            print 'No Scope Defined!'
+            return
 
         if self.entity_data:
+            if self.task:
+                # set tas_name
+                if self.scope == 'assets':
+                    self.task_name = '%s_%s' % (self.asset, self.task)
+                elif self.scope == 'shots':
+                    self.task_name = '%s_%s' % (self.shot, self.task)
+                # get task_data
+                self.task_data = self.entity_exists('task')
+                if not self.task_data:
+                    self.task_data = self.create_task()
             if self.user:
                 self.user_data = self.entity_exists('user')
                 # TODO - add user to the project if they aren't on it.
-                if self.task:
-                    # set tas_name
-                    if self.scope == 'assets':
-                        self.task_name = '%s_%s' % (self.asset, self.task)
-                    elif self.scope == 'shots':
-                        self.task_name = '%s_%s' % (self.shot, self.task)
-                    # get task_data
-                    self.task_data = self.entity_exists('task')
-                    if not self.task_data:
-                        self.task_data = self.create_task()
-                    if self.version:
-                        if self.scope == 'shots':
-                            self.version_name = '%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.version)
-                        elif self.scope == 'assets':
-                            self.version_name = '%s_%s_%s_%s' % (self.category, self.asset, self.task, self.version)
-                        if self.version_name:
-                            self.version_data = self.find_version()
-                            if not self.version_data:
-                                self.version_data = self.create_version()
+
+                if self.version:
+                    if self.scope == 'shots':
+                        self.version_name = '%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.version)
+                    elif self.scope == 'assets':
+                        self.version_name = '%s_%s_%s_%s' % (self.type, self.asset, self.task, self.version)
+                    if self.version_name:
+                        self.version_data = self.find_version()
+                        if not self.version_data:
+                            self.version_data = self.create_version()
 
     def entity_exists(self, data_type):
         """
@@ -129,7 +134,7 @@ class ProjectManagementData(object):
                 'code': self.version_name,
                 'user': self.user}
         if self.find_version():
-            logging.info('Shotgun Version Already Exists - skipping')
+            logging.info('Shotgun Version %s Already Exists - skipping' % self.version_name)
             return
         return ShotgunQuery.create('Version', data)
 
@@ -142,21 +147,24 @@ class ProjectManagementData(object):
         return ShotgunQuery.create('Project', data)
 
     def create_asset(self):
+        print self.type
         data = {'project': self.project_data,
-                'sg_asset_type': self.category,
+                'sg_asset_type': self.type,
                 'code': self.asset}
-        logging.info('Creating Shotgun Asset %s' % self.asset)
+        logging.info('Creating Shotgun Asset %s:%s' % (self.type, self.asset))
         return ShotgunQuery.create('Asset', data)
 
     def create_sequence(self):
         data = {'project': self.project_data,
                 'code': self.seq}
+        logging.info('Creating Shotgun Sequence %s' % self.seq)
         return ShotgunQuery.create('Sequence', data)
 
     def create_shot(self):
         data = {'project': self.project_data,
                 'sg_sequence': self.seq_data,
                 'code': self.shot}
+        logging.info('Creating Shotgun Shot %s' % self.shot)
         return ShotgunQuery.create('Shot', data)
 
     def create_task(self):
@@ -164,12 +172,22 @@ class ProjectManagementData(object):
         # For some reason the "sim" task doesn't work on this, others seem to
 
         task_data = self.find_task_shortname()
-        data = {'project': self.project_data,
-                'entity': self.entity_data,
-                'step': task_data,
-                'task_assignees': [self.user_data],
-                'content': self.task_name
-                }
+        print 'Task Data: %s' % task_data
+        print 'User Data: %s' % self.user_data
+        if self.user_data:
+            data = {'project': self.project_data,
+                    'entity': self.entity_data,
+                    'step': task_data,
+                    'task_assignees': [self.user_data],
+                    'content': self.task_name
+                    }
+        else:
+            data = {'project': self.project_data,
+                    'entity': self.entity_data,
+                    'step': task_data,
+                    'content': self.task_name
+                    }
+        logging.info('Creating Shotgun Task: %s, %s' % (self.task, self.task_name))
         return ShotgunQuery.create('Task', data)
 
     def find_project(self):
@@ -185,7 +203,8 @@ class ProjectManagementData(object):
     def find_asset(self):
         filters = [['code', 'is', self.asset],
                    ['project', 'is', self.project_data],
-                   ['sg_asset_type', 'is', self.category]]
+                   ['sg_asset_type', 'is', self.type]]
+        logging.info('Searching for asset: %s:%s' % (self.type, self.asset))
         return ShotgunQuery.find_one('Asset', filters, fields=ASSETFIELDS)
 
     def find_task_shortname(self):
