@@ -73,7 +73,8 @@ class AssetWidget(QtWidgets.QWidget):
         self.filter_string = filter_string
         self.label = title
         self.title = QtWidgets.QLabel("<b>%s</b>" % title)
-
+        self.task = None
+        self.user = None
         self.versions = AdvComboBox()
         self.versions.setMinimumWidth(500)
         self.versions.hide()
@@ -100,6 +101,8 @@ class AssetWidget(QtWidgets.QWidget):
         self.add_button.setText("+")
         self.show_button = QtWidgets.QToolButton()
         self.show_button.setText("more")
+        self.assign_button = QtWidgets.QToolButton()
+        self.assign_button.setText("create assignment")
         self.hide_button = QtWidgets.QToolButton()
         self.hide_button.setText("less")
         self.data_table = LJTableWidget(self)
@@ -127,6 +130,7 @@ class AssetWidget(QtWidgets.QWidget):
         h_layout.addWidget(self.search_box)
         h_layout.addWidget(self.show_button)
         h_layout.addWidget(self.hide_button)
+        h_layout.addWidget(self.assign_button)
         h_layout.addWidget(self.add_button)
 
         v_layout.addLayout(h_layout)
@@ -138,6 +142,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.hide_combos()
 
         self.message.hide()
+        self.assign_button.hide()
         self.add_button.hide()
         self.hideall()
         self.show_button.clicked.connect(self.on_show_button_clicked)
@@ -236,8 +241,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.shot = '*'
         self.seq = '*'
         self.user = '*'
-        #self.user_default = app_config()['account_info']['user']
-        self.user_default = 'PADL_dev'
+        self.user_default = app_config()['account_info']['user']
+        #self.user_default = 'PADL_dev'
+        self.user_favorites = app_config()['account_info']['user_favorites']
         self.version = ''
         self.task = ''
         self.resolution = ''
@@ -386,6 +392,23 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def on_task_resolution_changed(self):
         print 'resolution changed %s' % self.sender().currentText()
 
+    def on_assign_button_clicked(self):
+        task = self.sender().parent().task
+        dialog = InputDialog(title="Make an %s Assignment" % task, combo_box_items=self.user_favorites,
+                             buttons=['Cancel', 'Assign Task'])
+        dialog.exec_()
+        if dialog.button == 'Assign Task':
+            self.task = task
+            self.user = dialog.combo_box.currentText()
+            self.version = '000.000'
+            self.resolution = 'high'
+            # TODO - need to figure out what asset i have selected at the moment.
+            self.update_location()
+            print self.current_location
+            # TODO - need to actually create the assignment with ProductionData
+            # TODO - reset the selection to none and all the current selecion stuff to what it should be
+        print 'Making an assignment!'
+
     def on_assets_filter_changed(self):
         filter_ = self.assets.resolutions.currentText()
         self.assets_filter_default = filter_
@@ -493,6 +516,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                     if task not in self.task_layout.tasks:
                         # version_location = copy.copy(self.current_location)
                         task_widget = AssetWidget(self, task)
+                        task_widget.task = task
                         task_widget.showall()
                         task_widget.search_box.hide()
                         task_widget.hide_button.hide()
@@ -519,6 +543,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
                         task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
                         task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
+                        task_widget.assign_button.clicked.connect(self.on_assign_button_clicked)
+                        if not user:
+                            task_widget.users_label.hide()
+                            task_widget.users.hide()
+                            task_widget.data_table.hide()
+                            task_widget.versions.hide()
+                            task_widget.show_button.hide()
+                            task_widget.assign_button.show()
 
     # LOAD FUNCTIONS
 
