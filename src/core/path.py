@@ -509,6 +509,7 @@ class CreateProductionData(object):
                 os.makedirs(path_)
 
     def create_scene_description(self):
+        print 'CREATING SCENE DESCRIPTION:'
         print self.path_object.path_root
         print 'Json based Scene Descriptions Not Yet Connected'
 
@@ -522,10 +523,6 @@ class CreateProductionData(object):
         module = "plugins.project_management.%s.main" % proj_management
         loaded_module = __import__(module, globals(), locals(), 'main', -1)
         loaded_module.ProjectManagementData(path_object).create_entities_from_data()
-
-
-#path_object = PathObject(path_object=r'D:\cgl-pod_advertising\source\bob_town')
-#CreateProductionData(path_object=path_object, proj_management='active_colab', test=True)
 
 
 def icon_path():
