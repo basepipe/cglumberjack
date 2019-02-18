@@ -1,10 +1,10 @@
 import re
 import os
 import glob
-from cglcore.path import PathParser, create_production_data
+from core.path import CreateProductionData, PathObject
 from Qt import QtWidgets, QtCore
 
-from cglcore.config import app_config
+from core.config import app_config
 from cglui.widgets.base import LJDialog
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.combo import AdvComboBox
@@ -61,8 +61,7 @@ class AssetCreator(LJDialog):
         self.resize(600, 60)
         if not path_dict:
             return
-        self.path_dict = path_dict
-        self.current_path = None
+        self.path_object = PathObject(path_dict)
         self.company = None
         self.project = None
         self.scope = "shots"
@@ -79,8 +78,8 @@ class AssetCreator(LJDialog):
         self.get_valid_categories()
         # Environment Stuff
         self.root = app_config()['paths']['root']
-        self.do_shotgun = app_config()['shotgun']['create_by_default']
-        self.asset_string_example = app_config()['paths']['rules']['assetname_example']
+        self.project_management = app_config()['account_info']['project_management']
+        self.asset_string_example = app_config()['rules']['path_variables']['asset']['example']
         self.v_layout = QtWidgets.QVBoxLayout(self)
         self.grid_layout = QtWidgets.QGridLayout(self)
         self.scope_row = QtWidgets.QHBoxLayout()
@@ -119,20 +118,21 @@ class AssetCreator(LJDialog):
         dialog.exec_()
         self.company = dialog.line_edit.text()
         self.full_root = r'%s\cgl-%s' % (self.root, self.company)
-        os.path.mkdirs(self.full_root)  # is there a way to work this into create_production_data?
-        self.get_current_location()
+        #os.path.mkdirs(self.full_root)  # is there a way to work this into create_production_data?
 
     def on_create_project(self):
         print 'create project'
         dialog = InputDialog(title='Create Project', message='Type a Project Name', line_edit=True)
         dialog.exec_()
         project_name = dialog.line_edit.text()
-        create_production_data(project=project_name, shotgun=self.do_shotgun, with_root=False,
-                               custom_root=self.full_root)
-        create_production_data(project=project_name, scope='shots', shotgun=self.do_shotgun, with_root=False,
-                               custom_root=self.full_root)
-        self.project_combo.insertItem(0, project_name)
-        self.get_current_location()
+        print 'This (line 129) is depreciated'
+        #CreateProductionData(self.current_location, project_management=self.project_management)
+        #create_production_data(project=project_name, with_root=False,
+        #                       custom_root=self.full_root)
+        #create_production_data(project=project_name, scope='shots', with_root=False,
+        #                       custom_root=self.full_root)
+        #self.project_combo.insertItem(0, project_name)
+        #self.get_current_location()
 
     def on_root_combo_changed(self):
         self.root = self.root_combo.currentText()
@@ -167,19 +167,6 @@ class AssetCreator(LJDialog):
             self.project_combo.addItems(projects)
         else:
             print '%s does not exist yet' % path
-        self.get_current_location()
-
-    def task_text_changed(self):
-        regex = re.compile(r'%s' % app_config()['paths']['rules']['taskname'])
-        if self.task_combo.currentText():
-            if re.match(regex, self.task_combo.currentText()):
-                message = 'Click Enter to Create %s' % self.task_combo.currentText()
-            else:
-                example = app_config()['paths']['rules']['taskname_example']
-                bad_name = '%s is not a valid task name' % (self.task_combo.currentText())
-                message = '%s\n%s' % (bad_name, example)
-            self.task_message.setText(message)
-            self.task_message.show()
         self.get_current_location()
 
     def asset_text_changed(self):
@@ -272,31 +259,35 @@ class AssetCreator(LJDialog):
         self.load_assets()
 
     def get_current_location(self):
-        if self.company:
-            self.path_dict['root'] = self.full_root
+        if self.path_object.company:
+            self.path_object.new_set_attr(root=self.full_root)
         if self.project:
-            self.path_dict['project'] = self.project
-            self.path_dict['scope'] = self.scope.lower()
-            self.path_dict['context'] = 'source'
-        if self.seq:
-            self.path_dict['seq'] = self.seq
-        if self.shot:
-            self.path_dict['shot'] = self.shot
-
-        if not self.project:
-            return self.full_root
-        self.current_path = '%s%s' % (self.full_root, PathParser.path_from_dict(self.path_dict))
+            self.path_object.new_set_attr(project=self.project)
+            self.path_object.new_set_attr(scope=self.scope.lower())
+            self.path_object.new_set_attr(context='source')
+        else:
+            return self.path_object.path_root
+        if self.path_object.scope == 'shots':
+            if self.seq:
+                self.path_object.new_set_attr(seq=self.seq)
+            if self.shot:
+                self.path_object.new_set_attr(shot=self.shot)
+        elif self.path_object.scope == 'assets':
+            self.path_object.new_set_attr(type=self.seq)
+            self.path_object.new_set_attr(asset=self.shot)
 
     def load_assets(self):
-        print 'loading %s from %s' % (self.scope, self.path_dict)
-        self.path_dict['seq'] = '*'
-        self.path_dict['shot'] = '*'
-        self.path_dict['task'] = ''
-        self.path_dict['user'] = ''
-        glob_path = PathParser.path_from_dict(self.path_dict, with_root=True)
+        print 'loading %s from %s' % (self.scope, self.path_object.__dict__)
+        self.path_object.seq = '*'
+        self.path_object.shot = '*'
+        self.path_object.task = ''
+        self.path_object.user = ''
+        print self.path_object.path_root
+        glob_path = self.path_object.path_root
         glob_path = re.sub('/+$', '', glob_path)
         print glob_path
         list_ = glob.glob(glob_path)
+        print 'list %s' % list_
         self.assets = []
         for each in list_:
             asset = each.split('%s\\' % self.scope)[-1].replace('\\', ':')
@@ -308,7 +299,7 @@ class AssetCreator(LJDialog):
         tasks = ['']
         for each in task_list:
             tasks.append(each)
-        self.task_combo.addItems(tasks)
+        print "I'm meant to load tasks in some kind of gui: %s" % tasks
 
     @staticmethod
     def is_valid_asset():
@@ -321,15 +312,16 @@ class AssetCreator(LJDialog):
     def on_asset_text_enter(self):
         if 'Click Enter' in self.asset_widget.message.text():
             if self.asset_widget.search_box.text() != '':
-                # make sure i know what the valid tasks are for this project
-                self.load_tasks()
+                print self.path_object.path_root
                 print "Creating %s: %s" % (self.scope, self.asset_widget.search_box.text())
-                if not self.seq:
-                    self.seq = 'default'
+                self.path_object.new_set_attr(asset=self.asset_widget.search_box.text())
+                self.path_object.new_set_attr(seq='default')
                 print 'asset_list', self.asset_list
-                # create_production_data(project=self.project, scope=self.scope.lower(), with_root=False,
-                #                       custom_root=self.full_root, shotgun=self.do_shotgun,
-                #                       seq=self.seq, shot=self.asset)
+                print self.path_object.path_root
+                print self.path_object.data
+                print self.project_management
+                CreateProductionData(self.path_object.data,
+                                     project_management=self.project_management)
 
 
 if __name__ == "__main__":

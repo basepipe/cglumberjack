@@ -50,9 +50,9 @@ class ProjectManagementData(object):
         for key in kwargs:
             self.__dict__[key] = kwargs[key]
 
-        print 'Creating Entries for ftrack:'
+        print 'Creating Entries for Shotgun:'
 
-    def create_entities_from_object(self):
+    def create_project_management_data(self):
         if self.project:
             self.project_data = self.entity_exists('project')
             if not self.project_data:
@@ -79,6 +79,7 @@ class ProjectManagementData(object):
         if self.entity_data:
             if self.user:
                 self.user_data = self.entity_exists('user')
+                # TODO - add user to the project if they aren't on it.
                 if self.task:
                     # set tas_name
                     if self.scope == 'assets':
@@ -137,13 +138,14 @@ class ProjectManagementData(object):
             short_name = self.project
         data = {'name': self.project,
                 'sg_code': short_name}
-
+        logging.info('Creating Shotgun Project %s' % self.project)
         return ShotgunQuery.create('Project', data)
 
     def create_asset(self):
         data = {'project': self.project_data,
                 'sg_asset_type': self.category,
                 'code': self.asset}
+        logging.info('Creating Shotgun Asset %s' % self.asset)
         return ShotgunQuery.create('Asset', data)
 
     def create_sequence(self):

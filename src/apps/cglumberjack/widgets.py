@@ -8,6 +8,7 @@ from cglui.widgets.containers.menu import LJMenu
 from cglcore.path import PathParser, add_to_system
 from cglcore import path
 
+
 class FileTableModel(ListItemModel):
     def data(self, index, role):
         row = index.row()

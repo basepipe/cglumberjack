@@ -265,6 +265,13 @@ class PathObject(object):
         self.set_path()
 
     def set_attr(self, attr, value, regex=True):
+        """
+        Sets Attr attr, at value, regex requirement can be turned on or off.
+        :param attr:
+        :param value:
+        :param regex:
+        :return:
+        """
         if regex:
             try:
                 regex = app_config()['rules']['path_variables'][attr]['regex']
@@ -452,15 +459,16 @@ class PathObject(object):
 
 
 class CreateProductionData(object):
-    def __init__(self, path_object=None, file_system=True, proj_management=False,
+    def __init__(self, path_object=None, file_system=True, project_management=None,
                  scene_description=False, do_scope=False, test=False):
         self.test = test
         self.path_object = PathObject(path_object)
         self.do_scope = do_scope
         if file_system:
             self.create_folders()
-        if proj_management:
-            self.create_project_management_data(path_object, proj_management)
+        if project_management:
+            logging.info('Creating Production Management Data for %s: %s' % (project_management, self.path_object.data))
+            self.create_project_management_data(self.path_object, project_management)
         if scene_description:
             self.create_scene_description()
 
@@ -514,15 +522,14 @@ class CreateProductionData(object):
         print 'Json based Scene Descriptions Not Yet Connected'
 
     @staticmethod
-    def create_project_management_data(path_object, proj_management):
-        # TODO I need multiple levels of globals in order to manage this, how do i say that the pod wants one project
+    def create_project_management_data(path_object, project_management):
         # TODO I need to do something that syncs my globals to the cloud in case they get toasted.
-        # TODO it might be a good idea to get this working with shotgun since i already know how complex that one is.
         # management software
         # and another studio wants a different kind of project management software by default.
-        module = "plugins.project_management.%s.main" % proj_management
+        module = "plugins.project_management.%s.main" % project_management
         loaded_module = __import__(module, globals(), locals(), 'main', -1)
-        loaded_module.ProjectManagementData(path_object).create_entities_from_data()
+        print path_object
+        loaded_module.ProjectManagementData(path_object).create_project_management_data()
 
 
 def icon_path():

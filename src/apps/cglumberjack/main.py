@@ -226,7 +226,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         # Environment Stuff
-        self.do_shotgun = False  # TODO - add this to the globals
+        self.project_management = app_config()['account_info']['project_management']
         self.root = app_config()['paths']['root']
         self.company = app_config()['account_info']['company']
         self.user_root = app_config()['cg_lumberjack_dir']
@@ -358,7 +358,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             project_name = dialog.line_edit.text()
             self.project = project_name
             self.update_location()
-            CreateProductionData(self.current_location)
+            CreateProductionData(self.current_location, project_management=self.project_management)
             self.load_projects()
         else:
             pass

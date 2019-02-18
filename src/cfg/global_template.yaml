@@ -150,7 +150,6 @@ ext_map:
   .hprj: 'audio'
   .raf: 'image'
 shotgun:
-  create_by_default: False
   url: https://fsuada.shotgunstudio.com
   api_script: core_tools
   api_key: bc29cd2fd4ce9fe3c2598c4d559b09f88eaa95b05edfd12a834a23aea0797e2f
