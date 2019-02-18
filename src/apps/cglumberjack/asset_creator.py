@@ -318,10 +318,8 @@ class AssetCreator(LJDialog):
                 self.path_object.new_set_attr(seq='default')
                 print 'asset_list', self.asset_list
                 print self.path_object.path_root
-                print self.path_object.data
-                print self.project_management
-                CreateProductionData(self.path_object.data,
-                                     project_management=self.project_management)
+                # CreateProductionData(self.path_object.data,
+                #                      project_management=self.project_management)
 
 
 if __name__ == "__main__":
