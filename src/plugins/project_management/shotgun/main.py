@@ -82,15 +82,17 @@ class ProjectManagementData(object):
 
         if self.entity_data:
             if self.task:
-                # set tas_name
+                # set task_name
                 if self.scope == 'assets':
                     self.task_name = '%s_%s' % (self.asset, self.task)
                 elif self.scope == 'shots':
                     self.task_name = '%s_%s' % (self.shot, self.task)
                 # get task_data
                 self.task_data = self.entity_exists('task')
+                print 'TASK DATA FOUND: %s' % self.task_data
                 if not self.task_data:
                     self.task_data = self.create_task()
+                    print '2 task data: %s' % self.task_data
             if self.user:
                 self.user_data = self.entity_exists('user')
                 # TODO - add user to the project if they aren't on it.
@@ -124,19 +126,21 @@ class ProjectManagementData(object):
         elif data_type == 'user':
             data = self.find_user()
         elif data_type == 'task':
-            data = self.find_task()
+            data = self.find_task()[0]
         return data
 
     def create_version(self):
         data = {'project': self.project_data,
                 'entity': self.entity_data,
-                'sg_task': self.task,
+                'sg_task': self.task_data,
                 'code': self.version_name,
-                'user': self.user}
+                'user': self.user_data}
         if self.find_version():
             logging.info('Shotgun Version %s Already Exists - skipping' % self.version_name)
             return
-        return ShotgunQuery.create('Version', data)
+        logging.info('Creating Version: %s' % self.version)
+        sg_data = ShotgunQuery.create('Version', data)
+        return sg_data['id']
 
     def create_project(self, short_name=None):
         if not short_name:

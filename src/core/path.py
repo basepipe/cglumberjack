@@ -14,6 +14,8 @@ from core.config import app_config
 #from cglcore.exceptions import LumberJackException
 from cglui.widgets.dialog import InputDialog
 
+PROJ_MANAGEMENT = app_config()['account_info']['project_management']
+
 
 class PathObject(object):
     """
@@ -58,7 +60,6 @@ class PathObject(object):
         self.template = []
 
         if type(path_object) is dict:
-            print 'is dict'
             self.process_dict(path_object)
         elif type(path_object) is str:
             self.process_string(path_object)
@@ -459,7 +460,7 @@ class PathObject(object):
 
 
 class CreateProductionData(object):
-    def __init__(self, path_object=None, file_system=True, project_management=None,
+    def __init__(self, path_object=None, file_system=True, project_management=PROJ_MANAGEMENT,
                  scene_description=False, do_scope=False, test=False):
         self.test = test
         self.path_object = PathObject(path_object)

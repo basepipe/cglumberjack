@@ -62,11 +62,13 @@ class AssetWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
+    assign_clicked = QtCore.Signal(object)
 
-    def __init__(self, parent, title, filter_string=None):
+    def __init__(self, parent, title, filter_string=None, path_object=None):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout(self)
+        self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout(self)
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
@@ -148,6 +150,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.show_button.clicked.connect(self.on_show_button_clicked)
         self.hide_button.clicked.connect(self.on_hide_button_clicked)
         self.add_button.clicked.connect(self.on_add_button_clicked)
+        self.assign_button.clicked.connect(self.on_assign_button_clicked)
         self.hide_tool_buttons()
         
     def hide(self):
@@ -222,6 +225,9 @@ class AssetWidget(QtWidgets.QWidget):
         self.hide_combos()
         self.hide_button.hide()
         self.show_button.show()
+
+    def on_assign_button_clicked(self):
+        self.assign_clicked.emit(self.path_object)
 
     def set_title(self, new_title):
         self.title.setText('<b>%s</b>' % new_title.title())
@@ -392,8 +398,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def on_task_resolution_changed(self):
         print 'resolution changed %s' % self.sender().currentText()
 
-    def on_assign_button_clicked(self):
-        task = self.sender().parent().task
+    def on_assign_button_clicked(self, data):
+        task = self.sender().label
         dialog = InputDialog(title="Make an %s Assignment" % task, combo_box_items=self.user_favorites,
                              buttons=['Cancel', 'Assign Task'])
         dialog.exec_()
@@ -402,12 +408,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.user = dialog.combo_box.currentText()
             self.version = '000.000'
             self.resolution = 'high'
-            # TODO - need to figure out what asset i have selected at the moment.
+            self.shot = data.shot
+            self.seq = data.seq
             self.update_location()
-            print self.current_location
-            # TODO - need to actually create the assignment with ProductionData
-            # TODO - reset the selection to none and all the current selecion stuff to what it should be
-        print 'Making an assignment!'
+            CreateProductionData(path_object=self.current_location)
+        self.reload_task_widget(self.sender())
 
     def on_assets_filter_changed(self):
         filter_ = self.assets.resolutions.currentText()
@@ -507,15 +512,18 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             current = PathObject(str(path))
             current.set_attr(attr='task', value='*')
             current.set_attr(attr='root', value=self.root)
+            self.task_layout.seq = current.seq
+            self.task_layout.shot = current.shot
 
             self.update_location(path_object=current)
+            print "1: %s" % self.current_location
             # Get the list of tasks for the selection
             task_list = current.glob_project_element('task')
             for task in task_list:
                 if '.' not in task:
                     if task not in self.task_layout.tasks:
                         # version_location = copy.copy(self.current_location)
-                        task_widget = AssetWidget(self, task)
+                        task_widget = AssetWidget(self, task, path_object=current)
                         task_widget.task = task
                         task_widget.showall()
                         task_widget.search_box.hide()
@@ -543,7 +551,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
                         task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
                         task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
-                        task_widget.assign_button.clicked.connect(self.on_assign_button_clicked)
+                        task_widget.assign_clicked.connect(self.on_assign_button_clicked)
                         if not user:
                             task_widget.users_label.hide()
                             task_widget.users.hide()
@@ -555,6 +563,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     # LOAD FUNCTIONS
 
     def reload_task_widget(self, widget, populate_versions=True):
+        # TODO - need to get a really good method written for what is shown when the task widget is reloaded/loaded
         path_obj = PathObject(self.current_location)
         path_obj.set_attr(attr='filename', value='*')
         path_obj.set_attr('user', widget.users.currentText())
