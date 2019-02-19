@@ -583,7 +583,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         current = PathObject(self.current_location)
         renders = current.copy(context='render', filename='*')
         files_ = renders.glob_project_element('filename')
-        label = QtWidgets.QLabel('<b>%s: Exports</b>' % renders.task)
+        label = QtWidgets.QLabel('<b>%s: Published Files</b>' % renders.task)
         render_widget = AssetWidget(self, 'Output')
         render_widget.showall()
         render_widget.title.hide()

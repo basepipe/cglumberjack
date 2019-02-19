@@ -4,6 +4,7 @@ account_info:
   user: tmikota
   user_favorites: ['PADL_dev', 'tmiko', 'tmikota']
   user_directory: C:\Users\tmiko\Documents\cglumberjack
+  project_management: shotgun
 companies:
   pod_advertising:
     shotgun: False
