@@ -57,7 +57,6 @@ class ProjectManagementData(object):
         if not self.project_data:
             self.project_data = self.create_project()
         if self.scope == 'assets':
-            print 'asset pass'
             if self.type:
                 print 'type = %s' % self.type
                 if self.asset:

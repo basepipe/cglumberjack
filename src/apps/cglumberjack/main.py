@@ -1,5 +1,4 @@
 import glob
-import copy
 import os
 from Qt import QtWidgets, QtCore, QtGui
 from core.config import app_config
@@ -857,4 +856,5 @@ if __name__ == "__main__":
     td.setWindowTitle('CG Lumberjack')
     td.show()
     td.raise_()
+    # setup stylesheet
     app.exec_()

@@ -159,6 +159,10 @@ shotgun:
   project_short_name: sg_code
   notes: ensure short codes exist for all pipeline steps in shotgun, might want a wizard for this.
   username: tmikota
+ftrack:
+  server_url: None
+  api_key: None
+  api_user: None
 email:
   from: tom@cglumberjack.com
   bcc: tom@cglumberjack.com
