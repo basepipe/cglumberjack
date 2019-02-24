@@ -21,7 +21,9 @@ class ProjectManagementData(object):
     shot_data = None
     category = None
     asset = None
-    user = None
+    user = 'Lone Coconut'
+    user_email = 'LoneCoconutMail@gmail.com'
+    user_data = None
     time_entry = None
     note = None
     schema = SCHEMAS[3]
@@ -31,6 +33,9 @@ class ProjectManagementData(object):
     asset_data = None
     scope = 'shots'
     task_name = None
+    project_team = None
+    assignments = []
+    assignment_data = None
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
@@ -93,6 +98,11 @@ class ProjectManagementData(object):
                     self.task_data = self.create_task()
                     print '2 task data: %s' % self.task_data
 
+        if self.user_email:
+            self.entity_exists('user')
+            if self.user_data:
+                # TODO - add user to the project if they aren't on it.
+                self.create_assignment()
 
     def entity_exists(self, data_type):
         """
@@ -167,12 +177,24 @@ class ProjectManagementData(object):
         })
         return self.task_data
 
+    def create_assignment(self):
+        print 'Creating Assignment %s: for %s' % (self.task, self.user_email)
+        self.assignment_data = self.ftrack.create('Appointment', {
+            'context': self.task_data,
+            'resource': self.user_data,
+            'type': 'assignment'
+        })
+        return self.assignment_data
+
     def create_version(self):
         self.version_data = self.ftrack.create('Version', {
             'name': self.version,
             'parent': self.task_data,
         })
         return self.version_data
+
+    def add_user_to_project(self):
+        pass
 
     def find_project(self):
         print 'Searching for Project %s' % self.project
@@ -197,10 +219,38 @@ class ProjectManagementData(object):
         self.seq_data = self.ftrack.query('Sequence where' 
                                           ' project.id is "{0}"'.format(self.project_data['id']))
         return self.seq_data
-        pass
+
+    def find_project_team(self):
+        self.project_team = set()
+        for allocation in self.project_data['allocations']:
+            resource = allocation['resource']
+
+            if isinstance(resource, self.ftrack.types['Group']):
+                for membership in resource['memberships']:
+                    user = membership['user']
+                    self.project_team.add(user)
 
     def find_user(self):
-        pass
+        # this should be easier than this - but the example given in the docs isn't working
+        # will have to reach out to support on this one
+        # http://ftrack-python-api.rtd.ftrack.com/en/1.7.0/example/assignments_and_allocations.html
+        # i should be able to do this easily with a query but it doesn't return anything.
+        all_users = self.ftrack.query('User')
+        for each in all_users:
+            if each['username'] == self.user_email:
+                self.user_data = each
+                print 'Found User: %s' % self.user_email
+        return self.user_data
+
+    def find_user_tasks(self):
+        self.find_project()
+        self.assignments = self.ftrack.query('select link from Task '
+                                             'where assignments any (resource.username = "{0}")'.format(self.user_email))
+
+        print 'assignments found for %s:' % self.user_email
+        for a in self.assignments:
+            print ' / '.join(item['name'] for item in a['link'])
+        return self.assignments
 
     def find_task(self):
         return self.ftrack.query('Task where '
@@ -223,6 +273,8 @@ class ProjectManagementData(object):
 
 if __name__ == "__main__":
     this = ProjectManagementData()
+    # this.find_user()
+    #user = this.find_user_tasks()
     this.create_project_management_data()
     this.ftrack.commit()
 
