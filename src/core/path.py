@@ -14,6 +14,8 @@ from core.config import app_config
 #from cglcore.exceptions import LumberJackException
 from cglui.widgets.dialog import InputDialog
 
+PROJ_MANAGEMENT = app_config()['account_info']['project_management']
+
 
 class PathObject(object):
     """
@@ -58,7 +60,6 @@ class PathObject(object):
         self.template = []
 
         if type(path_object) is dict:
-            print 'is dict'
             self.process_dict(path_object)
         elif type(path_object) is str:
             self.process_string(path_object)
@@ -265,6 +266,13 @@ class PathObject(object):
         self.set_path()
 
     def set_attr(self, attr, value, regex=True):
+        """
+        Sets Attr attr, at value, regex requirement can be turned on or off.
+        :param attr:
+        :param value:
+        :param regex:
+        :return:
+        """
         if regex:
             try:
                 regex = app_config()['rules']['path_variables'][attr]['regex']
@@ -452,15 +460,16 @@ class PathObject(object):
 
 
 class CreateProductionData(object):
-    def __init__(self, path_object=None, file_system=True, proj_management=False,
+    def __init__(self, path_object=None, file_system=True, project_management=PROJ_MANAGEMENT,
                  scene_description=False, do_scope=False, test=False):
         self.test = test
         self.path_object = PathObject(path_object)
         self.do_scope = do_scope
         if file_system:
             self.create_folders()
-        if proj_management:
-            self.create_project_management_data(path_object, proj_management)
+        if project_management:
+            logging.info('Creating Production Management Data for %s: %s' % (project_management, self.path_object.data))
+            self.create_project_management_data(self.path_object, project_management)
         if scene_description:
             self.create_scene_description()
 
@@ -509,23 +518,19 @@ class CreateProductionData(object):
                 os.makedirs(path_)
 
     def create_scene_description(self):
+        print 'CREATING SCENE DESCRIPTION:'
         print self.path_object.path_root
         print 'Json based Scene Descriptions Not Yet Connected'
 
     @staticmethod
-    def create_project_management_data(path_object, proj_management):
-        # TODO I need multiple levels of globals in order to manage this, how do i say that the pod wants one project
+    def create_project_management_data(path_object, project_management):
         # TODO I need to do something that syncs my globals to the cloud in case they get toasted.
-        # TODO it might be a good idea to get this working with shotgun since i already know how complex that one is.
         # management software
         # and another studio wants a different kind of project management software by default.
-        module = "plugins.project_management.%s.main" % proj_management
+        module = "plugins.project_management.%s.main" % project_management
         loaded_module = __import__(module, globals(), locals(), 'main', -1)
-        loaded_module.ProjectManagementData(path_object).create_entities_from_data()
-
-
-#path_object = PathObject(path_object=r'D:\cgl-pod_advertising\source\bob_town')
-#CreateProductionData(path_object=path_object, proj_management='active_colab', test=True)
+        print path_object
+        loaded_module.ProjectManagementData(path_object).create_project_management_data()
 
 
 def icon_path():

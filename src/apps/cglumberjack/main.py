@@ -1,5 +1,4 @@
 import glob
-import copy
 import os
 from Qt import QtWidgets, QtCore, QtGui
 from core.config import app_config
@@ -62,18 +61,21 @@ class AssetWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
+    assign_clicked = QtCore.Signal(object)
 
-    def __init__(self, parent, title, filter_string=None):
+    def __init__(self, parent, title, filter_string=None, path_object=None):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout(self)
+        self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout(self)
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
         self.title = QtWidgets.QLabel("<b>%s</b>" % title)
-
+        self.task = None
+        self.user = None
         self.versions = AdvComboBox()
         self.versions.setMinimumWidth(500)
         self.versions.hide()
@@ -100,6 +102,8 @@ class AssetWidget(QtWidgets.QWidget):
         self.add_button.setText("+")
         self.show_button = QtWidgets.QToolButton()
         self.show_button.setText("more")
+        self.assign_button = QtWidgets.QToolButton()
+        self.assign_button.setText("create assignment")
         self.hide_button = QtWidgets.QToolButton()
         self.hide_button.setText("less")
         self.data_table = LJTableWidget(self)
@@ -127,6 +131,7 @@ class AssetWidget(QtWidgets.QWidget):
         h_layout.addWidget(self.search_box)
         h_layout.addWidget(self.show_button)
         h_layout.addWidget(self.hide_button)
+        h_layout.addWidget(self.assign_button)
         h_layout.addWidget(self.add_button)
 
         v_layout.addLayout(h_layout)
@@ -138,11 +143,13 @@ class AssetWidget(QtWidgets.QWidget):
         self.hide_combos()
 
         self.message.hide()
+        self.assign_button.hide()
         self.add_button.hide()
         self.hideall()
         self.show_button.clicked.connect(self.on_show_button_clicked)
         self.hide_button.clicked.connect(self.on_hide_button_clicked)
         self.add_button.clicked.connect(self.on_add_button_clicked)
+        self.assign_button.clicked.connect(self.on_assign_button_clicked)
         self.hide_tool_buttons()
         
     def hide(self):
@@ -218,6 +225,9 @@ class AssetWidget(QtWidgets.QWidget):
         self.hide_button.hide()
         self.show_button.show()
 
+    def on_assign_button_clicked(self):
+        self.assign_clicked.emit(self.path_object)
+
     def set_title(self, new_title):
         self.title.setText('<b>%s</b>' % new_title.title())
 
@@ -226,7 +236,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         # Environment Stuff
-        self.do_shotgun = False  # TODO - add this to the globals
+        self.project_management = app_config()['account_info']['project_management']
         self.root = app_config()['paths']['root']
         self.company = app_config()['account_info']['company']
         self.user_root = app_config()['cg_lumberjack_dir']
@@ -236,8 +246,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.shot = '*'
         self.seq = '*'
         self.user = '*'
-        #self.user_default = app_config()['account_info']['user']
-        self.user_default = 'PADL_dev'
+        self.user_default = app_config()['account_info']['user']
+        #self.user_default = 'PADL_dev'
+        self.user_favorites = app_config()['account_info']['user_favorites']
         self.version = ''
         self.task = ''
         self.resolution = ''
@@ -358,7 +369,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             project_name = dialog.line_edit.text()
             self.project = project_name
             self.update_location()
-            CreateProductionData(self.current_location)
+            CreateProductionData(self.current_location, project_management=self.project_management)
             self.load_projects()
         else:
             pass
@@ -385,6 +396,22 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def on_task_resolution_changed(self):
         print 'resolution changed %s' % self.sender().currentText()
+
+    def on_assign_button_clicked(self, data):
+        task = self.sender().label
+        dialog = InputDialog(title="Make an %s Assignment" % task, combo_box_items=self.user_favorites,
+                             buttons=['Cancel', 'Assign Task'])
+        dialog.exec_()
+        if dialog.button == 'Assign Task':
+            self.task = task
+            self.user = dialog.combo_box.currentText()
+            self.version = '000.000'
+            self.resolution = 'high'
+            self.shot = data.shot
+            self.seq = data.seq
+            self.update_location()
+            CreateProductionData(path_object=self.current_location)
+        self.reload_task_widget(self.sender())
 
     def on_assets_filter_changed(self):
         filter_ = self.assets.resolutions.currentText()
@@ -484,15 +511,19 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             current = PathObject(str(path))
             current.set_attr(attr='task', value='*')
             current.set_attr(attr='root', value=self.root)
+            self.task_layout.seq = current.seq
+            self.task_layout.shot = current.shot
 
             self.update_location(path_object=current)
+            print "1: %s" % self.current_location
             # Get the list of tasks for the selection
             task_list = current.glob_project_element('task')
             for task in task_list:
                 if '.' not in task:
                     if task not in self.task_layout.tasks:
                         # version_location = copy.copy(self.current_location)
-                        task_widget = AssetWidget(self, task)
+                        task_widget = AssetWidget(self, task, path_object=current)
+                        task_widget.task = task
                         task_widget.showall()
                         task_widget.search_box.hide()
                         task_widget.hide_button.hide()
@@ -519,10 +550,19 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
                         task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
                         task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
+                        task_widget.assign_clicked.connect(self.on_assign_button_clicked)
+                        if not user:
+                            task_widget.users_label.hide()
+                            task_widget.users.hide()
+                            task_widget.data_table.hide()
+                            task_widget.versions.hide()
+                            task_widget.show_button.hide()
+                            task_widget.assign_button.show()
 
     # LOAD FUNCTIONS
 
     def reload_task_widget(self, widget, populate_versions=True):
+        # TODO - need to get a really good method written for what is shown when the task widget is reloaded/loaded
         path_obj = PathObject(self.current_location)
         path_obj.set_attr(attr='filename', value='*')
         path_obj.set_attr('user', widget.users.currentText())
@@ -542,7 +582,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         current = PathObject(self.current_location)
         renders = current.copy(context='render', filename='*')
         files_ = renders.glob_project_element('filename')
-        label = QtWidgets.QLabel('<b>%s: Exports</b>' % renders.task)
+        label = QtWidgets.QLabel('<b>%s: Published Files</b>' % renders.task)
         render_widget = AssetWidget(self, 'Output')
         render_widget.showall()
         render_widget.title.hide()
@@ -816,4 +856,5 @@ if __name__ == "__main__":
     td.setWindowTitle('CG Lumberjack')
     td.show()
     td.raise_()
+    # setup stylesheet
     app.exec_()
