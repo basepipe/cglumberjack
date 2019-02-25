@@ -260,16 +260,6 @@ class ProjectManagementData(object):
     def find_version(self):
         pass
 
-    def test(self):
-        project_schema = self.ftrack.query('ProjectSchema')
-        for each in project_schema:
-            print each['name']
-        return
-        self.find_project()
-        assets = self.find_asset()
-        for a in assets:
-            print a['name']
-
 
 if __name__ == "__main__":
     this = ProjectManagementData()
