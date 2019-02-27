@@ -1,6 +1,6 @@
 import yaml
 from Qt import QtWidgets, QtGui, QtCore
-from cglcore.config import app_config
+from core.config import app_config
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.base import LJDialog
 import copy

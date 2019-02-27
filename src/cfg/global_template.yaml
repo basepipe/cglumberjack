@@ -160,9 +160,9 @@ shotgun:
   notes: ensure short codes exist for all pipeline steps in shotgun, might want a wizard for this.
   username: tmikota
 ftrack:
-  server_url: None
-  api_key: None
-  api_user: None
+  server_url: https://lone-coconut.ftrackapp.com
+  api_key: MTQ1MTRlN2YtYTk4OS00Y2YwLWI5NjctYzE2YjZmZThiYTljOjowY2FiODg4YS1jNGY4LTQxMzQtOTNkNi1hYzNiMmE3YWZhMWE
+  api_user: LoneCoconutMail@gmail.com
 email:
   from: tom@cglumberjack.com
   bcc: tom@cglumberjack.com
