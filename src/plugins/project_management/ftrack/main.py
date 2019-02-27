@@ -36,6 +36,9 @@ class ProjectManagementData(object):
     project_team = None
     assignments = []
     assignment_data = None
+    user_group_name = 'default'
+    user_group = None
+    appointment = None
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
@@ -47,6 +50,8 @@ class ProjectManagementData(object):
         self.ftrack = ftrack_api.Session(server_url=app_config()['ftrack']['server_url'],
                                          api_key=app_config()['ftrack']['api_key'],
                                          api_user=app_config()['ftrack']['api_user'])
+
+
 
         self.project_schema = self.ftrack.query('ProjectSchema where name is %s' % self.schema).first()
         # Retrieve default types.
@@ -178,13 +183,20 @@ class ProjectManagementData(object):
         return self.task_data
 
     def create_assignment(self):
-        print 'Creating Assignment %s: for %s' % (self.task, self.user_email)
-        self.assignment_data = self.ftrack.create('Appointment', {
-            'context': self.task_data,
-            'resource': self.user_data,
-            'type': 'assignment'
-        })
-        return self.assignment_data
+        existing_assignment = self.ftrack.query(
+            'Appointment where context.id is "{}" and resource.id = "{}" and type="assignment"'.format(
+                self.task_data['id'], self.user_data['id'])).first()
+        if not existing_assignment:
+            print 'Creating Assignment %s: for %s' % (self.task, self.user_email)
+            self.assignment_data = self.ftrack.create('Appointment', {
+                'context': self.task_data,
+                'resource': self.user_data,
+                'type': 'assignment'
+            })
+            return self.assignment_data
+        else:
+            print 'Found Assignment: %s -->> %s' % (self.user_email, self.task_name)
+            return None
 
     def create_version(self):
         self.version_data = self.ftrack.create('Version', {
@@ -193,14 +205,38 @@ class ProjectManagementData(object):
         })
         return self.version_data
 
+    def add_user_group_to_project(self):
+        self.user_group = self.ftrack.ensure('Group', {"name": self.user_group_name, "local": False})
+        project_has_group = self.ftrack.query(
+            'Appointment where context.id is "{}" and resource.id = "{}" and type="allocation"'.format(
+                self.project_data['id'], self.user_group['id']
+            )
+        ).first()
+        if not project_has_group:
+            print 'Assigning group {} to project {}'.format(self.user_group['name'], self.project_data['name'])
+            self.ftrack.create('Appointment', {
+                'context': self.project_data,
+                'resource': self.user_group,
+                'type': 'allocation'
+            })
+        else:
+            print 'Found Group: {} on project {}'.format(self.user_group['name'], self.project_data['name'])
+
     def add_user_to_project(self):
-        pass
+        self.find_project()
+        self.find_user()
+        print 'Assigning user {} to {} {}'.format(self.user_data['username'], 'project', self.project_data['name'])
+        self.appointment = self.ftrack.create('Appointment', {
+            'context': self.project_data,
+            'resource': self.user_data,
+            'type': 'allocation'
+        })
+        print 'made it to the end'
 
     def find_project(self):
-        print 'Searching for Project %s' % self.project
         self.project_data = self.ftrack.query('Project where status is active and name is %s' % self.project_short_name).first()
         if self.project_data:
-            print 'Project %s Found' % self.project
+            print 'Found Project: %s' % self.project
             return self.project_data
         else:
             print '%s Not Found' % self.project
@@ -211,7 +247,6 @@ class ProjectManagementData(object):
                                  'project.id is "{0}"'.format(self.project_data['id']))
 
     def find_shot(self):
-        print 'Searching for shot %s' % self.shot_name
         self.shot_data = self.ftrack.query('Shot where name is %s' % self.shot_name).first()
         return self.shot_data
 
@@ -240,17 +275,35 @@ class ProjectManagementData(object):
             if each['username'] == self.user_email:
                 self.user_data = each
                 print 'Found User: %s' % self.user_email
+                self.add_user_group_to_project()
+                self.find_user_on_project(context='project')
         return self.user_data
 
-    def find_user_tasks(self):
-        self.find_project()
-        self.assignments = self.ftrack.query('select link from Task '
-                                             'where assignments any (resource.username = "{0}")'.format(self.user_email))
+    def find_user_on_project(self, context='project'):
+        if context == 'project':
+            context = self.project_data
+        else:
+            context == self.user_group
 
-        print 'assignments found for %s:' % self.user_email
-        for a in self.assignments:
-            print ' / '.join(item['name'] for item in a['link'])
-        return self.assignments
+        project_has_user = self.ftrack.query(
+            'Appointment where context.id is "{}" and resource.id = "{}" and type="allocation"'.format(
+                self.project_data['id'], self.user_data['id']
+            )
+        ).first()
+        if not project_has_user:
+            self.add_user_to_project()
+        else:
+            print 'Found User: {} on project {}'.format(self.user_data['username'], self.project_data['name'])
+
+    def find_user_tasks(self):
+            self.find_project()
+            self.assignments = self.ftrack.query('select link from Task '
+                                                 'where assignments any (resource.username = "{0}")'.format(self.user_email))
+
+            print 'assignments found for %s:' % self.user_email
+            for a in self.assignments:
+                print ' / '.join(item['name'] for item in a['link'])
+            return self.assignments
 
     def find_task(self):
         return self.ftrack.query('Task where '
@@ -264,7 +317,6 @@ class ProjectManagementData(object):
 if __name__ == "__main__":
     this = ProjectManagementData()
     # this.find_user()
-    #user = this.find_user_tasks()
     this.create_project_management_data()
     this.ftrack.commit()
 
