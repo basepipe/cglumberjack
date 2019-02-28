@@ -16,7 +16,7 @@ class ProjectManagementData(object):
     task_data = None
     seq = 'CGLT'
     seq_data = None
-    shot = '0000'
+    shot = '0400'
     shot_name = '%s_%s' % (seq, shot)
     shot_data = None
     category = None
@@ -28,6 +28,7 @@ class ProjectManagementData(object):
     note = None
     schema = SCHEMAS[3]
     schema_data = None
+    version = 'compositing.nk'
     version_data = None
     entity_data = None
     asset_data = None
@@ -58,11 +59,17 @@ class ProjectManagementData(object):
         self.default_shot_status = self.project_schema.get_statuses('Shot')[0]
         self.shot_statuses = self.project_schema.get_statuses('Shot')
         self.task_types = self.project_schema.get_types('Task')
-        self.default_task_type = self.project_schema.get_types('Task')[0]
-        self.task_statuses = self.project_schema.get_statuses('Task', self.default_task_type['id'])
-        self.default_task_status = self.project_schema.get_statuses('Task', self.default_task_type['id'])[0]
+        self.task_type = self.get_current_task_type()
+        self.task_statuses = self.project_schema.get_statuses('Task', self.task_type['id'])
+        self.default_task_status = self.project_schema.get_statuses('Task', self.task_type['id'])[0]
 
         print 'Creating Entries for ftrack:'
+
+    def get_current_task_type(self):
+        for task in self.task_types:
+            if task['name'] == self.task:
+                return task
+        return None
 
     def create_project_management_data(self):
         self.project_data = self.entity_exists('project')
@@ -89,7 +96,6 @@ class ProjectManagementData(object):
             self.entity_data = self.shot_data
         else:
             print 'No Scope Defined!'
-
         if self.entity_data:
             if self.task:
                 # set task_name
@@ -101,13 +107,27 @@ class ProjectManagementData(object):
                 self.task_data = self.entity_exists('task')
                 if not self.task_data:
                     self.task_data = self.create_task()
-                    print '2 task data: %s' % self.task_data
-
         if self.user_email:
             self.entity_exists('user')
             if self.user_data:
                 # TODO - add user to the project if they aren't on it.
                 self.create_assignment()
+
+        if self.version:
+            print 'Looking for Assets'
+            create_version = True
+            if self.scope == 'shots':
+                assets = self.ftrack.query('Asset where parent.name is %s' % self.shot_name)
+                if assets:
+                    for a in assets:
+                        print 'Found version: %' % a['name']
+                        if a['name'] == self.version:
+                            print '%s already exists, skipping' % self.version
+                            create_version = False
+                            return
+                else:
+                    if create_version:
+                        self.create_version()
 
     def entity_exists(self, data_type):
         """
@@ -131,6 +151,8 @@ class ProjectManagementData(object):
             data_ = self.find_task()
             if data_:
                 data_ = data_[0]
+        elif data_type == 'version':
+            data_ = self.find_version()
         try:
             if data_:
                 print 'Found %s: %s' % (data_type, data_['name'])
@@ -147,13 +169,13 @@ class ProjectManagementData(object):
         })
         return project
 
-    def create_asset(self):
-        asset = self.ftrack.create('Asset', {
-            'name': self.asset,
-            'type': 'Character',
-            'parent': self.project_data
-        })
-        return asset
+    #def create_asset(self):
+    #    asset = self.ftrack.create('Asset', {
+    #        'name': self.asset,
+    #        'type': 'Character',
+    #        'parent': self.project_data
+    #    })
+    #    return asset
 
     def create_sequence(self):
         print 'Creating Sequence %s' % self.seq
@@ -173,16 +195,17 @@ class ProjectManagementData(object):
         return self.shot_data
 
     def create_task(self):
-        print 'Creating Task %s' % self.task_name
+        print 'Creating Task %s, %s' % (self.task_name, self.task_type['name'])
         self.task_data = self.ftrack.create('Task', {
-            'name': self.task,
+            'name': self.task_name,
             'parent': self.shot_data,
             'status': self.default_task_status,
-            'type': self.default_task_type
+            'type': self.task_type
         })
         return self.task_data
 
     def create_assignment(self):
+        print 'Checking for Assignment %s' % self.task_data['name']
         existing_assignment = self.ftrack.query(
             'Appointment where context.id is "{}" and resource.id = "{}" and type="assignment"'.format(
                 self.task_data['id'], self.user_data['id'])).first()
@@ -199,11 +222,19 @@ class ProjectManagementData(object):
             return None
 
     def create_version(self):
-        self.version_data = self.ftrack.create('Version', {
+        asset_type = self.ftrack.query('AssetType where name is "%s"' % self.task).one()
+        asset = self.ftrack.create('Asset', {
             'name': self.version,
-            'parent': self.task_data,
+            'type': asset_type,
+            'parent': self.shot_data
         })
-        return self.version_data
+
+        print 'Creating Version %s for: %s' % (self.version, self.task_name)
+        if self.scope == 'shots':
+            self.version_data = self.ftrack.create('AssetVersion', {
+                'asset': asset,
+                'task': self.task_data,
+            })
 
     def add_user_group_to_project(self):
         self.user_group = self.ftrack.ensure('Group', {"name": self.user_group_name, "local": False})
@@ -298,7 +329,7 @@ class ProjectManagementData(object):
     def find_user_tasks(self):
             self.find_project()
             self.assignments = self.ftrack.query('select link from Task '
-                                                 'where assignments any (resource.username = "{0}")'.format(self.user_email))
+                                                 'where assignments any (resource.username = %s)' % self.user_email)
 
             print 'assignments found for %s:' % self.user_email
             for a in self.assignments:
@@ -306,11 +337,13 @@ class ProjectManagementData(object):
             return self.assignments
 
     def find_task(self):
-        return self.ftrack.query('Task where '
-                                 'project.id is "{0}"'.format(self.project_data['id']))
-        pass
+        self.task_data = self.ftrack.query('Task where name is "{0}" '
+                                            'and project.id is "{1}"'.format(self.task_name, self.project_data['id']))
+        return self.task_data
 
     def find_version(self):
+        return self.ftrack.query('AssetVersion where '
+                                 'task.id is "{0}"'.format(self.task_data['id']))
         pass
 
 
