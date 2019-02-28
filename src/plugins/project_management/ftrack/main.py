@@ -222,6 +222,8 @@ class ProjectManagementData(object):
             return None
 
     def create_version(self):
+        # TODO - need to look at if an "asset" exists already before creating it.
+        # TODO - need to look at whether a "version" exists already before creating it.
         asset_type = self.ftrack.query('AssetType where name is "%s"' % self.task).one()
         asset = self.ftrack.create('Asset', {
             'name': self.version,
