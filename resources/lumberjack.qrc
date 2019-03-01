@@ -1,9 +1,8 @@
 <!DOCTYPE RCC><RCC version="1.0">
     <qresource>
         <file>lumberjack.qrc</file>
-    <file>theme.css</file>
-    <file>i18n\ru.qm</file>
-    <file>i18n\zh-cn.qm</file>
+    <file>i18n/zh-cn.qm</file>
+    <file>i18n/ru.qm</file>
 
     </qresource>
     </RCC>
