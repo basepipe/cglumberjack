@@ -45,9 +45,7 @@ class VariableType(AdvComboBox):
     def __init__(self, parent=None):
         AdvComboBox.__init__(self, parent)
         self.addItems(['Dynamic', 'List', 'Static', "Automated"])
-
         # attributes of these types:
-
         # Dynamic: this is fluid, can be changed to almost anything, project name would be dynamic for instance, or it could also be enum if you wanted to lock it down a bit.
         # List: this is a list of possible items, it can potentially be added to
         # Static: This is a static string for instance having a folder called "Clients" that never changes would be an example of that.
@@ -261,6 +259,7 @@ class PathFormulator(LJDialog):
 
     def load_companies(self):
         companies = get_companies()
+        print companies
         if companies:
             self.company.combo.addItems(companies)
         self.on_company_changed()
