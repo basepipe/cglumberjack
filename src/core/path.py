@@ -15,6 +15,7 @@ from core.config import app_config
 from cglui.widgets.dialog import InputDialog
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
+EXT_MAP = app_config()['ext_map']
 
 
 class PathObject(object):
@@ -51,13 +52,21 @@ class PathObject(object):
         self.shotname = None
         self.task = None
         self.cam = None
-        self.filetype = None
+        self.file_type = None
         self.scope_list = app_config()['rules']['scope_list']
         self.context_list = app_config()['rules']['context_list']
         self.path = None  # string of the properly formatted path
         self.path_root = None # this gives the full path with the root
         self.split_point = None  # point at which to split the path when formatting.
+        self.thumb_path_full = None
+        self.preview_path_full = None
+        self.start_frame = None
+        self.end_frame = None
+        self.frame_rate = None
         self.template = []
+        self.actual_resolution = None
+        self.date_created = None
+        self.date_modified = None
 
         if type(path_object) is dict:
             self.process_dict(path_object)
@@ -200,15 +209,22 @@ class PathObject(object):
                     if self.__dict__[attr]:
                         path_string = os.path.join(path_string, self.__dict__[attr])
         # if windows
+        
         if sys.platform == 'win32':
             self.path_root = '%s\\%s' % (self.root, path_string)
+            path_, file_ = os.path.split(self.path_root)
+            self.thumb_path_full = '%s\\%s\\%s' % (path_, '.thumb', file_)
         else:
             self.path_root = os.path.join(self.root, path_string)
+            path_, file_ = os.path.split(self.path_root)
+            self.thumb_path_full = os.path.join(self.root, '.thumb', file_)
         self.path = path_string
+        self.set_file_type()
+        self.set_preview_path()
         if root:
             return self.path_root
         else:
-            return self.path
+            return self.path        
 
     def new_set_attr(self, **kwargs):
         for attr in kwargs:
@@ -431,16 +447,48 @@ class PathObject(object):
         new_obj.set_attr('version', next_minor)
         return new_obj
 
-    def set_filetype(self):
+    def set_file_type(self):
         """
-        sets attr 'filetype' to reflect the kind of file we're working with, or to let me know if it's a folder
+        sets attr 'file_type' to reflect the kind of file we're working with, or to let me know if it's a folder
         this is just a convenience attr when working with pathObjects
         :return:
         """
-        pass
+        _, file_ext = os.path.splitext(self.path)
+        try:
+            _type = EXT_MAP[file_ext]
+            if _type == 'movie':
+                self.file_type = 'movie'
+            elif _type == 'image':
+                if '%04d' in self.path:
+                    self.file_type = 'sequence'
+                elif '####' in self.path:
+                    self.file_type = 'sequence'
+                else:
+                    self.file_type = 'image'
+            else:
+                self.file_type = _type
+        except KeyError:
+            self.file_type = None
 
     def set_preview_path(self):
-        pass
+        if self.file_type == 'movie':
+            ext = '.mov'
+        elif self.file_type == 'sequence':
+            ext = '.mov'
+        elif self.file_type == 'image':
+            ext = '.jpg'
+        elif self.file_type == 'ppt':
+            ext = '.jpg'
+        elif self.file_type == 'pdf':
+            ext = '.jpg'
+        name_ = self.filename.replace('####', '')
+        name_, o_ext = os.path.splitext(name_)
+        name_ = name_.replace(o_ext, ext)
+        path_, file_ = os.path.split(self.path_root)
+        if sys.platform == 'win32':
+            self.preview_path_full = '%s\\%s\\%s' % (path_, '.preview', name_)
+        else:
+            self.preview_path_full = os.path.join(self.root, '.preview', name_)
 
     def set_proper_filename(self):
         if self.filename:

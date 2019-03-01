@@ -1,3 +1,4 @@
+import json
 from core.config import app_config
 import ftrack_api
 
@@ -14,9 +15,9 @@ class ProjectManagementData(object):
     project_data = None
     task = 'Compositing'
     task_data = None
-    seq = 'CGLT'
+    seq = 'CGLF'
     seq_data = None
-    shot = '0400'
+    shot = '0300'
     shot_name = '%s_%s' % (seq, shot)
     shot_data = None
     category = None
@@ -40,6 +41,8 @@ class ProjectManagementData(object):
     user_group_name = 'default'
     user_group = None
     appointment = None
+    path_root = r'/Users/tmikota/Downloads/return_jedi.mp4'
+    file_type = 'movie'
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
@@ -112,22 +115,11 @@ class ProjectManagementData(object):
             if self.user_data:
                 # TODO - add user to the project if they aren't on it.
                 self.create_assignment()
-
         if self.version:
-            print 'Looking for Assets'
-            create_version = True
             if self.scope == 'shots':
-                assets = self.ftrack.query('Asset where parent.name is %s' % self.shot_name)
-                if assets:
-                    for a in assets:
-                        print 'Found version: %' % a['name']
-                        if a['name'] == self.version:
-                            print '%s already exists, skipping' % self.version
-                            create_version = False
-                            return
-                else:
-                    if create_version:
-                        self.create_version()
+                self.create_version()
+                self.upload_media()
+                # upload media
 
     def entity_exists(self, data_type):
         """
@@ -142,7 +134,7 @@ class ProjectManagementData(object):
         elif data_type == 'asset':
             data_ = self.find_asset()
         elif data_type == 'seq':
-            data_ = self.find_seq()[0]
+            data_ = self.find_seq()
         elif data_type == 'shot':
             data_ = self.find_shot()
         elif data_type == 'user':
@@ -222,6 +214,10 @@ class ProjectManagementData(object):
             return None
 
     def create_version(self):
+        try:
+            self.ftrack.event_hub.connect()
+        except:
+            pass
         # TODO - need to look at if an "asset" exists already before creating it.
         # TODO - need to look at whether a "version" exists already before creating it.
         asset_type = self.ftrack.query('AssetType where name is "%s"' % self.task).one()
@@ -230,12 +226,37 @@ class ProjectManagementData(object):
             'type': asset_type,
             'parent': self.shot_data
         })
-
+        if not asset:
+            print 'Type: %s not found in ftrack - aborting' % self.task
+            return
         print 'Creating Version %s for: %s' % (self.version, self.task_name)
         if self.scope == 'shots':
             self.version_data = self.ftrack.create('AssetVersion', {
                 'asset': asset,
                 'task': self.task_data,
+            })
+
+    def upload_media(self):
+        # TODO - need methods for deriving filetype as well as frameIn, frameOut, and frameRate
+        server_location = self.ftrack.query('Location where name is "ftrack.server"').one()
+        component = self.version_data.create_component(
+            path=self.path_root,
+            data={
+                'name': self.version
+            },
+            location=server_location
+        )
+        if self.file_type == 'movie':
+        # TODO - need to understand if this is needed at all.
+        # Framerate - can i pull this from metadata?
+            component['metadata']['ftr_meta'] = json.dumps({
+                'frameIn': 0,
+                'frameOut': 150,
+                'frameRate': 24
+            })
+        elif self.file_type == 'image':
+            component['metadata']['ftr_meta'] = json.dumps({
+                'format': 'image'
             })
 
     def add_user_group_to_project(self):
@@ -284,9 +305,14 @@ class ProjectManagementData(object):
         return self.shot_data
 
     def find_seq(self):
-        self.seq_data = self.ftrack.query('Sequence where' 
-                                          ' project.id is "{0}"'.format(self.project_data['id']))
-        return self.seq_data
+        seqs = self.ftrack.query('Sequence where project.id is "{0}"'.format(self.project_data['id']))
+        for each in seqs:
+            print each['name']
+            if each['name'] == self.seq:
+                print 'Found %s' % each['name']
+                self.seq_data = each
+                return each
+        return None
 
     def find_project_team(self):
         self.project_team = set()
@@ -351,7 +377,8 @@ class ProjectManagementData(object):
 
 if __name__ == "__main__":
     this = ProjectManagementData()
-    # this.find_user()
+    #test = this.ftrack.query('Location where name is "ftrack.server  "').one()
+    #print test
     this.create_project_management_data()
     this.ftrack.commit()
 
