@@ -16,6 +16,7 @@ from cglui.widgets.dialog import InputDialog
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 EXT_MAP = app_config()['ext_map']
+ROOT = app_config()['paths']['root']
 
 
 class PathObject(object):
@@ -219,8 +220,9 @@ class PathObject(object):
             path_, file_ = os.path.split(self.path_root)
             self.thumb_path_full = os.path.join(self.root, '.thumb', file_)
         self.path = path_string
-        self.set_file_type()
-        self.set_preview_path()
+        if self.filename:
+            self.set_file_type()
+            self.set_preview_path()
         if root:
             return self.path_root
         else:
@@ -583,3 +585,20 @@ class CreateProductionData(object):
 
 def icon_path():
     return os.path.join(app_config()['paths']['code_root'], 'resources', 'images')
+
+
+def get_projects(company):
+    d = {'root': ROOT,
+         'company': company,
+         'project': '*',
+         'context': 'source'}
+    path_object = PathObject(d)
+    return path_object.glob_project_element('project')
+
+
+def get_companies():
+    d = {'root': ROOT,
+         'company': '*'
+         }
+    path_object = PathObject(d)
+    return path_object.glob_project_element('company')
