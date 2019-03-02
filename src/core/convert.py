@@ -62,6 +62,7 @@ def get_info(input_file):
                              stderr=subprocess.STDOUT)
         d = {}
         for each in p.stdout:
+            print each
             try:
                 key, value = each.strip('\n').split('=')
                 if key != 'None':
