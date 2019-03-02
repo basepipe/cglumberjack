@@ -50,9 +50,9 @@ def get_red_data(filein):
             line = line.replace('\t', '')
             line = line.replace(' ', '')
             try:
-                key, value = line.split(':', 1)
-                if key != 'None':
-                   d[key] = value
+                key_, value = line.split(':', 1)
+                if key_ != 'None':
+                   d[key_] = value
             except ValueError:
                 pass
         return d
