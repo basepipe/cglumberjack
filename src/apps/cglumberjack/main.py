@@ -125,6 +125,18 @@ class AssetWidget(QtWidgets.QWidget):
         self.tool_button_layout.addWidget(self.review_button)
         self.tool_button_layout.addWidget(self.publish_button)
 
+        # build the filter optoins row
+        self.filter_options_row = QtWidgets.QHBoxLayout()
+        self.assets_radio = QtWidgets.QRadioButton('Assets')
+        self.assets_radio.setChecked(True)
+        self.shots_radio = QtWidgets.QRadioButton('Shots')
+        self.category_combo = AdvComboBox()
+        self.category_label = QtWidgets.QLabel('Category')
+        self.filter_options_row.addWidget(self.assets_radio)
+        self.filter_options_row.addWidget(self.shots_radio)
+        self.filter_options_row.addWidget(self.category_label)
+        self.filter_options_row.addWidget(self.category_combo)
+
         # this is where the filter needs to be!
         h_layout.addWidget(self.title)
         h_layout.addWidget(self.versions)
@@ -138,6 +150,7 @@ class AssetWidget(QtWidgets.QWidget):
         v_layout.addWidget(self.message)
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
+        v_layout.addLayout(self.filter_options_row)
         v_layout.addWidget(self.data_table, 1)
         v_layout.addLayout(self.tool_button_layout)
         self.hide_combos()
