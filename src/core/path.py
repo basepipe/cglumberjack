@@ -221,8 +221,9 @@ class PathObject(object):
             self.thumb_path_full = os.path.join(self.root, '.thumb', file_)
         self.path = path_string
         if self.filename:
-            self.set_file_type()
-            self.set_preview_path()
+            if self.filename != '*':
+                self.set_file_type()
+                self.set_preview_path()
         if root:
             return self.path_root
         else:
@@ -458,19 +459,28 @@ class PathObject(object):
         _, file_ext = os.path.splitext(self.path)
         try:
             _type = EXT_MAP[file_ext]
-            if _type == 'movie':
-                self.file_type = 'movie'
-            elif _type == 'image':
-                if '%04d' in self.path:
-                    self.file_type = 'sequence'
-                elif '####' in self.path:
-                    self.file_type = 'sequence'
+            if _type:
+                if _type == 'movie':
+                    self.__dict__['file_type'] = 'movie'
+                    self.data['file_type'] = 'movie'
+                elif _type == 'image':
+                    if '%04d' in self.path:
+                        self.__dict__['file_type'] = 'sequence'
+                        self.data['file_type'] = 'sequence'
+                    elif '####' in self.path:
+                        self.__dict__['file_type'] = 'sequence'
+                        self.data['file_type'] = 'sequence'
+                    else:
+                        self.__dict__['file_type'] = 'image'
+                        self.data['file_type'] = 'image'
                 else:
-                    self.file_type = 'image'
+                    self.__dict__['file_type'] = _type
+                    self.data['file_type'] = _type
             else:
-                self.file_type = _type
+                pass
         except KeyError:
-            self.file_type = None
+            self.__dict__['file_type'] = None
+            self.data['file_type'] = None
 
     def set_preview_path(self):
         if self.file_type == 'movie':
@@ -482,6 +492,8 @@ class PathObject(object):
         elif self.file_type == 'ppt':
             ext = '.jpg'
         elif self.file_type == 'pdf':
+            ext = '.jpg'
+        else:
             ext = '.jpg'
         name_ = self.filename.replace('####', '')
         name_, o_ext = os.path.splitext(name_)

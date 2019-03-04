@@ -13,15 +13,15 @@ class ProjectManagementData(object):
     project = 'cgl_test_full'
     project_short_name = 'cgl_test'
     project_data = None
-    task = 'Compositing'
+    task = 'Modeling'
     task_data = None
-    seq = 'CGLF'
+    seq = ''
     seq_data = None
-    shot = '0300'
+    shot = ''
     shot_name = '%s_%s' % (seq, shot)
     shot_data = None
     category = None
-    asset = None
+    asset = 'glass'
     user = 'Lone Coconut'
     user_email = 'LoneCoconutMail@gmail.com'
     user_data = None
@@ -29,11 +29,11 @@ class ProjectManagementData(object):
     note = None
     schema = SCHEMAS[3]
     schema_data = None
-    version = 'compositing.nk'
+    version = 'model_file.mb'
     version_data = None
     entity_data = None
     asset_data = None
-    scope = 'shots'
+    scope = 'assets'
     task_name = None
     project_team = None
     assignments = []
@@ -42,7 +42,8 @@ class ProjectManagementData(object):
     user_group = None
     appointment = None
     path_root = r'/Users/tmikota/Downloads/return_jedi.mp4'
-    file_type = 'movie'
+    file_type = 'image'
+    type = None
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
@@ -63,6 +64,7 @@ class ProjectManagementData(object):
         self.shot_statuses = self.project_schema.get_statuses('Shot')
         self.task_types = self.project_schema.get_types('Task')
         self.task_type = self.get_current_task_type()
+        print self.task_type, 'TASK TYPE'
         self.task_statuses = self.project_schema.get_statuses('Task', self.task_type['id'])
         self.default_task_status = self.project_schema.get_statuses('Task', self.task_type['id'])[0]
 
@@ -79,14 +81,12 @@ class ProjectManagementData(object):
         if not self.project_data:
             self.project_data = self.create_project()
         if self.scope == 'assets':
-            if self.type:
-                print 'type = %s' % self.type
-                if self.asset:
-                    self.asset_data = self.entity_exists('asset')
-                    print 'Asset Data:', self.asset_data
-                    if not self.asset_data:
-                        self.asset_data = self.create_asset()
-            self.entity_data = self.asset_data
+            if self.asset:
+                self.asset_data = self.entity_exists('asset')
+                print 'Asset Data:', self.asset_data
+                #if not self.asset_data:
+                #    self.asset_data = self.create_asset()
+            #self.entity_data = self.asset_data
         elif self.scope == 'shots':
             if self.seq:
                 self.seq_data = self.entity_exists('seq')
@@ -194,6 +194,8 @@ class ProjectManagementData(object):
             'status': self.default_task_status,
             'type': self.task_type
         })
+        if self.thumb_path_full:
+            self.task_data.create_thumbnail(self.thumb_path_full)
         return self.task_data
 
     def create_assignment(self):
@@ -235,6 +237,8 @@ class ProjectManagementData(object):
                 'asset': asset,
                 'task': self.task_data,
             })
+        if self.thumb_path_full:
+            self.version_data.create_thumbnail(self.thumb_path_full)
 
     def upload_media(self):
         # TODO - need methods for deriving filetype as well as frameIn, frameOut, and frameRate
@@ -297,8 +301,11 @@ class ProjectManagementData(object):
             return False
 
     def find_asset(self):
-        return self.ftrack.query('Asset where status is active and '
-                                 'project.id is "{0}"'.format(self.project_data['id']))
+        print 'Asset is %s' % self.asset
+        assets = self.ftrack.query('Asset where '
+                                   'project.id is "{0}"'.format(self.project_data['id']))
+        for each in assets:
+            print each
 
     def find_shot(self):
         self.shot_data = self.ftrack.query('Shot where name is %s' % self.shot_name).first()
@@ -380,6 +387,6 @@ if __name__ == "__main__":
     #test = this.ftrack.query('Location where name is "ftrack.server  "').one()
     #print test
     this.create_project_management_data()
-    this.ftrack.commit()
+    #this.ftrack.commit()
 
 
