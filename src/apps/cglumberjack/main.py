@@ -128,7 +128,6 @@ class AssetWidget(QtWidgets.QWidget):
         # build the filter optoins row
         self.filter_options_row = QtWidgets.QHBoxLayout()
         self.assets_radio = QtWidgets.QRadioButton('Assets')
-        self.assets_radio.setChecked(True)
         self.shots_radio = QtWidgets.QRadioButton('Shots')
         self.category_combo = AdvComboBox()
         self.category_label = QtWidgets.QLabel('Category')
@@ -177,6 +176,9 @@ class AssetWidget(QtWidgets.QWidget):
         self.users_label.hide()
         self.resolutions.hide()
         self.resolutions_label.hide()
+        self.assets_radio.hide()
+        self.shots_radio.hide()
+        self.category_combo.hide()
         
     def show(self, combos=False):
         self.show_button.show()
@@ -193,6 +195,16 @@ class AssetWidget(QtWidgets.QWidget):
         self.new_version_button.hide()
         self.publish_button.hide()
         self.review_button.hide()
+
+    def show_filters(self):
+        self.category_combo.show()
+        self.assets_radio.show()
+        self.shots_radio.show()
+
+    def hide_filters(self):
+        self.category_combo.hide()
+        self.assets_radio.hide()
+        self.shots_radio.hide()
 
     def show_tool_buttons(self):
         self.open_button.show()
@@ -280,6 +292,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         # filters
         self.project_filter = AssetWidget(self, title="Project")
         self.project_filter.showall()
+        self.project_filter.hide_filters()
         self.project_filter.add_button.show()
         self.project_filter.hide_button.hide()
         self.radio_label = QtWidgets.QLabel('<b>Filter</b>')
@@ -344,6 +357,29 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         if self.company:
             if not os.path.exists(os.path.join(self.user_root, 'companies', self.company)):
                 os.makedirs(os.path.join(self.user_root, 'companies', self.company))
+
+    def on_filter_radio_changed(self):
+        print self.sender()
+        if self.sender().text() == 'Assets':
+            self.scope = 'assets'
+        elif self.sender().text() == 'Shots':
+            self.scope = 'shots'
+        print 'Changed scope to %s' % self.scope
+        print self.scope
+        self.current_location['scope'] = self.scope
+        #self.update_location()
+        self.on_project_changed(data=None, cmd=True)
+        #self.reload_task_widget(self.assets)
+        print 'Updating Path'
+        print 'Reloading Project'
+
+    def set_scope_radio(self):
+        if self.scope == 'assets':
+            self.assets.assets_radio.setChecked(True)
+            self.assets.shots_radio.setChecked(False)
+        elif self.scope == 'shots':
+            self.assets.shots_radio.setChecked(True)
+            self.assets.assets_radio.setChecked(False)
 
     # UI interface Functions / Stuff that happens when buttons get clicked/changed.
     def on_company_changed(self):
@@ -470,8 +506,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.sender().parent().show_tool_buttons()
         self.clear_task_selection_except()
 
-    def on_project_changed(self, data):
-        self.project = data[0][0]
+    def on_project_changed(self, data, cmd=False):
+        if not cmd:
+            self.project = data[0][0]
         # reset the env vars after a project change
         self.seq = '*'
         self.shot = '*'
@@ -481,6 +518,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         # build the asset Widget
         self.clear_layout(self.middle_layout)
         self.assets = AssetWidget(self, title="")
+        self.assets.show_filters()
+        self.set_scope_radio()
         self.assets.set_title('Project: %s' % self.project)
         self.assets.add_button.show()
         self.radio_publishes.clicked.connect(self.on_assets_filter_changed)
@@ -501,6 +540,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.radio_everyone.toggled.connect(self.on_assets_filter_changed)
         self.radio_publishes.toggled.connect(self.on_assets_filter_changed)
         self.radio_user.toggled.connect(self.on_assets_filter_changed)
+        self.assets.shots_radio.clicked.connect(self.on_filter_radio_changed)
+        self.assets.assets_radio.clicked.connect(self.on_filter_radio_changed)
 
     def on_main_asset_selected(self, data):
         # data format: ['Project', 'Seq', 'Shot', 'Task', 'User', 'Path']
