@@ -320,7 +320,8 @@ class PathObject(object):
                     if regex:
                         try:
                             if not re.match(regex, value):
-                                logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
+                                pass
+                                #logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
                                 #return
                         except TypeError:
                             pass
