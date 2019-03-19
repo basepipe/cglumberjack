@@ -57,7 +57,175 @@ class FunctionButtons(QtWidgets.QHBoxLayout):
         self.addWidget(self.publish_button)
 
 
+class ProjectWidget(QtWidgets.QWidget):
+    button_clicked = QtCore.Signal(object)
+    filter_changed = QtCore.Signal()
+    add_clicked = QtCore.Signal()
+    assign_clicked = QtCore.Signal(object)
+
+    def __init__(self, parent, title, filter_string=None, path_object=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        v_layout = QtWidgets.QVBoxLayout(self)
+        h_layout = QtWidgets.QHBoxLayout(self)
+        self.path_object = path_object
+        self.tool_button_layout = QtWidgets.QHBoxLayout(self)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.setSizePolicy(self.sizePolicy)
+        self.filter_string = filter_string
+        self.label = title
+        self.title = QtWidgets.QLabel("<b>%s</b>" % title)
+        self.task = None
+        self.user = None
+
+        self.message = QtWidgets.QLabel("")
+        # TODO - need to remove the dropdown button on this instance
+        self.search_box = LJSearchEdit(self)
+        self.add_button = QtWidgets.QToolButton()
+        self.add_button.setText("+")
+        self.data_table = LJTableWidget(self)
+        self.data_table.title = title
+        self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.data_table.setMinimumWidth(200)
+
+        # this is where the filter needs to be!
+        h_layout.addWidget(self.title)
+        h_layout.addWidget(self.add_button)
+
+        v_layout.addLayout(h_layout)
+        #v_layout.addWidget(self.message)
+        v_layout.addWidget(self.search_box)
+        v_layout.addWidget(self.data_table, 1)
+
+        self.add_button.clicked.connect(self.on_add_button_clicked)
+
+    def setup(self, mdl):
+        self.data_table.set_item_model(mdl)
+        self.data_table.set_search_box(self.search_box)
+
+    def on_add_button_clicked(self):
+        self.add_clicked.emit()
+
+    def on_show_button_clicked(self):
+        self.show_combos()
+        self.hide_button.show()
+        self.show_button.hide()
+
+    def on_hide_button_clicked(self):
+        self.hide_combos()
+        self.hide_button.hide()
+        self.show_button.show()
+
+    def on_assign_button_clicked(self):
+        self.assign_clicked.emit(self.path_object)
+
+    def set_title(self, new_title):
+        self.title.setText('<b>%s</b>' % new_title.title())
+
+
 class AssetWidget(QtWidgets.QWidget):
+    button_clicked = QtCore.Signal(object)
+    filter_changed = QtCore.Signal()
+    add_clicked = QtCore.Signal()
+    assign_clicked = QtCore.Signal(object)
+
+    def __init__(self, parent, title, filter_string=None, path_object=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        v_layout = QtWidgets.QVBoxLayout(self)
+        v_list = QtWidgets.QVBoxLayout(self)
+        h_layout = QtWidgets.QHBoxLayout(self)
+        self.path_object = path_object
+        self.tool_button_layout = QtWidgets.QHBoxLayout(self)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.setSizePolicy(self.sizePolicy)
+        self.filter_string = filter_string
+        self.label = title
+        self.title = QtWidgets.QLabel("<b>%s</b>" % title)
+        self.scope_title = QtWidgets.QLabel("<b>%s</b>" % 'Assets')
+        self.task = None
+        self.user = None
+
+        # self.message = QtWidgets.QLabel("")
+        self.search_box = LJSearchEdit(self)
+        self.search_box
+        self.add_button = QtWidgets.QToolButton()
+        self.add_button.setText("+")
+        self.data_table = LJTableWidget(self)
+        self.data_table.title = title
+        self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.data_table.setMinimumWidth(340)
+
+        # build the filter optoins row
+        self.assets_radio = QtWidgets.QRadioButton('Assets')
+        self.shots_radio = QtWidgets.QRadioButton('Shots')
+
+        self.radio_layout = QtWidgets.QHBoxLayout()
+        # create a button group for these radio buttons
+        self.radio_group2 = QtGui.QButtonGroup(self)
+        self.radio_user = QtWidgets.QRadioButton('My Assignments')
+        self.radio_everything = QtWidgets.QRadioButton('Everything')
+        self.radio_publishes = QtWidgets.QRadioButton('Publishes')
+        self.radio_group2.addButton(self.radio_user)
+        self.radio_group2.addButton(self.radio_everything)
+        self.radio_group2.addButton(self.radio_publishes)
+        self.radio_layout.addWidget(self.scope_title)
+        self.radio_layout.addWidget(self.radio_everything)
+        self.radio_layout.addWidget(self.radio_user)
+        self.radio_layout.addWidget(self.radio_publishes)
+
+        # this is where the filter needs to be!
+        h_layout.addWidget(self.title)
+        h_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        h_layout.addWidget(self.shots_radio)
+        h_layout.addWidget(self.assets_radio)
+        h_layout.addWidget(self.add_button)
+
+        v_layout.setSpacing(10)
+        v_list.setSpacing(0)
+        v_list.addWidget(self.search_box)
+        v_list.addWidget(self.data_table, 1)
+
+        v_layout.addLayout(h_layout)
+        # v_layout.addWidget(self.message)
+        v_layout.addLayout(self.radio_layout)
+        #v_layout.addWidget(self.scope_title)
+        v_layout.addLayout(v_list)
+
+        self.add_button.clicked.connect(self.on_add_button_clicked)
+
+    def get_category_label(self):
+        if self.scope == 'assets':
+            return 'Category'
+        elif self.scope == 'shots':
+            return 'Sequence'
+
+    def setup(self, mdl):
+        self.data_table.set_item_model(mdl)
+        self.data_table.set_search_box(self.search_box)
+
+    def on_add_button_clicked(self):
+        self.add_clicked.emit()
+
+    def on_show_button_clicked(self):
+        self.show_combos()
+        self.hide_button.show()
+        self.show_button.hide()
+
+    def on_hide_button_clicked(self):
+        self.hide_combos()
+        self.hide_button.hide()
+        self.show_button.show()
+
+    def on_assign_button_clicked(self):
+        self.assign_clicked.emit(self.path_object)
+
+    def set_title(self, new_title):
+        self.title.setText('<b>%s</b>' % new_title.title())
+
+    def set_scope_title(self, new_title):
+        self.scope_title.setText('<b>%s</b>' % new_title.title())
+
+
+class TaskWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
@@ -125,17 +293,6 @@ class AssetWidget(QtWidgets.QWidget):
         self.tool_button_layout.addWidget(self.review_button)
         self.tool_button_layout.addWidget(self.publish_button)
 
-        # build the filter optoins row
-        self.filter_options_row = QtWidgets.QHBoxLayout()
-        self.assets_radio = QtWidgets.QRadioButton('Assets')
-        self.shots_radio = QtWidgets.QRadioButton('Shots')
-        self.category_combo = AdvComboBox()
-        self.category_label = QtWidgets.QLabel('Category')
-        self.filter_options_row.addWidget(self.assets_radio)
-        self.filter_options_row.addWidget(self.shots_radio)
-        self.filter_options_row.addWidget(self.category_label)
-        self.filter_options_row.addWidget(self.category_combo)
-
         # this is where the filter needs to be!
         h_layout.addWidget(self.title)
         h_layout.addWidget(self.versions)
@@ -149,7 +306,6 @@ class AssetWidget(QtWidgets.QWidget):
         v_layout.addWidget(self.message)
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
-        v_layout.addLayout(self.filter_options_row)
         v_layout.addWidget(self.data_table, 1)
         v_layout.addLayout(self.tool_button_layout)
         self.hide_combos()
@@ -163,6 +319,12 @@ class AssetWidget(QtWidgets.QWidget):
         self.add_button.clicked.connect(self.on_add_button_clicked)
         self.assign_button.clicked.connect(self.on_assign_button_clicked)
         self.hide_tool_buttons()
+
+    def get_category_label(self):
+        if self.scope == 'assets':
+            return 'Category'
+        elif self.scope == 'shots':
+            return 'Sequence'
         
     def hide(self):
         self.hide_button.hide()
@@ -285,12 +447,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path = ''
         layout = QtWidgets.QVBoxLayout(self)
         self.h_layout = QtWidgets.QHBoxLayout(self)
-        self.radio_label = None
-        self.radio_layout = None
-        self.radio_user = None
-        self.radio_everyone = None
-        self.radio_publishes = None
-        self.radio_buttons = [self.radio_user, self.radio_everyone, self.radio_publishes]
 
         # Create the Left Panel
         self.filter_layout = QtWidgets.QVBoxLayout(self)
@@ -299,22 +455,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         # company
         self.company_widget = LabelComboRow('Company')
         # filters
-        self.project_filter = AssetWidget(self, title="Project")
-        self.project_filter.showall()
-        self.project_filter.hide_filters()
-        self.project_filter.add_button.show()
-        self.project_filter.hide_button.hide()
-
-        #self.radio_label.hide()
-        #self.radio_user.hide()
-        #self.radio_everyone.hide()
-        #self.radio_publishes.hide()
+        self.project_filter = ProjectWidget(self, title="Projects")
 
         # assemble the filter_panel
-        #self.filter_layout.addLayout(self.user_widget)
+        self.filter_layout.addLayout(self.user_widget)
         self.filter_layout.addLayout(self.company_widget)
-        # self.filter_layout.addWidget(self.radio_label)
-        # self.filter_layout.addLayout(self.radio_layout)
         self.filter_layout.addWidget(self.project_filter)
 
         # Create the Middle Panel
@@ -362,19 +507,31 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 os.makedirs(os.path.join(self.user_root, 'companies', self.company))
 
     def on_filter_radio_changed(self):
-        print self.sender()
         if self.sender().text() == 'Assets':
             self.scope = 'assets'
         elif self.sender().text() == 'Shots':
             self.scope = 'shots'
-        print 'Changed scope to %s' % self.scope
-        print self.scope
+        self.assets.set_scope_title(self.scope)
         self.current_location['scope'] = self.scope
-        #self.update_location()
         self.on_project_changed(data=None, cmd=True)
-        #self.reload_task_widget(self.assets)
-        print 'Updating Path'
-        print 'Reloading Project'
+
+    def on_user_radio_changed(self):
+        self.set_user_from_radio_buttons()
+        self.assets_filter_default = self.user
+        if self.user == '':
+            self.task = ''
+        elif self.user == '*':
+            self.task = ''
+        else:
+            self.task = '*'
+        self.version = ''
+        self.resolution = ''
+        self.seq = '*'
+        self.shot = '*'
+        self.clear_layout(self.task_layout)
+        self.clear_layout(self.render_layout)
+        self.update_location()
+        self.load_assets()
 
     def set_scope_radio(self):
         if self.scope == 'assets':
@@ -465,21 +622,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             CreateProductionData(path_object=self.current_location)
         self.reload_task_widget(self.sender())
 
-    def on_assets_filter_changed(self):
-        filter_ = self.assets.resolutions.currentText()
-        self.assets_filter_default = filter_
-        self.version = ''
-        self.resolution = ''
-        self.current_location['task'] = '*'
-        self.seq = '*'
-        self.shot = '*'
-        self.task = '*'
-        self.user = filter_
-        self.clear_layout(self.task_layout)
-        self.clear_layout(self.render_layout)
-        self.update_location()
-        self.load_assets()
-
     def on_source_selected(self, data):
         # clear everything
         object_ = PathObject(self.current_location)
@@ -520,28 +662,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         # build the asset Widget
         self.clear_layout(self.middle_layout)
         self.assets = AssetWidget(self, title="")
-        self.assets.show_filters()
+        self.assets.radio_everything.setChecked(True)
         self.set_scope_radio()
-        self.assets.set_title('<b>%s: %s</b>' % (self.project, self.scope))
+        self.assets.set_title('<b>%s</b>' % self.project)
+        self.assets.set_scope_title('<b>%s</b>' % self.scope)
         self.assets.add_button.show()
-        self.radio_label = QtWidgets.QLabel('<b>Filter</b>')
-        self.radio_layout = QtWidgets.QHBoxLayout(self)
-        self.radio_user = QtWidgets.QRadioButton('User Assignments')
-        self.radio_everyone = QtWidgets.QRadioButton('Everything')
-        self.radio_publishes = QtWidgets.QRadioButton('Publishes')
-        self.radio_layout.addWidget(self.radio_user)
-        self.radio_layout.addWidget(self.radio_publishes)
-        self.radio_layout.addWidget(self.radio_everyone)
-        self.radio_everyone.setChecked(True)
-        self.radio_layout.addItem(QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Maximum,
-                                                   QtWidgets.QSizePolicy.Minimum))
 
         # update location and display the resulting assets.
         self.update_location()
-        self.assets.showall()
-        self.assets.hide_button.hide()
-        self.middle_layout.addWidget(self.radio_label)
-        self.middle_layout.addLayout(self.radio_layout)
         self.middle_layout.addWidget(self.assets)
 
         self.load_assets()
@@ -551,9 +679,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
         self.assets.shots_radio.clicked.connect(self.on_filter_radio_changed)
         self.assets.assets_radio.clicked.connect(self.on_filter_radio_changed)
-        self.radio_everyone.toggled.connect(self.on_assets_filter_changed)
-        self.radio_publishes.toggled.connect(self.on_assets_filter_changed)
-        self.radio_user.toggled.connect(self.on_assets_filter_changed)
+        self.assets.radio_publishes.clicked.connect(self.on_user_radio_changed)
+        self.assets.radio_everything.clicked.connect(self.on_user_radio_changed)
+        self.assets.radio_user.clicked.connect(self.on_user_radio_changed)
 
     def on_main_asset_selected(self, data):
         # data format: ['Project', 'Seq', 'Shot', 'Task', 'User', 'Path']
@@ -573,7 +701,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.task_layout.addLayout(task_label_layout)
 
             # set our current location
-            path = data[0][1]
+            path = data[0][2]
             current = PathObject(str(path))
             current.set_attr(attr='task', value='*')
             current.set_attr(attr='root', value=self.root)
@@ -581,14 +709,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.task_layout.shot = current.shot
 
             self.update_location(path_object=current)
-            print "1: %s" % self.current_location
             # Get the list of tasks for the selection
             task_list = current.glob_project_element('task')
             for task in task_list:
                 if '.' not in task:
                     if task not in self.task_layout.tasks:
                         # version_location = copy.copy(self.current_location)
-                        task_widget = AssetWidget(self, task, path_object=current)
+                        task_widget = TaskWidget(self, task, path_object=current)
                         task_widget.task = task
                         task_widget.showall()
                         task_widget.search_box.hide()
@@ -649,7 +776,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         renders = current.copy(context='render', filename='*')
         files_ = renders.glob_project_element('filename')
         label = QtWidgets.QLabel('<b>%s: Published Files</b>' % renders.task)
-        render_widget = AssetWidget(self, 'Output')
+        render_widget = TaskWidget(self, 'Output')
         render_widget.showall()
         render_widget.title.hide()
         render_widget.search_box.hide()
@@ -669,8 +796,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         # set the combo box according to what filters are currently selected.
         widget.users.hide()
         widget.users_label.hide()
-        filter_ = self.get_asset_filter()
-        self.user = filter_
+        self.set_user_from_radio_buttons()
         if self.user == '*':
             widget.users.show()
             widget.users_label.show()
@@ -783,9 +909,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             shot_name = '%s:%s' % (d['seq'], d['shot'])
             if shot_name not in temp_:
                 temp_.append(shot_name)
-                data.append([shot_name, each, ''])
-        self.assets.setup(ListItemModel(data, ['Name', 'Path', 'Due Date']))
+                data.append([d['shot'], d['seq'], each, ''])
+        self.assets.setup(ListItemModel(data, ['Name', 'Category', 'Path', 'Due Date']))
         self.assets.data_table.hideColumn(1)
+        self.assets.data_table.hideColumn(2)
         self.assets.data_table.set_draggable(True)
         self.assets.data_table.dropped.connect(self.on_file_dragged_to_assets)
         self.assets.add_button.clicked.connect(self.on_create_asset)
@@ -820,14 +947,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     # CONVENIENCE FUNCTIONS
 
-    def get_asset_filter(self):
-        if self.radio_publishes.isChecked():
-            filter_ = 'publish'
-        elif self.radio_user.isChecked():
-            filter_ = self.user_default
-        elif self.radio_everyone.isChecked():
-            filter_ = '*'
-        return filter_
+    def set_user_from_radio_buttons(self):
+        if self.assets.radio_publishes.isChecked():
+            self.user = 'publish'
+        elif self.assets.radio_user.isChecked():
+            self.user = self.user_default
+        elif self.assets.radio_everything.isChecked():
+            self.user = ''
 
     def update_location(self, path_object=None):
         if path_object:
@@ -844,7 +970,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                                      }
             path_obj = PathObject(self.current_location)
             self.path_root = path_obj.path_root
-            print self.path_root
+            print 'Setting path as: ', self.path_root
             self.path = path_obj.path
             self.current_location_line_edit.setText(self.path_root)
             return self.path_root
