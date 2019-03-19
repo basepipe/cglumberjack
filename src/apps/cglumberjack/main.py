@@ -179,6 +179,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.assets_radio.hide()
         self.shots_radio.hide()
         self.category_combo.hide()
+        self.category_label.hide()
         
     def show(self, combos=False):
         self.show_button.show()
@@ -198,11 +199,13 @@ class AssetWidget(QtWidgets.QWidget):
 
     def show_filters(self):
         self.category_combo.show()
+        self.category_label.show()
         self.assets_radio.show()
         self.shots_radio.show()
 
     def hide_filters(self):
         self.category_combo.hide()
+        self.category_label.hide()
         self.assets_radio.hide()
         self.shots_radio.hide()
 
@@ -270,7 +273,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.scope = 'assets'
         self.shot = '*'
         self.seq = '*'
-        self.user = '*'
+        self.user = None
         self.user_default = app_config()['account_info']['user']
         #self.user_default = 'PADL_dev'
         self.user_favorites = app_config()['account_info']['user_favorites']
@@ -282,6 +285,12 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path = ''
         layout = QtWidgets.QVBoxLayout(self)
         self.h_layout = QtWidgets.QHBoxLayout(self)
+        self.radio_label = None
+        self.radio_layout = None
+        self.radio_user = None
+        self.radio_everyone = None
+        self.radio_publishes = None
+        self.radio_buttons = [self.radio_user, self.radio_everyone, self.radio_publishes]
 
         # Create the Left Panel
         self.filter_layout = QtWidgets.QVBoxLayout(self)
@@ -295,27 +304,21 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.project_filter.hide_filters()
         self.project_filter.add_button.show()
         self.project_filter.hide_button.hide()
-        self.radio_label = QtWidgets.QLabel('<b>Filter</b>')
-        self.radio_layout = QtWidgets.QHBoxLayout(self)
-        self.radio_user = QtWidgets.QRadioButton('User Assignments')
-        self.radio_everyone = QtWidgets.QRadioButton('Everything')
-        self.radio_publishes = QtWidgets.QRadioButton('Publishes')
 
-        self.radio_layout.addWidget(self.radio_user)
-        self.radio_user.setChecked(True)
-        self.radio_layout.addWidget(self.radio_publishes)
-        self.radio_layout.addWidget(self.radio_everyone)
-        self.radio_layout.addItem(QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Maximum,
-                                                        QtWidgets.QSizePolicy.Minimum))
+        #self.radio_label.hide()
+        #self.radio_user.hide()
+        #self.radio_everyone.hide()
+        #self.radio_publishes.hide()
+
         # assemble the filter_panel
-        self.filter_layout.addLayout(self.user_widget)
+        #self.filter_layout.addLayout(self.user_widget)
         self.filter_layout.addLayout(self.company_widget)
-        self.filter_layout.addWidget(self.radio_label)
-        self.filter_layout.addLayout(self.radio_layout)
+        # self.filter_layout.addWidget(self.radio_label)
+        # self.filter_layout.addLayout(self.radio_layout)
         self.filter_layout.addWidget(self.project_filter)
 
         # Create the Middle Panel
-        self.middle_layout = QtWidgets.QHBoxLayout()
+        self.middle_layout = QtWidgets.QVBoxLayout()
         self.assets = None
         self.assets_filter_default = 'Everything'
 
@@ -514,34 +517,43 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.shot = '*'
         self.resolution = ''
         self.version = ''
-        self.task = '*'
         # build the asset Widget
         self.clear_layout(self.middle_layout)
         self.assets = AssetWidget(self, title="")
         self.assets.show_filters()
         self.set_scope_radio()
-        self.assets.set_title('Project: %s' % self.project)
+        self.assets.set_title('<b>%s: %s</b>' % (self.project, self.scope))
         self.assets.add_button.show()
-        self.radio_publishes.clicked.connect(self.on_assets_filter_changed)
+        self.radio_label = QtWidgets.QLabel('<b>Filter</b>')
+        self.radio_layout = QtWidgets.QHBoxLayout(self)
+        self.radio_user = QtWidgets.QRadioButton('User Assignments')
+        self.radio_everyone = QtWidgets.QRadioButton('Everything')
+        self.radio_publishes = QtWidgets.QRadioButton('Publishes')
+        self.radio_layout.addWidget(self.radio_user)
+        self.radio_layout.addWidget(self.radio_publishes)
+        self.radio_layout.addWidget(self.radio_everyone)
+        self.radio_everyone.setChecked(True)
+        self.radio_layout.addItem(QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Maximum,
+                                                   QtWidgets.QSizePolicy.Minimum))
 
         # update location and display the resulting assets.
         self.update_location()
         self.assets.showall()
         self.assets.hide_button.hide()
+        self.middle_layout.addWidget(self.radio_label)
+        self.middle_layout.addLayout(self.radio_layout)
         self.middle_layout.addWidget(self.assets)
 
         self.load_assets()
         self.clear_layout(self.task_layout)
         self.clear_layout(self.render_layout)
         self.assets.data_table.selected.connect(self.on_main_asset_selected)
-        self.radio_publishes.show()
-        self.radio_everyone.show()
-        self.radio_user.show()
+
+        self.assets.shots_radio.clicked.connect(self.on_filter_radio_changed)
+        self.assets.assets_radio.clicked.connect(self.on_filter_radio_changed)
         self.radio_everyone.toggled.connect(self.on_assets_filter_changed)
         self.radio_publishes.toggled.connect(self.on_assets_filter_changed)
         self.radio_user.toggled.connect(self.on_assets_filter_changed)
-        self.assets.shots_radio.clicked.connect(self.on_filter_radio_changed)
-        self.assets.assets_radio.clicked.connect(self.on_filter_radio_changed)
 
     def on_main_asset_selected(self, data):
         # data format: ['Project', 'Seq', 'Shot', 'Task', 'User', 'Path']
@@ -713,19 +725,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             print 'no projects'
             self.project_filter.search_box.setEnabled(False)
             self.project_filter.data_table.setEnabled(False)
-            self.radio_user.setEnabled(False)
-            self.radio_everyone.setEnabled(False)
-            self.radio_publishes.setEnabled(False)
-            self.radio_label.setEnabled(False)
             self.project_filter.add_button.setText('Create First Project')
         else:
             self.project_filter.search_box.setEnabled(True)
             self.project_filter.data_table.setEnabled(True)
             self.project_filter.add_button.setText('+')
-            self.radio_user.setEnabled(True)
-            self.radio_everyone.setEnabled(True)
-            self.radio_publishes.setEnabled(True)
-            self.radio_label.setEnabled(True)
         self.project_filter.setup(ListItemModel(self.prep_list_for_table(projects, split_for_file=True), ['Name']))
         self.update_location()
 

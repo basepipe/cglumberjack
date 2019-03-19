@@ -316,14 +316,13 @@ class AssetCreator(LJDialog):
             if self.asset_widget.search_box.text() != '':
                 self.path_object.new_set_attr(asset=self.asset_widget.search_box.text())
                 self.path_object.new_set_attr(type='Prop')
-                for each in app_config()['pipeline_steps']['assets']['default_steps']:
-                    self.path_object.new_set_attr(task=each)
+                #for each in app_config()['pipeline_steps']['assets']['default_steps']:
+                #    self.path_object.new_set_attr(task=each)
                     # self.path_object.new_set_attr(resolution='high')
                     # self.path_object.new_set_attr(version='000.000')
                     # self.path_object.new_set_attr(user='tmikota')
-                    print 'Current Path With Root: %s' % self.path_object.path_root
-                    CreateProductionData(self.path_object.data,
-                                         project_management=self.project_management)
+                print 'Current Path With Root: %s' % self.path_object.path_root
+                CreateProductionData(self.path_object.data, project_management=self.project_management)
 
 
 if __name__ == "__main__":

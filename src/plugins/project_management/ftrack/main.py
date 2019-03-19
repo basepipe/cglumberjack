@@ -10,39 +10,41 @@ class ProjectManagementData(object):
     create = False
     edit = False
     delete = False
-    project = 'cgl_test_full'
-    project_short_name = 'cgl_test'
+    project = None
+    project_short_name = None
     project_data = None
-    task = 'Modeling'
+    task = None
     task_data = None
-    seq = ''
+    seq = None
     seq_data = None
-    shot = ''
+    shot = None
     shot_name = '%s_%s' % (seq, shot)
     shot_data = None
     category = None
-    asset = 'chlake'
-    user = 'Lone Coconut'
-    user_email = 'LoneCoconutMail@gmail.com'
+    asset = None
+    user = None
+    user_email = None
+    #user_email = 'LoneCoconutMail@gmail.com'
     user_data = None
     time_entry = None
     note = None
     schema = SCHEMAS[3]
     schema_data = None
-    version = 'IMG_5822.mov'
+    version = None
     version_data = None
     entity_data = None
     asset_data = None
-    scope = 'assets'
+    scope = None
+    context = None
     task_name = None
     project_team = None
     assignments = []
     assignment_data = None
-    user_group_name = 'default'
+    user_group_name = None
     user_group = None
     appointment = None
-    path_root = r'C:\Users\tmiko\Downloads\IMG_5822.mov'
-    file_type = 'movie'
+    path_root = None
+    file_type = None
     ftrack_asset_type = 'Upload'
     type = None
     thumb_path_full = None
@@ -54,6 +56,23 @@ class ProjectManagementData(object):
         for key in kwargs:
             self.__dict__[key] = kwargs[key]
 
+        if not self.project_short_name:
+            self.project_short_name = self.project
+
+        if self.shot == '*':
+            self.shot = None
+        if self.asset == '*':
+            self.asset = None
+        if self.seq == '*':
+            self.seq = None
+        if self.type == '*':
+            self.type = None
+        if self.user == '*':
+            self.user = None
+        if self.task == '*':
+            self.task = None
+
+        print 'PATH: --', self.path_root
         self.ftrack = ftrack_api.Session(server_url=app_config()['ftrack']['server_url'],
                                          api_key=app_config()['ftrack']['api_key'],
                                          api_user=app_config()['ftrack']['api_user'])
@@ -63,11 +82,11 @@ class ProjectManagementData(object):
         self.default_shot_status = self.project_schema.get_statuses('Shot')[0]
         self.shot_statuses = self.project_schema.get_statuses('Shot')
         # get the types of tasks for shots.
-        self.task_types = self.project_schema.get_types('Task')
-        self.task_type = self.get_current_task_type()
-        self.task_statuses = self.project_schema.get_statuses('Task', self.task_type['id'])
-        self.default_task_status = self.project_schema.get_statuses('Task', self.task_type['id'])[0]
-
+        if self.task:
+            self.task_types = self.project_schema.get_types('Task')
+            self.task_type = self.get_current_task_type()
+            self.task_statuses = self.project_schema.get_statuses('Task', self.task_type['id'])
+            self.default_task_status = self.project_schema.get_statuses('Task', self.task_type['id'])[0]
         print 'Creating Entries for ftrack:'
 
     def get_current_task_type(self):
@@ -78,14 +97,17 @@ class ProjectManagementData(object):
 
     def create_project_management_data(self):
         self.project_data = self.entity_exists('project')
+        print self.project
         if not self.project_data:
             self.project_data = self.create_project()
+            print self.project_data
         if self.scope == 'assets':
+            print 'assets'
             if self.asset:
                 self.asset_data = self.entity_exists('asset')
                 if not self.asset_data:
                     self.asset_data = self.create_asset()
-            self.entity_data = self.asset_data
+                self.entity_data = self.asset_data
         elif self.scope == 'shots':
             if self.seq:
                 self.seq_data = self.entity_exists('seq')
@@ -95,7 +117,7 @@ class ProjectManagementData(object):
                 self.shot_data = self.entity_exists('shot')
                 if not self.shot_data:
                     self.shot_data = self.create_shot()
-            self.entity_data = self.shot_data
+                self.entity_data = self.shot_data
         else:
             print 'No Scope Defined!'
         if self.entity_data:
@@ -109,13 +131,15 @@ class ProjectManagementData(object):
                 self.task_data = self.entity_exists('task')
                 if not self.task_data:
                     self.task_data = self.create_task()
-        if self.user_email:
-            self.entity_exists('user')
-            if self.user_data:
-                # TODO - add user to the project if they aren't on it.
-                self.create_assignment()
-        if self.version:
-            self.create_version()
+            if self.user_email:
+                self.entity_exists('user')
+                if self.user_data:
+                    if self.entity_data:
+                        # TODO - add user to the project if they aren't on it.
+                        self.create_assignment()
+            if self.version:
+                self.create_version()
+        self.ftrack.commit()
 
     def entity_exists(self, data_type):
         """
@@ -295,7 +319,6 @@ class ProjectManagementData(object):
     def find_project(self):
         self.project_data = self.ftrack.query('Project where status is active and name is %s' % self.project_short_name).first()
         if self.project_data:
-            print 'Found Project: %s' % self.project
             return self.project_data
         else:
             print '%s Not Found' % self.project
@@ -387,11 +410,9 @@ class ProjectManagementData(object):
 
 if __name__ == "__main__":
     this = ProjectManagementData()
-    #test = this.ftrack.query('Location where name is "ftrack.server  "').one()
-    #print test
     this.create_project_management_data()
     this.ftrack.commit()
-    this.upload_media()
+    #this.upload_media()
 
 
 
