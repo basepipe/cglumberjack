@@ -4,7 +4,7 @@ from Qt import QtTest
 
 
 class LJSearchEdit(QtWidgets.QLineEdit):
-    def __init__(self, parent):
+    def __init__(self, parent, button=False):
         QtWidgets.QLineEdit.__init__(self, parent)
         QtWidgets.QLineEdit.setPlaceholderText(self, self.tr("Type to Filter"))
         self.button = QtWidgets.QToolButton(self)
@@ -13,6 +13,9 @@ class LJSearchEdit(QtWidgets.QLineEdit):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(self.button, 0, QtCore.Qt.AlignRight)
         self.button.clicked.connect(self.cancel_clicked)
+        self.button.hide()
+        if button:
+            self.button.show()
 
     def cancel_clicked(self):
         QtWidgets.QLineEdit.setText(self, "")

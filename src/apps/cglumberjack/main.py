@@ -2,7 +2,7 @@ import glob
 import os
 from Qt import QtWidgets, QtCore, QtGui
 from core.config import app_config
-from cglui.widgets.combo import AdvComboBox
+from cglui.widgets.combo import AdvComboBox, LabelComboRow
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
@@ -19,28 +19,6 @@ class LabelEditRow(QtWidgets.QVBoxLayout):
         self.lineEdit = QtWidgets.QLineEdit()
         self.addWidget(self.label)
         self.addWidget(self.lineEdit)
-
-
-class LabelComboRow(QtWidgets.QVBoxLayout):
-    def __init__(self, label):
-        QtWidgets.QVBoxLayout.__init__(self)
-        self.label = QtWidgets.QLabel("<b>%s</b>" % label)
-        self.add_button = QtWidgets.QToolButton()
-        self.add_button.setText('+')
-        self.h_layout = QtWidgets.QHBoxLayout()
-        self.h_layout.addWidget(self.label)
-        self.h_layout.addWidget(self.add_button)
-        self.combo = AdvComboBox()
-        self.addLayout(self.h_layout)
-        self.addWidget(self.combo)
-        
-    def hide(self):
-        self.label.hide()
-        self.combo.hide()
-        
-    def show(self):
-        self.label.show()
-        self.combo.show()
 
 
 class FunctionButtons(QtWidgets.QHBoxLayout):
@@ -481,7 +459,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.cl_row.addWidget(self.current_location_label)
         self.cl_row.addWidget(self.current_location_line_edit)
 
-        # assemble the main h layout
+        # assemble the main h layoutQtWidgets.QLabel("<b>%s</b>" % title)
         self.h_layout.addLayout(self.filter_layout)
         self.h_layout.addLayout(self.middle_layout)
         self.h_layout.addLayout(self.task_layout)

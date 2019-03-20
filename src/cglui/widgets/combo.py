@@ -1,6 +1,41 @@
 from Qt import QtCore, QtWidgets
 
 
+class LabelComboRow(QtWidgets.QVBoxLayout):
+    def __init__(self, label, button=True, bold=True):
+        QtWidgets.QVBoxLayout.__init__(self)
+        if bold:
+            self.label = QtWidgets.QLabel("<b>%s</b>" % label)
+        else:
+            self.label = QtWidgets.QLabel("%s" % label)
+        self.combo = AdvComboBox()
+        self.h_layout = QtWidgets.QHBoxLayout()
+        self.h_layout.addWidget(self.label)
+        if button:
+            self.add_button = QtWidgets.QToolButton()
+            self.add_button.setText('+')
+            self.h_layout.addWidget(self.add_button)
+            self.addLayout(self.h_layout)
+            self.addWidget(self.combo)
+        else:
+            self.h_layout.addWidget(self.combo)
+            self.addLayout(self.h_layout)
+
+    def hide(self):
+        self.label.hide()
+        self.combo.hide()
+
+    def show(self):
+        self.label.show()
+        self.combo.show()
+
+
+class AdvComboBoxLabeled(QtWidgets.QVBoxLayout):
+    def __init__(self, label):
+        QtWidgets.QVBoxLayout.__init__(self)
+        self.label = QtWidgets.QLabel("<b>%s</b>" % label)
+
+
 class AdvComboBox(QtWidgets.QComboBox):
     def __init__(self, parent=None):
         super(AdvComboBox, self).__init__(parent)
