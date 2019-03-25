@@ -4,13 +4,7 @@ account_info:
   user: tmikota
   user_favorites: ['PADL_dev', 'tmiko', 'tmikota']
   user_directory: C:\Users\tmiko\Documents\cglumberjack
-  project_management: shotgun
-companies:
-  pod_advertising:
-    shotgun: False
-    active_colab: True
-    file_system: True
-    scene_description: False
+  project_management: ftrack
 logging:
     level: debug
     format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'
@@ -38,13 +32,15 @@ rules:
       example: "Any characters or numbers are allowed for project names"
     scope:
       regex: "[a-z]+"
+      example: "examples: assets, shots"
     context:
       regex: "[a-z]+"
+      example: "examples: source, render"
     seq:
-      regex: "[A-Za-z0-9]+"
-      example: ""
+      regex: "^[0-9]{3}$"
+      example: "examples: 000, 010, 020"
     shot:
-      regex: "[A-Za-z0-9]+"
+      regex: "^[0-9]{4}$"
     task:
       regex: "[a-z]+"
     user:
@@ -147,9 +143,6 @@ ext_map:
   .tx: 'image'
   .tex: 'image'
   .pdf: 'pdf'
-  .wav: 'audio'
-  .hprj: 'audio'
-  .raf: 'image'
 shotgun:
   url: https://fsuada.shotgunstudio.com
   api_script: core_tools
@@ -161,7 +154,7 @@ shotgun:
   username: tmikota
 ftrack:
   server_url: https://lone-coconut.ftrackapp.com
-  api_key: MTQ1MTRlN2YtYTk4OS00Y2YwLWI5NjctYzE2YjZmZThiYTljOjowY2FiODg4YS1jNGY4LTQxMzQtOTNkNi1hYzNiMmE3YWZhMWE
+  api_key: ZTU3ZDZkMDUtMWI3OS00ZWU1LWE2NGItZGJiYmQyOGExZTZiOjoyMTUyYmI2ZC1kNzk2LTRmZmUtYjUzZS0wMjBiMzA5MGZhMDA
   api_user: LoneCoconutMail@gmail.com
 email:
   from: tom@cglumberjack.com
@@ -184,6 +177,7 @@ asset_categories:
   Library: lib
 pipeline_steps:
   shots:
+    default_steps: ['anim', 'lite', 'comp', 'lay', 'cam']
     Animatics: amtc
     Previs: prev
     Layout: lay
@@ -204,6 +198,7 @@ pipeline_steps:
     Color Editing: color
     Camera: cam
   assets:
+    default_steps: ['ref', 'mdl', 'tex', 'shd']
     Conception/Previs/R&D: ref
     Modeling/UV: mdl
     Texturing: tex
@@ -235,9 +230,8 @@ default:
     half: 960x540
     third: 640x360
     quarter: 480x270
+
 dvp:
   frame_rate: 24
-
-
 
 

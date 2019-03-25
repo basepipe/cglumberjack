@@ -2,193 +2,238 @@ import re
 import os
 import glob
 from core.path import CreateProductionData, PathObject
-from Qt import QtWidgets, QtCore
+from Qt import QtWidgets, QtCore, QtGui
 
 from core.config import app_config
 from cglui.widgets.base import LJDialog
-from cglui.widgets.search import LJSearchEdit
-from cglui.widgets.combo import AdvComboBox
-from cglui.widgets.containers.model import ListItemModel
-from cglui.widgets.dialog import InputDialog
-from cglui.widgets.containers.table import LJTableWidget
+from cglui.widgets.combo import AdvComboBox, LabelComboRow
 
 
 class AssetWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
 
-    def __init__(self, parent, title, filter_string=None):
+    def __init__(self, parent, title, scope):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout(self)
-        self.filter_string = filter_string
+        if scope == 'assets':
+            self.category_row = LabelComboRow('%s Category' % scope.title(), button=False, bold=False)
+            self.name_row = LabelComboRow('%s Name(s)' % scope.title(), button=False, bold=False)
+        if scope == 'shots':
+            self.category_row = LabelComboRow('Sequence', button=False, bold=False)
+            self.name_row = LabelComboRow('Shot Name(s)', button=False, bold=False)
         self.label = title
-        self.title = QtWidgets.QLabel("<b>%s</b>" % title)
+        self.project_label = QtWidgets.QLabel("<b>Create %s For: %s</b>" % (scope.title(), title))
         self.message = QtWidgets.QLabel("")
-        self.search_box = LJSearchEdit(self)
-        self.button = QtWidgets.QToolButton()
-        self.button.setText("+")
-        self.data_table = LJTableWidget(self)
-        self.data_table.setMinimumHeight(200)
 
-        # this is where the filter needs to be!
-        h_layout.addWidget(self.title)
-        h_layout.addWidget(self.search_box)
-        h_layout.addWidget(self.button)
+        h_layout.addWidget(self.project_label)
+        h_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                               QtWidgets.QSizePolicy.Minimum))
 
         v_layout.addLayout(h_layout)
+        v_layout.addItem(QtWidgets.QSpacerItem(0, 10, QtWidgets.QSizePolicy.Minimum,
+                                               QtWidgets.QSizePolicy.Minimum))
+        v_layout.addLayout(self.category_row)
+        v_layout.addLayout(self.name_row)
         v_layout.addWidget(self.message)
-        v_layout.addWidget(self.data_table, 1)
 
         self.message.hide()
-        self.button.clicked.connect(self.on_button_clicked)
-
-    def setup(self, mdl):
-        self.data_table.set_item_model(mdl)
-        self.data_table.set_search_box(self.search_box)
-
-    def on_button_clicked(self):
-        data = {'title': self.label}
-        self.button_clicked.emit(data)
 
     def set_title(self, new_title):
         self.title.setText('<b>%s</b>' % new_title.title())
 
 
 class AssetCreator(LJDialog):
-    def __init__(self, parent=None, title='Create Assets', path_dict=None):
+    def __init__(self, parent=None, path_dict=None, task_mode=False):
         LJDialog.__init__(self, parent)
-        self.resize(600, 60)
+        self.task_mode = task_mode
+        self.resize(300, 60)
+        self.red_palette = QtGui.QPalette()
+        self.red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
+        self.green_palette = QtGui.QPalette()
+        self.green_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 255, 0))
+        self.black_palette = QtGui.QPalette()
+        self.black_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 0, 0))
         if not path_dict:
             return
         self.path_object = PathObject(path_dict)
-        self.company = None
-        self.project = None
-        self.scope = "shots"
+        self.scope = self.path_object.scope
+        if task_mode:
+            self.setWindowTitle('Create %s' % 'Task(s)')
+        else:
+            self.setWindowTitle('Create %s' % self.scope.title())
         self.asset = None
-        self.assets = []
         self.asset_message_string = ''
         self.asset_list = []
-        self.shot = None
-        self.seq = None
         self.full_root = None
         self.regex = ''
         self.valid_categories_string = ''
+        self.seq = None
         self.valid_categories = []
         self.get_valid_categories()
         # Environment Stuff
         self.root = app_config()['paths']['root']
         self.project_management = app_config()['account_info']['project_management']
-        self.asset_string_example = app_config()['rules']['path_variables']['asset']['example']
+        if self.scope == 'assets':
+            self.asset_string_example = app_config()['rules']['path_variables']['asset']['example']
+        elif self.scope == 'shots':
+            self.asset_string_example = app_config()['rules']['path_variables']['shotname']['example']
         self.v_layout = QtWidgets.QVBoxLayout(self)
         self.grid_layout = QtWidgets.QGridLayout(self)
         self.scope_row = QtWidgets.QHBoxLayout()
         self.asset_row = QtWidgets.QHBoxLayout(self)
+        self.tasks = []
         self.task_row = QtWidgets.QHBoxLayout(self)
         self.task_combo = AdvComboBox()
-
-        # radio button stuff
-        self.shots_radio = QtWidgets.QRadioButton('Shots')
-        self.assets_radio = QtWidgets.QRadioButton('Assets')
-        self.assets_radio.setChecked(True)
-        self.radio_layout = QtWidgets.QHBoxLayout(self)
-        self.radio_layout.addWidget(self.shots_radio)
-        self.radio_layout.addWidget(self.assets_radio)
-        self.radio_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                        QtWidgets.QSizePolicy.Minimum))
+        if self.task_mode:
+            self.create_button = QtWidgets.QPushButton('Create %s' % 'Task(s)')
+        else:
+            self.create_button = QtWidgets.QPushButton('Create %s' % self.scope.title())
+        self.create_button.setEnabled(False)
 
         # asset & shot stuff
-        self.asset_message = QtWidgets.QLabel("")
-        self.asset_widget = AssetWidget(self, title="")
+        self.asset_widget = AssetWidget(self, scope=self.scope, title=str(self.path_object.project))
+        self.asset_widget.name_row.combo.setEnabled(False)
         self.asset_row.addWidget(self.asset_widget)
-        self.asset_widget.button.hide()
         # task stuff
+        self.task_layout = QtWidgets.QVBoxLayout(self)
+        for each in app_config()['pipeline_steps'][self.scope]:
+            defaults = app_config()['pipeline_steps'][self.scope]['default_steps']
+            if each == 'default_steps':
+                pass
+            else:
+                checkbox = QtWidgets.QCheckBox('%s (%s)' % (each, app_config()['pipeline_steps'][self.scope][each]))
+                checkbox.stateChanged.connect(self.on_checkbox_clicked)
+                self.task_layout.addWidget(checkbox)
+                if app_config()['pipeline_steps'][self.scope][each] in defaults:
+                    print each
+                    checkbox.setCheckState(QtCore.Qt.Checked)
 
-        self.v_layout.addLayout(self.radio_layout)
         self.v_layout.addLayout(self.asset_row)
-        self.on_scope_changed()
+        self.v_layout.addLayout(self.task_layout)
+        self.v_layout.addWidget(self.create_button)
+        self.v_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
+                                                    QtWidgets.QSizePolicy.Expanding))
+        self.asset_widget.message.hide()
+        self.load_categories()
+        self.asset_widget.category_row.combo.currentIndexChanged.connect(self.on_category_selected)
+        self.asset_widget.name_row.combo.editTextChanged.connect(self.process_asset_string)
+        self.create_button.clicked.connect(self.on_create_clicked)
+        if self.scope == 'shots':
+            self.asset_widget.category_row.combo.editTextChanged.connect(self.on_seq_text_changed)
+        self.hide_layout_items(self.task_layout)
 
-        self.assets_radio.clicked.connect(self.on_scope_changed)
-        self.shots_radio.clicked.connect(self.on_scope_changed)
-        self.asset_widget.search_box.textChanged.connect(self.asset_text_changed)
-        self.asset_widget.search_box.returnPressed.connect(self.on_asset_text_enter)
+        if self.task_mode:
+            self.on_set_vars()
 
-    def on_create_company(self):
-        print 'create company'
-        dialog = InputDialog(title='Create Company', message='Type a Company Name', line_edit=True)
-        dialog.exec_()
-        self.company = dialog.line_edit.text()
-        self.full_root = r'%s\cgl-%s' % (self.root, self.company)
-        #os.path.mkdirs(self.full_root)  # is there a way to work this into create_production_data?
+    def on_set_vars(self):
+        if self.path_object.seq:
+            index = self.asset_widget.category_row.combo.findText(self.path_object.seq)
+            if index != -1:
+                self.asset_widget.category_row.combo.setCurrentIndex(index)
+            else:
+                self.asset_widget.category_row.combo.addItem(self.path_object.seq)
+                index = self.asset_widget.category_row.combo.findText(self.path_object.seq)
+                self.asset_widget.category_row.combo.setCurrentIndex(index)
+        if self.path_object.shot:
+            print 1
+            index = self.asset_widget.name_row.combo.findText(self.path_object.shot)
+            if index != -1:
+                print 2, self.path_object.shot
+                self.asset_widget.name_row.combo.setCurrentIndex(index)
+            else:
+                print 3
+                self.asset_widget.name_row.combo.addItem(self.path_object.shot)
+                index = self.asset_widget.name_row.combo.findText(self.path_object.shot)
+                self.asset_widget.name_row.combo.setCurrentIndex(index)
 
-    def on_create_project(self):
-        print 'create project'
-        dialog = InputDialog(title='Create Project', message='Type a Project Name', line_edit=True)
-        dialog.exec_()
-        project_name = dialog.line_edit.text()
-        print 'This (line 129) is depreciated'
-        #CreateProductionData(self.current_location, project_management=self.project_management)
-        #create_production_data(project=project_name, with_root=False,
-        #                       custom_root=self.full_root)
-        #create_production_data(project=project_name, scope='shots', with_root=False,
-        #                       custom_root=self.full_root)
-        #self.project_combo.insertItem(0, project_name)
-        #self.get_current_location()
+    def on_checkbox_clicked(self):
+        self.find_all_checked_boxes()
 
-    def on_root_combo_changed(self):
-        self.root = self.root_combo.currentText()
-        self.company = None
-        self.company_combo.clear()
-        companies = []
-        if os.path.exists(self.root_combo.currentText()):
-            self.root = self.root_combo.currentText()
-            for each in os.listdir(self.root_combo.currentText()):
-                if 'cgl-' in each:
-                    companies.append(each)
-            self.company_combo.addItems(companies)
-        self.get_current_location()
+    def find_all_checked_boxes(self):
+        self.tasks = []
+        for i in range(self.task_layout.count()):
+            child = self.task_layout.itemAt(i)
+            if child.widget().checkState() == QtCore.Qt.Checked:
+                self.tasks.append(child.widget().text().split('(')[-1].replace(')', ''))
+        print self.tasks
 
-        # TODO - need a regex that helps me know if i have a legal root.
+    @staticmethod
+    def hide_layout_items(layout):
+        for i in range(layout.count()):
+            child = layout.itemAt(i).widget()
+            child.hide()
 
-    def on_company_combo_changed(self):
-        self.company = self.company_combo.currentText()
-        if self.company:
-            self.full_root = r'%s\%s' % (self.root, self.company)
-            print self.full_root, 'self root'
-        else:
-            print "No company selected"
-            return
-        self.project = None
-        self.project_combo.clear()
-        projects = []
-        path = os.path.join(self.full_root, 'source')
-        if os.path.exists(path):
-            for each in os.listdir(path):
-                projects.append(each)
-            self.project_combo.addItems(projects)
-        else:
-            print '%s does not exist yet' % path
-        self.get_current_location()
+    @staticmethod
+    def show_layout_items(layout):
+        for i in range(layout.count()):
+            child = layout.itemAt(i).widget()
+            child.show()
 
-    def asset_text_changed(self):
-        string_ = self.asset_widget.search_box.text()
-        if string_:
-            # meat of everything happens here in process asset string
-            self.process_asset_string(string_)
-            self.asset_widget.message.setText(self.asset_message_string)
-            self.asset_widget.message.show()
-        else:
+    def on_category_selected(self):
+        self.path_object.new_set_attr(seq=self.asset_widget.category_row.combo.currentText())
+        self.asset_widget.name_row.combo.setEnabled(True)
+        self.load_assets()
+
+    def on_seq_text_changed(self):
+        self.seq = self.asset_widget.category_row.combo.currentText()
+        print app_config()['rules']['path_variables']['seq']['regex']
+        seq_rules = app_config()['rules']['path_variables']['seq']['regex']
+        example = app_config()['rules']['path_variables']['seq']['example']
+        self.regex = re.compile(r'%s' % seq_rules)
+        if re.match(self.regex, self.seq):
+            self.asset_widget.name_row.combo.setEnabled(True)
             self.asset_widget.message.hide()
-        self.get_current_location()
-
-    def check_asset_name(self, test_string):
-
-        if re.match(self.regex, test_string):
-            return test_string
         else:
-            return '%s is an invalid asset name' % test_string
+            self.asset_message_string = '%s is not a valid sequence name\n%s' % (self.seq, example)
+            self.asset_widget.message.setText(self.asset_message_string)
+            self.asset_widget.message.setPalette(self.red_palette)
+            self.asset_widget.message.show()
 
-    def process_asset_string(self, asset_string):
+    def load_categories(self):
+        categories = app_config()['asset_categories']
+        cats = ['']
+        for c in categories:
+            cats.append(categories[c])
+        self.asset_widget.category_row.combo.addItems(cats)
+
+    def process_asset_string(self):
+        self.seq = self.asset_widget.category_row.combo.currentText()
+        asset_string = self.asset_widget.name_row.combo.currentText()
+        if self.scope == 'assets':
+            asset_rules = r'^([a-zA-Z]{3,},\s*)*([a-zA-Z]{3,}$)|^([a-zA-Z]{3,},\s*)*([a-zA-Z]{3,}$)'
+            example = app_config()['rules']['path_variables']['shot']['regex']
+        if self.scope == 'shots':
+            asset_rules = app_config()['rules']['path_variables']['shot']['regex']
+        self.regex = re.compile(r'%s' % asset_rules)
+        if re.match(self.regex, asset_string):
+            self.asset_message_string = '%s is a valid %s name' % (asset_string, self.scope)
+            self.asset_widget.message.setPalette(self.black_palette)
+            self.asset_widget.message.setText(self.asset_message_string)
+            self.asset_widget.message.hide()
+            self.show_layout_items(self.task_layout)
+            self.create_button.setEnabled(True)
+            if asset_string in self.asset_list:
+                self.asset_message_string = '%s already Exists!' % asset_string
+                self.asset_widget.message.setText(self.asset_message_string)
+                self.asset_widget.message.setPalette(self.red_palette)
+                self.asset_widget.message.show()
+                self.hide_layout_items(self.task_layout)
+                self.create_button.setEnabled(False)
+        else:
+            self.asset_message_string = '%s is not a valid %s name\n%s' % (asset_string, self.scope,
+                                                                           self.asset_string_example)
+            self.asset_widget.message.setText(self.asset_message_string)
+            self.asset_widget.message.setPalette(self.red_palette)
+            if asset_string == '':
+                self.asset_widget.message.hide()
+            else:
+                self.asset_widget.message.show()
+            self.hide_layout_items(self.task_layout)
+            self.create_button.setEnabled(False)
+
+    def process_asset_string_old(self, asset_string):
         # TODO - add something here that also filters by the argument(s) given.
         asset_rules = r'^[a-zA-Z]{3,}:([a-zA-Z]{3,},\s*)*([a-zA-Z]{3,}$)|^([a-zA-Z]{3,},\s*)*([a-zA-Z]{3,}$)'
         self.regex = re.compile(r'%s' % asset_rules)
@@ -247,53 +292,17 @@ class AssetCreator(LJDialog):
             new_list.append(each.replace(' ', ''))
         return new_list
 
-    def on_scope_changed(self):
-        if self.assets_radio.isChecked():
-            self.scope = 'assets'
-        else:
-            self.scope = 'shots'
-        print self.scope
-        self.asset_widget.set_title(self.scope)
-        self.asset_widget.message.hide()
-        self.asset_widget.search_box.clear()
-        self.get_current_location()
-        self.load_assets()
-
-    def get_current_location(self):
-        if self.path_object.company:
-            self.path_object.new_set_attr(root=self.full_root)
-        if self.project:
-            self.path_object.new_set_attr(project=self.project)
-            self.path_object.new_set_attr(scope=self.scope.lower())
-            self.path_object.new_set_attr(context='source')
-        else:
-            return self.path_object.path_root
-        if self.path_object.scope == 'shots':
-            if self.seq:
-                self.path_object.new_set_attr(seq=self.seq)
-            if self.shot:
-                self.path_object.new_set_attr(shot=self.shot)
-        elif self.path_object.scope == 'assets':
-            self.path_object.new_set_attr(type=self.seq)
-            self.path_object.new_set_attr(asset=self.shot)
-
     def load_assets(self):
-        print 'loading %s from %s' % (self.scope, self.path_object.__dict__)
-        self.path_object.seq = '*'
-        self.path_object.shot = '*'
-        self.path_object.task = ''
-        self.path_object.user = ''
-        print self.path_object.path_root
+        self.asset_widget.name_row.combo.clear()
         glob_path = self.path_object.path_root
         glob_path = re.sub('/+$', '', glob_path)
         print glob_path
         list_ = glob.glob(glob_path)
-        print 'list %s' % list_
-        self.assets = []
+        assets = ['']
         for each in list_:
-            asset = each.split('%s\\' % self.scope)[-1].replace('\\', ':')
-            self.assets.append([asset])
-        self.asset_widget.setup(ListItemModel(self.assets, ['Name']))
+            assets.append(os.path.split(each)[-1])
+        self.asset_list = assets
+        self.asset_widget.name_row.combo.addItems(assets)
 
     def load_tasks(self):
         task_list = app_config()['pipeline_steps'][self.scope.lower()]
@@ -311,19 +320,19 @@ class AssetCreator(LJDialog):
     def is_valid_shot():
         pass
 
-    def on_asset_text_enter(self):
-        if 'Click Enter' in self.asset_widget.message.text():
-            if self.asset_widget.search_box.text() != '':
-                self.path_object.new_set_attr(asset=self.asset_widget.search_box.text())
-                self.path_object.new_set_attr(type='Prop')
-                for each in app_config()['pipeline_steps']['assets']['default_steps']:
-                    self.path_object.new_set_attr(task=each)
-                    # self.path_object.new_set_attr(resolution='high')
-                    # self.path_object.new_set_attr(version='000.000')
-                    # self.path_object.new_set_attr(user='tmikota')
-                    print 'Current Path With Root: %s' % self.path_object.path_root
-                    CreateProductionData(self.path_object.data,
-                                         project_management=self.project_management)
+    def on_create_clicked(self):
+        for each in self.tasks:
+            if self.scope == 'assets':
+                self.path_object.new_set_attr(asset=self.asset_widget.name_row.combo.currentText())
+                self.path_object.new_set_attr(type=self.seq)
+            elif self.scope == 'shots':
+                self.path_object.new_set_attr(shot=self.asset_widget.name_row.combo.currentText())
+                self.path_object.new_set_attr(seq=self.seq)
+            self.path_object.new_set_attr(task=each)
+            print 'Current Path With Root: %s' % self.path_object.path_root
+            CreateProductionData(self.path_object.data, project_management=self.project_management)
+        self.accept()
+        self.close()
 
 
 if __name__ == "__main__":
@@ -335,3 +344,4 @@ if __name__ == "__main__":
     td.show()
     td.raise_()
     app.exec_()
+
