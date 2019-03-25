@@ -1,12 +1,14 @@
 from Qt import QtCore
 from Qt import QtWidgets
 from Qt import QtGui
+import sys
+import yaml
 import os
 import re
 import datetime
 from core.util import current_user, test_string_against_rules
 #from core import lj_mail
-from core.config import app_config
+from core.config import app_config, user_config
 #from core import screen_grab
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.combo import AdvComboBox
@@ -808,6 +810,105 @@ class ShaderSetup(LJDialog):
         self.accept()
 
 
+class LoginDialog(LJDialog):
+
+    def __init__(self, parent=None):
+        LJDialog.__init__(self, parent)
+        self.user_name = ''
+        self.user_email = ''
+        self.company = ''
+        self.user_config = user_config()
+        self.parent = parent
+        uname_layout = QtWidgets.QHBoxLayout()
+        email_layout = QtWidgets.QHBoxLayout()
+        company_layout = QtWidgets.QHBoxLayout()
+        self.uname_label = QtWidgets.QLabel('User Name:')
+        self.email_label = QtWidgets.QLabel('Email:')
+        self.company_label = QtWidgets.QLabel('Company:')
+        self.uname_line_edit = QtWidgets.QLineEdit()
+        self.email_line_edit = QtWidgets.QLineEdit()
+        self.company_line_edit = QtWidgets.QLineEdit()
+        self.uname_line_edit.setMinimumWidth(160)
+        self.uname_line_edit.setMaximumWidth(160)
+        self.email_line_edit.setMaximumWidth(160)
+        self.email_line_edit.setMinimumWidth(160)
+        self.company_line_edit.setMaximumWidth(160)
+        self.company_line_edit.setMinimumWidth(160)
+        uname_layout.addWidget(self.uname_label)
+        uname_layout.addWidget(self.uname_line_edit)
+        email_layout.addWidget(self.email_label)
+        email_layout.addWidget(self.email_line_edit)
+        company_layout.addWidget(self.company_label)
+        company_layout.addWidget(self.company_line_edit)
+        buttons_layout = QtWidgets.QHBoxLayout()
+        self.ok_button = QtWidgets.QPushButton('Ok')
+        self.cancel_button = QtWidgets.QPushButton('Cancel')
+        buttons_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                     QtWidgets.QSizePolicy.Minimum))
+        buttons_layout.addWidget(self.cancel_button)
+        buttons_layout.addWidget(self.ok_button)
+        self.ok_button.setEnabled(False)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(uname_layout)
+        layout.addLayout(email_layout)
+        layout.addLayout(company_layout)
+        layout.addLayout(buttons_layout)
+        self.setLayout(layout)
+        self.setWindowTitle('Login')
+        self.load_user_defaults()
+
+        self.cancel_button.clicked.connect(self.on_cancel_clicked)
+        self.ok_button.clicked.connect(self.on_ok_clicked)
+        self.email_line_edit.textChanged.connect(self.on_text_changed)
+        self.uname_line_edit.textChanged.connect(self.on_text_changed)
+        self.company_line_edit.textChanged.connect(self.on_text_changed)
+
+    def on_text_changed(self):
+        uname = self.uname_line_edit.text()
+        email = self.email_line_edit.text()
+        company = self.company_line_edit.text()
+        if uname and email and company:
+            self.ok_button.setEnabled(True)
+        else:
+            self.ok_button.setEnabled(False)
+
+    def on_ok_clicked(self):
+        self.save_user_defaults()
+        self.accept()
+
+    def on_cancel_clicked(self):
+        self.accept()
+        print 'Cancel Clicked'
+
+    def load_user_defaults(self):
+        if os.path.exists(self.user_config):
+            with open(self.user_config, 'r') as stream:
+                try:
+                    result = yaml.load(stream)
+                    self.uname_line_edit.setText(result['user_name'])
+                    self.email_line_edit.setText(result['user_email'])
+                    self.company_line_edit.setText(result['company'])
+                    self.user_email = result['user_email']
+                    self.user_name = result['user_name']
+                    self.company = result['company']
+                except yaml.YAMLError as exc:
+                    print(exc)
+                    sys.exit(99)
+        else:
+            pass
+
+    def save_user_defaults(self):
+        print 'Saving user config: %s' % self.user_config
+        self.user_name = self.uname_line_edit.text()
+        self.user_email = self.email_line_edit.text()
+        self.company = self.company_line_edit.text()
+        d = {'user_name': self.user_name,
+             'user_email': self.user_email,
+             'company': self.company
+             }
+        with open(self.user_config, 'w') as outfile:
+            yaml.dump(d, outfile, default_flow_style=False)
 
 
 

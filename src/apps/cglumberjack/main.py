@@ -7,7 +7,7 @@ from cglui.widgets.base import LJMainWindow
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
-from cglui.widgets.dialog import InputDialog
+from cglui.widgets.dialog import InputDialog, LoginDialog
 from core.path import PathObject, CreateProductionData
 from asset_ingestor_widget import AssetIngestor
 
@@ -108,7 +108,7 @@ class AssetWidget(QtWidgets.QWidget):
 
     def __init__(self, parent, title, filter_string=None, path_object=None):
         QtWidgets.QWidget.__init__(self, parent)
-        v_layout = QtWidgets.QVBoxLayout(self)
+        self.v_layout = QtWidgets.QVBoxLayout(self)
         v_list = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout(self)
         self.path_object = path_object
@@ -122,7 +122,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.task = None
         self.user = None
 
-        # self.message = QtWidgets.QLabel("")
+        self.message = QtWidgets.QLabel("")
         self.search_box = LJSearchEdit(self)
         self.search_box
         self.add_button = QtWidgets.QToolButton()
@@ -157,16 +157,17 @@ class AssetWidget(QtWidgets.QWidget):
         h_layout.addWidget(self.assets_radio)
         h_layout.addWidget(self.add_button)
 
-        v_layout.setSpacing(10)
+        self.v_layout.setSpacing(10)
         v_list.setSpacing(0)
         v_list.addWidget(self.search_box)
         v_list.addWidget(self.data_table, 1)
 
-        v_layout.addLayout(h_layout)
-        # v_layout.addWidget(self.message)
-        v_layout.addLayout(self.radio_layout)
-        #v_layout.addWidget(self.scope_title)
-        v_layout.addLayout(v_list)
+        self.v_layout.addLayout(h_layout)
+        self.v_layout.addWidget(self.message)
+        self.v_layout.addLayout(self.radio_layout)
+        #self.v_layout.addWidget(self.scope_title)
+        self.v_layout.addLayout(v_list)
+        #self.v_layout.addStretch(1)
 
         self.add_button.clicked.connect(self.on_add_button_clicked)
 
@@ -249,7 +250,7 @@ class TaskWidget(QtWidgets.QWidget):
         self.show_button = QtWidgets.QToolButton()
         self.show_button.setText("more")
         self.assign_button = QtWidgets.QToolButton()
-        self.assign_button.setText("create assignment")
+        self.assign_button.setText("Create Assignment")
         self.hide_button = QtWidgets.QToolButton()
         self.hide_button.setText("less")
         self.data_table = LJTableWidget(self)
@@ -401,42 +402,42 @@ class TaskWidget(QtWidgets.QWidget):
 
 
 class CGLumberjackWidget(QtWidgets.QWidget):
-    def __init__(self, parent=None):
+
+    def __init__(self, parent=None, user_name=None, user_email=None, company=None):
         QtWidgets.QWidget.__init__(self, parent)
         # Environment Stuff
-        self.project_management = app_config()['account_info']['project_management']
-        self.root = app_config()['paths']['root']
-        self.company = app_config()['account_info']['company']
+        self.user = user_name
+        self.default_user = user_name
+        self.user_email = user_email
+        self.company = company
+        self.user_default = self.user
+        layout = QtWidgets.QVBoxLayout(self)
+        self.h_layout = QtWidgets.QHBoxLayout(self)
+        self.project_management = app_config(company=self.company)['account_info']['project_management']  # Company Specific
+        self.root = app_config()['paths']['root']  # Company Specific
         self.user_root = app_config()['cg_lumberjack_dir']
+        self.user = None
         self.context = 'source'
         self.project = '*'
         self.scope = 'assets'
         self.shot = '*'
         self.seq = '*'
-        self.user = None
-        self.user_default = app_config()['account_info']['user']
-        #self.user_default = 'PADL_dev'
-        self.user_favorites = app_config()['account_info']['user_favorites']
+        self.user_favorites = ''
         self.version = ''
         self.task = ''
         self.resolution = ''
         self.current_location = {}
         self.path_root = ''
         self.path = ''
-        layout = QtWidgets.QVBoxLayout(self)
-        self.h_layout = QtWidgets.QHBoxLayout(self)
 
         # Create the Left Panel
         self.filter_layout = QtWidgets.QVBoxLayout(self)
-        self.user_widget = LabelComboRow('User')
-        self.user_widget.combo.addItem(self.user_default)
         # company
         self.company_widget = LabelComboRow('Company')
         # filters
         self.project_filter = ProjectWidget(self, title="Projects")
 
         # assemble the filter_panel
-        self.filter_layout.addLayout(self.user_widget)
         self.filter_layout.addLayout(self.company_widget)
         self.filter_layout.addWidget(self.project_filter)
 
@@ -521,8 +522,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     # UI interface Functions / Stuff that happens when buttons get clicked/changed.
     def on_company_changed(self):
-        print 'combo changed'
         self.company = self.company_widget.combo.currentText()
+        self.project_management = app_config(company=self.company)['account_info']['project_management']  # Company Specific
+        self.root = app_config()['paths']['root']  # Company Specific
+        self.user_root = app_config()['cg_lumberjack_dir']
         self.load_projects()
         if self.middle_layout:
             self.clear_layout(self.middle_layout)
@@ -561,13 +564,17 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         else:
             pass
 
-    def on_create_asset(self):
-        # This needs to be properly designed, i need to design the create project and create company dialogs as well
-        # to ensure that regex is controlling names of shots/sequences/projects/etc....
-        # this should be built from the ground up to handle drag/drop asset/shot creation as well.
+    def on_create_asset(self, set_vars=False):
         import asset_creator
-        dialog = asset_creator.AssetCreator(self, path_dict=self.current_location)
+        print 'create asset clicked'
+        if 'asset' in self.current_location:
+            print self.current_location['asset']
+            task_mode = True
+        else:
+            task_mode = False
+        dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
         dialog.exec_()
+        self.load_assets()
 
     def on_file_dragged_to_assets(self, data):
         dialog = AssetIngestor(self, path_dict=self.current_location, current_user=self.user_default)
@@ -586,7 +593,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def on_assign_button_clicked(self, data):
         task = self.sender().label
-        dialog = InputDialog(title="Make an %s Assignment" % task, combo_box_items=self.user_favorites,
+        print self.default_user, 'USERR'
+        dialog = InputDialog(title="Make an %s Assignment" % task,
+                             combo_box_items=['', self.default_user],
+                             message='Type or Choose the username for assignment',
                              buttons=['Cancel', 'Assign Task'])
         dialog.exec_()
         if dialog.button == 'Assign Task':
@@ -597,7 +607,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.shot = data.shot
             self.seq = data.seq
             self.update_location()
-            CreateProductionData(path_object=self.current_location)
+            CreateProductionData(path_object=self.current_location, project_management=self.project_management)
         self.reload_task_widget(self.sender())
 
     def on_source_selected(self, data):
@@ -683,8 +693,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             current = PathObject(str(path))
             current.set_attr(attr='task', value='*')
             current.set_attr(attr='root', value=self.root)
+            current.new_set_attr(user_email=self.user_email)
             self.task_layout.seq = current.seq
             self.task_layout.shot = current.shot
+            task_add.clicked.connect(self.on_create_asset)
 
             self.update_location(path_object=current)
             # Get the list of tasks for the selection
@@ -783,7 +795,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if index_ != -1:
                 widget.users.setCurrentIndex(index_)
                 self.user = 'publish'
-        elif self.user == self.user_widget.combo.currentText():
+        else:
             index_ = widget.users.findText(self.user_default)
             if index_ != -1:
                 widget.users.setCurrentIndex(index_)
@@ -876,24 +888,45 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.company_widget.combo.setCurrentIndex(0)
 
     def load_assets(self):
+        red_palette = QtGui.QPalette()
+        red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
         self.assets.data_table.clearSpans()
         current = PathObject(self.current_location)
         items = glob.glob(current.path_root)
         data = []
         temp_ = []
-        for each in items:
-            obj_ = PathObject(str(each))
-            d = obj_.data
-            shot_name = '%s:%s' % (d['seq'], d['shot'])
-            if shot_name not in temp_:
-                temp_.append(shot_name)
-                data.append([d['shot'], d['seq'], each, ''])
-        self.assets.setup(ListItemModel(data, ['Name', 'Category', 'Path', 'Due Date']))
-        self.assets.data_table.hideColumn(1)
-        self.assets.data_table.hideColumn(2)
-        self.assets.data_table.set_draggable(True)
-        self.assets.data_table.dropped.connect(self.on_file_dragged_to_assets)
         self.assets.add_button.clicked.connect(self.on_create_asset)
+        if items:
+            self.assets.data_table.show()
+            self.assets.search_box.show()
+            self.assets.message.hide()
+            self.assets.radio_publishes.show()
+            self.assets.radio_everything.show()
+            self.assets.radio_user.show()
+            self.assets.scope_title.show()
+            self.assets.message.setText('')
+            for each in items:
+                obj_ = PathObject(str(each))
+                d = obj_.data
+                shot_name = '%s:%s' % (d['seq'], d['shot'])
+                if shot_name not in temp_:
+                    temp_.append(shot_name)
+                    data.append([d['shot'], d['seq'], each, ''])
+            self.assets.setup(ListItemModel(data, ['Name', 'Category', 'Path', 'Due Date']))
+            self.assets.data_table.hideColumn(1)
+            self.assets.data_table.hideColumn(2)
+            self.assets.data_table.set_draggable(True)
+            self.assets.data_table.dropped.connect(self.on_file_dragged_to_assets)
+        else:
+            self.assets.scope_title.hide()
+            self.assets.data_table.hide()
+            self.assets.search_box.hide()
+            self.assets.radio_publishes.hide()
+            self.assets.radio_everything.hide()
+            self.assets.radio_user.hide()
+            self.assets.message.setText('No %s Found! \nClick + button to create %s' % (self.scope.title(), self.scope))
+            self.assets.message.setPalette(red_palette)
+            self.assets.message.show()
 
     # CLEAR/DELETE FUNCTIONS
 
@@ -942,9 +975,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             return self.path_root
         else:
             self.current_location = {'company': self.company, 'root': self.root, 'scope': self.scope,
-                                     'context': self.context, 'project': self.project, 'seq': self.seq, 'shot': self.shot,
-                                     'user': self.user, 'version': self.version, 'task': self.task,
-                                     'resolution': self.resolution
+                                     'context': self.context, 'project': self.project, 'seq': self.seq,
+                                     'shot': self.shot, 'user': self.user,
+                                     'version': self.version, 'task': self.task,
+                                     'resolution': self.resolution, 'user_email': self.user_email
                                      }
             path_obj = PathObject(self.current_location)
             self.path_root = path_obj.path_root
@@ -978,16 +1012,32 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 class CGLumberjack(LJMainWindow):
     def __init__(self):
         LJMainWindow.__init__(self)
-        self.setCentralWidget(CGLumberjackWidget(self))
+        self.user_name = ''
+        self.user_email = ''
+        self.company = ''
+        self.load_user_config()
+        if not self.user_name:
+            self.on_login_clicked()
+        self.setCentralWidget(CGLumberjackWidget(self, user_email=self.user_email,
+                                                 user_name=self.user_name,
+                                                 company=self.company))
+        if self.user_name:
+            self.setWindowTitle('CG Lumberjack - Logged in as %s' % self.user_name)
+        else:
+            self.setWindowTitle("CG Lumberjack - Log In")
         self.status_bar = QtWidgets.QStatusBar()
         self.setStatusBar(self.status_bar)
         w = 400
         h = 500
+
         self.resize(w, h)
         menu_bar = self.menuBar()
+        two_bar = self.menuBar()
         icon = QtGui.QPixmap(":images/'lumberjack.24px.png").scaled(24, 24)
         self.setWindowIcon(icon)
+        login = QtWidgets.QAction('Login', self)
         tools_menu = menu_bar.addMenu('&Tools')
+        self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
         settings.setShortcut('Ctrl+,')
         shelves = QtWidgets.QAction('Shelf Builder', self)
@@ -999,6 +1049,20 @@ class CGLumberjack(LJMainWindow):
         # connect signals and slots
         settings.triggered.connect(self.on_settings_clicked)
         shelves.triggered.connect(self.on_shelves_clicked)
+        login.triggered.connect(self.on_login_clicked)
+
+    def load_user_config(self):
+        dialog = LoginDialog(parent=self)
+        self.user_name = dialog.user_name
+        self.user_email = dialog.user_email
+        self.company = dialog.company
+        dialog.close()
+
+    def on_login_clicked(self):
+        dialog = LoginDialog(parent=self)
+        dialog.exec_()
+        self.user_name = dialog.user_name
+        self.user_email = dialog.user_email
 
     def on_settings_clicked(self):
         from apps.configurator.main import Configurator
@@ -1015,7 +1079,6 @@ if __name__ == "__main__":
     from cglui.startup import do_gui_init
     app = do_gui_init()
     td = CGLumberjack()
-    td.setWindowTitle('CG Lumberjack')
     td.show()
     td.raise_()
     # setup stylesheet

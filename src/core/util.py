@@ -118,6 +118,22 @@ def copy_file(src, dest):
         shutil.copyfile(src, dest)
 
 
+def split_all(path):
+    allparts = []
+    while 1:
+        parts = os.path.split(path)
+        if parts[0] == path:  # sentinel for absolute paths
+            allparts.insert(0, parts[0])
+            break
+        elif parts[1] == path: # sentinel for relative paths
+            allparts.insert(0, parts[1])
+            break
+        else:
+            path = parts[0]
+            allparts.insert(0, parts[1])
+    return allparts
+
+
 if __name__ == '__main__':
     test = r'F:\FSU\VFX\render\16BTH_2018_McBain\assets\Environment\bed'
     print folder_size(test)

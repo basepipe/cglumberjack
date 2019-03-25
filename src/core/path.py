@@ -9,6 +9,7 @@ import copy
 import subprocess
 import fnmatch
 from string import Formatter
+from core.util import split_all
 
 from core.config import app_config
 #from cglcore.exceptions import LumberJackException
@@ -145,13 +146,20 @@ class PathObject(object):
                 self.data[each] = self.__dict__[each]
 
     def get_company(self, path_string):
-        companies = app_config()['account_info']['companies']
-        for c in companies:
-            if c in path_string:
-                self.new_set_attr(company=c)
-        if not self.company:
-            logging.error("No Valid Company defined in path provided - invalid path: %s" % path_string)
-            return
+        # TODO - we need to do something based off the order of the regex labels in the config here, this is VERY
+        # proned to error. We have to figure out how to make sure we have a valid, registered company somehow.  This
+        # can be something we do upon creatoin of a company through the interface, but needs to handle companies outside
+        # the interface as well.
+        temp_ = path_string.split(self.root)[-1]
+        c = split_all(temp_)[1]
+        self.new_set_attr(company=c)
+        #companies = app_config()['account_info']['companies']
+        #for c in companies:
+        #    if c in path_string:
+        #        self.new_set_attr(company=c)
+        #if not self.company:
+        #    logging.error("No Valid Company defined in path provided - invalid path: %s" % path_string)
+        #    return
 
     def unpack_path(self, path_string):
         path_string = os.path.normpath(path_string.split(self.company)[-1])
@@ -214,16 +222,18 @@ class PathObject(object):
         if sys.platform == 'win32':
             self.path_root = '%s\\%s' % (self.root, path_string)
             path_, file_ = os.path.split(self.path_root)
-            self.thumb_path_full = '%s\\%s\\%s' % (path_, '.thumb', file_)
         else:
             self.path_root = os.path.join(self.root, path_string)
             path_, file_ = os.path.split(self.path_root)
-            self.thumb_path_full = os.path.join(self.root, '.thumb', file_)
         self.path = path_string
         if self.filename:
             if self.filename != '*':
                 self.set_file_type()
                 self.set_preview_path()
+                if sys.platform == 'win32':
+                    self.thumb_path_full = '%s\\%s\\%s' % (path_, '.thumb', file_)
+                else:
+                    self.thumb_path_full = os.path.join(self.root, '.thumb', file_)
         if root:
             return self.path_root
         else:
@@ -292,11 +302,12 @@ class PathObject(object):
         :param regex:
         :return:
         """
-        if regex:
-            try:
-                regex = app_config()['rules']['path_variables'][attr]['regex']
-            except KeyError:
-                logging.info('Could not find regex for %s in config, skipping' % attr)
+        if attr != 'root':
+            if regex:
+                try:
+                    regex = app_config()['rules']['path_variables'][attr]['regex']
+                except KeyError:
+                    logging.info('Could not find regex for %s in config, skipping' % attr)
         if value == '*':
             self.__dict__[attr] = value
             self.data[attr] = value
@@ -530,6 +541,7 @@ class CreateProductionData(object):
         self.do_scope = do_scope
         if file_system:
             self.create_folders()
+        print 'Created Folders for %s' % self.path_object.path_root
         if project_management:
             logging.info('Creating Production Management Data for %s: %s' % (project_management, self.path_object.data))
             self.create_project_management_data(self.path_object, project_management)
@@ -573,8 +585,9 @@ class CreateProductionData(object):
             path_ = path_object.path_root.split('*')[0]
         else:
             path_ = path_object.path_root
-        if os.path.splitext(path_):
-            path_ = os.path.dirname(path_)
+        if path_object.ext:
+            if os.path.splitext(path_):
+                path_ = os.path.dirname(path_)
         print 'Creating directories: %s' % path_
         if not test:
             if not os.path.exists(path_):

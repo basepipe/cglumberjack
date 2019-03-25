@@ -45,8 +45,9 @@ class AssetWidget(QtWidgets.QWidget):
 
 
 class AssetCreator(LJDialog):
-    def __init__(self, parent=None, path_dict=None):
+    def __init__(self, parent=None, path_dict=None, task_mode=False):
         LJDialog.__init__(self, parent)
+        self.task_mode = task_mode
         self.resize(300, 60)
         self.red_palette = QtGui.QPalette()
         self.red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
@@ -58,7 +59,10 @@ class AssetCreator(LJDialog):
             return
         self.path_object = PathObject(path_dict)
         self.scope = self.path_object.scope
-        self.setWindowTitle('Create %s' % self.scope.title())
+        if task_mode:
+            self.setWindowTitle('Create %s' % 'Task(s)')
+        else:
+            self.setWindowTitle('Create %s' % self.scope.title())
         self.asset = None
         self.asset_message_string = ''
         self.asset_list = []
@@ -82,7 +86,10 @@ class AssetCreator(LJDialog):
         self.tasks = []
         self.task_row = QtWidgets.QHBoxLayout(self)
         self.task_combo = AdvComboBox()
-        self.create_button = QtWidgets.QPushButton('Create %s' % self.scope.title())
+        if self.task_mode:
+            self.create_button = QtWidgets.QPushButton('Create %s' % 'Task(s)')
+        else:
+            self.create_button = QtWidgets.QPushButton('Create %s' % self.scope.title())
         self.create_button.setEnabled(False)
 
         # asset & shot stuff
@@ -116,6 +123,30 @@ class AssetCreator(LJDialog):
         if self.scope == 'shots':
             self.asset_widget.category_row.combo.editTextChanged.connect(self.on_seq_text_changed)
         self.hide_layout_items(self.task_layout)
+
+        if self.task_mode:
+            self.on_set_vars()
+
+    def on_set_vars(self):
+        if self.path_object.seq:
+            index = self.asset_widget.category_row.combo.findText(self.path_object.seq)
+            if index != -1:
+                self.asset_widget.category_row.combo.setCurrentIndex(index)
+            else:
+                self.asset_widget.category_row.combo.addItem(self.path_object.seq)
+                index = self.asset_widget.category_row.combo.findText(self.path_object.seq)
+                self.asset_widget.category_row.combo.setCurrentIndex(index)
+        if self.path_object.shot:
+            print 1
+            index = self.asset_widget.name_row.combo.findText(self.path_object.shot)
+            if index != -1:
+                print 2, self.path_object.shot
+                self.asset_widget.name_row.combo.setCurrentIndex(index)
+            else:
+                print 3
+                self.asset_widget.name_row.combo.addItem(self.path_object.shot)
+                index = self.asset_widget.name_row.combo.findText(self.path_object.shot)
+                self.asset_widget.name_row.combo.setCurrentIndex(index)
 
     def on_checkbox_clicked(self):
         self.find_all_checked_boxes()
@@ -299,7 +330,9 @@ class AssetCreator(LJDialog):
                 self.path_object.new_set_attr(seq=self.seq)
             self.path_object.new_set_attr(task=each)
             print 'Current Path With Root: %s' % self.path_object.path_root
-            # CreateProductionData(self.path_object.data, project_management=self.project_management)
+            CreateProductionData(self.path_object.data, project_management=self.project_management)
+        self.accept()
+        self.close()
 
 
 if __name__ == "__main__":
