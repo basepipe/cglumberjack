@@ -628,3 +628,8 @@ def get_companies():
          }
     path_object = PathObject(d)
     return path_object.glob_project_element('company')
+
+
+def replace_illegal_filename_characters(filename):
+    return re.sub('[^A-Za-z0-9\.#]+', '_', filename)
+

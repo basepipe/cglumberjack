@@ -1,5 +1,6 @@
 import glob
 import os
+import shutil
 from Qt import QtWidgets, QtCore, QtGui
 from core.config import app_config
 from cglui.widgets.combo import AdvComboBox, LabelComboRow
@@ -8,7 +9,7 @@ from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog, LoginDialog
-from core.path import PathObject, CreateProductionData
+from core.path import PathObject, CreateProductionData, replace_illegal_filename_characters
 from asset_ingestor_widget import AssetIngestor
 
 
@@ -254,6 +255,7 @@ class TaskWidget(QtWidgets.QWidget):
         self.hide_button = QtWidgets.QToolButton()
         self.hide_button.setText("less")
         self.data_table = LJTableWidget(self)
+        self.data_table.set_draggable(True)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.data_table.setMinimumWidth(340)
@@ -734,6 +736,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
                         task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
                         task_widget.assign_clicked.connect(self.on_assign_button_clicked)
+                        task_widget.data_table.dropped.connect(self.on_file_dragged_to_source)
                         if not user:
                             task_widget.users_label.hide()
                             task_widget.users.hide()
@@ -743,6 +746,28 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                             task_widget.assign_button.show()
 
     # LOAD FUNCTIONS
+    def on_file_dragged_to_source(self, data):
+        # Only do this if it's dragged into a thing that hasn't been selected
+        object_ = PathObject(self.current_location)
+        parent = self.sender().parent()
+        object_.set_attr(attr='root', value=self.root)
+        object_.set_attr(attr='version', value=parent.versions.currentText())
+        object_.set_attr(attr='context', value='source')
+        object_.set_attr(attr='resolution', value=parent.resolutions.currentText())
+        object_.set_attr(attr='user', value=parent.users.currentText())
+        object_.set_attr(attr='task', value=self.sender().task)
+        self.update_location(object_)
+        self.clear_task_selection_except(self.sender().task)
+        for d in data:
+            if os.path.isfile(d):
+                path_, filename_ = os.path.split(d)
+                # need to make the filenames safe (no illegal chars)
+                filename_ = replace_illegal_filename_characters(filename_)
+                print 'Copying File From %s to %s' % (d, os.path.join(self.path_root, filename_))
+                shutil.copy2(d, os.path.join(self.path_root, filename_))
+                self.reload_task_widget(self.sender().parent())
+            elif os.path.isdir(d):
+                print 'No support for directories yet'
 
     def reload_task_widget(self, widget, populate_versions=True):
         # TODO - need to get a really good method written for what is shown when the task widget is reloaded/loaded
