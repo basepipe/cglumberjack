@@ -10,16 +10,19 @@ class AssetWidget(QtWidgets.QWidget):
 
     def __init__(self):
         QtWidgets.QWidget.__init__(self)
-        frame = QtWidgets.QFrame()
-        frame.setFrameShadow(QtWidgets.QFrame.Raised)
-        frame.setFrameShape(QtWidgets.QFrame.VLine)
+        # self.setStyleSheet("border: 1px solid black")
         layout = QtWidgets.QVBoxLayout()
 
         self.priority = QtWidgets.QLabel('Priority:')
+        self.priority.setStyleSheet("border: 0px")
         self.date = QtWidgets.QLabel('Due: ')
+        self.date.setStyleSheet("border: 0px")
         self.user = QtWidgets.QLabel('tmikota')
+        self.user.setStyleSheet("border: 0px")
         self.status = QtWidgets.QLabel('Ready To Start')
+        self.status.setStyleSheet("border: 0px")
         self.name = QtWidgets.QLabel('King Kong')
+        self.name.setStyleSheet("border: 0px")
         self.thumbpath = ''
 
         top_row = QtWidgets.QHBoxLayout()
@@ -41,8 +44,8 @@ class AssetWidget(QtWidgets.QWidget):
         layout.addLayout(middle_row)
         layout.addLayout(bottom_row)
         self.setLayout(layout)
-        self.setFixedWidth(230)
-        self.setFixedHeight(80)
+        #self.setFixedWidth(230)
+        self.setFixedHeight(70)
 
         self.priority.mousePressEvent = self.priority_press
         self.priority.mouseReleaseEvent = self.priority_release
@@ -88,11 +91,19 @@ class SwimLane(QtWidgets.QVBoxLayout):
     def __init__(self, label):
         QtWidgets.QVBoxLayout.__init__(self)
         self.label = QtWidgets.QLabel(label)
-        list_widget = QtWidgets.QListWidget()
+        self.list_widget = QtWidgets.QListWidget()
+        self.list_widget.setMinimumWidth(230)
 
         self.addWidget(self.label)
-        self.addWidget(list_widget)
+        self.addWidget(self.list_widget)
 
+    def add_item(self, widget):
+        item = QtGui.QListWidgetItem(self.list_widget)
+        item.setSizeHint(widget.sizeHint())
+        # Set size hint
+        # Add QListWidgetItem into QListWidget
+        self.list_widget.addItem(item)
+        self.list_widget.setItemWidget(item, widget)
 
 class Foreman(LJMainWindow):
     def __init__(self):
@@ -103,9 +114,11 @@ class Foreman(LJMainWindow):
         central_widget.setLayout(swim_lanes_layout)
         model_layout = SwimLane(label='Modelling')
         test = AssetWidget()
+        test2 = AssetWidget()
         swim_lanes_layout.addLayout(model_layout)
-        button = QtWidgets.QPushButton('test')
-        swim_lanes_layout.addWidget(test)
+        model_layout.add_item(test)
+        model_layout.add_item(test2)
+
 
 
 if __name__ == "__main__":
