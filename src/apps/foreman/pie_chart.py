@@ -1,5 +1,6 @@
 from Qt import QtCore, QtGui, QtWidgets
-import sys, random
+import sys
+import random
 
 COLORS = {'done': QtGui.QColor(0, 0, 0),
           'in progress': QtGui.QColor(0, 1, 0),
@@ -30,7 +31,7 @@ class PieChart(QtWidgets.QGraphicsView):
 app = QtWidgets.QApplication(sys.argv)
 scene = QtWidgets.QGraphicsScene()
 
-families = [1,2,3,4,5,6,7,8,9,10]
+families = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 total = 0
 set_angle = 0
 count1 = 0
