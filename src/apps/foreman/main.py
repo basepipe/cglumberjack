@@ -1,5 +1,8 @@
 from Qt import QtCore, QtGui, QtWidgets
-from cglui.widgets.base import LJDialog, LJMainWindow
+from cglui.widgets.base import LJMainWindow
+
+VIEWS = {'3d Assets': ['mdl', 'rig', 'tex', 'shd'],
+         'Shots': ['prev', 'anim', 'lite', 'comp']}
 
 
 class AssetWidget(QtWidgets.QWidget):
@@ -13,6 +16,8 @@ class AssetWidget(QtWidgets.QWidget):
         # self.setStyleSheet("border: 1px solid black")
         layout = QtWidgets.QVBoxLayout()
 
+
+        # TODO - figure out the text sizing for this label as well as the fonts.
         self.priority = QtWidgets.QLabel('Priority:')
         self.priority.setStyleSheet("border: 0px")
         self.date = QtWidgets.QLabel('Due: ')
@@ -21,7 +26,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.user.setStyleSheet("border: 0px")
         self.status = QtWidgets.QLabel('Ready To Start')
         self.status.setStyleSheet("border: 0px")
-        self.name = QtWidgets.QLabel('King Kong')
+        self.name = QtWidgets.QLabel('<b>King Kong</b>')
         self.name.setStyleSheet("border: 0px")
         self.thumbpath = ''
 
@@ -85,12 +90,10 @@ class AssetWidget(QtWidgets.QWidget):
         self.status_clicked.emit('status')
 
 
-
-
 class SwimLane(QtWidgets.QVBoxLayout):
     def __init__(self, label):
         QtWidgets.QVBoxLayout.__init__(self)
-        self.label = QtWidgets.QLabel(label)
+        self.label = QtWidgets.QLabel(label) # TODO: Center this label
         self.list_widget = QtWidgets.QListWidget()
         self.list_widget.setMinimumWidth(230)
 
@@ -105,19 +108,53 @@ class SwimLane(QtWidgets.QVBoxLayout):
         self.list_widget.addItem(item)
         self.list_widget.setItemWidget(item, widget)
 
+
+class ButtonBar(QtWidgets.QHBoxLayout):
+    view_changed = QtCore.Signal()
+    graph_clicked = QtCore.Signal()
+    connections_clicked = QtCore.Signal()
+    focus_clicked = QtCore.Signal()
+
+    def __init__(self):
+        QtWidgets.QHBoxLayout.__init__(self)
+        self.label = QtWidgets.QLabel('View: ')
+        self.combo = QtWidgets.QComboBox()
+        for each in VIEWS:
+            self.combo.addItem(each)
+        self.connections_button = QtWidgets.QToolButton()
+        self.graph_button = QtWidgets.QToolButton()
+        self.focus_button = QtWidgets.QToolButton()
+        self.addWidget(self.label)
+        self.addWidget(self.combo)
+        self.addWidget(self.connections_button)
+        self.addWidget(self.graph_button)
+        self.addWidget(self.focus_button)
+        self.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+
+
 class Foreman(LJMainWindow):
     def __init__(self):
         LJMainWindow.__init__(self)
         central_widget = QtWidgets.QWidget(self)
         self.setCentralWidget(central_widget)
-        swim_lanes_layout = QtWidgets.QHBoxLayout()
-        central_widget.setLayout(swim_lanes_layout)
-        model_layout = SwimLane(label='Modelling')
-        test = AssetWidget()
-        test2 = AssetWidget()
-        swim_lanes_layout.addLayout(model_layout)
-        model_layout.add_item(test)
-        model_layout.add_item(test2)
+        self.vertical_layout = QtWidgets.QVBoxLayout()
+        self.swim_lanes_layout = QtWidgets.QHBoxLayout()
+
+
+
+        self.vertical_layout.addLayout(ButtonBar())
+        self.vertical_layout.addLayout(self.swim_lanes_layout)
+        central_widget.setLayout(self.vertical_layout)
+
+        self.load_swim_lanes()
+
+    def load_swim_lanes(self):
+        for each in VIEWS['3d Assets']:
+            layout = SwimLane(label=each)
+            self.swim_lanes_layout.addLayout(layout)
+
+    def load_assets_into_lanes(self):
+        pass
 
 
 
