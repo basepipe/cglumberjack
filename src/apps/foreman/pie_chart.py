@@ -2,6 +2,7 @@ from Qt import QtCore, QtGui, QtWidgets
 import sys
 import random
 
+
 COLORS = {'done': QtGui.QColor(0, 0, 0),
           'in progress': QtGui.QColor(0, 1, 0),
           'not started': QtGui.QColor(1, 0, 0)
