@@ -93,7 +93,8 @@ class AssetWidget(QtWidgets.QWidget):
 class SwimLane(QtWidgets.QVBoxLayout):
     def __init__(self, label):
         QtWidgets.QVBoxLayout.__init__(self)
-        self.label = QtWidgets.QLabel(label) # TODO: Center this label
+        self.label = QtWidgets.QLabel(label.title())
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.list_widget = QtWidgets.QListWidget()
         self.list_widget.setMinimumWidth(230)
 
@@ -140,21 +141,32 @@ class Foreman(LJMainWindow):
         self.vertical_layout = QtWidgets.QVBoxLayout()
         self.swim_lanes_layout = QtWidgets.QHBoxLayout()
 
+        self.button_bar = ButtonBar()
 
-
-        self.vertical_layout.addLayout(ButtonBar())
+        self.vertical_layout.addLayout(self.button_bar)
         self.vertical_layout.addLayout(self.swim_lanes_layout)
         central_widget.setLayout(self.vertical_layout)
 
         self.load_swim_lanes()
+        self.button_bar.combo.currentIndexChanged.connect(self.load_swim_lanes)
 
     def load_swim_lanes(self):
-        for each in VIEWS['3d Assets']:
+        self.clear_layout(self.swim_lanes_layout)
+        var = self.button_bar.combo.currentText()
+        for each in VIEWS[var]:
             layout = SwimLane(label=each)
             self.swim_lanes_layout.addLayout(layout)
 
     def load_assets_into_lanes(self):
         pass
+
+    def clear_layout(self, layout):
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget() is not None:
+                child.widget().deleteLater()
+            elif child.layout() is not None:
+                self.clear_layout(child.layout())
 
 
 

@@ -30,6 +30,7 @@ class FunctionButtons(QtWidgets.QHBoxLayout):
         self.review_button = QtWidgets.QPushButton('Review')
         self.version_up = QtWidgets.QPushButton('Version Up')
 
+        self.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         self.addWidget(self.open_button)
         self.addWidget(self.version_up)
         self.addWidget(self.review_button)
@@ -269,6 +270,8 @@ class TaskWidget(QtWidgets.QWidget):
         self.review_button.setText('Review')
         self.publish_button = QtWidgets.QToolButton()
         self.publish_button.setText('Publish')
+        self.tool_button_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                              QtWidgets.QSizePolicy.Minimum))
         self.tool_button_layout.addWidget(self.open_button)
         self.tool_button_layout.addWidget(self.new_version_button)
         self.tool_button_layout.addWidget(self.review_button)
