@@ -168,6 +168,9 @@ class Foreman(LJMainWindow):
             elif child.layout() is not None:
                 self.clear_layout(child.layout())
 
+    def load_xml(self):
+        json_file = r'F:\VFX\source\18BTH_2019_Brinkley'
+        pass
 
 
 if __name__ == "__main__":
