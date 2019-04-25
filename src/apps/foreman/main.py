@@ -16,7 +16,6 @@ class AssetWidget(QtWidgets.QWidget):
         # self.setStyleSheet("border: 1px solid black")
         layout = QtWidgets.QVBoxLayout()
 
-
         # TODO - figure out the text sizing for this label as well as the fonts.
         self.priority = QtWidgets.QLabel('Priority:')
         self.priority.setStyleSheet("border: 0px")
