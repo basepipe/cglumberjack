@@ -147,6 +147,7 @@ class Foreman(LJMainWindow):
         central_widget.setLayout(self.vertical_layout)
 
         self.load_swim_lanes()
+        self.load_assets_into_lanes()
         self.button_bar.combo.currentIndexChanged.connect(self.load_swim_lanes)
 
     def load_swim_lanes(self):
@@ -157,7 +158,7 @@ class Foreman(LJMainWindow):
             self.swim_lanes_layout.addLayout(layout)
 
     def load_assets_into_lanes(self):
-        pass
+        self.load_project_json()
 
     def clear_layout(self, layout):
         while layout.count():
@@ -167,8 +168,18 @@ class Foreman(LJMainWindow):
             elif child.layout() is not None:
                 self.clear_layout(child.layout())
 
-    def load_xml(self):
-        json_file = r'F:\VFX\source\18BTH_2019_Brinkley'
+    def load_project_json(self):
+        import core.assetcore as ac
+        json_file = r'Z:\Projects\VFX\render\19F3_2019_Lucia\19F3_2019_Lucia.json'
+        layout_data = ac.readJson(json_file)
+        for each in layout_data:
+            if layout_data[each]['scope'] == 'assets':
+                layout_data[each]['json']
+                layout_data[each]['name'], layout_data[each]['status'], layout_data[each]['json']
+        # read the json file
+        # find all the assets
+
+    def load_asset_json(self, json):
         pass
 
 
