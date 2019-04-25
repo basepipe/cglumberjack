@@ -1,7 +1,13 @@
+import os
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.base import LJMainWindow
+import core.assetcore as ac
+from core.config import app_config
 
-VIEWS = {'3d Assets': ['mdl', 'rig', 'tex', 'shd'],
+
+VIEWS = {'All Assets': ['mdl', 'rig', 'tex', 'shd'],
+         'Rigged Assets': ['mdl', 'rig', 'tex', 'shd'],
+         'Simple Assets': ['mdl', 'tex', 'shd'],
          'Shots': ['prev', 'anim', 'lite', 'comp']}
 
 
@@ -169,18 +175,55 @@ class Foreman(LJMainWindow):
                 self.clear_layout(child.layout())
 
     def load_project_json(self):
-        import core.assetcore as ac
         json_file = r'Z:\Projects\VFX\render\19F3_2019_Lucia\19F3_2019_Lucia.json'
         layout_data = ac.readJson(json_file)
         for each in layout_data:
             if layout_data[each]['scope'] == 'assets':
-                layout_data[each]['json']
-                layout_data[each]['name'], layout_data[each]['status'], layout_data[each]['json']
+                print layout_data[each]['name']
+                if layout_data[each]['json']:
+                    self.load_asset_json(layout_data[each]['json'])
+
         # read the json file
         # find all the assets
 
-    def load_asset_json(self, json):
-        pass
+    def load_asset_json(self, asset, json):
+        # add root to the json file
+        simple_asset_dict = {asset: {'rig': {'status': 'ignored',
+                                             'due': 'None',
+                                             'assigned': 'not assigned'
+                                             },
+                                     'mdl': {'status': 'not started',
+                                             'due': 'None',
+                                             'assigned': 'not assigned'
+                                             },
+                                     'shd': {'status': 'not started',
+                                             'due': 'None',
+                                             'assigned': 'not assigned'
+                                             },
+                                     'tex': {'status': 'not started',
+                                             'due': 'None',
+                                             'assigned': 'not assigned'
+                                             }
+                                     }
+
+                             }
+        root = app_config()['paths']['root']
+        root = r'Z:/Projects/VFX'
+        json_with_root = '%s%s' % (root, json)
+        asset_data = ac.readJson(json_with_root)
+        for task in asset_data:
+            if asset_data[task]['status']:
+                simple_asset_dict[asset][task]['status'] = asset_data[task]['status']
+            if asset_data[task]['due']:
+                print 'due date found'
+            if asset_data[task]['assigned']:
+                print 'assignment found'
+
+        for task in simple_asset_dict:
+            print task
+            # add the asset item if the status matches properly
+
+
 
 
 if __name__ == "__main__":
