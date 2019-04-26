@@ -17,23 +17,25 @@ class AssetWidget(QtWidgets.QWidget):
     priority_clicked = QtCore.Signal(object)
     date_clicked = QtCore.Signal(object)
 
-    def __init__(self):
+    def __init__(self, name, status='Not Started', due='Not Scheduled', assigned='Not Assigned', priority='Medium',
+                 json_path=None):
         QtWidgets.QWidget.__init__(self)
         # self.setStyleSheet("border: 1px solid black")
         layout = QtWidgets.QVBoxLayout()
 
         # TODO - figure out the text sizing for this label as well as the fonts.
-        self.priority = QtWidgets.QLabel('Priority:')
+        self.priority = QtWidgets.QLabel('Priority: %s' % priority)
         self.priority.setStyleSheet("border: 0px")
-        self.date = QtWidgets.QLabel('Due: ')
+        self.date = QtWidgets.QLabel('Due: %s' % due)
         self.date.setStyleSheet("border: 0px")
-        self.user = QtWidgets.QLabel('tmikota')
+        self.user = QtWidgets.QLabel(assigned)
         self.user.setStyleSheet("border: 0px")
-        self.status = QtWidgets.QLabel('Ready To Start')
+        self.status = QtWidgets.QLabel("Status: %s" % status)
         self.status.setStyleSheet("border: 0px")
-        self.name = QtWidgets.QLabel('<b>King Kong</b>')
+        self.name = QtWidgets.QLabel('<b>%s</b>' % name)
         self.name.setStyleSheet("border: 0px")
         self.thumbpath = ''
+        self.json_path = json_path
 
         top_row = QtWidgets.QHBoxLayout()
         top_row.addWidget(self.priority)
@@ -55,7 +57,7 @@ class AssetWidget(QtWidgets.QWidget):
         layout.addLayout(bottom_row)
         self.setLayout(layout)
         #self.setFixedWidth(230)
-        self.setFixedHeight(70)
+        self.setFixedHeight(90)
 
         self.priority.mousePressEvent = self.priority_press
         self.priority.mouseReleaseEvent = self.priority_release
@@ -145,6 +147,7 @@ class Foreman(LJMainWindow):
         self.setCentralWidget(central_widget)
         self.vertical_layout = QtWidgets.QVBoxLayout()
         self.swim_lanes_layout = QtWidgets.QHBoxLayout()
+        self.lanes_dict = {}
 
         self.button_bar = ButtonBar()
 
@@ -153,7 +156,7 @@ class Foreman(LJMainWindow):
         central_widget.setLayout(self.vertical_layout)
 
         self.load_swim_lanes()
-        self.load_assets_into_lanes()
+        # self.load_assets_into_lanes()
         self.button_bar.combo.currentIndexChanged.connect(self.load_swim_lanes)
 
     def load_swim_lanes(self):
@@ -162,6 +165,8 @@ class Foreman(LJMainWindow):
         for each in VIEWS[var]:
             layout = SwimLane(label=each)
             self.swim_lanes_layout.addLayout(layout)
+            self.lanes_dict[each.lower()] = layout
+        self.load_assets_into_lanes()
 
     def load_assets_into_lanes(self):
         self.load_project_json()
@@ -181,7 +186,7 @@ class Foreman(LJMainWindow):
             if layout_data[each]['scope'] == 'assets':
                 print layout_data[each]['name']
                 if layout_data[each]['json']:
-                    self.load_asset_json(layout_data[each]['json'])
+                    self.load_asset_json(each, layout_data[each]['json'])
 
         # read the json file
         # find all the assets
@@ -207,6 +212,7 @@ class Foreman(LJMainWindow):
                                      }
 
                              }
+
         root = app_config()['paths']['root']
         root = r'Z:/Projects/VFX'
         json_with_root = '%s%s' % (root, json)
@@ -214,16 +220,35 @@ class Foreman(LJMainWindow):
         for task in asset_data:
             if asset_data[task]['status']:
                 simple_asset_dict[asset][task]['status'] = asset_data[task]['status']
-            if asset_data[task]['due']:
-                print 'due date found'
-            if asset_data[task]['assigned']:
-                print 'assignment found'
+            try:
+                if asset_data[task]['due']:
+                    print 'due date found'
+            except KeyError:
+                pass
+                # print 'No Due Date on asset %s:%s' % (asset, task)
+            try:
+                if asset_data[task]['assigned']:
+                    print 'assignment found'
+            except KeyError:
+                pass
+                # print 'No Assignment on asset %s:%s' % (asset, task)
 
-        for task in simple_asset_dict:
-            print task
-            # add the asset item if the status matches properly
-
-
+        for asset in simple_asset_dict:
+            name = asset
+            for task in simple_asset_dict[name]:
+                status = simple_asset_dict[name][task]['status']
+                due = simple_asset_dict[name][task]['due']
+                assigned = simple_asset_dict[name][task]['assigned']
+                priority = 'high'
+                if status != 'published':
+                    widget = AssetWidget(name=name, status=status, due=due, assigned=assigned, priority=priority,
+                                         json_path=json)
+                    print json
+                    try:
+                        self.lanes_dict[task].add_item(widget)
+                    except KeyError:
+                        print 'Task %s not scheduled, keeping default values' % task
+                # add the asset item if the status matches properly
 
 
 if __name__ == "__main__":
