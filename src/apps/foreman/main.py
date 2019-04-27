@@ -18,7 +18,7 @@ class AssetWidget(QtWidgets.QWidget):
     date_clicked = QtCore.Signal(object)
 
     def __init__(self, name, status='Not Started', due='Not Scheduled', assigned='Not Assigned', priority='Medium',
-                 json_path=None):
+                 json_path=None, done=False):
         QtWidgets.QWidget.__init__(self)
         # self.setStyleSheet("border: 1px solid black")
         layout = QtWidgets.QVBoxLayout()
@@ -52,9 +52,11 @@ class AssetWidget(QtWidgets.QWidget):
         middle_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         bottom_row.addWidget(self.status)
 
-        layout.addLayout(top_row)
+        if not done:
+            layout.addLayout(top_row)
         layout.addLayout(middle_row)
-        layout.addLayout(bottom_row)
+        if not done:
+            layout.addLayout(bottom_row)
         self.setLayout(layout)
         #self.setFixedWidth(230)
         self.setFixedHeight(90)
@@ -138,6 +140,9 @@ class ButtonBar(QtWidgets.QHBoxLayout):
         self.addWidget(self.graph_button)
         self.addWidget(self.focus_button)
         self.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        self.connections_button.hide()
+        self.graph_button.hide()
+        self.focus_button.hide()
 
 
 class Foreman(LJMainWindow):
@@ -166,6 +171,9 @@ class Foreman(LJMainWindow):
             layout = SwimLane(label=each)
             self.swim_lanes_layout.addLayout(layout)
             self.lanes_dict[each.lower()] = layout
+        layout = SwimLane(label='Done')
+        self.swim_lanes_layout.addLayout(layout)
+        self.lanes_dict['Done'] = layout
         self.load_assets_into_lanes()
 
     def load_assets_into_lanes(self):
@@ -180,7 +188,7 @@ class Foreman(LJMainWindow):
                 self.clear_layout(child.layout())
 
     def load_project_json(self):
-        json_file = r'Z:\Projects\VFX\render\19F3_2019_Lucia\19F3_2019_Lucia.json'
+        json_file = r'F:/VFX/render/18BTH_2019_Brinkley/18BTH_2019_Brinkley.json'
         layout_data = ac.readJson(json_file)
         for each in layout_data:
             if layout_data[each]['scope'] == 'assets':
@@ -190,6 +198,14 @@ class Foreman(LJMainWindow):
 
         # read the json file
         # find all the assets
+
+    def check_publishes(self, dict):
+        done = True
+        for task in dict:
+            print task, dict[task]['status']
+            if dict[task]['status'] != 'published':
+                done = False
+        return done
 
     def load_asset_json(self, asset, json):
         # add root to the json file
@@ -214,41 +230,47 @@ class Foreman(LJMainWindow):
                              }
 
         root = app_config()['paths']['root']
-        root = r'Z:/Projects/VFX'
+        root = r'F:/VFX'
         json_with_root = '%s%s' % (root, json)
         asset_data = ac.readJson(json_with_root)
-        for task in asset_data:
-            if asset_data[task]['status']:
-                simple_asset_dict[asset][task]['status'] = asset_data[task]['status']
-            try:
-                if asset_data[task]['due']:
-                    print 'due date found'
-            except KeyError:
-                pass
-                # print 'No Due Date on asset %s:%s' % (asset, task)
-            try:
-                if asset_data[task]['assigned']:
-                    print 'assignment found'
-            except KeyError:
-                pass
-                # print 'No Assignment on asset %s:%s' % (asset, task)
+        self.check_publishes(asset_data)
+        if self.check_publishes(asset_data):
+            # add the asset to the done column
+            widget = AssetWidget(name=asset, done=True)
+            self.lanes_dict['Done'].add_item(widget)
+        else:
+            for task in asset_data:
+                if asset_data[task]['status']:
+                    simple_asset_dict[asset][task]['status'] = asset_data[task]['status']
+                try:
+                    if asset_data[task]['due']:
+                        print 'due date found'
+                except KeyError:
+                    pass
+                    # print 'No Due Date on asset %s:%s' % (asset, task)
+                try:
+                    if asset_data[task]['assigned']:
+                        print 'assignment found'
+                except KeyError:
+                    pass
+                    # print 'No Assignment on asset %s:%s' % (asset, task)
 
-        for asset in simple_asset_dict:
-            name = asset
-            for task in simple_asset_dict[name]:
-                status = simple_asset_dict[name][task]['status']
-                due = simple_asset_dict[name][task]['due']
-                assigned = simple_asset_dict[name][task]['assigned']
-                priority = 'high'
-                if status != 'published':
-                    widget = AssetWidget(name=name, status=status, due=due, assigned=assigned, priority=priority,
-                                         json_path=json)
-                    print json
-                    try:
-                        self.lanes_dict[task].add_item(widget)
-                    except KeyError:
-                        print 'Task %s not scheduled, keeping default values' % task
-                # add the asset item if the status matches properly
+            for asset in simple_asset_dict:
+                name = asset
+                for task in simple_asset_dict[name]:
+                    status = simple_asset_dict[name][task]['status']
+                    due = simple_asset_dict[name][task]['due']
+                    assigned = simple_asset_dict[name][task]['assigned']
+                    priority = 'high'
+                    if status != 'published':
+                        widget = AssetWidget(name=name, status=status, due=due, assigned=assigned, priority=priority,
+                                             json_path=json)
+                        print json
+                        try:
+                            self.lanes_dict[task].add_item(widget)
+                        except KeyError:
+                            print 'Task %s not scheduled, keeping default values' % task
+                    # add the asset item if the status matches properly
 
 
 if __name__ == "__main__":

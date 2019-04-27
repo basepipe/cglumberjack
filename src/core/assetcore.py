@@ -3,6 +3,7 @@ import logging
 from enum import Enum
 logging.getLogger().setLevel(logging.INFO)
 
+
 class MetaObject(object):
     def __init__(self, jsonfile=None, _type=None, **kwargs):
         self._metaItems = []
