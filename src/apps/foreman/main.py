@@ -1,4 +1,3 @@
-import os
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.base import LJMainWindow
 import core.assetcore as ac

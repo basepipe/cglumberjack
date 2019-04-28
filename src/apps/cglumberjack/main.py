@@ -66,7 +66,7 @@ class ProjectWidget(QtWidgets.QWidget):
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.data_table.setMinimumWidth(200)
+        self.data_table.setMinimumWidth(220)
 
         # this is where the filter needs to be!
         h_layout.addWidget(self.title)
@@ -76,6 +76,8 @@ class ProjectWidget(QtWidgets.QWidget):
         #v_layout.addWidget(self.message)
         v_layout.addWidget(self.search_box)
         v_layout.addWidget(self.data_table, 1)
+        # v_layout.setSpacing(10)
+        v_layout.setContentsMargins(0, 20, 0, 0)  # left, top, right, bottom
 
         self.add_button.clicked.connect(self.on_add_button_clicked)
 
@@ -113,27 +115,30 @@ class AssetWidget(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         self.v_layout = QtWidgets.QVBoxLayout(self)
         v_list = QtWidgets.QVBoxLayout()
-        h_layout = QtWidgets.QHBoxLayout()
+        scope_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
-        self.title = QtWidgets.QLabel("<b>%s</b>" % title)
+        self.title = QtWidgets.QLabel("<b>Project: %s</b>" % title)
         self.scope_title = QtWidgets.QLabel("<b>%s</b>" % 'Assets')
         self.task = None
         self.user = None
+        minWidth = 340
 
         self.message = QtWidgets.QLabel("")
+        self.message.setMinimumWidth(minWidth)
+        self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.search_box = LJSearchEdit(self)
-        self.search_box
         self.add_button = QtWidgets.QToolButton()
         self.add_button.setText("+")
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.data_table.setMinimumWidth(340)
+        self.data_table.setMinimumWidth(minWidth)
 
         # build the filter optoins row
         self.assets_radio = QtWidgets.QRadioButton('Assets')
@@ -148,29 +153,32 @@ class AssetWidget(QtWidgets.QWidget):
         self.radio_group2.addButton(self.radio_user)
         self.radio_group2.addButton(self.radio_everything)
         self.radio_group2.addButton(self.radio_publishes)
-        self.radio_layout.addWidget(self.scope_title)
+        # self.radio_layout.addWidget(self.title)
+        self.radio_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         self.radio_layout.addWidget(self.radio_everything)
         self.radio_layout.addWidget(self.radio_user)
         self.radio_layout.addWidget(self.radio_publishes)
 
         # this is where the filter needs to be!
-        h_layout.addWidget(self.title)
-        h_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
-        h_layout.addWidget(self.shots_radio)
-        h_layout.addWidget(self.assets_radio)
-        h_layout.addWidget(self.add_button)
+        scope_layout.addWidget(self.scope_title)
+        scope_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        scope_layout.addWidget(self.shots_radio)
+        scope_layout.addWidget(self.assets_radio)
+        scope_layout.addWidget(self.add_button)
 
-        self.v_layout.setSpacing(10)
-        v_list.setSpacing(0)
+        #v_list.setSpacing(2)
+        v_list.addItem(QtWidgets.QSpacerItem(0, 3, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
         v_list.addWidget(self.search_box)
         v_list.addWidget(self.data_table, 1)
 
-        self.v_layout.addLayout(h_layout)
-        self.v_layout.addWidget(self.message)
+        self.v_layout.addWidget(self.title)
+        self.v_layout.addItem(QtWidgets.QSpacerItem(0, 4, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
         self.v_layout.addLayout(self.radio_layout)
-        #self.v_layout.addWidget(self.scope_title)
+        self.v_layout.addItem(QtWidgets.QSpacerItem(0, 8, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
+        self.v_layout.addLayout(scope_layout)
+        self.v_layout.addWidget(self.message)
         self.v_layout.addLayout(v_list)
-        #self.v_layout.addStretch(1)
+        self.v_layout.setContentsMargins(0, 12, 0, 0)
 
         self.add_button.clicked.connect(self.on_add_button_clicked)
 
@@ -201,7 +209,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.assign_clicked.emit(self.path_object)
 
     def set_title(self, new_title):
-        self.title.setText('<b>%s</b>' % new_title.title())
+        self.title.setText('<b>Project:  %s</b>' % new_title.title())
 
     def set_scope_title(self, new_title):
         self.scope_title.setText('<b>%s</b>' % new_title.title())
@@ -258,7 +266,7 @@ class FileTableWidget(LJTableWidget):
             e.ignore()
 
 
-class TaskWidget(QtWidgets.QWidget):
+class TaskWidget(QtWidgets.QFrame):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
@@ -266,45 +274,48 @@ class TaskWidget(QtWidgets.QWidget):
     open_button_clicked = QtCore.Signal()
 
     def __init__(self, parent, title, filter_string=None, path_object=None):
-        QtWidgets.QWidget.__init__(self, parent)
+        QtWidgets.QFrame.__init__(self, parent)
+        self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
         v_layout = QtWidgets.QVBoxLayout(self)
-        h_layout = QtWidgets.QHBoxLayout()
+        task_row = QtWidgets.QHBoxLayout()
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
-        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Maximum)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
-        self.title = QtWidgets.QLabel("<b>%s</b>" % title)
+        self.title = QtWidgets.QLabel("<b>%s</b>" % title.title())
         self.task = None
         self.user = None
         self.versions = AdvComboBox()
         self.versions.setMinimumWidth(200)
         self.versions.hide()
+        self.setMinimumWidth(300)
 
-        self.users_label = QtWidgets.QLabel("  User:")
+        self.users_label = QtWidgets.QLabel("User:")
         self.users = AdvComboBox()
         self.users_layout = QtWidgets.QHBoxLayout()
-        self.users_layout.addWidget(self.users_label)
         self.users_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
                                                         QtWidgets.QSizePolicy.Minimum))
+        self.users_layout.addWidget(self.users_label)
+
         self.users_layout.addWidget(self.users)
 
         self.resolutions = AdvComboBox()
         self.resolutions_layout = QtWidgets.QHBoxLayout()
-        self.resolutions_label = QtWidgets.QLabel("  Resolution:")
-        self.resolutions_layout.addWidget(self.resolutions_label)
         self.resolutions_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                              QtWidgets.QSizePolicy.Minimum))
+                                                        QtWidgets.QSizePolicy.Minimum))
+        self.resolutions_label = QtWidgets.QLabel("Resolution:")
+        self.resolutions_layout.addWidget(self.resolutions_label)
         self.resolutions_layout.addWidget(self.resolutions)
+        self.resolutions_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.message = QtWidgets.QLabel("")
-        self.search_box = LJSearchEdit(self)
-        self.add_button = QtWidgets.QToolButton()
-        self.add_button.setText("+")
+        # self.search_box = LJSearchEdit(self)
+        # self.add_button = QtWidgets.QToolButton()
+        # self.add_button.setText("+")
         self.show_button = QtWidgets.QToolButton()
         self.show_button.setText("more")
-        self.assign_button = QtWidgets.QToolButton()
+        self.assign_button = QtWidgets.QPushButton()
         self.assign_button.setText("Create Assignment")
         self.hide_button = QtWidgets.QToolButton()
         self.hide_button.setText("less")
@@ -313,6 +324,7 @@ class TaskWidget(QtWidgets.QWidget):
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.data_table.setMinimumHeight(50)
+        self.data_table.setMinimumWidth(150)
 
         # build the tool button row
         self.open_button = QtWidgets.QToolButton()
@@ -331,31 +343,30 @@ class TaskWidget(QtWidgets.QWidget):
         self.tool_button_layout.addWidget(self.publish_button)
 
         # this is where the filter needs to be!
-        h_layout.addWidget(self.title)
-        h_layout.addWidget(self.versions)
-        h_layout.addWidget(self.search_box)
-        h_layout.addWidget(self.show_button)
-        h_layout.addWidget(self.hide_button)
-        h_layout.addWidget(self.assign_button)
-        h_layout.addWidget(self.add_button)
+        task_row.addWidget(self.title)
+        task_row.addWidget(self.versions)
+        # task_row.addWidget(self.search_box)
+        task_row.addWidget(self.show_button)
+        task_row.addWidget(self.hide_button)
+        # task_row.addWidget(self.assign_button)
+        # task_row.addWidget(self.add_button)
 
-        v_layout.addLayout(h_layout)
-        v_layout.addWidget(self.message)
+        v_layout.addLayout(task_row)
+        # v_layout.addWidget(self.message)
+        v_layout.addWidget(self.assign_button)
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
         v_layout.addWidget(self.data_table, 1)
         v_layout.addItem((QtWidgets.QSpacerItem(0, 25, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)))
         v_layout.addLayout(self.tool_button_layout)
-        v_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)))
+        self.setLayout(v_layout)
         self.hide_combos()
 
-        self.message.hide()
         self.assign_button.hide()
-        self.add_button.hide()
         self.hideall()
         self.show_button.clicked.connect(self.on_show_button_clicked)
         self.hide_button.clicked.connect(self.on_hide_button_clicked)
-        self.add_button.clicked.connect(self.on_add_button_clicked)
+        # self.add_button.clicked.connect(self.on_add_button_clicked)
         self.assign_button.clicked.connect(self.on_assign_button_clicked)
         self.open_button.clicked.connect(self.on_open_button_clicked)
         self.hide_tool_buttons()
@@ -440,7 +451,7 @@ class TaskWidget(QtWidgets.QWidget):
 
     def setup(self, mdl):
         self.data_table.set_item_model(mdl)
-        self.data_table.set_search_box(self.search_box)
+        # self.data_table.set_search_box(self.search_box)
 
     def on_open_button_clicked(self):
         self.open_button_clicked.emit()
@@ -504,16 +515,20 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         # assemble the filter_panel
         self.filter_layout.addLayout(self.company_widget)
         self.filter_layout.addWidget(self.project_filter)
+        self.filter_layout.setSpacing(0)
+        self.filter_layout.setContentsMargins(0, 10, 0, 0)
 
         # Create the Middle Panel
         self.middle_layout = QtWidgets.QVBoxLayout()
         self.assets = None
         self.assets_filter_default = 'Everything'
+        self.middle_layout.setContentsMargins(10, 0, 10, 0)
 
         # Create the Right Panel
 
         # Create Empty layouts for tasks as well as renders.
         self.task_layout = QtWidgets.QVBoxLayout()
+        self.task_layout.setContentsMargins(0, 10, 0, 0)
         self.render_layout = QtWidgets.QVBoxLayout()
 
         # create the current path
@@ -525,12 +540,20 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.cl_row.addWidget(self.current_location_line_edit)
 
         # assemble the main h layoutQtWidgets.QLabel("<b>%s</b>" % title)
+        # lineA = QtWidgets.QFrame()
+        # lineA.setFrameShape(QtWidgets.QFrame.VLine)
+        # lineA.setFrameShadow(QtWidgets.QFrame.Sunken)
+        # lineA.setMinimumHeight(100)
+
         self.h_layout.addLayout(self.filter_layout)
+        # self.h_layout.addWidget(lineA)
         self.h_layout.addLayout(self.middle_layout)
         self.h_layout.addLayout(self.task_layout)
         self.h_layout.addLayout(self.render_layout)
-        self.h_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                    QtWidgets.QSizePolicy.Minimum))
+        #self.h_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+        #                                            QtWidgets.QSizePolicy.Minimum))
+        self.h_layout.addStretch()
+        self.h_layout.setSpacing(10)
         layout.addLayout(self.cl_row)
         layout.addLayout(self.h_layout)
 
@@ -756,10 +779,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             task_add = QtWidgets.QToolButton()
             task_add.setText('+')
             task_label_layout = QtWidgets.QHBoxLayout()
-            task_label_layout.addWidget(task_label)
-            task_label_layout.addWidget(task_add)
-            task_label_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
-                                                            QtWidgets.QSizePolicy.Minimum))
+            # task_label_layout.addWidget(task_label)
+
+            self.task_layout.addWidget(task_label)
+            self.task_layout.addItem((QtWidgets.QSpacerItem(0, 32, QtWidgets.QSizePolicy.Minimum,
+                                                            QtWidgets.QSizePolicy.Minimum)))
             self.task_layout.addLayout(task_label_layout)
 
             # set our current location
@@ -775,14 +799,17 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.update_location(path_object=current)
             # Get the list of tasks for the selection
             task_list = current.glob_project_element('task')
+            task_label_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                            QtWidgets.QSizePolicy.Minimum))
             for task in task_list:
+                task_radio = QtWidgets.QCheckBox(task)
+                task_label_layout.addWidget(task_radio)
                 if '.' not in task:
                     if task not in self.task_layout.tasks:
                         # version_location = copy.copy(self.current_location)
                         task_widget = TaskWidget(parent=self, title=task, path_object=current)
                         task_widget.task = task
                         task_widget.showall()
-                        task_widget.search_box.hide()
                         task_widget.hide_button.hide()
                         task_widget.show_button.show()
 
@@ -792,8 +819,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         resolution = self.populate_resolutions_combo(task_widget, current, task)
                         self.task_layout.addWidget(task_widget)
                         self.task_layout.tasks.append(task)
-                        self.task_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
-                                                                        QtWidgets.QSizePolicy.Expanding)))
                         version_obj = current.copy(task=task, user=user, version=version,
                                                    resolution=resolution, filename='*')
                         task_widget.data_table.task = version_obj.task
@@ -818,6 +843,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                             task_widget.versions.hide()
                             task_widget.show_button.hide()
                             task_widget.assign_button.show()
+            task_label_layout.addWidget(task_add)
+            self.task_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
+                                                            QtWidgets.QSizePolicy.Expanding)))
 
     def on_open_clicked(self):
         if '####' in self.path_root:
@@ -1023,14 +1051,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if shot_name not in temp_:
                     temp_.append(shot_name)
                     if d['scope'] == 'assets':
-                        data.append([d['seq'], d['shot'], each, ''])
+                        data.append([d['seq'], d['shot'], each, '', ''])
                     elif d['scope'] == 'shots':
-                        data.append([d['seq'], shot_name, each, ''])
+                        data.append([d['seq'], shot_name, each, '', ''])
             if d['scope'] == 'assets':
-                self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date']))
+                self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status']))
                 self.assets.data_table.hideColumn(0)
             elif d['scope'] == 'shots':
-                self.assets.setup(ListItemModel(data, ['Seq', 'Shot', 'Path', 'Due Date']))
+                self.assets.setup(ListItemModel(data, ['Seq', 'Shot', 'Path', 'Due Date', 'Status']))
                 self.assets.data_table.hideColumn(0)
             self.assets.data_table.hideColumn(2)
             self.assets.data_table.set_draggable(True)
