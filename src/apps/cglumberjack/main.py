@@ -2,7 +2,7 @@ import glob
 import os
 import shutil
 from Qt import QtWidgets, QtCore, QtGui
-from core.config import app_config
+from core.config import app_config, UserConfig
 from cglui.widgets.combo import AdvComboBox, LabelComboRow
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.search import LJSearchEdit
@@ -478,12 +478,13 @@ class TaskWidget(QtWidgets.QFrame):
 
 class CGLumberjackWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, user_name=None, user_email=None, company=None):
+    def __init__(self, parent=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None):
         QtWidgets.QWidget.__init__(self, parent)
         # Environment Stuff
         self.user = user_name
         self.default_user = user_name
         self.user_email = user_email
+        self.user_name = user_name
         self.company = company
         self.user_default = self.user
         layout = QtWidgets.QVBoxLayout(self)
@@ -493,10 +494,26 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.user_root = app_config()['cg_lumberjack_dir']
         self.user = None
         self.context = 'source'
-        self.project = '*'
-        self.scope = 'assets'
-        self.shot = '*'
-        self.seq = '*'
+        self.initial_path_object = None
+        self.radio_filter = radio_filter
+        if path:
+            self.initial_path_object = PathObject(path)
+        if self.initial_path_object.project:
+            self.project = self.initial_path_object.project
+        else:
+            self.project = '*'
+        if self.initial_path_object.scope:
+            self.scope = self.initial_path_object.scope
+        else:
+            self.scope = 'assets'
+        if self.initial_path_object.shot:
+            self.shot = self.initial_path_object.shot
+        else:
+            self.shot = '*'
+        if self.initial_path_object.seq:
+            self.seq = self.initial_path_object.seq
+        else:
+            self.seq = '*'
         self.user_favorites = ''
         self.version = ''
         self.task = ''
@@ -521,7 +538,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         # Create the Middle Panel
         self.middle_layout = QtWidgets.QVBoxLayout()
         self.assets = None
-        self.assets_filter_default = 'Everything'
+        self.assets_filter_default = filter
         self.middle_layout.setContentsMargins(10, 0, 10, 0)
 
         # Create the Right Panel
@@ -748,7 +765,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         # build the asset Widget
         self.clear_layout(self.middle_layout)
         self.assets = AssetWidget(self, title="")
-        self.assets.radio_everything.setChecked(True)
+        if not self.radio_filter:
+            self.assets.radio_everything.setChecked(True)
+        elif self.radio_filter == 'Everything':
+            self.assets.radio_everything.setChecked(True)
+        elif self.radio_filter == 'My Assignments':
+            self.assets.radio_user.setChecked(True)
+        elif self.radio_filter == 'Publishes':
+            self.assets.radio_publishes.setChecked(True)
         self.set_scope_radio()
         self.assets.set_title('<b>%s</b>' % self.project)
         self.assets.set_scope_title('<b>%s</b>' % self.scope)
@@ -988,6 +1012,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.project_filter.data_table.setEnabled(True)
             self.project_filter.add_button.setText('+')
         self.project_filter.setup(ListItemModel(self.prep_list_for_table(projects, split_for_file=True), ['Name']))
+        if self.project != '*':
+            self.project_filter.data_table.select_row_by_text(self.project)
+            self.on_project_changed(data=[self.project], cmd=True)
         self.update_location()
 
     def load_companies(self, company=None):
@@ -1164,12 +1191,18 @@ class CGLumberjack(LJMainWindow):
         self.user_name = ''
         self.user_email = ''
         self.company = ''
+        self.previous_path = ''
+        self.filter = 'Everything'
+        self.previous_paths = {}
         self.load_user_config()
         if not self.user_name:
             self.on_login_clicked()
+        print self.previous_path, '----------'
         self.setCentralWidget(CGLumberjackWidget(self, user_email=self.user_email,
                                                  user_name=self.user_name,
-                                                 company=self.company))
+                                                 company=self.company,
+                                                 path=self.previous_path,
+                                                 radio_filter=self.filter))
         if self.user_name:
             self.setWindowTitle('CG Lumberjack - Logged in as %s' % self.user_name)
         else:
@@ -1201,11 +1234,18 @@ class CGLumberjack(LJMainWindow):
         login.triggered.connect(self.on_login_clicked)
 
     def load_user_config(self):
-        dialog = LoginDialog(parent=self)
-        self.user_name = dialog.user_name
-        self.user_email = dialog.user_email
-        self.company = dialog.company
-        dialog.close()
+        config = UserConfig().d
+        self.user_name = str(config['user_name'])
+        self.user_email = str(config['user_email'])
+        self.company = str(config['company'])
+        self.previous_path = str(config['previous_path'])
+        self.previous_path = self.previous_path
+        if self.user_name in self.previous_path:
+            self.filter = 'My Assignments'
+        elif 'publish' in self.previous_path:
+            self.filter = 'Publishes'
+        else:
+            self.filter = 'Everything'
 
     def on_login_clicked(self):
         dialog = LoginDialog(parent=self)
@@ -1222,6 +1262,14 @@ class CGLumberjack(LJMainWindow):
         from apps.shelf_tool.main import ShelfTool
         dialog = ShelfTool(self)
         dialog.exec_()
+
+    def closeEvent(self, event):
+        user_config = UserConfig(company=self.centralWidget().company,
+                                 user_email=self.centralWidget().user_email,
+                                 user_name=self.centralWidget().user_name,
+                                 current_path=self.centralWidget().path_root)
+        print 'Saving Session to -> %s' % user_config.user_config_path
+        user_config.update_all()
 
 
 if __name__ == "__main__":
