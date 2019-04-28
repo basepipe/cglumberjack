@@ -616,6 +616,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.load_projects()
         if self.middle_layout:
             self.clear_layout(self.middle_layout)
+        if self.task_layout:
+            self.clear_layout(self.task_layout)
         if self.render_layout:
             self.clear_layout(self.render_layout)
 
@@ -657,7 +659,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def on_create_asset(self, set_vars=False):
         import asset_creator
-        print 'create asset clicked'
         if 'asset' in self.current_location:
             print self.current_location['asset']
             task_mode = True
@@ -1027,6 +1028,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.company_widget.combo.setCurrentIndex(0)
 
     def load_assets(self):
+        # TODO it'd be cool to pass an asset and be able to selected it if passed.
+        self.clear_layout(self.task_layout)
+        self.clear_layout(self.render_layout)
         red_palette = QtGui.QPalette()
         red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
         self.assets.data_table.clearSpans()
