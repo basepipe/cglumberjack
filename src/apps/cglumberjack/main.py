@@ -122,7 +122,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
-        self.title = QtWidgets.QLabel("<b>Project: %s</b>" % title)
+        self.title = QtWidgets.QLabel("<h2>Project: %s</h2>" % title)
         self.scope_title = QtWidgets.QLabel("<b>%s</b>" % 'Assets')
         self.task = None
         self.user = None
@@ -209,7 +209,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.assign_clicked.emit(self.path_object)
 
     def set_title(self, new_title):
-        self.title.setText('<b>Project:  %s</b>' % new_title.title())
+        self.title.setText('<h2>Project:  %s</h2>' % new_title.title())
 
     def set_scope_title(self, new_title):
         self.scope_title.setText('<b>%s</b>' % new_title.title())
@@ -288,7 +288,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.task = None
         self.user = None
         self.versions = AdvComboBox()
-        self.versions.setMinimumWidth(200)
+        #self.versions.setMinimumWidth(200)
         self.versions.hide()
         self.setMinimumWidth(300)
 
@@ -775,7 +775,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.task_layout.tasks = []
             self.clear_layout(self.task_layout)
             self.clear_layout(self.render_layout)
-            task_label = QtWidgets.QLabel('<b>Tasks</b>')
+            task_label = QtWidgets.QLabel('<H2>Tasks</H2>')
             task_add = QtWidgets.QToolButton()
             task_add.setText('+')
             task_label_layout = QtWidgets.QHBoxLayout()
@@ -807,7 +807,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if '.' not in task:
                     if task not in self.task_layout.tasks:
                         # version_location = copy.copy(self.current_location)
-                        task_widget = TaskWidget(parent=self, title=task, path_object=current)
+                        task_widget = TaskWidget(parent=self, title=app_config()['pipeline_steps']['short_to_long'][task], path_object=current)
                         task_widget.task = task
                         task_widget.showall()
                         task_widget.hide_button.hide()
