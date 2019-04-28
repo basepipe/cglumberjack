@@ -71,6 +71,7 @@ class PathObject(object):
         self.date_modified = None
         self.project_config = None
         self.company_config = None
+        self.software_config = None
 
         if type(path_object) is dict:
             self.process_dict(path_object)
@@ -541,7 +542,7 @@ class PathObject(object):
         if self.company:
             self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
         if self.project:
-            self.project_config = os.path.join(self.company_config, self.project, 'global.yaml')
+            self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'global.yaml')
 
 
 class CreateProductionData(object):

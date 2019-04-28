@@ -273,7 +273,7 @@ class TaskWidget(QtWidgets.QFrame):
     assign_clicked = QtCore.Signal(object)
     open_button_clicked = QtCore.Signal()
 
-    def __init__(self, parent, title, filter_string=None, path_object=None):
+    def __init__(self, parent, title, short_title, filter_string=None, path_object=None):
         QtWidgets.QFrame.__init__(self, parent)
         self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
         v_layout = QtWidgets.QVBoxLayout(self)
@@ -702,8 +702,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         print 'resolution changed %s' % self.sender().currentText()
 
     def on_assign_button_clicked(self, data):
-        task = self.sender().label
-        print self.default_user, 'USERR'
+        task = self.sender().task
         dialog = InputDialog(title="Make an %s Assignment" % task,
                              combo_box_items=['', self.default_user],
                              message='Type or Choose the username for assignment',
@@ -761,6 +760,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.shot = '*'
         self.resolution = ''
         self.version = ''
+        self.task = ''
         self.user = None
         # build the asset Widget
         self.clear_layout(self.middle_layout)
@@ -820,7 +820,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.task_layout.seq = current.seq
             self.task_layout.shot = current.shot
             task_add.clicked.connect(self.on_create_asset)
-
             self.update_location(path_object=current)
             # Get the list of tasks for the selection
             task_list = current.glob_project_element('task')
@@ -831,8 +830,12 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 task_label_layout.addWidget(task_radio)
                 if '.' not in task:
                     if task not in self.task_layout.tasks:
+                        print task, 2
                         # version_location = copy.copy(self.current_location)
-                        task_widget = TaskWidget(parent=self, title=app_config()['pipeline_steps']['short_to_long'][task], path_object=current)
+                        task_widget = TaskWidget(parent=self,
+                                                 title=app_config()['pipeline_steps']['short_to_long'][task],
+                                                 short_title=task,
+                                                 path_object=current)
                         task_widget.task = task
                         task_widget.showall()
                         task_widget.hide_button.hide()
@@ -1238,8 +1241,10 @@ class CGLumberjack(LJMainWindow):
         self.user_name = str(config['user_name'])
         self.user_email = str(config['user_email'])
         self.company = str(config['company'])
-        self.previous_path = str(config['previous_path'])
-        self.previous_path = self.previous_path
+        try:
+            self.previous_path = str(config['previous_path'])
+        except KeyError:
+            self.previous_path = '%s%s/source' % (app_config()['paths']['root'], self.company)
         if self.user_name in self.previous_path:
             self.filter = 'My Assignments'
         elif 'publish' in self.previous_path:

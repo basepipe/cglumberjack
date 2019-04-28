@@ -76,7 +76,7 @@ rules:
     resolution:
       regex: "[A-Za-z0-9]+"
     user_email:
-      regex: "[a-zA-Z0-9].+@[a-zA-Z0-9]+\\.[a-zA-Z]{2,3}\\.*[a-zA-Z]{2,3}"
+      regex: "[A-Za-z0-9]+"
   general:
     valid_sequence:
       regex: "[aA-zZ]+(\\.|\\_|\\-)[0-9]{2,4}\\."

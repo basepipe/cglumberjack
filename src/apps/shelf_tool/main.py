@@ -6,6 +6,7 @@ from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.base import LJDialog
 import copy
 from cglcore.config import app_config
+import glob
 
 
 class Highlighter(QtGui.QSyntaxHighlighter):
@@ -102,10 +103,10 @@ class ShelfTool(LJDialog):
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.setMovable(True)
         self.tabs.tabnum = 0
-
+        self.company_config_dir = os.path.dirname(parent.centralWidget().initial_path_object.company_config)
         self.tabs.tabBar().tabMoved.connect(lambda: self.reorder_top())
 
-        self.root = app_config()['paths']['code_root']
+        self.root = self.company_config_dir
         self.software_dict = {}
         self.max_tab = 0
 
@@ -162,38 +163,37 @@ class ShelfTool(LJDialog):
         with open(self.file, 'w') as yaml_file:
             yaml.dump(y, yaml_file)
 
-
     def add_software(self):
-        text, result = QtGui.QInputDialog.getText(self, "Add New Software", "New Software Name:")
+        software, result = QtGui.QInputDialog.getText(self, "Add New Software", "New Software Name:")
         if result:
-            p = os.path.join(self.root, 'src', 'cfg', text+'_shelves.yaml')
-            t = os.path.join(self.root, 'src', 'tools', text, 'shelves')
+            shelves_yaml = os.path.join(self.root, software, 'shelves.yaml')
+            shelves_code_folder = os.path.join(self.root, software, 'shelves')
+            print shelves_yaml
+            print shelves_code_folder
 
-            if not os.path.exists(t):
-                os.makedirs(t)
+            if not os.path.exists(shelves_code_folder):
+                os.makedirs(shelves_code_folder)
 
             y = dict()
-            y[text.encode('utf-8')+'_shelves'] = {}
+            y[software.encode('utf-8')+'_shelves'] = {}
 
-            with open(p, 'w') as yaml_file:
+            with open(shelves_yaml, 'w') as yaml_file:
                 yaml.dump(y, yaml_file)
 
-            self.software = text.encode('utf-8')
-            self.software_dict[self.software] = p
+            self.software = software.encode('utf-8')
+            self.software_dict[self.software] = shelves_yaml
             self.populate_software_combo()
 
     def populate_software_combo(self):
-        cfg = os.path.join(self.root, 'src', 'cfg')
-        files = os.listdir(cfg)
+        cfg = os.path.join(self.root, '*', 'shelves.yaml')
+        yamls = glob.glob(cfg)
         shelves = []
         software_list = ['']
-
-        for f in files:
-            if 'shelves' in f:
-                config_file = os.path.join(cfg, f)
-                software = f.split('_')[0]
-                shelves.append(os.path.join(cfg, f))
-                self.software_dict[software] = config_file
+        for each in yamls:
+            software_root = os.path.split(each)[0]
+            software = os.path.split(software_root)[-1]
+            shelves.append(software_root)
+            self.software_dict[software] = each
 
         for key in self.software_dict:
             software_list.append(key)
@@ -219,11 +219,14 @@ class ShelfTool(LJDialog):
         m = re.search("tools\.([a-zA-Z_1-9]*)\.shelves.([a-zA-Z_1-9]*)\.([a-zA-Z_1-9]*)",
                       rows["command"].edit.text().encode('utf-8'))
         if m:
+            software = m.group(1)
+            shelf_name = m.group(2)
+            button = m.group(3)
             root = app_config()['paths']['code_root']
-            p = os.path.join(root, "src", "tools", m.group(1), "shelves", m.group(2), "%s.py" % m.group(3))
-            #print(p)
-            with open(p, 'w+') as y:
-                y.write(rows["plaintext"].toPlainText())
+            p = os.path.join(self.company_config_dir, software, "shelves", shelf_name, "%s.py" % button)
+            print(p)
+            #with open(p, 'w+') as y:
+            #    y.write(rows["plaintext"].toPlainText())
 
         newtabs.setCurrentIndex(tp)
 
@@ -313,10 +316,8 @@ class ShelfTool(LJDialog):
             m = re.search("tools\.([a-zA-Z_1-9]*)\.shelves.([a-zA-Z_1-9]*)\.([a-zA-Z_1-9]*)",
                           oldcom.encode('utf-8'))
             if m:
-                root = app_config()['paths']['code_root']
-                p = os.path.join(root, "src", "tools", m.group(1), "shelves", m.group(2), "%s.py" % m.group(3))
-                #print("removed ", p)
-                os.remove(p)
+                button_file = os.path.join(self.company_config_dir, m.group(1), "shelves", m.group(2), "%s.py" % m.group(3))
+                os.remove(button_file)
 
             #print(oldname, newname)
             if oldname is not newname:
@@ -341,8 +342,10 @@ class ShelfTool(LJDialog):
         m = re.search("tools\.([a-zA-Z_1-9]*)\.shelves.([a-zA-Z_1-9]*)\.([a-zA-Z_1-9]*)", rows["command"].edit.text().encode('utf-8'))
         if m:
             root = app_config()['paths']['code_root']
-            p = os.path.join(root, "src", "tools", m.group(1), "shelves", m.group(2), "%s.py" % m.group(3))
-            with open(p, 'w+') as y:
+            button_file = os.path.join(self.company_config_dir, m.group(1), "shelves", m.group(2), "%s.py" % m.group(3))
+            if not os.path.exists(os.path.dirname(button_file)):
+                os.makedirs(os.path.dirname(button_file))
+            with open(button_file, 'w+') as y:
                 y.write(rows["plaintext"].toPlainText())
 
         root = app_config()['paths']['code_root']
@@ -631,7 +634,7 @@ class ShelfTool(LJDialog):
         m = re.search("tools\.([a-zA-Z_1-9]*)\.shelves.([a-zA-Z_1-9]*)\.([a-zA-Z_1-9]*)", command)
         if m:
             root = app_config()['paths']['code_root']
-            p = os.path.join(root, "src", "tools", m.group(1), "shelves", m.group(2), "%s.py" % m.group(3))
+            p = os.path.join(self.company_config_dir, m.group(1), "shelves", m.group(2), "%s.py" % m.group(3))
             try:
                 return open(p).read()
             except IOError:

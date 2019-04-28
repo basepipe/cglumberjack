@@ -117,10 +117,13 @@ class UserConfig(object):
         if self.current_path:
             self.d['previous_path'] = self.current_path
             number = 1
-            if self.current_path in self.d['previous_paths']:
-                number = self.d['previous_paths'][self.current_path]
-                number += 1
-            self.d['previous_paths'][self.current_path] = number
+            try:
+                if self.current_path in self.d['previous_paths']:
+                    number = self.d['previous_paths'][self.current_path]
+                    number += 1
+                self.d['previous_paths'][self.current_path] = number
+            except KeyError:
+                self.d['previous_paths'] = {self.current_path: number}
 
     def update_user_email(self):
         if self.user_email:
