@@ -192,11 +192,16 @@ class AssetCreator(LJDialog):
             self.asset_widget.message.show()
 
     def load_categories(self):
-        categories = app_config()['asset_categories']
-        cats = ['']
-        for c in categories:
-            cats.append(categories[c])
-        self.asset_widget.category_row.combo.addItems(cats)
+        if self.path_object.scope == 'assets':
+            categories = app_config()['asset_categories']
+            cats = ['']
+            for c in categories:
+                cats.append(categories[c])
+            self.asset_widget.category_row.combo.addItems(cats)
+        elif self.path_object.scope == 'shots':
+            seqs = self.path_object.glob_project_element('seq')
+            self.asset_widget.category_row.combo.addItems(seqs)
+            self.on_seq_text_changed()
 
     def process_asset_string(self):
         self.seq = self.asset_widget.category_row.combo.currentText()
