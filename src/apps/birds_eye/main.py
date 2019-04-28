@@ -101,7 +101,7 @@ class AssetWidget(QtWidgets.QWidget):
 class SwimLane(QtWidgets.QVBoxLayout):
     def __init__(self, label):
         QtWidgets.QVBoxLayout.__init__(self)
-        self.label = QtWidgets.QLabel(label.title())
+        self.label = QtWidgets.QLabel("<h2>%s</h2>" % label.title())
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.list_widget = QtWidgets.QListWidget()
         self.list_widget.setMinimumWidth(230)
@@ -144,13 +144,14 @@ class ButtonBar(QtWidgets.QHBoxLayout):
         self.focus_button.hide()
 
 
-class Foreman(LJMainWindow):
+class BirdsEye(LJMainWindow):
     def __init__(self):
         LJMainWindow.__init__(self)
         central_widget = QtWidgets.QWidget(self)
         self.setCentralWidget(central_widget)
         self.vertical_layout = QtWidgets.QVBoxLayout()
         self.swim_lanes_layout = QtWidgets.QHBoxLayout()
+        self.swim_lanes_layout.setContentsMargins(0, 15, 0, 0)
         self.lanes_dict = {}
 
         self.button_bar = ButtonBar()
@@ -167,7 +168,8 @@ class Foreman(LJMainWindow):
         self.clear_layout(self.swim_lanes_layout)
         var = self.button_bar.combo.currentText()
         for each in VIEWS[var]:
-            layout = SwimLane(label=each)
+            full_title = app_config()['pipeline_steps']['short_to_long'][each]
+            layout = SwimLane(label=full_title)
             self.swim_lanes_layout.addLayout(layout)
             self.lanes_dict[each.lower()] = layout
         layout = SwimLane(label='Done')
@@ -275,8 +277,8 @@ class Foreman(LJMainWindow):
 if __name__ == "__main__":
     from cglui.startup import do_gui_init
     app = do_gui_init()
-    td = Foreman()
-    td.setWindowTitle('Foreman')
+    td = BirdsEye()
+    td.setWindowTitle("Bird's Eye View")
     td.show()
     td.raise_()
     app.exec_()

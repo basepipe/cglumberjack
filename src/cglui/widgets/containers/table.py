@@ -102,6 +102,17 @@ class LJTableWidget(QTableView):
             print 'nothing selected'
             self.nothing_selected.emit()
 
+    def select_row_by_text(self, text, column=0):
+        # search all the items in the table view and select the one that has 'text' in it.
+        # .setSelection() is a massive part of figuring this out.
+        row_count = self.model().rowCount()
+        for row in range(0, row_count + 1):
+            src_index = self.model().index(row, column)
+            data = self.model().data(src_index, QtCore.Qt.DisplayRole)
+            if data == text:
+                self.selectRow(row)
+        self.selected.emit([data])
+
     def on_closing(self):
         settings = UISettings.settings()
         hheading = self.horizontalHeader()

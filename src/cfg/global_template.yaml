@@ -179,7 +179,7 @@ asset_categories:
   Library: lib
 pipeline_steps:
   shots:
-    default_steps: ['anim', 'lite', 'comp', 'lay', 'cam']
+    default_steps: ['prev', 'anim', 'lite', 'comp']
     Animatics: amtc
     Previs: prev
     Layout: lay
@@ -214,6 +214,31 @@ pipeline_steps:
     Layout: lay
     Bundle: bndl
     HDRI: hdri
+  short_to_long:
+    mdl: modelling
+    tex: textures
+    shd: shading
+    rig: rigging
+    lite: lighting
+    comp: compositing
+    ref: reference
+    fx: effects
+    cncpt: concept art
+    lay: layout
+    bndl: bundle
+    hdri: hdri
+    edit: editorial
+    boards: storyboards
+    color: color correct
+    prev: previs
+    sim: simulation
+    aud: audio
+    trn: transcript
+    mm: matchmove
+    mcp: motion capture
+    matte: matte painting
+    sound: sound editing
+    anim: animation
 default:
   linear_gamma: 2.2
   frame_rate: 24

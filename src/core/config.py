@@ -94,6 +94,65 @@ class Configuration(object):
                 sys.exit(99)
 
 
+class UserConfig(object):
+    user_config_path = Configuration().user_config
+
+    def __init__(self, company=None, user_email=None, user_name=None, current_path=None):
+        self.d = self._load_yaml(self.user_config_path)
+        self.current_path = current_path
+        self.company = company
+        self.user_email = user_email
+        self.user_name = user_name
+
+    def update_all(self):
+        print self.d
+        self.update_path()
+        self.update_user_email()
+        self.update_user_name()
+        self.update_company()
+        print self.d
+        self._write_yaml()
+
+    def update_path(self):
+        if self.current_path:
+            self.d['previous_path'] = self.current_path
+            number = 1
+            if self.current_path in self.d['previous_paths']:
+                number = self.d['previous_paths'][self.current_path]
+                number += 1
+            self.d['previous_paths'][self.current_path] = number
+
+    def update_user_email(self):
+        if self.user_email:
+            self.d['user_email'] = self.user_email
+
+    def update_user_name(self):
+        if self.user_name:
+            self.d['user_name'] = self.user_name
+
+    def update_company(self):
+        if self.company:
+            self.d['company'] = self.company
+
+    def _write_yaml(self):
+        with open(self.user_config_path, 'w') as f:
+            yaml.dump(self.d, f, default_flow_style=False)
+
+    @staticmethod
+    def _load_yaml(path):
+        with open(path, 'r') as stream:
+            try:
+                result = yaml.load(stream)
+                if result:
+                    return result
+                else:
+                    return {}
+            except yaml.YAMLError as exc:
+                print(exc)
+                sys.exit(99)
+
+
+
 def config():
     """
     get the whole configuration
@@ -121,5 +180,8 @@ def user_config():
     :return: string of path
     """
     return Configuration().user_config
+
+
+
 
 

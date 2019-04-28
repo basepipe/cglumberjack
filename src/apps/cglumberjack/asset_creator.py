@@ -86,6 +86,16 @@ class AssetCreator(LJDialog):
         self.tasks = []
         self.task_row = QtWidgets.QHBoxLayout(self)
         self.task_combo = AdvComboBox()
+        self.clear_selection_button = QtWidgets.QPushButton('Clear Selection')
+        self.defaults_radio = QtWidgets.QRadioButton('Select Defaults')
+        self.none_radio = QtWidgets.QRadioButton('Select None')
+        self.radio_layout = QtWidgets.QHBoxLayout()
+        self.radio_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                        QtWidgets.QSizePolicy.Minimum))
+        self.radio_layout.addWidget(self.defaults_radio)
+        self.radio_layout.addWidget(self.none_radio)
+        self.defaults_radio.setChecked(True)
+
         if self.task_mode:
             self.create_button = QtWidgets.QPushButton('Create %s' % 'Task(s)')
         else:
@@ -111,6 +121,7 @@ class AssetCreator(LJDialog):
                     checkbox.setCheckState(QtCore.Qt.Checked)
 
         self.v_layout.addLayout(self.asset_row)
+        self.v_layout.addLayout(self.radio_layout)
         self.v_layout.addLayout(self.task_layout)
         self.v_layout.addWidget(self.create_button)
         self.v_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,

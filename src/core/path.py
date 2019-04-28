@@ -670,8 +670,10 @@ def start(filepath):
 
     subprocess.Popen(command, shell=True)
 
+
 def replace_illegal_filename_characters(filename):
     return re.sub('[^A-Za-z0-9\.#]+', '_', filename)
+
 
 
 
