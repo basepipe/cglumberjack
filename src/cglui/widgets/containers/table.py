@@ -27,6 +27,8 @@ class LJTableWidget(QTableView):
         self.items_ = []
         self.clicked.connect(self.row_selected)
         self.activated.connect(self.row_selected)
+        self.height_hint = 0
+        self.width_hint = 0
 
     def mouseReleaseEvent(self, e):
         super(LJTableWidget, self).mouseReleaseEvent(e)
@@ -135,19 +137,32 @@ class LJTableWidget(QTableView):
             print 'invalid'
             e.ignore()
 
-    '''
-    # TODO - this doesn't work on mac, but does on windows
     def resizeEvent(self, event):
+        # TODO - this doesn't work on mac, but does on windows
         """ Resize all sections to content and user interactive """
-
         super(LJTableWidget, self).resizeEvent(event)
         header = self.horizontalHeader()
+        v_header = self.verticalHeader()
+        total_height = 0
+        total_width = 0
         for column in range(header.count()):
             self.horizontalHeader().setResizeMode(column, QHeaderView.ResizeToContents) 
             width = header.sectionSize(column)
             header.setResizeMode(column, QHeaderView.Interactive)
             header.resizeSection(column, width)
-    '''
+            total_width += width
+        for row in range(v_header.count()):
+            self.verticalHeader().setResizeMode(row, QHeaderView.ResizeToContents)
+            height = v_header.sectionSize(row)
+            v_header.setResizeMode(row, QHeaderView.Interactive)
+            v_header.resizeSection(row, height)
+            total_height += height
+        self.height_hint = total_height
+        self.width_hint = total_width
+        self.sizeHint()
+
+    def sizeHint(self):
+        return QtCore.QSize(self.height_hint, self.width_hint)
 
 
 class LJKeyPairTableWidget(LJTableWidget):

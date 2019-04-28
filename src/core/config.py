@@ -121,3 +121,5 @@ def user_config():
     :return: string of path
     """
     return Configuration().user_config
+
+

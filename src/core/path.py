@@ -69,6 +69,8 @@ class PathObject(object):
         self.actual_resolution = None
         self.date_created = None
         self.date_modified = None
+        self.project_config = None
+        self.company_config = None
 
         if type(path_object) is dict:
             self.process_dict(path_object)
@@ -76,6 +78,7 @@ class PathObject(object):
             self.process_string(path_object)
         else:
             logging.error('type: %s not expected' % type(path_object))
+        self.set_project_config()
 
     def process_string(self, path_object):
         self.get_company(path_object)
@@ -532,6 +535,14 @@ class PathObject(object):
             pass
         pass
 
+    def set_project_config(self):
+        user_dir = os.path.expanduser("~")
+        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
+        if self.company:
+            self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
+        if self.project:
+            self.project_config = os.path.join(self.company_config, self.project, 'global.yaml')
+
 
 class CreateProductionData(object):
     def __init__(self, path_object=None, file_system=True, project_management=PROJ_MANAGEMENT,
@@ -547,6 +558,8 @@ class CreateProductionData(object):
             self.create_project_management_data(self.path_object, project_management)
         if scene_description:
             self.create_scene_description()
+        if self.path_object.resolution:
+            self.create_default_file()
 
     def create_folders(self):
         if not self.path_object.root:
@@ -603,10 +616,23 @@ class CreateProductionData(object):
         # TODO I need to do something that syncs my globals to the cloud in case they get toasted.
         # management software
         # and another studio wants a different kind of project management software by default.
-        module = "plugins.project_management.%s.main" % project_management
-        loaded_module = __import__(module, globals(), locals(), 'main', -1)
-        print path_object
-        loaded_module.ProjectManagementData(path_object).create_project_management_data()
+        if project_management != 'lumbermill':
+            module = "plugins.project_management.%s.main" % project_management
+            loaded_module = __import__(module, globals(), locals(), 'main', -1)
+            print path_object
+            loaded_module.ProjectManagementData(path_object).create_project_management_data()
+        else:
+            print 'Using Lumbermill built in proj management'
+
+    def create_default_file(self):
+        if self.path_object.task == 'prev':
+            self.path_object.new_set_attr(filename='%s_%s_%s.mb' % (self.path_object.seq,
+                                                                    self.path_object.shot,
+                                                                    self.path_object.task))
+            this = __file__.split('src')[0]
+            default_file = "%ssrc\%s" % (this, r'plugins\maya\2018\templates\default.mb')
+            logging.info('Creating Default Previs file: %s' % self.path_object.path_root)
+            shutil.copy2(default_file, self.path_object.path_root)
 
 
 def icon_path():
@@ -628,3 +654,22 @@ def get_companies():
          }
     path_object = PathObject(d)
     return path_object.glob_project_element('company')
+
+
+def start(filepath):
+    cmd = "cmd /c start "
+    if sys.platform == "darwin":
+        cmd = "open "
+    elif sys.platform == "linux2":
+        cmd = "xdg-open "
+    else:
+        if os.path.isfile(filepath):
+            os.startfile(filepath)
+            return
+    command = (cmd + filepath)
+
+    subprocess.Popen(command, shell=True)
+
+
+
+

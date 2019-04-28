@@ -7,8 +7,9 @@ from cglui.widgets.base import LJMainWindow
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
+from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.dialog import InputDialog, LoginDialog
-from core.path import PathObject, CreateProductionData
+from core.path import PathObject, CreateProductionData, start
 from asset_ingestor_widget import AssetIngestor
 
 
@@ -44,9 +45,9 @@ class ProjectWidget(QtWidgets.QWidget):
     def __init__(self, parent, title, filter_string=None, path_object=None):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
-        h_layout = QtWidgets.QHBoxLayout(self)
+        h_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
-        self.tool_button_layout = QtWidgets.QHBoxLayout(self)
+        self.tool_button_layout = QtWidgets.QHBoxLayout()
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
@@ -109,10 +110,10 @@ class AssetWidget(QtWidgets.QWidget):
     def __init__(self, parent, title, filter_string=None, path_object=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.v_layout = QtWidgets.QVBoxLayout(self)
-        v_list = QtWidgets.QVBoxLayout(self)
-        h_layout = QtWidgets.QHBoxLayout(self)
+        v_list = QtWidgets.QVBoxLayout()
+        h_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
-        self.tool_button_layout = QtWidgets.QHBoxLayout(self)
+        self.tool_button_layout = QtWidgets.QHBoxLayout()
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
@@ -204,19 +205,71 @@ class AssetWidget(QtWidgets.QWidget):
         self.scope_title.setText('<b>%s</b>' % new_title.title())
 
 
+class FileTableWidget(LJTableWidget):
+    show_in_folder = QtCore.Signal()
+    show_in_shotgun = QtCore.Signal()
+    copy_folder_path = QtCore.Signal()
+    copy_file_path = QtCore.Signal()
+    import_version_from = QtCore.Signal()
+    push_to_cloud = QtCore.Signal()
+    pull_from_cloud = QtCore.Signal()
+    share_download_link = QtCore.Signal()
+
+    def __init__(self, parent):
+        LJTableWidget.__init__(self, parent)
+        # Set The Right Click Menu
+        self.horizontalHeader().hide()
+        self.item_right_click_menu = LJMenu(self)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.item_right_click_menu.create_action("Show In Folder", self.show_in_folder)
+        self.item_right_click_menu.create_action("Show In ShotGun", self.show_in_shotgun)
+        self.item_right_click_menu.addSeparator()
+        self.item_right_click_menu.create_action("Copy Folder Path", self.copy_folder_path)
+        self.item_right_click_menu.create_action("Copy File Path", self.copy_file_path)
+        self.item_right_click_menu.addSeparator()
+        self.item_right_click_menu.create_action("Import Version From...", self.import_version_from)
+        self.item_right_click_menu.addSeparator()
+        self.item_right_click_menu.create_action("Push", self.push_to_cloud)
+        self.item_right_click_menu.create_action("Push", self.pull_from_cloud)
+        self.item_right_click_menu.create_action("Share Download Link", self.share_download_link)
+        self.item_right_click_menu.addSeparator()
+        # self.item_right_click_menu.create_action("Create Dailies Template", self.create_dailies_template_signal)
+        # self.item_right_click_menu.addSeparator()
+        self.customContextMenuRequested.connect(self.item_right_click)
+        self.setAcceptDrops(True)
+        self.setMaximumHeight(self.height_hint)
+
+    def item_right_click(self, position):
+        self.item_right_click_menu.exec_(self.mapToGlobal(position))
+
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasUrls:
+            e.accept()
+        else:
+            e.ignore()
+
+    def dragMoveEvent(self, e):
+        if e.mimeData().hasUrls:
+            e.setDropAction(QtCore.Qt.CopyAction)
+            e.accept()
+        else:
+            e.ignore()
+
+
 class TaskWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
     assign_clicked = QtCore.Signal(object)
+    open_button_clicked = QtCore.Signal()
 
     def __init__(self, parent, title, filter_string=None, path_object=None):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
-        h_layout = QtWidgets.QHBoxLayout(self)
+        h_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
-        self.tool_button_layout = QtWidgets.QHBoxLayout(self)
-        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.tool_button_layout = QtWidgets.QHBoxLayout()
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
@@ -224,19 +277,19 @@ class TaskWidget(QtWidgets.QWidget):
         self.task = None
         self.user = None
         self.versions = AdvComboBox()
-        self.versions.setMinimumWidth(500)
+        self.versions.setMinimumWidth(200)
         self.versions.hide()
 
         self.users_label = QtWidgets.QLabel("  User:")
         self.users = AdvComboBox()
-        self.users_layout = QtWidgets.QHBoxLayout(self)
+        self.users_layout = QtWidgets.QHBoxLayout()
         self.users_layout.addWidget(self.users_label)
         self.users_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
                                                         QtWidgets.QSizePolicy.Minimum))
         self.users_layout.addWidget(self.users)
 
         self.resolutions = AdvComboBox()
-        self.resolutions_layout = QtWidgets.QHBoxLayout(self)
+        self.resolutions_layout = QtWidgets.QHBoxLayout()
         self.resolutions_label = QtWidgets.QLabel("  Resolution:")
         self.resolutions_layout.addWidget(self.resolutions_label)
         self.resolutions_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
@@ -253,10 +306,10 @@ class TaskWidget(QtWidgets.QWidget):
         self.assign_button.setText("Create Assignment")
         self.hide_button = QtWidgets.QToolButton()
         self.hide_button.setText("less")
-        self.data_table = LJTableWidget(self)
+        self.data_table = FileTableWidget(self)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.data_table.setMinimumWidth(340)
+        self.data_table.setMinimumHeight(50)
 
         # build the tool button row
         self.open_button = QtWidgets.QToolButton()
@@ -267,6 +320,8 @@ class TaskWidget(QtWidgets.QWidget):
         self.review_button.setText('Review')
         self.publish_button = QtWidgets.QToolButton()
         self.publish_button.setText('Publish')
+        self.tool_button_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                              QtWidgets.QSizePolicy.Minimum))
         self.tool_button_layout.addWidget(self.open_button)
         self.tool_button_layout.addWidget(self.new_version_button)
         self.tool_button_layout.addWidget(self.review_button)
@@ -286,7 +341,9 @@ class TaskWidget(QtWidgets.QWidget):
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
         v_layout.addWidget(self.data_table, 1)
+        v_layout.addItem((QtWidgets.QSpacerItem(0, 25, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)))
         v_layout.addLayout(self.tool_button_layout)
+        v_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)))
         self.hide_combos()
 
         self.message.hide()
@@ -297,6 +354,7 @@ class TaskWidget(QtWidgets.QWidget):
         self.hide_button.clicked.connect(self.on_hide_button_clicked)
         self.add_button.clicked.connect(self.on_add_button_clicked)
         self.assign_button.clicked.connect(self.on_assign_button_clicked)
+        self.open_button.clicked.connect(self.on_open_button_clicked)
         self.hide_tool_buttons()
 
     def get_category_label(self):
@@ -381,6 +439,9 @@ class TaskWidget(QtWidgets.QWidget):
         self.data_table.set_item_model(mdl)
         self.data_table.set_search_box(self.search_box)
 
+    def on_open_button_clicked(self):
+        self.open_button_clicked.emit()
+
     def on_add_button_clicked(self):
         self.add_clicked.emit()
 
@@ -412,7 +473,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.company = company
         self.user_default = self.user
         layout = QtWidgets.QVBoxLayout(self)
-        self.h_layout = QtWidgets.QHBoxLayout(self)
+        self.h_layout = QtWidgets.QHBoxLayout()
         self.project_management = app_config(company=self.company)['account_info']['project_management']  # Company Specific
         self.root = app_config()['paths']['root']  # Company Specific
         self.user_root = app_config()['cg_lumberjack_dir']
@@ -431,7 +492,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path = ''
 
         # Create the Left Panel
-        self.filter_layout = QtWidgets.QVBoxLayout(self)
+        self.filter_layout = QtWidgets.QVBoxLayout()
         # company
         self.company_widget = LabelComboRow('Company')
         # filters
@@ -533,7 +594,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.clear_layout(self.render_layout)
 
     def on_create_company(self):
-        dialog = InputDialog(title='Create Company', message='Type a Company Name', line_edit=True)
+        dialog = InputDialog(title='Create Company', message='Type a Company Name & Choose Project Management',
+                             line_edit=True, combo_box_items=['lumbermil', 'ftrack', 'shotgun'], line_edit_text='Name')
         dialog.exec_()
         if dialog.button == 'Ok':
             self.company = '%s' % dialog.line_edit.text()
@@ -553,13 +615,16 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             os.makedirs(dir_)
 
     def on_create_project(self):
-        dialog = InputDialog(title='Create Project', message='Type a Project Name', line_edit=True)
+        dialog = InputDialog(title='Create Project', message='Type a Project Name & Choose Proj Management',
+                             line_edit=True, combo_box_items=['lumbermill', 'shotgun', 'ftrack'])
         dialog.exec_()
         if dialog.button == 'Ok':
             project_name = dialog.line_edit.text()
             self.project = project_name
             self.update_location()
             CreateProductionData(self.current_location, project_management=self.project_management)
+            production_management = dialog.combo_box.currentText()
+            print 'setting project management to %s' % production_management
             self.load_projects()
         else:
             pass
@@ -571,6 +636,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             print self.current_location['asset']
             task_mode = True
         else:
+            print 'asset creator in shots mode!'
             task_mode = False
         dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
         dialog.exec_()
@@ -629,6 +695,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.clear_task_selection_except(self.sender().task)
         self.sender().parent().show_tool_buttons()
         self.load_render_files()
+        print object_.context
+        if object_.context == 'source':
+            self.sender().parent().review_button.hide()
+            self.sender().parent().publish_button.hide()
 
     def on_render_selected(self, data):
         object_ = PathObject(self.current_location)
@@ -647,6 +717,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.shot = '*'
         self.resolution = ''
         self.version = ''
+        self.user = None
         # build the asset Widget
         self.clear_layout(self.middle_layout)
         self.assets = AssetWidget(self, title="")
@@ -705,7 +776,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if '.' not in task:
                     if task not in self.task_layout.tasks:
                         # version_location = copy.copy(self.current_location)
-                        task_widget = TaskWidget(self, task, path_object=current)
+                        task_widget = TaskWidget(parent=self, title=task, path_object=current)
                         task_widget.task = task
                         task_widget.showall()
                         task_widget.search_box.hide()
@@ -718,7 +789,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         resolution = self.populate_resolutions_combo(task_widget, current, task)
                         self.task_layout.addWidget(task_widget)
                         self.task_layout.tasks.append(task)
-                        self.task_layout.addItem((QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Minimum,
+                        self.task_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
                                                                         QtWidgets.QSizePolicy.Expanding)))
                         version_obj = current.copy(task=task, user=user, version=version,
                                                    resolution=resolution, filename='*')
@@ -730,6 +801,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         task_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True),
                                                         ['Name']))
                         task_widget.data_table.selected.connect(self.on_source_selected)
+                        task_widget.data_table.doubleClicked.connect(self.on_open_clicked)
+                        task_widget.open_button_clicked.connect(self.on_open_clicked)
                         task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
                         task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
                         task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
@@ -741,6 +814,16 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                             task_widget.versions.hide()
                             task_widget.show_button.hide()
                             task_widget.assign_button.show()
+
+    def on_open_clicked(self):
+        if '####' in self.path_root:
+            print 'Nothing set for sequences yet'
+            # config = app_config()['paths']
+            # settings = app_config()['default']
+            # cmd = "%s -framerate %s %s" % (config['ffplay'], settings['frame_rate'], self.path_root.replace('####', '%04d'))
+            # subprocess.Popen(cmd)
+        else:
+            start(self.path_root)
 
     # LOAD FUNCTIONS
 
@@ -765,18 +848,21 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         current = PathObject(self.current_location)
         renders = current.copy(context='render', filename='*')
         files_ = renders.glob_project_element('filename')
-        label = QtWidgets.QLabel('<b>%s: Published Files</b>' % renders.task)
-        render_widget = TaskWidget(self, 'Output')
-        render_widget.showall()
-        render_widget.title.hide()
-        render_widget.search_box.hide()
-        render_widget.hide_button.hide()
-        self.render_layout.addWidget(label)
-        self.render_layout.addWidget(render_widget)
-        self.render_layout.addItem((QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Minimum,
-                                                          QtWidgets.QSizePolicy.Expanding)))
-        render_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True), ['Name']))
-        render_widget.data_table.selected.connect(self.on_render_selected)
+        if files_:
+            label = QtWidgets.QLabel('<b>%s: Published Files</b>' % renders.task)
+            render_widget = TaskWidget(self, 'Output')
+            render_widget.showall()
+            render_widget.title.hide()
+            render_widget.search_box.hide()
+            render_widget.hide_button.hide()
+            self.render_layout.addWidget(label)
+            self.render_layout.addWidget(render_widget)
+            self.render_layout.addItem((QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Minimum,
+                                                              QtWidgets.QSizePolicy.Expanding)))
+            render_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True), ['Name']))
+            render_widget.data_table.selected.connect(self.on_render_selected)
+        else:
+            print 'No Published Files for %s' % current.path_root
 
     def populate_users_combo(self, widget, path_object, task):
         object_ = path_object.copy(user='*', task=task)
@@ -854,7 +940,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         companies_dir = os.path.join(self.user_root, 'companies')
         if os.path.exists(companies_dir):
             companies = os.listdir(companies_dir)
-            print 'Companies: %s' % companies
             if not companies:
                 dialog = InputDialog(buttons=['Create Company', 'Find Company'], message='No companies found in Config'
                                                                                          'location %s:' % companies_dir)
@@ -908,12 +993,19 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             for each in items:
                 obj_ = PathObject(str(each))
                 d = obj_.data
-                shot_name = '%s:%s' % (d['seq'], d['shot'])
+                shot_name = '%s_%s' % (d['seq'], d['shot'])
                 if shot_name not in temp_:
                     temp_.append(shot_name)
-                    data.append([d['shot'], d['seq'], each, ''])
-            self.assets.setup(ListItemModel(data, ['Name', 'Category', 'Path', 'Due Date']))
-            self.assets.data_table.hideColumn(1)
+                    if d['scope'] == 'assets':
+                        data.append([d['seq'], d['shot'], each, ''])
+                    elif d['scope'] == 'shots':
+                        data.append([d['seq'], shot_name, each, ''])
+            if d['scope'] == 'assets':
+                self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date']))
+                self.assets.data_table.hideColumn(0)
+            elif d['scope'] == 'shots':
+                self.assets.setup(ListItemModel(data, ['Seq', 'Shot', 'Path', 'Due Date']))
+                self.assets.data_table.hideColumn(0)
             self.assets.data_table.hideColumn(2)
             self.assets.data_table.set_draggable(True)
             self.assets.data_table.dropped.connect(self.on_file_dragged_to_assets)
@@ -982,7 +1074,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                                      }
             path_obj = PathObject(self.current_location)
             self.path_root = path_obj.path_root
-            print 'Setting path as: ', self.path_root
             self.path = path_obj.path
             self.current_location_line_edit.setText(self.path_root)
             return self.path_root
