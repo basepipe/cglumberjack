@@ -98,7 +98,10 @@ class UserConfig(object):
     user_config_path = Configuration().user_config
 
     def __init__(self, company=None, user_email=None, user_name=None, current_path=None):
-        self.d = self._load_yaml(self.user_config_path)
+        if os.path.exists(self.user_config_path):
+            self.d = self._load_yaml(self.user_config_path)
+        else:
+            return None
         self.current_path = current_path
         self.company = company
         self.user_email = user_email

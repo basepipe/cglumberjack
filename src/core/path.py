@@ -627,13 +627,26 @@ class CreateProductionData(object):
 
     def create_default_file(self):
         if self.path_object.task == 'prev':
-            self.path_object.new_set_attr(filename='%s_%s_%s.mb' % (self.path_object.seq,
-                                                                    self.path_object.shot,
-                                                                    self.path_object.task))
-            this = __file__.split('src')[0]
-            default_file = "%ssrc\%s" % (this, r'plugins\maya\2018\templates\default.mb')
-            logging.info('Creating Default Previs file: %s' % self.path_object.path_root)
-            shutil.copy2(default_file, self.path_object.path_root)
+            self.create_maya_default_file()
+        if self.path_object.task == 'mdl':
+            self.create_maya_default_file()
+        if self.path_object.task == 'shd':
+            self.create_maya_default_file()
+        if self.path_object.task == 'anim':
+            self.create_maya_default_file()
+        if self.path_object.task == 'lite':
+            self.create_maya_default_file()
+
+    def create_maya_default_file(self):
+        self.path_object.new_set_attr(filename='%s_%s_%s.mb' % (self.path_object.seq,
+                                                                self.path_object.shot,
+                                                                self.path_object.task))
+        this = __file__.split('src')[0]
+        default_file = "%ssrc/%s" % (this, r'plugins/maya/2018/templates/default.mb')
+        logging.info('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
+        shutil.copy2(default_file, self.path_object.path_root)
+
+
 
 
 def icon_path():

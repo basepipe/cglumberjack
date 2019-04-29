@@ -1,6 +1,7 @@
 import glob
 import os
 import shutil
+import logging
 from Qt import QtWidgets, QtCore, QtGui
 from core.config import app_config, UserConfig
 from cglui.widgets.combo import AdvComboBox, LabelComboRow
@@ -130,7 +131,7 @@ class AssetWidget(QtWidgets.QWidget):
 
         self.message = QtWidgets.QLabel("")
         self.message.setMinimumWidth(minWidth)
-        self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        # doesn't work on mac - self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.search_box = LJSearchEdit(self)
         self.add_button = QtWidgets.QToolButton()
@@ -146,7 +147,7 @@ class AssetWidget(QtWidgets.QWidget):
 
         self.radio_layout = QtWidgets.QHBoxLayout()
         # create a button group for these radio buttons
-        self.radio_group2 = QtGui.QButtonGroup(self)
+        self.radio_group2 = QtWidgets.QButtonGroup(self)
         self.radio_user = QtWidgets.QRadioButton('My Assignments')
         self.radio_everything = QtWidgets.QRadioButton('Everything')
         self.radio_publishes = QtWidgets.QRadioButton('Publishes')
@@ -497,6 +498,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.initial_path_object = None
         self.radio_filter = radio_filter
         if path:
+            print path
             self.initial_path_object = PathObject(path)
         if self.initial_path_object.project:
             self.project = self.initial_path_object.project
@@ -684,7 +686,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             task_mode = False
         dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
         dialog.exec_()
-        self.load_assets()
+        self.on_project_changed([[self.current_location['project']]])
 
     def on_file_dragged_to_assets(self, data):
         dialog = AssetIngestor(self, path_dict=self.current_location, current_user=self.user_default)
@@ -704,7 +706,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def on_assign_button_clicked(self, data):
         task = self.sender().task
         dialog = InputDialog(title="Make an %s Assignment" % task,
-                             combo_box_items=['', self.default_user],
+                             combo_box_items=[self.default_user],
                              message='Type or Choose the username for assignment',
                              buttons=['Cancel', 'Assign Task'])
         dialog.exec_()
@@ -717,7 +719,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.seq = data.seq
             self.update_location()
             CreateProductionData(path_object=self.current_location, project_management=self.project_management)
-        self.reload_task_widget(self.sender())
+        data = self.assets.data_table.row_selected()
+        self.on_main_asset_selected(data)
 
     def on_source_selected(self, data):
         # clear everything
@@ -830,7 +833,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 task_label_layout.addWidget(task_radio)
                 if '.' not in task:
                     if task not in self.task_layout.tasks:
-                        print task, 2
                         # version_location = copy.copy(self.current_location)
                         task_widget = TaskWidget(parent=self,
                                                  title=app_config()['pipeline_steps']['short_to_long'][task],
@@ -903,7 +905,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 path_, filename_ = os.path.split(d)
                 # need to make the filenames safe (no illegal chars)
                 filename_ = replace_illegal_filename_characters(filename_)
-                print 'Copying File From %s to %s' % (d, os.path.join(self.path_root, filename_))
+                logging.info('Copying File From %s to %s' % (d, os.path.join(self.path_root, filename_)))
                 shutil.copy2(d, os.path.join(self.path_root, filename_))
                 self.reload_task_widget(self.sender().parent())
             elif os.path.isdir(d):
@@ -1237,20 +1239,22 @@ class CGLumberjack(LJMainWindow):
         login.triggered.connect(self.on_login_clicked)
 
     def load_user_config(self):
-        config = UserConfig().d
-        self.user_name = str(config['user_name'])
-        self.user_email = str(config['user_email'])
-        self.company = str(config['company'])
-        try:
-            self.previous_path = str(config['previous_path'])
-        except KeyError:
-            self.previous_path = '%s%s/source' % (app_config()['paths']['root'], self.company)
-        if self.user_name in self.previous_path:
-            self.filter = 'My Assignments'
-        elif 'publish' in self.previous_path:
-            self.filter = 'Publishes'
-        else:
-            self.filter = 'Everything'
+        user_config = UserConfig()
+        if 'd' in user_config.__dict__:
+            config = user_config.d
+            self.user_name = str(config['user_name'])
+            self.user_email = str(config['user_email'])
+            self.company = str(config['company'])
+            try:
+                self.previous_path = str(config['previous_path'])
+            except KeyError:
+                self.previous_path = '%s%s/source' % (app_config()['paths']['root'], self.company)
+            if self.user_name in self.previous_path:
+                self.filter = 'My Assignments'
+            elif 'publish' in self.previous_path:
+                self.filter = 'Publishes'
+            else:
+                self.filter = 'Everything'
 
     def on_login_clicked(self):
         dialog = LoginDialog(parent=self)

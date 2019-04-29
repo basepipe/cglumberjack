@@ -6,8 +6,7 @@ import glob
 from Qt import QtWidgets, QtGui, QtCore
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.base import LJDialog
-from cglcore.config import app_config
-
+from core.config import app_config
 
 
 class Highlighter(QtGui.QSyntaxHighlighter):
@@ -166,7 +165,7 @@ class ShelfTool(LJDialog):
             yaml.dump(y, yaml_file)
 
     def add_software(self):
-        software, result = QtGui.QInputDialog.getText(self, "Add New Software", "New Software Name:")
+        software, result = QtWidgets.QInputDialog.getText(self, "Add New Software", "New Software Name:")
         if result:
             shelves_yaml = os.path.join(self.root, software, 'shelves.yaml')
             shelves_code_folder = os.path.join(self.root, software, 'shelves')
@@ -232,7 +231,6 @@ class ShelfTool(LJDialog):
                 y.write(rows["plaintext"].toPlainText())
 
         newtabs.setCurrentIndex(tp)
-
         exec(rows['command'].edit.text())
 
     def make_init(self, folder):
@@ -240,7 +238,7 @@ class ShelfTool(LJDialog):
             i.write("")
 
     def add_shelf(self):
-        shelf_name, result = QtGui.QInputDialog.getText(self, "Add a New Shelf", "New Shelf Name:")
+        shelf_name, result = QtWidgets.QInputDialog.getText(self, "Add a New Shelf", "New Shelf Name:")
         if result:
             with open(self.file, 'r') as yaml_file:
                 shelf = yaml.load(yaml_file)
@@ -299,7 +297,7 @@ class ShelfTool(LJDialog):
             name = self.tabs.tabText(self.tabs.currentIndex())
             oldcom = y[self.software][name][oldname]["command"]
 
-            m = re.search("tools\.([a-zA-Z_1-9]*)\.shelves.([a-zA-Z_1-9]*)\.([a-zA-Z_1-9]*)",
+            m = re.search("([a-zA-Z_1-9]*)\.shelves.([a-zA-Z_1-9]*)\.([a-zA-Z_1-9]*)",
                           oldcom.encode('utf-8'))
             if m:
                 button_file = os.path.join(self.company_config_dir, m.group(1), "shelves", m.group(2), "%s.py" % m.group(3))
@@ -386,7 +384,7 @@ class ShelfTool(LJDialog):
 
         #layout.addLayout(order)
 
-        icon = self.get_label_row("Icon", "", path+["Icon"])
+        icon = self.get_label_row_with_button("Icon", "", path+["Icon"])
         scroll_area.icon = icon
 
         layout.addLayout(icon)
@@ -554,7 +552,10 @@ class ShelfTool(LJDialog):
                         layout.addLayout(self.get_label_row(x, tabs_dict[x].encode('utf-8'), [x]))
                 elif type(tabs_dict[x]) is not dict:
                     # print(x, str(tabs_dict[x]))
-                    r[x] = self.get_label_row(x, str(tabs_dict[x]), [x])
+                    if x == 'icon':
+                        r[x] = self.get_label_row_with_button(x, str(tabs_dict[x]), [x])
+                    else:
+                        r[x] = self.get_label_row(x, str(tabs_dict[x]), [x])
                     if str(x) != "order":
                         layout.addLayout(r[x])
 
@@ -672,6 +673,36 @@ class ShelfTool(LJDialog):
         row.edit = edit
         #print(edit.dict_path)
         return row
+
+    def get_label_row_with_button(self, lab, ed, path):
+        label = QtWidgets.QLabel("%s" % lab)
+        label.setMinimumWidth(250)
+        edit = QtWidgets.QLineEdit()
+        button = QtWidgets.QToolButton()
+        button.line_edit = edit
+        edit.setText(ed)
+        row = QtWidgets.QHBoxLayout()
+        edit.dict_path = copy.copy(path)
+        # edit.textChanged[str].connect(lambda: self.save_change(edit))
+        row.addWidget(label)
+        row.addWidget(edit)
+        row.addWidget(button)
+        row.label = label
+        row.edit = edit
+        row.button = button
+        # print(edit.dict_path)
+        button.clicked.connect(self.icon_button_clicked)
+        return row
+
+    def icon_button_clicked(self):
+        # why does this automatically execute?
+        file_browser = QtWidgets.QFileDialog(self, 'Choose existing company(ies) to add to the registry', str(self.root), '')
+        file_browser.exec_()
+
+        file_ = file_browser.selectedFiles()[0]
+        self.sender().line_edit.setText(file_)
+        print 'pushed a button'
+
 
     def get_edit_row(self):
         edit = QtWidgets.QLineEdit()
