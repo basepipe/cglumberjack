@@ -1,12 +1,13 @@
 import os
 import re
 import yaml
+import copy
+import glob
 from Qt import QtWidgets, QtGui, QtCore
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.base import LJDialog
-import copy
 from cglcore.config import app_config
-import glob
+
 
 
 class Highlighter(QtGui.QSyntaxHighlighter):
