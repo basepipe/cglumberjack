@@ -247,7 +247,7 @@ class ShelfTool(LJDialog):
             with open(self.file, 'w') as yaml_file:
                 yaml.dump(y, yaml_file)
 
-            t = os.path.join(self.root, 'src', 'tools', self.software)
+            t = os.path.join(self.root, 'src', 'tools', 'cgl_%s' % self.software)
             #print(t)
             if not os.path.exists(t):
                 os.makedirs(t)

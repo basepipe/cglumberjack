@@ -1,12 +1,25 @@
-import os
+import os, sys
+import yaml
 import pymel.core as pm
 from core.config import app_config
-# noinspection PyUnresolvedReferences
+from core.path import PathObject
 import maya.mel
 
 
 def get_shelves():
-    return app_config()['maya_shelves']
+    scene_name = str(pm.sceneName())
+    path_object = PathObject(scene_name)
+    maya_shelf_path = '%s%s' % (os.path.dirname(path_object.company_config.replace('/', '\\')), '\\cgl_maya\\shelves.yaml')
+    with open(maya_shelf_path, 'r') as stream:
+        try:
+            result = yaml.load(stream)
+            if result:
+                return result['maya_shelves']
+            else:
+                return {}
+        except yaml.YAMLError as exc:
+            print(exc)
+            sys.exit(99)
 
 
 def shelf_base():
@@ -54,7 +67,7 @@ def remove_inactive(shelves):
 
 
 def order_buttons(shelf_name):
-    shelves = app_config()['maya_shelves']
+    shelves = get_shelves()
     buttons = shelves[shelf_name]
     buttons.pop('order')
     try:
@@ -110,14 +123,12 @@ def load_shelves():
         buttons = order_buttons(shelf)
         for button in buttons:
             #try:
-            label = shelves[shelf][button]['label']
-            print 'label: ', label
-            add_button(_shelf, label=shelves[shelf][button]['label'],
+            label = shelves[shelf][button]['button name']
+            add_button(_shelf, label=shelves[shelf][button]['button name'],
                        annotation=shelves[shelf][button]['annotation'],
                        command=shelves[shelf][button]['command'],
                        icon=get_icon_path(shelves, shelf, button),
                        image_overlay_label=label)
-            print 'made it'
             #except KeyError:
             #    print '%s is not loading properly' % button
             #   print shelves[shelf][button]
