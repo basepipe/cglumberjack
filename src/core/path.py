@@ -538,7 +538,7 @@ class PathObject(object):
 
     def set_project_config(self):
         user_dir = os.path.expanduser("~")
-        cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
+        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
         if self.company:
             self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
         if self.project:

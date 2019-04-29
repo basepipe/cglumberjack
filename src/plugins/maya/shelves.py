@@ -14,7 +14,7 @@ def get_shelves():
         try:
             result = yaml.load(stream)
             if result:
-                return result['maya_shelves']
+                return result['cgl_maya']
             else:
                 return {}
         except yaml.YAMLError as exc:
