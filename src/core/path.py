@@ -538,7 +538,11 @@ class PathObject(object):
 
     def set_project_config(self):
         user_dir = os.path.expanduser("~")
-        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
+        print user_dir
+        if 'Documents' in user_dir:
+            cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
+        else:
+            cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
         if self.company:
             self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
         if self.project:
@@ -645,8 +649,6 @@ class CreateProductionData(object):
         default_file = "%ssrc/%s" % (this, r'plugins/maya/2018/templates/default.mb')
         logging.info('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
         shutil.copy2(default_file, self.path_object.path_root)
-
-
 
 
 def icon_path():

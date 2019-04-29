@@ -5,16 +5,20 @@ from core.config import app_config
 from core.path import PathObject
 import maya.mel
 
+PATH_OBJECT = PathObject(str(pm.sceneName()))
+COMPANY_CONFIG = os.path.dirname(PATH_OBJECT.company_config.replace('/', '\\'))
+MAYA_SHELVES_PATH = os.path.join(COMPANY_CONFIG, 'cgl_tools', 'maya', 'shelves.yaml')
+MAYA_SHELVES = os.path.join(os.path.dirname(MAYA_SHELVES_PATH), 'shelves')
+if COMPANY_CONFIG not in sys.path:
+    sys.path.insert(0, COMPANY_CONFIG)
+
 
 def get_shelves():
-    scene_name = str(pm.sceneName())
-    path_object = PathObject(scene_name)
-    maya_shelf_path = '%s%s' % (os.path.dirname(path_object.company_config.replace('/', '\\')), '\\cgl_maya\\shelves.yaml')
-    with open(maya_shelf_path, 'r') as stream:
+    with open(MAYA_SHELVES_PATH, 'r') as stream:
         try:
             result = yaml.load(stream)
             if result:
-                return result['cgl_maya']
+                return result['maya']
             else:
                 return {}
         except yaml.YAMLError as exc:
@@ -109,7 +113,10 @@ def load_shelves():
     delete_shelves()
     shelves = get_shelves()
     for each in shelves:
-        print shelves[each]
+        shelf_folder = os.path.join(MAYA_SHELVES, each)
+        print each, 'adding this to the PATH', shelf_folder
+        if shelf_folder not in sys.path:
+            sys.path.insert(0, shelf_folder)
     try:
         shelves = remove_inactive(shelves)
     except KeyError:
@@ -124,10 +131,13 @@ def load_shelves():
         for button in buttons:
             #try:
             label = shelves[shelf][button]['button name']
+            icon_file = get_icon_path(shelves, shelf, button)
+            if icon_file:
+                label = ''
             add_button(_shelf, label=shelves[shelf][button]['button name'],
                        annotation=shelves[shelf][button]['annotation'],
                        command=shelves[shelf][button]['command'],
-                       icon=get_icon_path(shelves, shelf, button),
+                       icon=icon_file,
                        image_overlay_label=label)
             #except KeyError:
             #    print '%s is not loading properly' % button
@@ -135,7 +145,12 @@ def load_shelves():
 
 
 def get_icon_path(maya_shelves, shelf, button):
-    icon_path = os.path.join(app_config()['paths']['code_root'], 'resources', 'images')
-    icon_file = os.path.join(icon_path, maya_shelves[shelf][button]['icon'])
-    print icon_file
-    return icon_file
+    scene_name = str(pm.sceneName())
+    path_object = PathObject(scene_name)
+    icon_path = os.path.join(os.path.dirname(path_object.company_config))
+    if maya_shelves[shelf][button]['icon']:
+        icon_file = os.path.join(icon_path, maya_shelves[shelf][button]['icon'])
+        return icon_file
+    else:
+        return ''
+
