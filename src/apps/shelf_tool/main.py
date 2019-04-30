@@ -135,7 +135,7 @@ class ShelfTool(LJDialog):
         self.layout.addWidget(self.tabs)
 
         #self.layout.addLayout(button_row2)
-        self.setWindowTitle("LUMBERJACK CONFIG")
+        self.setWindowTitle("The Shelf Manager")
         self.setLayout(self.layout)
         self.file = ""
         self.populate_software_combo()
@@ -313,6 +313,7 @@ class ShelfTool(LJDialog):
                 button_dict[rows[x].label.text().encode('utf-8').lower()] = rows[x].edit.text().encode('utf-8')
 
         button_dict["order"] = int(button_dict["order"])
+        print rows["command"].edit.text()
         cgl_tools, software, shelves, shelf_name, button = rows["command"].edit.text().encode('utf-8').split()[1].split('.')
         button_file = os.path.join(self.company_config_dir, 'cgl_tools', software, "shelves", shelf_name, "%s.py" % button)
         if not os.path.exists(os.path.dirname(button_file)):
@@ -692,8 +693,8 @@ class ShelfTool(LJDialog):
         self.sender().setIcon(QtGui.QIcon(os.path.join(icon_folder, filename)))
         self.sender().setIconSize(QtCore.QSize(24, 24))
         self.sender().line_edit.setText(os.path.join('icons', filename))
-        self.sender().tab_widget.setTabIcon(self.sender().tab_index, QtGui.QIcon(os.path.join(icon_folder, filename)))
-        self.sender().tab_widget.setIconSize(QtCore.QSize(24, 24))
+        #self.sender().tab_widget.setTabIcon(self.sender().tab_index, QtGui.QIcon(os.path.join(icon_folder, filename)))
+        #self.sender().tab_widget.setIconSize(QtCore.QSize(24, 24))
 
     def get_edit_row(self):
         edit = QtWidgets.QLineEdit()
