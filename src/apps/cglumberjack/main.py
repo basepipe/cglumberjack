@@ -500,22 +500,19 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         if path:
             print path
             self.initial_path_object = PathObject(path)
-        if self.initial_path_object.project:
-            self.project = self.initial_path_object.project
-        else:
-            self.project = '*'
-        if self.initial_path_object.scope:
-            self.scope = self.initial_path_object.scope
-        else:
-            self.scope = 'assets'
-        if self.initial_path_object.shot:
-            self.shot = self.initial_path_object.shot
-        else:
-            self.shot = '*'
-        if self.initial_path_object.seq:
-            self.seq = self.initial_path_object.seq
-        else:
-            self.seq = '*'
+        self.project = '*'
+        self.scope = 'assets'
+        self.shot = '*'
+        self.seq = '*'
+        if self.initial_path_object:
+            if self.initial_path_object.project:
+                self.project = self.initial_path_object.project
+            if self.initial_path_object.scope:
+                self.scope = self.initial_path_object.scope
+            if self.initial_path_object.shot:
+                self.shot = self.initial_path_object.shot
+            if self.initial_path_object.seq:
+                self.seq = self.initial_path_object.seq
         self.user_favorites = ''
         self.version = ''
         self.task = ''
@@ -1202,7 +1199,6 @@ class CGLumberjack(LJMainWindow):
         self.load_user_config()
         if not self.user_name:
             self.on_login_clicked()
-        print self.previous_path, '----------'
         self.setCentralWidget(CGLumberjackWidget(self, user_email=self.user_email,
                                                  user_name=self.user_name,
                                                  company=self.company,
@@ -1224,6 +1220,8 @@ class CGLumberjack(LJMainWindow):
         self.setWindowIcon(icon)
         login = QtWidgets.QAction('Login', self)
         tools_menu = menu_bar.addMenu('&Tools')
+        kanban_view = QtWidgets.QAction('Kanban View', self)
+        self.kanban_menu = two_bar.addAction(kanban_view)
         self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
         settings.setShortcut('Ctrl+,')
@@ -1237,6 +1235,10 @@ class CGLumberjack(LJMainWindow):
         settings.triggered.connect(self.on_settings_clicked)
         shelves.triggered.connect(self.on_shelves_clicked)
         login.triggered.connect(self.on_login_clicked)
+        kanban_view.triggered.connect(self.on_kanban_clicked)
+
+    def on_kanban_clicked(self):
+        print 'Opening up the Kanban View and closing this one'
 
     def load_user_config(self):
         user_config = UserConfig()

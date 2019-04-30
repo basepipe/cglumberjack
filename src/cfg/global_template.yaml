@@ -4,14 +4,14 @@ account_info:
   user: tmikota
   user_favorites: ['PADL_dev', 'tmiko', 'tmikota']
   user_directory: C:\Users\tmiko\Documents\cglumberjack
-  project_management: ftrack
+  project_management: lumbermill
 logging:
     level: debug
     format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'
     debug:
         format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'
 paths:
-  root: 'Z:'
+  root: ''
   code_root: C:\Users\tmikota\PycharmProjects\cglumberjack
   ffmpeg: C:\ffmpeg\bin\ffmpeg.exe
   oiiotool: C:\OpenImageIO-1.5.0-OCIO\bin\oiiotool.exe
