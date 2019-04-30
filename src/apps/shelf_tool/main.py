@@ -104,7 +104,6 @@ class ShelfTool(LJDialog):
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.setMovable(True)
         self.tabs.tabnum = 0
-        print parent.centralWidget().initial_path_object.company_config
         self.company_config_dir = os.path.dirname(parent.centralWidget().initial_path_object.company_config)
         self.tabs.tabBar().tabMoved.connect(lambda: self.reorder_top())
 
@@ -143,7 +142,6 @@ class ShelfTool(LJDialog):
         self.software_combo.currentIndexChanged.connect(self.on_software_selected)
 
     def reorder_top(self):
-        #print("reordering top")
         with open(self.file, 'r') as yaml_file:
             y = yaml.load(yaml_file)
 
@@ -154,7 +152,6 @@ class ShelfTool(LJDialog):
             yaml.dump(y, yaml_file)
 
     def reorder_bottom(self, newtabs):
-        #print("reordering bottom")
         with open(self.file, 'r') as yaml_file:
             y = yaml.load(yaml_file)
 
@@ -189,7 +186,6 @@ class ShelfTool(LJDialog):
         shelves = []
         software_list = ['']
         for each in yamls:
-            print each
             software_root = os.path.split(each)[0]
             software = os.path.split(software_root)[-1]
             shelves.append(software_root)
@@ -210,8 +206,6 @@ class ShelfTool(LJDialog):
 
     def select_file(self):
         self.file = str(QtWidgets.QFileDialog.getOpenFileName()[0])
-        #print(self.file)
-        #self.parse(self.file)
 
     def test_exec(self, newtabs, tabname, newname, rows):
         tp = newtabs.currentIndex()
@@ -272,14 +266,14 @@ class ShelfTool(LJDialog):
             layout = QtWidgets.QVBoxLayout()
             tab = QtWidgets.QWidget()
             tab.setLayout(layout)
-            scroll_area = self.make_new_button(newtabs, tabname)
+            scroll_area = self.make_new_button(newtabs, tabname, tp)
             scroll_area.setWidgetResizable(True)
             newtabs.addTab(scroll_area, str("+"))
             newtabs.tabnum += 1
             if newtabs.tabnum > self.max_tab:
                 self.max_tab = newtabs.tabnum
         else:
-            scroll_area = self.make_new_button(newtabs, tabname)
+            scroll_area = self.make_new_button(newtabs, tabname, tp)
             scroll_area.setWidgetResizable(True)
 
             scroll_area.bname.edit.setText(rows["bname"].edit.text().encode('utf-8'))
@@ -326,12 +320,10 @@ class ShelfTool(LJDialog):
         with open(button_file, 'w+') as y:
             y.write(rows["plaintext"].toPlainText())
 
-        root = app_config()['paths']['code_root']
-        i = os.path.join(root, "src", "apps", "unity", "editor", "Lumbermill", "images",
-                         button_dict["icon"])
-        if os.path.exists(i):
-            ic = QtGui.QIcon(i)
-            newtabs.setTabIcon(int(button_dict["order"]) - 1, ic)
+        icon_path = os.path.join(r'%s' % self.company_config_dir, button_dict["icon"])
+        if os.path.exists(icon_path):
+            newtabs.setTabIcon(int(button_dict["order"]) - 1, QtGui.QIcon(icon_path))
+            newtabs.setIconSize(QtCore.QSize(24, 24))
 
         s = self.software
         t1 = self.tabs.tabText(self.tabs.currentIndex())
@@ -343,21 +335,15 @@ class ShelfTool(LJDialog):
         newtabs.setCurrentIndex(tp)
 
     def append_yaml(self, path, button_dict):
-        #print(path)
-        #print(button_dict)
-        print self.file
         with open(self.file, 'r') as yaml_file:
             y = yaml.load(yaml_file)
-            print y
-            print button_dict
-            print path
             y[path[0]][path[1]][path[2]] = button_dict
 
         if y:
             with open(self.file, 'w') as yaml_file:
                 yaml.dump(y, yaml_file)
 
-    def make_new_button(self, newtabs, tabname):
+    def make_new_button(self, newtabs, tabname, index_):
         scroll_area = QtWidgets.QScrollArea()
         tab = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout()
@@ -385,7 +371,7 @@ class ShelfTool(LJDialog):
 
         #layout.addLayout(order)
 
-        icon = self.get_label_row_with_button("Icon", "", path+["Icon"])
+        icon = self.get_label_row_with_button("Icon", "", path+["Icon"], newtabs, index_)
         scroll_area.icon = icon
 
         layout.addLayout(icon)
@@ -440,8 +426,6 @@ class ShelfTool(LJDialog):
 
         with open(filename, 'r') as stream:
             f = yaml.load(stream)
-
-            #print(len(f))
             if len(f) == 0:
                 return
 
@@ -479,13 +463,10 @@ class ShelfTool(LJDialog):
 
         for i in range(0, olen):
             for x in tabs_dict:
-                #print(x)
                 if str(x) != "order" and str(x) != "active":
                     if tabs_dict[x]["order"] == i:
-                        #print(x, tabs_dict[x]["order"], i, olen)
-                        #order += 1
                         tab = QtWidgets.QWidget()
-                        tab.setLayout(self.generate_tab(newtabs, tabs_dict[x], x))
+                        tab.setLayout(self.generate_tab(newtabs, tabs_dict[x], x, newtabs, i))
                         scroll_area = QtWidgets.QScrollArea()
                         scroll_area.setWidget(tab)
                         scroll_area.setWidgetResizable(True)
@@ -494,11 +475,11 @@ class ShelfTool(LJDialog):
                         if newtabs.tabnum > self.max_tab:
                             self.max_tab = newtabs.tabnum
                         root = app_config()['paths']['code_root']
-                        i = os.path.join(root, "src", "apps", "unity", "editor", "Lumbermill", "images",
-                                         tabs_dict[x]["icon"])
-                        if os.path.exists(i):
-                            ic = QtGui.QIcon(i)
-                            newtabs.setTabIcon(int(tabs_dict[x]["order"]) - 1, ic)
+                        icon_path = os.path.join(self.company_config_dir, tabs_dict[x]["icon"])
+                        print icon_path
+                        if os.path.exists(icon_path):
+                            newtabs.setTabIcon(int(tabs_dict[x]["order"]) - 1, QtGui.QIcon(icon_path))
+                            newtabs.setIconSize(QtCore.QSize(24, 24))
 
         '''
         while order < olen or k == 1:
@@ -525,7 +506,7 @@ class ShelfTool(LJDialog):
                             newtabs.setTabIcon(int(tabs_dict[x]["order"]) - 1, ic)
         '''
 
-        scroll_area = self.make_new_button(newtabs, tabname)
+        scroll_area = self.make_new_button(newtabs, tabname, newtabs.tabnum)
         scroll_area.setWidgetResizable(True)
         newtabs.addTab(scroll_area, str("+"))
         newtabs.tabnum += 1
@@ -538,7 +519,7 @@ class ShelfTool(LJDialog):
 
         return layout
 
-    def generate_tab(self, newtabs, tabs_dict, tabname):
+    def generate_tab(self, newtabs, tabs_dict, tabname, tab_widget, index_):
         layout = QtWidgets.QVBoxLayout()
         self.tn = tabname
 
@@ -546,15 +527,12 @@ class ShelfTool(LJDialog):
 
         if type(tabs_dict) is dict:
             for x in tabs_dict:
-                #print(str(x))
                 if type(tabs_dict[x]) is unicode:
-                    # print(x, tabs_dict[x].encode('utf-8'))
                     if str(x) != "order":
                         layout.addLayout(self.get_label_row(x, tabs_dict[x].encode('utf-8'), [x]))
                 elif type(tabs_dict[x]) is not dict:
-                    # print(x, str(tabs_dict[x]))
                     if x == 'icon':
-                        r[x] = self.get_label_row_with_button(x, str(tabs_dict[x]), [x])
+                        r[x] = self.get_label_row_with_button(x, str(tabs_dict[x]), [x], tab_widget, index_)
                     else:
                         r[x] = self.get_label_row(x, str(tabs_dict[x]), [x])
                     if str(x) != "order":
@@ -617,9 +595,8 @@ class ShelfTool(LJDialog):
         return layout
 
     def get_command(self, command):
-        print 'command', command
-        cgl_tools, software, shelves, tab, file = command.split()[1].split('.')
-        python_file = os.path.join(self.company_config_dir, 'cgl_tools', software, "shelves", tab, "%s.py" % file)
+        cgl_tools, software, shelves, tab, file_ = command.split()[1].split('.')
+        python_file = os.path.join(self.company_config_dir, 'cgl_tools', software, "shelves", tab, "%s.py" % file_)
         try:
             return open(python_file).read()
         except IOError:
@@ -639,14 +616,11 @@ class ShelfTool(LJDialog):
                 widget.setLayout(self.iterate_over_dict(x[y], new_layout, p))
             else:
                 p.append(y)
-                #print(self.tn)
-                #print(p)
                 layout.addLayout(self.get_label_row("\t"+y, str(x[y]), p))
             p.pop()
         return layout
 
     def save_change(self, edit):
-        #print(edit.dict_path, edit.text())
         with open(self.filename, 'r') as stream:
             f = yaml.load(stream)
 
@@ -668,21 +642,27 @@ class ShelfTool(LJDialog):
         edit.setText(ed)
         row = QtWidgets.QHBoxLayout()
         edit.dict_path = copy.copy(path)
-        #edit.textChanged[str].connect(lambda: self.save_change(edit))
         row.addWidget(label)
         row.addWidget(edit)
         row.label = label
         row.edit = edit
-        #print(edit.dict_path)
         return row
 
-    def get_label_row_with_button(self, lab, ed, path):
+    def get_label_row_with_button(self, lab, ed, path, tab_widget, index_):
         label = QtWidgets.QLabel("%s" % lab)
         label.setMinimumWidth(250)
         edit = QtWidgets.QLineEdit()
         edit.setPlaceholderText('Click the button to choose an icon, or drag it here')
         button = QtWidgets.QToolButton()
         button.line_edit = edit
+        if ed:
+            icon_path = os.path.join(self.company_config_dir, ed)
+        else:
+            icon_path = ''
+        button.setIcon(QtGui.QIcon(icon_path))
+        button.setIconSize(QtCore.QSize(24, 24))
+        button.tab_widget = tab_widget
+        button.tab_index = index_ - 1
         edit.setText(ed)
         row = QtWidgets.QHBoxLayout()
         edit.dict_path = copy.copy(path)
@@ -693,7 +673,6 @@ class ShelfTool(LJDialog):
         row.label = label
         row.edit = edit
         row.button = button
-        # print(edit.dict_path)
         button.clicked.connect(self.icon_button_clicked)
         return row
 
@@ -708,11 +687,13 @@ class ShelfTool(LJDialog):
         if not os.path.exists(icon_folder):
             os.makedirs(icon_folder)
         filename = os.path.split(file_)[-1]
-        shutil.copy2(file_, os.path.join(icon_folder, filename))
-        print icon_folder
+        if not os.path.exists(os.path.join(icon_folder, filename)):
+            shutil.copy2(file_, os.path.join(icon_folder, filename))
+        self.sender().setIcon(QtGui.QIcon(os.path.join(icon_folder, filename)))
+        self.sender().setIconSize(QtCore.QSize(24, 24))
         self.sender().line_edit.setText(os.path.join('icons', filename))
-        print 'pushed a button'
-
+        self.sender().tab_widget.setTabIcon(self.sender().tab_index, QtGui.QIcon(os.path.join(icon_folder, filename)))
+        self.sender().tab_widget.setIconSize(QtCore.QSize(24, 24))
 
     def get_edit_row(self):
         edit = QtWidgets.QLineEdit()
