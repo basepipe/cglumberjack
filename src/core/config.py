@@ -12,7 +12,10 @@ class Configuration(object):
     """
     LOADED_CONFIG = {}
     user_dir = os.path.expanduser("~")
-    cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
+    if 'Documents' in user_dir:
+        cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack')
+    else:
+        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
     user_config = os.path.join(cg_lumberjack_dir, 'user_config.yaml')
 
     def __init__(self, company=None):
@@ -25,6 +28,7 @@ class Configuration(object):
             else:
                 self.company_global_dir = None
             global_cfg, app_cfg = self._find_config_file()
+            print 'Global Config:', global_cfg
             cfg = {}
             cfg['cg_lumberjack_dir'] = self.cg_lumberjack_dir
             if os.path.isfile(global_cfg):

@@ -148,6 +148,7 @@ def get_icon_path(maya_shelves, shelf, button):
     scene_name = str(pm.sceneName())
     path_object = PathObject(scene_name)
     icon_path = os.path.join(os.path.dirname(path_object.company_config))
+    print icon_path
     if maya_shelves[shelf][button]['icon']:
         icon_file = os.path.join(icon_path, maya_shelves[shelf][button]['icon'])
         return icon_file

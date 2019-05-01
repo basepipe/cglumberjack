@@ -30,7 +30,7 @@ class PathObject(object):
             logging.error('No Path Object supplied')
             return
         self.data = {}
-        self.root = app_config()['paths']['root']
+        self.root = app_config()['paths']['root'].replace('\\', '/')
         self.company = None
         self.project = None
         self.scope = None
@@ -154,8 +154,12 @@ class PathObject(object):
         # proned to error. We have to figure out how to make sure we have a valid, registered company somehow.  This
         # can be something we do upon creatoin of a company through the interface, but needs to handle companies outside
         # the interface as well.
+        print self.root
         temp_ = path_string.split(self.root)[-1]
+        temp_ = temp_.replace('\\', '/')
+
         c = split_all(temp_)[1]
+        print 'Compan:', c
         self.new_set_attr(company=c)
         #companies = app_config()['account_info']['companies']
         #for c in companies:
@@ -258,12 +262,14 @@ class PathObject(object):
                 if value:
                     if attr == 'scope':
                         if value not in self.scope_list:
+                            print 1
                             logging.error('%s not found in %s' % (value, self.scope_list))
                             return
                         else:
                             self.__dict__[attr] = value
                             self.data[attr] = value
                     elif attr == 'context':
+                        print 2
                         if value not in self.context_list:
                             logging.error('%s not found in %s' % (value, self.context_list))
                             return
@@ -319,6 +325,7 @@ class PathObject(object):
             if value:
                 if attr == 'scope':
                     if value not in self.scope_list:
+                        print 3
                         logging.error('%s not found in %s' % (value, self.scope_list))
                         return
                     else:
@@ -326,6 +333,7 @@ class PathObject(object):
                         self.data[attr] = value
                 elif attr == 'context':
                     if value not in self.context_list:
+                        print 4
                         logging.error('%s not found in %s' % (value, self.context_list))
                         return
                     else:
