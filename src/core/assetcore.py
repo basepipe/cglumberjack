@@ -153,6 +153,8 @@ class BaseItem(object):
             self.__class__ = ShaderItem
         elif _type == 'link':
             self.__class__ = LinkItem
+        elif _type == 'init':
+            self.__class__ = InitialItem
 
         self.data = []
         if kwargs:
@@ -311,6 +313,7 @@ class LinkItem(BaseItem):
                           }
         self.data = MetaNode()
         self.build_structure(self.structure, structure=self.data)
+
 
 class AssetItem(BaseItem):
     '''
@@ -509,6 +512,33 @@ class ShaderItem(BaseItem):
         self.build_structure(self.structure, structure=self.data)
 
 
+class InitialItem(BaseItem):
+    """
+    this is the initial .json file that's created before we do any kind of internal "task publish", this allows us to
+    create the minimum required information for the json file.
+    """
+    def __init__(self, **kwargs):
+        super(InitialItem, self).__init__(**kwargs)
+
+    def set_structure(self):
+        '''
+        uid should always be the parent structure
+        :return:
+        '''
+        self.structure = {'uid':
+                          {'name': IVals.REQUIRED,
+                           'task': IVals.REQUIRED,
+                           'source_path': IVals.REQUIRED,
+                           'status': True,
+                           'due': True,
+                           'assigned': True,
+                           'priority': True
+                           }
+                          }
+        self.data = MetaNode()
+        self.build_structure(self.structure, structure=self.data)
+
+
 class AnimItem(BaseItem):
     '''
     writes out the asset json in the proper format
@@ -529,7 +559,11 @@ class AnimItem(BaseItem):
                            'transform': True,
                            'mb_path': True,
                            'abc_path': IVals.REQUIRED,
-                           'unity_path': True
+                           'unity_path': True,
+                           'status': True,
+                           'due': True,
+                           'assigned': True,
+                           'priority': True
                            }
                           }
         self.data = MetaNode()
