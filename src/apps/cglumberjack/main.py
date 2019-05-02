@@ -961,10 +961,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         files_ = renders.glob_project_element('filename')
         if files_:
             label = QtWidgets.QLabel('<b>%s: Published Files</b>' % renders.task)
-            render_widget = TaskWidget(self, 'Output')
+            render_widget = TaskWidget(self, 'Output', 'Output')
             render_widget.showall()
             render_widget.title.hide()
-            render_widget.search_box.hide()
+            # render_widget.search_box.hide()
             render_widget.hide_button.hide()
             self.render_layout.addWidget(label)
             self.render_layout.addWidget(render_widget)

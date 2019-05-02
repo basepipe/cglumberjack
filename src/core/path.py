@@ -83,6 +83,22 @@ class PathObject(object):
         else:
             logging.error('type: %s not expected' % type(path_object))
 
+    def set_status(self):
+        if not self.status:
+            print 0
+            if self.version == '000.0000':
+                self.status = 'assigned'
+            if self.user == 'publish':
+                self.status = 'published'
+            if self.minor_version != '000.0000':
+                self.status = 'in progress'
+        if not self.assigned:
+            print 1
+            self.assigned = self.user
+        if not self.priority:
+            print 2
+            self.priority = 'medium'
+
     def process_string(self, path_object):
         self.get_company(path_object)
         self.unpack_path(path_object)
@@ -410,11 +426,8 @@ class PathObject(object):
         :return:
         """
         new_obj = copy.deepcopy(self)
-        print new_obj.version
         if new_obj.user:
-            print new_obj.path_root
             latest_version = new_obj.glob_project_element('version')
-            print latest_version, 0
             if latest_version:
                 new_obj.set_attr(version=latest_version[-1])
                 return new_obj
@@ -527,13 +540,11 @@ class PathObject(object):
             self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'global.yaml')
 
     def set_json(self):
-        print 'setting json'
-        json_obj = self.copy(latest=True, context='render', ext='json', task='lay', user='publish',
-                             set_proper_filename=True)
+        json_obj = self.copy(latest=True, context='render', ext='json', task='lay', set_proper_filename=True)
         self.asset_json = json_obj.path_root
         self.shot_json = json_obj.path_root
         if self.task:
-            json_obj = self.copy(context='render', ext='json', user='publish', set_proper_filename=True)
+            json_obj = self.copy(context='render', ext='json', set_proper_filename=True)
             self.task_json = json_obj.path_root
         if self.project:
             proj_name = json_obj.data['project']
@@ -563,9 +574,13 @@ class CreateProductionData(object):
         :return:
         """
         if self.path_object.task_json:
+            print self.path_object.task
             print 'Editing json file %s' % self.path_object.task_json
+            self.update_task_json(assigned=self.path_object.user, priority=self.path_object.priority,
+                                  status=self.path_object.status)
         if self.path_object.asset_json:
             print 'Editing asset json file %s' % self.path_object.asset_json
+            self.update_asset_json()
         if self.path_object.project_json:
             print 'Editing Project json file %s' % self.path_object.project_json
 
@@ -574,14 +589,17 @@ class CreateProductionData(object):
         if task_json doesn't exist it creates one, if it does exist it edits it with the new information
         :return:
         """
+        self.path_object.set_status()
         if os.path.exists(self.path_object.task_json):
             asset_meta = assetcore.MetaObject(jsonfile=self.path_object.task_json)
         else:
             asset_meta = assetcore.MetaObject()
-        name = '%s_%s' % (self.path_object.seq, self.path_object.shot)
+        name = '%s_%s_%s' % (self.path_object.seq, self.path_object.shot, self.path_object.task)
 
         asset_meta.add(_type='init',
                        name=name,
+                       task=self.path_object.task,
+                       type='init',
                        uid=name,
                        source_path=self.path_object.path,
                        status=self.path_object.status,
@@ -593,6 +611,32 @@ class CreateProductionData(object):
             os.makedirs(os.path.dirname(self.path_object.path_root))
         asset_meta.save(self.path_object.task_json)
         print 'Creating json for %s: %s' % (name, self.path_object.task_json)
+
+    def update_asset_json(self):
+        # TODO 1 get it to be 'publish' for the destination directory
+        # TODO 2 get a path rather than path_root thing for the actual directory that gets writtn
+        print 'UPdateing Asset Json'
+        obj = self.path_object.copy(user='publish')
+        print 0, obj.asset_json
+        if os.path.exists(obj.asset_json):
+            asset_meta = assetcore.MetaObject(jsonfile=obj.asset_json)
+        else:
+            asset_meta = assetcore.MetaObject()
+        asset_meta.add(_type='link',
+                       name=self.path_object.task,
+                       task=self.path_object.task,
+                       type='link',
+                       uid=self.path_object.task,
+                       added_from='system',
+                       json=obj.task_json,
+                       scope=obj.scope,
+                       status=obj.status
+                       )
+        if not os.path.exists(os.path.dirname(obj.asset_json)):
+            print 'Make dirs: %s' % os.path.dirname(obj.asset_json)
+            os.makedirs(os.path.dirname(obj.asset_json))
+        asset_meta.save(obj.asset_json)
+        print obj.asset_json
 
     def create_folders(self):
         if not self.path_object.root:

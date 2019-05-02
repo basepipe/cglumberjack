@@ -12,6 +12,7 @@ class MetaObject(object):
         #     raise AttributeError('no name defined for MetaItem %s' % self)
 
         if jsonfile:
+            print jsonfile
             # read and parse json if its given
             data = readJson(jsonfile)
             if data:
@@ -88,7 +89,7 @@ class MetaObject(object):
         data = {}
         for metaitem in self._metaItems:
             data[metaitem.uid] = self.itemtojson(metaitem.data.uid)
-
+        print data
         writeJson(path, data)
 
     def itemtojson(self, obj):
@@ -270,6 +271,7 @@ class BundleItem(BaseItem):
         uid should always be the parent structure
         :return:
         '''
+
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
                            'task': IVals.REQUIRED,
@@ -307,7 +309,6 @@ class LinkItem(BaseItem):
                            'added_from': True,
                            'json': True,
                            'transform': None,
-                           'status': IVals.REQUIRED,
                            'scope': IVals.REQUIRED
                            }
                           }
@@ -528,6 +529,7 @@ class InitialItem(BaseItem):
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
                            'task': IVals.REQUIRED,
+                           'type': IVals.REQUIRED,
                            'source_path': IVals.REQUIRED,
                            'status': True,
                            'due': True,
