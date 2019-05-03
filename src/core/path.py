@@ -613,30 +613,25 @@ class CreateProductionData(object):
         print 'Creating json for %s: %s' % (name, self.path_object.task_json)
 
     def update_asset_json(self):
-        # TODO 1 get it to be 'publish' for the destination directory
-        # TODO 2 get a path rather than path_root thing for the actual directory that gets writtn
-        print 'UPdateing Asset Json'
-        obj = self.path_object.copy(user='publish')
-        print 0, obj.asset_json
+        obj = self.path_object
         if os.path.exists(obj.asset_json):
             asset_meta = assetcore.MetaObject(jsonfile=obj.asset_json)
         else:
             asset_meta = assetcore.MetaObject()
+        new_obj = PathObject(str(obj.task_json))
         asset_meta.add(_type='link',
                        name=self.path_object.task,
                        task=self.path_object.task,
                        type='link',
                        uid=self.path_object.task,
                        added_from='system',
-                       json=obj.task_json,
+                       json=new_obj.path,
                        scope=obj.scope,
                        status=obj.status
                        )
         if not os.path.exists(os.path.dirname(obj.asset_json)):
-            print 'Make dirs: %s' % os.path.dirname(obj.asset_json)
             os.makedirs(os.path.dirname(obj.asset_json))
         asset_meta.save(obj.asset_json)
-        print obj.asset_json
 
     def create_folders(self):
         if not self.path_object.root:
