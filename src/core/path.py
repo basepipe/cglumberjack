@@ -583,6 +583,7 @@ class CreateProductionData(object):
             self.update_asset_json()
         if self.path_object.project_json:
             print 'Editing Project json file %s' % self.path_object.project_json
+            self.update_project_json()
 
     def update_task_json(self, status=None, priority=None, due=None, assigned=None):
         """
@@ -632,6 +633,24 @@ class CreateProductionData(object):
         if not os.path.exists(os.path.dirname(obj.asset_json)):
             os.makedirs(os.path.dirname(obj.asset_json))
         asset_meta.save(obj.asset_json)
+
+    def update_project_json(self):
+        if os.path.exists(self.path_object.project_json):
+            project_meta = assetcore.MetaObject(jsonfile=self.path_object.project_json)
+        else:
+            project_meta = assetcore.MetaObject()
+        asset_obj = PathObject(str(self.path_object.asset_json))
+        print self.path_object.scope
+        project_meta.add(_type='link',
+                         name="%s_%s" % (self.path_object.seq, self.path_object.shot),
+                         type='link',
+                         uid=self.path_object.task,
+                         added_from='system',
+                         json=asset_obj.path,
+                         scope=self.path_object.scope
+                         )
+        print 1
+        project_meta.save(self.path_object.project_json)
 
     def create_folders(self):
         if not self.path_object.root:

@@ -304,7 +304,7 @@ class LinkItem(BaseItem):
         '''
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
-                           'task': IVals.REQUIRED,
+                           'task': True,
                            'type': IVals.REQUIRED,
                            'added_from': True,
                            'json': True,
