@@ -12,12 +12,10 @@ class MetaObject(object):
         #     raise AttributeError('no name defined for MetaItem %s' % self)
 
         if jsonfile:
-            print jsonfile
             # read and parse json if its given
             data = readJson(jsonfile)
             if data:
                 for item, attr in data.iteritems():
-                    print item, attr
                     self._metaItems.append(BaseItem(_type=attr['type'], uid=item, **attr))
         else:
             if kwargs:
@@ -89,7 +87,6 @@ class MetaObject(object):
         data = {}
         for metaitem in self._metaItems:
             data[metaitem.uid] = self.itemtojson(metaitem.data.uid)
-        print data
         writeJson(path, data)
 
     def itemtojson(self, obj):
@@ -442,7 +439,6 @@ class ModelItem(BaseItem):
         uid should always be the parent structure
         :return:
         '''
-        print 'modelItem'
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
                            'task': IVals.REQUIRED,
@@ -630,7 +626,6 @@ class IVals(Enum):
 def writeJson(f, assetlist):
     with open(f, 'w') as outfile:
         json.dump(assetlist, outfile, indent=4, sort_keys=True)
-    print 'writing json path %s' % f
 
 
 def readJson(f):

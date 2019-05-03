@@ -122,6 +122,7 @@ class PathObject(object):
         for key in path_object:
             self.data[key] = path_object[key]
             self.set_attr(attr=key, value=path_object[key])
+        self.set_shotname()
 
     def get_template(self):
         self.template = []
@@ -214,6 +215,7 @@ class PathObject(object):
                         self.set_attr(attr=attr, value=path_parts[i])
                 except IndexError:
                     pass
+
         if not self.seq:
             self.set_attr(seq=self.type)
         if not self.shot:
@@ -226,6 +228,8 @@ class PathObject(object):
             major_version, minor_version = self.version.split('.')
             self.set_attr(major_version=major_version.replace('.', ''))
             self.set_attr(minor_version=minor_version.replace('.', ''))
+        if self.shot:
+            self.set_shotname()
 
     def set_path(self, root=False):
         self.get_template()
@@ -433,10 +437,19 @@ class PathObject(object):
         return new_obj
 
     def next_minor_version_number(self):
+        if self.version:
+            major, minor = self.version.split('.')
+            self.major_version = major
+            self.minor_version = minor
         if not self.minor_version:
+            print 1
             next_minor = '001'
         else:
+            print 2
             next_minor = '%03d' % (int(self.minor_version)+1)
+        if not self.major_version:
+            print 3
+            self.set_attr(major_version='000')
         return '%s.%s' % (self.major_version, next_minor)
 
     def next_major_version_number(self):
@@ -453,6 +466,7 @@ class PathObject(object):
         return new_obj
 
     def new_minor_version_object(self):
+        # TODO - this will need to take into account Publish Versions eventually
         next_minor = self.next_minor_version_number()
         new_obj = copy.deepcopy(self)
         new_obj.set_attr('version', next_minor)
@@ -520,9 +534,9 @@ class PathObject(object):
         self.set_path()
 
     def set_shotname(self):
-        if self.context == 'shots':
+        if self.scope == 'shots':
             self.set_attr(shotname='%s_%s' % (self.seq, self.shot))
-        if self.context == 'assets':
+        if self.scope == 'assets':
             self.set_attr(assetname='%s_%s' % (self.seq, self.shot))
 
     def set_project_config(self):
@@ -553,15 +567,17 @@ class CreateProductionData(object):
                  do_scope=False, test=False, json=True):
         self.test = test
         self.path_object = PathObject(path_object)
+        print self.path_object.version
+        print self.path_object.path_root
         self.do_scope = do_scope
         if file_system:
             self.create_folders()
-            print 'Created Folders for %s' % self.path_object.path_root
         if project_management:
             logging.info('Creating Production Management Data for %s: %s' % (project_management, self.path_object.data))
             self.create_project_management_data(self.path_object, project_management)
         if self.path_object.resolution:
-            self.create_default_file()
+            if self.path_object.version == '000.000':
+                self.create_default_file()
         if json:
             self.update_json()
 
@@ -571,14 +587,11 @@ class CreateProductionData(object):
         :return:
         """
         if self.path_object.task_json:
-            print 'Editing json file %s' % self.path_object.task_json
             self.update_task_json(assigned=self.path_object.user, priority=self.path_object.priority,
                                   status=self.path_object.status)
         if self.path_object.asset_json:
-            print 'Editing asset json file %s' % self.path_object.asset_json
             self.update_asset_json()
         if self.path_object.project_json:
-            print 'Editing Project json file %s' % self.path_object.project_json
             self.update_project_json()
 
     def update_task_json(self, status=None, priority=None, due=None, assigned=None):
@@ -691,15 +704,9 @@ class CreateProductionData(object):
         if path_object.ext:
             if os.path.splitext(path_):
                 path_ = os.path.dirname(path_)
-        print 'Creating directories: %s' % path_
         if not test:
             if not os.path.exists(path_):
                 os.makedirs(path_)
-
-    def create_scene_description(self):
-        print 'CREATING SCENE DESCRIPTION:'
-        print self.path_object.path_root
-        print 'Json based Scene Descriptions Not Yet Connected'
 
     @staticmethod
     def create_project_management_data(path_object, project_management):

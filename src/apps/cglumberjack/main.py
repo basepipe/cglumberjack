@@ -488,7 +488,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.initial_path_object = None
         self.radio_filter = radio_filter
         if path:
-            print path
             self.initial_path_object = PathObject(path)
         self.project = '*'
         self.scope = 'assets'
@@ -666,10 +665,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def on_create_asset(self, set_vars=False):
         import asset_creator
         if 'asset' in self.current_location:
-            print self.current_location['asset']
             task_mode = True
         else:
-            print 'asset creator in shots mode!'
             task_mode = False
         dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
         dialog.exec_()
@@ -721,6 +718,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         object_.set_attr(task=self.sender().task)
         try:
             object_.set_attr(filename=data[0][0])
+            filename_base, ext = os.path.splitext(data[0][0])
+            object_.set_attr(filename_base=filename_base)
+            object_.set_attr(ext=ext.replace('.', ''))
         except IndexError:
             # this indicates a selection within the module, but not a specific selected files
             pass
@@ -728,7 +728,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.clear_task_selection_except(self.sender().task)
         self.sender().parent().show_tool_buttons()
         self.load_render_files()
-        print object_.context
         if object_.context == 'source':
             self.sender().parent().review_button.hide()
             self.sender().parent().publish_button.hide()
@@ -804,6 +803,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             # set our current location
             path = data[0][2]
             current = PathObject(str(path))
+
             current.set_attr(task='*')
             current.set_attr(root=self.root)
             current.set_attr(user_email=self.user_email)
@@ -900,9 +900,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         print 'download link'
 
     def on_new_version_clicked(self):
-        new = self.initial_path_object.new_minor_version_object().path_root
-        CreateProductionData(new)
+        current = PathObject(self.current_location)
+        next_minor = current.new_minor_version_object()
+        shutil.copytree(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
+        # TODO - this isn't creating the 'render' version of this path
+        CreateProductionData(next_minor)
         # reselect the original asset.
+        data = [[current.seq, current.shotname, current.path_root, '', '']]
+        self.on_main_asset_selected(data)
 
     def on_open_clicked(self):
         if '####' in self.path_root:
