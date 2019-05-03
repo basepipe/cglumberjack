@@ -85,7 +85,6 @@ class PathObject(object):
 
     def set_status(self):
         if not self.status:
-            print 0
             if self.version == '000.0000':
                 self.status = 'assigned'
             if self.user == 'publish':
@@ -93,10 +92,8 @@ class PathObject(object):
             if self.minor_version != '000.0000':
                 self.status = 'in progress'
         if not self.assigned:
-            print 1
             self.assigned = self.user
         if not self.priority:
-            print 2
             self.priority = 'medium'
 
     def process_string(self, path_object):
@@ -574,7 +571,6 @@ class CreateProductionData(object):
         :return:
         """
         if self.path_object.task_json:
-            print self.path_object.task
             print 'Editing json file %s' % self.path_object.task_json
             self.update_task_json(assigned=self.path_object.user, priority=self.path_object.priority,
                                   status=self.path_object.status)
@@ -611,7 +607,6 @@ class CreateProductionData(object):
         if not os.path.exists(os.path.dirname(self.path_object.path_root)):
             os.makedirs(os.path.dirname(self.path_object.path_root))
         asset_meta.save(self.path_object.task_json)
-        print 'Creating json for %s: %s' % (name, self.path_object.task_json)
 
     def update_asset_json(self):
         obj = self.path_object
@@ -640,16 +635,20 @@ class CreateProductionData(object):
         else:
             project_meta = assetcore.MetaObject()
         asset_obj = PathObject(str(self.path_object.asset_json))
-        print self.path_object.scope
+        if self.path_object.user == 'publish':
+            status = 'published'
+        else:
+            status = 'in progress'
         project_meta.add(_type='link',
                          name="%s_%s" % (self.path_object.seq, self.path_object.shot),
                          type='link',
-                         uid=self.path_object.task,
+                         uid="%s_%s" % (self.path_object.seq, self.path_object.shot),
                          added_from='system',
+                         task='lay',
                          json=asset_obj.path,
+                         status=status,
                          scope=self.path_object.scope
                          )
-        print 1
         project_meta.save(self.path_object.project_json)
 
     def create_folders(self):
