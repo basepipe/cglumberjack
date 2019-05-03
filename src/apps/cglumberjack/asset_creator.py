@@ -346,6 +346,7 @@ class AssetCreator(LJDialog):
                 self.path_object.set_attr(seq=self.seq)
             self.path_object.set_attr(task=each)
             print 'Current Path With Root: %s' % self.path_object.path_root
+            print self.path_object.data
             CreateProductionData(self.path_object.data, project_management=self.project_management)
         self.accept()
         self.close()

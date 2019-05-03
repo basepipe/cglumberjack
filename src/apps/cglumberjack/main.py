@@ -903,7 +903,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         current = PathObject(self.current_location)
         next_minor = current.new_minor_version_object()
         shutil.copytree(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
-        # TODO - this isn't creating the 'render' version of this path
         CreateProductionData(next_minor)
         # reselect the original asset.
         data = [[current.seq, current.shotname, current.path_root, '', '']]
@@ -944,7 +943,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 print 'No support for directories yet'
 
     def reload_task_widget(self, widget, populate_versions=True):
-        # TODO - need to get a really good method written for what is shown when the task widget is reloaded/loaded
         path_obj = PathObject(self.current_location)
         path_obj.set_attr(filename='*')
         path_obj.set_attr(user=widget.users.currentText())
@@ -953,7 +951,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         else:
             path_obj.set_attr(version=widget.versions.currentText())
             path_obj.set_attr(resolution=widget.resolutions.currentText())
-        path_obj.set_attr(task=widget.label)
+        path_obj.set_attr(task=widget.task)
         self.update_location(path_obj)
         files_ = path_obj.glob_project_element('filename')
         widget.setup(ListItemModel(self.prep_list_for_table(files_), ['Name']))

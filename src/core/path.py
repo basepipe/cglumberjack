@@ -80,6 +80,8 @@ class PathObject(object):
             self.process_dict(path_object)
         elif type(path_object) is str:
             self.process_string(path_object)
+        elif type(path_object) is PathObject:
+            self.process_dict(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
 
@@ -442,13 +444,10 @@ class PathObject(object):
             self.major_version = major
             self.minor_version = minor
         if not self.minor_version:
-            print 1
             next_minor = '001'
         else:
-            print 2
             next_minor = '%03d' % (int(self.minor_version)+1)
         if not self.major_version:
-            print 3
             self.set_attr(major_version='000')
         return '%s.%s' % (self.major_version, next_minor)
 
@@ -567,8 +566,6 @@ class CreateProductionData(object):
                  do_scope=False, test=False, json=True):
         self.test = test
         self.path_object = PathObject(path_object)
-        print self.path_object.version
-        print self.path_object.path_root
         self.do_scope = do_scope
         if file_system:
             self.create_folders()
@@ -684,7 +681,6 @@ class CreateProductionData(object):
         if path_object.context:
             new_context = d[path_object.context]
             new_obj = path_object.copy(context=new_context)
-
             self.safe_makedirs(new_obj)
 
     def create_other_scope(self, path_object):
