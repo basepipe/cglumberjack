@@ -7,13 +7,9 @@ import re
 import shutil
 import copy
 import subprocess
-import fnmatch
-from string import Formatter
 from core.util import split_all
-
-from core.config import app_config
-#from cglcore.exceptions import LumberJackException
-from cglui.widgets.dialog import InputDialog
+from core import assetcore
+from core.config import app_config, UserConfig
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 EXT_MAP = app_config()['ext_map']
@@ -30,7 +26,7 @@ class PathObject(object):
             logging.error('No Path Object supplied')
             return
         self.data = {}
-        self.root = app_config()['paths']['root']
+        self.root = app_config()['paths']['root'].replace('\\', '/')
         self.company = None
         self.project = None
         self.scope = None
@@ -59,7 +55,6 @@ class PathObject(object):
         self.context_list = app_config()['rules']['context_list']
         self.path = None  # string of the properly formatted path
         self.path_root = None # this gives the full path with the root
-        self.split_point = None  # point at which to split the path when formatting.
         self.thumb_path_full = None
         self.preview_path_full = None
         self.start_frame = None
@@ -71,24 +66,50 @@ class PathObject(object):
         self.date_modified = None
         self.project_config = None
         self.company_config = None
+        self.software_config = None
+        self.asset_json = None
+        self.shot_json = None
+        self.task_json = None
+        self.project_json = None
+        self.status = None
+        self.due = None
+        self.assigned = None
+        self.priority = None
 
         if type(path_object) is dict:
             self.process_dict(path_object)
         elif type(path_object) is str:
             self.process_string(path_object)
+        elif type(path_object) is PathObject:
+            self.process_dict(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
-        self.set_project_config()
+
+    def set_status(self):
+        if not self.status:
+            if self.version == '000.0000':
+                self.status = 'assigned'
+            if self.user == 'publish':
+                self.status = 'published'
+            if self.minor_version != '000.0000':
+                self.status = 'in progress'
+        if not self.assigned:
+            self.assigned = self.user
+        if not self.priority:
+            self.priority = 'medium'
 
     def process_string(self, path_object):
         self.get_company(path_object)
         self.unpack_path(path_object)
         self.set_data_from_attrs()
-        # self.set_shotname()
+        self.set_project_config()
+        self.set_json()
 
     def process_dict(self, path_object):
         self.set_attrs_from_dict(path_object)
         self.set_path()
+        self.set_project_config()
+        self.set_json()
 
     def get_attrs_from_config(self):
         attrs = []
@@ -103,6 +124,7 @@ class PathObject(object):
         for key in path_object:
             self.data[key] = path_object[key]
             self.set_attr(attr=key, value=path_object[key])
+        self.set_shotname()
 
     def get_template(self):
         self.template = []
@@ -154,12 +176,14 @@ class PathObject(object):
         # can be something we do upon creatoin of a company through the interface, but needs to handle companies outside
         # the interface as well.
         temp_ = path_string.split(self.root)[-1]
+        temp_ = temp_.replace('\\', '/')
+
         c = split_all(temp_)[1]
-        self.new_set_attr(company=c)
+        self.set_attr(company=c)
         #companies = app_config()['account_info']['companies']
         #for c in companies:
         #    if c in path_string:
-        #        self.new_set_attr(company=c)
+        #        self.set_attr(company=c)
         #if not self.company:
         #    logging.error("No Valid Company defined in path provided - invalid path: %s" % path_string)
         #    return
@@ -171,9 +195,9 @@ class PathObject(object):
         if path_parts[0] == '':
             path_parts.pop(0)
         path_parts.insert(0, self.company)
-        self.set_attr('context', path_parts[1].lower())
+        self.set_attr(context=path_parts[1].lower())
         if len(path_parts) > 3:
-            self.set_attr('scope', path_parts[3].lower())
+            self.set_attr(scope=path_parts[3].lower())
         self.get_template()
         self.data = {}
         for i, attr in enumerate(self.template):
@@ -185,26 +209,29 @@ class PathObject(object):
                     elif attr == self.scope:
                         pass
                     elif attr == 'filename':
-                        self.set_attr('filename', path_parts[i])
+                        self.set_attr(filename=path_parts[i])
                         filename_base, ext = os.path.splitext(path_parts[i])
-                        self.set_attr('filename_base', filename_base)
-                        self.set_attr('ext', ext.replace('.', ''))
+                        self.set_attr(filename_base=filename_base)
+                        self.set_attr(ext=ext.replace('.', ''))
                     else:
-                        self.set_attr(attr, path_parts[i])
+                        self.set_attr(attr=attr, value=path_parts[i])
                 except IndexError:
                     pass
+
         if not self.seq:
-            self.set_attr('seq', self.type)
+            self.set_attr(seq=self.type)
         if not self.shot:
-            self.set_attr('shot', self.asset)
+            self.set_attr(shot=self.asset)
         if not self.asset:
-            self.set_attr('asset', self.shot)
+            self.set_attr(asset=self.shot)
         if not self.type:
-            self.set_attr('type', self.seq)
+            self.set_attr(type=self.seq)
         if self.version:
             major_version, minor_version = self.version.split('.')
-            self.set_attr('major_version', major_version.replace('.', ''))
-            self.set_attr('minor_version', minor_version.replace('.', ''))
+            self.set_attr(major_version=major_version.replace('.', ''))
+            self.set_attr(minor_version=minor_version.replace('.', ''))
+        if self.shot:
+            self.set_shotname()
 
     def set_path(self, root=False):
         self.get_template()
@@ -242,10 +269,12 @@ class PathObject(object):
         else:
             return self.path        
 
-    def new_set_attr(self, **kwargs):
+    def set_attr(self, attr=None, value=None, **kwargs):
+        regex = ''
+        if attr:
+            kwargs[attr] = value
         for attr in kwargs:
             value = kwargs[attr]
-
             try:
                 regex = app_config()['rules']['path_variables'][attr]['regex']
             except KeyError:
@@ -291,72 +320,11 @@ class PathObject(object):
             elif attr == 'type':
                 self.__dict__['seq'] = value
                 self.data['seq'] = value
-            elif attr == 'filename':
-                self.__dict__['filename'] = value
-                self.data['filename'] = value
-                self.set_proper_filename()
-        self.set_path()
+            elif attr == 'ext':
+                if self.filename:
+                    base, ext = os.path.splitext(self.filename)
+                    self.filename = '%s.%s' % (base, self.ext)
 
-    def set_attr(self, attr, value, regex=True):
-        """
-        Sets Attr attr, at value, regex requirement can be turned on or off.
-        :param attr:
-        :param value:
-        :param regex:
-        :return:
-        """
-        if attr != 'root':
-            if regex:
-                try:
-                    regex = app_config()['rules']['path_variables'][attr]['regex']
-                except KeyError:
-                    logging.info('Could not find regex for %s in config, skipping' % attr)
-        if value == '*':
-            self.__dict__[attr] = value
-            self.data[attr] = value
-        else:
-            if value:
-                if attr == 'scope':
-                    if value not in self.scope_list:
-                        logging.error('%s not found in %s' % (value, self.scope_list))
-                        return
-                    else:
-                        self.__dict__[attr] = value
-                        self.data[attr] = value
-                elif attr == 'context':
-                    if value not in self.context_list:
-                        logging.error('%s not found in %s' % (value, self.context_list))
-                        return
-                    else:
-                        self.__dict__[attr] = value
-                        self.data[attr] = value
-                else:
-                    if regex:
-                        try:
-                            if not re.match(regex, value):
-                                pass
-                                #logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
-                                #return
-                        except TypeError:
-                            pass
-                    self.__dict__[attr] = value
-                    self.data[attr] = value
-        if attr == 'shot':
-            self.__dict__['asset'] = value
-            self.data['asset'] = value
-        elif attr == 'asset':
-            self.__dict__['shot'] = value
-            self.data['shot'] = value
-        elif attr == 'seq':
-            self.__dict__['type'] = value
-            self.data['type'] = value
-        elif attr == 'type':
-            self.__dict__['seq'] = value
-            self.data['seq'] = value
-        elif attr == 'filename':
-            self.__dict__['filename'] = value
-            self.data['filename'] = value
-            self.set_proper_filename()
         self.set_path()
 
     def glob_project_element(self, attr, full_path=False):
@@ -370,16 +338,29 @@ class PathObject(object):
         :return: returns list of items, or paths.
         """
         # this does not account for duplicate values - need a system that does.
+        try:
+            value = self.data[attr]
+            if value:
+                glob_path = self.path_root.split(value)[0]
+                list_ = []
+                if not full_path:
+                    for each in glob.glob(os.path.join(glob_path, '*')):
+                        list_.append(os.path.split(each)[-1])
+                else:
+                    list_ = glob.glob(os.path.join(glob_path, '*'))
+                return list_
+        except KeyError:
+            return None
 
+    def split_after(self, attr):
+        """
+        convenience function that returns the path after splitting it at the desired attribute.
+        for example split at project would return the path up to and including the project variable.
+        :param attr:
+        :return:
+        """
         value = self.data[attr]
-        glob_path = self.path_root.split(value)[0]
-        list_ = []
-        if not full_path:
-            for each in glob.glob(os.path.join(glob_path, '*')):
-                list_.append(os.path.split(each)[-1])
-        else:
-            list_ = glob.glob(os.path.join(glob_path, '*'))
-        return list_
+        return os.path.join(self.path_root.split(value)[0], value)
 
     def glob_multiple_project_elements(self, full_path=False, split_at=None, elements=[]):
         """
@@ -420,7 +401,6 @@ class PathObject(object):
         split_at = self.template[highest_index]
         return glob_object.glob_project_element(attr=split_at)
 
-
     def eliminate_wild_cards(self):
         """
         this goes through a path object and changes all items with astrix into empty strings
@@ -432,18 +412,43 @@ class PathObject(object):
                 self.data[key] = ''
         self.set_path()
 
-
-    def copy(self, **kwargs):
+    def copy(self, latest=False, set_proper_filename=False, **kwargs):
         new_obj = copy.deepcopy(self)
         for attr in kwargs:
-            new_obj.set_attr(attr, kwargs[attr])
+            new_obj.set_attr(attr=attr, value=kwargs[attr])
+        if set_proper_filename:
+            new_obj.set_proper_filename()
+        if latest:
+            return new_obj.latest_version()
+        else:
+            return new_obj
+
+    def latest_version(self):
+        """
+        Returns a path to the latest version.
+        :return:
+        """
+        new_obj = copy.deepcopy(self)
+        if new_obj.user:
+            latest_version = new_obj.glob_project_element('version')
+            if latest_version:
+                new_obj.set_attr(version=latest_version[-1])
+                return new_obj
+            else:
+                new_obj.set_attr(version='000.000')
         return new_obj
 
     def next_minor_version_number(self):
+        if self.version:
+            major, minor = self.version.split('.')
+            self.major_version = major
+            self.minor_version = minor
         if not self.minor_version:
             next_minor = '001'
         else:
             next_minor = '%03d' % (int(self.minor_version)+1)
+        if not self.major_version:
+            self.set_attr(major_version='000')
         return '%s.%s' % (self.major_version, next_minor)
 
     def next_major_version_number(self):
@@ -456,10 +461,11 @@ class PathObject(object):
     def new_major_version_object(self):
         next_major = self.next_major_version_number()
         new_obj = copy.deepcopy(self)
-        new_obj.new_set_attr(version=next_major)
+        new_obj.set_attr(version=next_major)
         return new_obj
 
     def new_minor_version_object(self):
+        # TODO - this will need to take into account Publish Versions eventually
         next_minor = self.next_minor_version_number()
         new_obj = copy.deepcopy(self)
         new_obj.set_attr('version', next_minor)
@@ -520,46 +526,140 @@ class PathObject(object):
             self.preview_path_full = os.path.join(self.root, '.preview', name_)
 
     def set_proper_filename(self):
-        if self.filename:
-            self.filename_base, self.ext = os.path.splitext(self.filename)
-        else:
-            self.filename_base = ''
-            self.ext = ''
-        pass
+        # TODO - this needs to be basted off formulas like the path object.  Curses.
+        self.filename_base = '%s_%s_%s' % (self.seq, self.shot, self.task)
+        if self.ext:
+            self.filename = '%s.%s' % (self.filename_base, self.ext)
+        self.set_path()
 
     def set_shotname(self):
-        if self.context == 'shots':
-            self.set_attr('shotname', '%s_%s' % (self.seq, self.shot))
-        if self.context == 'assets':
-            self.set_attr('assetname', '%s_%s' % (self.seq, self.shot))
-            pass
-        pass
+        if self.scope == 'shots':
+            self.set_attr(shotname='%s_%s' % (self.seq, self.shot))
+        if self.scope == 'assets':
+            self.set_attr(assetname='%s_%s' % (self.seq, self.shot))
 
     def set_project_config(self):
         user_dir = os.path.expanduser("~")
-        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
+        if 'Documents' in user_dir:
+            cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
+        else:
+            cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
         if self.company:
             self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
         if self.project:
-            self.project_config = os.path.join(self.company_config, self.project, 'global.yaml')
+            self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'global.yaml')
+
+    def set_json(self):
+        json_obj = self.copy(latest=True, context='render', ext='json', task='lay', set_proper_filename=True)
+        self.asset_json = json_obj.path_root
+        self.shot_json = json_obj.path_root
+        if self.task:
+            json_obj = self.copy(context='render', ext='json', set_proper_filename=True)
+            self.task_json = json_obj.path_root
+        if self.project:
+            proj_name = json_obj.data['project']
+            self.project_json = os.path.join(json_obj.path_root.split(proj_name)[0], proj_name, '%s.json' % proj_name)
 
 
 class CreateProductionData(object):
     def __init__(self, path_object=None, file_system=True, project_management=PROJ_MANAGEMENT,
-                 scene_description=False, do_scope=False, test=False):
+                 do_scope=False, test=False, json=True):
         self.test = test
         self.path_object = PathObject(path_object)
         self.do_scope = do_scope
         if file_system:
             self.create_folders()
-        print 'Created Folders for %s' % self.path_object.path_root
         if project_management:
             logging.info('Creating Production Management Data for %s: %s' % (project_management, self.path_object.data))
             self.create_project_management_data(self.path_object, project_management)
-        if scene_description:
-            self.create_scene_description()
         if self.path_object.resolution:
-            self.create_default_file()
+            if self.path_object.version == '000.000':
+                self.create_default_file()
+        if json:
+            self.update_json()
+
+    def update_json(self):
+        """
+        creates json file, or updates an existing one.
+        :return:
+        """
+        if self.path_object.task_json:
+            self.update_task_json(assigned=self.path_object.user, priority=self.path_object.priority,
+                                  status=self.path_object.status)
+        if self.path_object.asset_json:
+            self.update_asset_json()
+        if self.path_object.project_json:
+            self.update_project_json()
+
+    def update_task_json(self, status=None, priority=None, due=None, assigned=None):
+        """
+        if task_json doesn't exist it creates one, if it does exist it edits it with the new information
+        :return:
+        """
+        self.path_object.set_status()
+        if os.path.exists(self.path_object.task_json):
+            asset_meta = assetcore.MetaObject(jsonfile=self.path_object.task_json)
+        else:
+            asset_meta = assetcore.MetaObject()
+        name = '%s_%s_%s' % (self.path_object.seq, self.path_object.shot, self.path_object.task)
+
+        asset_meta.add(_type='init',
+                       name=name,
+                       task=self.path_object.task,
+                       type='init',
+                       uid=name,
+                       source_path=self.path_object.path,
+                       status=self.path_object.status,
+                       due=self.path_object.due,
+                       assigned=self.path_object.assigned,
+                       priority=self.path_object.priority
+                       )
+        if not os.path.exists(os.path.dirname(self.path_object.path_root)):
+            os.makedirs(os.path.dirname(self.path_object.path_root))
+        asset_meta.save(self.path_object.task_json)
+
+    def update_asset_json(self):
+        obj = self.path_object
+        if os.path.exists(obj.asset_json):
+            asset_meta = assetcore.MetaObject(jsonfile=obj.asset_json)
+        else:
+            asset_meta = assetcore.MetaObject()
+        new_obj = PathObject(str(obj.task_json))
+        asset_meta.add(_type='link',
+                       name=self.path_object.task,
+                       task=self.path_object.task,
+                       type='link',
+                       uid=self.path_object.task,
+                       added_from='system',
+                       json=new_obj.path,
+                       scope=obj.scope,
+                       status=obj.status
+                       )
+        if not os.path.exists(os.path.dirname(obj.asset_json)):
+            os.makedirs(os.path.dirname(obj.asset_json))
+        asset_meta.save(obj.asset_json)
+
+    def update_project_json(self):
+        if os.path.exists(self.path_object.project_json):
+            project_meta = assetcore.MetaObject(jsonfile=self.path_object.project_json)
+        else:
+            project_meta = assetcore.MetaObject()
+        asset_obj = PathObject(str(self.path_object.asset_json))
+        if self.path_object.user == 'publish':
+            status = 'published'
+        else:
+            status = 'in progress'
+        project_meta.add(_type='link',
+                         name="%s_%s" % (self.path_object.seq, self.path_object.shot),
+                         type='link',
+                         uid="%s_%s" % (self.path_object.seq, self.path_object.shot),
+                         added_from='system',
+                         task='lay',
+                         json=asset_obj.path,
+                         status=status,
+                         scope=self.path_object.scope
+                         )
+        project_meta.save(self.path_object.project_json)
 
     def create_folders(self):
         if not self.path_object.root:
@@ -569,7 +669,7 @@ class CreateProductionData(object):
             logging.info('No Company Defined')
             return
         if not self.path_object.context:
-            self.path_object.new_set_attr(context='source')
+            self.path_object.set_attr(context='source')
 
         self.safe_makedirs(self.path_object, test=self.test)
         self.create_other_context(self.path_object)
@@ -581,7 +681,6 @@ class CreateProductionData(object):
         if path_object.context:
             new_context = d[path_object.context]
             new_obj = path_object.copy(context=new_context)
-
             self.safe_makedirs(new_obj)
 
     def create_other_scope(self, path_object):
@@ -601,15 +700,9 @@ class CreateProductionData(object):
         if path_object.ext:
             if os.path.splitext(path_):
                 path_ = os.path.dirname(path_)
-        print 'Creating directories: %s' % path_
         if not test:
             if not os.path.exists(path_):
                 os.makedirs(path_)
-
-    def create_scene_description(self):
-        print 'CREATING SCENE DESCRIPTION:'
-        print self.path_object.path_root
-        print 'Json based Scene Descriptions Not Yet Connected'
 
     @staticmethod
     def create_project_management_data(path_object, project_management):
@@ -619,20 +712,30 @@ class CreateProductionData(object):
         if project_management != 'lumbermill':
             module = "plugins.project_management.%s.main" % project_management
             loaded_module = __import__(module, globals(), locals(), 'main', -1)
-            print path_object
             loaded_module.ProjectManagementData(path_object).create_project_management_data()
         else:
             print 'Using Lumbermill built in proj management'
 
     def create_default_file(self):
         if self.path_object.task == 'prev':
-            self.path_object.new_set_attr(filename='%s_%s_%s.mb' % (self.path_object.seq,
-                                                                    self.path_object.shot,
-                                                                    self.path_object.task))
-            this = __file__.split('src')[0]
-            default_file = "%ssrc\%s" % (this, r'plugins\maya\2018\templates\default.mb')
-            logging.info('Creating Default Previs file: %s' % self.path_object.path_root)
-            shutil.copy2(default_file, self.path_object.path_root)
+            self.create_maya_default_file()
+        if self.path_object.task == 'mdl':
+            self.create_maya_default_file()
+        if self.path_object.task == 'shd':
+            self.create_maya_default_file()
+        if self.path_object.task == 'anim':
+            self.create_maya_default_file()
+        if self.path_object.task == 'lite':
+            self.create_maya_default_file()
+
+    def create_maya_default_file(self):
+        self.path_object.set_attr(filename='%s_%s_%s.mb' % (self.path_object.seq,
+                                                                self.path_object.shot,
+                                                                self.path_object.task))
+        this = __file__.split('src')[0]
+        default_file = "%ssrc/%s" % (this, r'plugins/maya/2018/templates/default.mb')
+        logging.info('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
+        shutil.copy2(default_file, self.path_object.path_root)
 
 
 def icon_path():
@@ -673,6 +776,35 @@ def start(filepath):
 
 def replace_illegal_filename_characters(filename):
     return re.sub('[^A-Za-z0-9\.#]+', '_', filename)
+
+
+def show_in_folder(path_string):
+    full_path = os.path.dirname(path_string)
+    if sys.platform == "darwin":
+        cmd = 'open '
+    elif sys.platform == "linux2":
+        cmd = 'xdg-open '
+    else:
+        cmd = r"cmd /c start "
+        full_path = full_path.replace('/', '\\')
+
+    command = (cmd + full_path)
+    logging.info("running command: %s" % command)
+    subprocess.Popen(command, shell=True)
+
+
+def create_project_config(company, project):
+    config_dir = os.path.dirname(UserConfig().user_config_path)
+    company_config = os.path.join(config_dir, 'companies', company, 'global.yaml')
+    project_dir = os.path.join(config_dir, 'companies', company, project)
+    project_config = os.path.join(project_dir, 'global.yaml')
+    if os.path.exists(company_config):
+        if not os.path.exists(project_dir):
+            os.makedirs(project_dir)
+            shutil.copy2(company_config, project_config)
+
+
+
 
 
 

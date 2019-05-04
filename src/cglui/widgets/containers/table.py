@@ -157,7 +157,7 @@ class LJTableWidget(QTableView):
         total_height = 0
         total_width = 0
         for column in range(header.count()):
-            self.horizontalHeader().setResizeMode(column, QHeaderView.ResizeToContents) 
+            self.horizontalHeader().setResizeMode(column, QHeaderView.ResizeToContents)
             width = header.sectionSize(column)
             header.setResizeMode(column, QHeaderView.Interactive)
             header.resizeSection(column, width)

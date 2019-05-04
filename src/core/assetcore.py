@@ -16,7 +16,6 @@ class MetaObject(object):
             data = readJson(jsonfile)
             if data:
                 for item, attr in data.iteritems():
-                    print item, attr
                     self._metaItems.append(BaseItem(_type=attr['type'], uid=item, **attr))
         else:
             if kwargs:
@@ -88,7 +87,6 @@ class MetaObject(object):
         data = {}
         for metaitem in self._metaItems:
             data[metaitem.uid] = self.itemtojson(metaitem.data.uid)
-
         writeJson(path, data)
 
     def itemtojson(self, obj):
@@ -153,6 +151,8 @@ class BaseItem(object):
             self.__class__ = ShaderItem
         elif _type == 'link':
             self.__class__ = LinkItem
+        elif _type == 'init':
+            self.__class__ = InitialItem
 
         self.data = []
         if kwargs:
@@ -268,6 +268,7 @@ class BundleItem(BaseItem):
         uid should always be the parent structure
         :return:
         '''
+
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
                            'task': IVals.REQUIRED,
@@ -300,17 +301,17 @@ class LinkItem(BaseItem):
         '''
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
-                           'task': IVals.REQUIRED,
+                           'task': True,
                            'type': IVals.REQUIRED,
                            'added_from': True,
                            'json': True,
                            'transform': None,
-                           'status': IVals.REQUIRED,
                            'scope': IVals.REQUIRED
                            }
                           }
         self.data = MetaNode()
         self.build_structure(self.structure, structure=self.data)
+
 
 class AssetItem(BaseItem):
     '''
@@ -438,7 +439,6 @@ class ModelItem(BaseItem):
         uid should always be the parent structure
         :return:
         '''
-        print 'modelItem'
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
                            'task': IVals.REQUIRED,
@@ -509,6 +509,34 @@ class ShaderItem(BaseItem):
         self.build_structure(self.structure, structure=self.data)
 
 
+class InitialItem(BaseItem):
+    """
+    this is the initial .json file that's created before we do any kind of internal "task publish", this allows us to
+    create the minimum required information for the json file.
+    """
+    def __init__(self, **kwargs):
+        super(InitialItem, self).__init__(**kwargs)
+
+    def set_structure(self):
+        '''
+        uid should always be the parent structure
+        :return:
+        '''
+        self.structure = {'uid':
+                          {'name': IVals.REQUIRED,
+                           'task': IVals.REQUIRED,
+                           'type': IVals.REQUIRED,
+                           'source_path': IVals.REQUIRED,
+                           'status': True,
+                           'due': True,
+                           'assigned': True,
+                           'priority': True
+                           }
+                          }
+        self.data = MetaNode()
+        self.build_structure(self.structure, structure=self.data)
+
+
 class AnimItem(BaseItem):
     '''
     writes out the asset json in the proper format
@@ -529,7 +557,11 @@ class AnimItem(BaseItem):
                            'transform': True,
                            'mb_path': True,
                            'abc_path': IVals.REQUIRED,
-                           'unity_path': True
+                           'unity_path': True,
+                           'status': True,
+                           'due': True,
+                           'assigned': True,
+                           'priority': True
                            }
                           }
         self.data = MetaNode()
@@ -594,7 +626,6 @@ class IVals(Enum):
 def writeJson(f, assetlist):
     with open(f, 'w') as outfile:
         json.dump(assetlist, outfile, indent=4, sort_keys=True)
-    print 'writing json path %s' % f
 
 
 def readJson(f):

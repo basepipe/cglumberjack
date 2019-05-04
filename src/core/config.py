@@ -12,7 +12,10 @@ class Configuration(object):
     """
     LOADED_CONFIG = {}
     user_dir = os.path.expanduser("~")
-    cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
+    if 'Documents' in user_dir:
+        cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack')
+    else:
+        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
     user_config = os.path.join(cg_lumberjack_dir, 'user_config.yaml')
 
     def __init__(self, company=None):
@@ -25,6 +28,7 @@ class Configuration(object):
             else:
                 self.company_global_dir = None
             global_cfg, app_cfg = self._find_config_file()
+            print 'Global Config:', global_cfg
             cfg = {}
             cfg['cg_lumberjack_dir'] = self.cg_lumberjack_dir
             if os.path.isfile(global_cfg):
@@ -98,7 +102,10 @@ class UserConfig(object):
     user_config_path = Configuration().user_config
 
     def __init__(self, company=None, user_email=None, user_name=None, current_path=None):
-        self.d = self._load_yaml(self.user_config_path)
+        if os.path.exists(self.user_config_path):
+            self.d = self._load_yaml(self.user_config_path)
+        else:
+            return None
         self.current_path = current_path
         self.company = company
         self.user_email = user_email
@@ -117,10 +124,13 @@ class UserConfig(object):
         if self.current_path:
             self.d['previous_path'] = self.current_path
             number = 1
-            if self.current_path in self.d['previous_paths']:
-                number = self.d['previous_paths'][self.current_path]
-                number += 1
-            self.d['previous_paths'][self.current_path] = number
+            try:
+                if self.current_path in self.d['previous_paths']:
+                    number = self.d['previous_paths'][self.current_path]
+                    number += 1
+                self.d['previous_paths'][self.current_path] = number
+            except KeyError:
+                self.d['previous_paths'] = {self.current_path: number}
 
     def update_user_email(self):
         if self.user_email:

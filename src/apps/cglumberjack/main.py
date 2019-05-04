@@ -1,6 +1,7 @@
 import glob
 import os
 import shutil
+import logging
 from Qt import QtWidgets, QtCore, QtGui
 from core.config import app_config, UserConfig
 from cglui.widgets.combo import AdvComboBox, LabelComboRow
@@ -10,7 +11,7 @@ from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.dialog import InputDialog, LoginDialog
-from core.path import PathObject, CreateProductionData, start, replace_illegal_filename_characters
+from core.path import PathObject, CreateProductionData, start, replace_illegal_filename_characters, show_in_folder, create_project_config
 from asset_ingestor_widget import AssetIngestor
 
 
@@ -21,21 +22,6 @@ class LabelEditRow(QtWidgets.QVBoxLayout):
         self.lineEdit = QtWidgets.QLineEdit()
         self.addWidget(self.label)
         self.addWidget(self.lineEdit)
-
-
-class FunctionButtons(QtWidgets.QHBoxLayout):
-    def __init__(self):
-        QtWidgets.QHBoxLayout.__init__(self)
-        self.open_button = QtWidgets.QPushButton('Open')
-        self.publish_button = QtWidgets.QPushButton('Publish')
-        self.review_button = QtWidgets.QPushButton('Review')
-        self.version_up = QtWidgets.QPushButton('Version Up')
-
-        self.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
-        self.addWidget(self.open_button)
-        self.addWidget(self.version_up)
-        self.addWidget(self.review_button)
-        self.addWidget(self.publish_button)
 
 
 class ProjectWidget(QtWidgets.QWidget):
@@ -130,7 +116,7 @@ class AssetWidget(QtWidgets.QWidget):
 
         self.message = QtWidgets.QLabel("")
         self.message.setMinimumWidth(minWidth)
-        self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        # doesn't work on mac - self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.search_box = LJSearchEdit(self)
         self.add_button = QtWidgets.QToolButton()
@@ -146,7 +132,7 @@ class AssetWidget(QtWidgets.QWidget):
 
         self.radio_layout = QtWidgets.QHBoxLayout()
         # create a button group for these radio buttons
-        self.radio_group2 = QtGui.QButtonGroup(self)
+        self.radio_group2 = QtWidgets.QButtonGroup(self)
         self.radio_user = QtWidgets.QRadioButton('My Assignments')
         self.radio_everything = QtWidgets.QRadioButton('Everything')
         self.radio_publishes = QtWidgets.QRadioButton('Publishes')
@@ -240,7 +226,7 @@ class FileTableWidget(LJTableWidget):
         self.item_right_click_menu.create_action("Import Version From...", self.import_version_from)
         self.item_right_click_menu.addSeparator()
         self.item_right_click_menu.create_action("Push", self.push_to_cloud)
-        self.item_right_click_menu.create_action("Push", self.pull_from_cloud)
+        self.item_right_click_menu.create_action("Pull", self.pull_from_cloud)
         self.item_right_click_menu.create_action("Share Download Link", self.share_download_link)
         self.item_right_click_menu.addSeparator()
         # self.item_right_click_menu.create_action("Create Dailies Template", self.create_dailies_template_signal)
@@ -272,8 +258,9 @@ class TaskWidget(QtWidgets.QFrame):
     add_clicked = QtCore.Signal()
     assign_clicked = QtCore.Signal(object)
     open_button_clicked = QtCore.Signal()
+    new_version_clicked = QtCore.Signal()
 
-    def __init__(self, parent, title, filter_string=None, path_object=None):
+    def __init__(self, parent, title, short_title, filter_string=None, path_object=None):
         QtWidgets.QFrame.__init__(self, parent)
         self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
         v_layout = QtWidgets.QVBoxLayout(self)
@@ -330,7 +317,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.open_button = QtWidgets.QToolButton()
         self.open_button.setText('Open')
         self.new_version_button = QtWidgets.QToolButton()
-        self.new_version_button.setText('New Version')
+        self.new_version_button.setText('Version Up')
         self.review_button = QtWidgets.QToolButton()
         self.review_button.setText('Review')
         self.publish_button = QtWidgets.QToolButton()
@@ -369,6 +356,7 @@ class TaskWidget(QtWidgets.QFrame):
         # self.add_button.clicked.connect(self.on_add_button_clicked)
         self.assign_button.clicked.connect(self.on_assign_button_clicked)
         self.open_button.clicked.connect(self.on_open_button_clicked)
+        self.new_version_button.clicked.connect(self.on_new_version_clicked)
         self.hide_tool_buttons()
 
     def get_category_label(self):
@@ -453,6 +441,9 @@ class TaskWidget(QtWidgets.QFrame):
         self.data_table.set_item_model(mdl)
         # self.data_table.set_search_box(self.search_box)
 
+    def on_new_version_clicked(self):
+        self.new_version_clicked.emit()
+
     def on_open_button_clicked(self):
         self.open_button_clicked.emit()
 
@@ -498,22 +489,19 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.radio_filter = radio_filter
         if path:
             self.initial_path_object = PathObject(path)
-        if self.initial_path_object.project:
-            self.project = self.initial_path_object.project
-        else:
-            self.project = '*'
-        if self.initial_path_object.scope:
-            self.scope = self.initial_path_object.scope
-        else:
-            self.scope = 'assets'
-        if self.initial_path_object.shot:
-            self.shot = self.initial_path_object.shot
-        else:
-            self.shot = '*'
-        if self.initial_path_object.seq:
-            self.seq = self.initial_path_object.seq
-        else:
-            self.seq = '*'
+        self.project = '*'
+        self.scope = 'assets'
+        self.shot = '*'
+        self.seq = '*'
+        if self.initial_path_object:
+            if self.initial_path_object.project:
+                self.project = self.initial_path_object.project
+            if self.initial_path_object.scope:
+                self.scope = self.initial_path_object.scope
+            if self.initial_path_object.shot:
+                self.shot = self.initial_path_object.shot
+            if self.initial_path_object.seq:
+                self.seq = self.initial_path_object.seq
         self.user_favorites = ''
         self.version = ''
         self.task = ''
@@ -671,20 +659,19 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             production_management = dialog.combo_box.currentText()
             print 'setting project management to %s' % production_management
             self.load_projects()
+            create_project_config(self.company, self.project)
         else:
             pass
 
     def on_create_asset(self, set_vars=False):
         import asset_creator
         if 'asset' in self.current_location:
-            print self.current_location['asset']
             task_mode = True
         else:
-            print 'asset creator in shots mode!'
             task_mode = False
         dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
         dialog.exec_()
-        self.load_assets()
+        self.on_project_changed([[self.current_location['project']]])
 
     def on_file_dragged_to_assets(self, data):
         dialog = AssetIngestor(self, path_dict=self.current_location, current_user=self.user_default)
@@ -702,10 +689,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         print 'resolution changed %s' % self.sender().currentText()
 
     def on_assign_button_clicked(self, data):
-        task = self.sender().label
-        print self.default_user, 'USERR'
+        task = self.sender().task
         dialog = InputDialog(title="Make an %s Assignment" % task,
-                             combo_box_items=['', self.default_user],
+                             combo_box_items=[self.default_user],
                              message='Type or Choose the username for assignment',
                              buttons=['Cancel', 'Assign Task'])
         dialog.exec_()
@@ -718,20 +704,24 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.seq = data.seq
             self.update_location()
             CreateProductionData(path_object=self.current_location, project_management=self.project_management)
-        self.reload_task_widget(self.sender())
+        data = self.assets.data_table.row_selected()
+        self.on_main_asset_selected(data)
 
     def on_source_selected(self, data):
         # clear everything
         object_ = PathObject(self.current_location)
         parent = self.sender().parent()
-        object_.set_attr(attr='root', value=self.root)
-        object_.set_attr(attr='version', value=parent.versions.currentText())
-        object_.set_attr(attr='context', value='source')
-        object_.set_attr(attr='resolution', value=parent.resolutions.currentText())
-        object_.set_attr(attr='user', value=parent.users.currentText())
-        object_.set_attr(attr='task', value=self.sender().task)
+        object_.set_attr(root=self.root)
+        object_.set_attr(version=parent.versions.currentText())
+        object_.set_attr(context='source')
+        object_.set_attr(resolution=parent.resolutions.currentText())
+        object_.set_attr(user=parent.users.currentText())
+        object_.set_attr(task=self.sender().task)
         try:
-            object_.set_attr(attr='filename', value=data[0][0])
+            object_.set_attr(filename=data[0][0])
+            filename_base, ext = os.path.splitext(data[0][0])
+            object_.set_attr(filename_base=filename_base)
+            object_.set_attr(ext=ext.replace('.', ''))
         except IndexError:
             # this indicates a selection within the module, but not a specific selected files
             pass
@@ -739,16 +729,15 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.clear_task_selection_except(self.sender().task)
         self.sender().parent().show_tool_buttons()
         self.load_render_files()
-        print object_.context
         if object_.context == 'source':
             self.sender().parent().review_button.hide()
             self.sender().parent().publish_button.hide()
 
     def on_render_selected(self, data):
         object_ = PathObject(self.current_location)
-        object_.set_attr(attr='root', value=self.root)
-        object_.set_attr(attr='context', value='render')
-        object_.set_attr(attr='filename', value=data[0][0])
+        object_.set_attr(root=self.root)
+        object_.set_attr(context='render')
+        object_.set_attr(filename=data[0][0])
         self.update_location(object_)
         self.sender().parent().show_tool_buttons()
         self.clear_task_selection_except()
@@ -761,6 +750,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.shot = '*'
         self.resolution = ''
         self.version = ''
+        self.task = ''
         self.user = None
         # build the asset Widget
         self.clear_layout(self.middle_layout)
@@ -814,13 +804,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             # set our current location
             path = data[0][2]
             current = PathObject(str(path))
-            current.set_attr(attr='task', value='*')
-            current.set_attr(attr='root', value=self.root)
-            current.new_set_attr(user_email=self.user_email)
+
+            current.set_attr(task='*')
+            current.set_attr(root=self.root)
+            current.set_attr(user_email=self.user_email)
             self.task_layout.seq = current.seq
             self.task_layout.shot = current.shot
             task_add.clicked.connect(self.on_create_asset)
-
             self.update_location(path_object=current)
             # Get the list of tasks for the selection
             task_list = current.glob_project_element('task')
@@ -832,7 +822,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if '.' not in task:
                     if task not in self.task_layout.tasks:
                         # version_location = copy.copy(self.current_location)
-                        task_widget = TaskWidget(parent=self, title=app_config()['pipeline_steps']['short_to_long'][task], path_object=current)
+                        task_widget = TaskWidget(parent=self,
+                                                 title=app_config()['pipeline_steps']['short_to_long'][task],
+                                                 short_title=task,
+                                                 path_object=current)
                         task_widget.task = task
                         task_widget.showall()
                         task_widget.hide_button.hide()
@@ -856,11 +849,20 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         task_widget.data_table.selected.connect(self.on_source_selected)
                         task_widget.data_table.doubleClicked.connect(self.on_open_clicked)
                         task_widget.open_button_clicked.connect(self.on_open_clicked)
+                        task_widget.new_version_clicked.connect(self.on_new_version_clicked)
                         task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
                         task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
                         task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
                         task_widget.assign_clicked.connect(self.on_assign_button_clicked)
                         task_widget.data_table.dropped.connect(self.on_file_dragged_to_source)
+                        task_widget.data_table.show_in_folder.connect(self.show_in_folder)
+                        task_widget.data_table.show_in_shotgun.connect(self.show_in_shotgun)
+                        task_widget.data_table.copy_folder_path.connect(self.copy_folder_path)
+                        task_widget.data_table.copy_file_path.connect(self.copy_file_path)
+                        task_widget.data_table.import_version_from.connect(self.import_versions_from)
+                        task_widget.data_table.push_to_cloud.connect(self.push)
+                        task_widget.data_table.pull_from_cloud.connect(self.pull)
+                        task_widget.data_table.share_download_link.connect(self.share_download_link)
                         if not user:
                             task_widget.users_label.hide()
                             task_widget.users.hide()
@@ -871,6 +873,41 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             task_label_layout.addWidget(task_add)
             self.task_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
                                                             QtWidgets.QSizePolicy.Expanding)))
+
+    def show_in_folder(self):
+        show_in_folder(self.path_root)
+
+    def show_in_shotgun(self):
+        CreateProductionData(path_object=self.current_location, file_system=False, do_scope=False, test=False, json=True)
+
+    def copy_folder_path(self):
+        clipboard = QtWidgets.QApplication.clipboard()
+        clipboard.setText(os.path.dirname(self.path_root))
+
+    def copy_file_path(self):
+        clipboard = QtWidgets.QApplication.clipboard()
+        clipboard.setText(self.path_root)
+
+    def import_versions_from(self):
+        print 'import versions'
+
+    def push(self):
+        print 'push'
+
+    def pull(self):
+        print 'pull'
+
+    def share_download_link(self):
+        print 'download link'
+
+    def on_new_version_clicked(self):
+        current = PathObject(self.current_location)
+        next_minor = current.new_minor_version_object()
+        shutil.copytree(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
+        CreateProductionData(next_minor)
+        # reselect the original asset.
+        data = [[current.seq, current.shotname, current.path_root, '', '']]
+        self.on_main_asset_selected(data)
 
     def on_open_clicked(self):
         if '####' in self.path_root:
@@ -887,12 +924,12 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         # Only do this if it's dragged into a thing that hasn't been selected
         object_ = PathObject(self.current_location)
         parent = self.sender().parent()
-        object_.set_attr(attr='root', value=self.root)
-        object_.set_attr(attr='version', value=parent.versions.currentText())
-        object_.set_attr(attr='context', value='source')
-        object_.set_attr(attr='resolution', value=parent.resolutions.currentText())
-        object_.set_attr(attr='user', value=parent.users.currentText())
-        object_.set_attr(attr='task', value=self.sender().task)
+        object_.set_attr(root=self.root)
+        object_.set_attr(version=parent.versions.currentText())
+        object_.set_attr(context='source')
+        object_.set_attr(resolution=parent.resolutions.currentText())
+        object_.set_attr(user=parent.users.currentText())
+        object_.set_attr(task=self.sender().task)
         self.update_location(object_)
         self.clear_task_selection_except(self.sender().task)
         for d in data:
@@ -900,23 +937,22 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 path_, filename_ = os.path.split(d)
                 # need to make the filenames safe (no illegal chars)
                 filename_ = replace_illegal_filename_characters(filename_)
-                print 'Copying File From %s to %s' % (d, os.path.join(self.path_root, filename_))
+                logging.info('Copying File From %s to %s' % (d, os.path.join(self.path_root, filename_)))
                 shutil.copy2(d, os.path.join(self.path_root, filename_))
                 self.reload_task_widget(self.sender().parent())
             elif os.path.isdir(d):
                 print 'No support for directories yet'
 
     def reload_task_widget(self, widget, populate_versions=True):
-        # TODO - need to get a really good method written for what is shown when the task widget is reloaded/loaded
         path_obj = PathObject(self.current_location)
-        path_obj.set_attr(attr='filename', value='*')
-        path_obj.set_attr('user', widget.users.currentText())
+        path_obj.set_attr(filename='*')
+        path_obj.set_attr(user=widget.users.currentText())
         if populate_versions:
-            path_obj.set_attr('version', self.populate_versions_combo(widget, path_obj, widget.label))
+            path_obj.set_attr(version=self.populate_versions_combo(widget, path_obj, widget.label))
         else:
-            path_obj.set_attr('version', widget.versions.currentText())
-            path_obj.set_attr('resolution', widget.resolutions.currentText())
-        path_obj.set_attr('task', widget.label)
+            path_obj.set_attr(version=widget.versions.currentText())
+            path_obj.set_attr(resolution=widget.resolutions.currentText())
+        path_obj.set_attr(task=widget.task)
         self.update_location(path_obj)
         files_ = path_obj.glob_project_element('filename')
         widget.setup(ListItemModel(self.prep_list_for_table(files_), ['Name']))
@@ -929,10 +965,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         files_ = renders.glob_project_element('filename')
         if files_:
             label = QtWidgets.QLabel('<b>%s: Published Files</b>' % renders.task)
-            render_widget = TaskWidget(self, 'Output')
+            render_widget = TaskWidget(self, 'Output', 'Output')
             render_widget.showall()
             render_widget.title.hide()
-            render_widget.search_box.hide()
+            # render_widget.search_box.hide()
             render_widget.hide_button.hide()
             self.render_layout.addWidget(label)
             self.render_layout.addWidget(render_widget)
@@ -1197,7 +1233,6 @@ class CGLumberjack(LJMainWindow):
         self.load_user_config()
         if not self.user_name:
             self.on_login_clicked()
-        print self.previous_path, '----------'
         self.setCentralWidget(CGLumberjackWidget(self, user_email=self.user_email,
                                                  user_name=self.user_name,
                                                  company=self.company,
@@ -1219,6 +1254,8 @@ class CGLumberjack(LJMainWindow):
         self.setWindowIcon(icon)
         login = QtWidgets.QAction('Login', self)
         tools_menu = menu_bar.addMenu('&Tools')
+        kanban_view = QtWidgets.QAction('Kanban View', self)
+        self.kanban_menu = two_bar.addAction(kanban_view)
         self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
         settings.setShortcut('Ctrl+,')
@@ -1232,20 +1269,28 @@ class CGLumberjack(LJMainWindow):
         settings.triggered.connect(self.on_settings_clicked)
         shelves.triggered.connect(self.on_shelves_clicked)
         login.triggered.connect(self.on_login_clicked)
+        kanban_view.triggered.connect(self.on_kanban_clicked)
+
+    def on_kanban_clicked(self):
+        print 'Opening up the Kanban View and closing this one'
 
     def load_user_config(self):
-        config = UserConfig().d
-        self.user_name = str(config['user_name'])
-        self.user_email = str(config['user_email'])
-        self.company = str(config['company'])
-        self.previous_path = str(config['previous_path'])
-        self.previous_path = self.previous_path
-        if self.user_name in self.previous_path:
-            self.filter = 'My Assignments'
-        elif 'publish' in self.previous_path:
-            self.filter = 'Publishes'
-        else:
-            self.filter = 'Everything'
+        user_config = UserConfig()
+        if 'd' in user_config.__dict__:
+            config = user_config.d
+            self.user_name = str(config['user_name'])
+            self.user_email = str(config['user_email'])
+            self.company = str(config['company'])
+            try:
+                self.previous_path = str(config['previous_path'])
+            except KeyError:
+                self.previous_path = '%s%s/source' % (app_config()['paths']['root'], self.company)
+            if self.user_name in self.previous_path:
+                self.filter = 'My Assignments'
+            elif 'publish' in self.previous_path:
+                self.filter = 'Publishes'
+            else:
+                self.filter = 'Everything'
 
     def on_login_clicked(self):
         dialog = LoginDialog(parent=self)
@@ -1255,7 +1300,7 @@ class CGLumberjack(LJMainWindow):
 
     def on_settings_clicked(self):
         from apps.configurator.main import Configurator
-        dialog = Configurator(self)
+        dialog = Configurator(self, self.company)
         dialog.exec_()
 
     def on_shelves_clicked(self):
