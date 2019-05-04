@@ -1,6 +1,7 @@
 import yaml
+import os
 from Qt import QtWidgets, QtGui, QtCore
-from core.config import app_config
+from core.config import app_config, UserConfig
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.base import LJDialog
 import copy
@@ -35,55 +36,48 @@ class NewProjectWindow(LJDialog):
 
 
 class Configurator(LJDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, company=None):
         LJDialog.__init__(self, parent)
+        self.company = company
         self.tabs = QtWidgets.QTabWidget()
 
-        client_label = QtWidgets.QLabel("%s" % "Company")
-        client_combo = AdvComboBox()
-        client_row = QtWidgets.QHBoxLayout()
-        client_row.addWidget(client_label)
-        client_row.addWidget(client_combo)
+        company_label = QtWidgets.QLabel("%s" % "Company")
+        self.company_combo = AdvComboBox()
+        company_row = QtWidgets.QHBoxLayout()
+        company_row.addWidget(company_label)
+        company_row.addWidget(self.company_combo)
 
         project_label = QtWidgets.QLabel("%s" % "Project")
-        project_combo = AdvComboBox()
+        self.project_combo = AdvComboBox()
         project_row = QtWidgets.QHBoxLayout()
         project_row.addWidget(project_label)
-        project_row.addWidget(project_combo)
-
-        root_label = QtWidgets.QLabel("%s" % 'Root Directory')
-        root_line_edit = QtWidgets.QLineEdit()
-        root_choose = QtWidgets.QToolButton()
-        root_choose.setText('...')
-        # root_label.setMaximumWidth(250)
-        root_row = QtWidgets.QHBoxLayout()
-        root_row.addWidget(root_label)
-        root_row.addWidget(root_line_edit)
-        root_row.addWidget(root_choose)
+        project_row.addWidget(self.project_combo)
 
         config_label = QtWidgets.QLabel("%s" % 'Config Directory')
-        config_line_edit = QtWidgets.QLineEdit()
+        self.config_line_edit = QtWidgets.QLineEdit()
         config_choose = QtWidgets.QToolButton()
         config_choose.setText('...')
         # config_label.setMaximumWidth(250)
         config_row = QtWidgets.QHBoxLayout()
         config_row.addWidget(config_label)
-        config_row.addWidget(config_line_edit)
+        config_row.addWidget(self.config_line_edit)
         config_row.addWidget(config_choose)
+        self.current_path = os.path.dirname(UserConfig().user_config_path)
+        self.user_config_path = os.path.dirname(UserConfig().user_config_path)
+        self.config_line_edit.setText(self.user_config_path)
 
         self.inner = QtGui.QVBoxLayout()
         self.layout = QtGui.QVBoxLayout()
         self.layout.addLayout(self.inner)
         self.layout.addLayout(config_row)
-        self.layout.addLayout(root_row)
-        self.layout.addLayout(client_row)
+        self.layout.addLayout(company_row)
         self.layout.addLayout(project_row)
         self.layout.addWidget(self.tabs)
 
         import_btn = QtWidgets.QPushButton("Import")
         save_btn = QtWidgets.QPushButton("Save")
 
-        import_btn.clicked.connect(self.select_file)
+
 
         button_row2 = QtWidgets.QHBoxLayout()
         button_row2.addWidget(import_btn)
@@ -93,6 +87,45 @@ class Configurator(LJDialog):
         self.setWindowTitle("LUMBERJACK CONFIG")
         self.setLayout(self.layout)
         self.file = ""
+        self.load_companies()
+
+        import_btn.clicked.connect(self.select_file)
+        self.company_combo.currentIndexChanged.connect(self.load_projects)
+        self.project_combo.currentIndexChanged.connect(self.load_file)
+
+    def load_companies(self):
+        self.current_path = os.path.join(self.config_line_edit.text(), 'companies')
+        companies = os.listdir(self.current_path)
+        companies.insert(0, '')
+        self.company_combo.addItems(companies)
+        if self.company:
+            index = self.company_combo.findText(self.company)
+            if index != -1:
+                self.company_combo.setCurrentIndex(index)
+                self.load_projects()
+
+    def load_projects(self):
+        ignore = ['cgl_tools']
+        self.current_path = os.path.join(self.current_path, self.company_combo.currentText())
+        projects = os.listdir(self.current_path)
+        for each in ignore:
+            if each in projects:
+                projects.remove(each)
+        projects.insert(0, '')
+        self.project_combo.addItems(projects)
+
+    def load_file(self):
+        project = self.project_combo.currentText()
+        if project == '':
+            return
+        if project == 'global.yaml':
+            self.current_path = os.path.join(self.current_path, project)
+        else:
+            self.current_path = os.path.join(os.path.dirname(self.current_path), project, 'global.yaml')
+        self.file = self.current_path
+        # TODO - need to clear everything
+        print 'Loading Globals: %s' % self.file
+        self.parse(self.file)
 
     def select_file(self):
         self.file = str(QtWidgets.QFileDialog.getOpenFileName()[0])

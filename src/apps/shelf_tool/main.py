@@ -321,7 +321,7 @@ class ShelfTool(LJDialog):
         with open(button_file, 'w+') as y:
             y.write(rows["plaintext"].toPlainText())
 
-        icon_path = os.path.join(r'%s' % self.company_config_dir, button_dict["icon"])
+        icon_path = os.path.join(r'%s' % self.company_config_dir, 'cgl_tools', button_dict["icon"])
         if os.path.exists(icon_path):
             newtabs.setTabIcon(int(button_dict["order"]) - 1, QtGui.QIcon(icon_path))
             newtabs.setIconSize(QtCore.QSize(24, 24))
@@ -476,8 +476,7 @@ class ShelfTool(LJDialog):
                         if newtabs.tabnum > self.max_tab:
                             self.max_tab = newtabs.tabnum
                         root = app_config()['paths']['code_root']
-                        icon_path = os.path.join(self.company_config_dir, tabs_dict[x]["icon"])
-                        print icon_path
+                        icon_path = os.path.join(self.company_config_dir, 'cgl_tools', tabs_dict[x]["icon"])
                         if os.path.exists(icon_path):
                             newtabs.setTabIcon(int(tabs_dict[x]["order"]) - 1, QtGui.QIcon(icon_path))
                             newtabs.setIconSize(QtCore.QSize(24, 24))
@@ -657,7 +656,7 @@ class ShelfTool(LJDialog):
         button = QtWidgets.QToolButton()
         button.line_edit = edit
         if ed:
-            icon_path = os.path.join(self.company_config_dir, ed)
+            icon_path = os.path.join(self.company_config_dir, 'cgl_tools', ed)
         else:
             icon_path = ''
         button.setIcon(QtGui.QIcon(icon_path))

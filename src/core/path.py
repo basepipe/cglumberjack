@@ -9,7 +9,7 @@ import copy
 import subprocess
 from core.util import split_all
 from core import assetcore
-from core.config import app_config
+from core.config import app_config, UserConfig
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 EXT_MAP = app_config()['ext_map']
@@ -791,6 +791,20 @@ def show_in_folder(path_string):
     command = (cmd + full_path)
     logging.info("running command: %s" % command)
     subprocess.Popen(command, shell=True)
+
+
+def create_project_config(company, project):
+    config_dir = os.path.dirname(UserConfig().user_config_path)
+    company_config = os.path.join(config_dir, 'companies', company, 'global.yaml')
+    project_dir = os.path.join(config_dir, 'companies', company, project)
+    project_config = os.path.join(project_dir, 'global.yaml')
+    if os.path.exists(company_config):
+        if not os.path.exists(project_dir):
+            os.makedirs(project_dir)
+            shutil.copy2(company_config, project_config)
+
+
+
 
 
 

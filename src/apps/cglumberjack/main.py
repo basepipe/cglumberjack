@@ -11,7 +11,7 @@ from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.dialog import InputDialog, LoginDialog
-from core.path import PathObject, CreateProductionData, start, replace_illegal_filename_characters, show_in_folder
+from core.path import PathObject, CreateProductionData, start, replace_illegal_filename_characters, show_in_folder, create_project_config
 from asset_ingestor_widget import AssetIngestor
 
 
@@ -659,6 +659,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             production_management = dialog.combo_box.currentText()
             print 'setting project management to %s' % production_management
             self.load_projects()
+            create_project_config(self.company, self.project)
         else:
             pass
 
@@ -1299,7 +1300,7 @@ class CGLumberjack(LJMainWindow):
 
     def on_settings_clicked(self):
         from apps.configurator.main import Configurator
-        dialog = Configurator(self)
+        dialog = Configurator(self, self.company)
         dialog.exec_()
 
     def on_shelves_clicked(self):
