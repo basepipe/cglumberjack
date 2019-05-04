@@ -177,7 +177,6 @@ class PathObject(object):
         # the interface as well.
         temp_ = path_string.split(self.root)[-1]
         temp_ = temp_.replace('\\', '/')
-
         c = split_all(temp_)[1]
         self.set_attr(company=c)
         #companies = app_config()['account_info']['companies']
