@@ -531,7 +531,7 @@ class CGLumberjack(LJMainWindow):
         dialog.exec_()
 
     def on_shelves_clicked(self):
-        from apps.shelf_tool.main import ShelfTool
+        from apps.toolshed.main import ShelfTool
         dialog = ShelfTool(self)
         dialog.exec_()
 
