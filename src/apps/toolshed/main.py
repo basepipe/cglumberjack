@@ -92,22 +92,25 @@ class ShelfTool(LJDialog):
     def add_software(self):
         software, result = QtWidgets.QInputDialog.getText(self, "Add New Software", "New Software Name:")
         if result:
-            shelves_yaml = os.path.join(self.root, 'cgl_tools', software, 'shelves.yaml')
-            shelves_code_folder = os.path.join(self.root, 'cgl_tools', software, 'shelves')
-            if not os.path.exists(shelves_code_folder):
-                os.makedirs(shelves_code_folder)
+            for each in ['shelves', 'menus', 'preflights']:
+                shelves_yaml = os.path.join(self.root, 'cgl_tools', software, '%s.yaml' % each)
+                shelves_code_folder = os.path.join(self.root, 'cgl_tools', software, each)
 
-            y = dict()
-            y[software.encode('utf-8')] = {}
+                if not os.path.exists(shelves_code_folder):
+                    os.makedirs(shelves_code_folder)
 
-            with open(shelves_yaml, 'w') as yaml_file:
-                yaml.dump(y, yaml_file)
+                y = dict()
+                y[software.encode('utf-8')] = {}
 
-            self.software = software.encode('utf-8')
-            self.software_dict[self.software] = shelves_yaml
-            self.populate_software_combo()
+                with open(shelves_yaml, 'w') as yaml_file:
+                    yaml.dump(y, yaml_file)
+
+                self.software = software.encode('utf-8')
+                self.software_dict[self.software] = shelves_yaml
+                self.populate_software_combo()
 
     def populate_software_combo(self):
+        self.software_combo.clear()
         cfg = os.path.join(self.root, 'cgl_tools', '*')
         yamls = glob.glob(cfg)
         print yamls
@@ -130,6 +133,7 @@ class ShelfTool(LJDialog):
             self.type_combo.show()
 
     def populate_types(self):
+        self.type_combo.clear()
         cfg = os.path.join(self.root, 'cgl_tools', self.software_combo.currentText(), '*.yaml')
         yamls = glob.glob(cfg)
         for each in yamls:
@@ -140,9 +144,12 @@ class ShelfTool(LJDialog):
     def on_type_selected(self):
         self.clear_tabs()
         self.file = os.path.join(self.root, 'cgl_tools', self.software_combo.currentText(), self.type_combo.currentText())
+        file_, ext_ = os.path.splitext(self.file)
+        file_ = os.path.split(file_)[-1]
         self.parse(self.file, type=self.type_combo.currentText())
         self.add_software_btn.show()
         self.add_shelf_btn.show()
+        self.add_shelf_btn.setText('Add New %s' % file_)
 
     def select_file(self):
         self.file = str(QtWidgets.QFileDialog.getOpenFileName()[0])
