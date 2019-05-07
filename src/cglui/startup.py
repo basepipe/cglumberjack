@@ -9,7 +9,7 @@ from Qt import QtWidgets, QtCore
 
 import Qt
 
-from core.startup import do_app_init
+from cglcore.startup import do_app_init
 from cglui.util import UISettings
 
 

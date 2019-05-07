@@ -1,12 +1,12 @@
 import os
 from Qt import QtWidgets, QtCore, QtGui
-from core.config import app_config
+from cglcore.config import app_config
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
-from core.path import PathObject, CreateProductionData
+from cglcore.path import PathObject, CreateProductionData
 
 
 class LabelEditRow(QtWidgets.QVBoxLayout):

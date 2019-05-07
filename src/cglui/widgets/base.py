@@ -1,7 +1,7 @@
 from Qt.QtWidgets import QMainWindow, QDialog, QSplitter, QWidget
 from Qt.QtCore import QSize, QObject
 from cglui.util import UISettings, widget_name
-from core.util import app_name
+from cglcore.util import app_name
 
 
 class StateSavers(QObject):

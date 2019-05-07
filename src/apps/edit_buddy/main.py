@@ -7,8 +7,8 @@ from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.base import LJDialog
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.project_selection_module import LineEditWidget, LabelEditRow, ProjectControlCenter, LabelComboRow
-from core.config import app_config
-from core.path import PathObject, CreateProductionData
+from cglcore.config import app_config
+from cglcore.path import PathObject, CreateProductionData
 
 
 class PandasModel(QtCore.QAbstractTableModel):

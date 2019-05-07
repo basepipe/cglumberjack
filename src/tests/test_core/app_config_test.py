@@ -1,6 +1,6 @@
 import pytest
 import os
-from core.config import app_config
+from cglcore.config import app_config
 
 
 def test_src_is_sources_root():

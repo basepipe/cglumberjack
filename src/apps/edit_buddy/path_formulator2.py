@@ -6,8 +6,8 @@ import re
 from cglui.widgets.project_selection_module import LineEditWidget, LabelComboRow
 from cglui.widgets.dialog import AdvComboBox
 from cglui.widgets.base import LJDialog
-from core.path import get_projects, get_companies
-from core.config import app_config
+from cglcore.path import get_projects, get_companies
+from cglcore.config import app_config
 
 
 class QVLine(QtWidgets.QFrame):

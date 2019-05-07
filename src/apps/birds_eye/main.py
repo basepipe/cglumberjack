@@ -1,7 +1,7 @@
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.base import LJMainWindow
 import core.assetcore as ac
-from core.config import app_config
+from cglcore.config import app_config
 
 
 VIEWS = {'All Assets': ['mdl', 'rig', 'tex', 'shd'],

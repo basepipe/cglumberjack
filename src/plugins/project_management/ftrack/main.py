@@ -1,5 +1,5 @@
 import json
-from core.config import app_config
+from cglcore.config import app_config
 import ftrack_api
 
 SCHEMAS = ['Generic', 'Development', 'INTERNO', "VFX", 'PRODUCCION', 'ANIMATION']  # These are queryable

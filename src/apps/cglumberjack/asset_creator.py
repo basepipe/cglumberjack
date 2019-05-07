@@ -1,10 +1,10 @@
 import re
 import os
 import glob
-from core.path import CreateProductionData, PathObject
+from cglcore.path import CreateProductionData, PathObject
 from Qt import QtWidgets, QtCore, QtGui
 
-from core.config import app_config
+from cglcore.config import app_config
 from cglui.widgets.base import LJDialog
 from cglui.widgets.combo import AdvComboBox, LabelComboRow
 

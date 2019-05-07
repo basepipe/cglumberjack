@@ -1,8 +1,8 @@
 import os, sys
 import yaml
 import pymel.core as pm
-from core.config import app_config
-from core.path import PathObject
+from cglcore.config import app_config
+from cglcore.path import PathObject
 import maya.mel
 
 PATH_OBJECT = PathObject(str(pm.sceneName()))
