@@ -90,6 +90,9 @@ class ShelfTool(LJDialog):
 
     def add_software(self):
         software, result = QtWidgets.QInputDialog.getText(self, "Add New Software", "New Software Name:")
+        if not os.path.exists(os.path.join(self.root, '__init__.py')):
+            self.make_init(self.root)
+
         if result:
             software_code_folder = os.path.join(self.root, 'cgl_tools', software)
             if not os.path.exists(software_code_folder):
@@ -103,6 +106,9 @@ class ShelfTool(LJDialog):
 
                 if not os.path.exists(shelves_code_folder):
                     os.makedirs(shelves_code_folder)
+
+                if not os.path.exists(os.path.join(self.root, 'cgl_tools', '__init__.py')):
+                    self.make_init(os.path.join(os.path.join(self.root, 'cgl_tools')))
 
                 if not os.path.exists(os.path.join(shelves_code_folder, '__init__.py')):
                     self.make_init(shelves_code_folder)
