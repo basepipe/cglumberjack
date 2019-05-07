@@ -7,7 +7,7 @@ import datetime
 from os.path import expanduser
 import logging
 import re
-from core.config import app_config
+from cglcore.config import app_config
 
 
 def pretty(obj):

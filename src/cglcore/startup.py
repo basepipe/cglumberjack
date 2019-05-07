@@ -2,7 +2,7 @@ import logging
 import sys
 import multiprocessing
 
-from core.config import app_config
+from cglcore.config import app_config
 
 
 def _logging_setup():

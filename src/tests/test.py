@@ -1,4 +1,4 @@
-from core.path import PathObject, CreateProductionData
+from cglcore.path import PathObject, CreateProductionData
 
 path = r'D:\cgl-fsutests\source\thedogmovie\assets\prop\ball\mdl\tmikota\000.014\high\prop_ball_mdl.mb'
 

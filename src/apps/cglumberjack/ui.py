@@ -2,14 +2,14 @@ import glob
 import copy
 import os
 from Qt import QtWidgets, QtCore, QtGui
-from core.config import app_config
+from cglcore.config import app_config
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
-from core.path import PathObject
+from cglcore.path import PathObject
 from asset_ingestor_widget import AssetIngestor
 
 

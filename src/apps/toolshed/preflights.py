@@ -7,7 +7,6 @@ import shutil
 from Qt import QtWidgets, QtGui, QtCore
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.base import LJDialog
-from core.config import app_config
 
 
 class PreflightTool(LJDialog):

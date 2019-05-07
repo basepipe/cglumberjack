@@ -1,13 +1,14 @@
 import os
 import re
 import yaml
+import json
 import copy
 import glob
 import shutil
 from Qt import QtWidgets, QtGui, QtCore
 from cglui.widgets.base import LJDialog
 from cglui.widgets.text import Highlighter
-from core.config import app_config
+from cglcore.config import app_config
 
 GUI_DICT = {'shelves.yaml': ['button name', 'command', 'icon', 'order', 'annotation', 'label'],
             'preflights.yaml': ['order', 'module', 'name', 'required'],
@@ -58,7 +59,7 @@ class ShelfTool(LJDialog):
         self.layout.addLayout(self.software_row)
         self.layout.addWidget(self.tabs)
 
-        self.setWindowTitle("The Shelf Manager")
+        self.setWindowTitle("Tool Shed")
         self.setLayout(self.layout)
         self.file = ""
         self.populate_software_combo()
@@ -92,12 +93,21 @@ class ShelfTool(LJDialog):
     def add_software(self):
         software, result = QtWidgets.QInputDialog.getText(self, "Add New Software", "New Software Name:")
         if result:
+            software_code_folder = os.path.join(self.root, 'cgl_tools', software)
+            if not os.path.exists(software_code_folder):
+                os.makedirs(software_code_folder)
+            if not os.path.exists(os.path.join(software_code_folder, '__init__.py')):
+                self.make_init(software_code_folder)
             for each in ['shelves', 'menus', 'preflights']:
                 shelves_yaml = os.path.join(self.root, 'cgl_tools', software, '%s.yaml' % each)
+
                 shelves_code_folder = os.path.join(self.root, 'cgl_tools', software, each)
 
                 if not os.path.exists(shelves_code_folder):
                     os.makedirs(shelves_code_folder)
+
+                if not os.path.exists(os.path.join(shelves_code_folder, '__init__.py')):
+                    self.make_init(shelves_code_folder)
 
                 y = dict()
                 y[software.encode('utf-8')] = {}
@@ -146,10 +156,12 @@ class ShelfTool(LJDialog):
         self.file = os.path.join(self.root, 'cgl_tools', self.software_combo.currentText(), self.type_combo.currentText())
         file_, ext_ = os.path.splitext(self.file)
         file_ = os.path.split(file_)[-1]
-        self.parse(self.file, type=self.type_combo.currentText())
-        self.add_software_btn.show()
-        self.add_shelf_btn.show()
-        self.add_shelf_btn.setText('Add New %s' % file_)
+        if self.type_combo.currentText():
+            self.current_type, ext = os.path.splitext(self.type_combo.currentText())
+            self.parse(self.file, type=self.type_combo.currentText())
+            self.add_software_btn.show()
+            self.add_shelf_btn.show()
+            self.add_shelf_btn.setText('Add New %s' % file_)
 
     def select_file(self):
         self.file = str(QtWidgets.QFileDialog.getOpenFileName()[0])
@@ -164,7 +176,7 @@ class ShelfTool(LJDialog):
             shelf_name = m.group(2)
             button = m.group(3)
             root = app_config()['paths']['code_root']
-            p = os.path.join(self.company_config_dir, 'cgl_tools', software, "shelves", shelf_name, "%s.py" % button)
+            p = os.path.join(self.company_config_dir, 'cgl_tools', software, self.current_type, shelf_name, "%s.py" % button)
             with open(p, 'w+') as y:
                 y.write(rows["plaintext"].toPlainText())
 
@@ -172,12 +184,13 @@ class ShelfTool(LJDialog):
         exec(rows['command'].edit.text())
 
     def make_init(self, folder):
+        print 'creating init for %s' % folder
         with open(os.path.join(folder, '__init__.py'), 'w+') as i:
             i.write("")
 
     def get_software_folder(self, software, shelf_name):
         software_folder = os.path.join(self.root, 'cgl_tools', software)
-        shelves_folder = os.path.join(software_folder, 'shelves')
+        shelves_folder = os.path.join(software_folder, self.current_type)
         shelf_name_folder = os.path.join(shelves_folder, shelf_name.encode('utf-8'))
         return [software_folder, shelves_folder, shelf_name_folder]
 
@@ -242,7 +255,8 @@ class ShelfTool(LJDialog):
             m = re.search("cgl_tools\.([a-zA-Z_1-9]*)\.shelves.([a-zA-Z_1-9]*)\.([a-zA-Z_1-9]*)",
                           oldcom.encode('utf-8'))
             if m:
-                button_file = os.path.join(self.company_config_dir, 'cgl_tools', m.group(1), "shelves", m.group(2), "%s.py" % m.group(3))
+                button_file = os.path.join(self.company_config_dir, 'cgl_tools', m.group(1), self.current_type, m.group(2), "%s.py" % m.group(3))
+                print 0, button_file
                 os.remove(button_file)
 
             if oldname is not newname:
@@ -262,7 +276,8 @@ class ShelfTool(LJDialog):
         button_dict["order"] = int(button_dict["order"])
         print rows["command"].edit.text()
         cgl_tools, software, shelves, shelf_name, button = rows["command"].edit.text().encode('utf-8').split()[1].split('.')
-        button_file = os.path.join(self.company_config_dir, 'cgl_tools', software, "shelves", shelf_name, "%s.py" % button)
+        button_file = os.path.join(self.company_config_dir, 'cgl_tools', software, self.current_type, shelf_name, "%s.py" % button)
+        print 1, button_file
         if not os.path.exists(os.path.dirname(button_file)):
             os.makedirs(os.path.dirname(button_file))
         with open(button_file, 'w+') as y:
@@ -292,6 +307,7 @@ class ShelfTool(LJDialog):
                 yaml.dump(y, yaml_file)
 
     def make_new_button(self, newtabs, tabname, index_):
+        self.disable_label_edit = True
         scroll_area = QtWidgets.QScrollArea()
         tab = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout()
@@ -303,6 +319,10 @@ class ShelfTool(LJDialog):
         scroll_area.bname = bname
 
         layout.addLayout(bname)
+
+        label_name = self.get_label_row("Label (What is displayed in menus)", "", path+["Label"])
+        scroll_area.label = label_name
+        layout.addLayout(label_name)
 
         anno = self.get_label_row("Annotation", "", path+["Annotation"])
         scroll_area.anno = anno
@@ -334,11 +354,12 @@ class ShelfTool(LJDialog):
         synrow.addWidget(syn)
         layout.addLayout(synrow)
 
-        rows = {"bname": bname, "anno": anno, "command": command, "order": order, "icon": icon, "plaintext": syn}
+        rows = {"bname": bname, "label": label_name, "anno": anno, "command": command,
+                "order": order, "icon": icon, "plaintext": syn}
         save_btn.clicked.connect(lambda: self.add_page(newtabs, tabname, bname.edit.text(), rows))
         test_btn.clicked.connect(lambda: self.test_exec(newtabs, tabname, bname.edit.text(), rows))
 
-        rows["plaintext"].insertPlainText("def run():\n    print(\"hello world\")")
+        rows["plaintext"].insertPlainText("def run():\n    print(\"hello world:\")")
 
         rows["bname"].edit.textChanged[str].connect(lambda: self.set_command(rows, tabname))
 
@@ -356,15 +377,34 @@ class ShelfTool(LJDialog):
         return scroll_area
 
     def set_command(self, rows, tabname):
+        """
+        set's the string for the 'command' line_edit, this is also used esse
+        :param rows:
+        :param tabname:
+        :return:
+        """
         if " " in rows["bname"].edit.text():
+            # TODO - make this red
             rows["command"].edit.setText("NO SPACES IN BUTTON NAME")
+
         else:
-            command = "import cgl_tools.%s.shelves.%s.%s as %s; %s.run()" % (str(self.software_combo.currentText()),
-                                                                         tabname, rows["bname"].edit.text(),
-                                                                         rows["bname"].edit.text(),
-                                                                         rows["bname"].edit.text()
-                                                                         )
+            command = "import cgl_tools.%s.%s.%s.%s as %s; %s.run()" % (str(self.software_combo.currentText()),
+                                                                        self.current_type,
+                                                                        tabname, rows["bname"].edit.text(),
+                                                                        rows["bname"].edit.text(),
+                                                                        rows["bname"].edit.text()
+                                                                        )
             rows["command"].edit.setText(command)
+            if self.disable_label_edit:
+                rows['label'].edit.setText(rows["bname"].edit.text())
+            document = rows['plaintext'].document().toPlainText()
+            if '"hello world:' in document:
+                print 'found it'
+                changed_command = "def run():\n    print(\"hello world: %s\")" % rows["bname"].edit.text()
+                rows["plaintext"].clear()
+                rows["plaintext"].insertPlainText(changed_command)
+
+            # Change the hello world statement
 
     def parse(self, filename, type='shelves.yaml'):
         self.clear_tabs()
@@ -390,6 +430,7 @@ class ShelfTool(LJDialog):
                                 self.tabs.addTab(scroll_area, str(tabs_dict))
             # need a way to auto resize the GUI to expand as far as necessary
         else:
+            print filename, 0
             with open(filename, 'r') as stream:
                 f = yaml.load(stream)
                 if len(f) == 0:
@@ -506,24 +547,27 @@ class ShelfTool(LJDialog):
                     layout.addWidget(widget)
                     widget.setLayout(self.iterate_over_dict(tabs_dict[x], new_layout, [x]))
 
-        syn = QtWidgets.QPlainTextEdit()
-        syn.setPlainText("Can't Display Module")
-        syn.setEnabled(False)
-        highlighter = Highlighter(syn.document())
-        synrow = QtWidgets.QHBoxLayout()
-        synrow.addWidget(syn)
-        layout.addLayout(synrow)
-        #layout.addItem(QtWidgets.QSpacerItem(0, 200, QtWidgets.QSizePolicy.Expanding))
-        test_btn = QtWidgets.QPushButton("Test")
-        save_btn = QtWidgets.QPushButton("Save")
-        # save_btn.clicked.connect(lambda: self.add_page(newtabs, tabname, rows["bname"].edit.text(), rows))
-        # test_btn.clicked.connect(lambda: self.test_exec(newtabs, tabname, rows["bname"].edit.text(), rows))
-        save_row = QtWidgets.QHBoxLayout()
-        save_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
-        save_row.addWidget(test_btn)
-        save_row.addWidget(save_btn)
-        layout.addLayout(save_row)
-        return layout
+            syn = QtWidgets.QPlainTextEdit()
+            if self.get_command(tabs_dict["command"]):
+                syn.setPlainText(self.get_command(tabs_dict["command"]))
+            else:
+                syn.setPlainText("Can't Display Module")
+            syn.setEnabled(False)
+            highlighter = Highlighter(syn.document())
+            synrow = QtWidgets.QHBoxLayout()
+            synrow.addWidget(syn)
+            layout.addLayout(synrow)
+
+            # Create Buttons at the bottom
+            test_btn = QtWidgets.QPushButton("Test")
+            save_btn = QtWidgets.QPushButton("Save")
+            # Create the Save Row
+            save_row = QtWidgets.QHBoxLayout()
+            save_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+            save_row.addWidget(test_btn)
+            save_row.addWidget(save_btn)
+            layout.addLayout(save_row)
+            return layout
 
     def generate_tab(self, newtabs, tabs_dict, tabname, tab_widget, index_):
         layout = QtWidgets.QVBoxLayout()
@@ -555,6 +599,7 @@ class ShelfTool(LJDialog):
         if type(tabs_dict) is dict:
             if self.get_command(tabs_dict["command"]):
                 syn = QtWidgets.QPlainTextEdit()
+
                 syn.setPlainText(self.get_command(tabs_dict["command"]))
                 highlighter = Highlighter(syn.document())
                 synrow = QtWidgets.QHBoxLayout()
@@ -602,7 +647,7 @@ class ShelfTool(LJDialog):
 
     def get_command(self, command):
         cgl_tools, software, shelves, tab, file_ = command.split()[1].split('.')
-        python_file = os.path.join(self.company_config_dir, 'cgl_tools', software, "shelves", tab, "%s.py" % file_)
+        python_file = os.path.join(self.company_config_dir, 'cgl_tools', software, self.current_type, tab, "%s.py" % file_)
         try:
             return open(python_file).read()
         except IOError:
@@ -701,7 +746,8 @@ class ShelfTool(LJDialog):
         #self.sender().tab_widget.setTabIcon(self.sender().tab_index, QtGui.QIcon(os.path.join(icon_folder, filename)))
         #self.sender().tab_widget.setIconSize(QtCore.QSize(24, 24))
 
-    def get_edit_row(self):
+    @staticmethod
+    def get_edit_row():
         edit = QtWidgets.QLineEdit()
         edit2 = QtWidgets.QLineEdit()
         row = QtWidgets.QHBoxLayout()
@@ -714,7 +760,7 @@ if __name__ == "__main__":
     from cglui.startup import do_gui_init
     app = do_gui_init()
     mw = ShelfTool()
-    mw.setWindowTitle('Shelf Tool')
+    mw.setWindowTitle('Tool Shed: A CG Lumberjack Joint')
     mw.show()
     mw.raise_()
     app.exec_()

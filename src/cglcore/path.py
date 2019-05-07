@@ -7,9 +7,9 @@ import re
 import shutil
 import copy
 import subprocess
-from core.util import split_all
-from core import assetcore
-from core.config import app_config, UserConfig
+from cglcore.util import split_all
+from cglcore import assetcore
+from cglcore.config import app_config, UserConfig
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 EXT_MAP = app_config()['ext_map']
@@ -717,22 +717,25 @@ class CreateProductionData(object):
 
     def create_default_file(self):
         if self.path_object.task == 'prev':
-            self.create_maya_default_file()
+            self.copy_default_file('maya', 'mb')
         if self.path_object.task == 'mdl':
-            self.create_maya_default_file()
+            self.copy_default_file('maya', 'mb')
         if self.path_object.task == 'shd':
-            self.create_maya_default_file()
+            self.copy_default_file('maya', 'mb')
         if self.path_object.task == 'anim':
-            self.create_maya_default_file()
+            self.copy_default_file('maya', 'mb')
         if self.path_object.task == 'lite':
-            self.create_maya_default_file()
+            self.copy_default_file('maya', 'mb')
+        if self.path_object.task == 'comp':
+            self.copy_default_file('nuke', 'nk')
 
-    def create_maya_default_file(self):
-        self.path_object.set_attr(filename='%s_%s_%s.mb' % (self.path_object.seq,
-                                                                self.path_object.shot,
-                                                                self.path_object.task))
+    def copy_default_file(self, software, ext):
+        self.path_object.set_attr(filename='%s_%s_%s.%s' % (self.path_object.seq,
+                                                            self.path_object.shot,
+                                                            self.path_object.task,
+                                                            ext))
         this = __file__.split('src')[0]
-        default_file = "%ssrc/%s" % (this, r'plugins/maya/2018/templates/default.mb')
+        default_file = "%ssrc/%s" % (this, r'plugins/%s/templates/default.%s' % (software, ext))
         logging.info('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
         shutil.copy2(default_file, self.path_object.path_root)
 

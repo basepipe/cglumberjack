@@ -3,7 +3,7 @@ import os
 import shutil
 import logging
 from Qt import QtWidgets, QtCore, QtGui
-from core.config import app_config, UserConfig
+from cglcore.config import app_config, UserConfig
 from cglui.widgets.combo import AdvComboBox, LabelComboRow
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.search import LJSearchEdit
@@ -11,7 +11,7 @@ from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.dialog import InputDialog, LoginDialog
-from core.path import PathObject, CreateProductionData, start, replace_illegal_filename_characters, show_in_folder, create_project_config
+from cglcore.path import PathObject, CreateProductionData, start, replace_illegal_filename_characters, show_in_folder, create_project_config
 from asset_ingestor_widget import AssetIngestor
 
 

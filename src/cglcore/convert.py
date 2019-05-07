@@ -3,8 +3,8 @@ import subprocess
 import glob
 import logging
 
-from core.config import app_config
-from core.path import PathObject
+from cglcore.config import app_config
+from cglcore.path import PathObject
 
 # Important note regarding ffmpeg and .h264 encoding:  There was a lot of discussion about whether this is ok
 # to be distributing software with .h264 encoding.  I called the law firm that handles licensing and they said that

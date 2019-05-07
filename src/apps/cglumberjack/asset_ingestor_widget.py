@@ -1,10 +1,10 @@
 import os
 import glob
 from Qt import QtWidgets, QtCore, QtGui
-from core.path import PathObject, CreateProductionData
+from cglcore.path import PathObject, CreateProductionData
 from cglui.widgets.combo import AdvComboBox
-from core.config import app_config
-from core.path import icon_path
+from cglcore.config import app_config
+from cglcore.path import icon_path
 import shutil
 
 

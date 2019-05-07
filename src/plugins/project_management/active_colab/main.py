@@ -1,4 +1,3 @@
-#from core.path import PathObject
 
 
 class ProjectManagementData(object):
