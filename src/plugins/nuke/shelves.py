@@ -5,7 +5,8 @@ import nuke
 from cglcore.path import PathObject
 
 
-PATH_OBJECT = PathObject(str(r'D:/cgl-fsutests/source/thedogmovie/shots/000/0300/comp/tmikota/000.000/high'))
+PATH_OBJECT = PathObject(str(nuke.root().name()))
+# TODO = I need a way of figuring out whether a PATH OBJECT is in compliance with the pipeline
 COMPANY_CONFIG = os.path.dirname(PATH_OBJECT.company_config.replace('/', '\\'))
 NUKE_SHELVES_PATH = os.path.join(COMPANY_CONFIG, 'cgl_tools', 'nuke', 'shelves.yaml')
 NUKE_SHELVES = os.path.join(os.path.dirname(NUKE_SHELVES_PATH), 'shelves')

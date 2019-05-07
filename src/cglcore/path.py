@@ -99,6 +99,7 @@ class PathObject(object):
             self.priority = 'medium'
 
     def process_string(self, path_object):
+        print path_object
         self.get_company(path_object)
         self.unpack_path(path_object)
         self.set_data_from_attrs()
@@ -175,7 +176,11 @@ class PathObject(object):
         # proned to error. We have to figure out how to make sure we have a valid, registered company somehow.  This
         # can be something we do upon creatoin of a company through the interface, but needs to handle companies outside
         # the interface as well.
+        path_string = path_string.replace('\\', '/')
+        print path_string, 0
+        print self.root, 1
         temp_ = path_string.split(self.root)[-1]
+        print temp_, 2
         temp_ = temp_.replace('\\', '/')
         c = split_all(temp_)[1]
         self.set_attr(company=c)

@@ -648,6 +648,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             os.makedirs(dir_)
 
     def on_create_project(self):
+        print 'CURRENT LOCATION: %s' % self.current_location
         dialog = InputDialog(title='Create Project', message='Type a Project Name & Choose Proj Management',
                              line_edit=True, combo_box_items=['lumbermill', 'shotgun', 'ftrack'])
         dialog.exec_()

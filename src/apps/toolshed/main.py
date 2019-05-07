@@ -38,8 +38,6 @@ class ShelfTool(LJDialog):
         self.add_shelf_btn = QtWidgets.QPushButton("Add New Shelf")
         self.type_label.hide()
         self.type_combo.hide()
-        self.add_software_btn.hide()
-        self.add_shelf_btn.hide()
 
         self.software_row = QtWidgets.QHBoxLayout()
         self.software_row.addWidget(software_label)
@@ -320,7 +318,7 @@ class ShelfTool(LJDialog):
 
         layout.addLayout(bname)
 
-        label_name = self.get_label_row("Label (What is displayed in menus)", "", path+["Label"])
+        label_name = self.get_label_row("Label", "", path+["Label"])
         scroll_area.label = label_name
         layout.addLayout(label_name)
 
