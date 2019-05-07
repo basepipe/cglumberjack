@@ -38,8 +38,6 @@ class ShelfTool(LJDialog):
         self.add_shelf_btn = QtWidgets.QPushButton("Add New Shelf")
         self.type_label.hide()
         self.type_combo.hide()
-        self.add_software_btn.hide()
-        self.add_shelf_btn.hide()
 
         self.software_row = QtWidgets.QHBoxLayout()
         self.software_row.addWidget(software_label)
