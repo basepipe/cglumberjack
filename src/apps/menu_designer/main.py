@@ -1,7 +1,6 @@
 import os
 import re
 import yaml
-import json
 import copy
 import glob
 import shutil
@@ -15,7 +14,7 @@ GUI_DICT = {'shelves.yaml': ['button name', 'command', 'icon', 'order', 'annotat
             'menus.yaml': ['order', 'name']}
 
 
-class ShelfTool(LJDialog):
+class MenuDesigner(LJDialog):
     def __init__(self, parent=None):
         LJDialog.__init__(self, parent)
         self.tabs = QtWidgets.QTabWidget()
@@ -57,7 +56,7 @@ class ShelfTool(LJDialog):
         self.layout.addLayout(self.software_row)
         self.layout.addWidget(self.tabs)
 
-        self.setWindowTitle("Tool Shed")
+        self.setWindowTitle("Menu Designer")
         self.setLayout(self.layout)
         self.file = ""
         self.populate_software_combo()
@@ -763,8 +762,8 @@ class ShelfTool(LJDialog):
 if __name__ == "__main__":
     from cglui.startup import do_gui_init
     app = do_gui_init()
-    mw = ShelfTool()
-    mw.setWindowTitle('Tool Shed: A CG Lumberjack Joint')
+    mw = MenuDesigner()
+    mw.setWindowTitle('Tool Shed')
     mw.show()
     mw.raise_()
     app.exec_()

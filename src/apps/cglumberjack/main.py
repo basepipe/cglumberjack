@@ -1260,7 +1260,7 @@ class CGLumberjack(LJMainWindow):
         self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
         settings.setShortcut('Ctrl+,')
-        shelves = QtWidgets.QAction('Shelf Builder', self)
+        shelves = QtWidgets.QAction('Menu Designer', self)
         ingest_dialog = QtWidgets.QAction('Ingest Tool', self)
         # add actions to the file menu
         tools_menu.addAction(settings)
@@ -1305,8 +1305,8 @@ class CGLumberjack(LJMainWindow):
         dialog.exec_()
 
     def on_shelves_clicked(self):
-        from apps.toolshed.main import ShelfTool
-        dialog = ShelfTool(self)
+        from apps.menu_designer.main import MenuDesigner
+        dialog = MenuDesigner(self)
         dialog.exec_()
 
     def closeEvent(self, event):
