@@ -75,6 +75,7 @@ class PathObject(object):
         self.due = None
         self.assigned = None
         self.priority = None
+        self.input_company = '*'
 
         if type(path_object) is dict:
             self.process_dict(path_object)
@@ -99,7 +100,6 @@ class PathObject(object):
             self.priority = 'medium'
 
     def process_string(self, path_object):
-        print path_object
         self.get_company(path_object)
         self.unpack_path(path_object)
         self.set_data_from_attrs()
@@ -125,6 +125,10 @@ class PathObject(object):
         for key in path_object:
             self.data[key] = path_object[key]
             self.set_attr(attr=key, value=path_object[key])
+        if self.version:
+            major_version, minor_version = self.version.split('.')
+            self.set_attr(major_version=major_version.replace('.', ''))
+            self.set_attr(minor_version=minor_version.replace('.', ''))
         self.set_shotname()
 
     def get_template(self):
@@ -177,10 +181,7 @@ class PathObject(object):
         # can be something we do upon creatoin of a company through the interface, but needs to handle companies outside
         # the interface as well.
         path_string = path_string.replace('\\', '/')
-        print path_string, 0
-        print self.root, 1
         temp_ = path_string.split(self.root)[-1]
-        print temp_, 2
         temp_ = temp_.replace('\\', '/')
         c = split_all(temp_)[1]
         self.set_attr(company=c)
@@ -251,6 +252,7 @@ class PathObject(object):
                 else:
                     if self.__dict__[attr]:
                         path_string = os.path.join(path_string, self.__dict__[attr])
+        #path_string = path_string.replace('\\', '/')
         # if windows
         
         if sys.platform == 'win32':
@@ -288,6 +290,8 @@ class PathObject(object):
                 self.data[attr] = value
             else:
                 if value:
+                    if value == 'io':
+                        value = value.upper()
                     if attr == 'scope':
                         if value not in self.scope_list:
                             logging.error('%s not found in %s' % (value, self.scope_list))
@@ -567,9 +571,10 @@ class PathObject(object):
 
 class CreateProductionData(object):
     def __init__(self, path_object=None, file_system=True, project_management=PROJ_MANAGEMENT,
-                 do_scope=False, test=False, json=True):
+                 do_scope=True, test=False, json=True):
         self.test = test
         self.path_object = PathObject(path_object)
+        print 'Path Object: %s' % self.path_object.path
         self.do_scope = do_scope
         if file_system:
             self.create_folders()
@@ -579,21 +584,24 @@ class CreateProductionData(object):
         if self.path_object.resolution:
             if self.path_object.version == '000.000':
                 self.create_default_file()
-        if json:
-            self.update_json()
+        #if json:
+        #    self.update_json()
 
     def update_json(self):
         """
         creates json file, or updates an existing one.
         :return:
         """
-        if self.path_object.task_json:
-            self.update_task_json(assigned=self.path_object.user, priority=self.path_object.priority,
-                                  status=self.path_object.status)
-        if self.path_object.asset_json:
-            self.update_asset_json()
-        if self.path_object.project_json:
-            self.update_project_json()
+        if self.path_object.scope != 'IO':
+            print self.path_object.scope
+            if self.path_object.task_json:
+                print self.path_object.task_json
+                self.update_task_json(assigned=self.path_object.user, priority=self.path_object.priority,
+                                      status=self.path_object.status)
+            if self.path_object.asset_json:
+                self.update_asset_json()
+            if self.path_object.project_json:
+                self.update_project_json()
 
     def update_task_json(self, status=None, priority=None, due=None, assigned=None):
         """
@@ -674,7 +682,6 @@ class CreateProductionData(object):
             return
         if not self.path_object.context:
             self.path_object.set_attr(context='source')
-
         self.safe_makedirs(self.path_object, test=self.test)
         self.create_other_context(self.path_object)
         if self.do_scope:
@@ -689,11 +696,11 @@ class CreateProductionData(object):
 
     def create_other_scope(self, path_object):
         if path_object.scope:
-            d = {'assets': 'shots', 'shots': 'assets'}
-            if path_object.scope:
-                new_obj = path_object.copy(scope=d[path_object.scope])
-                self.safe_makedirs(new_obj)
-                self.create_other_context(new_obj)
+            for each in app_config()['rules']['scope_list']:
+                if each != path_object.scope:
+                    new_obj = path_object.copy(scope=each)
+                    self.safe_makedirs(new_obj)
+                    self.create_other_context(new_obj)
 
     @staticmethod
     def safe_makedirs(path_object, test=False):
@@ -707,6 +714,8 @@ class CreateProductionData(object):
         if not test:
             if not os.path.exists(path_):
                 os.makedirs(path_)
+        else:
+            print 'TEST MODE: makeing dirs: %s' % path_
 
     @staticmethod
     def create_project_management_data(path_object, project_management):

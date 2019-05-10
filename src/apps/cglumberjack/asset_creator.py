@@ -148,13 +148,10 @@ class AssetCreator(LJDialog):
                 index = self.asset_widget.category_row.combo.findText(self.path_object.seq)
                 self.asset_widget.category_row.combo.setCurrentIndex(index)
         if self.path_object.shot:
-            print 1
             index = self.asset_widget.name_row.combo.findText(self.path_object.shot)
             if index != -1:
-                print 2, self.path_object.shot
                 self.asset_widget.name_row.combo.setCurrentIndex(index)
             else:
-                print 3
                 self.asset_widget.name_row.combo.addItem(self.path_object.shot)
                 index = self.asset_widget.name_row.combo.findText(self.path_object.shot)
                 self.asset_widget.name_row.combo.setCurrentIndex(index)
