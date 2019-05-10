@@ -39,7 +39,7 @@ class ImportBrowser(LJDialog):
         self.current_location = {}
 
         header = self.destination_tree.header()
-        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        # header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.destination_tree.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.dest_path = LineEditWidget(label='Destination')
         self.category = LineEditWidget(label='Category', read_only=False)

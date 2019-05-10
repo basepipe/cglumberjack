@@ -5,7 +5,7 @@ import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.combo import AdvComboBox, LabelComboRow
-from cglui.widgets.base import LJMainWindow
+from cglui.widgets.base import LJMainWindow, LJFileBrowser
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
@@ -129,6 +129,8 @@ class AssetWidget(QtWidgets.QWidget):
         # build the filter optoins row
         self.assets_radio = QtWidgets.QRadioButton('Assets')
         self.shots_radio = QtWidgets.QRadioButton('Shots')
+        self.io_radio = QtWidgets.QRadioButton('IO')
+        self.radio_group_scope = QtWidgets.QButtonGroup(self)
 
         self.radio_layout = QtWidgets.QHBoxLayout()
         # create a button group for these radio buttons
@@ -139,6 +141,9 @@ class AssetWidget(QtWidgets.QWidget):
         self.radio_group2.addButton(self.radio_user)
         self.radio_group2.addButton(self.radio_everything)
         self.radio_group2.addButton(self.radio_publishes)
+        self.radio_group_scope.addButton(self.io_radio)
+        self.radio_group_scope.addButton(self.shots_radio)
+        self.radio_group_scope.addButton(self.assets_radio)
         # self.radio_layout.addWidget(self.title)
         self.radio_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         self.radio_layout.addWidget(self.radio_everything)
@@ -148,6 +153,7 @@ class AssetWidget(QtWidgets.QWidget):
         # this is where the filter needs to be!
         scope_layout.addWidget(self.scope_title)
         scope_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        scope_layout.addWidget(self.io_radio)
         scope_layout.addWidget(self.shots_radio)
         scope_layout.addWidget(self.assets_radio)
         scope_layout.addWidget(self.add_button)
@@ -173,6 +179,8 @@ class AssetWidget(QtWidgets.QWidget):
             return 'Category'
         elif self.scope == 'shots':
             return 'Sequence'
+        elif self.scope == 'IO':
+            return 'IO'
 
     def setup(self, mdl):
         self.data_table.set_item_model(mdl)
@@ -252,6 +260,46 @@ class FileTableWidget(LJTableWidget):
             e.ignore()
 
 
+class IOWidget(QtWidgets.QFrame):
+    versions_changed = QtCore.Signal(object)
+
+    def __init__(self, parent, title, path_object=None):
+        QtWidgets.QFrame.__init__(self, parent)
+        self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Maximum)
+        self.setSizePolicy(self.sizePolicy)
+
+        self.path_object = path_object
+
+        v_layout = QtWidgets.QVBoxLayout()
+        title_layout = QtWidgets.QHBoxLayout()
+
+        self.label = title
+        self.title = QtWidgets.QLabel("<b>%s</b>" % title.title())
+        self.add_button = QtWidgets.QToolButton()
+        self.add_button.setText("Create First Version")
+        self.versions = QtWidgets.QComboBox()
+        self.file_tree = LJFileBrowser(self)
+
+        title_layout.addWidget(self.title)
+        title_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                        QtWidgets.QSizePolicy.Minimum))
+        title_layout.addWidget(self.versions)
+        title_layout.addWidget(self.add_button)
+        self.setMinimumWidth(500)
+
+        v_layout.addLayout(title_layout)
+        v_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
+                                                        QtWidgets.QSizePolicy.Expanding))
+        v_layout.addWidget(self.file_tree)
+
+        self.setLayout(v_layout)
+        self.versions.currentIndexChanged.connect(self.on_version_changed)
+
+    def on_version_changed(self):
+        self.versions_changed.emit(self.versions.currentText())
+
+
 class TaskWidget(QtWidgets.QFrame):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
@@ -274,6 +322,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.title = QtWidgets.QLabel("<b>%s</b>" % title.title())
         self.task = None
         self.user = None
+        self.in_file_tree = None
         self.versions = AdvComboBox()
         #self.versions.setMinimumWidth(200)
         self.versions.hide()
@@ -379,6 +428,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.resolutions_label.hide()
         self.assets_radio.hide()
         self.shots_radio.hide()
+        self.io_radio.hide()
         self.category_combo.hide()
         self.category_label.hide()
         
@@ -403,12 +453,14 @@ class TaskWidget(QtWidgets.QFrame):
         self.category_label.show()
         self.assets_radio.show()
         self.shots_radio.show()
+        self.io_radio.show()
 
     def hide_filters(self):
         self.category_combo.hide()
         self.category_label.hide()
         self.assets_radio.hide()
         self.shots_radio.hide()
+        self.io_radio.hide()
 
     def show_tool_buttons(self):
         self.open_button.show()
@@ -487,12 +539,17 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.context = 'source'
         self.initial_path_object = None
         self.radio_filter = radio_filter
+        self.user_changed_versions = False
         if path:
-            self.initial_path_object = PathObject(path)
+            try:
+                self.initial_path_object = PathObject(path)
+            except IndexError:
+                pass
         self.project = '*'
         self.scope = 'assets'
         self.shot = '*'
         self.seq = '*'
+        self.input_company = '*'
         if self.initial_path_object:
             if self.initial_path_object.project:
                 self.project = self.initial_path_object.project
@@ -582,9 +639,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.scope = 'assets'
         elif self.sender().text() == 'Shots':
             self.scope = 'shots'
+        elif self.sender().text() == 'IO':
+            self.scope = 'IO'
         self.assets.set_scope_title(self.scope)
         self.current_location['scope'] = self.scope
-        self.on_project_changed(data=None, cmd=True)
+        self.on_project_changed([[self.current_location['project']]])
 
     def on_user_radio_changed(self):
         self.set_user_from_radio_buttons()
@@ -599,6 +658,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.resolution = ''
         self.seq = '*'
         self.shot = '*'
+        self.input_company = '*'
         self.clear_layout(self.task_layout)
         self.clear_layout(self.render_layout)
         self.update_location()
@@ -607,10 +667,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def set_scope_radio(self):
         if self.scope == 'assets':
             self.assets.assets_radio.setChecked(True)
-            self.assets.shots_radio.setChecked(False)
         elif self.scope == 'shots':
             self.assets.shots_radio.setChecked(True)
-            self.assets.assets_radio.setChecked(False)
+        elif self.scope == 'IO':
+            self.assets.io_radio.setChecked(True)
 
     # UI interface Functions / Stuff that happens when buttons get clicked/changed.
     def on_company_changed(self):
@@ -640,8 +700,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.load_projects()
 
     def create_company_globals(self, company):
-        print '##########################################'
-        print 'Creating Company Globlas %s' % company
+        print 'Creating Company Globals %s' % company
         dir_ = os.path.join(self.user_root, 'companies', company)
         if not os.path.exists(dir_):
             print '%s doesnt exist, making it' % dir_
@@ -665,14 +724,24 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             pass
 
     def on_create_asset(self, set_vars=False):
-        import asset_creator
-        if 'asset' in self.current_location:
-            task_mode = True
+        # TODO - make this work for IO
+        if self.current_location['scope'] == 'IO':
+            dialog = InputDialog(self, title='Create Input Company', message='Enter the CLIENT or name of VENDOR',
+                                 combo_box_items=['CLIENT'])
+            dialog.exec_()
+            self.current_location['input_company'] = dialog.combo_box.currentText()
+            input_company_location = PathObject(self.current_location).path_root
+            if input_company_location.endswith(dialog.combo_box.currentText()):
+                CreateProductionData(self.current_location, json=False)
         else:
-            task_mode = False
-        dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
-        dialog.exec_()
-        self.on_project_changed([[self.current_location['project']]])
+            import asset_creator
+            if 'asset' in self.current_location:
+                task_mode = True
+            else:
+                task_mode = False
+            dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
+            dialog.exec_()
+            self.on_project_changed([[self.current_location['project']]])
 
     def on_file_dragged_to_assets(self, data):
         dialog = AssetIngestor(self, path_dict=self.current_location, current_user=self.user_default)
@@ -749,6 +818,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         # reset the env vars after a project change
         self.seq = '*'
         self.shot = '*'
+        self.input_company = '*'
         self.resolution = ''
         self.version = ''
         self.task = ''
@@ -780,100 +850,136 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
         self.assets.shots_radio.clicked.connect(self.on_filter_radio_changed)
         self.assets.assets_radio.clicked.connect(self.on_filter_radio_changed)
+        self.assets.io_radio.clicked.connect(self.on_filter_radio_changed)
         self.assets.radio_publishes.clicked.connect(self.on_user_radio_changed)
         self.assets.radio_everything.clicked.connect(self.on_user_radio_changed)
         self.assets.radio_user.clicked.connect(self.on_user_radio_changed)
 
     def on_main_asset_selected(self, data):
         # data format: ['Project', 'Seq', 'Shot', 'Task', 'User', 'Path']
+        try:
+            current = PathObject(data[0][2])
+        except IndexError:
+            print 'Nothing Selected'
+            return
         if data:
             # reset the GUI
             self.task_layout.tasks = []
             self.clear_layout(self.task_layout)
             self.clear_layout(self.render_layout)
-            task_label = QtWidgets.QLabel('<H2>Tasks</H2>')
-            task_add = QtWidgets.QToolButton()
-            task_add.setText('+')
-            task_label_layout = QtWidgets.QHBoxLayout()
-            # task_label_layout.addWidget(task_label)
+            if current.input_company != '*':
+                task_label = QtWidgets.QLabel('<H2>IO</H2>')
+                task_add = QtWidgets.QToolButton()
+                task_add.setText('+')
+                task_label_layout = QtWidgets.QHBoxLayout()
+                # task_label_layout.addWidget(task_label)
 
-            self.task_layout.addWidget(task_label)
-            self.task_layout.addItem((QtWidgets.QSpacerItem(0, 32, QtWidgets.QSizePolicy.Minimum,
-                                                            QtWidgets.QSizePolicy.Minimum)))
-            self.task_layout.addLayout(task_label_layout)
+                self.task_layout.addWidget(task_label)
+                IO_widget = IOWidget(self, 'IN', current)
+                self.in_file_tree = IO_widget.file_tree
+                self.task_layout.addWidget(IO_widget)
+                self.task_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
+                                                                QtWidgets.QSizePolicy.Expanding)))
+                self.update_location(path_object=current)
+                IO_widget.add_button.clicked.connect(self.on_add_ingest)
+                IO_widget.versions_changed.connect(self.on_ingest_versions_changed)
+                IO_widget.versions.activated.connect(self.user_entered_versions)
+                self.populate_ingest_versions(IO_widget.versions, current)
 
-            # set our current location
-            path = data[0][2]
-            current = PathObject(str(path))
+            else:
+                task_label = QtWidgets.QLabel('<H2>Tasks</H2>')
+                task_add = QtWidgets.QToolButton()
+                task_add.setText('+')
+                task_label_layout = QtWidgets.QHBoxLayout()
+                # task_label_layout.addWidget(task_label)
 
-            current.set_attr(task='*')
-            current.set_attr(root=self.root)
-            current.set_attr(user_email=self.user_email)
-            self.task_layout.seq = current.seq
-            self.task_layout.shot = current.shot
-            task_add.clicked.connect(self.on_create_asset)
-            self.update_location(path_object=current)
-            # Get the list of tasks for the selection
-            task_list = current.glob_project_element('task')
-            task_label_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                            QtWidgets.QSizePolicy.Minimum))
-            for task in task_list:
-                task_radio = QtWidgets.QCheckBox(task)
-                task_label_layout.addWidget(task_radio)
-                if '.' not in task:
-                    if task not in self.task_layout.tasks:
-                        # version_location = copy.copy(self.current_location)
-                        task_widget = TaskWidget(parent=self,
-                                                 title=app_config()['pipeline_steps']['short_to_long'][task],
-                                                 short_title=task,
-                                                 path_object=current)
-                        task_widget.task = task
-                        task_widget.showall()
-                        task_widget.hide_button.hide()
-                        task_widget.show_button.show()
+                self.task_layout.addWidget(task_label)
+                self.task_layout.addItem((QtWidgets.QSpacerItem(0, 32, QtWidgets.QSizePolicy.Minimum,
+                                                                QtWidgets.QSizePolicy.Minimum)))
+                self.task_layout.addLayout(task_label_layout)
 
-                        # find the version information for the task:
-                        user = self.populate_users_combo(task_widget, current, task)
-                        version = self.populate_versions_combo(task_widget, current, task)
-                        resolution = self.populate_resolutions_combo(task_widget, current, task)
-                        self.task_layout.addWidget(task_widget)
-                        self.task_layout.tasks.append(task)
-                        version_obj = current.copy(task=task, user=user, version=version,
-                                                   resolution=resolution, filename='*')
-                        task_widget.data_table.task = version_obj.task
-                        task_widget.data_table.user = version_obj.user
-                        task_widget.data_table.version = version_obj.version
-                        task_widget.data_table.resolution = version_obj.resolution
-                        files_ = version_obj.glob_project_element('filename')
-                        task_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True),
-                                                        ['Name']))
-                        task_widget.data_table.selected.connect(self.on_source_selected)
-                        task_widget.data_table.doubleClicked.connect(self.on_open_clicked)
-                        task_widget.open_button_clicked.connect(self.on_open_clicked)
-                        task_widget.new_version_clicked.connect(self.on_new_version_clicked)
-                        task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
-                        task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
-                        task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
-                        task_widget.assign_clicked.connect(self.on_assign_button_clicked)
-                        task_widget.data_table.dropped.connect(self.on_file_dragged_to_source)
-                        task_widget.data_table.show_in_folder.connect(self.show_in_folder)
-                        task_widget.data_table.show_in_shotgun.connect(self.show_in_shotgun)
-                        task_widget.data_table.copy_folder_path.connect(self.copy_folder_path)
-                        task_widget.data_table.copy_file_path.connect(self.copy_file_path)
-                        task_widget.data_table.import_version_from.connect(self.import_versions_from)
-                        task_widget.data_table.push_to_cloud.connect(self.push)
-                        task_widget.data_table.pull_from_cloud.connect(self.pull)
-                        task_widget.data_table.share_download_link.connect(self.share_download_link)
-                        if not user:
-                            task_widget.users_label.hide()
-                            task_widget.users.hide()
-                            task_widget.data_table.hide()
-                            task_widget.versions.hide()
-                            task_widget.show_button.hide()
-                            task_widget.assign_button.show()
-            task_label_layout.addWidget(task_add)
-            self.task_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
-                                                            QtWidgets.QSizePolicy.Expanding)))
+                # set our current location
+                current.set_attr(task='*')
+                current.set_attr(root=self.root)
+                current.set_attr(user_email=self.user_email)
+                self.task_layout.seq = current.seq
+                self.task_layout.shot = current.shot
+                task_add.clicked.connect(self.on_create_asset)
+                self.update_location(path_object=current)
+                # Get the list of tasks for the selection
+                task_list = current.glob_project_element('task')
+                task_label_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                                QtWidgets.QSizePolicy.Minimum))
+                for task in task_list:
+                    task_radio = QtWidgets.QCheckBox(task)
+                    task_label_layout.addWidget(task_radio)
+                    if '.' not in task:
+                        if task not in self.task_layout.tasks:
+                            # version_location = copy.copy(self.current_location)
+                            task_widget = TaskWidget(parent=self,
+                                                     title=app_config()['pipeline_steps']['short_to_long'][task],
+                                                     short_title=task,
+                                                     path_object=current)
+                            task_widget.task = task
+                            task_widget.showall()
+                            task_widget.hide_button.hide()
+                            task_widget.show_button.show()
+
+                            # find the version information for the task:
+                            user = self.populate_users_combo(task_widget, current, task)
+                            version = self.populate_versions_combo(task_widget, current, task)
+                            resolution = self.populate_resolutions_combo(task_widget, current, task)
+                            self.task_layout.addWidget(task_widget)
+                            self.task_layout.tasks.append(task)
+                            version_obj = current.copy(task=task, user=user, version=version,
+                                                       resolution=resolution, filename='*')
+                            task_widget.data_table.task = version_obj.task
+                            task_widget.data_table.user = version_obj.user
+                            task_widget.data_table.version = version_obj.version
+                            task_widget.data_table.resolution = version_obj.resolution
+                            files_ = version_obj.glob_project_element('filename')
+                            task_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True),
+                                                            ['Name']))
+                            task_widget.data_table.selected.connect(self.on_source_selected)
+                            task_widget.data_table.doubleClicked.connect(self.on_open_clicked)
+                            task_widget.open_button_clicked.connect(self.on_open_clicked)
+                            task_widget.new_version_clicked.connect(self.on_new_version_clicked)
+                            task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
+                            task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
+                            task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
+                            task_widget.assign_clicked.connect(self.on_assign_button_clicked)
+                            task_widget.data_table.dropped.connect(self.on_file_dragged_to_source)
+                            task_widget.data_table.show_in_folder.connect(self.show_in_folder)
+                            task_widget.data_table.show_in_shotgun.connect(self.show_in_shotgun)
+                            task_widget.data_table.copy_folder_path.connect(self.copy_folder_path)
+                            task_widget.data_table.copy_file_path.connect(self.copy_file_path)
+                            task_widget.data_table.import_version_from.connect(self.import_versions_from)
+                            task_widget.data_table.push_to_cloud.connect(self.push)
+                            task_widget.data_table.pull_from_cloud.connect(self.pull)
+                            task_widget.data_table.share_download_link.connect(self.share_download_link)
+                            if not user:
+                                task_widget.users_label.hide()
+                                task_widget.users.hide()
+                                task_widget.data_table.hide()
+                                task_widget.versions.hide()
+                                task_widget.show_button.hide()
+                                task_widget.assign_button.show()
+                task_label_layout.addWidget(task_add)
+                self.task_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
+                                                                QtWidgets.QSizePolicy.Expanding)))
+
+    def on_add_ingest(self):
+        path_object = PathObject(self.current_location)
+        version = path_object.next_major_version_number()
+        path_object.set_attr(version=version)
+        if not os.path.exists(path_object.path_root):
+            print 'Creating Version at: %s' % path_object.path_root
+            os.makedirs(path_object.path_root)
+        # TODO refresh the thing
+        dir_ = os.path.split(path_object.path_root)[0]
+        data = [['', path_object.input_company, dir_, '', '']]
+        self.clear_layout(self.task_layout)
+        self.on_main_asset_selected(data)
 
     def show_in_folder(self):
         show_in_folder(self.path_root)
@@ -1019,6 +1125,32 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             task_widget.versions.setCurrentIndex(0)
         return task_widget.versions.currentText()
 
+    def populate_ingest_versions(self, combo_box, path_object):
+        items = glob.glob('%s/%s' % (path_object.path_root, '*'))
+        versions = []
+        for each in items:
+            versions.append(os.path.split(each)[-1])
+        versions = sorted(versions)
+        number = len(versions)
+        combo_box.addItems(versions)
+        combo_box.setCurrentIndex(number-1)
+        self.current_location['version'] = combo_box.currentText()
+        self.update_location(path_object=PathObject(self.current_location))
+        self.user_changed_versions = True
+        self.on_ingest_versions_changed(combo_box.currentText())
+        self.user_changed_versions = False
+
+    def user_entered_versions(self):
+        self.user_changed_versions = True
+
+    def on_ingest_versions_changed(self, version):
+        if self.user_changed_versions:
+            self.current_location['version'] = version
+            self.update_location(path_object=PathObject(self.current_location))
+            self.in_file_tree.populate(directory=self.path_root)
+
+
+
     @staticmethod
     def populate_resolutions_combo(task_widget, path_object, task):
 
@@ -1092,7 +1224,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.company_widget.combo.setCurrentIndex(0)
 
     def load_assets(self):
-        # TODO it'd be cool to pass an asset and be able to selected it if passed.
         self.clear_layout(self.task_layout)
         self.clear_layout(self.render_layout)
         red_palette = QtGui.QPalette()
@@ -1115,19 +1246,29 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             for each in items:
                 obj_ = PathObject(str(each))
                 d = obj_.data
-                shot_name = '%s_%s' % (d['seq'], d['shot'])
+                if d['scope'] != 'IO':
+                    shot_name = '%s_%s' % (d['seq'], d['shot'])
+                else:
+                    shot_name = d['input_company']
                 if shot_name not in temp_:
                     temp_.append(shot_name)
                     if d['scope'] == 'assets':
                         data.append([d['seq'], d['shot'], each, '', ''])
                     elif d['scope'] == 'shots':
                         data.append([d['seq'], shot_name, each, '', ''])
+                    elif d['scope'] == 'IO':
+                        data.append(['', shot_name, each, '', ''])
             if d['scope'] == 'assets':
                 self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status']))
                 self.assets.data_table.hideColumn(0)
             elif d['scope'] == 'shots':
                 self.assets.setup(ListItemModel(data, ['Seq', 'Shot', 'Path', 'Due Date', 'Status']))
                 self.assets.data_table.hideColumn(0)
+            elif d['scope'] == 'IO':
+                self.assets.setup(ListItemModel(data, ['Seq', 'Company', 'Path', 'Latest Ingest', 'Status']))
+                self.assets.data_table.hideColumn(0)
+                self.assets.data_table.hideColumn(3)
+                self.assets.data_table.hideColumn(4)
             self.assets.data_table.hideColumn(2)
             self.assets.data_table.set_draggable(True)
             self.assets.data_table.dropped.connect(self.on_file_dragged_to_assets)
