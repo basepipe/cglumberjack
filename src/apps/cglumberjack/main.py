@@ -91,6 +91,18 @@ class ProjectWidget(QtWidgets.QWidget):
     def set_title(self, new_title):
         self.title.setText('<b>%s</b>' % new_title.title())
 
+    def hide_all(self):
+        self.search_box.hide()
+        self.add_button.hide()
+        self.data_table.hide()
+        self.title.hide()
+
+    def show_all(self):
+        self.search_box.show()
+        self.add_button.show()
+        self.data_table.show()
+        self.title.show()
+
 
 class AssetWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
@@ -852,19 +864,17 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.cl_row.addWidget(self.current_location_label)
         self.cl_row.addWidget(self.current_location_line_edit)
 
-        # assemble the main h layoutQtWidgets.QLabel("<b>%s</b>" % title)
-        # lineA = QtWidgets.QFrame()
-        # lineA.setFrameShape(QtWidgets.QFrame.VLine)
-        # lineA.setFrameShadow(QtWidgets.QFrame.Sunken)
-        # lineA.setMinimumHeight(100)
+        self.hide_project_column_button = QtWidgets.QPushButton()
+        self.hide_project_column_button.setSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.MinimumExpanding)
+        self.hide_project_column_button.setMaximumWidth(16)
+        self.left_column_visibility = True
 
         self.h_layout.addLayout(self.filter_layout)
-        # self.h_layout.addWidget(lineA)
+        self.h_layout.addWidget(self.hide_project_column_button)
         self.h_layout.addLayout(self.middle_layout)
         self.h_layout.addLayout(self.task_layout)
         self.h_layout.addLayout(self.render_layout)
-        #self.h_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-        #                                            QtWidgets.QSizePolicy.Minimum))
+
         self.h_layout.addStretch()
         self.h_layout.setSpacing(10)
         layout.addLayout(self.cl_row)
@@ -875,10 +885,34 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.load_projects()
         # self.load_assets()
         # create connections
+        self.hide_project_column_button.clicked.connect(self.hide_show_column)
         self.project_filter.data_table.selected.connect(self.on_project_changed)
         self.company_widget.add_button.clicked.connect(self.on_create_company)
         self.project_filter.add_button.clicked.connect(self.on_create_project)
         self.company_widget.combo.currentIndexChanged.connect(self.on_company_changed)
+
+    def hide_show_column(self):
+        if self.left_column_visibility:
+            self.hide_left_column()
+        else:
+            self.show_left_column()
+
+
+    def hide_left_column(self):
+        # company widget
+        self.company_widget.hide()
+        self.project_filter.hide_all()
+        # project filter
+        print 'hiding column'
+        print 'setting visibility to 0'
+        self.left_column_visibility = False
+
+    def show_left_column(self):
+        self.company_widget.show()
+        self.project_filter.show_all()
+        print 'showing column'
+        print 'setting visibility to 1'
+        self.left_column_visibility = True
 
     def check_default_company_globals(self):
         if self.company:
