@@ -1,4 +1,4 @@
-from Qt import QtCore, QtWidgets
+from Qt import QtCore, QtWidgets, QtGui
 
 
 class LabelComboRow(QtWidgets.QVBoxLayout):
@@ -45,6 +45,7 @@ class AdvComboBox(QtWidgets.QComboBox):
         self.setEditable(True)
         self.setMinimumWidth(90)
         self.SizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+        self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
         # add a filter model to filter matching items
         self.pFilterModel = QtCore.QSortFilterProxyModel(self)
         self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)

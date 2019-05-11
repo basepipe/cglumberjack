@@ -2,6 +2,7 @@ import glob
 import os
 import shutil
 import logging
+import pandas as pd
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.combo import AdvComboBox, LabelComboRow
@@ -268,8 +269,11 @@ class IOWidget(QtWidgets.QFrame):
         self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Maximum)
         self.setSizePolicy(self.sizePolicy)
+        widget_width = 500
+        self.io_statuses = ['Ingested', 'Tagged', 'Published']
 
         self.path_object = path_object
+        self.pandas_path = None
 
         v_layout = QtWidgets.QVBoxLayout()
         title_layout = QtWidgets.QHBoxLayout()
@@ -281,23 +285,270 @@ class IOWidget(QtWidgets.QFrame):
         self.versions = QtWidgets.QComboBox()
         self.file_tree = LJFileBrowser(self)
 
+        self.tags_title = QtWidgets.QLabel("<b>Select File(s) or Folder(s) to tag</b>")
+
+        self.shot_radio_button = QtWidgets.QRadioButton('Shots')
+        self.shot_radio_button.setChecked(True)
+        self.asset_radio_button = QtWidgets.QRadioButton('Assets')
+        self.radio_row = QtWidgets.QHBoxLayout()
+
+        self.radio_row.addWidget(self.shot_radio_button)
+        self.radio_row.addWidget(self.asset_radio_button)
+        self.radio_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                     QtWidgets.QSizePolicy.Minimum))
+
+        self.seq_label = QtWidgets.QLabel('Seq ')
+        self.seq_combo = AdvComboBox()
+        self.seq_row = QtWidgets.QHBoxLayout()
+        self.seq_row.addWidget(self.seq_label)
+        self.seq_row.addWidget(self.seq_combo)
+
+        self.shot_label = QtWidgets.QLabel('Shot')
+        self.shot_combo = AdvComboBox()
+        self.seq_row.addWidget(self.shot_label)
+        self.seq_row.addWidget(self.shot_combo)
+
+        self.task_label = QtWidgets.QLabel('Task')
+        self.task_combo = AdvComboBox()
+        self.seq_row.addWidget(self.task_label)
+        self.seq_row.addWidget(self.task_combo)
+
+        self.tags_label = QtWidgets.QLabel("Tags")
+        self.tags_label.setWordWrap(True)
+        self.tags_label.setMaximumWidth(100)
+        self.tags_line_edit = QtWidgets.QLineEdit()
+        self.tags_row = QtWidgets.QHBoxLayout()
+        self.tags_row.addWidget(self.tags_label)
+        self.tags_row.addWidget(self.tags_line_edit)
+
+        # create buttons row
+        self.buttons_row = QtWidgets.QHBoxLayout()
+        self.publish_button = QtWidgets.QPushButton('Publish To Project')
+        self.publish_button.setEnabled(False)
+        self.buttons_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                        QtWidgets.QSizePolicy.Minimum))
+        self.buttons_row.addWidget(self.publish_button)
+
+
         title_layout.addWidget(self.title)
         title_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
                                                         QtWidgets.QSizePolicy.Minimum))
         title_layout.addWidget(self.versions)
         title_layout.addWidget(self.add_button)
-        self.setMinimumWidth(500)
+        self.setMinimumWidth(widget_width)
 
         v_layout.addLayout(title_layout)
-        v_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
-                                                        QtWidgets.QSizePolicy.Expanding))
         v_layout.addWidget(self.file_tree)
-
+        v_layout.addWidget(self.tags_title)
+        v_layout.addLayout(self.radio_row)
+        v_layout.addLayout(self.seq_row)
+        v_layout.addLayout(self.tags_row)
+        v_layout.addLayout(self.buttons_row)
+        v_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
+                                               QtWidgets.QSizePolicy.Expanding))
         self.setLayout(v_layout)
         self.versions.currentIndexChanged.connect(self.on_version_changed)
+        self.hide_tags()
+
+        self.shot_radio_button.clicked.connect(self.on_radio_clicked)
+        self.asset_radio_button.clicked.connect(self.on_radio_clicked)
+        self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
+        self.file_tree.initialized.connect(self.load_data_frame)
+        self.seq_combo.editTextChanged.connect(self.edit_data_frame)
+        self.shot_combo.editTextChanged.connect(self.edit_data_frame)
+        self.task_combo.editTextChanged.connect(self.edit_data_frame)
+        self.tags_line_edit.textChanged.connect(self.edit_tags)
+        self.data_frame = None
+
+    def load_data_frame(self):
+        print 'initializing data frame'
+        self.pandas_path = os.path.join(self.file_tree.directory, 'publish_data.csv')
+        if os.path.exists(self.pandas_path):
+            self.data_frame = pd.read_csv(self.pandas_path, names=["Filepath", "Tags", "Keep Client Naming",
+                                                                   "Seq", "Shot", "Task", "Project Filepath", "Status"])
+        else:
+            data = []
+            # msg = "Generating Pandas DataFrame from folder: %s" % folder
+            # LOG.info(msg)
+            for root, _, files in os.walk(self.file_tree.directory):
+                for filename in files:
+                    fullpath = os.path.join(os.path.abspath(root), filename)
+                    data.append((fullpath, '', True, '', '', '', '', self.io_statuses[0]))
+            self.data_frame = pd.DataFrame(data, columns=["Filepath", "Tags", "Keep Client Naming",
+                                                          "Seq", "Shot", "Task",
+                                                          "Project Filepath", "Status"])
+
+    def edit_tags(self):
+        files = self.file_tree.selected_items
+        tags = self.tags_line_edit.text()
+        if tags:
+            for f in files:
+                f = f.replace('/', '\\')
+                row = self.data_frame.loc[self.data_frame['Filepath'] == f].index[0]
+                self.data_frame.at[row, 'Tags'] = tags
+            self.save_data_frame()
+
+    def edit_data_frame(self):
+        files = self.file_tree.selected_items
+        if self.shot_radio_button.isChecked():
+            scope = 'shots'
+        elif self.asset_radio_button.isChecked():
+            scope = 'assets'
+        if self.seq_combo.currentText():
+            seq = str(self.seq_combo.currentText())
+            if self.shot_combo.currentText():
+                shot = str(self.shot_combo.currentText())
+
+                if self.task_combo.currentText():
+                    try:
+                        task = app_config()['pipeline_steps'][scope][str(self.task_combo.currentText())]
+                        to_object = self.path_object.copy(scope=scope,
+                                                          seq=seq,
+                                                          shot=shot,
+                                                          task=task,
+                                                          context='render',
+                                                          version='000.000',
+                                                          user='publish',
+                                                          resolution='high')
+                        for f in files:
+                            f = f.replace('/', '\\')
+                            row = self.data_frame.loc[self.data_frame['Filepath'] == f].index[0]
+                            to_path = os.path.join(to_object.path_root, os.path.split(f)[-1])
+                            self.data_frame.at[row, 'Seq'] = seq
+                            self.data_frame.at[row, 'Shot'] = shot
+                            self.data_frame.at[row, 'Task'] = task
+                            self.data_frame.at[row, 'Project Filepath'] = to_path
+                            self.data_frame.at[row, 'Status'] = self.io_statuses[1]
+                        self.save_data_frame()
+                    except KeyError:
+                        pass
+
+    def clear_all(self):
+        self.shot_combo.clear()
+        self.seq_combo.clear()
+        self.task_combo.clear()
+        self.tags_line_edit.clear()
+
+    def show_line_edit_info(self, data):
+        self.tags_line_edit.clear()
+        filepath = data[-1].replace('/', '\\')
+        row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
+        tags = self.data_frame.loc[row, 'Tags']
+        if type(tags) != float:
+            if tags:
+                self.tags_line_edit.setText(tags)
+
+    def show_combo_info(self, data):
+        filepath = data[-1].replace('/', '\\')
+        row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
+        seq = self.data_frame.loc[row, 'Seq']
+        shot = self.data_frame.loc[row, 'Shot']
+        task = self.data_frame.loc[row, 'Task']
+        status = self.data_frame.loc[row, 'Status']
+        self.publish_button.setEnabled(False)
+        if type(seq) != float:
+            if seq:
+                seq = '%03d' % int(seq)
+                self.set_combo_to_text(self.seq_combo, seq)
+        if type(shot) != float:
+            if shot:
+                shot = '%04d' % int(shot)
+                self.set_combo_to_text(self.shot_combo, shot)
+        if type(task) != float:
+            if task:
+                task = app_config()['pipeline_steps']['short_to_long'][task]
+                self.set_combo_to_text(self.task_combo, task)
+        if type(status) != float:
+            if status == 'Tagged':
+                self.publish_button.setEnabled(True)
+
+    def set_combo_to_text(self, combo, text):
+        index = combo.findText(text)
+        if index != -1:
+            combo.setCurrentIndex(index)
+        else:
+            combo.addItem(text)
+            self.set_combo_to_text(combo, text)
+
+    def save_data_frame(self):
+        dropped_dupes = self.data_frame.drop_duplicates()
+        dropped_dupes.to_csv(self.pandas_path)
 
     def on_version_changed(self):
         self.versions_changed.emit(self.versions.currentText())
+
+    def on_radio_clicked(self):
+        self.clear_all()
+        if self.shot_radio_button.isChecked():
+            self.seq_label.setText('Seq ')
+            self.shot_label.setText('Shot')
+            self.tags_label.setText('Tags')
+        if self.asset_radio_button.isChecked():
+            self.seq_label.setText('Category')
+            self.shot_label.setText('Asset')
+            self.tags_label.setText('Tags        ')
+        self.populate_combos()
+
+    def hide_tags(self):
+        self.tags_title.setText("<b>Select File(s) or Folder(s) to tag</b>")
+        self.asset_radio_button.hide()
+        self.shot_radio_button.hide()
+        self.seq_label.hide()
+        self.seq_combo.hide()
+        self.shot_label.hide()
+        self.shot_combo.hide()
+        self.task_label.hide()
+        self.task_combo.hide()
+        self.tags_label.hide()
+        self.tags_line_edit.hide()
+
+    def show_tags(self, files=[]):
+        if len(files) == 1:
+            files_text = files[0]
+        else:
+            files_text = '%s files' % len(files)
+
+        self.tags_title.setText("<b>Tag %s for Publish</b>" % files_text)
+        self.asset_radio_button.show()
+        self.shot_radio_button.show()
+        self.seq_label.show()
+        self.seq_combo.show()
+        self.shot_label.show()
+        self.shot_combo.show()
+        self.task_label.show()
+        self.task_combo.show()
+        self.tags_label.show()
+        self.tags_line_edit.show()
+
+    def populate_combos(self):
+        ignore = ['default_steps', '']
+        if self.shot_radio_button.isChecked():
+            scope = 'shots'
+        else:
+            scope = 'assets'
+        tasks = app_config()['pipeline_steps'][scope]
+        seqs = self.path_object.copy(seq='*', scope=scope).glob_project_element('seq')
+        task_names = ['']
+        for each in tasks:
+            if each not in ignore:
+                task_names.append(each)
+        self.task_combo.addItems(sorted(task_names))
+        seqs.insert(0, '')
+        self.seq_combo.addItems(seqs)
+
+    def on_seq_changed(self):
+        self.shot_combo.clear()
+        if self.shot_radio_button.isChecked():
+            scope = 'shots'
+        else:
+            scope = 'assets'
+        seq = self.seq_combo.currentText()
+        if seq:
+            this = self.path_object.copy(scope=scope, seq=seq, shot='*')
+            shots = self.path_object.copy(scope=scope, seq=seq, shot='*').glob_project_element('shot')
+            if shots:
+                shots.insert(0, '')
+                self.shot_combo.addItems(shots)
 
 
 class TaskWidget(QtWidgets.QFrame):
@@ -724,7 +975,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             pass
 
     def on_create_asset(self, set_vars=False):
-        # TODO - make this work for IO
         if self.current_location['scope'] == 'IO':
             dialog = InputDialog(self, title='Create Input Company', message='Enter the CLIENT or name of VENDOR',
                                  combo_box_items=['CLIENT'])
@@ -884,6 +1134,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 IO_widget.add_button.clicked.connect(self.on_add_ingest)
                 IO_widget.versions_changed.connect(self.on_ingest_versions_changed)
                 IO_widget.versions.activated.connect(self.user_entered_versions)
+                IO_widget.file_tree.selected.connect(self.on_client_file_selected)
                 self.populate_ingest_versions(IO_widget.versions, current)
 
             else:
@@ -967,6 +1218,17 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 task_label_layout.addWidget(task_add)
                 self.task_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
                                                                 QtWidgets.QSizePolicy.Expanding)))
+
+    def on_client_file_selected(self, data):
+        files = []
+        for each in data:
+            path_, filename_ = os.path.split(each)
+            files.append(filename_)
+        self.sender().parent().clear_all()
+        self.sender().parent().show_tags(files=files)
+        self.sender().parent().populate_combos()
+        self.sender().parent().show_combo_info(data)
+        self.sender().parent().show_line_edit_info(data)
 
     def on_add_ingest(self):
         path_object = PathObject(self.current_location)

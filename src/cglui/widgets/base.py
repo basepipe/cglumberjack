@@ -95,11 +95,16 @@ class LJWidgetWrapper(LJDialog):
 
 class LJFileBrowser(QtWidgets.QTreeView):
     dropped_files = QtCore.Signal(object)
+    selected = QtCore.Signal(object)
+    initialized = QtCore.Signal()
 
     def __init__(self, parent=None, directory=None):
         QtWidgets.QTreeView.__init__(self, parent)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        # self.clicked.connect(self.object_selected)
         self.directory = directory
         self.model = None
+        self.selected_items = []
         if self.directory:
             self.populate(self.directory)
         else:
@@ -109,19 +114,21 @@ class LJFileBrowser(QtWidgets.QTreeView):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.customContextMenuRequested.connect(self.right_click_menu)
-        self.model = QtWidgets.QFileSystemModel()
+        self.model = LJFileSystemModel()
         self.directory = directory
         self.model.setRootPath((QtCore.QDir.rootPath()))
+        self.model.find_status()
         self.setModel(self.model)
         self.setRootIndex(self.model.index(directory))
         self.setSortingEnabled(True)
         self.setColumnHidden(1, True)
         self.setColumnHidden(2, True)
-        self.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
-        #@self.setDragEnabled(True)
+        self.setDragDropMode(QtGui.QAbstractItemView.DropOnly)
+        self.initialized.emit()
 
     def mouseReleaseEvent(self, e):
         super(LJFileBrowser, self).mouseReleaseEvent(e)
+        self.object_selected()
 
     def right_click_menu(self):
         menu = QtGui.QMenu()
@@ -135,6 +142,15 @@ class LJFileBrowser(QtWidgets.QTreeView):
         index = self.currentIndex()
         file_path = self.model.filePath(index)
         print 'viewing %s' % file_path
+
+    def object_selected(self):
+        files = []
+        for index in self.selectedIndexes():
+            file_path = self.model.filePath(index)
+            if file_path not in files:
+                files.append(file_path)
+        self.selected_items = files
+        self.selected.emit(files)
 
     def dragEnterEvent(self, e):
         if e.mimeData().hasUrls:
@@ -155,6 +171,8 @@ class LJFileBrowser(QtWidgets.QTreeView):
         to_path = self.model.filePath(index)
         if not to_path:
             to_path = self.directory
+        if not os.path.isdir(to_path):
+            to_path, filename = os.path.split(to_path)
         if e.mimeData().hasUrls:
             e.setDropAction(QtCore.Qt.CopyAction)
             e.accept()
@@ -168,4 +186,22 @@ class LJFileBrowser(QtWidgets.QTreeView):
         else:
             print 'invalid'
             e.ignore()
+
+
+class LJFileSystemModel(QtWidgets.QFileSystemModel):
+
+    def columnCount(self, parent = QtCore.QModelIndex()):
+        return super(LJFileSystemModel, self).columnCount()+1
+
+    def find_status(self):
+        print 'root path', self.rootDirectory()
+
+    def data(self, index, role):
+        if index.column() == self.columnCount() - 1:
+            if role == QtCore.Qt.DisplayRole:
+                return "Status"
+            if role == QtCore.Qt.TextAlignmentRole:
+                return QtCore.Qt.AlignHCenter
+
+        return super(LJFileSystemModel, self).data(index, role)
 
