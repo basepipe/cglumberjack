@@ -12,6 +12,7 @@ class LabelComboRow(QtWidgets.QVBoxLayout):
         self.h_layout = QtWidgets.QHBoxLayout()
         self.h_layout.addWidget(self.label)
         if button:
+            self.button = button
             self.add_button = QtWidgets.QToolButton()
             self.add_button.setText('+')
             self.h_layout.addWidget(self.add_button)
@@ -24,10 +25,14 @@ class LabelComboRow(QtWidgets.QVBoxLayout):
     def hide(self):
         self.label.hide()
         self.combo.hide()
+        if self.button:
+            self.add_button.hide()
 
     def show(self):
         self.label.show()
         self.combo.show()
+        if self.button:
+            self.add_button.show()
 
 
 class AdvComboBoxLabeled(QtWidgets.QVBoxLayout):
