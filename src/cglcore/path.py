@@ -571,7 +571,7 @@ class PathObject(object):
 
 class CreateProductionData(object):
     def __init__(self, path_object=None, file_system=True, project_management=PROJ_MANAGEMENT,
-                 do_scope=True, test=False, json=True):
+                 do_scope=False, test=False, json=True):
         self.test = test
         self.path_object = PathObject(path_object)
         print 'Path Object: %s' % self.path_object.path
