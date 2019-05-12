@@ -12,6 +12,23 @@ from cglcore.path import PathObject, CreateProductionData, start
 from cglcore.path import replace_illegal_filename_characters, show_in_folder, create_project_config
 from asset_ingestor_widget import AssetIngestor
 from widgets import IOWidget, TaskWidget, ProjectWidget, AssetWidget
+from panels import CompanyPanel, ProjectPanel, TaskPanel, IngestPanel
+
+
+class PathWidget(QtWidgets.QWidget):
+    def __init__(self, parent=None, path=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.current_location_label = QtWidgets.QLabel('Current Location')
+        self.current_location_line_edit = QtWidgets.QLineEdit()
+        self.current_location_line_edit.setReadOnly(True)
+        self.cl_row = QtWidgets.QHBoxLayout(self)
+        self.cl_row.addWidget(self.current_location_label)
+        self.cl_row.addWidget(self.current_location_line_edit)
+        if path:
+            self.set_text(path)
+
+    def set_text(self, text):
+        self.current_location_line_edit.setText(text)
 
 
 class CGLumberjackWidget(QtWidgets.QWidget):
@@ -25,8 +42,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.user_name = user_name
         self.company = company
         self.user_default = self.user
-        layout = QtWidgets.QVBoxLayout(self)
-        self.h_layout = QtWidgets.QHBoxLayout()
         self.project_management = app_config(company=self.company)['account_info']['project_management']
         self.root = app_config()['paths']['root']  # Company Specific
         self.user_root = app_config()['cg_lumberjack_dir']
@@ -35,6 +50,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.initial_path_object = None
         self.radio_filter = radio_filter
         self.user_changed_versions = False
+
+        layout = QtWidgets.QVBoxLayout(self)
+        self.h_layout = QtWidgets.QHBoxLayout()
         if path:
             try:
                 self.initial_path_object = PathObject(path)
@@ -63,201 +81,34 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path = ''
         self.in_file_tree = None
 
-        # create the current path
-        self.current_location_label = QtWidgets.QLabel('Current Location')
-        self.current_location_line_edit = QtWidgets.QLineEdit()
-        self.current_location_line_edit.setReadOnly(True)
-        self.cl_row = QtWidgets.QHBoxLayout()
-        self.cl_row.addWidget(self.current_location_label)
-        self.cl_row.addWidget(self.current_location_line_edit)
+        self.path_widget = PathWidget(path=self.initial_path_object.path_root)
+        self.panel_left = CompanyPanel(path_object=self.initial_path_object)
+        self.panel_left.location_changed.connect(self.update_location2)
 
-        # Create the Left Panel
-        self.panel_left = QtWidgets.QVBoxLayout()
-        self.company_widget = LabelComboRow('Company')
-        self.project_filter = ProjectWidget(self, title="Projects")
-
-        # assemble the Left filter_panel
-        self.panel_left.addLayout(self.company_widget)
-        self.panel_left.addWidget(self.project_filter)
-        self.panel_left.setSpacing(0)
-        self.panel_left.setContentsMargins(0, 10, 0, 0)
-        self.hide_left_panel_button = QtWidgets.QPushButton()
-        self.hide_left_panel_button.setSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.MinimumExpanding)
-        self.hide_left_panel_button.setMaximumWidth(16)
-        self.hide_left_panel_button.setContentsMargins(0, 0, 0, 0)
-        self.left_column_visibility = True
-
-        # Create the Middle Panel
-        self.panel_center = QtWidgets.QVBoxLayout()
-        self.assets = None
-        self.assets_filter_default = filter
-        self.panel_center.setContentsMargins(10, 0, 10, 0)
+        self.panel_center = ProjectPanel(path_object=self.initial_path_object)
+        self.panel_left.location_changed.connect(self.panel_center.on_project_changed)
+        self.panel_center.location_changed.connect(self.update_location2)
 
         # Create Empty layouts for tasks as well as renders.
         self.panel_tasks = QtWidgets.QVBoxLayout()
         self.panel_tasks.setContentsMargins(0, 10, 0, 0)
         self.render_layout = QtWidgets.QVBoxLayout()
 
-
-
-        self.h_layout.addLayout(self.panel_left)
-        self.h_layout.addWidget(self.hide_left_panel_button)
-        self.h_layout.addLayout(self.panel_center)
+        self.h_layout.addWidget(self.panel_left)
+        self.h_layout.addWidget(self.panel_center)
         self.h_layout.addLayout(self.panel_tasks)
         self.h_layout.addLayout(self.render_layout)
 
         self.h_layout.addStretch()
         self.h_layout.setSpacing(0)
-        layout.addLayout(self.cl_row)
+        layout.addWidget(self.path_widget)
         layout.addLayout(self.h_layout)
 
-        self.check_default_company_globals()
-        self.load_companies()
-        self.load_projects()
-        # self.load_assets()
-        # create connections
-        self.hide_left_panel_button.clicked.connect(self.hide_show_column)
-        self.project_filter.data_table.selected.connect(self.on_project_changed)
-        self.company_widget.add_button.clicked.connect(self.on_create_company)
-        self.project_filter.add_button.clicked.connect(self.on_create_project)
-        self.company_widget.combo.currentIndexChanged.connect(self.on_company_changed)
-
-    def hide_show_column(self):
-        if self.left_column_visibility:
-            self.hide_left_column()
-        else:
-            self.show_left_column()
-
-    def hide_left_column(self):
-        # company widget
-        self.company_widget.hide()
-        self.project_filter.hide_all()
-        # project filter
-        self.left_column_visibility = False
-
-    def show_left_column(self):
-        self.company_widget.show()
-        self.project_filter.show_all()
-        self.left_column_visibility = True
-
-    def check_default_company_globals(self):
-        if self.company:
-            if not os.path.exists(os.path.join(self.user_root, 'companies', self.company)):
-                os.makedirs(os.path.join(self.user_root, 'companies', self.company))
-
-    def on_filter_radio_changed(self):
-        if self.sender().text() == 'Assets':
-            self.scope = 'assets'
-        elif self.sender().text() == 'Shots':
-            self.scope = 'shots'
-        elif self.sender().text() == 'IO':
-            self.scope = 'IO'
-        self.assets.set_scope_title(self.scope)
-        self.current_location['scope'] = self.scope
-        self.on_project_changed([[self.current_location['project']]])
-
-    def on_user_radio_changed(self):
-        self.set_user_from_radio_buttons()
-        self.assets_filter_default = self.user
-        if self.user == '':
-            self.task = ''
-        elif self.user == '*':
-            self.task = ''
-        else:
-            self.task = '*'
-        self.version = ''
-        self.resolution = ''
-        self.seq = '*'
-        self.shot = '*'
-        self.input_company = '*'
-        self.clear_layout(self.panel_tasks)
-        self.clear_layout(self.render_layout)
-        self.update_location()
-        self.load_assets()
-
-    def set_scope_radio(self):
-        if self.scope == 'assets':
-            self.assets.assets_radio.setChecked(True)
-        elif self.scope == 'shots':
-            self.assets.shots_radio.setChecked(True)
-        elif self.scope == 'IO':
-            self.assets.io_radio.setChecked(True)
-
-    # UI interface Functions / Stuff that happens when buttons get clicked/changed.
-    def on_company_changed(self):
-        self.company = self.company_widget.combo.currentText()
-        self.project_management = app_config(company=self.company)['account_info']['project_management']
-        self.root = app_config()['paths']['root']  # Company Specific
-        self.user_root = app_config()['cg_lumberjack_dir']
-        self.load_projects()
-        if self.panel_center:
-            self.clear_layout(self.panel_center)
-        if self.panel_tasks:
-            self.clear_layout(self.panel_tasks)
-        if self.render_layout:
-            self.clear_layout(self.render_layout)
-
-    def on_create_company(self):
-        dialog = InputDialog(title='Create Company', message='Type a Company Name & Choose Project Management',
-                             line_edit=True, combo_box_items=['lumbermil', 'ftrack', 'shotgun'], line_edit_text='Name')
-        dialog.exec_()
-        if dialog.button == 'Ok':
-            self.company = '%s' % dialog.line_edit.text()
-            d = {'root': self.root,
-                 'company': self.company}
-            self.create_company_globals(dialog.line_edit.text())
-            CreateProductionData(d)
-            self.load_companies(company=self.company)
-            self.load_projects()
-
-    def create_company_globals(self, company):
-        print 'Creating Company Globals %s' % company
-        dir_ = os.path.join(self.user_root, 'companies', company)
-        if not os.path.exists(dir_):
-            print '%s doesnt exist, making it' % dir_
-            os.makedirs(dir_)
-
-    def on_create_project(self):
-        print 'CURRENT LOCATION: %s' % self.current_location
-        dialog = InputDialog(title='Create Project', message='Type a Project Name & Choose Proj Management',
-                             line_edit=True, combo_box_items=['lumbermill', 'shotgun', 'ftrack'])
-        dialog.exec_()
-        if dialog.button == 'Ok':
-            project_name = dialog.line_edit.text()
-            self.project = project_name
-            self.update_location()
-            CreateProductionData(self.current_location, project_management=self.project_management)
-            production_management = dialog.combo_box.currentText()
-            print 'setting project management to %s' % production_management
-            self.load_projects()
-            create_project_config(self.company, self.project)
-        else:
-            pass
-
-    def on_create_asset(self, set_vars=False):
-        if self.current_location['scope'] == 'IO':
-            dialog = InputDialog(self, title='Create Input Company', message='Enter the CLIENT or name of VENDOR',
-                                 combo_box_items=['CLIENT'])
-            dialog.exec_()
-            self.current_location['input_company'] = dialog.combo_box.currentText()
-            input_company_location = PathObject(self.current_location).path_root
-            if input_company_location.endswith(dialog.combo_box.currentText()):
-                CreateProductionData(self.current_location, json=False)
-        else:
-            import asset_creator
-            if 'asset' in self.current_location:
-                task_mode = True
-            else:
-                task_mode = False
-            dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
-            dialog.exec_()
-            self.on_project_changed([[self.current_location['project']]])
-
-    def on_file_dragged_to_assets(self, data):
-        dialog = AssetIngestor(self, path_dict=self.current_location, current_user=self.user_default)
-        dialog.on_files_added(data)
-        dialog.exec_()
-        self.load_assets()
+    def update_location2(self, data):
+        self.current_location = data
+        path_object = PathObject(data)
+        self.path_root = str(path_object.path_root)
+        self.path_widget.set_text(path_object.path_root)
 
     def on_task_version_changed(self):
         self.reload_task_widget(self.sender().parent(), populate_versions=False)
@@ -321,49 +172,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(object_)
         self.sender().parent().show_tool_buttons()
         self.clear_task_selection_except()
-
-    def on_project_changed(self, data, cmd=False):
-        if not cmd:
-            self.project = data[0][0]
-        # reset the env vars after a project change
-        self.seq = '*'
-        self.shot = '*'
-        self.input_company = '*'
-        self.resolution = ''
-        self.version = ''
-        self.task = ''
-        self.user = None
-        # build the asset Widget
-        self.clear_layout(self.panel_center)
-        self.assets = AssetWidget(self, title="")
-        if not self.radio_filter:
-            self.assets.radio_everything.setChecked(True)
-        elif self.radio_filter == 'Everything':
-            self.assets.radio_everything.setChecked(True)
-        elif self.radio_filter == 'My Assignments':
-            self.assets.radio_user.setChecked(True)
-        elif self.radio_filter == 'Publishes':
-            self.assets.radio_publishes.setChecked(True)
-        self.set_scope_radio()
-        self.assets.set_title('<b>%s</b>' % self.project)
-        self.assets.set_scope_title('<b>%s</b>' % self.scope)
-        self.assets.add_button.show()
-
-        # update location and display the resulting assets.
-        self.update_location()
-        self.panel_center.addWidget(self.assets)
-
-        self.load_assets()
-        self.clear_layout(self.panel_tasks)
-        self.clear_layout(self.render_layout)
-        self.assets.data_table.selected.connect(self.on_main_asset_selected)
-
-        self.assets.shots_radio.clicked.connect(self.on_filter_radio_changed)
-        self.assets.assets_radio.clicked.connect(self.on_filter_radio_changed)
-        self.assets.io_radio.clicked.connect(self.on_filter_radio_changed)
-        self.assets.radio_publishes.clicked.connect(self.on_user_radio_changed)
-        self.assets.radio_everything.clicked.connect(self.on_user_radio_changed)
-        self.assets.radio_user.clicked.connect(self.on_user_radio_changed)
 
     def on_main_asset_selected(self, data):
         # data format: ['Project', 'Seq', 'Shot', 'Task', 'User', 'Path']
@@ -692,125 +500,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             task_widget.resolutions.setCurrentIndex(index_)
         return task_widget.resolutions.currentText()
 
-    def load_projects(self):
-        d = {'root': self.root,
-             'company': self.company,
-             'project': '*',
-             'context': 'source'}
-        path_object = PathObject(d)
-        projects = path_object.glob_project_element('project')
-        if not projects:
-            print 'no projects'
-            self.project_filter.search_box.setEnabled(False)
-            self.project_filter.data_table.setEnabled(False)
-            self.project_filter.add_button.setText('Create First Project')
-        else:
-            self.project_filter.search_box.setEnabled(True)
-            self.project_filter.data_table.setEnabled(True)
-            self.project_filter.add_button.setText('+')
-        self.project_filter.setup(ListItemModel(self.prep_list_for_table(projects, split_for_file=True), ['Name']))
-        if self.project != '*':
-            self.project_filter.data_table.select_row_by_text(self.project)
-            self.on_project_changed(data=[self.project], cmd=True)
-        self.update_location()
-
-    def load_companies(self, company=None):
-        self.company_widget.combo.clear()
-        companies_dir = os.path.join(self.user_root, 'companies')
-        if os.path.exists(companies_dir):
-            companies = os.listdir(companies_dir)
-            if not companies:
-                dialog = InputDialog(buttons=['Create Company', 'Find Company'], message='No companies found in Config'
-                                                                                         'location %s:' % companies_dir)
-                dialog.exec_()
-                if dialog.button == 'Create Company':
-                    print 'Create Company pushed'
-                elif dialog.button == 'Find Company':
-                    company_paths = QtWidgets.QFileDialog.getExistingDirectory(self,
-                                                                               'Choose existing company(ies) to add to '
-                                                                               'the registry', self.root,
-                                                                               QtWidgets.QFileDialog.ShowDirsOnly)
-                    company = os.path.split(company_paths)[-1]
-                    companies.append(company)
-                    os.makedirs(os.path.join(companies_dir, company))
-                # ask me to type the name of companies i'm looking for?
-                # ask me to create a company if there are none at all.
-                # Open the location and ask me to choose folders that are companies
-        else:
-            return
-
-        self.company_widget.combo.addItem('')
-        for each in companies:
-            c = os.path.split(each)[-1]
-            self.company_widget.combo.addItem(c)
-        if not company:
-            company = self.company
-        index = self.company_widget.combo.findText(company)
-        if index:
-            self.company_widget.combo.setCurrentIndex(index)
-        else:
-            self.company_widget.combo.setCurrentIndex(0)
-
-    def load_assets(self):
-        self.clear_layout(self.panel_tasks)
-        self.clear_layout(self.render_layout)
-        red_palette = QtGui.QPalette()
-        red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
-        self.assets.data_table.clearSpans()
-        current = PathObject(self.current_location)
-        items = glob.glob(current.path_root)
-        data = []
-        temp_ = []
-        self.assets.add_button.clicked.connect(self.on_create_asset)
-        if items:
-            self.assets.data_table.show()
-            self.assets.search_box.show()
-            self.assets.message.hide()
-            self.assets.radio_publishes.show()
-            self.assets.radio_everything.show()
-            self.assets.radio_user.show()
-            self.assets.scope_title.show()
-            self.assets.message.setText('')
-            for each in items:
-                obj_ = PathObject(str(each))
-                d = obj_.data
-                if d['scope'] != 'IO':
-                    shot_name = '%s_%s' % (d['seq'], d['shot'])
-                else:
-                    shot_name = d['input_company']
-                if shot_name not in temp_:
-                    temp_.append(shot_name)
-                    if d['scope'] == 'assets':
-                        data.append([d['seq'], d['shot'], each, '', ''])
-                    elif d['scope'] == 'shots':
-                        data.append([d['seq'], shot_name, each, '', ''])
-                    elif d['scope'] == 'IO':
-                        data.append(['', shot_name, each, '', ''])
-            if d['scope'] == 'assets':
-                self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status']))
-                self.assets.data_table.hideColumn(0)
-            elif d['scope'] == 'shots':
-                self.assets.setup(ListItemModel(data, ['Seq', 'Shot', 'Path', 'Due Date', 'Status']))
-                self.assets.data_table.hideColumn(0)
-            elif d['scope'] == 'IO':
-                self.assets.setup(ListItemModel(data, ['Seq', 'Company', 'Path', 'Latest Ingest', 'Status']))
-                self.assets.data_table.hideColumn(0)
-                self.assets.data_table.hideColumn(3)
-                self.assets.data_table.hideColumn(4)
-            self.assets.data_table.hideColumn(2)
-            self.assets.data_table.set_draggable(True)
-            self.assets.data_table.dropped.connect(self.on_file_dragged_to_assets)
-        else:
-            self.assets.scope_title.hide()
-            self.assets.data_table.hide()
-            self.assets.search_box.hide()
-            self.assets.radio_publishes.hide()
-            self.assets.radio_everything.hide()
-            self.assets.radio_user.hide()
-            self.assets.message.setText('No %s Found! \nClick + button to create %s' % (self.scope.title(), self.scope))
-            self.assets.message.setPalette(red_palette)
-            self.assets.message.show()
-
     # CLEAR/DELETE FUNCTIONS
 
     def clear_task_selection_except(self, task=None):
@@ -874,21 +563,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         if item not in item_list:
             item_list.append(item)
         return item_list
-
-    @staticmethod
-    def prep_list_for_table(list_, path_filter=None, split_for_file=False):
-        # TODO - would be awesome to make this smart enough to know what to do with a dict, list, etc...
-        list_.sort()
-        output_ = []
-        for each in list_:
-            if path_filter:
-                filtered = PathObject(each).data[path_filter]
-                output_.append([filtered])
-            else:
-                if split_for_file:
-                    each = os.path.split(each)[-1]
-                output_.append([each])
-        return output_
 
 
 class CGLumberjack(LJMainWindow):
@@ -983,6 +657,7 @@ class CGLumberjack(LJMainWindow):
                                  user_email=self.centralWidget().user_email,
                                  user_name=self.centralWidget().user_name,
                                  current_path=self.centralWidget().path_root)
+        print self.centralWidget().path_root, ' this'
         print 'Saving Session to -> %s' % user_config.user_config_path
         user_config.update_all()
 

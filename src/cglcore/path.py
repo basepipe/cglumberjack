@@ -77,6 +77,8 @@ class PathObject(object):
         self.priority = None
         self.input_company = '*'
 
+        if type(path_object) is unicode:
+            path_object = str(path_object)
         if type(path_object) is dict:
             self.process_dict(path_object)
         elif type(path_object) is str:

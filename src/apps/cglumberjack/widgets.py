@@ -636,13 +636,14 @@ class TaskWidget(QtWidgets.QFrame):
     def set_title(self, new_title):
         self.title.setText('<b>%s</b>' % new_title.title())
 
+
 class ProjectWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
     assign_clicked = QtCore.Signal(object)
 
-    def __init__(self, parent, title, filter_string=None, path_object=None):
+    def __init__(self, parent=None, title='', filter_string=None, path_object=None):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout()
