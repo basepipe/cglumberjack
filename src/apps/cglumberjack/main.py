@@ -45,10 +45,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.user = None
         self.context = 'source'
         self.initial_path_object = None
+        self.panel = None
         self.radio_filter = radio_filter
 
-        layout = QtWidgets.QVBoxLayout(self)
-        self.h_layout = QtWidgets.QHBoxLayout()
+        self.layout = QtWidgets.QVBoxLayout(self)
         if path:
             try:
                 self.initial_path_object = PathObject(path)
@@ -78,36 +78,76 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.in_file_tree = None
 
         self.path_widget = PathWidget(path=self.initial_path_object.path_root)
-        self.panel_left = CompanyPanel(path_object=self.initial_path_object)
-        self.panel_left.location_changed.connect(self.update_location2)
-
-        self.panel_center = ProjectPanel(path_object=self.initial_path_object)
-        self.panel_left.location_changed.connect(self.panel_center.on_project_changed)
-        self.panel_center.location_changed.connect(self.update_location2)
+        self.layout.addWidget(self.path_widget)
+        # TODO - make a path object the currency rather than a dict, makes it easier.
+        self.update_location(self.initial_path_object)
+        #self.panel_center = ProjectPanel(path_object=self.initial_path_object)
+        #self.panel_left.location_changed.connect(self.panel_center.on_project_changed)
+        #self.panel_center.location_changed.connect(self.update_location2)
 
         # Create Empty layouts for tasks as well as renders.
-        self.render_layout = QtWidgets.QVBoxLayout()
-        self.panel_tasks = TaskPanel(path_object=self.initial_path_object, user_email=self.user_email,
-                                     user_name=self.user_name, render_layout=self.render_layout)
-        self.panel_center.location_changed.connect(self.panel_tasks.on_main_asset_selected)
-        self.panel_tasks.location_changed.connect(self.update_location2)
+        #self.render_layout = QtWidgets.QVBoxLayout()
+        #self.panel_tasks = TaskPanel(path_object=self.initial_path_object, user_email=self.user_email,
+        #                             user_name=self.user_name, render_layout=self.render_layout)
+        #self.panel_center.location_changed.connect(self.panel_tasks.on_main_asset_selected)
+        #self.panel_tasks.location_changed.connect(self.update_location2)
 
 
-        self.h_layout.addWidget(self.panel_left)
-        self.h_layout.addWidget(self.panel_center)
-        self.h_layout.addWidget(self.panel_tasks)
-        self.h_layout.addLayout(self.render_layout)
+        #self.h_layout.addWidget(self.panel_left)
+        #self.h_layout.addWidget(self.panel_center)
+        #self.h_layout.addWidget(self.panel_tasks)
+        #self.h_layout.addLayout(self.render_layout)
 
-        self.h_layout.addStretch()
-        self.h_layout.setSpacing(0)
-        layout.addWidget(self.path_widget)
-        layout.addLayout(self.h_layout)
 
-    def update_location2(self, data):
-        self.current_location = data
-        path_object = PathObject(data)
+    def update_location(self, data):
+        print data
+        path_object = None
+        if type(data) == dict:
+            self.current_location = data
+            path_object = PathObject(data)
+        elif type(data) == PathObject:
+            print 'made it'
+            path_object = PathObject(data).copy()
         self.path_root = str(path_object.path_root)
         self.path_widget.set_text(path_object.path_root)
+        try:
+            clear_layout(self.panel_left)
+        except AttributeError:
+            pass
+        company = path_object.company
+        project = path_object.project
+        scope = path_object.scope
+        seq = path_object.seq
+        shot = path_object.shot
+        user = path_object.user
+        version = path_object.version
+        print version
+        if scope == 'IO':
+            if version:
+                print 'adding task panel'
+                self.panel = TaskPanel(path_object=self.initial_path_object, user_email=self.user_email,
+                                       user_name=self.user_name, render_layout=None)
+                #self.panel.location_changed.connect(self.update_location)
+                self.layout.addWidget(self.panel)
+            else:
+                print 'load the asset widget'
+        elif scope == 'shots' or scope == 'assets':
+            if version:
+                self.panel = TaskPanel(path_object=self.initial_path_object, user_email=self.user_email,
+                                       user_name=self.user_name, render_layout=None)
+                #self.panel.location_changed.connect(self.update_location)
+                self.layout.addWidget(self.panel)
+            else:
+                print 'load the asset widget'
+        elif not scope:
+            print 'load the company/project widget'
+            self.panel = CompanyPanel(path_object=self.initial_path_object)
+            self.panel.location_changed.connect(self.update_location)
+            self.layout.addWidget(self.panel)
+        print company, project, scope, seq, shot, user, version
+
+
+
 
 
 class CGLumberjack(LJMainWindow):
@@ -205,6 +245,15 @@ class CGLumberjack(LJMainWindow):
         print self.centralWidget().path_root, ' this'
         print 'Saving Session to -> %s' % user_config.user_config_path
         user_config.update_all()
+
+
+def clear_layout(layout):
+    while layout.count():
+        child = layout.takeAt(0)
+        if child.widget() is not None:
+            child.widget().deleteLater()
+        elif child.layout() is not None:
+            clear_layout(child.layout())
 
 
 if __name__ == "__main__":

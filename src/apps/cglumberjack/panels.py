@@ -48,10 +48,6 @@ class CompanyPanel(QtWidgets.QWidget):
         self.company_widget = LabelComboRow('Company')
         self.project_filter = ProjectWidget(title="Projects")
 
-        self.visibility_button = QtWidgets.QPushButton()
-        self.visibility_button.setSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.MinimumExpanding)
-        self.visibility_button.setMaximumWidth(16)
-        self.visibility_button.setContentsMargins(0, 0, 0, 0)
         # TODO - set icon with an arrow
 
         # assemble the Left filter_panel
@@ -60,17 +56,13 @@ class CompanyPanel(QtWidgets.QWidget):
         v_layout.setSpacing(0)
         v_layout.setContentsMargins(0, 10, 0, 0)
 
-        h_layout = QtWidgets.QHBoxLayout(self)
-        h_layout.addLayout(v_layout)
-        h_layout.addWidget(self.visibility_button)
-
         self.check_default_company_globals()
         self.load_companies()
         if self.company:
             self.load_projects()
-        self.setLayout(h_layout)
+        self.setLayout(v_layout)
 
-        self.visibility_button.clicked.connect(self.toggle_visibility)
+        #self.visibility_button.clicked.connect(self.toggle_visibility)
         self.project_filter.data_table.selected.connect(self.on_project_changed)
         self.company_widget.add_button.clicked.connect(self.on_create_company)
         self.project_filter.add_button.clicked.connect(self.on_create_project)
@@ -483,6 +475,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.user_default = self.user
         self.default_user = user_name
         self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
+        self.on_main_asset_selected(self.path_object.data)
 
     def on_main_asset_selected(self, data):
         try:
