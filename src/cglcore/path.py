@@ -309,13 +309,13 @@ class PathObject(object):
                             self.__dict__[attr] = value
                             self.data[attr] = value
                     else:
-                        if regex:
-                            try:
-                                if not re.match(regex, value):
-                                    logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
-                                    # return
-                            except TypeError:
-                                pass
+                        #if regex:
+                        #    try:
+                        #        if not re.match(regex, value):
+                        #            logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
+                        #            # return
+                        #    except TypeError:
+                        #        pass
                         self.__dict__[attr] = value
                         self.data[attr] = value
             if attr == 'shot':

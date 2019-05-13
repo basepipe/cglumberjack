@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-
+import shutil
 from Qt.QtCore import Qt
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore import path
@@ -186,7 +186,7 @@ class IOWidget(QtWidgets.QFrame):
 
         # create buttons row
         self.buttons_row = QtWidgets.QHBoxLayout()
-        self.publish_button = QtWidgets.QPushButton('Published Tagged')
+        self.publish_button = QtWidgets.QPushButton('Publish Tagged')
         self.publish_button.setEnabled(False)
         self.buttons_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
                                                         QtWidgets.QSizePolicy.Minimum))
@@ -225,7 +225,19 @@ class IOWidget(QtWidgets.QFrame):
         self.data_frame = None
 
     def publish_tagged_assets(self):
-        pass
+        for index, row in self.data_frame.iterrows():
+            if row['Status'] == 'Tagged':
+                print 'Copying %s to %s' % (row['Filepath'], row['Project Filepath'])
+                if os.path.isfile(row['Project Filepath']):
+                    dir_, file_ = os.path.split(row['Project Filepath'])
+                    if not os.path.exists(row['Project Filepath']):
+                        os.makedirs(dir_)
+                elif os.path.isdir(row['Project Filepath']):
+                    dir_ = os.path.isdir(row['Project Filepath'])
+                path.CreateProductionData(dir_)
+                shutil.copy2(row['Filepath'], row['Project Filepath'])
+                # TODO - I need to create a .txt file in the src directory that describes the action that
+                # produced these files.
 
     def load_data_frame(self):
         print 'initializing data frame'
@@ -306,28 +318,30 @@ class IOWidget(QtWidgets.QFrame):
                 self.tags_line_edit.setText(tags)
 
     def show_combo_info(self, data):
-        filepath = data[-1].replace('/', '\\')
-        row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
-        seq = self.data_frame.loc[row, 'Seq']
-        shot = self.data_frame.loc[row, 'Shot']
-        task = self.data_frame.loc[row, 'Task']
-        status = self.data_frame.loc[row, 'Status']
-        self.publish_button.setEnabled(False)
-        if type(seq) != float:
-            if seq:
-                seq = '%03d' % int(seq)
-                self.set_combo_to_text(self.seq_combo, seq)
-        if type(shot) != float:
-            if shot:
-                shot = '%04d' % int(shot)
-                self.set_combo_to_text(self.shot_combo, shot)
-        if type(task) != float:
-            if task:
-                task = app_config()['pipeline_steps']['short_to_long'][task]
-                self.set_combo_to_text(self.task_combo, task)
-        if type(status) != float:
-            if status == 'Tagged':
-                self.publish_button.setEnabled(True)
+        if data:
+            print data
+            filepath = data[-1].replace('/', '\\')
+            row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
+            seq = self.data_frame.loc[row, 'Seq']
+            shot = self.data_frame.loc[row, 'Shot']
+            task = self.data_frame.loc[row, 'Task']
+            status = self.data_frame.loc[row, 'Status']
+            self.publish_button.setEnabled(False)
+            if type(seq) != float:
+                if seq:
+                    seq = '%03d' % int(seq)
+                    self.set_combo_to_text(self.seq_combo, seq)
+            if type(shot) != float:
+                if shot:
+                    shot = '%04d' % int(shot)
+                    self.set_combo_to_text(self.shot_combo, shot)
+            if type(task) != float:
+                if task:
+                    task = app_config()['pipeline_steps']['short_to_long'][task]
+                    self.set_combo_to_text(self.task_combo, task)
+            if type(status) != float:
+                if status == 'Tagged':
+                    self.publish_button.setEnabled(True)
 
     def set_combo_to_text(self, combo, text):
         index = combo.findText(text)

@@ -86,10 +86,12 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.panel_center.location_changed.connect(self.update_location2)
 
         # Create Empty layouts for tasks as well as renders.
-        self.panel_tasks = TaskPanel(path_object=self.initial_path_object, user_email=self.user_email,
-                                     user_name=self.user_name)
-        self.panel_center.location_changed.connect(self.panel_tasks.on_main_asset_selected)
         self.render_layout = QtWidgets.QVBoxLayout()
+        self.panel_tasks = TaskPanel(path_object=self.initial_path_object, user_email=self.user_email,
+                                     user_name=self.user_name, render_layout=self.render_layout)
+        self.panel_center.location_changed.connect(self.panel_tasks.on_main_asset_selected)
+        self.panel_tasks.location_changed.connect(self.update_location2)
+
 
         self.h_layout.addWidget(self.panel_left)
         self.h_layout.addWidget(self.panel_center)
@@ -106,69 +108,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         path_object = PathObject(data)
         self.path_root = str(path_object.path_root)
         self.path_widget.set_text(path_object.path_root)
-
-    def load_render_files(self):
-        self.clear_layout(self.render_layout)
-        current = PathObject(self.current_location)
-        renders = current.copy(context='render', filename='*')
-        files_ = renders.glob_project_element('filename')
-        if files_:
-            label = QtWidgets.QLabel('<b>%s: Published Files</b>' % renders.task)
-            render_widget = TaskWidget(self, 'Output', 'Output')
-            render_widget.showall()
-            render_widget.title.hide()
-            # render_widget.search_box.hide()
-            render_widget.hide_button.hide()
-            self.render_layout.addWidget(label)
-            self.render_layout.addWidget(render_widget)
-            self.render_layout.addItem((QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Minimum,
-                                                              QtWidgets.QSizePolicy.Expanding)))
-            render_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True), ['Name']))
-            render_widget.data_table.selected.connect(self.on_render_selected)
-        else:
-            print 'No Published Files for %s' % current.path_root
-
-
-
-    # CLEAR/DELETE FUNCTIONS
-
-
-
-    def clear_layout(self, layout):
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clear_layout(child.layout())
-
-    # CONVENIENCE FUNCTIONS
-
-    def update_location(self, path_object=None):
-        if path_object:
-            self.current_location_line_edit.setText(path_object.path_root)
-            self.current_location = path_object.data
-            self.path_root = path_object.path_root
-            self.path = path_object.path
-            return self.path_root
-        else:
-            self.current_location = {'company': self.company, 'root': self.root, 'scope': self.scope,
-                                     'context': self.context, 'project': self.project, 'seq': self.seq,
-                                     'shot': self.shot, 'user': self.user,
-                                     'version': self.version, 'task': self.task,
-                                     'resolution': self.resolution, 'user_email': self.user_email
-                                     }
-            path_obj = PathObject(self.current_location)
-            self.path_root = path_obj.path_root
-            self.path = path_obj.path
-            self.current_location_line_edit.setText(self.path_root)
-            return self.path_root
-
-    @staticmethod
-    def append_unique_to_list(item, item_list):
-        if item not in item_list:
-            item_list.append(item)
-        return item_list
 
 
 class CGLumberjack(LJMainWindow):

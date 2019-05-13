@@ -11,6 +11,7 @@ from cglcore.path import PathObject, CreateProductionData, start
 from cglcore.path import replace_illegal_filename_characters, show_in_folder, create_project_config
 from asset_ingestor_widget import AssetIngestor
 from widgets import ProjectWidget, AssetWidget, TaskWidget, IOWidget
+from apps.project_buddy.widgets import LJButton
 
 
 class CompanyPanel(QtWidgets.QWidget):
@@ -439,6 +440,8 @@ class ProjectPanel(QtWidgets.QWidget):
             self.scope = 'shots'
         elif self.sender().text() == 'IO':
             self.scope = 'IO'
+            self.input_company = '*'
+            self.current_location['input_company'] = '*'
         self.assets.set_scope_title(self.scope)
         self.current_location['scope'] = self.scope
         self.on_project_changed(self.current_location)
@@ -457,8 +460,8 @@ class ProjectPanel(QtWidgets.QWidget):
         self.seq = '*'
         self.shot = '*'
         self.input_company = '*'
-        self.clear_layout(self.panel_tasks)
-        self.clear_layout(self.render_layout)
+        clear_layout(self.panel_tasks)
+        clear_layout(self.render_layout)
         self.update_location()
         self.load_assets()
 
@@ -466,9 +469,10 @@ class ProjectPanel(QtWidgets.QWidget):
 class TaskPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None, user_email='', user_name=''):
+    def __init__(self, parent=None, path_object=None, user_email='', user_name='', render_layout=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.path_object = path_object
+        self.render_layout = render_layout
         self.current_location = path_object.data
         self.panel_tasks = QtWidgets.QVBoxLayout(self)
         self.panel_tasks.setContentsMargins(0, 10, 0, 0)
@@ -490,6 +494,7 @@ class TaskPanel(QtWidgets.QWidget):
             # reset the GUI
             self.panel_tasks.tasks = []
             clear_layout(self.panel_tasks)
+            print current.path_root
             if current.input_company != '*':
                 task_label = QtWidgets.QLabel('<H2>IO</H2>')
                 task_add = QtWidgets.QToolButton()
@@ -540,8 +545,12 @@ class TaskPanel(QtWidgets.QWidget):
                     if '.' not in task:
                         if task not in self.panel_tasks.tasks:
                             # version_location = copy.copy(self.current_location)
+                            try:
+                                title = app_config()['pipeline_steps']['short_to_long'][task]
+                            except KeyError:
+                                return
                             task_widget = TaskWidget(parent=self,
-                                                     title=app_config()['pipeline_steps']['short_to_long'][task],
+                                                     title=title,
                                                      short_title=task,
                                                      path_object=current)
                             task_widget.task = task
@@ -619,7 +628,7 @@ class TaskPanel(QtWidgets.QWidget):
         # TODO refresh the thing
         dir_ = os.path.split(path_object.path_root)[0]
         # data = [['', path_object.input_company, dir_, '', '']]
-        self.clear_layout(self.panel_tasks)
+        clear_layout(self.panel_tasks)
         self.on_main_asset_selected(dir_)
 
     def populate_ingest_versions(self, combo_box, path_object):
@@ -882,7 +891,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.update_location(path_obj)
         files_ = path_obj.glob_project_element('filename')
         widget.setup(ListItemModel(self.prep_list_for_table(files_), ['Name']))
-        self.clear_layout(self.render_layout)
+        clear_layout(self.render_layout)
 
     def clear_task_selection_except(self, task=None):
         layout = self.panel_tasks
@@ -901,6 +910,27 @@ class TaskPanel(QtWidgets.QWidget):
                             child.widget().hide_tool_buttons()
                             child.widget().data_table.clearSelection()
         return
+
+    def load_render_files(self):
+        clear_layout(self.render_layout)
+        current = PathObject(self.current_location)
+        renders = current.copy(context='render', filename='*')
+        files_ = renders.glob_project_element('filename')
+        if files_:
+            label = QtWidgets.QLabel('<b>%s: Published Files</b>' % renders.task)
+            render_widget = TaskWidget(self, 'Output', 'Output')
+            render_widget.showall()
+            render_widget.title.hide()
+            # render_widget.search_box.hide()
+            render_widget.hide_button.hide()
+            self.render_layout.addWidget(label)
+            self.render_layout.addWidget(render_widget)
+            self.render_layout.addItem((QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Minimum,
+                                                              QtWidgets.QSizePolicy.Expanding)))
+            render_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True), ['Name']))
+            render_widget.data_table.selected.connect(self.on_render_selected)
+        else:
+            print 'No Published Files for %s' % current.path_root
 
 
 class IngestPanel(QtWidgets.QVBoxLayout):
