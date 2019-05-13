@@ -459,6 +459,7 @@ class TaskWidget(QtWidgets.QFrame):
         # self.versions.setMinimumWidth(200)
         self.versions.hide()
         self.setMinimumWidth(300)
+        self.setMinimumHeight(200)
 
         self.users_label = QtWidgets.QLabel("User:")
         self.users = AdvComboBox()
@@ -525,8 +526,11 @@ class TaskWidget(QtWidgets.QFrame):
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
         v_layout.addWidget(self.data_table, 1)
-        v_layout.addItem((QtWidgets.QSpacerItem(0, 25, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)))
+        v_layout.addItem((QtWidgets.QSpacerItem(0, 25, QtWidgets.QSizePolicy.Minimum,
+                                                QtWidgets.QSizePolicy.Minimum)))
         v_layout.addLayout(self.tool_button_layout)
+        v_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
+                                                QtWidgets.QSizePolicy.MinimumExpanding)))
         self.setLayout(v_layout)
         self.hide_combos()
 

@@ -44,23 +44,23 @@ class CompanyPanel(QtWidgets.QWidget):
         self.left_column_visibility = True
 
         # Create the Left Panel
-        v_layout = QtWidgets.QVBoxLayout()
+        self.panel = QtWidgets.QVBoxLayout()
         self.company_widget = LabelComboRow('Company')
         self.project_filter = ProjectWidget(title="Projects")
 
         # TODO - set icon with an arrow
 
         # assemble the Left filter_panel
-        v_layout.addLayout(self.company_widget)
-        v_layout.addWidget(self.project_filter)
-        v_layout.setSpacing(0)
-        v_layout.setContentsMargins(0, 10, 0, 0)
+        self.panel.addLayout(self.company_widget)
+        self.panel.addWidget(self.project_filter)
+        self.panel.setSpacing(0)
+        self.panel.setContentsMargins(0, 10, 0, 0)
 
         self.check_default_company_globals()
         self.load_companies()
         if self.company:
             self.load_projects()
-        self.setLayout(v_layout)
+        self.setLayout(self.panel)
 
         #self.visibility_button.clicked.connect(self.toggle_visibility)
         self.project_filter.data_table.selected.connect(self.on_project_changed)
@@ -218,6 +218,16 @@ class CompanyPanel(QtWidgets.QWidget):
         else:
             pass
 
+    def clear_layout(self, layout=None):
+        if not layout:
+            layout = self.panel
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget() is not None:
+                child.widget().deleteLater()
+            elif child.layout() is not None:
+                self.clear_layout(child.layout())
+
 
 class ProjectPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
@@ -225,62 +235,19 @@ class ProjectPanel(QtWidgets.QWidget):
     def __init__(self, parent=None, path_object=None):
         QtWidgets.QWidget.__init__(self, parent)
         # Create the Middle Panel
-        self.current_location = {}
         if path_object:
-            path_object = path_object
-            self.current_location = path_object.data
-            self.context = path_object.context
-            self.company = path_object.company
-            if path_object.scope:
-                print path_object.scope, '01234'
-                self.scope = path_object.scope
-            else:
-                self.scope = 'assets'
-                self.current_location['scope'] = 'assets'
+            self.path_object = path_object.copy(seq='*', shot='*', input_company='*', resolution='', version='',
+                                                user=None)
         else:
-            self.current_location['scope'] = 'assets'
-            self.context = 'source'
-            self.scope = 'assets'
-            self.company = ''
-            self.project = ''
-            self.seq = '*'
-            self.shot = '*'
-        self.panel_center = QtWidgets.QVBoxLayout(self)
+            return
+
+        self.panel = QtWidgets.QVBoxLayout(self)
         self.assets = None
         self.assets_filter_default = filter
-        self.panel_center.setContentsMargins(10, 0, 10, 0)
+        self.panel.setContentsMargins(10, 0, 10, 0)
         self.root = app_config()['paths']['root']
-
-        self.input_company = '*'
-        self.resolution = ''
-        self.version = ''
-        self.task = ''
-        self.user = None
         self.radio_filter = 'Everything'
-        self.path = ''
-        self.path_root = ''
-        self.on_project_changed(self.current_location)
-
-    def on_project_changed(self, data):
-        self.current_location = data
-        # reset the env vars after a project change
-        self.project = self.current_location['project']
-        if self.project == '*':
-            if not self.project:
-                return
-            return
-        self.company = self.current_location['company']
-        self.seq = '*'
-        self.shot = '*'
-        self.input_company = '*'
-        self.resolution = ''
-        self.version = ''
-        self.task = ''
-        self.user = None
-        self.root = app_config()['paths']['root']
-        self.context = 'source'
-        # build the asset Widget
-        clear_layout(self.panel_center)
+        self.clear_layout()
         self.assets = AssetWidget(self, title="")
         if not self.radio_filter:
             self.assets.radio_everything.setChecked(True)
@@ -291,14 +258,14 @@ class ProjectPanel(QtWidgets.QWidget):
         elif self.radio_filter == 'Publishes':
             self.assets.radio_publishes.setChecked(True)
 
-        self.assets.set_title('<b>%s</b>' % self.project)
-        self.assets.set_scope_title('<b>%s</b>' % self.scope)
+        self.assets.set_title('<b>%s</b>' % self.path_object.project)
+        self.assets.set_scope_title('<b>%s</b>' % self.path_object.scope)
         self.assets.add_button.show()
         self.set_scope_radio()
 
         # update location and display the resulting assets.
-        self.update_location()
-        self.panel_center.addWidget(self.assets)
+        #self.update_location()
+        self.panel.addWidget(self.assets)
 
         self.load_assets()
         self.assets.data_table.selected.connect(self.on_main_asset_selected)
@@ -313,8 +280,7 @@ class ProjectPanel(QtWidgets.QWidget):
         red_palette = QtGui.QPalette()
         red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
         self.assets.data_table.clearSpans()
-        current = PathObject(self.current_location)
-        items = glob.glob(current.path_root)
+        items = glob.glob(self.path_object.path_root)
         data = []
         temp_ = []
         self.assets.add_button.clicked.connect(self.on_create_asset)
@@ -373,30 +339,19 @@ class ProjectPanel(QtWidgets.QWidget):
             self.update_location(p_o)
 
     def update_location(self, path_object=None):
-        if self.company:
-            if path_object:
-                self.current_location = path_object.data
-                self.path_root = path_object.path_root
-                self.path = path_object.path
-            else:
-                self.current_location = {'company': self.company, 'root': self.root, 'scope': self.scope,
-                                         'context': self.context, 'project': self.project, 'seq': self.seq,
-                                         'shot': self.shot
-                                         }
-                path_obj = PathObject(self.current_location)
-                self.path_root = path_obj.path_root
-                self.path = path_obj.path
-            self.location_changed.emit(self.current_location)
-            return self.path_root
+        if path_object:
+            self.location_changed.emit(path_object.data)
+        else:
+            self.location_changed.emit(self.path_object.data)
 
     def set_scope_radio(self):
-        if self.scope == 'assets':
+        if self.path_object.scope == 'assets':
             self.assets.assets_radio.setChecked(True)
-        elif self.scope == 'shots':
+        elif self.path_object.scope == 'shots':
             self.assets.shots_radio.setChecked(True)
-        elif self.scope == 'IO':
+        elif self.path_object.scope == 'IO':
             self.assets.io_radio.setChecked(True)
-        elif self.scope == '':
+        elif self.path_object.scope == '':
             self.scope = 'assets'
             self.assets.assets_radio.setChecked(True)
 
@@ -427,16 +382,14 @@ class ProjectPanel(QtWidgets.QWidget):
 
     def on_filter_radio_changed(self):
         if self.sender().text() == 'Assets':
-            self.scope = 'assets'
+            self.path_object.set_attr(scope='assets')
         elif self.sender().text() == 'Shots':
-            self.scope = 'shots'
+            self.path_object.set_attr(scope='shots')
         elif self.sender().text() == 'IO':
-            self.scope = 'IO'
-            self.input_company = '*'
-            self.current_location['input_company'] = '*'
-        self.assets.set_scope_title(self.scope)
-        self.current_location['scope'] = self.scope
-        self.on_project_changed(self.current_location)
+            self.path_object.set_attr(scope='IO')
+            self.path_object.set_attr(input_company='*')
+        self.assets.set_scope_title(self.path_object.scope)
+        self.update_location(self.path_object)
 
     def on_user_radio_changed(self):
         self.set_user_from_radio_buttons()
@@ -452,13 +405,23 @@ class ProjectPanel(QtWidgets.QWidget):
         self.seq = '*'
         self.shot = '*'
         self.input_company = '*'
-        clear_layout(self.panel_tasks)
-        clear_layout(self.render_layout)
+        self.clear_layout(self.panel_tasks)
+        self.clear_layout(self.render_layout)
         self.update_location()
         self.load_assets()
 
+    def clear_layout(self, layout=None):
+        if not layout:
+            layout = self.panel
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget() is not None:
+                child.widget().deleteLater()
+            elif child.layout() is not None:
+                self.clear_layout(child.layout())
 
-class TaskPanel(QtWidgets.QWidget):
+
+class IOPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, user_email='', user_name='', render_layout=None):
@@ -466,8 +429,10 @@ class TaskPanel(QtWidgets.QWidget):
         self.path_object = path_object
         self.render_layout = render_layout
         self.current_location = path_object.data
+        self.panel = QtWidgets.QVBoxLayout(self)
+        self.panel.setContentsMargins(0, 10, 0, 0)
         self.panel_tasks = QtWidgets.QVBoxLayout(self)
-        self.panel_tasks.setContentsMargins(0, 10, 0, 0)
+        self.panel_tasks.setContentsMargins(0, 0, 0, 0)
         self.in_file_tree = None
         self.user_changed_versions = False
         self.user_email = user_email
@@ -485,114 +450,151 @@ class TaskPanel(QtWidgets.QWidget):
             return
         if data:
             # reset the GUI
-            self.panel_tasks.tasks = []
-            clear_layout(self.panel_tasks)
-            print current.path_root
-            if current.input_company != '*':
-                task_label = QtWidgets.QLabel('<H2>IO</H2>')
-                task_add = QtWidgets.QToolButton()
-                task_add.setText('+')
-                task_label_layout = QtWidgets.QHBoxLayout()
-                # task_label_layout.addWidget(task_label)
+            self.panel.tasks = []
+            self.clear_layout(self.panel)
+            task_label = QtWidgets.QLabel('<H2>IO</H2>')
+            task_add = QtWidgets.QToolButton()
+            task_add.setText('+')
+            task_label_layout = QtWidgets.QHBoxLayout()
+            # task_label_layout.addWidget(task_label)
 
-                self.panel_tasks.addWidget(task_label)
-                io_widget = IOWidget(self, 'IN', current)
-                self.in_file_tree = io_widget.file_tree
-                self.panel_tasks.addWidget(io_widget)
-                self.panel_tasks.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
-                                                                QtWidgets.QSizePolicy.Expanding)))
-                self.update_location(path_object=current)
-                io_widget.add_button.clicked.connect(self.on_add_ingest)
-                io_widget.versions_changed.connect(self.on_ingest_versions_changed)
-                io_widget.versions.activated.connect(self.user_entered_versions)
-                io_widget.file_tree.selected.connect(self.on_client_file_selected)
-                self.populate_ingest_versions(io_widget.versions, current)
+            self.panel.addWidget(task_label)
+            io_widget = IOWidget(self, 'IN', current)
+            self.in_file_tree = io_widget.file_tree
+            self.panel.addWidget(io_widget)
+            self.panel.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
+                                                      QtWidgets.QSizePolicy.Expanding)))
+            self.update_location(path_object=current)
+            io_widget.add_button.clicked.connect(self.on_add_ingest)
+            io_widget.versions_changed.connect(self.on_ingest_versions_changed)
+            io_widget.versions.activated.connect(self.user_entered_versions)
+            io_widget.file_tree.selected.connect(self.on_client_file_selected)
+            self.populate_ingest_versions(io_widget.versions, current)
 
-            else:
-                task_label = QtWidgets.QLabel('<H2>Tasks</H2>')
-                task_add = QtWidgets.QToolButton()
-                task_add.setText('+')
-                task_label_layout = QtWidgets.QHBoxLayout()
-                # task_label_layout.addWidget(task_label)
+    def clear_layout(self, layout=None):
+        if not layout:
+            layout = self.panel
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget() is not None:
+                child.widget().deleteLater()
+            elif child.layout() is not None:
+                self.clear_layout(child.layout())
 
-                self.panel_tasks.addWidget(task_label)
-                self.panel_tasks.addItem((QtWidgets.QSpacerItem(0, 32, QtWidgets.QSizePolicy.Minimum,
-                                                                QtWidgets.QSizePolicy.Minimum)))
-                self.panel_tasks.addLayout(task_label_layout)
 
-                # set our current location
-                current.set_attr(task='*')
-                current.set_attr(root=self.path_object.root)
-                current.set_attr(user_email=self.user_email)
-                self.panel_tasks.seq = current.seq
-                self.panel_tasks.shot = current.shot
-                task_add.clicked.connect(self.on_create_asset)
-                self.update_location(path_object=current)
-                # Get the list of tasks for the selection
-                task_list = current.glob_project_element('task')
-                task_label_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                                QtWidgets.QSizePolicy.Minimum))
-                for task in task_list:
-                    task_radio = QtWidgets.QCheckBox(task)
-                    task_label_layout.addWidget(task_radio)
-                    if '.' not in task:
-                        if task not in self.panel_tasks.tasks:
-                            # version_location = copy.copy(self.current_location)
-                            try:
-                                title = app_config()['pipeline_steps']['short_to_long'][task]
-                            except KeyError:
-                                return
-                            task_widget = TaskWidget(parent=self,
-                                                     title=title,
-                                                     short_title=task,
-                                                     path_object=current)
-                            task_widget.task = task
-                            task_widget.showall()
-                            task_widget.hide_button.hide()
-                            task_widget.show_button.show()
+class TaskPanel(QtWidgets.QWidget):
+    location_changed = QtCore.Signal(object)
 
-                            # find the version information for the task:
-                            user = self.populate_users_combo(task_widget, current, task)
-                            version = self.populate_versions_combo(task_widget, current, task)
-                            resolution = self.populate_resolutions_combo(task_widget, current, task)
-                            self.panel_tasks.addWidget(task_widget)
-                            self.panel_tasks.tasks.append(task)
-                            version_obj = current.copy(task=task, user=user, version=version,
-                                                       resolution=resolution, filename='*')
-                            task_widget.data_table.task = version_obj.task
-                            task_widget.data_table.user = version_obj.user
-                            task_widget.data_table.version = version_obj.version
-                            task_widget.data_table.resolution = version_obj.resolution
-                            files_ = version_obj.glob_project_element('filename')
-                            task_widget.setup(ListItemModel(prep_list_for_table(files_, split_for_file=True),
-                                                            ['Name']))
-                            task_widget.data_table.selected.connect(self.on_source_selected)
-                            task_widget.data_table.doubleClicked.connect(self.on_open_clicked)
-                            task_widget.open_button_clicked.connect(self.on_open_clicked)
-                            task_widget.new_version_clicked.connect(self.on_new_version_clicked)
-                            task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
-                            task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
-                            task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
-                            task_widget.assign_clicked.connect(self.on_assign_button_clicked)
-                            task_widget.data_table.dropped.connect(self.on_file_dragged_to_source)
-                            task_widget.data_table.show_in_folder.connect(self.show_in_folder)
-                            task_widget.data_table.show_in_shotgun.connect(self.show_in_shotgun)
-                            task_widget.data_table.copy_folder_path.connect(self.copy_folder_path)
-                            task_widget.data_table.copy_file_path.connect(self.copy_file_path)
-                            task_widget.data_table.import_version_from.connect(self.import_versions_from)
-                            task_widget.data_table.push_to_cloud.connect(self.push)
-                            task_widget.data_table.pull_from_cloud.connect(self.pull)
-                            task_widget.data_table.share_download_link.connect(self.share_download_link)
-                            if not user:
-                                task_widget.users_label.hide()
-                                task_widget.users.hide()
-                                task_widget.data_table.hide()
-                                task_widget.versions.hide()
-                                task_widget.show_button.hide()
-                                task_widget.assign_button.show()
-                task_label_layout.addWidget(task_add)
-                self.panel_tasks.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
-                                                                QtWidgets.QSizePolicy.Expanding)))
+    def __init__(self, parent=None, path_object=None, user_email='', user_name='', render_layout=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.path_object = path_object
+        self.render_layout = render_layout
+        self.current_location = path_object.data
+        self.panel = QtWidgets.QVBoxLayout(self)
+        self.panel_title = QtWidgets.QHBoxLayout()
+        self.tasks = QtWidgets.QHBoxLayout()
+        self.in_file_tree = None
+        self.user_changed_versions = False
+        self.user_email = user_email
+        self.user = user_name
+        self.user_default = self.user
+        self.default_user = user_name
+        self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
+        self.on_main_asset_selected(self.path_object.data)
+        self.panel.addLayout(self.panel_title)
+        self.panel.addLayout(self.tasks)
+        self.panel.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                  QtWidgets.QSizePolicy.Expanding)))
+
+    def on_main_asset_selected(self, data):
+        try:
+            current = PathObject(data)
+        except IndexError:
+            print 'Nothing Selected'
+            return
+        if data:
+            print 888888888888
+            print data
+            # reset the GUI
+            self.panel.tasks = []
+            self.clear_layout(self.panel)
+            project_button = QtWidgets.QPushButton()
+            task_label = QtWidgets.QLabel('<H2>%s_%s: Tasks</H2>' % (self.path_object.seq, self.path_object.shot))
+            self.panel_title.addWidget(task_label)
+            task_add = QtWidgets.QToolButton()
+            task_add.setText('+')
+            current.set_attr(task='*')
+            current.set_attr(root=self.path_object.root)
+            current.set_attr(user_email=self.user_email)
+            self.panel.seq = current.seq
+            self.panel.shot = current.shot
+            task_add.clicked.connect(self.on_create_asset)
+            # Get the list of tasks for the selection
+            task_list = current.glob_project_element('task')
+            self.update_location(path_object=current)
+            self.panel_title.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                            QtWidgets.QSizePolicy.Minimum))
+            for task in task_list:
+                task_radio = QtWidgets.QCheckBox(task)
+                self.panel_title.addWidget(task_radio)
+                if '.' not in task:
+                    if task not in self.panel.tasks:
+                        # version_location = copy.copy(self.current_location)
+                        try:
+                            title = app_config()['pipeline_steps']['short_to_long'][task]
+                        except KeyError:
+                            return
+                        task_widget = TaskWidget(parent=self,
+                                                 title=title,
+                                                 short_title=task,
+                                                 path_object=current)
+                        task_widget.task = task
+                        task_widget.showall()
+                        task_widget.hide_button.hide()
+                        task_widget.show_button.show()
+
+                        # find the version information for the task:
+                        user = self.populate_users_combo(task_widget, current, task)
+                        version = self.populate_versions_combo(task_widget, current, task)
+                        resolution = self.populate_resolutions_combo(task_widget, current, task)
+                        self.tasks.addWidget(task_widget)
+                        self.panel.tasks.append(task)
+                        version_obj = current.copy(task=task, user=user, version=version,
+                                                   resolution=resolution, filename='*')
+                        task_widget.data_table.task = version_obj.task
+                        task_widget.data_table.user = version_obj.user
+                        task_widget.data_table.version = version_obj.version
+                        task_widget.data_table.resolution = version_obj.resolution
+                        files_ = version_obj.glob_project_element('filename')
+                        task_widget.setup(ListItemModel(prep_list_for_table(files_, split_for_file=True),
+                                                        ['Name']))
+                        task_widget.data_table.selected.connect(self.on_source_selected)
+                        task_widget.data_table.doubleClicked.connect(self.on_open_clicked)
+                        task_widget.open_button_clicked.connect(self.on_open_clicked)
+                        task_widget.new_version_clicked.connect(self.on_new_version_clicked)
+                        task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
+                        task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
+                        task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
+                        task_widget.assign_clicked.connect(self.on_assign_button_clicked)
+                        task_widget.data_table.dropped.connect(self.on_file_dragged_to_source)
+                        task_widget.data_table.show_in_folder.connect(self.show_in_folder)
+                        task_widget.data_table.show_in_shotgun.connect(self.show_in_shotgun)
+                        task_widget.data_table.copy_folder_path.connect(self.copy_folder_path)
+                        task_widget.data_table.copy_file_path.connect(self.copy_file_path)
+                        task_widget.data_table.import_version_from.connect(self.import_versions_from)
+                        task_widget.data_table.push_to_cloud.connect(self.push)
+                        task_widget.data_table.pull_from_cloud.connect(self.pull)
+                        task_widget.data_table.share_download_link.connect(self.share_download_link)
+                        if not user:
+                            task_widget.users_label.hide()
+                            task_widget.users.hide()
+                            task_widget.data_table.hide()
+                            task_widget.versions.hide()
+                            task_widget.show_button.hide()
+                            task_widget.assign_button.show()
+            self.panel_title.addWidget(task_add)
+            self.panel.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
+                                                      QtWidgets.QSizePolicy.Expanding)))
 
     def update_location(self, path_object):
         if path_object:
@@ -621,7 +623,7 @@ class TaskPanel(QtWidgets.QWidget):
         # TODO refresh the thing
         dir_ = os.path.split(path_object.path_root)[0]
         # data = [['', path_object.input_company, dir_, '', '']]
-        clear_layout(self.panel_tasks)
+        self.clear_layout(self.panel)
         self.on_main_asset_selected(dir_)
 
     def populate_ingest_versions(self, combo_box, path_object):
@@ -884,10 +886,10 @@ class TaskPanel(QtWidgets.QWidget):
         self.update_location(path_obj)
         files_ = path_obj.glob_project_element('filename')
         widget.setup(ListItemModel(self.prep_list_for_table(files_), ['Name']))
-        clear_layout(self.render_layout)
+        self.clear_layout(self.render_layout)
 
     def clear_task_selection_except(self, task=None):
-        layout = self.panel_tasks
+        layout = self.panel
         i = -1
         while i <= layout.count():
             i += 1
@@ -905,7 +907,7 @@ class TaskPanel(QtWidgets.QWidget):
         return
 
     def load_render_files(self):
-        clear_layout(self.render_layout)
+        self.clear_layout(self.render_layout)
         current = PathObject(self.current_location)
         renders = current.copy(context='render', filename='*')
         files_ = renders.glob_project_element('filename')
@@ -924,6 +926,16 @@ class TaskPanel(QtWidgets.QWidget):
             render_widget.data_table.selected.connect(self.on_render_selected)
         else:
             print 'No Published Files for %s' % current.path_root
+
+    def clear_layout(self, layout=None):
+        if not layout:
+            layout = self.panel
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget() is not None:
+                child.widget().deleteLater()
+            elif child.layout() is not None:
+                self.clear_layout(child.layout())
 
 
 class IngestPanel(QtWidgets.QVBoxLayout):
@@ -947,12 +959,3 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False):
                 each = os.path.split(each)[-1]
             output_.append([each])
     return output_
-
-
-def clear_layout(layout):
-    while layout.count():
-        child = layout.takeAt(0)
-        if child.widget() is not None:
-            child.widget().deleteLater()
-        elif child.layout() is not None:
-            clear_layout(child.layout())

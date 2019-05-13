@@ -237,8 +237,7 @@ class PathObject(object):
             major_version, minor_version = self.version.split('.')
             self.set_attr(major_version=major_version.replace('.', ''))
             self.set_attr(minor_version=minor_version.replace('.', ''))
-        if self.shot:
-            self.set_shotname()
+        self.set_shotname()
 
     def set_path(self, root=False):
         self.get_template()
@@ -370,7 +369,7 @@ class PathObject(object):
         :return:
         """
         value = self.data[attr]
-        return os.path.join(self.path_root.split(value)[0], value)
+        return os.path.join(self.path_root.split(value)[0], value).replace('\\', '/')
 
     def glob_multiple_project_elements(self, full_path=False, split_at=None, elements=[]):
         """
@@ -543,10 +542,8 @@ class PathObject(object):
         self.set_path()
 
     def set_shotname(self):
-        if self.scope == 'shots':
-            self.set_attr(shotname='%s_%s' % (self.seq, self.shot))
-        if self.scope == 'assets':
-            self.set_attr(assetname='%s_%s' % (self.seq, self.shot))
+        self.set_attr(shotname='%s_%s' % (self.seq, self.shot))
+        self.set_attr(assetname='%s_%s' % (self.seq, self.shot))
 
     def set_project_config(self):
         user_dir = os.path.expanduser("~")

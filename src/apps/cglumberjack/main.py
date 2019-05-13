@@ -5,27 +5,40 @@ import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.base import LJMainWindow
-from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject
-from widgets import TaskWidget, AssetWidget
-from panels import CompanyPanel, ProjectPanel, TaskPanel
+from panels import CompanyPanel, ProjectPanel, TaskPanel, IOPanel
 
 
 class PathWidget(QtWidgets.QWidget):
+    location_changed = QtCore.Signal(object)
     def __init__(self, parent=None, path=None):
         QtWidgets.QWidget.__init__(self, parent)
+        self.back_button = QtWidgets.QToolButton()
+        self.back_button.setText('<')
         self.current_location_label = QtWidgets.QLabel('Current Location')
         self.current_location_line_edit = QtWidgets.QLineEdit()
         self.current_location_line_edit.setReadOnly(True)
         self.cl_row = QtWidgets.QHBoxLayout(self)
+        self.cl_row.addWidget(self.back_button)
         self.cl_row.addWidget(self.current_location_label)
         self.cl_row.addWidget(self.current_location_line_edit)
-        if path:
-            self.set_text(path)
+        self.back_button.clicked.connect(self.back_button_pressed)
 
     def set_text(self, text):
-        self.current_location_line_edit.setText(text)
+        self.current_location_line_edit.setText(text.replace('\\', '/'))
+
+    def back_button_pressed(self):
+        path_object = PathObject(self.current_location_line_edit.text())
+        # if i'm a task, show me all the assets or shots
+        if path_object.version:
+            new_path = path_object.split_after('project')
+        elif path_object.task:
+            new_path = path_object.split_after('project')
+        else:
+            new_path = os.path.join(path_object.root, 'companies')
+        new_object = PathObject(new_path)
+        self.location_changed.emit(new_object)
 
 
 class CGLumberjackWidget(QtWidgets.QWidget):
@@ -78,73 +91,57 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.in_file_tree = None
 
         self.path_widget = PathWidget(path=self.initial_path_object.path_root)
+        self.path_widget.location_changed.connect(self.update_location)
         self.layout.addWidget(self.path_widget)
         # TODO - make a path object the currency rather than a dict, makes it easier.
         self.update_location(self.initial_path_object)
-        #self.panel_center = ProjectPanel(path_object=self.initial_path_object)
-        #self.panel_left.location_changed.connect(self.panel_center.on_project_changed)
-        #self.panel_center.location_changed.connect(self.update_location2)
-
-        # Create Empty layouts for tasks as well as renders.
-        #self.render_layout = QtWidgets.QVBoxLayout()
-        #self.panel_tasks = TaskPanel(path_object=self.initial_path_object, user_email=self.user_email,
-        #                             user_name=self.user_name, render_layout=self.render_layout)
-        #self.panel_center.location_changed.connect(self.panel_tasks.on_main_asset_selected)
-        #self.panel_tasks.location_changed.connect(self.update_location2)
-
-
-        #self.h_layout.addWidget(self.panel_left)
-        #self.h_layout.addWidget(self.panel_center)
-        #self.h_layout.addWidget(self.panel_tasks)
-        #self.h_layout.addLayout(self.render_layout)
-
 
     def update_location(self, data):
-        print data
+        if self.panel:
+            self.panel.clear_layout()
         path_object = None
         if type(data) == dict:
             self.current_location = data
             path_object = PathObject(data)
         elif type(data) == PathObject:
-            print 'made it'
-            path_object = PathObject(data).copy()
+            path_object = PathObject(data)
         self.path_root = str(path_object.path_root)
         self.path_widget.set_text(path_object.path_root)
-        try:
-            clear_layout(self.panel_left)
-        except AttributeError:
-            pass
-        company = path_object.company
         project = path_object.project
         scope = path_object.scope
-        seq = path_object.seq
         shot = path_object.shot
-        user = path_object.user
         version = path_object.version
-        print version
         if scope == 'IO':
             if version:
                 print 'adding task panel'
-                self.panel = TaskPanel(path_object=self.initial_path_object, user_email=self.user_email,
+                self.panel = IOPanel(path_object=path_object, user_email=self.user_email,
                                        user_name=self.user_name, render_layout=None)
-                #self.panel.location_changed.connect(self.update_location)
-                self.layout.addWidget(self.panel)
             else:
                 print 'load the asset widget'
+                self.panel = ProjectPanel(path_object=path_object)
         elif scope == 'shots' or scope == 'assets':
             if version:
-                self.panel = TaskPanel(path_object=self.initial_path_object, user_email=self.user_email,
+                self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
                                        user_name=self.user_name, render_layout=None)
-                #self.panel.location_changed.connect(self.update_location)
-                self.layout.addWidget(self.panel)
+            if shot:
+                if shot != '*':
+                    self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
+                                           user_name=self.user_name, render_layout=None)
+                else:
+                    self.panel = ProjectPanel(path_object=path_object)
             else:
                 print 'load the asset widget'
+                self.panel = ProjectPanel(path_object=path_object)
         elif not scope:
-            print 'load the company/project widget'
-            self.panel = CompanyPanel(path_object=self.initial_path_object)
+            if project:
+                print 'showing project contents'
+                self.panel = ProjectPanel(path_object=path_object)
+            else:
+                print 'showing companies and projects'
+                self.panel = CompanyPanel(path_object=path_object)
+        if self.panel:
             self.panel.location_changed.connect(self.update_location)
             self.layout.addWidget(self.panel)
-        print company, project, scope, seq, shot, user, version
 
 
 
@@ -245,15 +242,6 @@ class CGLumberjack(LJMainWindow):
         print self.centralWidget().path_root, ' this'
         print 'Saving Session to -> %s' % user_config.user_config_path
         user_config.update_all()
-
-
-def clear_layout(layout):
-    while layout.count():
-        child = layout.takeAt(0)
-        if child.widget() is not None:
-            child.widget().deleteLater()
-        elif child.layout() is not None:
-            clear_layout(child.layout())
 
 
 if __name__ == "__main__":
