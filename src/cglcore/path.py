@@ -133,6 +133,14 @@ class PathObject(object):
             self.set_attr(minor_version=minor_version.replace('.', ''))
         self.set_shotname()
 
+    def get_last_attr(self):
+        self.get_template()
+        for t in self.template:
+            if t in self.data:
+                if self.data[t]:
+                    current_ = t
+        return current_
+
     def get_template(self):
         self.template = []
         if self.context:

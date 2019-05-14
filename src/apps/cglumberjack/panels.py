@@ -44,7 +44,7 @@ class CompanyPanel(QtWidgets.QWidget):
         self.left_column_visibility = True
 
         # Create the Left Panel
-        self.panel = QtWidgets.QVBoxLayout()
+        self.panel = QtWidgets.QVBoxLayout(self)
         self.company_widget = LabelComboRow('Company')
         self.project_filter = ProjectWidget(title="Projects")
 
@@ -53,14 +53,11 @@ class CompanyPanel(QtWidgets.QWidget):
         # assemble the Left filter_panel
         self.panel.addLayout(self.company_widget)
         self.panel.addWidget(self.project_filter)
-        # self.panel.setSpacing(0)
-        #self.panel.setContentsMargins(0, 10, 0, 0)
 
         self.check_default_company_globals()
         self.load_companies()
         if self.company:
             self.load_projects()
-        self.setLayout(self.panel)
 
         #self.visibility_button.clicked.connect(self.toggle_visibility)
         self.project_filter.data_table.selected.connect(self.on_project_changed)

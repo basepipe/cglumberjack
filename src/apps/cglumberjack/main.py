@@ -39,8 +39,8 @@ class PathWidget(QtWidgets.QWidget):
         else:
             new_path = path_object.root
         new_object = PathObject(new_path)
-        if new_object.path_root.replace('\\', '/') == self.current_location_line_edit.text():
-            return
+        #if new_object.path_root.replace('\\', '/') == self.current_location_line_edit.text():
+        #    return
         self.location_changed.emit(new_object)
 
 
@@ -101,7 +101,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def update_location(self, data):
         if self.panel:
-            self.panel.clear_layout()
+           self.panel.clear_layout()
         path_object = None
         if type(data) == dict:
             self.current_location = data
@@ -110,38 +110,44 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             path_object = PathObject(data)
         self.path_root = str(path_object.path_root)
         self.path_widget.set_text(path_object.path_root)
-        if path_object.version:
-            if path_object.scope == 'IO':
-                self.panel = IOPanel(path_object=path_object, user_email=self.user_email, user_name=self.user_name,
-                                     render_layout=None)
-            else:
-                self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                       user_name=self.user_name, render_layout=None)
-
-        if path_object.scope == 'IO':
-            self.panel = IOPanel(path_object=path_object, user_email=self.user_email, user_name=self.user_name,
-                                 render_layout=None)
-
-        if path_object.shot:
-            if path_object.shot != '*':
-                self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                       user_name=self.user_name, render_layout=None)
+        print '----------Last Attr'
+        last = path_object.get_last_attr()
+        print last
+        print '----------end'
+        shot_attrs = ['seq', 'shot', 'type', 'asset']
+        if last == 'company' or last == 'project':
+            if path_object.project == '*':
+                self.panel = CompanyPanel(path_object=path_object)
             else:
                 self.panel = ProjectPanel(path_object=path_object)
-
-        if path_object.seq == '*':
-            self.panel = ProjectPanel(path_object=path_object)
-        if not path_object.seq:
-            self.panel = ProjectPanel(path_object=path_object)
-
-        if path_object.project == '*' or path_object.company == '':
-            self.panel = CompanyPanel(path_object=path_object)
-        if not path_object.company:
-            self.panel = CompanyPanel(path_object=path_object)
+        elif last in shot_attrs:
+            if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
+                self.panel = ProjectPanel(path_object=path_object)
+            else:
+                self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
+                                       user_name=self.user_name, render_layout=None)
+        elif last == 'input_company':
+            if path_object.input_company == '*':
+                self.panel = ProjectPanel(path_object=path_object)
+            else:
+                self.panel = IOPanel(path_object=path_object, user_email=self.user_email, user_name=self.user_name,
+                                     render_layout=None)
+        elif last == 'task':
+            self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
+                                   user_name=self.user_name, render_layout=None)
 
         if self.panel:
             self.panel.location_changed.connect(self.update_location)
             self.layout.addWidget(self.panel)
+            to_delete = []
+            # Why do i have to do this?!?!?
+            for i in range(self.layout.count()):
+                if i > 1:
+                    print i-1, self.layout.count()
+                    child = self.layout.takeAt(i-1)
+                    to_delete.append(child)
+            for each in to_delete:
+                each.widget().deleteLater()
 
 
 class CGLumberjack(LJMainWindow):
