@@ -53,8 +53,8 @@ class CompanyPanel(QtWidgets.QWidget):
         # assemble the Left filter_panel
         self.panel.addLayout(self.company_widget)
         self.panel.addWidget(self.project_filter)
-        self.panel.setSpacing(0)
-        self.panel.setContentsMargins(0, 10, 0, 0)
+        # self.panel.setSpacing(0)
+        #self.panel.setContentsMargins(0, 10, 0, 0)
 
         self.check_default_company_globals()
         self.load_companies()
@@ -244,7 +244,7 @@ class ProjectPanel(QtWidgets.QWidget):
         self.panel = QtWidgets.QVBoxLayout(self)
         self.assets = None
         self.assets_filter_default = filter
-        self.panel.setContentsMargins(10, 0, 10, 0)
+        # self.panel.setContentsMargins(10, 0, 10, 0)
         self.root = app_config()['paths']['root']
         self.radio_filter = 'Everything'
         self.clear_layout()
@@ -342,6 +342,7 @@ class ProjectPanel(QtWidgets.QWidget):
         if path_object:
             self.location_changed.emit(path_object.data)
         else:
+            self.path_object.set_attr(seq='*')
             self.location_changed.emit(self.path_object.data)
 
     def set_scope_radio(self):
@@ -430,9 +431,9 @@ class IOPanel(QtWidgets.QWidget):
         self.render_layout = render_layout
         self.current_location = path_object.data
         self.panel = QtWidgets.QVBoxLayout(self)
-        self.panel.setContentsMargins(0, 10, 0, 0)
+        # self.panel.setContentsMargins(0, 10, 0, 0)
         self.panel_tasks = QtWidgets.QVBoxLayout(self)
-        self.panel_tasks.setContentsMargins(0, 0, 0, 0)
+        # self.panel_tasks.setContentsMargins(0, 0, 0, 0)
         self.in_file_tree = None
         self.user_changed_versions = False
         self.user_email = user_email
@@ -480,6 +481,60 @@ class IOPanel(QtWidgets.QWidget):
                 child.widget().deleteLater()
             elif child.layout() is not None:
                 self.clear_layout(child.layout())
+
+    def update_location(self, path_object):
+        if path_object:
+            self.current_location = path_object.data
+            self.location_changed.emit(self.current_location)
+            return path_object.path_root
+
+    def user_entered_versions(self):
+        self.user_changed_versions = True
+
+    def on_client_file_selected(self, data):
+        files = []
+        for each in data:
+            path_, filename_ = os.path.split(each)
+            files.append(filename_)
+        self.sender().parent().clear_all()
+        self.sender().parent().show_tags(files=files)
+        self.sender().parent().populate_combos()
+        self.sender().parent().show_combo_info(data)
+        self.sender().parent().show_line_edit_info(data)
+
+    def on_add_ingest(self):
+        path_object = PathObject(self.current_location)
+        version = path_object.next_major_version_number()
+        path_object.set_attr(version=version)
+        if not os.path.exists(path_object.path_root):
+            print 'Creating Version at: %s' % path_object.path_root
+            os.makedirs(path_object.path_root)
+        # TODO refresh the thing
+        dir_ = os.path.split(path_object.path_root)[0]
+        # data = [['', path_object.input_company, dir_, '', '']]
+        self.clear_layout(self.panel)
+        self.on_main_asset_selected(dir_)
+
+    def populate_ingest_versions(self, combo_box, path_object):
+        items = glob.glob('%s/%s' % (path_object.path_root, '*'))
+        versions = []
+        for each in items:
+            versions.append(os.path.split(each)[-1])
+        versions = sorted(versions)
+        number = len(versions)
+        combo_box.addItems(versions)
+        combo_box.setCurrentIndex(number - 1)
+        self.current_location['version'] = combo_box.currentText()
+        self.update_location(path_object=PathObject(self.current_location))
+        self.user_changed_versions = True
+        self.on_ingest_versions_changed(combo_box.currentText())
+        self.user_changed_versions = False
+
+    def on_ingest_versions_changed(self, version):
+        if self.user_changed_versions:
+            self.current_location['version'] = version
+            self.update_location(path_object=PathObject(self.current_location))
+            self.in_file_tree.populate(directory=self.path_object.path_root)
 
 
 class TaskPanel(QtWidgets.QWidget):
@@ -601,54 +656,6 @@ class TaskPanel(QtWidgets.QWidget):
             self.current_location = path_object.data
             self.location_changed.emit(self.current_location)
             return path_object.path_root
-
-    def on_client_file_selected(self, data):
-        files = []
-        for each in data:
-            path_, filename_ = os.path.split(each)
-            files.append(filename_)
-        self.sender().parent().clear_all()
-        self.sender().parent().show_tags(files=files)
-        self.sender().parent().populate_combos()
-        self.sender().parent().show_combo_info(data)
-        self.sender().parent().show_line_edit_info(data)
-
-    def on_add_ingest(self):
-        path_object = PathObject(self.current_location)
-        version = path_object.next_major_version_number()
-        path_object.set_attr(version=version)
-        if not os.path.exists(path_object.path_root):
-            print 'Creating Version at: %s' % path_object.path_root
-            os.makedirs(path_object.path_root)
-        # TODO refresh the thing
-        dir_ = os.path.split(path_object.path_root)[0]
-        # data = [['', path_object.input_company, dir_, '', '']]
-        self.clear_layout(self.panel)
-        self.on_main_asset_selected(dir_)
-
-    def populate_ingest_versions(self, combo_box, path_object):
-        items = glob.glob('%s/%s' % (path_object.path_root, '*'))
-        versions = []
-        for each in items:
-            versions.append(os.path.split(each)[-1])
-        versions = sorted(versions)
-        number = len(versions)
-        combo_box.addItems(versions)
-        combo_box.setCurrentIndex(number-1)
-        self.current_location['version'] = combo_box.currentText()
-        self.update_location(path_object=PathObject(self.current_location))
-        self.user_changed_versions = True
-        self.on_ingest_versions_changed(combo_box.currentText())
-        self.user_changed_versions = False
-
-    def user_entered_versions(self):
-        self.user_changed_versions = True
-
-    def on_ingest_versions_changed(self, version):
-        if self.user_changed_versions:
-            self.current_location['version'] = version
-            self.update_location(path_object=PathObject(self.current_location))
-            self.in_file_tree.populate(directory=self.path_object.path_root)
 
     def on_create_asset(self, set_vars=False):
         if self.current_location['scope'] == 'IO':

@@ -1,7 +1,3 @@
-import glob
-import os
-import shutil
-import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.base import LJMainWindow
@@ -12,6 +8,7 @@ from panels import CompanyPanel, ProjectPanel, TaskPanel, IOPanel
 
 class PathWidget(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
+
     def __init__(self, parent=None, path=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.back_button = QtWidgets.QToolButton()
@@ -32,12 +29,18 @@ class PathWidget(QtWidgets.QWidget):
         path_object = PathObject(self.current_location_line_edit.text())
         # if i'm a task, show me all the assets or shots
         if path_object.version:
-            new_path = path_object.split_after('project')
+            new_path = '%s/%s' % (path_object.split_after('scope'), '*')
         elif path_object.task:
-            new_path = path_object.split_after('project')
+            new_path = '%s/%s' % (path_object.split_after('scope'), '*')
+        elif path_object.shot:
+            new_path = '%s/%s' % (path_object.split_after('scope'), '*')
+        elif path_object.project:
+            new_path = '%s/%s' % (path_object.split_after('context'), '*')
         else:
-            new_path = os.path.join(path_object.root, 'companies')
+            new_path = path_object.root
         new_object = PathObject(new_path)
+        if new_object.path_root.replace('\\', '/') == self.current_location_line_edit.text():
+            return
         self.location_changed.emit(new_object)
 
 
@@ -107,44 +110,38 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             path_object = PathObject(data)
         self.path_root = str(path_object.path_root)
         self.path_widget.set_text(path_object.path_root)
-        project = path_object.project
-        scope = path_object.scope
-        shot = path_object.shot
-        version = path_object.version
-        if scope == 'IO':
-            if version:
-                print 'adding task panel'
-                self.panel = IOPanel(path_object=path_object, user_email=self.user_email,
-                                       user_name=self.user_name, render_layout=None)
+        if path_object.version:
+            if path_object.scope == 'IO':
+                self.panel = IOPanel(path_object=path_object, user_email=self.user_email, user_name=self.user_name,
+                                     render_layout=None)
             else:
-                print 'load the asset widget'
-                self.panel = ProjectPanel(path_object=path_object)
-        elif scope == 'shots' or scope == 'assets':
-            if version:
                 self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
                                        user_name=self.user_name, render_layout=None)
-            if shot:
-                if shot != '*':
-                    self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                           user_name=self.user_name, render_layout=None)
-                else:
-                    self.panel = ProjectPanel(path_object=path_object)
+
+        if path_object.scope == 'IO':
+            self.panel = IOPanel(path_object=path_object, user_email=self.user_email, user_name=self.user_name,
+                                 render_layout=None)
+
+        if path_object.shot:
+            if path_object.shot != '*':
+                self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
+                                       user_name=self.user_name, render_layout=None)
             else:
-                print 'load the asset widget'
                 self.panel = ProjectPanel(path_object=path_object)
-        elif not scope:
-            if project:
-                print 'showing project contents'
-                self.panel = ProjectPanel(path_object=path_object)
-            else:
-                print 'showing companies and projects'
-                self.panel = CompanyPanel(path_object=path_object)
+
+        if path_object.seq == '*':
+            self.panel = ProjectPanel(path_object=path_object)
+        if not path_object.seq:
+            self.panel = ProjectPanel(path_object=path_object)
+
+        if path_object.project == '*' or path_object.company == '':
+            self.panel = CompanyPanel(path_object=path_object)
+        if not path_object.company:
+            self.panel = CompanyPanel(path_object=path_object)
+
         if self.panel:
             self.panel.location_changed.connect(self.update_location)
             self.layout.addWidget(self.panel)
-
-
-
 
 
 class CGLumberjack(LJMainWindow):
@@ -239,7 +236,6 @@ class CGLumberjack(LJMainWindow):
                                  user_email=self.centralWidget().user_email,
                                  user_name=self.centralWidget().user_name,
                                  current_path=self.centralWidget().path_root)
-        print self.centralWidget().path_root, ' this'
         print 'Saving Session to -> %s' % user_config.user_config_path
         user_config.update_all()
 
