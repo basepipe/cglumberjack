@@ -215,8 +215,6 @@ class PathObject(object):
             self.set_attr(scope=path_parts[3].lower())
         self.get_template()
         self.data = {}
-        print '000000000'
-        print self.template
         for i, attr in enumerate(self.template):
             if attr:
                 attr = attr.replace('{', '').replace('}', '')
@@ -300,33 +298,33 @@ class PathObject(object):
                 self.__dict__[attr] = value
                 self.data[attr] = value
             else:
-                if value:
-                    if value == 'io':
-                        value = value.upper()
-                    if attr == 'scope':
-                        if value not in self.scope_list:
-                            logging.error('%s not found in %s' % (value, self.scope_list))
-                            return
-                        else:
-                            self.__dict__[attr] = value
-                            self.data[attr] = value
-                    elif attr == 'context':
-                        if value not in self.context_list:
-                            logging.error('%s not found in %s' % (value, self.context_list))
-                            return
-                        else:
-                            self.__dict__[attr] = value
-                            self.data[attr] = value
+                # if value:
+                if value == 'io':
+                    value = value.upper()
+                if attr == 'scope':
+                    if value not in self.scope_list:
+                        logging.error('%s not found in %s' % (value, self.scope_list))
+                        return
                     else:
-                        #if regex:
-                        #    try:
-                        #        if not re.match(regex, value):
-                        #            logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
-                        #            # return
-                        #    except TypeError:
-                        #        pass
                         self.__dict__[attr] = value
                         self.data[attr] = value
+                elif attr == 'context':
+                    if value not in self.context_list:
+                        logging.error('%s not found in %s' % (value, self.context_list))
+                        return
+                    else:
+                        self.__dict__[attr] = value
+                        self.data[attr] = value
+                else:
+                    #if regex:
+                    #    try:
+                    #        if not re.match(regex, value):
+                    #            logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
+                    #            # return
+                    #    except TypeError:
+                    #        pass
+                    self.__dict__[attr] = value
+                    self.data[attr] = value
             if attr == 'shot':
                 self.__dict__['asset'] = value
                 self.data['asset'] = value

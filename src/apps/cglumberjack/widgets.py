@@ -16,13 +16,15 @@ from cglui.widgets.containers.menu import LJMenu
 class EmptyStateWidget(QtWidgets.QPushButton):
     files_added = QtCore.Signal(object)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, path_object=None):
         QtWidgets.QPushButton.__init__(self, parent)
+        self.path_object = path_object
         self.setAcceptDrops(True)
         self.setMinimumWidth(300)
         self.setMinimumHeight(100)
         self.setText('Drag/Drop to Add Files')
         self.setStyleSheet("background-color: white; border:1px dashed black;")
+        self.to_path = ''
 
     def mouseReleaseEvent(self, e):
         super(EmptyStateWidget, self).mouseReleaseEvent(e)
@@ -41,6 +43,11 @@ class EmptyStateWidget(QtWidgets.QPushButton):
             e.ignore()
 
     def dropEvent(self, e):
+        new_obj = self.path_object.copy(task=self.parent().task, version=self.parent().versions.currentText(),
+                                        user=self.parent().users.currentText(),
+                                        resolutions=self.parent().resolutions.currentText(), filename=None,
+                                        ext=None, filename_base=None)
+        self.to_path = new_obj.path_root
         if e.mimeData().hasUrls:
             e.setDropAction(QtCore.Qt.CopyAction)
             e.accept()
@@ -253,7 +260,7 @@ class TaskWidget(QtWidgets.QFrame):
         # task_row.addWidget(self.assign_button)
         # task_row.addWidget(self.add_button)
 
-        self.empty_state = EmptyStateWidget()
+        self.empty_state = EmptyStateWidget(path_object=self.path_object)
         self.empty_state.hide()
 
         v_layout.addLayout(task_row)

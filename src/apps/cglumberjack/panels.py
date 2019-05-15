@@ -537,8 +537,6 @@ class TaskPanel(QtWidgets.QWidget):
             print 'Nothing Selected'
             return
         if data:
-            print 888888888888
-            print data
             # reset the GUI
             self.panel.tasks = []
             self.clear_layout(self.panel)
@@ -607,6 +605,7 @@ class TaskPanel(QtWidgets.QWidget):
                         task_widget.data_table.push_to_cloud.connect(self.push)
                         task_widget.data_table.pull_from_cloud.connect(self.pull)
                         task_widget.data_table.share_download_link.connect(self.share_download_link)
+                        task_widget.empty_state.files_added.connect(self.new_files_dragged)
                         if not user:
                             task_widget.users_label.hide()
                             task_widget.users.hide()
@@ -618,6 +617,17 @@ class TaskPanel(QtWidgets.QWidget):
             self.panel_title.addWidget(task_add)
             self.panel.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
                                                       QtWidgets.QSizePolicy.Expanding)))
+
+    def new_files_dragged(self, files):
+        print 'Copying Files to: %s' % self.sender().to_path
+        for f in files:
+            file_ = os.path.split(f)[-1]
+            to_file = os.path.join(self.sender().to_path, file_)
+            path_object = PathObject(to_file)
+            print 'Copying %s to %s' % (f, to_file)
+            shutil.copy2(f, to_file)
+            CreateProductionData(path_object=path_object)
+            self.update_location(path_object)
 
     def update_location(self, path_object):
         if path_object:

@@ -129,20 +129,15 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path_widget.set_text(path_object.path_root)
         last = path_object.get_last_attr()
         shot_attrs = ['seq', 'shot', 'type', 'asset']
-        print last
-        if last == 'filename':
-            if self.panel:
-                print 'panel exists'
-                return
-
         if self.panel:
             self.panel.clear_layout()
         if last == 'filename':
+            # TODO - This needs to actually display the render panel as well, and reselect the actual filename.
             self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
                                    user_name=self.user_name, render_layout=None)
-        if last == 'resolution':
-            self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                   user_name=self.user_name, render_layout=None)
+        #if last == 'resolution':
+        #    self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
+        #                           user_name=self.user_name, render_layout=None)
         if last == 'company' or last == 'project':
             if path_object.project == '*':
                 self.panel = CompanyPanel(path_object=path_object)
