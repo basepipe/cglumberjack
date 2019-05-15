@@ -47,6 +47,7 @@ class ImportBrowser(LJDialog):
         self.path_object.set_attr(input_company='*')
         self.data_frame = None
         self.pandas_path = ''
+        self.io_statuses = ['Ingested', 'Tagged', 'Published']
 
         self.file_tree = LJFileBrowser(self)
 
@@ -112,11 +113,12 @@ class ImportBrowser(LJDialog):
         self.load_companies()
         self.hide_tags()
 
+        self.import_events.add_button.clicked.connect(self.on_add_ingest)
         self.shot_radio_button.clicked.connect(self.on_radio_clicked)
         self.asset_radio_button.clicked.connect(self.on_radio_clicked)
         self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
         self.file_tree.initialized.connect(self.load_data_frame)
-        self.file_tree.clicked.connect(self.show_tags)
+        self.file_tree.selected.connect(self.show_tags)
         self.seq_combo.editTextChanged.connect(self.edit_data_frame)
         self.shot_combo.editTextChanged.connect(self.edit_data_frame)
         self.task_combo.editTextChanged.connect(self.edit_data_frame)
@@ -136,6 +138,7 @@ class ImportBrowser(LJDialog):
     def on_company_changed(self):
         self.company_widget.list.selectedItems()[-1].text()
         self.path_object.set_attr(input_company=self.company_widget.list.selectedItems()[-1].text())
+        self.path_object.set_attr(version='000.0000')
         self.load_import_events()
 
     def load_import_events(self):
@@ -145,7 +148,6 @@ class ImportBrowser(LJDialog):
             self.import_events.list.addItem(os.path.split(e)[-1])
 
     def on_event_selected(self):
-        print self.import_events.list.selectedItems()[-1].text()
         self.path_object.set_attr(version=self.import_events.list.selectedItems()[-1].text())
         # Load the Tree Widget
         self.populate_tree()
@@ -244,13 +246,13 @@ class ImportBrowser(LJDialog):
         self.tags_label.hide()
         self.tags_line_edit.hide()
 
-    def show_tags(self, files=[]):
+    def show_tags(self, files):
         if len(files) == 1:
             files_text = files[0]
         else:
             files_text = '%s files' % len(files)
 
-        self.tags_title.setText("<b>Tag %s for Publish</b>" % files_text)
+        self.tags_title.setText("<b>Tag %s for Publish</b>" % os.path.split(files_text)[-1])
         self.asset_radio_button.show()
         self.shot_radio_button.show()
         self.seq_label.show()
@@ -291,6 +293,33 @@ class ImportBrowser(LJDialog):
             if shots:
                 shots.insert(0, '')
                 self.shot_combo.addItems(shots)
+
+    def on_client_file_selected(self, data):
+        files = []
+        for each in data:
+            path_, filename_ = os.path.split(each)
+            files.append(filename_)
+        self.sender().parent().clear_all()
+        self.sender().parent().show_tags(files=files)
+        self.sender().parent().populate_combos()
+        self.sender().parent().show_combo_info(data)
+        self.sender().parent().show_line_edit_info(data)
+
+    def on_add_ingest(self):
+        path_object = PathObject(self.path_object)
+        # TODO - this may need to get the latest
+        version = path_object.latest_version()
+        print version.path_root
+        return
+        path_object.set_attr(version=version)
+        print path_object.path_root
+        return
+        if not os.path.exists(path_object.path_root):
+            print 'Creating Version at: %s' % path_object.path_root
+            os.makedirs(path_object.path_root)
+        # TODO refresh the thing
+        dir_ = os.path.split(path_object.path_root)[0]
+        self.populate_tree()
 
 
 if __name__ == "__main__":

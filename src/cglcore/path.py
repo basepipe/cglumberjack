@@ -357,6 +357,7 @@ class PathObject(object):
         :return: returns list of items, or paths.
         """
         # this does not account for duplicate values - need a system that does.
+        # TODO this does not account for templates
         try:
             value = self.data[attr]
             if value:
