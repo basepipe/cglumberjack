@@ -2,14 +2,14 @@ import platform
 import os
 import psutil
 import datetime
+import shutil
 import pandas as pd
 import glob
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.base import LJDialog
 from cglui.widgets.base import LJFileBrowser
-from cglui.widgets.dialog import InputDialog
 from cglui.widgets.combo import AdvComboBox
-from cglui.widgets.project_selection_module import LJListWidget, LabelComboRow
+from cglui.widgets.project_selection_module import LJListWidget
 from cglcore.config import app_config
 from cglcore.path import PathObject, CreateProductionData
 
@@ -355,7 +355,7 @@ class ImportBrowser(LJDialog):
 
     def on_add_ingest(self):
         path_object = PathObject(self.path_object)
-        # TODO - this may need to get the latest
+        # TODO - this is broken for IO paths right now.
         version = path_object.latest_version()
         print version.path_root
         return
@@ -368,6 +368,21 @@ class ImportBrowser(LJDialog):
         # TODO refresh the thing
         dir_ = os.path.split(path_object.path_root)[0]
         self.populate_tree()
+
+    def publish_tagged_assets(self):
+        for index, row in self.data_frame.iterrows():
+            if row['Status'] == 'Tagged':
+                print 'Copying %s to %s' % (row['Filepath'], row['Project Filepath'])
+                if os.path.isfile(row['Project Filepath']):
+                    dir_, file_ = os.path.split(row['Project Filepath'])
+                    if not os.path.exists(row['Project Filepath']):
+                        os.makedirs(dir_)
+                elif os.path.isdir(row['Project Filepath']):
+                    dir_ = os.path.isdir(row['Project Filepath'])
+                CreateProductionData(dir_)
+                shutil.copy2(row['Filepath'], row['Project Filepath'])
+                # TODO - I need to create a .txt file in the src directory that describes the action that
+                # produced these files.
 
 
 if __name__ == "__main__":
