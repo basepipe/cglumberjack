@@ -118,14 +118,13 @@ class ImportBrowser(LJDialog):
         self.asset_radio_button.clicked.connect(self.on_radio_clicked)
         self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
         self.file_tree.initialized.connect(self.load_data_frame)
-        self.file_tree.selected.connect(self.show_tags)
+        self.file_tree.selected.connect(self.on_client_file_selected)
         self.seq_combo.editTextChanged.connect(self.edit_data_frame)
         self.shot_combo.editTextChanged.connect(self.edit_data_frame)
         self.task_combo.editTextChanged.connect(self.edit_data_frame)
         self.tags_line_edit.textChanged.connect(self.edit_tags)
         self.company_widget.list.clicked.connect(self.on_company_changed)
         self.import_events.list.clicked.connect(self.on_event_selected)
-
 
     def load_companies(self):
         self.company_widget.list.clear()
@@ -220,6 +219,55 @@ class ImportBrowser(LJDialog):
                         self.save_data_frame()
                     except KeyError:
                         pass
+
+    def clear_all(self):
+        self.shot_combo.clear()
+        self.seq_combo.clear()
+        self.task_combo.clear()
+        self.tags_line_edit.clear()
+
+    def show_line_edit_info(self, data):
+        self.tags_line_edit.clear()
+        filepath = data[-1].replace('/', '\\')
+        row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
+        tags = self.data_frame.loc[row, 'Tags']
+        if type(tags) != float:
+            if tags:
+                self.tags_line_edit.setText(tags)
+
+    def set_combo_to_text(self, combo, text):
+        index = combo.findText(text)
+        if index != -1:
+            combo.setCurrentIndex(index)
+        else:
+            combo.addItem(text)
+            self.set_combo_to_text(combo, text)
+
+    def show_combo_info(self, data):
+        if data:
+            print data
+            filepath = data[-1].replace('/', '\\')
+            row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
+            seq = self.data_frame.loc[row, 'Seq']
+            shot = self.data_frame.loc[row, 'Shot']
+            task = self.data_frame.loc[row, 'Task']
+            status = self.data_frame.loc[row, 'Status']
+            self.publish_button.setEnabled(False)
+            if type(seq) != float:
+                if seq:
+                    seq = '%03d' % int(seq)
+                    self.set_combo_to_text(self.seq_combo, seq)
+            if type(shot) != float:
+                if shot:
+                    shot = '%04d' % int(shot)
+                    self.set_combo_to_text(self.shot_combo, shot)
+            if type(task) != float:
+                if task:
+                    task = app_config()['pipeline_steps']['short_to_long'][task]
+                    self.set_combo_to_text(self.task_combo, task)
+            if type(status) != float:
+                if status == 'Tagged':
+                    self.publish_button.setEnabled(True)
 
     def on_radio_clicked(self):
         self.clear_all()
