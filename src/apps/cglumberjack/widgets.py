@@ -1,12 +1,8 @@
 import os
-import pandas as pd
-import shutil
 from Qt.QtCore import Qt
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore import path
-from cglcore.config import app_config
 from cglui.widgets.combo import AdvComboBox
-from cglui.widgets.base import LJFileBrowser
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
@@ -55,7 +51,6 @@ class EmptyStateWidget(QtWidgets.QPushButton):
             for url in e.mimeData().urls():
                 file_list.append(str(url.toLocalFile()))
             self.files_added.emit(file_list)
-            print file_list
         else:
             print 'invalid'
             e.ignore()
@@ -176,7 +171,7 @@ class TaskWidget(QtWidgets.QFrame):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
-    assign_clicked = QtCore.Signal(object)
+    start_task_clicked = QtCore.Signal(object)
     open_button_clicked = QtCore.Signal()
     new_version_clicked = QtCore.Signal()
 
@@ -399,7 +394,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.show_button.show()
 
     def on_start_task_clicked(self):
-        self.assign_clicked.emit(self.path_object)
+        self.start_task_clicked.emit(self.path_object)
 
     def set_title(self, new_title):
         self.title.setText('<b>%s</b>' % new_title.title())

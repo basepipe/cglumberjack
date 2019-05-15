@@ -212,7 +212,6 @@ class PathDesigner(QtWidgets.QVBoxLayout):
         for col in range(self.grid_layout.columnCount()):
             current = self.grid_layout.itemAtPosition(1, col)
             if current:
-                print 1, col
                 element = current.widget().currentText()
                 if not path:
                     path = element

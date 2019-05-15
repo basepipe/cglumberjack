@@ -341,6 +341,15 @@ class PathObject(object):
                 if self.filename:
                     base, ext = os.path.splitext(self.filename)
                     self.filename = '%s.%s' % (base, self.ext)
+            elif attr == 'filename':
+                if value:
+                    self.__dict__['filename'] = value
+                    self.data['filename'] = value
+                    base, ext = os.path.splitext(value)
+                    self.__dict__['ext'] = ext.replace('.', '')
+                    self.data['ext'] = ext.replace('.', '')
+                    self.__dict__['filename_base'] = base
+                    self.data['filename_base'] = base
 
         self.set_path()
 
@@ -582,7 +591,6 @@ class CreateProductionData(object):
                  do_scope=False, test=False, json=True):
         self.test = test
         self.path_object = PathObject(path_object)
-        print 'Path Object: %s' % self.path_object.path
         self.do_scope = do_scope
         if file_system:
             self.create_folders()

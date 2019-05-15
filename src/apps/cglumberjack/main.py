@@ -4,7 +4,8 @@ from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from import_main import ImportBrowser
 from cglcore.path import PathObject
-from panels import CompanyPanel, ProjectPanel, TaskPanel, IOPanel
+from panels import CompanyPanel, ProjectPanel, IOPanel
+from TaskPanel import TaskPanel
 
 
 class PathWidget(QtWidgets.QWidget):
@@ -118,7 +119,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(self.initial_path_object)
 
     def update_location(self, data):
-
+        try:
+            if self.sender().force_clear:
+                print 'I gotta clear this widget'
+                if self.panel:
+                    self.panel.clear_layout()
+                    self.panel = None
+        except AttributeError:
+            pass
         path_object = None
         if type(data) == dict:
             self.current_location = data
@@ -129,26 +137,40 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path_widget.set_text(path_object.path_root)
         last = path_object.get_last_attr()
         shot_attrs = ['seq', 'shot', 'type', 'asset']
-        if self.panel:
-            self.panel.clear_layout()
+
+        print last, '---------------------------------', path_object.path_root
         if last == 'filename':
-            # TODO - This needs to actually display the render panel as well, and reselect the actual filename.
+            print 0, 'filename'
+            if self.panel:
+                return
+            else:
+                print 'Last %s:%s' % (last, path_object.data[last])
+                # TODO -  This needs to actually display the render panel as well, and reselect the actual filename.
+                self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
+                                       user_name=self.user_name)
+        else:
+            print 1, 'clearing'
+            if self.panel:
+                self.panel.clear_layout()
+        if last == 'resolution':
+            print 2, 'resolution'
+            print 'Made it resolution: %s' % path_object.path_root
             self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                   user_name=self.user_name, render_layout=None)
-        #if last == 'resolution':
-        #    self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-        #                           user_name=self.user_name, render_layout=None)
+                                   user_name=self.user_name)
         if last == 'company' or last == 'project':
+            print 3
             if path_object.project == '*':
                 self.panel = CompanyPanel(path_object=path_object)
             else:
                 self.panel = ProjectPanel(path_object=path_object)
         elif last in shot_attrs:
+            print 4
+            print 'shot, or seq %s' % path_object.data[last]
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProjectPanel(path_object=path_object)
             else:
                 self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                       user_name=self.user_name, render_layout=None)
+                                       user_name=self.user_name)
         elif last == 'input_company':
             if path_object.input_company == '*':
                 self.panel = ProjectPanel(path_object=path_object)
@@ -157,7 +179,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                                      render_layout=None)
         elif last == 'task':
             self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                   user_name=self.user_name, render_layout=None)
+                                   user_name=self.user_name)
 
         if self.panel:
             self.panel.location_changed.connect(self.update_location)
