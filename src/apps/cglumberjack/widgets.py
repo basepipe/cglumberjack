@@ -13,6 +13,47 @@ from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
 
 
+class EmptyStateWidget(QtWidgets.QPushButton):
+    files_added = QtCore.Signal(object)
+
+    def __init__(self, parent=None):
+        QtWidgets.QPushButton.__init__(self, parent)
+        self.setAcceptDrops(True)
+        self.setMinimumWidth(300)
+        self.setMinimumHeight(100)
+        self.setText('Drag/Drop to Add Files')
+        self.setStyleSheet("background-color: white; border:1px dashed black;")
+
+    def mouseReleaseEvent(self, e):
+        super(EmptyStateWidget, self).mouseReleaseEvent(e)
+
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasUrls:
+            e.accept()
+        else:
+            e.ignore()
+
+    def dragMoveEvent(self, e):
+        if e.mimeData().hasUrls:
+            e.setDropAction(QtCore.Qt.CopyAction)
+            e.accept()
+        else:
+            e.ignore()
+
+    def dropEvent(self, e):
+        if e.mimeData().hasUrls:
+            e.setDropAction(QtCore.Qt.CopyAction)
+            e.accept()
+            file_list = []
+            for url in e.mimeData().urls():
+                file_list.append(str(url.toLocalFile()))
+            self.files_added.emit(file_list)
+            print file_list
+        else:
+            print 'invalid'
+            e.ignore()
+
+
 class FileTableModel(ListItemModel):
     def data(self, index, role):
         row = index.row()
@@ -124,314 +165,6 @@ class AssetWidget(QtWidgets.QWidget):
         self.title.setText('<b>%s</b>' % new_title.title())
 
 
-class IOWidget(QtWidgets.QFrame):
-    versions_changed = QtCore.Signal(object)
-
-    def __init__(self, parent, title, path_object=None):
-        QtWidgets.QFrame.__init__(self, parent)
-        self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
-        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Maximum)
-        self.setSizePolicy(self.sizePolicy)
-        widget_width = 500
-        self.io_statuses = ['Ingested', 'Tagged', 'Published']
-
-        self.path_object = path_object
-        self.pandas_path = None
-
-        v_layout = QtWidgets.QVBoxLayout()
-        title_layout = QtWidgets.QHBoxLayout()
-
-        self.label = title
-        self.title = QtWidgets.QLabel("<b>%s</b>" % title.title())
-        self.add_button = QtWidgets.QToolButton()
-        self.add_button.setText("Create First Version")
-        self.versions = QtWidgets.QComboBox()
-        self.file_tree = LJFileBrowser(self)
-
-        self.tags_title = QtWidgets.QLabel("<b>Select File(s) or Folder(s) to tag</b>")
-
-        self.shot_radio_button = QtWidgets.QRadioButton('Shots')
-        self.shot_radio_button.setChecked(True)
-        self.asset_radio_button = QtWidgets.QRadioButton('Assets')
-        self.radio_row = QtWidgets.QHBoxLayout()
-
-        self.radio_row.addWidget(self.shot_radio_button)
-        self.radio_row.addWidget(self.asset_radio_button)
-        self.radio_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                     QtWidgets.QSizePolicy.Minimum))
-
-        self.seq_label = QtWidgets.QLabel('Seq ')
-        self.seq_combo = AdvComboBox()
-        self.seq_row = QtWidgets.QHBoxLayout()
-        self.seq_row.addWidget(self.seq_label)
-        self.seq_row.addWidget(self.seq_combo)
-
-        self.shot_label = QtWidgets.QLabel('Shot')
-        self.shot_combo = AdvComboBox()
-        self.seq_row.addWidget(self.shot_label)
-        self.seq_row.addWidget(self.shot_combo)
-
-        self.task_label = QtWidgets.QLabel('Task')
-        self.task_combo = AdvComboBox()
-        self.seq_row.addWidget(self.task_label)
-        self.seq_row.addWidget(self.task_combo)
-
-        self.tags_label = QtWidgets.QLabel("Tags")
-        self.tags_label.setWordWrap(True)
-        self.tags_label.setMaximumWidth(100)
-        self.tags_line_edit = QtWidgets.QLineEdit()
-        self.tags_row = QtWidgets.QHBoxLayout()
-        self.tags_row.addWidget(self.tags_label)
-        self.tags_row.addWidget(self.tags_line_edit)
-
-        # create buttons row
-        self.buttons_row = QtWidgets.QHBoxLayout()
-        self.publish_button = QtWidgets.QPushButton('Publish Tagged')
-        self.publish_button.setEnabled(False)
-        self.buttons_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                        QtWidgets.QSizePolicy.Minimum))
-        self.buttons_row.addWidget(self.publish_button)
-
-
-        title_layout.addWidget(self.title)
-        title_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                        QtWidgets.QSizePolicy.Minimum))
-        title_layout.addWidget(self.versions)
-        title_layout.addWidget(self.add_button)
-        self.setMinimumWidth(widget_width)
-
-        v_layout.addLayout(title_layout)
-        v_layout.addWidget(self.file_tree)
-        v_layout.addWidget(self.tags_title)
-        v_layout.addLayout(self.radio_row)
-        v_layout.addLayout(self.seq_row)
-        v_layout.addLayout(self.tags_row)
-        v_layout.addLayout(self.buttons_row)
-        v_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
-                                               QtWidgets.QSizePolicy.Expanding))
-        self.setLayout(v_layout)
-        self.versions.currentIndexChanged.connect(self.on_version_changed)
-        self.hide_tags()
-
-        self.shot_radio_button.clicked.connect(self.on_radio_clicked)
-        self.asset_radio_button.clicked.connect(self.on_radio_clicked)
-        self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
-        self.file_tree.initialized.connect(self.load_data_frame)
-        self.seq_combo.editTextChanged.connect(self.edit_data_frame)
-        self.shot_combo.editTextChanged.connect(self.edit_data_frame)
-        self.task_combo.editTextChanged.connect(self.edit_data_frame)
-        self.tags_line_edit.textChanged.connect(self.edit_tags)
-        self.publish_button.clicked.connect(self.publish_tagged_assets)
-        self.data_frame = None
-
-    def publish_tagged_assets(self):
-        for index, row in self.data_frame.iterrows():
-            if row['Status'] == 'Tagged':
-                print 'Copying %s to %s' % (row['Filepath'], row['Project Filepath'])
-                if os.path.isfile(row['Project Filepath']):
-                    dir_, file_ = os.path.split(row['Project Filepath'])
-                    if not os.path.exists(row['Project Filepath']):
-                        os.makedirs(dir_)
-                elif os.path.isdir(row['Project Filepath']):
-                    dir_ = os.path.isdir(row['Project Filepath'])
-                path.CreateProductionData(dir_)
-                shutil.copy2(row['Filepath'], row['Project Filepath'])
-                # TODO - I need to create a .txt file in the src directory that describes the action that
-                # produced these files.
-
-    def load_data_frame(self):
-        print 'initializing data frame'
-        self.pandas_path = os.path.join(self.file_tree.directory, 'publish_data.csv')
-        if os.path.exists(self.pandas_path):
-            self.data_frame = pd.read_csv(self.pandas_path, names=["Filepath", "Tags", "Keep Client Naming",
-                                                                   "Seq", "Shot", "Task", "Project Filepath", "Status"])
-        else:
-            data = []
-            # msg = "Generating Pandas DataFrame from folder: %s" % folder
-            # LOG.info(msg)
-            for root, _, files in os.walk(self.file_tree.directory):
-                for filename in files:
-                    fullpath = os.path.join(os.path.abspath(root), filename)
-                    data.append((fullpath, '', True, '', '', '', '', self.io_statuses[0]))
-            self.data_frame = pd.DataFrame(data, columns=["Filepath", "Tags", "Keep Client Naming",
-                                                          "Seq", "Shot", "Task",
-                                                          "Project Filepath", "Status"])
-
-    def edit_tags(self):
-        files = self.file_tree.selected_items
-        tags = self.tags_line_edit.text()
-        if tags:
-            for f in files:
-                f = f.replace('/', '\\')
-                row = self.data_frame.loc[self.data_frame['Filepath'] == f].index[0]
-                self.data_frame.at[row, 'Tags'] = tags
-            self.save_data_frame()
-
-    def edit_data_frame(self):
-        files = self.file_tree.selected_items
-        if self.shot_radio_button.isChecked():
-            scope = 'shots'
-        elif self.asset_radio_button.isChecked():
-            scope = 'assets'
-        if self.seq_combo.currentText():
-            seq = str(self.seq_combo.currentText())
-            if self.shot_combo.currentText():
-                shot = str(self.shot_combo.currentText())
-
-                if self.task_combo.currentText():
-                    try:
-                        task = app_config()['pipeline_steps'][scope][str(self.task_combo.currentText())]
-                        to_object = self.path_object.copy(scope=scope,
-                                                          seq=seq,
-                                                          shot=shot,
-                                                          task=task,
-                                                          context='render',
-                                                          version='000.000',
-                                                          user='publish',
-                                                          resolution='high')
-                        for f in files:
-                            f = f.replace('/', '\\')
-                            row = self.data_frame.loc[self.data_frame['Filepath'] == f].index[0]
-                            to_path = os.path.join(to_object.path_root, os.path.split(f)[-1])
-                            self.data_frame.at[row, 'Seq'] = seq
-                            self.data_frame.at[row, 'Shot'] = shot
-                            self.data_frame.at[row, 'Task'] = task
-                            self.data_frame.at[row, 'Project Filepath'] = to_path
-                            self.data_frame.at[row, 'Status'] = self.io_statuses[1]
-                        self.save_data_frame()
-                    except KeyError:
-                        pass
-
-    def clear_all(self):
-        self.shot_combo.clear()
-        self.seq_combo.clear()
-        self.task_combo.clear()
-        self.tags_line_edit.clear()
-
-    def show_line_edit_info(self, data):
-        self.tags_line_edit.clear()
-        filepath = data[-1].replace('/', '\\')
-        row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
-        tags = self.data_frame.loc[row, 'Tags']
-        if type(tags) != float:
-            if tags:
-                self.tags_line_edit.setText(tags)
-
-    def show_combo_info(self, data):
-        if data:
-            print data
-            filepath = data[-1].replace('/', '\\')
-            row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
-            seq = self.data_frame.loc[row, 'Seq']
-            shot = self.data_frame.loc[row, 'Shot']
-            task = self.data_frame.loc[row, 'Task']
-            status = self.data_frame.loc[row, 'Status']
-            self.publish_button.setEnabled(False)
-            if type(seq) != float:
-                if seq:
-                    seq = '%03d' % int(seq)
-                    self.set_combo_to_text(self.seq_combo, seq)
-            if type(shot) != float:
-                if shot:
-                    shot = '%04d' % int(shot)
-                    self.set_combo_to_text(self.shot_combo, shot)
-            if type(task) != float:
-                if task:
-                    task = app_config()['pipeline_steps']['short_to_long'][task]
-                    self.set_combo_to_text(self.task_combo, task)
-            if type(status) != float:
-                if status == 'Tagged':
-                    self.publish_button.setEnabled(True)
-
-    def set_combo_to_text(self, combo, text):
-        index = combo.findText(text)
-        if index != -1:
-            combo.setCurrentIndex(index)
-        else:
-            combo.addItem(text)
-            self.set_combo_to_text(combo, text)
-
-    def save_data_frame(self):
-        dropped_dupes = self.data_frame.drop_duplicates()
-        dropped_dupes.to_csv(self.pandas_path)
-
-    def on_version_changed(self):
-        self.versions_changed.emit(self.versions.currentText())
-
-    def on_radio_clicked(self):
-        self.clear_all()
-        if self.shot_radio_button.isChecked():
-            self.seq_label.setText('Seq ')
-            self.shot_label.setText('Shot')
-            self.tags_label.setText('Tags')
-        if self.asset_radio_button.isChecked():
-            self.seq_label.setText('Category')
-            self.shot_label.setText('Asset')
-            self.tags_label.setText('Tags        ')
-        self.populate_combos()
-
-    def hide_tags(self):
-        self.tags_title.setText("<b>Select File(s) or Folder(s) to tag</b>")
-        self.asset_radio_button.hide()
-        self.shot_radio_button.hide()
-        self.seq_label.hide()
-        self.seq_combo.hide()
-        self.shot_label.hide()
-        self.shot_combo.hide()
-        self.task_label.hide()
-        self.task_combo.hide()
-        self.tags_label.hide()
-        self.tags_line_edit.hide()
-
-    def show_tags(self, files=[]):
-        if len(files) == 1:
-            files_text = files[0]
-        else:
-            files_text = '%s files' % len(files)
-
-        self.tags_title.setText("<b>Tag %s for Publish</b>" % files_text)
-        self.asset_radio_button.show()
-        self.shot_radio_button.show()
-        self.seq_label.show()
-        self.seq_combo.show()
-        self.shot_label.show()
-        self.shot_combo.show()
-        self.task_label.show()
-        self.task_combo.show()
-        self.tags_label.show()
-        self.tags_line_edit.show()
-
-    def populate_combos(self):
-        ignore = ['default_steps', '']
-        if self.shot_radio_button.isChecked():
-            scope = 'shots'
-        else:
-            scope = 'assets'
-        tasks = app_config()['pipeline_steps'][scope]
-        seqs = self.path_object.copy(seq='*', scope=scope).glob_project_element('seq')
-        task_names = ['']
-        for each in tasks:
-            if each not in ignore:
-                task_names.append(each)
-        self.task_combo.addItems(sorted(task_names))
-        seqs.insert(0, '')
-        self.seq_combo.addItems(seqs)
-
-    def on_seq_changed(self):
-        self.shot_combo.clear()
-        if self.shot_radio_button.isChecked():
-            scope = 'shots'
-        else:
-            scope = 'assets'
-        seq = self.seq_combo.currentText()
-        if seq:
-            this = self.path_object.copy(scope=scope, seq=seq, shot='*')
-            shots = self.path_object.copy(scope=scope, seq=seq, shot='*').glob_project_element('shot')
-            if shots:
-                shots.insert(0, '')
-                self.shot_combo.addItems(shots)
-
-
 class TaskWidget(QtWidgets.QFrame):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
@@ -459,7 +192,7 @@ class TaskWidget(QtWidgets.QFrame):
         # self.versions.setMinimumWidth(200)
         self.versions.hide()
         self.setMinimumWidth(300)
-        self.setMinimumHeight(200)
+        #self.setMinimumHeight(200)
 
         self.users_label = QtWidgets.QLabel("User:")
         self.users = AdvComboBox()
@@ -484,8 +217,8 @@ class TaskWidget(QtWidgets.QFrame):
         # self.add_button.setText("+")
         self.show_button = QtWidgets.QToolButton()
         self.show_button.setText("more")
-        self.assign_button = QtWidgets.QPushButton()
-        self.assign_button.setText("Create Assignment")
+        self.start_task_button = QtWidgets.QPushButton()
+        self.start_task_button.setText("Start Task")
         self.hide_button = QtWidgets.QToolButton()
         self.hide_button.setText("less")
         self.data_table = FileTableWidget(self)
@@ -520,12 +253,16 @@ class TaskWidget(QtWidgets.QFrame):
         # task_row.addWidget(self.assign_button)
         # task_row.addWidget(self.add_button)
 
+        self.empty_state = EmptyStateWidget()
+        self.empty_state.hide()
+
         v_layout.addLayout(task_row)
         # v_layout.addWidget(self.message)
-        v_layout.addWidget(self.assign_button)
+        v_layout.addWidget(self.start_task_button)
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
         v_layout.addWidget(self.data_table, 1)
+        v_layout.addWidget(self.empty_state)
         v_layout.addItem((QtWidgets.QSpacerItem(0, 25, QtWidgets.QSizePolicy.Minimum,
                                                 QtWidgets.QSizePolicy.Minimum)))
         v_layout.addLayout(self.tool_button_layout)
@@ -534,12 +271,12 @@ class TaskWidget(QtWidgets.QFrame):
         self.setLayout(v_layout)
         self.hide_combos()
 
-        self.assign_button.hide()
+        self.start_task_button.hide()
         self.hideall()
         self.show_button.clicked.connect(self.on_show_button_clicked)
         self.hide_button.clicked.connect(self.on_hide_button_clicked)
         # self.add_button.clicked.connect(self.on_add_button_clicked)
-        self.assign_button.clicked.connect(self.on_assign_button_clicked)
+        self.start_task_button.clicked.connect(self.on_start_task_clicked)
         self.open_button.clicked.connect(self.on_open_button_clicked)
         self.new_version_button.clicked.connect(self.on_new_version_clicked)
         self.hide_tool_buttons()
@@ -626,7 +363,13 @@ class TaskWidget(QtWidgets.QFrame):
         self.data_table.show()
 
     def setup(self, mdl):
+        # This is where i add the layout
         self.data_table.set_item_model(mdl)
+        self.empty_state.hide()
+        if not self.data_table.model().rowCount():
+            self.data_table.hide()
+            if not self.start_task_button.isVisible():
+                self.empty_state.show()
         # self.data_table.set_search_box(self.search_box)
 
     def on_new_version_clicked(self):
@@ -648,7 +391,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.hide_button.hide()
         self.show_button.show()
 
-    def on_assign_button_clicked(self):
+    def on_start_task_clicked(self):
         self.assign_clicked.emit(self.path_object)
 
     def set_title(self, new_title):
@@ -667,7 +410,7 @@ class ProjectWidget(QtWidgets.QWidget):
         h_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
-        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
@@ -683,7 +426,7 @@ class ProjectWidget(QtWidgets.QWidget):
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.data_table.setMinimumWidth(220)
+        #self.data_table.setMinimumWidth(220)
         h_layout.addWidget(self.title)
         h_layout.addWidget(self.add_button)
 
@@ -692,7 +435,7 @@ class ProjectWidget(QtWidgets.QWidget):
         v_layout.addWidget(self.search_box)
         v_layout.addWidget(self.data_table, 1)
         # v_layout.setSpacing(10)
-        #v_layout.setContentsMargins(0, 20, 0, 0)  # left, top, right, bottom
+        v_layout.setContentsMargins(0, 20, 0, 0)  # left, top, right, bottom
 
         self.add_button.clicked.connect(self.on_add_button_clicked)
 
@@ -745,11 +488,11 @@ class AssetWidget(QtWidgets.QWidget):
         scope_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
-        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
-        self.title = QtWidgets.QLabel("<h2>Project: %s</h2>" % title)
+        #self.title = QtWidgets.QLabel("<h2>Project: %s</h2>" % title)
         self.scope_title = QtWidgets.QLabel("<b>%s</b>" % 'Assets')
         self.task = None
         self.user = None
@@ -784,7 +527,7 @@ class AssetWidget(QtWidgets.QWidget):
         v_list.addWidget(self.search_box)
         v_list.addWidget(self.data_table, 1)
 
-        self.v_layout.addWidget(self.title)
+        #self.v_layout.addWidget(self.title)
         self.v_layout.addLayout(scope_layout)
         self.v_layout.addWidget(self.message)
         self.v_layout.addLayout(v_list)

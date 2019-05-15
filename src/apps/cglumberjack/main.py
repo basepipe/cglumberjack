@@ -14,20 +14,34 @@ class PathWidget(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         self.back_button = QtWidgets.QToolButton()
         self.back_button.setText('<')
-        self.current_location_label = QtWidgets.QLabel('Current Location')
+        self.project_label = QtWidgets.QLabel('<h2>Choose Project</h2>')
         self.current_location_line_edit = QtWidgets.QLineEdit()
         self.current_location_line_edit.setReadOnly(True)
         #self.import_button = QtWidgets.QPushButton('Import')
 
         self.cl_row = QtWidgets.QHBoxLayout(self)
+        self.cl_row.addWidget(self.project_label)
+        self.cl_row.addItem((QtWidgets.QSpacerItem(20, 0, QtWidgets.QSizePolicy.Minimum,
+                                       QtWidgets.QSizePolicy.Minimum)))
         self.cl_row.addWidget(self.back_button)
-        self.cl_row.addWidget(self.current_location_label)
         self.cl_row.addWidget(self.current_location_line_edit)
+        self.cl_row.addItem((QtWidgets.QSpacerItem(20, 0, QtWidgets.QSizePolicy.MinimumExpanding,
+                                       QtWidgets.QSizePolicy.Minimum)))
         #self.cl_row.addWidget(self.import_button)
         self.back_button.clicked.connect(self.back_button_pressed)
 
     def set_text(self, text):
         self.current_location_line_edit.setText(text.replace('\\', '/'))
+        fm = QtWidgets.QFontMetrics(self.current_location_line_edit.font())
+        self.current_location_line_edit.setFixedWidth(fm.boundingRect(text).width() + 25)
+        if self.current_location_line_edit.text():
+            path_object = PathObject(self.current_location_line_edit.text())
+            if path_object.project:
+                if path_object.project != '*':
+                    self.project_label.setText('<h2>%s</h2>' % path_object.project.title())
+                else:
+                    self.project_label.setText('<h2>Choose Project</h2>')
+
 
     def back_button_pressed(self):
         path_object = PathObject(self.current_location_line_edit.text())
@@ -104,8 +118,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(self.initial_path_object)
 
     def update_location(self, data):
-        if self.panel:
-           self.panel.clear_layout()
+
         path_object = None
         if type(data) == dict:
             self.current_location = data
@@ -116,6 +129,20 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path_widget.set_text(path_object.path_root)
         last = path_object.get_last_attr()
         shot_attrs = ['seq', 'shot', 'type', 'asset']
+        print last
+        if last == 'filename':
+            if self.panel:
+                print 'panel exists'
+                return
+
+        if self.panel:
+            self.panel.clear_layout()
+        if last == 'filename':
+            self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
+                                   user_name=self.user_name, render_layout=None)
+        if last == 'resolution':
+            self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
+                                   user_name=self.user_name, render_layout=None)
         if last == 'company' or last == 'project':
             if path_object.project == '*':
                 self.panel = CompanyPanel(path_object=path_object)
@@ -180,7 +207,7 @@ class CGLumberjack(LJMainWindow):
         self.resize(w, h)
         menu_bar = self.menuBar()
         two_bar = self.menuBar()
-        icon = QtGui.QPixmap(":images/'lumberjack.24px.png").scaled(24, 24)
+        icon = QtGui.QPixmap(":/images/lumberjack.24px.png").scaled(24, 24)
         self.setWindowIcon(icon)
         login = QtWidgets.QAction('Login', self)
         tools_menu = menu_bar.addMenu('&Tools')

@@ -10,7 +10,7 @@ from cglui.widgets.dialog import InputDialog
 from cglcore.path import PathObject, CreateProductionData, start
 from cglcore.path import replace_illegal_filename_characters, show_in_folder, create_project_config
 from asset_ingestor_widget import AssetIngestor
-from widgets import ProjectWidget, AssetWidget, TaskWidget, IOWidget
+from widgets import ProjectWidget, AssetWidget, TaskWidget
 from apps.project_buddy.widgets import LJButton
 
 
@@ -248,7 +248,7 @@ class ProjectPanel(QtWidgets.QWidget):
         self.clear_layout()
         self.assets = AssetWidget(self, title="")
 
-        self.assets.set_title('<b>%s</b>' % self.path_object.project)
+        #self.assets.set_title('<b>%s</b>' % self.path_object.project)
         self.assets.set_scope_title('<b>%s</b>' % self.path_object.scope)
         self.assets.add_button.show()
         self.set_scope_radio()
@@ -516,7 +516,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.current_location = path_object.data
         self.panel = QtWidgets.QVBoxLayout(self)
         self.panel_title = QtWidgets.QHBoxLayout()
-        self.tasks = QtWidgets.QHBoxLayout()
+        self.tasks = QtWidgets.QVBoxLayout()
         self.in_file_tree = None
         self.user_changed_versions = False
         self.user_email = user_email
@@ -559,8 +559,6 @@ class TaskPanel(QtWidgets.QWidget):
             self.panel_title.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
                                                             QtWidgets.QSizePolicy.Minimum))
             for task in task_list:
-                task_radio = QtWidgets.QCheckBox(task)
-                self.panel_title.addWidget(task_radio)
                 if '.' not in task:
                     if task not in self.panel.tasks:
                         # version_location = copy.copy(self.current_location)
@@ -615,7 +613,8 @@ class TaskPanel(QtWidgets.QWidget):
                             task_widget.data_table.hide()
                             task_widget.versions.hide()
                             task_widget.show_button.hide()
-                            task_widget.assign_button.show()
+                            task_widget.start_task_button.show()
+                            task_widget.empty_state.hide()
             self.panel_title.addWidget(task_add)
             self.panel.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
                                                       QtWidgets.QSizePolicy.Expanding)))
@@ -772,27 +771,21 @@ class TaskPanel(QtWidgets.QWidget):
 
     def on_assign_button_clicked(self, data):
         task = self.sender().task
-        dialog = InputDialog(title="Make an %s Assignment" % task,
+        dialog = InputDialog(title="%s Task Ownership" % task,
                              combo_box_items=[self.default_user],
-                             message='Type or Choose the username for assignment',
-                             buttons=['Cancel', 'Assign Task'])
+                             message='Who is Starting this Task?',
+                             buttons=['Cancel', 'Start'])
         dialog.exec_()
-        if dialog.button == 'Assign Task':
-            #self.task = task
-            #self.user = dialog.combo_box.currentText()
-            #self.version = '000.000'
+        if dialog.button == 'Start':
             self.path_object.set_attr(task=task)
             self.path_object.set_attr(user=dialog.combo_box.currentText())
             self.path_object.set_attr(version='000.000')
             self.path_object.set_attr(resolution='high')
-            #self.resolution = 'high'
             self.path_object.set_attr(shot=data.shot)
             self.path_object.set_attr(seq=data.seq)
             self.update_location(self.path_object)
-            print self.current_location
-            print self.path_object.path_root
             CreateProductionData(path_object=self.current_location, project_management=self.project_management)
-        self.on_main_asset_selected(self.current_location)
+        self.on_main_asset_selected(self.path_object)
 
     def show_in_folder(self):
         show_in_folder(self.path_root)
@@ -883,6 +876,7 @@ class TaskPanel(QtWidgets.QWidget):
         return
 
     def load_render_files(self):
+        return
         self.clear_layout(self.render_layout)
         current = PathObject(self.current_location)
         renders = current.copy(context='render', filename='*')
