@@ -105,6 +105,7 @@ class LJFileBrowser(QtWidgets.QTreeView):
         # self.clicked.connect(self.object_selected)
         self.directory = directory
         self.model = None
+        self.filter = ["*.csv"]
         self.selected_items = []
         if self.directory:
             self.populate(self.directory)
@@ -116,6 +117,10 @@ class LJFileBrowser(QtWidgets.QTreeView):
         self.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.customContextMenuRequested.connect(self.right_click_menu)
         self.model = LJFileSystemModel(directory)
+        # TODO - this filters everything BUT my filter, i want to filter ONLY what i've listed.
+        # self.model.setFilter(QDir.AllDirs | QDir.NoDotAndDotDot | QDir.AllEntries)
+        # self.model.setNameFilters(self.filter)
+        # self.model.setNameFilterDisables(0)
         self.directory = directory
         self.model.setRootPath((QtCore.QDir.rootPath()))
         self.setModel(self.model)

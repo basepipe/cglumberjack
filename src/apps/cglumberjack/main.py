@@ -2,6 +2,7 @@ from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
+from import_main import ImportBrowser
 from cglcore.path import PathObject
 from panels import CompanyPanel, ProjectPanel, TaskPanel, IOPanel
 
@@ -113,10 +114,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             path_object = PathObject(data)
         self.path_root = str(path_object.path_root)
         self.path_widget.set_text(path_object.path_root)
-        print '----------Last Attr'
         last = path_object.get_last_attr()
-        print last
-        print '----------end'
         shot_attrs = ['seq', 'shot', 'type', 'asset']
         if last == 'company' or last == 'project':
             if path_object.project == '*':
@@ -205,6 +203,8 @@ class CGLumberjack(LJMainWindow):
 
     def on_import_clicked(self):
         print 'Opening the Import Dialog'
+        import_dialog = ImportBrowser()
+        import_dialog.exec_()
 
     def load_user_config(self):
         user_config = UserConfig()
