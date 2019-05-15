@@ -684,8 +684,6 @@ class ProjectWidget(QtWidgets.QWidget):
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.data_table.setMinimumWidth(220)
-
-        # this is where the filter needs to be!
         h_layout.addWidget(self.title)
         h_layout.addWidget(self.add_button)
 
@@ -694,7 +692,7 @@ class ProjectWidget(QtWidgets.QWidget):
         v_layout.addWidget(self.search_box)
         v_layout.addWidget(self.data_table, 1)
         # v_layout.setSpacing(10)
-        v_layout.setContentsMargins(0, 20, 0, 0)  # left, top, right, bottom
+        #v_layout.setContentsMargins(0, 20, 0, 0)  # left, top, right, bottom
 
         self.add_button.clicked.connect(self.on_add_button_clicked)
 
@@ -759,7 +757,7 @@ class AssetWidget(QtWidgets.QWidget):
 
         self.message = QtWidgets.QLabel("")
         self.message.setMinimumWidth(minWidth)
-        # doesn't work on mac - self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.search_box = LJSearchEdit(self)
         self.add_button = QtWidgets.QToolButton()
@@ -772,44 +770,21 @@ class AssetWidget(QtWidgets.QWidget):
         # build the filter optoins row
         self.assets_radio = QtWidgets.QRadioButton('Assets')
         self.shots_radio = QtWidgets.QRadioButton('Shots')
-        self.io_radio = QtWidgets.QRadioButton('IO')
         self.radio_group_scope = QtWidgets.QButtonGroup(self)
-
-        self.radio_layout = QtWidgets.QHBoxLayout()
-        # create a button group for these radio buttons
-        self.radio_group2 = QtWidgets.QButtonGroup(self)
-        self.radio_user = QtWidgets.QRadioButton('My Assignments')
-        self.radio_everything = QtWidgets.QRadioButton('Everything')
-        self.radio_publishes = QtWidgets.QRadioButton('Publishes')
-        self.radio_group2.addButton(self.radio_user)
-        self.radio_group2.addButton(self.radio_everything)
-        self.radio_group2.addButton(self.radio_publishes)
-        self.radio_group_scope.addButton(self.io_radio)
         self.radio_group_scope.addButton(self.shots_radio)
         self.radio_group_scope.addButton(self.assets_radio)
-        # self.radio_layout.addWidget(self.title)
-        self.radio_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
-        self.radio_layout.addWidget(self.radio_everything)
-        self.radio_layout.addWidget(self.radio_user)
-        self.radio_layout.addWidget(self.radio_publishes)
 
-        # this is where the filter needs to be!
         scope_layout.addWidget(self.scope_title)
         scope_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
-        scope_layout.addWidget(self.io_radio)
         scope_layout.addWidget(self.shots_radio)
         scope_layout.addWidget(self.assets_radio)
         scope_layout.addWidget(self.add_button)
 
-        #v_list.setSpacing(2)
         v_list.addItem(QtWidgets.QSpacerItem(0, 3, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
         v_list.addWidget(self.search_box)
         v_list.addWidget(self.data_table, 1)
 
         self.v_layout.addWidget(self.title)
-        self.v_layout.addItem(QtWidgets.QSpacerItem(0, 4, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
-        self.v_layout.addLayout(self.radio_layout)
-        self.v_layout.addItem(QtWidgets.QSpacerItem(0, 8, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
         self.v_layout.addLayout(scope_layout)
         self.v_layout.addWidget(self.message)
         self.v_layout.addLayout(v_list)
@@ -822,8 +797,6 @@ class AssetWidget(QtWidgets.QWidget):
             return 'Category'
         elif self.scope == 'shots':
             return 'Sequence'
-        elif self.scope == 'IO':
-            return 'IO'
 
     def setup(self, mdl):
         self.data_table.set_item_model(mdl)

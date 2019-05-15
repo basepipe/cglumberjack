@@ -167,6 +167,8 @@ class CompanyPanel(QtWidgets.QWidget):
                 self.path_root = path_obj.path_root
                 self.path = path_obj.path
                 # self.current_location_line_edit.setText(self.path_root)
+            if self.current_location['project']:
+                self.current_location['scope'] = 'assets'
             self.location_changed.emit(self.current_location)
             return self.path_root
 
@@ -241,37 +243,21 @@ class ProjectPanel(QtWidgets.QWidget):
         self.panel = QtWidgets.QVBoxLayout(self)
         self.assets = None
         self.assets_filter_default = filter
-        # self.panel.setContentsMargins(10, 0, 10, 0)
         self.root = app_config()['paths']['root']
         self.radio_filter = 'Everything'
         self.clear_layout()
         self.assets = AssetWidget(self, title="")
-        if not self.radio_filter:
-            self.assets.radio_everything.setChecked(True)
-        elif self.radio_filter == 'Everything':
-            self.assets.radio_everything.setChecked(True)
-        elif self.radio_filter == 'My Assignments':
-            self.assets.radio_user.setChecked(True)
-        elif self.radio_filter == 'Publishes':
-            self.assets.radio_publishes.setChecked(True)
 
         self.assets.set_title('<b>%s</b>' % self.path_object.project)
         self.assets.set_scope_title('<b>%s</b>' % self.path_object.scope)
         self.assets.add_button.show()
         self.set_scope_radio()
-
-        # update location and display the resulting assets.
-        #self.update_location()
         self.panel.addWidget(self.assets)
-
         self.load_assets()
         self.assets.data_table.selected.connect(self.on_main_asset_selected)
         self.assets.shots_radio.clicked.connect(self.on_filter_radio_changed)
         self.assets.assets_radio.clicked.connect(self.on_filter_radio_changed)
-        self.assets.io_radio.clicked.connect(self.on_filter_radio_changed)
-        self.assets.radio_publishes.clicked.connect(self.on_user_radio_changed)
-        self.assets.radio_everything.clicked.connect(self.on_user_radio_changed)
-        self.assets.radio_user.clicked.connect(self.on_user_radio_changed)
+
 
     def load_assets(self):
         red_palette = QtGui.QPalette()
@@ -285,48 +271,37 @@ class ProjectPanel(QtWidgets.QWidget):
             self.assets.data_table.show()
             self.assets.search_box.show()
             self.assets.message.hide()
-            self.assets.radio_publishes.show()
-            self.assets.radio_everything.show()
-            self.assets.radio_user.show()
+            #self.assets.radio_publishes.show()
+            #self.assets.radio_everything.show()
+            #self.assets.radio_user.show()
             self.assets.scope_title.show()
             self.assets.message.setText('')
             for each in items:
                 obj_ = PathObject(str(each))
                 d = obj_.data
-                if d['scope'] != 'IO':
-                    shot_name = '%s_%s' % (d['seq'], d['shot'])
-                else:
-                    shot_name = d['input_company']
+                shot_name = '%s_%s' % (d['seq'], d['shot'])
                 if shot_name not in temp_:
                     temp_.append(shot_name)
                     if d['scope'] == 'assets':
                         data.append([d['seq'], d['shot'], each, '', ''])
                     elif d['scope'] == 'shots':
                         data.append([d['seq'], shot_name, each, '', ''])
-                    elif d['scope'] == 'IO':
-                        data.append(['', shot_name, each, '', ''])
             if d['scope'] == 'assets':
                 self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status']))
                 self.assets.data_table.hideColumn(0)
             elif d['scope'] == 'shots':
                 self.assets.setup(ListItemModel(data, ['Seq', 'Shot', 'Path', 'Due Date', 'Status']))
                 self.assets.data_table.hideColumn(0)
-            elif d['scope'] == 'IO':
-                self.assets.setup(ListItemModel(data, ['Seq', 'Company', 'Path', 'Latest Ingest', 'Status']))
-                self.assets.data_table.hideColumn(0)
-                self.assets.data_table.hideColumn(3)
-                self.assets.data_table.hideColumn(4)
             self.assets.data_table.hideColumn(2)
             self.assets.data_table.set_draggable(True)
             self.assets.data_table.dropped.connect(self.on_file_dragged_to_assets)
         else:
+            print 'items is %s' % items
             self.assets.scope_title.hide()
             self.assets.data_table.hide()
             self.assets.search_box.hide()
-            self.assets.radio_publishes.hide()
-            self.assets.radio_everything.hide()
-            self.assets.radio_user.hide()
-            self.assets.message.setText('No %s Found! \nClick + button to create %s' % (self.scope.title(), self.scope))
+            self.assets.message.setText('No %s Found! \nClick + button to create %s' % (self.path_object.scope.title(),
+                                                                                        self.path_object.scope))
             self.assets.message.setPalette(red_palette)
             self.assets.message.show()
 
@@ -347,13 +322,12 @@ class ProjectPanel(QtWidgets.QWidget):
             self.assets.assets_radio.setChecked(True)
         elif self.path_object.scope == 'shots':
             self.assets.shots_radio.setChecked(True)
-        elif self.path_object.scope == 'IO':
-            self.assets.io_radio.setChecked(True)
         elif self.path_object.scope == '':
-            self.scope = 'assets'
+            self.path_object.scope.set_attr(scope='assets')
             self.assets.assets_radio.setChecked(True)
 
     def on_create_asset(self, set_vars=False):
+        """
         if self.current_location['scope'] == 'IO':
             dialog = InputDialog(self, title='Create Input Company', message='Enter the CLIENT or name of VENDOR',
                                  combo_box_items=['CLIENT'])
@@ -363,14 +337,15 @@ class ProjectPanel(QtWidgets.QWidget):
             if input_company_location.endswith(dialog.combo_box.currentText()):
                 CreateProductionData(self.current_location, json=False)
         else:
-            import asset_creator
-            if 'asset' in self.current_location:
-                task_mode = True
-            else:
-                task_mode = False
-            dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
-            dialog.exec_()
-            self.on_project_changed(self.current_location['project'])
+        """
+        import asset_creator
+        if self.path_object.scope == 'assets':
+            task_mode = True
+        else:
+            task_mode = False
+        dialog = asset_creator.AssetCreator(self, path_dict=self.path_object.data, task_mode=task_mode)
+        dialog.exec_()
+        self.update_location()
 
     def on_file_dragged_to_assets(self, data):
         dialog = AssetIngestor(self, path_dict=self.current_location, current_user=self.user_default)
@@ -383,9 +358,6 @@ class ProjectPanel(QtWidgets.QWidget):
             self.path_object.set_attr(scope='assets')
         elif self.sender().text() == 'Shots':
             self.path_object.set_attr(scope='shots')
-        elif self.sender().text() == 'IO':
-            self.path_object.set_attr(scope='IO')
-            self.path_object.set_attr(input_company='*')
         self.assets.set_scope_title(self.path_object.scope)
         self.update_location(self.path_object)
 
@@ -940,14 +912,6 @@ class TaskPanel(QtWidgets.QWidget):
                 child.widget().deleteLater()
             elif child.layout() is not None:
                 self.clear_layout(child.layout())
-
-
-class IngestPanel(QtWidgets.QVBoxLayout):
-    location_changed = QtCore.Signal(object)
-
-    def __init__(self, parent):
-        QtWidgets.QWidget.__init__(self, parent)
-        pass
 
 
 def prep_list_for_table(list_, path_filter=None, split_for_file=False):

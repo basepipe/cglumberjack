@@ -101,6 +101,8 @@ class LJFileBrowser(QtWidgets.QTreeView):
     def __init__(self, parent=None, directory=None):
         QtWidgets.QTreeView.__init__(self, parent)
         self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                QtWidgets.QSizePolicy.MinimumExpanding)
         # self.clicked.connect(self.object_selected)
         self.directory = directory
         self.model = None

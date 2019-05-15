@@ -215,6 +215,8 @@ class PathObject(object):
             self.set_attr(scope=path_parts[3].lower())
         self.get_template()
         self.data = {}
+        print '000000000'
+        print self.template
         for i, attr in enumerate(self.template):
             if attr:
                 attr = attr.replace('{', '').replace('}', '')

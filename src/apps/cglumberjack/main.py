@@ -16,10 +16,13 @@ class PathWidget(QtWidgets.QWidget):
         self.current_location_label = QtWidgets.QLabel('Current Location')
         self.current_location_line_edit = QtWidgets.QLineEdit()
         self.current_location_line_edit.setReadOnly(True)
+        #self.import_button = QtWidgets.QPushButton('Import')
+
         self.cl_row = QtWidgets.QHBoxLayout(self)
         self.cl_row.addWidget(self.back_button)
         self.cl_row.addWidget(self.current_location_label)
         self.cl_row.addWidget(self.current_location_line_edit)
+        #self.cl_row.addWidget(self.import_button)
         self.back_button.clicked.connect(self.back_button_pressed)
 
     def set_text(self, text):
@@ -183,8 +186,8 @@ class CGLumberjack(LJMainWindow):
         self.setWindowIcon(icon)
         login = QtWidgets.QAction('Login', self)
         tools_menu = menu_bar.addMenu('&Tools')
-        kanban_view = QtWidgets.QAction('Kanban View', self)
-        self.kanban_menu = two_bar.addAction(kanban_view)
+        import_tool = QtWidgets.QAction('Import Files', self)
+        self.import_tool = two_bar.addAction(import_tool)
         self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
         settings.setShortcut('Ctrl+,')
@@ -198,10 +201,10 @@ class CGLumberjack(LJMainWindow):
         settings.triggered.connect(self.on_settings_clicked)
         shelves.triggered.connect(self.on_shelves_clicked)
         login.triggered.connect(self.on_login_clicked)
-        kanban_view.triggered.connect(self.on_kanban_clicked)
+        import_tool.triggered.connect(self.on_import_clicked)
 
-    def on_kanban_clicked(self):
-        print 'Opening up the Kanban View and closing this one'
+    def on_import_clicked(self):
+        print 'Opening the Import Dialog'
 
     def load_user_config(self):
         user_config = UserConfig()
