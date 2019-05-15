@@ -92,7 +92,6 @@ class ImportBrowser(LJDialog):
         # create buttons row
         self.buttons_row = QtWidgets.QHBoxLayout()
         self.publish_button = QtWidgets.QPushButton('Publish Tagged')
-        self.publish_button.setEnabled(False)
         self.buttons_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
                                                        QtWidgets.QSizePolicy.Minimum))
         self.buttons_row.addWidget(self.publish_button)
@@ -125,6 +124,7 @@ class ImportBrowser(LJDialog):
         self.tags_line_edit.textChanged.connect(self.edit_tags)
         self.company_widget.list.clicked.connect(self.on_company_changed)
         self.import_events.list.clicked.connect(self.on_event_selected)
+        self.publish_button.clicked.connect(self.publish_tagged_assets)
 
     def load_companies(self):
         self.company_widget.list.clear()
@@ -252,7 +252,6 @@ class ImportBrowser(LJDialog):
             shot = self.data_frame.loc[row, 'Shot']
             task = self.data_frame.loc[row, 'Task']
             status = self.data_frame.loc[row, 'Status']
-            self.publish_button.setEnabled(False)
             if type(seq) != float:
                 if seq:
                     seq = '%03d' % int(seq)
@@ -265,9 +264,6 @@ class ImportBrowser(LJDialog):
                 if task:
                     task = app_config()['pipeline_steps']['short_to_long'][task]
                     self.set_combo_to_text(self.task_combo, task)
-            if type(status) != float:
-                if status == 'Tagged':
-                    self.publish_button.setEnabled(True)
 
     def on_radio_clicked(self):
         self.clear_all()
@@ -369,19 +365,26 @@ class ImportBrowser(LJDialog):
         self.populate_tree()
 
     def publish_tagged_assets(self):
+        # TODO - We need to be changing status to 'Published' on this.
+        # TODO - I need to create a .txt file in the src directory detailing this publish
         for index, row in self.data_frame.iterrows():
             if row['Status'] == 'Tagged':
-                print 'Copying %s to %s' % (row['Filepath'], row['Project Filepath'])
-                if os.path.isfile(row['Project Filepath']):
-                    dir_, file_ = os.path.split(row['Project Filepath'])
-                    if not os.path.exists(row['Project Filepath']):
-                        os.makedirs(dir_)
-                elif os.path.isdir(row['Project Filepath']):
-                    dir_ = os.path.isdir(row['Project Filepath'])
-                CreateProductionData(dir_)
-                shutil.copy2(row['Filepath'], row['Project Filepath'])
-                # TODO - I need to create a .txt file in the src directory that describes the action that
-                # produced these files.
+                from_file = row['Filepath']
+                to_file = row['Project Filepath']
+                if os.path.splitext(to_file)[-1]:
+                    dir_ = os.path.dirname(to_file)
+                else:
+                    dir_ = to_file
+                if not os.path.exists(dir_):
+                    print 'Making Dirs: %s' % dir_
+                    os.makedirs(dir_)
+                if not os.path.exists(to_file):
+                    print 'Copying %s to %s' % (from_file, to_file)
+                    CreateProductionData(to_file)
+                    shutil.copy2(from_file, to_file)
+                row['Status'] = 'Published'
+        self.save_data_frame()
+        self.populate_tree()
 
 
 if __name__ == "__main__":

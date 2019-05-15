@@ -189,9 +189,9 @@ class LJFileBrowser(QtWidgets.QTreeView):
 
 
 class LJFileSystemModel(QtWidgets.QFileSystemModel):
-    def __init__(self, dir):
+    def __init__(self, dir_):
         QtWidgets.QFileSystemModel.__init__(self)
-        self.dir = dir
+        self.dir = dir_
         pandas_file = os.path.join(self.dir, 'publish_data.csv')
         self.df = None
         self.df_exists = False
@@ -220,7 +220,5 @@ class LJFileSystemModel(QtWidgets.QFileSystemModel):
                     return self.df.loc[row, 'Project Filepath']
                 except IndexError:
                     pass
-
-
         return super(LJFileSystemModel, self).data(i, role)
 
