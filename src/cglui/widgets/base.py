@@ -1,5 +1,6 @@
 import os
 import shutil
+import pandas as pd
 from Qt import QtWidgets, QtCore, QtGui
 from cglui.util import UISettings, widget_name
 from cglcore.util import app_name
@@ -114,10 +115,9 @@ class LJFileBrowser(QtWidgets.QTreeView):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.customContextMenuRequested.connect(self.right_click_menu)
-        self.model = LJFileSystemModel()
+        self.model = LJFileSystemModel(directory)
         self.directory = directory
         self.model.setRootPath((QtCore.QDir.rootPath()))
-        self.model.find_status()
         self.setModel(self.model)
         self.setRootIndex(self.model.index(directory))
         self.setSortingEnabled(True)
@@ -189,19 +189,38 @@ class LJFileBrowser(QtWidgets.QTreeView):
 
 
 class LJFileSystemModel(QtWidgets.QFileSystemModel):
+    def __init__(self, dir):
+        QtWidgets.QFileSystemModel.__init__(self)
+        self.dir = dir
+        pandas_file = os.path.join(self.dir, 'publish_data.csv')
+        self.df = None
+        self.df_exists = False
+        if os.path.exists(pandas_file):
+            self.df = pd.read_csv(pandas_file, names=["Filepath", "Tags", "Keep Client Naming",
+                                                      "Seq", "Shot", "Task", "Project Filepath", "Status"])
+            self.df_exists = True
 
     def columnCount(self, parent = QtCore.QModelIndex()):
-        return super(LJFileSystemModel, self).columnCount()+1
+        return super(LJFileSystemModel, self).columnCount()+2
 
-    def find_status(self):
-        print 'root path', self.rootDirectory()
-
-    def data(self, index, role):
-        if index.column() == self.columnCount() - 1:
+    def data(self, i, role):
+        if i.column() == self.columnCount()-2:
             if role == QtCore.Qt.DisplayRole:
-                return "Status"
+                try:
+                    row = self.df.loc[self.df['Filepath'] == self.filePath(i).replace('/', '\\')].index[0]
+                    return self.df.loc[row, 'Status']
+                except IndexError:
+                    pass
             if role == QtCore.Qt.TextAlignmentRole:
                 return QtCore.Qt.AlignHCenter
+        if i.column() == self.columnCount()-1:
+            if role == QtCore.Qt.DisplayRole:
+                try:
+                    row = self.df.loc[self.df['Filepath'] == self.filePath(i).replace('/', '\\')].index[0]
+                    return self.df.loc[row, 'Project Filepath']
+                except IndexError:
+                    pass
 
-        return super(LJFileSystemModel, self).data(index, role)
+
+        return super(LJFileSystemModel, self).data(i, role)
 

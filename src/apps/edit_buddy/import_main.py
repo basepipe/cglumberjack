@@ -361,7 +361,6 @@ class ImportBrowser(LJDialog):
         return
         path_object.set_attr(version=version)
         print path_object.path_root
-        return
         if not os.path.exists(path_object.path_root):
             print 'Creating Version at: %s' % path_object.path_root
             os.makedirs(path_object.path_root)
