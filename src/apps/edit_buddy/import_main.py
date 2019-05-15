@@ -116,6 +116,7 @@ class ImportBrowser(LJDialog):
         self.asset_radio_button.clicked.connect(self.on_radio_clicked)
         self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
         self.file_tree.initialized.connect(self.load_data_frame)
+        self.file_tree.clicked.connect(self.show_tags)
         self.seq_combo.editTextChanged.connect(self.edit_data_frame)
         self.shot_combo.editTextChanged.connect(self.edit_data_frame)
         self.task_combo.editTextChanged.connect(self.edit_data_frame)
@@ -151,7 +152,6 @@ class ImportBrowser(LJDialog):
 
     def populate_tree(self):
         self.file_tree.populate(directory=self.path_object.path_root)
-        self.load_data_frame()
 
     def load_data_frame(self):
         self.pandas_path = os.path.join(self.file_tree.directory, 'publish_data.csv')
