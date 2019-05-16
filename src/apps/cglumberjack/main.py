@@ -247,7 +247,8 @@ class CGLumberjack(LJMainWindow):
 
     def on_import_clicked(self):
         print 'Opening the Import Dialog'
-        import_dialog = ImportBrowser()
+        text = self.centralWidget().path_widget.current_location_line_edit.text()
+        import_dialog = ImportBrowser(path_object=PathObject(text))
         import_dialog.exec_()
 
     def load_user_config(self):

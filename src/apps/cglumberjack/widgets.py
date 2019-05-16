@@ -125,48 +125,6 @@ class FileTable(LJTableWidget):
             e.ignore()
 
 
-class AssetWidget(QtWidgets.QWidget):
-    button_clicked = QtCore.Signal(object)
-    filter_changed = QtCore.Signal()
-
-    def __init__(self, parent, title, filter_string=None):
-        QtWidgets.QWidget.__init__(self, parent)
-        v_layout = QtWidgets.QVBoxLayout(self)
-        h_layout = QtWidgets.QHBoxLayout(self)
-        self.filter_string = filter_string
-        self.label = title
-        self.title = QtWidgets.QLabel("<b>%s</b>" % title)
-        self.message = QtWidgets.QLabel("")
-        self.search_box = LJSearchEdit(self)
-        self.button = QtWidgets.QToolButton()
-        self.button.setText("+")
-        self.data_table = LJTableWidget(self)
-        self.data_table.setMinimumHeight(200)
-
-        # this is where the filter needs to be!
-        h_layout.addWidget(self.title)
-        h_layout.addWidget(self.search_box)
-        h_layout.addWidget(self.button)
-
-        v_layout.addLayout(h_layout)
-        v_layout.addWidget(self.message)
-        v_layout.addWidget(self.data_table, 1)
-
-        self.message.hide()
-        self.button.clicked.connect(self.on_button_clicked)
-
-    def setup(self, mdl):
-        self.data_table.set_item_model(mdl)
-        self.data_table.set_search_box(self.search_box)
-
-    def on_button_clicked(self):
-        data = {'title': self.label}
-        self.button_clicked.emit(data)
-
-    def set_title(self, new_title):
-        self.title.setText('<b>%s</b>' % new_title.title())
-
-
 class TaskWidget(QtWidgets.QFrame):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
@@ -495,7 +453,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.filter_string = filter_string
         self.label = title
         #self.title = QtWidgets.QLabel("<h2>Project: %s</h2>" % title)
-        self.scope_title = QtWidgets.QLabel("<b>%s</b>" % 'Assets')
+        #self.scope_title = QtWidgets.QLabel("<b>%s</b>" % 'Assets')
         self.task = None
         self.user = None
         minWidth = 340
@@ -519,10 +477,10 @@ class AssetWidget(QtWidgets.QWidget):
         self.radio_group_scope.addButton(self.shots_radio)
         self.radio_group_scope.addButton(self.assets_radio)
 
-        scope_layout.addWidget(self.scope_title)
-        scope_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        #scope_layout.addWidget(self.scope_title)
         scope_layout.addWidget(self.shots_radio)
         scope_layout.addWidget(self.assets_radio)
+        scope_layout.addStretch(1)
         scope_layout.addWidget(self.add_button)
 
         v_list.addItem(QtWidgets.QSpacerItem(0, 3, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
@@ -566,8 +524,8 @@ class AssetWidget(QtWidgets.QWidget):
     def set_title(self, new_title):
         self.title.setText('<h2>Project:  %s</h2>' % new_title.title())
 
-    def set_scope_title(self, new_title):
-        self.scope_title.setText('<b>%s</b>' % new_title.title())
+    #def set_scope_title(self, new_title):
+    #    self.scope_title.setText('<b>%s</b>' % new_title.title())
 
 
 class FileTableWidget(LJTableWidget):

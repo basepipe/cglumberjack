@@ -87,7 +87,11 @@ class ImportBrowser(LJDialog):
         self.company = None
         self.project = None
         self.data_frame = None
-        self.path_object = PathObject(r'D:\cgl-fsutests\source\test5\IO')
+        if path_object:
+            self.path_object = path_object
+        else:
+            print 'No Path Object found, exiting'
+            return
         self.path_object.set_attr(scope='IO')
         self.path_object.set_attr(input_company='*')
         self.data_frame = None

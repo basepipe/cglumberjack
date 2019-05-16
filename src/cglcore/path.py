@@ -351,7 +351,11 @@ class PathObject(object):
                     self.__dict__['filename_base'] = base
                     self.data['filename_base'] = base
             elif attr == 'version':
-                major, minor = value.split('.')
+                if value and value is not '*':
+                    major, minor = value.split('.')
+                else:
+                    major = '000'
+                    minor = '000'
                 self.__dict__['major_version'] = major
                 self.data['major_version'] = major
                 self.__dict__['minor_version'] = minor

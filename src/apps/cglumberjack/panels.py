@@ -249,7 +249,7 @@ class ProjectPanel(QtWidgets.QWidget):
         self.assets = AssetWidget(self, title="")
 
         #self.assets.set_title('<b>%s</b>' % self.path_object.project)
-        self.assets.set_scope_title('<b>%s</b>' % self.path_object.scope)
+        #self.assets.set_scope_title('<b>%s</b>' % self.path_object.scope)
         self.assets.add_button.show()
         self.set_scope_radio()
         self.panel.addWidget(self.assets)
@@ -257,7 +257,6 @@ class ProjectPanel(QtWidgets.QWidget):
         self.assets.data_table.selected.connect(self.on_main_asset_selected)
         self.assets.shots_radio.clicked.connect(self.on_filter_radio_changed)
         self.assets.assets_radio.clicked.connect(self.on_filter_radio_changed)
-
 
     def load_assets(self):
         red_palette = QtGui.QPalette()
@@ -271,10 +270,6 @@ class ProjectPanel(QtWidgets.QWidget):
             self.assets.data_table.show()
             self.assets.search_box.show()
             self.assets.message.hide()
-            #self.assets.radio_publishes.show()
-            #self.assets.radio_everything.show()
-            #self.assets.radio_user.show()
-            self.assets.scope_title.show()
             self.assets.message.setText('')
             for each in items:
                 obj_ = PathObject(str(each))
@@ -297,7 +292,6 @@ class ProjectPanel(QtWidgets.QWidget):
             self.assets.data_table.dropped.connect(self.on_file_dragged_to_assets)
         else:
             print 'items is %s' % items
-            self.assets.scope_title.hide()
             self.assets.data_table.hide()
             self.assets.search_box.hide()
             self.assets.message.setText('No %s Found! \nClick + button to create %s' % (self.path_object.scope.title(),
@@ -358,7 +352,7 @@ class ProjectPanel(QtWidgets.QWidget):
             self.path_object.set_attr(scope='assets')
         elif self.sender().text() == 'Shots':
             self.path_object.set_attr(scope='shots')
-        self.assets.set_scope_title(self.path_object.scope)
+        # self.assets.set_scope_title(self.path_object.scope)
         self.update_location(self.path_object)
 
     def on_user_radio_changed(self):
