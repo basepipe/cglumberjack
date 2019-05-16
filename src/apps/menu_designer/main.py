@@ -259,7 +259,6 @@ class MenuDesigner(LJDialog):
                           oldcom.encode('utf-8'))
             if m:
                 button_file = os.path.join(self.company_config_dir, 'cgl_tools', m.group(1), self.current_type, m.group(2), "%s.py" % m.group(3))
-                print 0, button_file
                 os.remove(button_file)
 
             if oldname is not newname:

@@ -40,6 +40,31 @@ class LabelComboRow(QtWidgets.QVBoxLayout):
         self.combo.show()
 
 
+class LJListWidget(QtWidgets.QWidget):
+    def __init__(self, label):
+        QtWidgets.QWidget.__init__(self)
+        layout = QtWidgets.QVBoxLayout(self)
+        self.label = QtWidgets.QLabel("<b>%s</b>" % label)
+        self.add_button = QtWidgets.QToolButton()
+        self.add_button.setText('+')
+        self.h_layout = QtWidgets.QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.h_layout.addWidget(self.label)
+        self.h_layout.addWidget(self.add_button)
+        self.list = QtWidgets.QListWidget()
+        self.list.setMaximumHeight(80)
+        layout.addLayout(self.h_layout)
+        layout.addWidget(self.list)
+
+    def hide(self):
+        self.label.hide()
+        self.combo.hide()
+
+    def show(self):
+        self.label.show()
+        self.combo.show()
+
+
 class FunctionButtons(QtWidgets.QHBoxLayout):
     def __init__(self):
         QtWidgets.QHBoxLayout.__init__(self)

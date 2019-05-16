@@ -77,6 +77,8 @@ class PathObject(object):
         self.priority = None
         self.input_company = '*'
 
+        if type(path_object) is unicode:
+            path_object = str(path_object)
         if type(path_object) is dict:
             self.process_dict(path_object)
         elif type(path_object) is str:
@@ -88,11 +90,11 @@ class PathObject(object):
 
     def set_status(self):
         if not self.status:
-            if self.version == '000.0000':
+            if self.version == '000.000':
                 self.status = 'assigned'
             if self.user == 'publish':
                 self.status = 'published'
-            if self.minor_version != '000.0000':
+            if self.minor_version != '000.000':
                 self.status = 'in progress'
         if not self.assigned:
             self.assigned = self.user
@@ -130,6 +132,14 @@ class PathObject(object):
             self.set_attr(major_version=major_version.replace('.', ''))
             self.set_attr(minor_version=minor_version.replace('.', ''))
         self.set_shotname()
+
+    def get_last_attr(self):
+        self.get_template()
+        for t in self.template:
+            if t in self.data:
+                if self.data[t]:
+                    current_ = t
+        return current_
 
     def get_template(self):
         self.template = []
@@ -235,8 +245,7 @@ class PathObject(object):
             major_version, minor_version = self.version.split('.')
             self.set_attr(major_version=major_version.replace('.', ''))
             self.set_attr(minor_version=minor_version.replace('.', ''))
-        if self.shot:
-            self.set_shotname()
+        self.set_shotname()
 
     def set_path(self, root=False):
         self.get_template()
@@ -289,33 +298,33 @@ class PathObject(object):
                 self.__dict__[attr] = value
                 self.data[attr] = value
             else:
-                if value:
-                    if value == 'io':
-                        value = value.upper()
-                    if attr == 'scope':
-                        if value not in self.scope_list:
-                            logging.error('%s not found in %s' % (value, self.scope_list))
-                            return
-                        else:
-                            self.__dict__[attr] = value
-                            self.data[attr] = value
-                    elif attr == 'context':
-                        if value not in self.context_list:
-                            logging.error('%s not found in %s' % (value, self.context_list))
-                            return
-                        else:
-                            self.__dict__[attr] = value
-                            self.data[attr] = value
+                # if value:
+                if value == 'io':
+                    value = value.upper()
+                if attr == 'scope':
+                    if value not in self.scope_list:
+                        logging.error('%s not found in %s' % (value, self.scope_list))
+                        return
                     else:
-                        if regex:
-                            try:
-                                if not re.match(regex, value):
-                                    logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
-                                    # return
-                            except TypeError:
-                                pass
                         self.__dict__[attr] = value
                         self.data[attr] = value
+                elif attr == 'context':
+                    if value not in self.context_list:
+                        logging.error('%s not found in %s' % (value, self.context_list))
+                        return
+                    else:
+                        self.__dict__[attr] = value
+                        self.data[attr] = value
+                else:
+                    #if regex:
+                    #    try:
+                    #        if not re.match(regex, value):
+                    #            logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
+                    #            # return
+                    #    except TypeError:
+                    #        pass
+                    self.__dict__[attr] = value
+                    self.data[attr] = value
             if attr == 'shot':
                 self.__dict__['asset'] = value
                 self.data['asset'] = value
@@ -332,7 +341,21 @@ class PathObject(object):
                 if self.filename:
                     base, ext = os.path.splitext(self.filename)
                     self.filename = '%s.%s' % (base, self.ext)
-
+            elif attr == 'filename':
+                if value:
+                    self.__dict__['filename'] = value
+                    self.data['filename'] = value
+                    base, ext = os.path.splitext(value)
+                    self.__dict__['ext'] = ext.replace('.', '')
+                    self.data['ext'] = ext.replace('.', '')
+                    self.__dict__['filename_base'] = base
+                    self.data['filename_base'] = base
+            elif attr == 'version':
+                major, minor = value.split('.')
+                self.__dict__['major_version'] = major
+                self.data['major_version'] = major
+                self.__dict__['minor_version'] = minor
+                self.data['minor_version'] = minor
         self.set_path()
 
     def glob_project_element(self, attr, full_path=False):
@@ -346,6 +369,7 @@ class PathObject(object):
         :return: returns list of items, or paths.
         """
         # this does not account for duplicate values - need a system that does.
+        # TODO this does not account for templates
         try:
             value = self.data[attr]
             if value:
@@ -368,7 +392,7 @@ class PathObject(object):
         :return:
         """
         value = self.data[attr]
-        return os.path.join(self.path_root.split(value)[0], value)
+        return os.path.join(self.path_root.split(value)[0], value).replace('\\', '/')
 
     def glob_multiple_project_elements(self, full_path=False, split_at=None, elements=[]):
         """
@@ -439,6 +463,7 @@ class PathObject(object):
         new_obj = copy.deepcopy(self)
         if new_obj.user:
             latest_version = new_obj.glob_project_element('version')
+            print latest_version
             if latest_version:
                 new_obj.set_attr(version=latest_version[-1])
                 return new_obj
@@ -460,13 +485,22 @@ class PathObject(object):
         return '%s.%s' % (self.major_version, next_minor)
 
     def next_major_version_number(self):
-        if not self.major_version:
-            next_major = '001'
-        else:
-            next_major = '%03d' % (int(self.major_version)+1)
+        """
+        Returns a string of the next major Version Number ex. 001.000.   If you need more flexibility use
+        next_major_version which will return a PathObject.
+        :return:
+        """
+        print self.latest_version().version , '8888888888888888'
+        major = self.latest_version().major_version
+        next_major = '%03d' % (int(major)+1)
         return '%s.%s' % (next_major, '000')
 
-    def new_major_version_object(self):
+    def next_major_version(self):
+        """
+        Returns the next major version within the user's context.   This takes into account circumstances like the
+        following:  current version is 003.000, latest version is 005.000, next major_version would be 006.000
+        :return:
+        """
         next_major = self.next_major_version_number()
         new_obj = copy.deepcopy(self)
         new_obj.set_attr(version=next_major)
@@ -541,10 +575,8 @@ class PathObject(object):
         self.set_path()
 
     def set_shotname(self):
-        if self.scope == 'shots':
-            self.set_attr(shotname='%s_%s' % (self.seq, self.shot))
-        if self.scope == 'assets':
-            self.set_attr(assetname='%s_%s' % (self.seq, self.shot))
+        self.set_attr(shotname='%s_%s' % (self.seq, self.shot))
+        self.set_attr(assetname='%s_%s' % (self.seq, self.shot))
 
     def set_project_config(self):
         user_dir = os.path.expanduser("~")
@@ -574,7 +606,6 @@ class CreateProductionData(object):
                  do_scope=False, test=False, json=True):
         self.test = test
         self.path_object = PathObject(path_object)
-        print 'Path Object: %s' % self.path_object.path
         self.do_scope = do_scope
         if file_system:
             self.create_folders()

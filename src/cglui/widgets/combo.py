@@ -11,13 +11,14 @@ class LabelComboRow(QtWidgets.QVBoxLayout):
         self.combo = AdvComboBox()
         self.h_layout = QtWidgets.QHBoxLayout()
         self.h_layout.addWidget(self.label)
+        self.h_layout.addWidget(self.combo)
         if button:
             self.button = button
             self.add_button = QtWidgets.QToolButton()
             self.add_button.setText('+')
             self.h_layout.addWidget(self.add_button)
             self.addLayout(self.h_layout)
-            self.addWidget(self.combo)
+            #self.addWidget(self.combo)
         else:
             self.h_layout.addWidget(self.combo)
             self.addLayout(self.h_layout)

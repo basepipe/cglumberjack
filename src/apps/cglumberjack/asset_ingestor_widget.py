@@ -257,7 +257,7 @@ class AssetIngestor(QtWidgets.QDialog):
             filename = self.table.item(i, 0).text()
             to_folder = str(self.table.item(i, 6).text())
             to_object = PathObject(to_folder)
-            next_version = to_object.new_major_version_object()
+            next_version = to_object.next_major_version()
             next_version.set_attr(filename=filename)
             CreateProductionData(next_version.data)
             print('copying %s -> %s' % (from_, next_version.path_root))

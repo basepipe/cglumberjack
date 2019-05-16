@@ -30,6 +30,9 @@ class LJTableWidget(QTableView):
         self.height_hint = 0
         self.width_hint = 0
 
+    def row_count(self):
+        return self.model().rowCount()
+
     def mouseReleaseEvent(self, e):
         super(LJTableWidget, self).mouseReleaseEvent(e)
         self.row_selected()

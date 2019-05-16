@@ -2,12 +2,9 @@ import platform
 import os
 import psutil
 import pandas
-import yaml
 import datetime
 from dateutil import tz
 import shutil
-import exifread
-import copy
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets import base as CGQ
 import sys

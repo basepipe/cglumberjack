@@ -140,21 +140,23 @@ class AssetCreator(LJDialog):
 
     def on_set_vars(self):
         if self.path_object.seq:
-            index = self.asset_widget.category_row.combo.findText(self.path_object.seq)
-            if index != -1:
-                self.asset_widget.category_row.combo.setCurrentIndex(index)
-            else:
-                self.asset_widget.category_row.combo.addItem(self.path_object.seq)
+            if self.path_object.seq != '*':
                 index = self.asset_widget.category_row.combo.findText(self.path_object.seq)
-                self.asset_widget.category_row.combo.setCurrentIndex(index)
+                if index != -1:
+                    self.asset_widget.category_row.combo.setCurrentIndex(index)
+                else:
+                    self.asset_widget.category_row.combo.addItem(self.path_object.seq)
+                    index = self.asset_widget.category_row.combo.findText(self.path_object.seq)
+                    self.asset_widget.category_row.combo.setCurrentIndex(index)
         if self.path_object.shot:
-            index = self.asset_widget.name_row.combo.findText(self.path_object.shot)
-            if index != -1:
-                self.asset_widget.name_row.combo.setCurrentIndex(index)
-            else:
-                self.asset_widget.name_row.combo.addItem(self.path_object.shot)
+            if self.path_object.shot != '*':
                 index = self.asset_widget.name_row.combo.findText(self.path_object.shot)
-                self.asset_widget.name_row.combo.setCurrentIndex(index)
+                if index != -1:
+                    self.asset_widget.name_row.combo.setCurrentIndex(index)
+                else:
+                    self.asset_widget.name_row.combo.addItem(self.path_object.shot)
+                    index = self.asset_widget.name_row.combo.findText(self.path_object.shot)
+                    self.asset_widget.name_row.combo.setCurrentIndex(index)
 
     def on_checkbox_clicked(self):
         self.find_all_checked_boxes()
@@ -202,9 +204,13 @@ class AssetCreator(LJDialog):
     def load_categories(self):
         if self.path_object.scope == 'assets':
             categories = app_config()['asset_categories']
+            print categories
+            print '00000000000000000000000000'
             cats = ['']
             for c in categories:
                 cats.append(categories[c])
+            print cats
+            print '00000000000000000000000000'
             self.asset_widget.category_row.combo.addItems(cats)
         elif self.path_object.scope == 'shots':
             seqs = self.path_object.glob_project_element('seq')
