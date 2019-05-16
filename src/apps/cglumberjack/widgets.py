@@ -41,7 +41,7 @@ class EmptyStateWidget(QtWidgets.QPushButton):
     def dropEvent(self, e):
         new_obj = self.path_object.copy(task=self.parent().task, version=self.parent().versions.currentText(),
                                         user=self.parent().users.currentText(),
-                                        resolutions=self.parent().resolutions.currentText(), filename=None,
+                                        resolution=self.parent().resolutions.currentText(), filename=None,
                                         ext=None, filename_base=None)
         self.to_path = new_obj.path_root
         if e.mimeData().hasUrls:

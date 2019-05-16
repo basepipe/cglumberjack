@@ -90,11 +90,11 @@ class PathObject(object):
 
     def set_status(self):
         if not self.status:
-            if self.version == '000.0000':
+            if self.version == '000.000':
                 self.status = 'assigned'
             if self.user == 'publish':
                 self.status = 'published'
-            if self.minor_version != '000.0000':
+            if self.minor_version != '000.000':
                 self.status = 'in progress'
         if not self.assigned:
             self.assigned = self.user
@@ -350,7 +350,12 @@ class PathObject(object):
                     self.data['ext'] = ext.replace('.', '')
                     self.__dict__['filename_base'] = base
                     self.data['filename_base'] = base
-
+            elif attr == 'version':
+                major, minor = value.split('.')
+                self.__dict__['major_version'] = major
+                self.data['major_version'] = major
+                self.__dict__['minor_version'] = minor
+                self.data['minor_version'] = minor
         self.set_path()
 
     def glob_project_element(self, attr, full_path=False):
@@ -458,6 +463,7 @@ class PathObject(object):
         new_obj = copy.deepcopy(self)
         if new_obj.user:
             latest_version = new_obj.glob_project_element('version')
+            print latest_version
             if latest_version:
                 new_obj.set_attr(version=latest_version[-1])
                 return new_obj
@@ -479,13 +485,22 @@ class PathObject(object):
         return '%s.%s' % (self.major_version, next_minor)
 
     def next_major_version_number(self):
-        if not self.major_version:
-            next_major = '001'
-        else:
-            next_major = '%03d' % (int(self.major_version)+1)
+        """
+        Returns a string of the next major Version Number ex. 001.000.   If you need more flexibility use
+        next_major_version which will return a PathObject.
+        :return:
+        """
+        print self.latest_version().version , '8888888888888888'
+        major = self.latest_version().major_version
+        next_major = '%03d' % (int(major)+1)
         return '%s.%s' % (next_major, '000')
 
-    def new_major_version_object(self):
+    def next_major_version(self):
+        """
+        Returns the next major version within the user's context.   This takes into account circumstances like the
+        following:  current version is 003.000, latest version is 005.000, next major_version would be 006.000
+        :return:
+        """
         next_major = self.next_major_version_number()
         new_obj = copy.deepcopy(self)
         new_obj.set_attr(version=next_major)

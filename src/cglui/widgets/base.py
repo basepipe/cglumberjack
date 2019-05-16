@@ -3,6 +3,7 @@ import shutil
 import pandas as pd
 from Qt import QtWidgets, QtCore, QtGui
 from cglui.util import UISettings, widget_name
+from cglcore.path import start
 from cglcore.util import app_name
 
 
@@ -146,6 +147,7 @@ class LJFileBrowser(QtWidgets.QTreeView):
     def view_in_explorer(self):
         index = self.currentIndex()
         file_path = self.model.filePath(index)
+        start(os.path.dirname(file_path))
         print 'viewing %s' % file_path
 
     def object_selected(self):
@@ -212,8 +214,11 @@ class LJFileSystemModel(QtWidgets.QFileSystemModel):
         if i.column() == self.columnCount()-2:
             if role == QtCore.Qt.DisplayRole:
                 try:
-                    row = self.df.loc[self.df['Filepath'] == self.filePath(i).replace('/', '\\')].index[0]
-                    return self.df.loc[row, 'Status']
+                    if self.df_exists:
+                        row = self.df.loc[self.df['Filepath'] == self.filePath(i).replace('/', '\\')].index[0]
+                        return self.df.loc[row, 'Status']
+                    else:
+                        return 'Imported'
                 except IndexError:
                     pass
             if role == QtCore.Qt.TextAlignmentRole:
@@ -221,8 +226,11 @@ class LJFileSystemModel(QtWidgets.QFileSystemModel):
         if i.column() == self.columnCount()-1:
             if role == QtCore.Qt.DisplayRole:
                 try:
-                    row = self.df.loc[self.df['Filepath'] == self.filePath(i).replace('/', '\\')].index[0]
-                    return self.df.loc[row, 'Project Filepath']
+                    if self.df_exists:
+                        row = self.df.loc[self.df['Filepath'] == self.filePath(i).replace('/', '\\')].index[0]
+                        return self.df.loc[row, 'Project Filepath']
+                    else:
+                        return 'Click To Tag'
                 except IndexError:
                     pass
         return super(LJFileSystemModel, self).data(i, role)
