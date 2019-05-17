@@ -132,13 +132,20 @@ class TaskPanel(QtWidgets.QWidget):
     def new_files_dragged(self, files):
         for f in files:
             file_ = os.path.split(f)[-1]
-            to_object = PathObject(self.sender().to_path)
-            to_object.set_attr(resolution='high')
-            to_object.set_attr(filename=file_)
-            to_file = to_object.path_root
-            print 'Copying %s to %s' % (f, to_file)
-            shutil.copy2(f, to_file)
-            CreateProductionData(path_object=to_object)
+            to_object = PathObject(self.sender().to_object)
+            to_folder = to_object.path_root
+            to_file = os.path.join(to_folder, file_)
+            if '.' in file_:
+                print 'copying a file'
+                print 'Copying %s to %s' % (f, to_file)
+                shutil.copy2(f, to_file)
+            else:
+                print 'copying a directory'
+                print 'Copying %s to %s' % (f, to_file)
+                shutil.copytree(f, to_file)
+                #CreateProductionData(path_object=)
+                #shutil.copy2(f, to_file)
+            return
             self.force_clear = True
             self.update_location(to_object)
 
@@ -150,6 +157,7 @@ class TaskPanel(QtWidgets.QWidget):
         """
         if path_object:
             self.current_location = path_object.data
+            self.path_object = path_object.copy()
             self.location_changed.emit(path_object)
 
     def on_create_asset(self, set_vars=False):
@@ -276,7 +284,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.on_main_asset_selected(current)
 
     def on_open_clicked(self):
-        if '####' in self.path_root:
+        if '####' in self.path_object.path_root:
             print 'Nothing set for sequences yet'
             # config = app_config()['paths']
             # settings = app_config()['default']
@@ -284,7 +292,8 @@ class TaskPanel(QtWidgets.QWidget):
             # self.path_root.replace('####', '%04d'))
             # subprocess.Popen(cmd)
         else:
-            start(self.path_root)
+            print 'Opening %s' % self.path_object.path_root
+            start(self.path_object.path_root)
 
     def on_task_version_changed(self):
         self.reload_task_widget(self.sender().parent(), populate_versions=False)
@@ -318,7 +327,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.update_location(path_object=self.path_object)
 
     def show_in_folder(self):
-        show_in_folder(self.path_root)
+        show_in_folder(self.path_object.path_root)
 
     def show_in_shotgun(self):
         CreateProductionData(path_object=self.current_location, file_system=False,
@@ -326,11 +335,11 @@ class TaskPanel(QtWidgets.QWidget):
 
     def copy_folder_path(self):
         clipboard = QtWidgets.QApplication.clipboard()
-        clipboard.setText(os.path.dirname(self.path_root))
+        clipboard.setText(os.path.dirname(self.path_object.path_root))
 
     def copy_file_path(self):
         clipboard = QtWidgets.QApplication.clipboard()
-        clipboard.setText(self.path_root)
+        clipboard.setText(self.path_object.path_root)
 
     @staticmethod
     def import_versions_from():
@@ -353,7 +362,7 @@ class TaskPanel(QtWidgets.QWidget):
         # Only do this if it's dragged into a thing that hasn't been selected
         object_ = PathObject(self.current_location)
         parent = self.sender().parent()
-        object_.set_attr(root=self.root)
+        #object_.set_attr(root=self.root)
         object_.set_attr(version=parent.versions.currentText())
         object_.set_attr(context='source')
         object_.set_attr(resolution=parent.resolutions.currentText())
@@ -362,15 +371,16 @@ class TaskPanel(QtWidgets.QWidget):
         self.update_location(object_)
         self.clear_task_selection_except(self.sender().task)
         for d in data:
+            path_, filename_ = os.path.split(d)
             if os.path.isfile(d):
-                path_, filename_ = os.path.split(d)
                 # need to make the filenames safe (no illegal chars)
                 filename_ = replace_illegal_filename_characters(filename_)
-                logging.info('Copying File From %s to %s' % (d, os.path.join(self.path_root, filename_)))
-                shutil.copy2(d, os.path.join(self.path_root, filename_))
+                logging.info('Copying File From %s to %s' % (d, os.path.join(object_.path_root, filename_)))
+                shutil.copy2(d, os.path.join(self.path_object.path_root, filename_))
                 self.reload_task_widget(self.sender().parent())
             elif os.path.isdir(d):
-                print 'No support for directories yet'
+                logging.info('Copying File From %s to %s' % (d, os.path.join(object_.path_root, filename_)))
+                shutil.copytree(d, os.path.join(object_.path_root, filename_))
 
     def reload_task_widget(self, widget, populate_versions=True):
         path_obj = PathObject(self.current_location)

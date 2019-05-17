@@ -1,6 +1,7 @@
 import os
 import shutil
 import pandas as pd
+import logging
 import glob
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.base import LJDialog
@@ -78,6 +79,12 @@ class ImportBrowser(LJDialog):
         super(ImportBrowser, self).__init__()
         v_layout = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout()
+        if path_object:
+            self.path_object = path_object
+        else:
+            print 'No Path Object found, exiting'
+            return
+        self.title = 'Import to %s' % path_object.project
 
         self.task = None
         self.version = None
@@ -87,11 +94,7 @@ class ImportBrowser(LJDialog):
         self.company = None
         self.project = None
         self.data_frame = None
-        if path_object:
-            self.path_object = path_object
-        else:
-            print 'No Path Object found, exiting'
-            return
+
         self.path_object.set_attr(scope='IO')
         self.path_object.set_attr(input_company='*')
         self.data_frame = None
@@ -189,9 +192,14 @@ class ImportBrowser(LJDialog):
         for f in files:
             file_ = os.path.split(f)[-1]
             to_object = PathObject(self.sender().to_path)
-            to_file = to_object.path_root
-            print 'Copying %s to %s' % (f, to_file)
-            shutil.copy2(f, to_file)
+            to_folder = to_object.path_root
+            to_file = os.path.join(to_folder, file_)
+            if '.' in file_:
+                logging.info('Copying File From %s to %s' % (f, to_file))
+                shutil.copy2(f, to_file)
+            else:
+                logging.info('Copying Folder From %s to %s' % (f, to_file))
+                shutil.copy(f, to_file)
         self.on_event_selected()
 
     def load_companies(self):

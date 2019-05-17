@@ -21,6 +21,7 @@ class EmptyStateWidget(QtWidgets.QPushButton):
         self.setText('Drag/Drop to Add Files')
         self.setStyleSheet("background-color: white; border:1px dashed black;")
         self.to_path = ''
+        self.to_object = None
 
     def mouseReleaseEvent(self, e):
         super(EmptyStateWidget, self).mouseReleaseEvent(e)
@@ -44,6 +45,7 @@ class EmptyStateWidget(QtWidgets.QPushButton):
                                         resolution=self.parent().resolutions.currentText(), filename=None,
                                         ext=None, filename_base=None)
         self.to_path = new_obj.path_root
+        self.to_object = new_obj
         if e.mimeData().hasUrls:
             e.setDropAction(QtCore.Qt.CopyAction)
             e.accept()
@@ -65,6 +67,7 @@ class FileTableModel(ListItemModel):
         if role == Qt.DecorationRole:
             data = self.data_[row][col]
             if "." not in data:
+                print 'u'
                 icon_path = os.path.join(path.icon_path(), 'folder2.png')
                 return QtWidgets.QIcon(icon_path)
         # if role == Qt.ToolTipRole:
@@ -140,7 +143,7 @@ class TaskWidget(QtWidgets.QFrame):
         task_row = QtWidgets.QHBoxLayout()
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
-        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Maximum)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Expanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
@@ -152,7 +155,7 @@ class TaskWidget(QtWidgets.QFrame):
         # self.versions.setMinimumWidth(200)
         self.versions.hide()
         self.setMinimumWidth(300)
-        #self.setMinimumHeight(200)
+        self.setMinimumHeight(140)
 
         self.users_label = QtWidgets.QLabel("User:")
         self.users = AdvComboBox()
@@ -182,11 +185,12 @@ class TaskWidget(QtWidgets.QFrame):
         self.hide_button = QtWidgets.QToolButton()
         self.hide_button.setText("less")
         self.data_table = FileTableWidget(self)
+        self.data_table.set_item_model(FileTableModel([], [""]))
         self.data_table.set_draggable(True)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.data_table.setMinimumHeight(50)
-        self.data_table.setMinimumWidth(150)
+        self.data_table.setMinimumHeight(120)
+        #self.data_table.setMinimumWidth(150)
 
         # build the tool button row
         self.open_button = QtWidgets.QToolButton()
@@ -207,27 +211,22 @@ class TaskWidget(QtWidgets.QFrame):
         # this is where the filter needs to be!
         task_row.addWidget(self.title)
         task_row.addWidget(self.versions)
-        # task_row.addWidget(self.search_box)
         task_row.addWidget(self.show_button)
         task_row.addWidget(self.hide_button)
-        # task_row.addWidget(self.assign_button)
-        # task_row.addWidget(self.add_button)
 
         self.empty_state = EmptyStateWidget(path_object=self.path_object)
         self.empty_state.hide()
 
         v_layout.addLayout(task_row)
-        # v_layout.addWidget(self.message)
         v_layout.addWidget(self.start_task_button)
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
         v_layout.addWidget(self.data_table, 1)
+        #v_layout.addItem(QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Minimum,
+        #                                                      QtWidgets.QSizePolicy.Minimum))
         v_layout.addWidget(self.empty_state)
-        v_layout.addItem((QtWidgets.QSpacerItem(0, 25, QtWidgets.QSizePolicy.Minimum,
-                                                QtWidgets.QSizePolicy.Minimum)))
         v_layout.addLayout(self.tool_button_layout)
-        v_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
-                                                QtWidgets.QSizePolicy.MinimumExpanding)))
+        v_layout.addStretch(1)
         self.setLayout(v_layout)
         self.hide_combos()
 
@@ -560,7 +559,7 @@ class FileTableWidget(LJTableWidget):
         # self.item_right_click_menu.addSeparator()
         self.customContextMenuRequested.connect(self.item_right_click)
         self.setAcceptDrops(True)
-        self.setMaximumHeight(self.height_hint)
+        # self.setMaximumHeight(self.height_hint)
 
     def item_right_click(self, position):
         self.item_right_click_menu.exec_(self.mapToGlobal(position))
@@ -577,3 +576,6 @@ class FileTableWidget(LJTableWidget):
             e.accept()
         else:
             e.ignore()
+
+    def sizeHint(self):
+        return QtCore.QSize(300, 150)
