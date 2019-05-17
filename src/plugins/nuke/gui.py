@@ -1,8 +1,7 @@
-from PySide2 import QtCore
+from Qt import QtWidgets, QtCore, QtGui
 from apps.cglumberjack.main import CGLumberjack, CGLumberjackWidget
 import cglnuke
 import cglui.startup as ui
-
 
 
 
@@ -19,11 +18,8 @@ class CGLNuke(CGLumberjack):
 
 
 def launch():
-    print 'yes!'
-    main_window = cglnuke.get_main_window()
     gui = CGLNuke()
-    ui.startup.do_maya_gui_init(gui)
-    gui.setParent(main_window)
+    ui.startup.do_nuke_gui_init(gui)
     gui.setWindowFlags(QtCore.Qt.Window)
     gui.setWindowTitle('CG LUmberjack')
     gui.setAttribute(QtCore.Qt.WA_DeleteOnClose)

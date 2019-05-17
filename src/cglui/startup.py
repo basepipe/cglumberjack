@@ -169,3 +169,8 @@ def do_gui_init():
 def do_maya_gui_init(gui):
     _load_ui_themes(gui)
     _load_ui_settings()
+
+
+def do_nuke_gui_init(gui):
+    _load_ui_themes(gui)
+    _load_ui_settings()

@@ -5,7 +5,7 @@ import logging
 import glob
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.base import LJDialog
-from cglui.widgets.base import LJFileBrowser
+from cglui.widgets.file_system import LJFileBrowser
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.project_selection_module import LJListWidget
 from cglcore.config import app_config

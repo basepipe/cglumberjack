@@ -2,7 +2,6 @@ from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
-from import_main import ImportBrowser
 from cglcore.path import PathObject
 from panels import CompanyPanel, ProjectPanel, IOPanel
 from TaskPanel import TaskPanel
@@ -33,8 +32,12 @@ class PathWidget(QtWidgets.QWidget):
 
     def set_text(self, text):
         self.current_location_line_edit.setText(text.replace('\\', '/'))
-        fm = QtWidgets.QFontMetrics(self.current_location_line_edit.font())
-        self.current_location_line_edit.setFixedWidth(fm.boundingRect(text).width() + 25)
+        try:
+            # this is QtCore instead of QtWidgets for Nuke (Pyside2)
+            fm = QtCore.QFontMetrics(self.current_location_line_edit.font())
+            self.current_location_line_edit.setFixedWidth(fm.boundingRect(text).width() + 25)
+        except:
+            pass
         if self.current_location_line_edit.text():
             path_object = PathObject(self.current_location_line_edit.text())
             if path_object.project:
@@ -108,7 +111,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.task = ''
         self.resolution = ''
         self.current_location = {}
-        self.path_root = ''
+        if path:
+            self.path_root = path
+        else:
+            self.path_root = ''
         self.path = ''
         self.in_file_tree = None
 
@@ -246,6 +252,7 @@ class CGLumberjack(LJMainWindow):
         import_tool.triggered.connect(self.on_import_clicked)
 
     def on_import_clicked(self):
+        from import_main import ImportBrowser
         print 'Opening the Import Dialog'
         text = self.centralWidget().path_widget.current_location_line_edit.text()
         import_dialog = ImportBrowser(path_object=PathObject(text))
