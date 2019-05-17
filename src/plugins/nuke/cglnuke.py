@@ -1,9 +1,9 @@
 import nuke
-from PySide2 import QtGui
+from PySide2 import QtWidgets
 
 
 def get_main_window():
-    return QtGui.QApplication.activeWindow()
+    return QtWidgets.QApplication.activeWindow()
 
 
 def get_scene_name():
@@ -30,7 +30,14 @@ def save_file_as(filepath):
     return nuke.scriptSaveAs(filepath)
 
 
-def import_file(filepath):
+def import_media(filepath):
+    # if i'm given a folder what do i do?
+    # if i'm given a file what do i do?
+    # if i'm given a seq what do i do?
+    return nuke.nodes.Read(filepath=filepath)
+
+
+def import_script(filepath):
     return nuke.nodePaste(filepath)
 
 

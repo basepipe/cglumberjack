@@ -2,7 +2,7 @@ from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
-from cglcore.path import PathObject
+from cglcore.path import PathObject, start
 from panels import CompanyPanel, ProjectPanel, IOPanel
 from TaskPanel import TaskPanel
 
@@ -10,7 +10,7 @@ from TaskPanel import TaskPanel
 class PathWidget(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path=None):
+    def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.back_button = QtWidgets.QToolButton()
         self.back_button.setText('<')
@@ -32,11 +32,11 @@ class PathWidget(QtWidgets.QWidget):
 
     def set_text(self, text):
         self.current_location_line_edit.setText(text.replace('\\', '/'))
+        # TODO - PYSIDE fix is QtCore instead of QtWidgets for Nuke (Pyside2)
         try:
-            # this is QtCore instead of QtWidgets for Nuke (Pyside2)
-            fm = QtCore.QFontMetrics(self.current_location_line_edit.font())
+            fm = QtWidgets.QFontMetrics(self.current_location_line_edit.font())
             self.current_location_line_edit.setFixedWidth(fm.boundingRect(text).width() + 25)
-        except:
+        except AttributeError:
             pass
         if self.current_location_line_edit.text():
             path_object = PathObject(self.current_location_line_edit.text())
@@ -45,7 +45,6 @@ class PathWidget(QtWidgets.QWidget):
                     self.project_label.setText('<h2>%s</h2>' % path_object.project.title())
                 else:
                     self.project_label.setText('<h2>Choose Project</h2>')
-
 
     def back_button_pressed(self):
         path_object = PathObject(self.current_location_line_edit.text())
@@ -68,7 +67,8 @@ class PathWidget(QtWidgets.QWidget):
 
 class CGLumberjackWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None):
+    def __init__(self, parent=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None,
+                 show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
         # Environment Stuff
         self.user = user_name
@@ -82,14 +82,15 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.user_root = app_config()['cg_lumberjack_dir']
         self.user = None
         self.context = 'source'
-        self.initial_path_object = None
+        self.path_object = None
         self.panel = None
         self.radio_filter = radio_filter
 
         self.layout = QtWidgets.QVBoxLayout(self)
+        print '--------------------', path
         if path:
             try:
-                self.initial_path_object = PathObject(path)
+                self.path_object = PathObject(path)
             except IndexError:
                 pass
         self.project = '*'
@@ -97,32 +98,25 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.shot = '*'
         self.seq = '*'
         self.input_company = '*'
-        if self.initial_path_object:
-            if self.initial_path_object.project:
-                self.project = self.initial_path_object.project
-            if self.initial_path_object.scope:
-                self.scope = self.initial_path_object.scope
-            if self.initial_path_object.shot:
-                self.shot = self.initial_path_object.shot
-            if self.initial_path_object.seq:
-                self.seq = self.initial_path_object.seq
+        if self.path_object:
+            if self.path_object.project:
+                self.project = self.path_object.project
+            if self.path_object.scope:
+                self.scope = self.path_object.scope
+            if self.path_object.shot:
+                self.shot = self.path_object.shot
+            if self.path_object.seq:
+                self.seq = self.path_object.seq
         self.user_favorites = ''
-        self.version = ''
         self.task = ''
         self.resolution = ''
-        self.current_location = {}
-        if path:
-            self.path_root = path
-        else:
-            self.path_root = ''
-        self.path = ''
         self.in_file_tree = None
-
-        self.path_widget = PathWidget(path=self.initial_path_object.path_root)
+        self.path_widget = PathWidget()
         self.path_widget.location_changed.connect(self.update_location)
         self.layout.addWidget(self.path_widget)
         # TODO - make a path object the currency rather than a dict, makes it easier.
-        self.update_location(self.initial_path_object)
+        self.update_location(self.path_object)
+        self.show_import = show_import
 
     def update_location(self, data):
         try:
@@ -135,11 +129,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             pass
         path_object = None
         if type(data) == dict:
-            self.current_location = data
             path_object = PathObject(data)
         elif type(data) == PathObject:
             path_object = PathObject(data)
-        self.path_root = str(path_object.path_root)
         self.path_widget.set_text(path_object.path_root)
         last = path_object.get_last_attr()
         shot_attrs = ['seq', 'shot', 'type', 'asset']
@@ -161,8 +153,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         if last == 'resolution':
             print 2, 'resolution'
             print 'Made it resolution: %s' % path_object.path_root
-            self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                   user_name=self.user_name)
+            self.load_task_panel(path_object)
         if last == 'company' or last == 'project':
             print 3
             if path_object.project == '*':
@@ -175,8 +166,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProjectPanel(path_object=path_object)
             else:
-                self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                       user_name=self.user_name)
+                self.load_task_panel(path_object)
         elif last == 'input_company':
             if path_object.input_company == '*':
                 self.panel = ProjectPanel(path_object=path_object)
@@ -184,8 +174,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.panel = IOPanel(path_object=path_object, user_email=self.user_email, user_name=self.user_name,
                                      render_layout=None)
         elif last == 'task':
-            self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                   user_name=self.user_name)
+            self.load_task_panel(path_object)
 
         if self.panel:
             self.panel.location_changed.connect(self.update_location)
@@ -199,6 +188,31 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                     to_delete.append(child)
             for each in to_delete:
                 each.widget().deleteLater()
+
+    def load_task_panel(self, path_object):
+        self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
+                               user_name=self.user_name, show_import=self.show_import)
+        self.panel.open_signal.connect(self.open_clicked)
+        self.panel.import_signal.connect(self.import_clicked)
+        self.panel.new_version_signal.connect(self.new_version_clicked)
+
+    def open_clicked(self):
+        if '####' in self.path_object.path_root:
+            print 'Nothing set for sequences yet'
+            # config = app_config()['paths']
+            # settings = app_config()['default']
+            # cmd = "%s -framerate %s %s" % (config['ffplay'], settings['frame_rate'],
+            # self.path_root.replace('####', '%04d'))
+            # subprocess.Popen(cmd)
+        else:
+            print 'Opening %s' % self.path_object.path_root
+            start(self.path_object.path_root)
+
+    def import_clicked(self):
+        print 'import clicked'
+
+    def new_version_clicked(self):
+        print 'New Version Clicked'
 
 
 class CGLumberjack(LJMainWindow):
@@ -296,7 +310,7 @@ class CGLumberjack(LJMainWindow):
         user_config = UserConfig(company=self.centralWidget().company,
                                  user_email=self.centralWidget().user_email,
                                  user_name=self.centralWidget().user_name,
-                                 current_path=self.centralWidget().path_root)
+                                 current_path=self.centralWidget().path_object.path_root)
         print 'Saving Session to -> %s' % user_config.user_config_path
         user_config.update_all()
 

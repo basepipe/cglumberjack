@@ -134,13 +134,15 @@ class TaskWidget(QtWidgets.QFrame):
     add_clicked = QtCore.Signal()
     start_task_clicked = QtCore.Signal(object)
     open_button_clicked = QtCore.Signal()
+    import_button_clicked = QtCore.Signal()
     new_version_clicked = QtCore.Signal()
 
-    def __init__(self, parent, title, short_title, filter_string=None, path_object=None):
+    def __init__(self, parent, title, short_title, filter_string=None, path_object=None, show_import=False):
         QtWidgets.QFrame.__init__(self, parent)
         self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
         v_layout = QtWidgets.QVBoxLayout(self)
         task_row = QtWidgets.QHBoxLayout()
+        self.show_import = show_import
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Expanding)
@@ -195,6 +197,8 @@ class TaskWidget(QtWidgets.QFrame):
         # build the tool button row
         self.open_button = QtWidgets.QToolButton()
         self.open_button.setText('Open')
+        self.import_button = QtWidgets.QToolButton()
+        self.import_button.setText('Import')
         self.new_version_button = QtWidgets.QToolButton()
         self.new_version_button.setText('Version Up')
         self.review_button = QtWidgets.QToolButton()
@@ -204,6 +208,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.tool_button_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
                                                               QtWidgets.QSizePolicy.Minimum))
         self.tool_button_layout.addWidget(self.open_button)
+        self.tool_button_layout.addWidget(self.import_button)
         self.tool_button_layout.addWidget(self.new_version_button)
         self.tool_button_layout.addWidget(self.review_button)
         self.tool_button_layout.addWidget(self.publish_button)
@@ -238,6 +243,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.start_task_button.clicked.connect(self.on_start_task_clicked)
         self.open_button.clicked.connect(self.on_open_button_clicked)
         self.new_version_button.clicked.connect(self.on_new_version_clicked)
+        self.import_button.clicked.connect(self.on_import_clicked)
         self.hide_tool_buttons()
 
     def get_category_label(self):
@@ -276,6 +282,7 @@ class TaskWidget(QtWidgets.QFrame):
 
     def hide_tool_buttons(self):
         self.open_button.hide()
+        self.import_button.hide()
         self.new_version_button.hide()
         self.publish_button.hide()
         self.review_button.hide()
@@ -296,6 +303,8 @@ class TaskWidget(QtWidgets.QFrame):
 
     def show_tool_buttons(self):
         self.open_button.show()
+        if self.show_import:
+            self.import_button.show()
         self.new_version_button.show()
         self.publish_button.show()
         self.review_button.show()
@@ -333,6 +342,9 @@ class TaskWidget(QtWidgets.QFrame):
 
     def on_new_version_clicked(self):
         self.new_version_clicked.emit()
+
+    def on_import_clicked(self):
+        self.import_button_clicked.emit()
 
     def on_open_button_clicked(self):
         self.open_button_clicked.emit()
@@ -459,7 +471,10 @@ class AssetWidget(QtWidgets.QWidget):
 
         self.message = QtWidgets.QLabel("")
         self.message.setMinimumWidth(minWidth)
-        self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        try:
+            self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        except AttributeError:
+            print 'PySide2 Natively does not have QtGui.QSizePolicy'
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.search_box = LJSearchEdit(self)
         self.add_button = QtWidgets.QToolButton()
@@ -579,3 +594,28 @@ class FileTableWidget(LJTableWidget):
 
     def sizeHint(self):
         return QtCore.QSize(300, 150)
+
+
+class LJListWidget(QtWidgets.QWidget):
+    def __init__(self, label):
+        QtWidgets.QWidget.__init__(self)
+        layout = QtWidgets.QVBoxLayout(self)
+        self.label = QtWidgets.QLabel("<b>%s</b>" % label)
+        self.add_button = QtWidgets.QToolButton()
+        self.add_button.setText('+')
+        self.h_layout = QtWidgets.QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.h_layout.addWidget(self.label)
+        self.h_layout.addWidget(self.add_button)
+        self.list = QtWidgets.QListWidget()
+        self.list.setMaximumHeight(80)
+        layout.addLayout(self.h_layout)
+        layout.addWidget(self.list)
+
+    def hide(self):
+        self.label.hide()
+        self.combo.hide()
+
+    def show(self):
+        self.label.show()
+        self.combo.show()

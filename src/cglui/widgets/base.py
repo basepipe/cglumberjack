@@ -19,6 +19,7 @@ class StateSavers(QtCore.QObject):
         for x in cls().SAVERS:
             x.on_closing()
 
+
 def _restore_size(self, default_size):
     if default_size is None:
         default_size = QtCore.QSize(800, 800)

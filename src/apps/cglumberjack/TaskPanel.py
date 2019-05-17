@@ -1,21 +1,26 @@
 import os
 import shutil
 import logging
+import re
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
 from cglcore.path import PathObject, CreateProductionData, start
-from cglcore.path import replace_illegal_filename_characters, show_in_folder
-from widgets import AssetWidget, TaskWidget
+from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file
+from widgets import AssetWidget, TaskWidget, FileTableModel
 from panels import prep_list_for_table
 
 
 class TaskPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
+    open_signal = QtCore.Signal()
+    import_signal = QtCore.Signal()
+    new_version_signal = QtCore.Signal()
 
-    def __init__(self, parent=None, path_object=None, user_email='', user_name=''):
+    def __init__(self, parent=None, path_object=None, user_email='', user_name='', show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
+        self.show_import = show_import
         self.path_object = path_object
         self.current_location = path_object.data
         self.panel = QtWidgets.QHBoxLayout(self)
@@ -37,6 +42,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.force_clear = False
         self.panel.addLayout(self.panel_source)
         self.panel.addLayout(self.render_layout)
+
 
     def on_main_asset_selected(self, data):
         try:
@@ -77,11 +83,12 @@ class TaskPanel(QtWidgets.QWidget):
                         task_widget = TaskWidget(parent=self,
                                                  title=title,
                                                  short_title=task,
-                                                 path_object=current)
+                                                 path_object=current, show_import=self.show_import)
                         task_widget.task = task
                         task_widget.showall()
                         task_widget.hide_button.hide()
                         task_widget.show_button.show()
+
 
                         # find the version information for the task:
                         user = self.populate_users_combo(task_widget, current, task)
@@ -96,11 +103,11 @@ class TaskPanel(QtWidgets.QWidget):
                         task_widget.data_table.version = version_obj.version
                         task_widget.data_table.resolution = version_obj.resolution
                         files_ = version_obj.glob_project_element('filename')
-                        task_widget.setup(ListItemModel(prep_list_for_table(files_, split_for_file=True),
-                                                        ['Name']))
+                        task_widget.setup(FileTableModel(prep_list_for_table(files_, split_for_file=True), ['Name']))
                         task_widget.data_table.selected.connect(self.on_source_selected)
                         task_widget.data_table.doubleClicked.connect(self.on_open_clicked)
                         task_widget.open_button_clicked.connect(self.on_open_clicked)
+                        task_widget.import_button_clicked.connect(self.on_import_clicked)
                         task_widget.new_version_clicked.connect(self.on_new_version_clicked)
                         task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
                         task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
@@ -284,16 +291,10 @@ class TaskPanel(QtWidgets.QWidget):
         self.on_main_asset_selected(current)
 
     def on_open_clicked(self):
-        if '####' in self.path_object.path_root:
-            print 'Nothing set for sequences yet'
-            # config = app_config()['paths']
-            # settings = app_config()['default']
-            # cmd = "%s -framerate %s %s" % (config['ffplay'], settings['frame_rate'],
-            # self.path_root.replace('####', '%04d'))
-            # subprocess.Popen(cmd)
-        else:
-            print 'Opening %s' % self.path_object.path_root
-            start(self.path_object.path_root)
+        self.open_signal.emit()
+
+    def on_import_clicked(self):
+        self.import_signal.emit()
 
     def on_task_version_changed(self):
         self.reload_task_widget(self.sender().parent(), populate_versions=False)
@@ -449,15 +450,22 @@ class TaskPanel(QtWidgets.QWidget):
 
     @staticmethod
     def prep_list_for_table(list_, path_filter=None, split_for_file=False):
-        # TODO - would be awesome to make this smart enough to know what to do with a dict, list, etc...
         list_.sort()
+        sequences = []
         output_ = []
+        seq_rules = app_config()['rules']['path_variables']['global']['file_sequence']['regex']
+        regex = re.compile(r'%s' % seq_rules)
         for each in list_:
             if path_filter:
                 filtered = PathObject(each).data[path_filter]
                 output_.append([filtered])
             else:
                 if split_for_file:
-                    each = os.path.split(each)[-1]
-                output_.append([each])
+                    seq_string = seq_from_file(os.path.basename(each))
+                    if seq_string:
+                        if seq_string not in output_:
+                            output_.append(seq_string)
+                    else:
+                        output_.append([each])
         return output_
+

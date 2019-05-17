@@ -503,6 +503,7 @@ class IOPanel(QtWidgets.QWidget):
 def prep_list_for_table(list_, path_filter=None, split_for_file=False):
     # TODO - would be awesome to make this smart enough to know what to do with a dict, list, etc...
     list_.sort()
+    sequences = []
     output_ = []
     for each in list_:
         if path_filter:
@@ -510,6 +511,7 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False):
             output_.append([filtered])
         else:
             if split_for_file:
-                each = os.path.split(each)[-1]
+                each = os.path.basename(each)
             output_.append([each])
     return output_
+

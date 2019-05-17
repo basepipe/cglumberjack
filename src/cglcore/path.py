@@ -14,6 +14,8 @@ from cglcore.config import app_config, UserConfig
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 EXT_MAP = app_config()['ext_map']
 ROOT = app_config()['paths']['root']
+SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
+SEQ_REGEX = re.compile("\\.[0-9]+\\.")
 
 
 class PathObject(object):
@@ -853,6 +855,15 @@ def create_project_config(company, project):
         if not os.path.exists(project_dir):
             os.makedirs(project_dir)
             shutil.copy2(company_config, project_config)
+
+
+def seq_from_file(basename):
+    numbers = re.search(SEQ_REGEX, basename)
+    numbers = numbers.group(0).replace('.', '')
+    string = '#' * int(len(numbers))
+    string = '.%s.' % string
+    this = re.sub(SEQ_REGEX, string, basename)
+    return this
 
 
 
