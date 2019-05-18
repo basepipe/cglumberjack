@@ -87,7 +87,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.radio_filter = radio_filter
 
         self.layout = QtWidgets.QVBoxLayout(self)
-        print '--------------------', path
         if path:
             try:
                 self.path_object = PathObject(path)
@@ -136,33 +135,24 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         last = path_object.get_last_attr()
         shot_attrs = ['seq', 'shot', 'type', 'asset']
 
-        print last, '---------------------------------', path_object.path_root
         if last == 'filename':
-            print 0, 'filename'
             if self.panel:
                 return
             else:
-                print 'Last %s:%s' % (last, path_object.data[last])
                 # TODO -  This needs to actually display the render panel as well, and reselect the actual filename.
                 self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
                                        user_name=self.user_name)
         else:
-            print 1, 'clearing'
             if self.panel:
                 self.panel.clear_layout()
         if last == 'resolution':
-            print 2, 'resolution'
-            print 'Made it resolution: %s' % path_object.path_root
             self.load_task_panel(path_object)
         if last == 'company' or last == 'project':
-            print 3
             if path_object.project == '*':
                 self.panel = CompanyPanel(path_object=path_object)
             else:
                 self.panel = ProjectPanel(path_object=path_object)
         elif last in shot_attrs:
-            print 4
-            print 'shot, or seq %s' % path_object.data[last]
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProjectPanel(path_object=path_object)
             else:
@@ -183,7 +173,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             # Why do i have to do this?!?!?
             for i in range(self.layout.count()):
                 if i > 1:
-                    print i-1, self.layout.count()
                     child = self.layout.takeAt(i-1)
                     to_delete.append(child)
             for each in to_delete:

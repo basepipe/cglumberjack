@@ -524,7 +524,6 @@ class ConfirmPublishFiles(LJDialog):
                 src = os.path.join(type_, self.gui_d[type_][label][0])
                 dst = os.path.join(type_, self.gui_d[type_][label][-1])
                 if src != dst:
-                    print src, dst
                     rename = True
         if not rename:
             self.rename_button.setText('All Names Passed - Skip')

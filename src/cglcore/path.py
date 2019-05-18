@@ -469,7 +469,6 @@ class PathObject(object):
         new_obj = copy.deepcopy(self)
         if new_obj.user:
             latest_version = new_obj.glob_project_element('version')
-            print latest_version
             if latest_version:
                 new_obj.set_attr(version=latest_version[-1])
                 return new_obj
@@ -496,7 +495,6 @@ class PathObject(object):
         next_major_version which will return a PathObject.
         :return:
         """
-        print self.latest_version().version , '8888888888888888'
         major = self.latest_version().major_version
         next_major = '%03d' % (int(major)+1)
         return '%s.%s' % (next_major, '000')
@@ -630,9 +628,7 @@ class CreateProductionData(object):
         :return:
         """
         if self.path_object.scope != 'IO':
-            print self.path_object.scope
             if self.path_object.task_json:
-                print self.path_object.task_json
                 self.update_task_json(assigned=self.path_object.user, priority=self.path_object.priority,
                                       status=self.path_object.status)
             if self.path_object.asset_json:
@@ -828,7 +824,7 @@ def start(filepath):
 
 
 def replace_illegal_filename_characters(filename):
-    return re.sub('[^A-Za-z0-9\.#]+', '_', filename)
+    return re.sub(r'[^A-Za-z0-9\.#]+', '_', filename)
 
 
 def show_in_folder(path_string):
@@ -859,12 +855,14 @@ def create_project_config(company, project):
 
 def seq_from_file(basename):
     numbers = re.search(SEQ_REGEX, basename)
-    numbers = numbers.group(0).replace('.', '')
-    string = '#' * int(len(numbers))
-    string = '.%s.' % string
-    this = re.sub(SEQ_REGEX, string, basename)
-    return this
-
+    if numbers:
+        numbers = numbers.group(0).replace('.', '')
+        string = '#' * int(len(numbers))
+        string = '.%s.' % string
+        this = re.sub(SEQ_REGEX, string, basename)
+        return this
+    else:
+        return basename
 
 
 

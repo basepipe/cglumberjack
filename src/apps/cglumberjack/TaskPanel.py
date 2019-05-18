@@ -1,15 +1,13 @@
 import os
 import shutil
 import logging
-import re
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
-from cglcore.path import PathObject, CreateProductionData, start
+from cglcore.path import PathObject, CreateProductionData
 from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file
 from widgets import AssetWidget, TaskWidget, FileTableModel
-from panels import prep_list_for_table
 
 
 class TaskPanel(QtWidgets.QWidget):
@@ -42,7 +40,6 @@ class TaskPanel(QtWidgets.QWidget):
         self.force_clear = False
         self.panel.addLayout(self.panel_source)
         self.panel.addLayout(self.render_layout)
-
 
     def on_main_asset_selected(self, data):
         try:
@@ -103,7 +100,7 @@ class TaskPanel(QtWidgets.QWidget):
                         task_widget.data_table.version = version_obj.version
                         task_widget.data_table.resolution = version_obj.resolution
                         files_ = version_obj.glob_project_element('filename')
-                        task_widget.setup(FileTableModel(prep_list_for_table(files_, split_for_file=True), ['Name']))
+                        task_widget.setup(FileTableModel(self.prep_list_for_table(files_, basename=True), ['Name']))
                         task_widget.data_table.selected.connect(self.on_source_selected)
                         task_widget.data_table.doubleClicked.connect(self.on_open_clicked)
                         task_widget.open_button_clicked.connect(self.on_open_clicked)
@@ -143,12 +140,10 @@ class TaskPanel(QtWidgets.QWidget):
             to_folder = to_object.path_root
             to_file = os.path.join(to_folder, file_)
             if '.' in file_:
-                print 'copying a file'
                 print 'Copying %s to %s' % (f, to_file)
                 shutil.copy2(f, to_file)
             else:
-                print 'copying a directory'
-                print 'Copying %s to %s' % (f, to_file)
+                print 'Copying directory %s to %s' % (f, to_file)
                 shutil.copytree(f, to_file)
                 #CreateProductionData(path_object=)
                 #shutil.copy2(f, to_file)
@@ -433,7 +428,7 @@ class TaskPanel(QtWidgets.QWidget):
             self.render_layout.addWidget(render_widget)
             self.render_layout.addItem((QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Minimum,
                                                               QtWidgets.QSizePolicy.Expanding)))
-            render_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True), ['Name']))
+            render_widget.setup(ListItemModel(self.prep_list_for_table(files_, basename=True), ['Name']))
             render_widget.data_table.selected.connect(self.on_render_selected)
         else:
             print 'No Published Files for %s' % current.path_root
@@ -449,23 +444,30 @@ class TaskPanel(QtWidgets.QWidget):
                 self.clear_layout(child.layout())
 
     @staticmethod
-    def prep_list_for_table(list_, path_filter=None, split_for_file=False):
+    def prep_list_for_table(list_, path_filter=None, basename=False):
+        """
+        Allows us to prepare lists for display in LJTables.
+        :param list_: list to put into the table.
+        :param path_filter: return a specific element from the path rather than the filename.  For instance if you
+        wanted to pull out only the "shot" name you'd use 'shot' as a path filter.
+        :param basename: if true we only return the os.path.basename() result of the string.
+        :return: list of prepared files/items.
+        """
         list_.sort()
-        sequences = []
         output_ = []
-        seq_rules = app_config()['rules']['path_variables']['global']['file_sequence']['regex']
-        regex = re.compile(r'%s' % seq_rules)
         for each in list_:
             if path_filter:
                 filtered = PathObject(each).data[path_filter]
                 output_.append([filtered])
             else:
-                if split_for_file:
-                    seq_string = seq_from_file(os.path.basename(each))
+                if basename:
+                    seq_string = str(seq_from_file(os.path.basename(each)))
                     if seq_string:
-                        if seq_string not in output_:
-                            output_.append(seq_string)
+                        if [seq_string] not in output_:
+                            output_.append([seq_string])
                     else:
                         output_.append([each])
+                else:
+                    output_.append([each])
         return output_
 

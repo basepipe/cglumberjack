@@ -66,7 +66,6 @@ def _load_ui_themes(gui=None):
     if theme_env in os.environ and os.environ[theme_env] == "1":
         logging.debug("THEME DEV MODE")
         rsc_dir = join(dirname(dirname(dirname(__file__))), "resources")
-        print rsc_dir
         if os.path.isdir(rsc_dir):
             theme = join(rsc_dir, "theme.css")
             app = QtWidgets.QApplication.instance()

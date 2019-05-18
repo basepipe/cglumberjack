@@ -335,7 +335,6 @@ class ImportBrowser(LJDialog):
 
     def show_combo_info(self, data):
         if data:
-            print data
             filepath = data[-1].replace('/', '\\')
             row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
             seq = self.data_frame.loc[row, 'Seq']
@@ -448,7 +447,6 @@ class ImportBrowser(LJDialog):
 
     def on_add_ingest_event(self):
         version = self.path_object.next_major_version()
-        print version.path_root
         if not os.path.exists(version.path_root):
             print 'Creating Version at: %s' % version.path_root
             os.makedirs(version.path_root)

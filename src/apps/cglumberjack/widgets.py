@@ -67,7 +67,6 @@ class FileTableModel(ListItemModel):
         if role == Qt.DecorationRole:
             data = self.data_[row][col]
             if "." not in data:
-                print 'u'
                 icon_path = os.path.join(path.icon_path(), 'folder2.png')
                 return QtWidgets.QIcon(icon_path)
         # if role == Qt.ToolTipRole:

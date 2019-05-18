@@ -122,7 +122,6 @@ def test_compare_config_to_obj_attrs():
         if config_attr in obj_.__dict__:
             assert True
         else:
-            print config_attr
             assert False
 
 

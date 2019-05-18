@@ -276,10 +276,8 @@ class MenuDesigner(LJDialog):
                 button_dict[rows[x].label.text().encode('utf-8').lower()] = rows[x].edit.text().encode('utf-8')
 
         button_dict["order"] = int(button_dict["order"])
-        print rows["command"].edit.text()
         cgl_tools, software, shelves, shelf_name, button = rows["command"].edit.text().encode('utf-8').split()[1].split('.')
         button_file = os.path.join(self.company_config_dir, 'cgl_tools', software, self.current_type, shelf_name, "%s.py" % button)
-        print 1, button_file
         if not os.path.exists(os.path.dirname(button_file)):
             os.makedirs(os.path.dirname(button_file))
         with open(button_file, 'w+') as y:

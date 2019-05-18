@@ -41,8 +41,6 @@ class LGShotgunListDictionaryItemModel(LGListDictionaryItemModel):
             self.data_filter = True
             if display_filter:
                 for key in display_filter:
-                    print 'key', key
-                    print 'display+filter', display_filter.keys()
                     self.keys = display_filter.keys()
                     self.headers.append(display_filter[key])
             else:

@@ -139,7 +139,6 @@ class PathDesigner(QtWidgets.QVBoxLayout):
         self.show_root()
         self.show_grid()
         self.on_add_selected(variables=parts)
-        print parts
 
     def hide_root(self):
         self.root_line_edit.hide()
@@ -164,7 +163,6 @@ class PathDesigner(QtWidgets.QVBoxLayout):
          for i in range(self.grid_layout.rowCount() * self.grid_layout.columnCount()) if self.grid_layout.itemAt(i)]
 
     def on_variable_changed(self):
-        print self.sender().parent()
         variable_text = self.sender().currentText()
         for col in range(self.grid_layout.columnCount()):
             current = self.grid_layout.itemAtPosition(0, col)
@@ -258,7 +256,6 @@ class PathFormulator(LJDialog):
 
     def load_companies(self):
         companies = get_companies()
-        print companies
         if companies:
             self.company.combo.addItems(companies)
         self.on_company_changed()
@@ -277,7 +274,6 @@ class PathFormulator(LJDialog):
 
     def on_create_formula(self):
         self.show_formula_widgets()
-
 
 
 if __name__ == "__main__":
