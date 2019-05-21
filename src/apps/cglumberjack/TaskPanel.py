@@ -6,11 +6,12 @@ from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
 from cglcore.path import PathObject, CreateProductionData
-from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file
+from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file, get_frange_from_seq
 from widgets import AssetWidget, TaskWidget, FileTableModel
 
 
 class TaskPanel(QtWidgets.QWidget):
+    source_selection_changed = QtCore.Signal(object)
     location_changed = QtCore.Signal(object)
     open_signal = QtCore.Signal()
     import_signal = QtCore.Signal()
@@ -99,13 +100,13 @@ class TaskPanel(QtWidgets.QWidget):
                         task_widget.data_table.user = version_obj.user
                         task_widget.data_table.version = version_obj.version
                         task_widget.data_table.resolution = version_obj.resolution
-                        files_ = version_obj.glob_project_element('filename')
+                        files_ = version_obj.glob_project_element('filename', full_path=True)
                         task_widget.setup(FileTableModel(self.prep_list_for_table(files_, basename=True), ['Name']))
                         task_widget.data_table.selected.connect(self.on_source_selected)
                         task_widget.data_table.doubleClicked.connect(self.on_open_clicked)
-                        task_widget.open_button_clicked.connect(self.on_open_clicked)
-                        task_widget.import_button_clicked.connect(self.on_import_clicked)
-                        task_widget.new_version_clicked.connect(self.on_new_version_clicked)
+                        task_widget.open_button.clicked.connect(self.on_open_clicked)
+                        task_widget.import_button.clicked.connect(self.on_import_clicked)
+                        task_widget.new_version_button.clicked.connect(self.on_new_version_clicked)
                         task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
                         task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
                         task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
@@ -243,7 +244,7 @@ class TaskPanel(QtWidgets.QWidget):
             self.user = ''
 
     def on_source_selected(self, data):
-        print 'source selected'
+        new_data = []
         object_ = PathObject(self.current_location)
         parent = self.sender().parent()
         object_.set_attr(root=self.path_object.root)
@@ -261,6 +262,10 @@ class TaskPanel(QtWidgets.QWidget):
             # this indicates a selection within the module, but not a specific selected files
             pass
         self.update_location(object_)
+        for each in data:
+            dir_ = os.path.dirname(object_.path_root)
+            new_data.append(os.path.join(dir_, each[0]))
+        self.source_selection_changed.emit(new_data)
         self.clear_task_selection_except(self.sender().task)
         self.sender().parent().show_tool_buttons()
         self.load_render_files()
@@ -286,6 +291,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.on_main_asset_selected(current)
 
     def on_open_clicked(self):
+        print 'open clicked 1'
         self.open_signal.emit()
 
     def on_import_clicked(self):
@@ -389,7 +395,7 @@ class TaskPanel(QtWidgets.QWidget):
             path_obj.set_attr(resolution=widget.resolutions.currentText())
         path_obj.set_attr(task=widget.task)
         self.update_location(path_obj)
-        files_ = path_obj.glob_project_element('filename')
+        files_ = path_obj.glob_project_element('filename', full_path=True)
         widget.setup(ListItemModel(self.prep_list_for_table(files_), ['Name']))
         self.clear_layout(self.render_layout)
 
@@ -416,7 +422,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.clear_layout(self.render_layout)
         current = PathObject(self.current_location)
         renders = current.copy(context='render', filename='*')
-        files_ = renders.glob_project_element('filename')
+        files_ = renders.glob_project_element('filename', full_path=True)
         if files_:
             label = QtWidgets.QLabel('<b>%s: Published Files</b>' % renders.task)
             render_widget = TaskWidget(self, 'Output', 'Output')
@@ -455,6 +461,10 @@ class TaskPanel(QtWidgets.QWidget):
         """
         list_.sort()
         output_ = []
+        dirname = os.path.dirname(list_[0])
+        print list_[0]
+        print 'made it'
+        print dirname
         for each in list_:
             if path_filter:
                 filtered = PathObject(each).data[path_filter]
@@ -469,5 +479,10 @@ class TaskPanel(QtWidgets.QWidget):
                         output_.append([each])
                 else:
                     output_.append([each])
+        for each in output_:
+            if '#' in each[0]:
+                frange = get_frange_from_seq(os.path.join(dirname, each[0]))
+                if frange:
+                    each[0] = '%s %s' % (each[0], frange)
         return output_
 

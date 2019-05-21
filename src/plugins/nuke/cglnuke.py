@@ -1,3 +1,4 @@
+import os
 import nuke
 from PySide2 import QtWidgets
 
@@ -31,10 +32,17 @@ def save_file_as(filepath):
 
 
 def import_media(filepath):
-    # if i'm given a folder what do i do?
-    # if i'm given a file what do i do?
-    # if i'm given a seq what do i do?
-    return nuke.nodes.Read(filepath=filepath)
+    """
+    imports the filepath.  This assumes that sequences are formated as follows:
+    [sequence] [sframe]-[eframe]
+    sequence.####.dpx 1-234
+    regular files are simply listed as a string with no frame numbers requred:
+    bob.jpg
+    :param filepath:
+    :return:
+    """
+    readNode = nuke.createNode('Read')
+    readNode.knob('file').fromUserText(filepath)
 
 
 def import_script(filepath):

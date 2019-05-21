@@ -366,31 +366,37 @@ class PathObject(object):
 
     def glob_project_element(self, attr, full_path=False):
         """
-        Simple Glob Function.  "I want to return all "projects"" for instance would be written this way:
-        glob_project_element(self, 'project')
-        this would return a list of project names.  Use the full_path flag to return a list of paths.
+        returns all of the project elements of type "attr" from the system.  Example - you want all projects on disk.
+        glob_project_element(attr='project')
         :param self: self
         :param attr: attribute name: 'project', 'scope', 'version', filename, etc...
         :param full_path: if True returns full paths for everything globbed
         :return: returns list of items, or paths.
         """
-        # this does not account for duplicate values - need a system that does.
-        # TODO this does not account for templates
-        try:
-            value = self.data[attr]
-            if value:
-                glob_path = self.path_root.split(value)[0]
-                list_ = []
-                if not full_path:
-                    for each in glob.glob(os.path.join(glob_path, '*')):
-                        list_.append(os.path.split(each)[-1])
-                else:
-                    list_ = glob.glob(os.path.join(glob_path, '*'))
-                return list_
-        except KeyError:
-            return None
+
+        list_ = []
+        index = self.template.index(attr)
+        parts = self.path.split('\\')
+        i = 0
+        path_ = ''
+        if index < len(parts):
+            while i < index:
+                path_ = os.path.join(path_, parts[i])
+                i += 1
+            path_ = os.path.join(path_, '*')
+            path_ = os.path.join(self.root, path_)
+            if not full_path:
+                for each in glob.glob(path_):
+                    list_.append(os.path.basename(each))
+            else:
+                print 2, path_
+                list_ = glob.glob(path_)
+            return list_
+        else:
+            return []
 
     def split_after(self, attr):
+        # TODO - this must be updated to match how glob_project_element works
         """
         convenience function that returns the path after splitting it at the desired attribute.
         for example split at project would return the path up to and including the project variable.
@@ -865,8 +871,16 @@ def seq_from_file(basename):
         return basename
 
 
-
-
+def get_frange_from_seq(filepath):
+    glob_string = filepath.split('#')[0]
+    frames = glob.glob('%s*' % glob_string)
+    if frames:
+        sframe = re.search(SEQ_REGEX, frames[0]).group(0).replace('.', '')
+        eframe = re.search(SEQ_REGEX, frames[-1]).group(0).replace('.', '')
+        if sframe and eframe:
+            return '%s-%s' % (sframe, eframe)
+    else:
+        return None
 
 
 

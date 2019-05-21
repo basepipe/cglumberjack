@@ -71,6 +71,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                  show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
         # Environment Stuff
+        self.show_import = show_import
         self.user = user_name
         self.default_user = user_name
         self.user_email = user_email
@@ -85,6 +86,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path_object = None
         self.panel = None
         self.radio_filter = radio_filter
+        self.source_selection = []
 
         self.layout = QtWidgets.QVBoxLayout(self)
         if path:
@@ -115,7 +117,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.layout.addWidget(self.path_widget)
         # TODO - make a path object the currency rather than a dict, makes it easier.
         self.update_location(self.path_object)
-        self.show_import = show_import
 
     def update_location(self, data):
         try:
@@ -140,8 +141,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 return
             else:
                 # TODO -  This needs to actually display the render panel as well, and reselect the actual filename.
-                self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                       user_name=self.user_name)
+                new_path_object = path_object.copy(user=None, resolution='high', filename=None)
+                self.load_task_panel(path_object=new_path_object)
         else:
             if self.panel:
                 self.panel.clear_layout()
@@ -184,6 +185,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
         self.panel.new_version_signal.connect(self.new_version_clicked)
+        self.panel.source_selection_changed.connect(self.set_source_selection)
+
+    def set_source_selection(self, data):
+        self.source_selection = data
 
     def open_clicked(self):
         if '####' in self.path_object.path_root:
@@ -242,15 +247,15 @@ class CGLumberjack(LJMainWindow):
         self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
         settings.setShortcut('Ctrl+,')
-        shelves = QtWidgets.QAction('Menu Designer', self)
+        menu_designer = QtWidgets.QAction('Menu Designer', self)
         ingest_dialog = QtWidgets.QAction('Ingest Tool', self)
         # add actions to the file menu
         tools_menu.addAction(settings)
-        tools_menu.addAction(shelves)
+        tools_menu.addAction(menu_designer)
         tools_menu.addAction(ingest_dialog)
         # connect signals and slots
         settings.triggered.connect(self.on_settings_clicked)
-        shelves.triggered.connect(self.on_shelves_clicked)
+        menu_designer.triggered.connect(self.on_shelves_clicked)
         login.triggered.connect(self.on_login_clicked)
         import_tool.triggered.connect(self.on_import_clicked)
 

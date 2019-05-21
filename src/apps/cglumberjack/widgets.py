@@ -156,7 +156,8 @@ class TaskWidget(QtWidgets.QFrame):
         # self.versions.setMinimumWidth(200)
         self.versions.hide()
         self.setMinimumWidth(300)
-        self.setMinimumHeight(140)
+        base_height = 120
+        self.setMinimumHeight(base_height+70)
 
         self.users_label = QtWidgets.QLabel("User:")
         self.users = AdvComboBox()
@@ -176,9 +177,6 @@ class TaskWidget(QtWidgets.QFrame):
         self.resolutions_layout.addWidget(self.resolutions)
         self.resolutions_layout.setContentsMargins(0, 0, 0, 0)
 
-        # self.search_box = LJSearchEdit(self)
-        # self.add_button = QtWidgets.QToolButton()
-        # self.add_button.setText("+")
         self.show_button = QtWidgets.QToolButton()
         self.show_button.setText("more")
         self.start_task_button = QtWidgets.QPushButton()
@@ -190,8 +188,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.data_table.set_draggable(True)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.data_table.setMinimumHeight(120)
-        #self.data_table.setMinimumWidth(150)
+        self.data_table.setMinimumHeight(base_height)
 
         # build the tool button row
         self.open_button = QtWidgets.QToolButton()
@@ -226,8 +223,6 @@ class TaskWidget(QtWidgets.QFrame):
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
         v_layout.addWidget(self.data_table, 1)
-        #v_layout.addItem(QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Minimum,
-        #                                                      QtWidgets.QSizePolicy.Minimum))
         v_layout.addWidget(self.empty_state)
         v_layout.addLayout(self.tool_button_layout)
         v_layout.addStretch(1)
@@ -330,14 +325,12 @@ class TaskWidget(QtWidgets.QFrame):
         self.data_table.show()
 
     def setup(self, mdl):
-        # This is where i add the layout
         self.data_table.set_item_model(mdl)
         self.empty_state.hide()
         if not self.data_table.model().rowCount():
             self.data_table.hide()
             if not self.start_task_button.isVisible():
                 self.empty_state.show()
-        # self.data_table.set_search_box(self.search_box)
 
     def on_new_version_clicked(self):
         self.new_version_clicked.emit()

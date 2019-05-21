@@ -17,9 +17,12 @@ class NukeBrowserWidget(CGLumberjackWidget):
         print 'open nuke'
 
     def import_clicked(self):
-        print self.path_object.path_root
-        cglnuke.import_media(self.path_object.path_root)
-        print 'nuke import'
+        for selection in self.source_selection:
+            if selection.endswith('.nk'):
+                cglnuke.import_script(selection)
+            else:
+                cglnuke.import_media(selection)
+            print 'nuke import'
 
 
 class CGLNuke(CGLumberjack):
