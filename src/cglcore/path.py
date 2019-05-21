@@ -15,7 +15,7 @@ PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 EXT_MAP = app_config()['ext_map']
 ROOT = app_config()['paths']['root']
 SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
-SEQ_REGEX = re.compile("\\.[0-9]+\\.")
+SEQ_REGEX = re.compile("\\.[0-9]{4,}\\.")
 
 
 class PathObject(object):
@@ -353,15 +353,16 @@ class PathObject(object):
                     self.__dict__['filename_base'] = base
                     self.data['filename_base'] = base
             elif attr == 'version':
-                if value and value is not '*':
-                    major, minor = value.split('.')
-                else:
-                    major = '000'
-                    minor = '000'
-                self.__dict__['major_version'] = major
-                self.data['major_version'] = major
-                self.__dict__['minor_version'] = minor
-                self.data['minor_version'] = minor
+                if value:
+                    if value is not '*' and value is not '.':
+                        major, minor = value.split('.')
+                    else:
+                        major = '000'
+                        minor = '000'
+                    self.__dict__['major_version'] = major
+                    self.data['major_version'] = major
+                    self.__dict__['minor_version'] = minor
+                    self.data['minor_version'] = minor
         self.set_path()
 
     def glob_project_element(self, attr, full_path=False):
@@ -389,7 +390,6 @@ class PathObject(object):
                 for each in glob.glob(path_):
                     list_.append(os.path.basename(each))
             else:
-                print 2, path_
                 list_ = glob.glob(path_)
             return list_
         else:

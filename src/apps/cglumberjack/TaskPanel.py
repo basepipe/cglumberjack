@@ -1,6 +1,8 @@
 import os
 import shutil
 import logging
+import json
+import datetime
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
@@ -19,6 +21,7 @@ class TaskPanel(QtWidgets.QWidget):
 
     def __init__(self, parent=None, path_object=None, user_email='', user_name='', show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
+        # self.setWidgetResizable(True)
         self.show_import = show_import
         self.path_object = path_object
         self.current_location = path_object.data
@@ -41,6 +44,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.force_clear = False
         self.panel.addLayout(self.panel_source)
         self.panel.addLayout(self.render_layout)
+        self.auto_publish_tasks = ['plate', 'element']
 
     def on_main_asset_selected(self, data):
         try:
@@ -50,7 +54,6 @@ class TaskPanel(QtWidgets.QWidget):
             return
         if data:
             # reset the GUI
-            self.panel_source.tasks = []
             self.clear_layout(self.panel_source)
             if self.path_object.scope == 'shots':
                 task_label = QtWidgets.QLabel('<H2>%s_%s: Tasks</H2>' % (self.path_object.seq, self.path_object.shot))
@@ -70,6 +73,7 @@ class TaskPanel(QtWidgets.QWidget):
             task_list = current.glob_project_element('task')
             self.update_location(path_object=current)
             self.panel_title.addStretch(1)
+            self.panel_source.tasks = []
             for task in task_list:
                 if '.' not in task:
                     if task not in self.panel_source.tasks:
@@ -135,10 +139,37 @@ class TaskPanel(QtWidgets.QWidget):
         self.panel_source.addStretch(1)
 
     def new_files_dragged(self, files):
+        to_object = PathObject(self.sender().to_object)
+        to_folder = to_object.path_root
+        if to_object.task in self.auto_publish_tasks:
+            dialog = InputDialog(title='Auto-publish files?',
+                                 message='Would you like me to publish this %s \n'
+                                         'to make it available to other tasks?' % to_object.task,
+                                 buttons=['Skip', 'Publish'])
+            dialog.exec_()
+            if dialog.button == 'Publish':
+                d = datetime.datetime.today()
+                current_date = d.strftime('%d-%m-%Y %H:%M:%S')
+                data = {}
+                data[current_date] = {'files added': files,
+                                      'to folder': to_folder}
+                path_ = os.path.join(to_object.path_root, 'ingest_record.json')
+                if os.path.exists(path_):
+                    with open(path_) as json_file:
+                        data = json.load(json_file)
+                data[current_date] = {'files added': files,
+                                      'to folder': to_folder}
+                with open(path_, 'w') as path_:
+                    json.dump(data, path_)
+
+                to_object.set_attr(context='render')
+                to_folder = to_object.path_root
+                print 'Render folder: %s' % to_folder
+
         for f in files:
             file_ = os.path.split(f)[-1]
-            to_object = PathObject(self.sender().to_object)
-            to_folder = to_object.path_root
+
+
             to_file = os.path.join(to_folder, file_)
             if '.' in file_:
                 print 'Copying %s to %s' % (f, to_file)
@@ -148,9 +179,8 @@ class TaskPanel(QtWidgets.QWidget):
                 shutil.copytree(f, to_file)
                 #CreateProductionData(path_object=)
                 #shutil.copy2(f, to_file)
-            return
-            self.force_clear = True
-            self.update_location(to_object)
+        if to_object.data:
+            self.on_main_asset_selected(to_object.data)
 
     def update_location(self, path_object):
         """
@@ -180,7 +210,6 @@ class TaskPanel(QtWidgets.QWidget):
                 task_mode = False
             dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
             dialog.exec_()
-            self.on_project_changed(self.current_location['project'])
 
     def populate_users_combo(self, widget, path_object, task):
         object_ = path_object.copy(user='*', task=task)
@@ -291,7 +320,6 @@ class TaskPanel(QtWidgets.QWidget):
         self.on_main_asset_selected(current)
 
     def on_open_clicked(self):
-        print 'open clicked 1'
         self.open_signal.emit()
 
     def on_import_clicked(self):
@@ -361,8 +389,18 @@ class TaskPanel(QtWidgets.QWidget):
 
     # LOAD FUNCTIONS
     def on_file_dragged_to_source(self, data):
+
         # Only do this if it's dragged into a thing that hasn't been selected
         object_ = PathObject(self.current_location)
+        if object_.task in self.auto_publish_tasks:
+            dialog = InputDialog(title='Auto-publish files?',
+                                 message='Would you like me to publish this %s \n'
+                                         'to make it available to other tasks?' % object_.task,
+                                 buttons=['Skip', 'Publish'])
+            dialog.exec_()
+            if dialog.button == 'Publish':
+                print 'Auto Publishing Files'
+
         parent = self.sender().parent()
         #object_.set_attr(root=self.root)
         object_.set_attr(version=parent.versions.currentText())
@@ -370,23 +408,32 @@ class TaskPanel(QtWidgets.QWidget):
         object_.set_attr(resolution=parent.resolutions.currentText())
         object_.set_attr(user=parent.users.currentText())
         object_.set_attr(task=self.sender().task)
+        # object_.set_attr(ext=None)
         self.update_location(object_)
         self.clear_task_selection_except(self.sender().task)
+        to_path = object_.path_root
+        if os.path.isfile(to_path):
+            to_path = os.path.dirname(to_path)
         for d in data:
             path_, filename_ = os.path.split(d)
             if os.path.isfile(d):
                 # need to make the filenames safe (no illegal chars)
                 filename_ = replace_illegal_filename_characters(filename_)
-                logging.info('Copying File From %s to %s' % (d, os.path.join(object_.path_root, filename_)))
-                shutil.copy2(d, os.path.join(self.path_object.path_root, filename_))
-                self.reload_task_widget(self.sender().parent())
+                logging.info('Copying File From %s to %s' % (d, os.path.join(to_path, filename_)))
+                shutil.copy2(d, os.path.join(to_path, filename_))
+                # self.reload_task_widget(self.sender().parent(), path_object=object_)
             elif os.path.isdir(d):
-                logging.info('Copying File From %s to %s' % (d, os.path.join(object_.path_root, filename_)))
+                logging.info('Copying Folder From %s to %s' % (d, os.path.join(to_path, filename_)))
                 shutil.copytree(d, os.path.join(object_.path_root, filename_))
+                # self.reload_task_widget(self.sender().parent())
 
-    def reload_task_widget(self, widget, populate_versions=True):
-        path_obj = PathObject(self.current_location)
-        path_obj.set_attr(filename='*')
+        self.on_main_asset_selected(object_.data)
+
+    def reload_task_widget(self, widget, path_object=None, populate_versions=True):
+        if path_object:
+            path_obj = PathObject(path_object)
+        else:
+            path_obj = PathObject(self.current_location)
         path_obj.set_attr(user=widget.users.currentText())
         if populate_versions:
             path_obj.set_attr(version=self.populate_versions_combo(widget, path_obj, widget.label))
@@ -459,12 +506,11 @@ class TaskPanel(QtWidgets.QWidget):
         :param basename: if true we only return the os.path.basename() result of the string.
         :return: list of prepared files/items.
         """
+        if not list_:
+            return
         list_.sort()
         output_ = []
         dirname = os.path.dirname(list_[0])
-        print list_[0]
-        print 'made it'
-        print dirname
         for each in list_:
             if path_filter:
                 filtered = PathObject(each).data[path_filter]

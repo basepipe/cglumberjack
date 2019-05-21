@@ -7,7 +7,10 @@ class LJItemModel(QAbstractTableModel):
             return self.headers[section]
 
     def rowCount(self, index):
-        return len(self.data_)
+        if self.data_:
+            return len(self.data_)
+        else:
+            return None
 
     def columnCount(self, index):
         return len(self.headers)

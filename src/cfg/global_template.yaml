@@ -214,6 +214,8 @@ pipeline_steps:
     Storyboards: boards
     Color Editing: color
     Camera: cam
+    Plate: plate
+    Element: elem
   assets:
     default_steps: ['ref', 'mdl', 'tex', 'shd']
     Conception/Previs/R&D: ref
@@ -257,6 +259,8 @@ pipeline_steps:
     anim: Animation
     blocking: Blocking
     amtc: Animatic
+    plate: Plate
+    elem: Element
 default:
   linear_gamma: 2.2
   frame_rate: 24
