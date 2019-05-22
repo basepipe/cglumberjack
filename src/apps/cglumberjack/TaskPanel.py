@@ -3,6 +3,7 @@ import shutil
 import logging
 import json
 import datetime
+import glob
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
@@ -22,6 +23,7 @@ class TaskPanel(QtWidgets.QWidget):
     def __init__(self, parent=None, path_object=None, user_email='', user_name='', show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
+        self.task_widgets_dict = {}
         self.show_import = show_import
         self.path_object = path_object
         self.current_location = path_object.data
@@ -82,6 +84,7 @@ class TaskPanel(QtWidgets.QWidget):
                             title = app_config()['pipeline_steps']['short_to_long'][task]
                         except KeyError:
                             return
+
                         task_widget = TaskWidget(parent=self,
                                                  title=title,
                                                  short_title=task,
@@ -90,7 +93,8 @@ class TaskPanel(QtWidgets.QWidget):
                         task_widget.showall()
                         task_widget.hide_button.hide()
                         task_widget.show_button.show()
-
+                        task_widget.data_table2.hide()
+                        self.task_widgets_dict[task] = task_widget
 
                         # find the version information for the task:
                         user = self.populate_users_combo(task_widget, current, task)
@@ -105,7 +109,12 @@ class TaskPanel(QtWidgets.QWidget):
                         task_widget.data_table.version = version_obj.version
                         task_widget.data_table.resolution = version_obj.resolution
                         files_ = version_obj.glob_project_element('filename', full_path=True)
-                        task_widget.setup(FileTableModel(self.prep_list_for_table(files_, basename=True), ['Name']))
+                        if files_:
+                            task_widget.my_files_label.show()
+                        task_widget.setup(task_widget.data_table,
+                                          FileTableModel(self.prep_list_for_table(files_, basename=True), ['Name']))
+                        self.load_render_files(task_widget)
+
                         task_widget.data_table.selected.connect(self.on_source_selected)
                         task_widget.data_table.doubleClicked.connect(self.on_open_clicked)
                         task_widget.open_button.clicked.connect(self.on_open_clicked)
@@ -153,7 +162,7 @@ class TaskPanel(QtWidgets.QWidget):
                 data = {}
                 data[current_date] = {'files added': files,
                                       'to folder': to_folder}
-                path_ = os.path.join(to_object.path_root, 'ingest_record.json')
+                path_ = os.path.join(to_object.path_root, 'ingest_record.cgl')
                 if os.path.exists(path_):
                     with open(path_) as json_file:
                         data = json.load(json_file)
@@ -168,19 +177,17 @@ class TaskPanel(QtWidgets.QWidget):
 
         for f in files:
             file_ = os.path.split(f)[-1]
-
-
             to_file = os.path.join(to_folder, file_)
             if '.' in file_:
                 print 'Copying %s to %s' % (f, to_file)
                 shutil.copy2(f, to_file)
+                # CreateProductionData(path_object=to_object)
+                self.on_main_asset_selected(self.current_location)
             else:
                 print 'Copying directory %s to %s' % (f, to_file)
                 shutil.copytree(f, to_file)
-                #CreateProductionData(path_object=)
-                #shutil.copy2(f, to_file)
-        if to_object.data:
-            self.on_main_asset_selected(to_object.data)
+                # CreateProductionData(path_object=to_object)
+                self.on_main_asset_selected(self.current_location)
 
     def update_location(self, path_object):
         """
@@ -297,7 +304,6 @@ class TaskPanel(QtWidgets.QWidget):
         self.source_selection_changed.emit(new_data)
         self.clear_task_selection_except(self.sender().task)
         self.sender().parent().show_tool_buttons()
-        self.load_render_files()
         if object_.context == 'source':
             self.sender().parent().review_button.hide()
             self.sender().parent().publish_button.hide()
@@ -443,7 +449,7 @@ class TaskPanel(QtWidgets.QWidget):
         path_obj.set_attr(task=widget.task)
         self.update_location(path_obj)
         files_ = path_obj.glob_project_element('filename', full_path=True)
-        widget.setup(ListItemModel(self.prep_list_for_table(files_), ['Name']))
+        widget.setup(widget.data_table, ListItemModel(self.prep_list_for_table(files_), ['Name']))
         self.clear_layout(self.render_layout)
 
     def clear_task_selection_except(self, task=None):
@@ -464,27 +470,23 @@ class TaskPanel(QtWidgets.QWidget):
                             child.widget().data_table.clearSelection()
         return
 
-    def load_render_files(self):
-        print 'loading render files'
+    def load_render_files(self, widget):
+        render_table = widget.data_table2
         self.clear_layout(self.render_layout)
         current = PathObject(self.current_location)
-        renders = current.copy(context='render', filename='*')
-        files_ = renders.glob_project_element('filename', full_path=True)
-        if files_:
-            label = QtWidgets.QLabel('<b>%s: Published Files</b>' % renders.task)
-            render_widget = TaskWidget(self, 'Output', 'Output')
-            render_widget.showall()
-            render_widget.title.hide()
-            # render_widget.search_box.hide()
-            render_widget.hide_button.hide()
-            self.render_layout.addWidget(label)
-            self.render_layout.addWidget(render_widget)
-            self.render_layout.addItem((QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Minimum,
-                                                              QtWidgets.QSizePolicy.Expanding)))
-            render_widget.setup(ListItemModel(self.prep_list_for_table(files_, basename=True), ['Name']))
-            render_widget.data_table.selected.connect(self.on_render_selected)
-        else:
-            print 'No Published Files for %s' % current.path_root
+        if widget.data_table.user:
+            renders = current.copy(context='render', task=widget.task, user=widget.data_table.user,
+                                   version=widget.data_table.version, resolution=widget.data_table.resolution,
+                                   filename='*')
+            files_ = glob.glob(renders.path_root)
+            if files_:
+                widget.setup(render_table, ListItemModel(self.prep_list_for_table(files_, basename=True), ['Name']))
+                render_table.show()
+                widget.export_label.show()
+            else:
+                widget.export_label.hide()
+                render_table.hide()
+                print 'No Published Files for %s' % current.path_root
 
     def clear_layout(self, layout=None):
         if not layout:

@@ -137,16 +137,23 @@ class PathObject(object):
 
     def get_last_attr(self):
         self.get_template()
+        print self.template
         for t in self.template:
             if t in self.data:
                 if self.data[t]:
                     current_ = t
+            elif t in app_config()['rules']['scope_list']:
+                current_ = 'scope'
+
         return current_
 
     def get_template(self):
         self.template = []
         if self.context:
             if self.scope:
+                if self.scope == '*':
+                    self.template = ['company', 'context', 'project', 'scope']
+                    return
                 try:
                     path_template = app_config()['templates'][self.scope][self.context]['path'].split('/')
                     if path_template[-1] == '':
@@ -263,14 +270,14 @@ class PathObject(object):
                 else:
                     if self.__dict__[attr]:
                         path_string = os.path.join(path_string, self.__dict__[attr])
-        #path_string = path_string.replace('\\', '/')
-        # if windows
-        
+
+        path_string = path_string.replace('\\', '/')
+
         if sys.platform == 'win32':
-            self.path_root = '%s\\%s' % (self.root, path_string)
+            self.path_root = '%s/%s' % (self.root, path_string)
             path_, file_ = os.path.split(self.path_root)
         else:
-            self.path_root = os.path.join(self.root, path_string)
+            self.path_root = os.path.join(self.root, path_string).replace('\\', '/')
             path_, file_ = os.path.split(self.path_root)
         self.path = path_string
         if self.filename:
@@ -377,7 +384,7 @@ class PathObject(object):
 
         list_ = []
         index = self.template.index(attr)
-        parts = self.path.split('\\')
+        parts = self.path.split('/')
         i = 0
         path_ = ''
         if index < len(parts):

@@ -3,8 +3,10 @@ from cglcore.config import app_config, UserConfig
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start
-from panels import CompanyPanel, ProjectPanel, IOPanel
+from panels import ProjectPanel, ProductionPanel, ScopePanel
+from IOPanel import IOPanel
 from TaskPanel import TaskPanel
+from import_main import ImportBrowser
 
 
 class PathWidget(QtWidgets.QWidget):
@@ -55,13 +57,16 @@ class PathWidget(QtWidgets.QWidget):
             new_path = '%s/%s' % (path_object.split_after('scope'), '*')
         elif path_object.shot:
             new_path = '%s/%s' % (path_object.split_after('scope'), '*')
+        elif path_object.scope:
+            if path_object.scope == '*':
+                new_path = '%s/%s' % (path_object.split_after('context'), '*')
+            else:
+                new_path = '%s/%s' % (path_object.split_after('project'), '*')
         elif path_object.project:
             new_path = '%s/%s' % (path_object.split_after('context'), '*')
         else:
             new_path = path_object.root
         new_object = PathObject(new_path)
-        #if new_object.path_root.replace('\\', '/') == self.current_location_line_edit.text():
-        #    return
         self.location_changed.emit(new_object)
 
 
@@ -150,17 +155,24 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.load_task_panel(path_object)
         if last == 'company' or last == 'project':
             if path_object.project == '*':
-                self.panel = CompanyPanel(path_object=path_object)
-            else:
                 self.panel = ProjectPanel(path_object=path_object)
+            else:
+                self.panel = ProductionPanel(path_object=path_object)
+        if last == 'scope':
+            if path_object.scope == '*':
+                self.panel = ScopePanel(path_object=path_object)
+            elif path_object.scope == 'IO':
+                self.panel = IOPanel(path_object=path_object)
+            else:
+                self.panel = ProductionPanel(path_object=path_object)
         elif last in shot_attrs:
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
-                self.panel = ProjectPanel(path_object=path_object)
+                self.panel = ProductionPanel(path_object=path_object)
             else:
                 self.load_task_panel(path_object)
         elif last == 'input_company':
             if path_object.input_company == '*':
-                self.panel = ProjectPanel(path_object=path_object)
+                self.panel = ProductionPanel(path_object=path_object)
             else:
                 self.panel = IOPanel(path_object=path_object, user_email=self.user_email, user_name=self.user_name,
                                      render_layout=None)
@@ -260,7 +272,7 @@ class CGLumberjack(LJMainWindow):
         import_tool.triggered.connect(self.on_import_clicked)
 
     def on_import_clicked(self):
-        from import_main import ImportBrowser
+
         print 'Opening the Import Dialog'
         text = self.centralWidget().path_widget.current_location_line_edit.text()
         import_dialog = ImportBrowser(path_object=PathObject(text))

@@ -8,13 +8,13 @@ from cglui.widgets.combo import LabelComboRow
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
 from cglcore.path import PathObject, CreateProductionData, start
-from cglcore.path import replace_illegal_filename_characters, show_in_folder, create_project_config
+from cglcore.path import create_project_config
 from asset_ingestor_widget import AssetIngestor
-from widgets import ProjectWidget, AssetWidget, TaskWidget
-from apps.project_buddy.widgets import LJButton
+from widgets import ProjectWidget, AssetWidget
+from import_main import ImportBrowser
 
 
-class CompanyPanel(QtWidgets.QWidget):
+class ProjectPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None):
@@ -31,7 +31,7 @@ class CompanyPanel(QtWidgets.QWidget):
         self.user_root = app_config()['cg_lumberjack_dir']
         self.path = ''
         self.path_root = ''
-        self.scope = ''
+        self.scope = '*'
         self.context = 'source'
         self.seq = ''
         self.shot = ''
@@ -136,6 +136,7 @@ class CompanyPanel(QtWidgets.QWidget):
              'project': '*',
              'context': 'source'}
         path_object = PathObject(d)
+        print 3, path_object.path_root
         projects = path_object.glob_project_element('project')
         if not projects:
             print 'no projects'
@@ -160,15 +161,13 @@ class CompanyPanel(QtWidgets.QWidget):
                 self.path_root = path_object.path_root
                 self.path = path_object.path
             else:
-                self.current_location = {'company': self.company, 'root': self.root, 'scope': self.scope,
+                self.current_location = {'company': self.company, 'root': self.root, 'scope': "*",
                                          'context': self.context, 'project': self.project
                                          }
                 path_obj = PathObject(self.current_location)
                 self.path_root = path_obj.path_root
                 self.path = path_obj.path
                 # self.current_location_line_edit.setText(self.path_root)
-            if self.current_location['project']:
-                self.current_location['scope'] = 'assets'
             self.location_changed.emit(self.current_location)
             return self.path_root
 
@@ -228,7 +227,42 @@ class CompanyPanel(QtWidgets.QWidget):
                 self.clear_layout(child.layout())
 
 
-class ProjectPanel(QtWidgets.QWidget):
+class ScopePanel(QtWidgets.QWidget):
+    location_changed = QtCore.Signal(object)
+
+    def __init__(self, parent=None, path_object=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        if path_object:
+            self.path_object = path_object.copy(seq=None, shot=None, input_company=None, resolution='', version='',
+                                                user=None, scope=None)
+        else:
+            return
+
+        self.panel = QtWidgets.QVBoxLayout(self)
+        for each in ['assets', 'shots', 'IO']:
+            button = QtWidgets.QPushButton(str(each))
+            button.setMinimumHeight(100)
+            self.panel.addWidget(button)
+            button.clicked.connect(self.on_button_clicked)
+        self.panel.addStretch(1)
+
+    def on_button_clicked(self):
+        scope = self.sender().text()
+        self.path_object.set_attr(scope=scope)
+        self.location_changed.emit(self.path_object)
+
+    def clear_layout(self, layout=None):
+        if not layout:
+            layout = self.panel
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget() is not None:
+                child.widget().deleteLater()
+            elif child.layout() is not None:
+                self.clear_layout(child.layout())
+
+
+class ProductionPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None):
@@ -383,121 +417,6 @@ class ProjectPanel(QtWidgets.QWidget):
                 child.widget().deleteLater()
             elif child.layout() is not None:
                 self.clear_layout(child.layout())
-
-
-class IOPanel(QtWidgets.QWidget):
-    location_changed = QtCore.Signal(object)
-
-    def __init__(self, parent=None, path_object=None, user_email='', user_name='', render_layout=None):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.path_object = path_object
-        self.render_layout = render_layout
-        self.current_location = path_object.data
-        self.panel = QtWidgets.QVBoxLayout(self)
-        # self.panel.setContentsMargins(0, 10, 0, 0)
-        self.panel_tasks = QtWidgets.QVBoxLayout(self)
-        # self.panel_tasks.setContentsMargins(0, 0, 0, 0)
-        self.in_file_tree = None
-        self.user_changed_versions = False
-        self.user_email = user_email
-        self.user = user_name
-        self.user_default = self.user
-        self.default_user = user_name
-        self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
-        self.on_main_asset_selected(self.path_object.data)
-
-    def on_main_asset_selected(self, data):
-        try:
-            current = PathObject(data)
-        except IndexError:
-            print 'Nothing Selected'
-            return
-        if data:
-            # reset the GUI
-            self.panel.tasks = []
-            self.clear_layout(self.panel)
-            task_label = QtWidgets.QLabel('<H2>IO</H2>')
-            task_add = QtWidgets.QToolButton()
-            task_add.setText('+')
-            task_label_layout = QtWidgets.QHBoxLayout()
-            # task_label_layout.addWidget(task_label)
-
-            self.panel.addWidget(task_label)
-            io_widget = IOWidget(self, 'IN', current)
-            self.in_file_tree = io_widget.file_tree
-            self.panel.addWidget(io_widget)
-            self.panel.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
-                                                      QtWidgets.QSizePolicy.Expanding)))
-            self.update_location(path_object=current)
-            io_widget.add_button.clicked.connect(self.on_add_ingest)
-            io_widget.versions_changed.connect(self.on_ingest_versions_changed)
-            io_widget.versions.activated.connect(self.user_entered_versions)
-            io_widget.file_tree.selected.connect(self.on_client_file_selected)
-            self.populate_ingest_versions(io_widget.versions, current)
-
-    def clear_layout(self, layout=None):
-        if not layout:
-            layout = self.panel
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clear_layout(child.layout())
-
-    def update_location(self, path_object):
-        if path_object:
-            self.current_location = path_object.data
-            self.location_changed.emit(self.current_location)
-            return path_object.path_root
-
-    def user_entered_versions(self):
-        self.user_changed_versions = True
-
-    def on_client_file_selected(self, data):
-        files = []
-        for each in data:
-            path_, filename_ = os.path.split(each)
-            files.append(filename_)
-        self.sender().parent().clear_all()
-        self.sender().parent().show_tags(files=files)
-        self.sender().parent().populate_combos()
-        self.sender().parent().show_combo_info(data)
-        self.sender().parent().show_line_edit_info(data)
-
-    def on_add_ingest(self):
-        path_object = PathObject(self.current_location)
-        version = path_object.next_major_version_number()
-        path_object.set_attr(version=version)
-        if not os.path.exists(path_object.path_root):
-            print 'Creating Version at: %s' % path_object.path_root
-            os.makedirs(path_object.path_root)
-        # TODO refresh the thing
-        dir_ = os.path.split(path_object.path_root)[0]
-        # data = [['', path_object.input_company, dir_, '', '']]
-        self.clear_layout(self.panel)
-        self.on_main_asset_selected(dir_)
-
-    def populate_ingest_versions(self, combo_box, path_object):
-        items = glob.glob('%s/%s' % (path_object.path_root, '*'))
-        versions = []
-        for each in items:
-            versions.append(os.path.split(each)[-1])
-        versions = sorted(versions)
-        number = len(versions)
-        combo_box.addItems(versions)
-        combo_box.setCurrentIndex(number - 1)
-        self.current_location['version'] = combo_box.currentText()
-        self.update_location(path_object=PathObject(self.current_location))
-        self.user_changed_versions = True
-        self.on_ingest_versions_changed(combo_box.currentText())
-        self.user_changed_versions = False
-
-    def on_ingest_versions_changed(self, version):
-        if self.user_changed_versions:
-            self.current_location['version'] = version
-            self.update_location(path_object=PathObject(self.current_location))
-            self.in_file_tree.populate(directory=self.path_object.path_root)
 
 
 def prep_list_for_table(list_, path_filter=None, split_for_file=False):

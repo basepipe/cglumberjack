@@ -139,12 +139,17 @@ class TaskWidget(QtWidgets.QFrame):
     def __init__(self, parent, title, short_title, filter_string=None, path_object=None, show_import=False):
         QtWidgets.QFrame.__init__(self, parent)
         self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
+        self.setAutoFillBackground(True)
+        p = self.palette()
+        brightness = 235
+        p.setColor(self.backgroundRole(), QtGui.QColor(brightness, brightness, brightness))
+        self.setPalette(p)
         v_layout = QtWidgets.QVBoxLayout(self)
         task_row = QtWidgets.QHBoxLayout()
         self.show_import = show_import
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
-        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Expanding)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
@@ -153,11 +158,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.user = None
         self.in_file_tree = None
         self.versions = AdvComboBox()
-        # self.versions.setMinimumWidth(200)
         self.versions.hide()
-        self.setMinimumWidth(300)
-        base_height = 120
-        self.setMinimumHeight(base_height+70)
 
         self.users_label = QtWidgets.QLabel("User:")
         self.users = AdvComboBox()
@@ -184,11 +185,19 @@ class TaskWidget(QtWidgets.QFrame):
         self.hide_button = QtWidgets.QToolButton()
         self.hide_button.setText("less")
         self.data_table = FileTableWidget(self)
-        self.data_table.set_item_model(FileTableModel([], [""]))
         self.data_table.set_draggable(True)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.data_table.setMinimumHeight(base_height)
+        self.data_table2 = FileTableWidget(self)
+        self.data_table2.set_draggable(True)
+        self.data_table2.title = 'blob'
+        self.data_table2.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.my_files_label = QtWidgets.QLabel('My Files')
+        self.export_label = QtWidgets.QLabel('Ready to Review/Publish')
+        self.export_label_row = QtWidgets.QHBoxLayout()
+        self.export_label_row.addWidget(self.export_label)
+        self.export_label.hide()
+        self.my_files_label.hide()
 
         # build the tool button row
         self.open_button = QtWidgets.QToolButton()
@@ -222,7 +231,10 @@ class TaskWidget(QtWidgets.QFrame):
         v_layout.addWidget(self.start_task_button)
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
+        v_layout.addWidget(self.my_files_label)
         v_layout.addWidget(self.data_table, 1)
+        v_layout.addLayout(self.export_label_row)
+        v_layout.addWidget(self.data_table2, 1)
         v_layout.addWidget(self.empty_state)
         v_layout.addLayout(self.tool_button_layout)
         v_layout.addStretch(1)
@@ -324,13 +336,14 @@ class TaskWidget(QtWidgets.QFrame):
         self.show_button.hide()
         self.data_table.show()
 
-    def setup(self, mdl):
-        self.data_table.set_item_model(mdl)
-        self.empty_state.hide()
-        if not self.data_table.model().rowCount():
-            self.data_table.hide()
-            if not self.start_task_button.isVisible():
-                self.empty_state.show()
+    def setup(self, table, mdl):
+        if mdl:
+            table.set_item_model(mdl)
+            self.empty_state.hide()
+            if not table.model().rowCount():
+                table.hide()
+                if not self.start_task_button.isVisible():
+                    self.empty_state.show()
 
     def on_new_version_clicked(self):
         self.new_version_clicked.emit()

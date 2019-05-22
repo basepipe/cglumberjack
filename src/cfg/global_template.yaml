@@ -1,4 +1,5 @@
 account_info:
+  user_directory: C:\Users\tmiko\Documents\cglumberjack
   project_management: lumbermill
 logging:
     level: debug
@@ -6,8 +7,8 @@ logging:
     debug:
         format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'
 paths:
-  root: ''
-  code_root: C:\Users\tmikota\PycharmProjects\cglumberjack
+  root: 'D:'
+  code_root: C:\Users\tmiko\PycharmProjects\cglumberjack
   ffmpeg: C:\ffmpeg\bin\ffmpeg.exe
   oiiotool: C:\OpenImageIO-1.5.0-OCIO\bin\oiiotool.exe
   ffprobe: C:\ffmpeg\bin\ffprobe.exe
@@ -15,7 +16,10 @@ paths:
   dev_pkg: C:\Python27\Lib\site-packages
   mayapy: C:\PROGRA~1\Autodesk\Maya2018\bin\mayapy.exe
   maketx: C:\OpenImageIO-1.5.0-OCIO\bin\maketx.exe
- path_variables:
+rules:
+  context_list: ['render', 'source', 'unity', 'unreal']
+  scope_list: ['assets', 'shots', 'IO']
+  path_variables:
     root:
       regex: "[A-Za-z0-9_\\:]+"
     company:
@@ -79,6 +83,8 @@ paths:
     date:
       regex: "[0-9_]+"
   general:
+    file_sequence:
+      regex: "\\.[0-9]+\\."
     valid_sequence:
       regex: "[aA-zZ]+(\\.|\\_|\\-)[0-9]{2,4}\\."
     taskname:
@@ -125,13 +131,6 @@ templates:
       version: "{version}"
     render:
       path: "{company}/render/{project}/IO/{input_company}"
-      version: "{version}"
-  edit:
-    source:
-      path: "{company}/source/{project}/editorial/{asset}/{user}"
-      version: "{version}/{filename}.{ext}"
-    render:
-      path: "{company}/render/{project}/editorial/{asset}/{user}"
       version: "{version}"
 ext_map:
   .mov: 'movie'
@@ -215,7 +214,6 @@ pipeline_steps:
     Color Editing: color
     Camera: cam
     Plate: plate
-    Element: elem
   assets:
     default_steps: ['ref', 'mdl', 'tex', 'shd']
     Conception/Previs/R&D: ref
@@ -260,7 +258,6 @@ pipeline_steps:
     blocking: Blocking
     amtc: Animatic
     plate: Plate
-    elem: Element
 default:
   linear_gamma: 2.2
   frame_rate: 24
@@ -279,7 +276,6 @@ default:
     half: 960x540
     third: 640x360
     quarter: 480x270
-
 dvp:
   frame_rate: 24
 
