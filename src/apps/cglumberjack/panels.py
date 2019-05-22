@@ -233,7 +233,7 @@ class ScopePanel(QtWidgets.QWidget):
     def __init__(self, parent=None, path_object=None):
         QtWidgets.QWidget.__init__(self, parent)
         if path_object:
-            self.path_object = path_object.copy(seq=None, shot=None, input_company=None, resolution='', version='',
+            self.path_object = path_object.copy(seq=None, shot=None, ingest_source=None, resolution='', version='',
                                                 user=None, scope=None)
         else:
             return
@@ -269,7 +269,7 @@ class ProductionPanel(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         # Create the Middle Panel
         if path_object:
-            self.path_object = path_object.copy(seq='*', shot='*', input_company='*', resolution='', version='',
+            self.path_object = path_object.copy(seq='*', shot='*', ingest_source='*', resolution='', version='',
                                                 user=None)
         else:
             return
@@ -360,9 +360,9 @@ class ProductionPanel(QtWidgets.QWidget):
             dialog = InputDialog(self, title='Create Input Company', message='Enter the CLIENT or name of VENDOR',
                                  combo_box_items=['CLIENT'])
             dialog.exec_()
-            self.current_location['input_company'] = dialog.combo_box.currentText()
-            input_company_location = PathObject(self.current_location).path_root
-            if input_company_location.endswith(dialog.combo_box.currentText()):
+            self.current_location['ingest_source'] = dialog.combo_box.currentText()
+            ingest_source_location = PathObject(self.current_location).path_root
+            if ingest_source_location.endswith(dialog.combo_box.currentText()):
                 CreateProductionData(self.current_location, json=False)
         else:
         """
@@ -402,7 +402,7 @@ class ProductionPanel(QtWidgets.QWidget):
         self.resolution = ''
         self.seq = '*'
         self.shot = '*'
-        self.input_company = '*'
+        self.ingest_source = '*'
         self.clear_layout(self.panel_tasks)
         self.clear_layout(self.render_layout)
         self.update_location()

@@ -151,9 +151,9 @@ class TaskPanel(QtWidgets.QWidget):
         to_object = PathObject(self.sender().to_object)
         to_folder = to_object.path_root
         if to_object.task in self.auto_publish_tasks:
-            dialog = InputDialog(title='Auto-publish files?',
-                                 message='Would you like me to publish this %s \n'
-                                         'to make it available to other tasks?' % to_object.task,
+            dialog = InputDialog(title='Auto-Export files?',
+                                 message='Would you like me to prepare these files\n'
+                                         'for review/publish?' % to_object.task,
                                  buttons=['Skip', 'Publish'])
             dialog.exec_()
             if dialog.button == 'Publish':
@@ -205,9 +205,9 @@ class TaskPanel(QtWidgets.QWidget):
             dialog = InputDialog(self, title='Create Input Company', message='Enter the CLIENT or name of VENDOR',
                                  combo_box_items=['CLIENT'])
             dialog.exec_()
-            self.current_location['input_company'] = dialog.combo_box.currentText()
-            input_company_location = PathObject(self.current_location).path_root
-            if input_company_location.endswith(dialog.combo_box.currentText()):
+            self.current_location['ingest_source'] = dialog.combo_box.currentText()
+            ingest_source_location = PathObject(self.current_location).path_root
+            if ingest_source_location.endswith(dialog.combo_box.currentText()):
                 CreateProductionData(self.current_location, json=False)
         else:
             import asset_creator

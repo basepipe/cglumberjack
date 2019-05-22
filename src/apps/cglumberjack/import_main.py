@@ -96,7 +96,7 @@ class ImportBrowser(LJDialog):
         self.data_frame = None
 
         self.path_object.set_attr(scope='IO')
-        self.path_object.set_attr(input_company='*')
+        self.path_object.set_attr(ingest_source='*')
         self.data_frame = None
         self.pandas_path = ''
         self.io_statuses = ['Imported', 'Tagged', 'Published']
@@ -204,7 +204,7 @@ class ImportBrowser(LJDialog):
 
     def load_companies(self):
         self.company_widget.list.clear()
-        dir_ = self.path_object.glob_project_element('input_company')
+        dir_ = self.path_object.glob_project_element('ingest_source')
         if 'INTERNAL' not in dir_:
             dir_.insert(0, 'INTERNAL')
         self.company_widget.list.addItems(dir_)
@@ -212,14 +212,14 @@ class ImportBrowser(LJDialog):
 
     def on_company_changed(self):
         self.company_widget.list.selectedItems()[-1].text()
-        self.path_object.set_attr(input_company=self.company_widget.list.selectedItems()[-1].text())
+        self.path_object.set_attr(ingest_source=self.company_widget.list.selectedItems()[-1].text())
         self.path_object.set_attr(version='000.0000')
         self.load_import_events()
 
     def load_import_events(self):
         latest = '-001.000'
         self.import_events.list.clear()
-        events = glob.glob('%s/%s' % (self.path_object.split_after('input_company'), '*'))
+        events = glob.glob('%s/%s' % (self.path_object.split_after('ingest_source'), '*'))
         for e in events:
             latest = os.path.split(e)[-1]
             self.import_events.list.addItem(os.path.split(e)[-1])

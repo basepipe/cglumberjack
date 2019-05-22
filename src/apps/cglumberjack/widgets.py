@@ -619,8 +619,12 @@ class LJListWidget(QtWidgets.QWidget):
 
     def hide(self):
         self.label.hide()
-        self.combo.hide()
+        self.add_button.hide()
+        self.list.hide()
+        # self.combo.hide()
 
     def show(self):
         self.label.show()
-        self.combo.show()
+        self.add_button.show()
+        self.list.show()
+

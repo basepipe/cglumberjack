@@ -77,7 +77,7 @@ class PathObject(object):
         self.due = None
         self.assigned = None
         self.priority = None
-        self.input_company = '*'
+        self.ingest_source = '*'
 
         if type(path_object) is unicode:
             path_object = str(path_object)
@@ -137,7 +137,6 @@ class PathObject(object):
 
     def get_last_attr(self):
         self.get_template()
-        print self.template
         for t in self.template:
             if t in self.data:
                 if self.data[t]:

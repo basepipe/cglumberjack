@@ -50,21 +50,30 @@ class PathWidget(QtWidgets.QWidget):
 
     def back_button_pressed(self):
         path_object = PathObject(self.current_location_line_edit.text())
+        print 4, path_object.ingest_source
+        print 5, path_object.scope
         # if i'm a task, show me all the assets or shots
         if path_object.version:
-            new_path = '%s/%s' % (path_object.split_after('scope'), '*')
+            print 6
+            if path_object.scope == 'IO':
+                new_path = '%s/%s' % (path_object.split_after('scope'), path_object.ingest_source)
+            else:
+                new_path = '%s/%s' % (path_object.split_after('scope'), '*')
         elif path_object.task:
+            print 7
             new_path = '%s/%s' % (path_object.split_after('scope'), '*')
         elif path_object.shot:
+            print 8
             new_path = '%s/%s' % (path_object.split_after('scope'), '*')
         elif path_object.scope:
-            if path_object.scope == '*':
-                new_path = '%s/%s' % (path_object.split_after('context'), '*')
-            else:
-                new_path = '%s/%s' % (path_object.split_after('project'), '*')
+            print 9
+            print path_object.scope
+            new_path = '%s/%s' % (path_object.split_after('project'), '*')
         elif path_object.project:
+            print 10
             new_path = '%s/%s' % (path_object.split_after('context'), '*')
         else:
+            print 11
             new_path = path_object.root
         new_object = PathObject(new_path)
         self.location_changed.emit(new_object)
@@ -103,7 +112,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.scope = 'assets'
         self.shot = '*'
         self.seq = '*'
-        self.input_company = '*'
+        self.ingest_source = '*'
         if self.path_object:
             if self.path_object.project:
                 self.project = self.path_object.project
@@ -141,6 +150,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         last = path_object.get_last_attr()
         shot_attrs = ['seq', 'shot', 'type', 'asset']
 
+        if path_object.scope == 'IO':
+            if path_object.version:
+                return
         if last == 'filename':
             if self.panel:
                 return
@@ -170,12 +182,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.panel = ProductionPanel(path_object=path_object)
             else:
                 self.load_task_panel(path_object)
-        elif last == 'input_company':
-            if path_object.input_company == '*':
-                self.panel = ProductionPanel(path_object=path_object)
-            else:
-                self.panel = IOPanel(path_object=path_object, user_email=self.user_email, user_name=self.user_name,
-                                     render_layout=None)
+        elif last == 'ingest_source':
+            self.panel = IOPanel(path_object=path_object)
         elif last == 'task':
             self.load_task_panel(path_object)
 

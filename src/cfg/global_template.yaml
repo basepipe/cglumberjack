@@ -25,7 +25,7 @@ rules:
     company:
       regex: "cgl-[A-Za-z0-9_]+"
       example: "Company Names must have 'cgl-' in the beginning of the name"
-    input_company:
+    ingest_source:
       regex: "[A-Za-z0-9_]+"
     project:
       regex: "[A-Za-z0-9_]+"
@@ -127,10 +127,10 @@ templates:
       version: "{filename}.{ext}"
   IO:
     source:
-      path: "{company}/source/{project}/IO/{input_company}"
+      path: "{company}/source/{project}/IO/{ingest_source}"
       version: "{version}"
     render:
-      path: "{company}/render/{project}/IO/{input_company}"
+      path: "{company}/render/{project}/IO/{ingest_source}"
       version: "{version}"
 ext_map:
   .mov: 'movie'

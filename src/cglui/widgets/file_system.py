@@ -24,7 +24,7 @@ class LJFileBrowser(QtWidgets.QTreeView):
 
 
 class LJFileBrowser(QtWidgets.QTreeView):
-    dropped_files = QtCore.Signal(object)
+    # dropped_files = QtCore.Signal(object)
     selected = QtCore.Signal(object)
     initialized = QtCore.Signal()
 
@@ -57,7 +57,7 @@ class LJFileBrowser(QtWidgets.QTreeView):
         self.setSortingEnabled(True)
         self.setColumnHidden(1, True)
         self.setColumnHidden(2, True)
-        self.setDragDropMode(QtGui.QAbstractItemView.DropOnly)
+        # self.setDragDropMode(QtGui.QAbstractItemView.DropOnly)
         self.initialized.emit()
 
     def mouseReleaseEvent(self, e):
