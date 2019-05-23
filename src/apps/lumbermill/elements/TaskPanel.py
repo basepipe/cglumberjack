@@ -10,7 +10,7 @@ from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
 from cglcore.path import PathObject, CreateProductionData
 from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file, get_frange_from_seq
-from widgets import AssetWidget, TaskWidget, FileTableModel
+from apps.lumbermill.elements.widgets import AssetWidget, TaskWidget, FileTableModel
 
 
 class TaskPanel(QtWidgets.QWidget):
@@ -212,7 +212,7 @@ class TaskPanel(QtWidgets.QWidget):
             if ingest_source_location.endswith(dialog.combo_box.currentText()):
                 CreateProductionData(self.current_location, json=False)
         else:
-            from apps.lumbermill import asset_creator
+            from apps.lumbermill.elements import asset_creator
             if 'asset' in self.current_location:
                 task_mode = True
             else:

@@ -7,7 +7,7 @@ from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
 from cglcore.path import PathObject, CreateProductionData
 from cglcore.path import create_project_config
-from widgets import ProjectWidget, AssetWidget
+from apps.lumbermill.elements.widgets import ProjectWidget, AssetWidget
 
 
 class ProjectPanel(QtWidgets.QWidget):
@@ -346,7 +346,7 @@ class ProductionPanel(QtWidgets.QWidget):
             self.assets.assets_radio.setChecked(True)
 
     def on_create_asset(self):
-        from apps.lumbermill import asset_creator
+        from apps.lumbermill.elements import asset_creator
         if self.path_object.scope == 'assets':
             task_mode = True
         else:

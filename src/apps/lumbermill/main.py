@@ -3,9 +3,9 @@ from cglcore.config import app_config, UserConfig
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start
-from panels import ProjectPanel, ProductionPanel, ScopePanel
-from IOPanel import IOPanel
-from TaskPanel import TaskPanel
+from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel
+from apps.lumbermill.elements.IOPanel import IOPanel
+from apps.lumbermill.elements.TaskPanel import TaskPanel
 
 
 class PathWidget(QtWidgets.QWidget):
