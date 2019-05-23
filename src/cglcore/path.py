@@ -310,19 +310,21 @@ class PathObject(object):
                 if value == 'io':
                     value = value.upper()
                 if attr == 'scope':
-                    if value not in self.scope_list:
-                        logging.error('%s not found in %s' % (value, self.scope_list))
-                        return
-                    else:
-                        self.__dict__[attr] = value
-                        self.data[attr] = value
+                    if value:
+                        if value in self.scope_list:
+                            self.__dict__[attr] = value
+                            self.data[attr] = value
+                        else:
+                            logging.error('Scope %s not found in %s' % (value, self.scope_list))
+                            return
                 elif attr == 'context':
-                    if value not in self.context_list:
-                        logging.error('%s not found in %s' % (value, self.context_list))
-                        return
-                    else:
-                        self.__dict__[attr] = value
-                        self.data[attr] = value
+                    if value:
+                        if value not in self.context_list:
+                            logging.error('Context %s not found in %s' % (value, self.context_list))
+                            return
+                        else:
+                            self.__dict__[attr] = value
+                            self.data[attr] = value
                 else:
                     #if regex:
                     #    try:

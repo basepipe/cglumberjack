@@ -3,11 +3,98 @@ import os
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
 from cglui.widgets.combo import LabelComboRow
+from apps.lumbermill.elements.widgets import LJListWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
 from cglcore.path import PathObject, CreateProductionData
 from cglcore.path import create_project_config
 from apps.lumbermill.elements.widgets import ProjectWidget, AssetWidget
+
+
+class CompanyPanel(QtWidgets.QWidget):
+    location_changed = QtCore.Signal(object)
+
+    def __init__(self, parent=None, path_object=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.path_object = path_object
+        self.panel = QtWidgets.QVBoxLayout(self)
+        self.company_widget = LJListWidget('Companies')
+        self.user_root = app_config()['cg_lumberjack_dir']
+        self.panel.addWidget(self.company_widget)
+        self.panel.addStretch(1)
+        self.load_companies()
+        self.project_management = 'lumbermill'
+
+        self.company_widget.add_button.clicked.connect(self.on_create_company)
+        self.company_widget.list.clicked.connect(self.on_company_changed)
+
+    def on_company_changed(self):
+        self.path_object.company = self.company_widget.list.selectedItems()[0].text()
+        if self.path_object.company:
+            if self.path_object.company != '*':
+                self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
+                self.check_default_company_globals()
+        self.update_location()
+
+    def on_create_company(self):
+        dialog = InputDialog(title='Create Company', message='Type a Company Name & Choose Project Management',
+                             line_edit=True, combo_box_items=['lumbermil', 'ftrack', 'shotgun'],
+                             line_edit_text='Company Name')
+        dialog.exec_()
+        if dialog.button == 'Ok':
+            self.path_object.company = '%s' % dialog.line_edit.text()
+            d = {'root': self.path_object.root,
+                 'company': dialog.line_edit.text()}
+            self.create_company_globals(dialog.line_edit.text())
+            CreateProductionData(d)
+            self.load_companies()
+            self.load_projects()
+
+    def create_company_globals(self, company):
+        print 'Creating Company Globals %s' % company
+        dir_ = os.path.join(self.user_root, 'companies', company)
+        if not os.path.exists(dir_):
+            print '%s doesnt exist, making it' % dir_
+            # os.makedirs(dir_)
+
+    def check_default_company_globals(self):
+        """
+        ensures there are globals directories in the right place, this should really have a popup if it's not
+        successful.
+        :return:
+        """
+        self.path_object.set_project_config()
+        if self.path_object.company:
+            if self.path_object.company != '*':
+                dir_ = os.path.dirname(self.path_object.company_config)
+                if not os.path.exists(dir_):
+                    print 'Creating Directory for Company Config File'
+                    os.makedirs(dir_)
+
+    def load_companies(self):
+        self.company_widget.list.clear()
+        companies = glob.glob(self.path_object.path_root)
+        if companies:
+            for each in companies:
+                c = os.path.basename(each)
+                self.company_widget.list.addItem(c)
+
+    def clear_layout(self, layout=None):
+        if not layout:
+            layout = self.panel
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget() is not None:
+                child.widget().deleteLater()
+            elif child.layout() is not None:
+                self.clear_layout(child.layout())
+
+    def update_location(self, path_object=None):
+        if path_object:
+            self.location_changed.emit(path_object.data)
+        else:
+            print 'no path_object specified'
+            self.location_changed.emit(self.path_object.data)
 
 
 class ProjectPanel(QtWidgets.QWidget):
@@ -16,8 +103,7 @@ class ProjectPanel(QtWidgets.QWidget):
     def __init__(self, parent=None, path_object=None):
         QtWidgets.QWidget.__init__(self, parent)
 
-        self.company = None
-        self.project = '*'
+        self.path_object = path_object
         if path_object.company:
             self.company = path_object.company
         if path_object.project:
@@ -25,46 +111,22 @@ class ProjectPanel(QtWidgets.QWidget):
         self.project_management = app_config(company=self.company)['account_info']['project_management']
         self.root = app_config()['paths']['root']  # Company Specific
         self.user_root = app_config()['cg_lumberjack_dir']
-        self.path = ''
-        self.path_root = ''
-        self.scope = '*'
-        self.context = 'source'
-        self.seq = ''
-        self.shot = ''
-        self.user = ''
-        self.version = ''
-        self.task = ''
-        self.resolution = ''
-        self.user_email = ''
-        self.current_location = []
         self.left_column_visibility = True
 
         # Create the Left Panel
         self.panel = QtWidgets.QVBoxLayout(self)
-        self.company_widget = LabelComboRow('Company')
-        self.project_filter = ProjectWidget(title="Projects")
+        self.project_filter = ProjectWidget(title="%s Projects" % self.path_object.company.title())
 
-        # TODO - set icon with an arrow
-
-        # assemble the Left filter_panel
-        self.panel.addLayout(self.company_widget)
         self.panel.addWidget(self.project_filter)
-
-        self.check_default_company_globals()
-        self.load_companies()
-        if self.company:
-            self.load_projects()
+        self.load_projects()
 
         self.project_filter.data_table.selected.connect(self.on_project_changed)
-        self.company_widget.add_button.clicked.connect(self.on_create_company)
         self.project_filter.add_button.clicked.connect(self.on_create_project)
-        self.company_widget.combo.currentIndexChanged.connect(self.on_company_changed)
 
     def on_project_changed(self, data):
-        self.project = data[0][0]
-        self.seq = '*'
-        self.shot = '*'
-        self.update_location()
+        self.path_object.set_attr(project=data[0][0])
+        self.path_object.set_attr(scope='*')
+        self.update_location(self.path_object)
 
     def toggle_visibility(self):
         if self.left_column_visibility:
@@ -73,68 +135,17 @@ class ProjectPanel(QtWidgets.QWidget):
             self.show()
 
     def hide(self):
-        # company widget
-        self.company_widget.hide()
         self.project_filter.hide_all()
         # project filter
         self.left_column_visibility = False
 
     def show(self):
-        self.company_widget.show()
         self.project_filter.show_all()
-        self.left_column_visibility = True
-
-    def check_default_company_globals(self):
-        if self.company:
-            if not os.path.exists(os.path.join(self.user_root, 'companies', self.company)):
-                os.makedirs(os.path.join(self.user_root, 'companies', self.company))
-
-    def load_companies(self, company=None):
-        self.company_widget.combo.clear()
-        companies_dir = os.path.join(self.user_root, 'companies')
-        if os.path.exists(companies_dir):
-            companies = os.listdir(companies_dir)
-            if not companies:
-                dialog = InputDialog(buttons=['Create Company', 'Find Company'], message='No companies found in Config'
-                                                                                         'location %s:' % companies_dir)
-                dialog.exec_()
-                if dialog.button == 'Create Company':
-                    print 'Create Company pushed'
-                elif dialog.button == 'Find Company':
-                    company_paths = QtWidgets.QFileDialog.getExistingDirectory(self,
-                                                                               'Choose existing company(ies) to add to '
-                                                                               'the registry', self.root,
-                                                                               QtWidgets.QFileDialog.ShowDirsOnly)
-                    company = os.path.split(company_paths)[-1]
-                    companies.append(company)
-                    os.makedirs(os.path.join(companies_dir, company))
-        else:
-            print 'Companies Dir does not exist %s' % companies_dir
-            return
-
-        self.company_widget.combo.addItem('')
-        for each in companies:
-            c = os.path.split(each)[-1]
-            self.company_widget.combo.addItem(c)
-        if not company:
-            company = self.company
-        index = self.company_widget.combo.findText(company)
-        if index == -1:
-            self.company_widget.combo.setCurrentIndex(0)
-        else:
-            self.company_widget.combo.setCurrentIndex(index)
-        self.update_location()
 
     def load_projects(self):
-        d = {'root': self.root,
-             'company': self.company,
-             'project': '*',
-             'context': 'source'}
-        path_object = PathObject(d)
-        print 3, path_object.path_root
-        projects = path_object.glob_project_element('project')
+        projects = self.path_object.glob_project_element('project')
         if not projects:
-            print 'no projects'
+            print 'no projects for %s' % self.path_object.company
             self.project_filter.search_box.setEnabled(False)
             self.project_filter.data_table.setEnabled(False)
             self.project_filter.add_button.setText('Create First Project')
@@ -144,55 +155,16 @@ class ProjectPanel(QtWidgets.QWidget):
             self.project_filter.add_button.setText('+')
         self.project_filter.setup(ListItemModel(prep_list_for_table(projects, split_for_file=True), ['Name']))
         if self.project != '*':
-            self.project_filter.data_table.select_row_by_text(self.project)
+            self.project_filter.data_table.select_row_by_text(self.path_object.project)
             self.on_project_changed(data=[self.project])
-        self.update_location()
+        self.update_location(self.path_object)
 
     def update_location(self, path_object=None):
-        if self.company:
-            if path_object:
-                self.current_location_line_edit.setText(path_object.path_root)
-                self.current_location = path_object.data
-                self.path_root = path_object.path_root
-                self.path = path_object.path
-            else:
-                self.current_location = {'company': self.company, 'root': self.root, 'scope': "*",
-                                         'context': self.context, 'project': self.project
-                                         }
-                path_obj = PathObject(self.current_location)
-                self.path_root = path_obj.path_root
-                self.path = path_obj.path
-                # self.current_location_line_edit.setText(self.path_root)
-            self.location_changed.emit(self.current_location)
-            return self.path_root
-
-    def on_company_changed(self):
-        self.company = self.company_widget.combo.currentText()
-        self.project_management = app_config(company=self.company)['account_info']['project_management']
-        self.root = app_config()['paths']['root']  # Company Specific
-        self.user_root = app_config()['cg_lumberjack_dir']
-        self.load_projects()
-        self.update_location()
-
-    def on_create_company(self):
-        dialog = InputDialog(title='Create Company', message='Type a Company Name & Choose Project Management',
-                             line_edit=True, combo_box_items=['lumbermil', 'ftrack', 'shotgun'], line_edit_text='Name')
-        dialog.exec_()
-        if dialog.button == 'Ok':
-            self.company = '%s' % dialog.line_edit.text()
-            d = {'root': self.root,
-                 'company': self.company}
-            self.create_company_globals(dialog.line_edit.text())
-            CreateProductionData(d)
-            self.load_companies(company=self.company)
-            self.load_projects()
-
-    def create_company_globals(self, company):
-        print 'Creating Company Globals %s' % company
-        dir_ = os.path.join(self.user_root, 'companies', company)
-        if not os.path.exists(dir_):
-            print '%s doesnt exist, making it' % dir_
-            os.makedirs(dir_)
+        if path_object:
+            self.location_changed.emit(path_object.data)
+        else:
+            print 'no path_object specified'
+            self.location_changed.emit(self.path_object.data)
 
     def on_create_project(self):
         print 'CURRENT LOCATION: %s' % self.current_location

@@ -3,7 +3,7 @@ from cglcore.config import app_config, UserConfig
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start
-from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel
+from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel
 from apps.lumbermill.elements.IOPanel import IOPanel
 from apps.lumbermill.elements.TaskPanel import TaskPanel
 
@@ -70,8 +70,10 @@ class PathWidget(QtWidgets.QWidget):
             else:
                 new_path = '%s/%s' % (path_object.split_after('project'), '*')
         elif path_object.project:
-            print 10
-            new_path = '%s/%s' % (path_object.split_after('context'), '*')
+            if path_object.project == '*':
+                new_path = '%s/%s' % (path_object.root, '*')
+            else:
+                new_path = '%s/%s' % (path_object.split_after('context'), '*')
         else:
             print 11
             new_path = path_object.root
@@ -149,7 +151,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path_widget.set_text(path_object.path_root)
         last = path_object.get_last_attr()
         shot_attrs = ['seq', 'shot', 'type', 'asset']
-
         if path_object.scope == 'IO':
             if path_object.version:
                 return
@@ -165,7 +166,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.panel.clear_layout()
         if last == 'resolution':
             self.load_task_panel(path_object)
-        if last == 'company' or last == 'project':
+        if last == 'project':
             if path_object.project == '*':
                 self.panel = ProjectPanel(path_object=path_object)
             else:
@@ -186,7 +187,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.panel = IOPanel(path_object=path_object)
         elif last == 'task':
             self.load_task_panel(path_object)
-
+        elif last == 'company':
+            self.panel = CompanyPanel(path_object=path_object)
         if self.panel:
             self.panel.location_changed.connect(self.update_location)
             self.layout.addWidget(self.panel)
