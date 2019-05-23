@@ -37,6 +37,7 @@ class VersionButton(QtWidgets.QPushButton):
         self.setEnabled(True)
 
 
+# noinspection PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming
 class EmptyStateWidget(QtWidgets.QPushButton):
     files_added = QtCore.Signal(object)
 
@@ -167,7 +168,7 @@ class TaskWidget(QtWidgets.QFrame):
     copy_selected_version = QtCore.Signal()
     copy_latest_version = QtCore.Signal()
 
-    def __init__(self, parent, title, short_title, filter_string=None, path_object=None, show_import=False):
+    def __init__(self, parent, title, filter_string=None, path_object=None, show_import=False):
         QtWidgets.QFrame.__init__(self, parent)
         self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
         self.setAutoFillBackground(True)
@@ -417,7 +418,8 @@ class ProjectWidget(QtWidgets.QWidget):
         h_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
-        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
@@ -433,16 +435,13 @@ class ProjectWidget(QtWidgets.QWidget):
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        #self.data_table.setMinimumWidth(220)
         h_layout.addWidget(self.title)
         h_layout.addWidget(self.add_button)
 
         v_layout.addLayout(h_layout)
-        #v_layout.addWidget(self.message)
         v_layout.addWidget(self.search_box)
         v_layout.addWidget(self.data_table, 1)
-        # v_layout.setSpacing(10)
-        v_layout.setContentsMargins(0, 20, 0, 0)  # left, top, right, bottom
+        v_layout.setContentsMargins(0, 20, 0, 0)
 
         self.add_button.clicked.connect(self.on_add_button_clicked)
 
@@ -495,18 +494,17 @@ class AssetWidget(QtWidgets.QWidget):
         scope_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
-        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
-        #self.title = QtWidgets.QLabel("<h2>Project: %s</h2>" % title)
-        #self.scope_title = QtWidgets.QLabel("<b>%s</b>" % 'Assets')
         self.task = None
         self.user = None
-        minWidth = 340
+        min_width = 340
 
         self.message = QtWidgets.QLabel("")
-        self.message.setMinimumWidth(minWidth)
+        self.message.setMinimumWidth(min_width)
         try:
             self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         except AttributeError:
@@ -518,7 +516,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.data_table.setMinimumWidth(minWidth)
+        self.data_table.setMinimumWidth(min_width)
 
         # build the filter optoins row
         self.assets_radio = QtWidgets.QRadioButton('Assets')
@@ -527,7 +525,6 @@ class AssetWidget(QtWidgets.QWidget):
         self.radio_group_scope.addButton(self.shots_radio)
         self.radio_group_scope.addButton(self.assets_radio)
 
-        #scope_layout.addWidget(self.scope_title)
         scope_layout.addWidget(self.shots_radio)
         scope_layout.addWidget(self.assets_radio)
         scope_layout.addStretch(1)
@@ -536,8 +533,6 @@ class AssetWidget(QtWidgets.QWidget):
         v_list.addItem(QtWidgets.QSpacerItem(0, 3, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
         v_list.addWidget(self.search_box)
         v_list.addWidget(self.data_table, 1)
-
-        #self.v_layout.addWidget(self.title)
         self.v_layout.addLayout(scope_layout)
         self.v_layout.addWidget(self.message)
         self.v_layout.addLayout(v_list)
@@ -573,9 +568,6 @@ class AssetWidget(QtWidgets.QWidget):
 
     def set_title(self, new_title):
         self.title.setText('<h2>Project:  %s</h2>' % new_title.title())
-
-    #def set_scope_title(self, new_title):
-    #    self.scope_title.setText('<b>%s</b>' % new_title.title())
 
 
 class FileTableWidget(LJTableWidget):

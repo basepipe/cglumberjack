@@ -18,17 +18,15 @@ class PathWidget(QtWidgets.QWidget):
         self.project_label = QtWidgets.QLabel('<h2>Choose Project</h2>')
         self.current_location_line_edit = QtWidgets.QLineEdit()
         self.current_location_line_edit.setReadOnly(True)
-        #self.import_button = QtWidgets.QPushButton('Import')
 
         self.cl_row = QtWidgets.QHBoxLayout(self)
         self.cl_row.addWidget(self.project_label)
         self.cl_row.addItem((QtWidgets.QSpacerItem(20, 0, QtWidgets.QSizePolicy.Minimum,
-                                       QtWidgets.QSizePolicy.Minimum)))
+                                                   QtWidgets.QSizePolicy.Minimum)))
         self.cl_row.addWidget(self.back_button)
         self.cl_row.addWidget(self.current_location_line_edit)
         self.cl_row.addItem((QtWidgets.QSpacerItem(20, 0, QtWidgets.QSizePolicy.MinimumExpanding,
-                                       QtWidgets.QSizePolicy.Minimum)))
-        #self.cl_row.addWidget(self.import_button)
+                             QtWidgets.QSizePolicy.Minimum)))
         self.back_button.clicked.connect(self.back_button_pressed)
 
     def set_text(self, text):
@@ -215,19 +213,16 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def open_clicked(self):
         if '####' in self.path_object.path_root:
             print 'Nothing set for sequences yet'
-            # config = app_config()['paths']
-            # settings = app_config()['default']
-            # cmd = "%s -framerate %s %s" % (config['ffplay'], settings['frame_rate'],
-            # self.path_root.replace('####', '%04d'))
-            # subprocess.Popen(cmd)
         else:
             print 'Opening %s' % self.path_object.path_root
             start(self.path_object.path_root)
 
-    def import_clicked(self):
+    @staticmethod
+    def import_clicked():
         print 'import clicked'
 
-    def new_version_clicked(self):
+    @staticmethod
+    def new_version_clicked():
         print 'New Version Clicked'
 
 
@@ -249,9 +244,9 @@ class CGLumberjack(LJMainWindow):
                                                  path=self.previous_path,
                                                  radio_filter=self.filter))
         if self.user_name:
-            self.setWindowTitle('CG Lumberjack - Logged in as %s' % self.user_name)
+            self.setWindowTitle('Lumbermill - Logged in as %s' % self.user_name)
         else:
-            self.setWindowTitle("CG Lumberjack - Log In")
+            self.setWindowTitle("Lumbermill - Log In")
         self.status_bar = QtWidgets.QStatusBar()
         self.setStatusBar(self.status_bar)
         w = 400

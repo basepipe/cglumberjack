@@ -3,13 +3,14 @@ import shutil
 import pandas as pd
 import logging
 import glob
+# noinspection PyUnresolvedReferences
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.file_system import LJFileBrowser
 from cglui.widgets.combo import AdvComboBox
 from widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
-from cglcore.path import PathObject, CreateProductionData
+from cglcore.path import CreateProductionData
 
 
 class EmptyStateWidgetIO(EmptyStateWidget):
@@ -36,15 +37,16 @@ class EmptyStateWidgetIO(EmptyStateWidget):
             e.ignore()
 
 
+# noinspection PyPep8Naming,PyPep8Naming
 class PandasModel(QtCore.QAbstractTableModel):
     def __init__(self, data, parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
         self._data = data
 
-    def rowCount(self, parent=None):
+    def rowCount(self):
         return len(self._data.values)
 
-    def columnCount(self, parent=None):
+    def columnCount(self):
         return self._data.columns.size
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
@@ -173,7 +175,8 @@ class IOPanel(QtWidgets.QWidget):
         self.publish_button.clicked.connect(self.publish_tagged_assets)
         self.empty_state.files_added.connect(self.new_files_dragged)
 
-    def on_source_add_clicked(self):
+    @staticmethod
+    def on_source_add_clicked():
         dialog = InputDialog(title='Add Source Company or Gear', message='Add an Import Source:', line_edit=True,
                              buttons=['Cancel', 'Add Source'])
         dialog.exec_()
@@ -219,7 +222,7 @@ class IOPanel(QtWidgets.QWidget):
         self.path_object.set_attr(ingest_source=self.source_widget.list.selectedItems()[-1].text())
         self.load_import_events()
 
-    def load_import_events(self, select_latest=False):
+    def load_import_events(self):
         latest = '-001.000'
         self.import_events.list.clear()
         events = glob.glob('%s/%s' % (self.path_object.split_after('ingest_source'), '*'))
@@ -227,8 +230,7 @@ class IOPanel(QtWidgets.QWidget):
             self.import_events.show()
             for e in events:
                 self.import_events.list.addItem(os.path.split(e)[-1])
-                # self.import_events.list.setItemSelected(item)
-            latest = os.path.split(e)[-1]
+                latest = os.path.split(e)[-1]
         self.path_object.set_attr(version=latest)
         self.path_object_next = self.path_object.next_major_version()
         self.empty_state.setText('Drag Media Here to Create Ingest %s' % self.path_object_next.version)
@@ -285,6 +287,7 @@ class IOPanel(QtWidgets.QWidget):
             self.save_data_frame()
 
     def edit_data_frame(self):
+        scope = ''
         files = self.file_tree.selected_items
         if self.shot_radio_button.isChecked():
             scope = 'shots'
@@ -349,7 +352,7 @@ class IOPanel(QtWidgets.QWidget):
             seq = self.data_frame.loc[row, 'Seq']
             shot = self.data_frame.loc[row, 'Shot']
             task = self.data_frame.loc[row, 'Task']
-            status = self.data_frame.loc[row, 'Status']
+            _ = self.data_frame.loc[row, 'Status']
             if type(seq) != float:
                 if seq:
                     seq = '%03d' % int(seq)
@@ -437,7 +440,7 @@ class IOPanel(QtWidgets.QWidget):
             scope = 'assets'
         seq = self.seq_combo.currentText()
         if seq:
-            this = self.path_object.copy(scope=scope, seq=seq, shot='*')
+            _ = self.path_object.copy(scope=scope, seq=seq, shot='*')
             shots = self.path_object.copy(scope=scope, seq=seq, shot='*').glob_project_element('shot')
             if shots:
                 shots.insert(0, '')
@@ -460,7 +463,6 @@ class IOPanel(QtWidgets.QWidget):
         self.hide_tags()
         self.file_tree.hide()
         self.empty_state.show()
-
 
     def publish_tagged_assets(self):
         # TODO - We need to be changing status to 'Published' on this.

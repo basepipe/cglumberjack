@@ -8,6 +8,7 @@ from cglcore.path import icon_path
 import shutil
 
 
+# noinspection PyPep8Naming
 class AssetIngestTable(QtWidgets.QTableWidget):
     files_added_signal = QtCore.Signal(basestring)
 
@@ -16,6 +17,7 @@ class AssetIngestTable(QtWidgets.QTableWidget):
         self.setAcceptDrops(True)
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
+    # noinspection PyPep8Naming
     def dragEnterEvent(self, e):
         if e.mimeData().hasUrls:
             e.accept()

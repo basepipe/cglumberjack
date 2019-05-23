@@ -218,11 +218,12 @@ class AssetCreator(LJDialog):
             self.on_seq_text_changed()
 
     def process_asset_string(self):
+        asset_rules = ''
         self.seq = self.asset_widget.category_row.combo.currentText()
         asset_string = self.asset_widget.name_row.combo.currentText()
         if self.scope == 'assets':
             asset_rules = r'^([a-zA-Z]{3,},\s*)*([a-zA-Z]{3,}$)|^([a-zA-Z]{3,},\s*)*([a-zA-Z]{3,}$)'
-            example = app_config()['rules']['path_variables']['shot']['regex']
+            # example = app_config()['rules']['path_variables']['shot']['regex']
         if self.scope == 'shots':
             asset_rules = app_config()['rules']['path_variables']['shot']['regex']
         self.regex = re.compile(r'%s' % asset_rules)

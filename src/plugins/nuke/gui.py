@@ -1,5 +1,5 @@
 from Qt import QtWidgets, QtCore, QtGui
-from apps.cglumberjack.main import CGLumberjack, CGLumberjackWidget
+from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import nuke
 import cglnuke
 import cglui.startup as startup

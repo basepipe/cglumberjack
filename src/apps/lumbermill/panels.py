@@ -1,15 +1,12 @@
 import glob
 import os
-import shutil
-import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
 from cglui.widgets.combo import LabelComboRow
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
-from cglcore.path import PathObject, CreateProductionData, start
+from cglcore.path import PathObject, CreateProductionData
 from cglcore.path import create_project_config
-from asset_ingestor_widget import AssetIngestor
 from widgets import ProjectWidget, AssetWidget
 
 
@@ -58,7 +55,6 @@ class ProjectPanel(QtWidgets.QWidget):
         if self.company:
             self.load_projects()
 
-        #self.visibility_button.clicked.connect(self.toggle_visibility)
         self.project_filter.data_table.selected.connect(self.on_project_changed)
         self.company_widget.add_button.clicked.connect(self.on_create_company)
         self.project_filter.add_button.clicked.connect(self.on_create_project)
@@ -281,8 +277,6 @@ class ProductionPanel(QtWidgets.QWidget):
         self.clear_layout()
         self.assets = AssetWidget(self, title="")
 
-        #self.assets.set_title('<b>%s</b>' % self.path_object.project)
-        #self.assets.set_scope_title('<b>%s</b>' % self.path_object.scope)
         self.assets.add_button.show()
         self.set_scope_radio()
         self.panel.addWidget(self.assets)
@@ -321,8 +315,6 @@ class ProductionPanel(QtWidgets.QWidget):
                 self.assets.setup(ListItemModel(data, ['Seq', 'Shot', 'Path', 'Due Date', 'Status']))
                 self.assets.data_table.hideColumn(0)
             self.assets.data_table.hideColumn(2)
-            self.assets.data_table.set_draggable(True)
-            self.assets.data_table.dropped.connect(self.on_file_dragged_to_assets)
         else:
             print 'items is %s' % items
             self.assets.data_table.hide()
@@ -353,19 +345,8 @@ class ProductionPanel(QtWidgets.QWidget):
             self.path_object.scope.set_attr(scope='assets')
             self.assets.assets_radio.setChecked(True)
 
-    def on_create_asset(self, set_vars=False):
-        """
-        if self.current_location['scope'] == 'IO':
-            dialog = InputDialog(self, title='Create Input Company', message='Enter the CLIENT or name of VENDOR',
-                                 combo_box_items=['CLIENT'])
-            dialog.exec_()
-            self.current_location['ingest_source'] = dialog.combo_box.currentText()
-            ingest_source_location = PathObject(self.current_location).path_root
-            if ingest_source_location.endswith(dialog.combo_box.currentText()):
-                CreateProductionData(self.current_location, json=False)
-        else:
-        """
-        import asset_creator
+    def on_create_asset(self):
+        from apps.lumbermill import asset_creator
         if self.path_object.scope == 'assets':
             task_mode = True
         else:
@@ -374,38 +355,12 @@ class ProductionPanel(QtWidgets.QWidget):
         dialog.exec_()
         self.update_location()
 
-    def on_file_dragged_to_assets(self, data):
-        dialog = AssetIngestor(self, path_dict=self.current_location, current_user=self.user_default)
-        dialog.on_files_added(data)
-        dialog.exec_()
-        self.load_assets()
-
     def on_filter_radio_changed(self):
         if self.sender().text() == 'Assets':
             self.path_object.set_attr(scope='assets')
         elif self.sender().text() == 'Shots':
             self.path_object.set_attr(scope='shots')
-        # self.assets.set_scope_title(self.path_object.scope)
         self.update_location(self.path_object)
-
-    def on_user_radio_changed(self):
-        self.set_user_from_radio_buttons()
-        self.assets_filter_default = self.user
-        if self.user == '':
-            self.task = ''
-        elif self.user == '*':
-            self.task = ''
-        else:
-            self.task = '*'
-        self.version = ''
-        self.resolution = ''
-        self.seq = '*'
-        self.shot = '*'
-        self.ingest_source = '*'
-        self.clear_layout(self.panel_tasks)
-        self.clear_layout(self.render_layout)
-        self.update_location()
-        self.load_assets()
 
     def clear_layout(self, layout=None):
         if not layout:
@@ -419,9 +374,7 @@ class ProductionPanel(QtWidgets.QWidget):
 
 
 def prep_list_for_table(list_, path_filter=None, split_for_file=False):
-    # TODO - would be awesome to make this smart enough to know what to do with a dict, list, etc...
     list_.sort()
-    sequences = []
     output_ = []
     for each in list_:
         if path_filter:
