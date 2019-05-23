@@ -11,7 +11,6 @@ from cglcore.path import PathObject, CreateProductionData, start
 from cglcore.path import create_project_config
 from asset_ingestor_widget import AssetIngestor
 from widgets import ProjectWidget, AssetWidget
-from import_main import ImportBrowser
 
 
 class ProjectPanel(QtWidgets.QWidget):

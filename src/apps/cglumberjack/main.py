@@ -6,7 +6,6 @@ from cglcore.path import PathObject, start
 from panels import ProjectPanel, ProductionPanel, ScopePanel
 from IOPanel import IOPanel
 from TaskPanel import TaskPanel
-from import_main import ImportBrowser
 
 
 class PathWidget(QtWidgets.QWidget):
@@ -265,8 +264,6 @@ class CGLumberjack(LJMainWindow):
         self.setWindowIcon(icon)
         login = QtWidgets.QAction('Login', self)
         tools_menu = menu_bar.addMenu('&Tools')
-        import_tool = QtWidgets.QAction('Import Files', self)
-        self.import_tool = two_bar.addAction(import_tool)
         self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
         settings.setShortcut('Ctrl+,')
@@ -280,14 +277,6 @@ class CGLumberjack(LJMainWindow):
         settings.triggered.connect(self.on_settings_clicked)
         menu_designer.triggered.connect(self.on_shelves_clicked)
         login.triggered.connect(self.on_login_clicked)
-        import_tool.triggered.connect(self.on_import_clicked)
-
-    def on_import_clicked(self):
-
-        print 'Opening the Import Dialog'
-        text = self.centralWidget().path_widget.current_location_line_edit.text()
-        import_dialog = ImportBrowser(path_object=PathObject(text))
-        import_dialog.exec_()
 
     def load_user_config(self):
         user_config = UserConfig()
