@@ -160,17 +160,23 @@ class LJTableWidget(QTableView):
         total_height = 0
         total_width = 0
         for column in range(header.count()):
-            self.horizontalHeader().setResizeMode(column, QHeaderView.ResizeToContents)
-            width = header.sectionSize(column)
-            header.setResizeMode(column, QHeaderView.Interactive)
-            header.resizeSection(column, width)
-            total_width += width
+            try:
+                self.horizontalHeader().setResizeMode(column, QHeaderView.ResizeToContents)
+                width = header.sectionSize(column)
+                header.setResizeMode(column, QHeaderView.Interactive)
+                header.resizeSection(column, width)
+                total_width += width
+            except AttributeError:
+                print 'PySide2 compatibilty issue: setResizeMode'
         for row in range(v_header.count()):
-            self.verticalHeader().setResizeMode(row, QHeaderView.ResizeToContents)
-            height = v_header.sectionSize(row)
-            v_header.setResizeMode(row, QHeaderView.Interactive)
-            v_header.resizeSection(row, height)
-            total_height += height
+            try:
+                self.verticalHeader().setResizeMode(row, QHeaderView.ResizeToContents)
+                height = v_header.sectionSize(row)
+                v_header.setResizeMode(row, QHeaderView.Interactive)
+                v_header.resizeSection(row, height)
+                total_height += height
+            except AttributeError:
+                print 'PySide2 compatibilty issue: setResizeMode'
         self.height_hint = total_height
         self.width_hint = total_width
         self.sizeHint()

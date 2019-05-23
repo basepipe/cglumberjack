@@ -1,21 +1,30 @@
 import os
 import shutil
 import logging
+import json
+import datetime
+import glob
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
-from cglcore.path import PathObject, CreateProductionData, start
-from cglcore.path import replace_illegal_filename_characters, show_in_folder
-from widgets import AssetWidget, TaskWidget
-from panels import prep_list_for_table
+from cglcore.path import PathObject, CreateProductionData
+from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file, get_frange_from_seq
+from widgets import AssetWidget, TaskWidget, FileTableModel
 
 
 class TaskPanel(QtWidgets.QWidget):
+    source_selection_changed = QtCore.Signal(object)
     location_changed = QtCore.Signal(object)
+    open_signal = QtCore.Signal()
+    import_signal = QtCore.Signal()
+    new_version_signal = QtCore.Signal()
 
-    def __init__(self, parent=None, path_object=None, user_email='', user_name=''):
+    def __init__(self, parent=None, path_object=None, user_email='', user_name='', show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
+        # self.setWidgetResizable(True)
+        self.task_widgets_dict = {}
+        self.show_import = show_import
         self.path_object = path_object
         self.current_location = path_object.data
         self.panel = QtWidgets.QHBoxLayout(self)
@@ -37,6 +46,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.force_clear = False
         self.panel.addLayout(self.panel_source)
         self.panel.addLayout(self.render_layout)
+        self.auto_publish_tasks = ['plate', 'element']
 
     def on_main_asset_selected(self, data):
         try:
@@ -46,7 +56,6 @@ class TaskPanel(QtWidgets.QWidget):
             return
         if data:
             # reset the GUI
-            self.panel_source.tasks = []
             self.clear_layout(self.panel_source)
             if self.path_object.scope == 'shots':
                 task_label = QtWidgets.QLabel('<H2>%s_%s: Tasks</H2>' % (self.path_object.seq, self.path_object.shot))
@@ -66,6 +75,7 @@ class TaskPanel(QtWidgets.QWidget):
             task_list = current.glob_project_element('task')
             self.update_location(path_object=current)
             self.panel_title.addStretch(1)
+            self.panel_source.tasks = []
             for task in task_list:
                 if '.' not in task:
                     if task not in self.panel_source.tasks:
@@ -74,14 +84,17 @@ class TaskPanel(QtWidgets.QWidget):
                             title = app_config()['pipeline_steps']['short_to_long'][task]
                         except KeyError:
                             return
+
                         task_widget = TaskWidget(parent=self,
                                                  title=title,
                                                  short_title=task,
-                                                 path_object=current)
+                                                 path_object=current, show_import=self.show_import)
                         task_widget.task = task
                         task_widget.showall()
                         task_widget.hide_button.hide()
                         task_widget.show_button.show()
+                        task_widget.data_table2.hide()
+                        self.task_widgets_dict[task] = task_widget
 
                         # find the version information for the task:
                         user = self.populate_users_combo(task_widget, current, task)
@@ -95,13 +108,21 @@ class TaskPanel(QtWidgets.QWidget):
                         task_widget.data_table.user = version_obj.user
                         task_widget.data_table.version = version_obj.version
                         task_widget.data_table.resolution = version_obj.resolution
-                        files_ = version_obj.glob_project_element('filename')
-                        task_widget.setup(ListItemModel(prep_list_for_table(files_, split_for_file=True),
-                                                        ['Name']))
+                        files_ = version_obj.glob_project_element('filename', full_path=True)
+                        if files_:
+                            task_widget.my_files_label.show()
+                        task_widget.setup(task_widget.data_table,
+                                          FileTableModel(self.prep_list_for_table(files_, basename=True), ['Name']))
+                        self.load_render_files(task_widget)
+
+                        task_widget.create_empty_version.connect(self.new_empty_version_clicked)
+                        task_widget.copy_latest_version.connect(self.new_version_from_latest)
+                        task_widget.copy_selected_version.connect(self.version_up_selected_clicked)
                         task_widget.data_table.selected.connect(self.on_source_selected)
+                        task_widget.data_table2.selected.connect(self.on_render_selected)
                         task_widget.data_table.doubleClicked.connect(self.on_open_clicked)
-                        task_widget.open_button_clicked.connect(self.on_open_clicked)
-                        task_widget.new_version_clicked.connect(self.on_new_version_clicked)
+                        task_widget.open_button.clicked.connect(self.on_open_clicked)
+                        task_widget.import_button.clicked.connect(self.on_import_clicked)
                         task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
                         task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
                         task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
@@ -130,17 +151,46 @@ class TaskPanel(QtWidgets.QWidget):
         self.panel_source.addStretch(1)
 
     def new_files_dragged(self, files):
+        to_object = PathObject(self.sender().to_object)
+        to_folder = to_object.path_root
+        if to_object.task in self.auto_publish_tasks:
+            dialog = InputDialog(title='Auto-Export files?',
+                                 message='Would you like me to prepare these files\n'
+                                         'for review/publish?' % to_object.task,
+                                 buttons=['Skip', 'Publish'])
+            dialog.exec_()
+            if dialog.button == 'Publish':
+                d = datetime.datetime.today()
+                current_date = d.strftime('%d-%m-%Y %H:%M:%S')
+                data = {}
+                data[current_date] = {'files added': files,
+                                      'to folder': to_folder}
+                path_ = os.path.join(to_object.path_root, 'ingest_record.cgl')
+                if os.path.exists(path_):
+                    with open(path_) as json_file:
+                        data = json.load(json_file)
+                data[current_date] = {'files added': files,
+                                      'to folder': to_folder}
+                with open(path_, 'w') as path_:
+                    json.dump(data, path_)
+
+                to_object.set_attr(context='render')
+                to_folder = to_object.path_root
+                print 'Render folder: %s' % to_folder
+
         for f in files:
             file_ = os.path.split(f)[-1]
-            to_object = PathObject(self.sender().to_path)
-            to_object.set_attr(resolution='high')
-            to_object.set_attr(filename=file_)
-            to_file = to_object.path_root
-            print 'Copying %s to %s' % (f, to_file)
-            shutil.copy2(f, to_file)
-            CreateProductionData(path_object=to_object)
-            self.force_clear = True
-            self.update_location(to_object)
+            to_file = os.path.join(to_folder, file_)
+            if '.' in file_:
+                print 'Copying %s to %s' % (f, to_file)
+                shutil.copy2(f, to_file)
+                # CreateProductionData(path_object=to_object)
+                self.on_main_asset_selected(self.current_location)
+            else:
+                print 'Copying directory %s to %s' % (f, to_file)
+                shutil.copytree(f, to_file)
+                # CreateProductionData(path_object=to_object)
+                self.on_main_asset_selected(self.current_location)
 
     def update_location(self, path_object):
         """
@@ -150,6 +200,7 @@ class TaskPanel(QtWidgets.QWidget):
         """
         if path_object:
             self.current_location = path_object.data
+            self.path_object = path_object.copy()
             self.location_changed.emit(path_object)
 
     def on_create_asset(self, set_vars=False):
@@ -157,9 +208,9 @@ class TaskPanel(QtWidgets.QWidget):
             dialog = InputDialog(self, title='Create Input Company', message='Enter the CLIENT or name of VENDOR',
                                  combo_box_items=['CLIENT'])
             dialog.exec_()
-            self.current_location['input_company'] = dialog.combo_box.currentText()
-            input_company_location = PathObject(self.current_location).path_root
-            if input_company_location.endswith(dialog.combo_box.currentText()):
+            self.current_location['ingest_source'] = dialog.combo_box.currentText()
+            ingest_source_location = PathObject(self.current_location).path_root
+            if ingest_source_location.endswith(dialog.combo_box.currentText()):
                 CreateProductionData(self.current_location, json=False)
         else:
             import asset_creator
@@ -169,7 +220,6 @@ class TaskPanel(QtWidgets.QWidget):
                 task_mode = False
             dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
             dialog.exec_()
-            self.on_project_changed(self.current_location['project'])
 
     def populate_users_combo(self, widget, path_object, task):
         object_ = path_object.copy(user='*', task=task)
@@ -233,7 +283,7 @@ class TaskPanel(QtWidgets.QWidget):
             self.user = ''
 
     def on_source_selected(self, data):
-        print 'source selected'
+        new_data = []
         object_ = PathObject(self.current_location)
         parent = self.sender().parent()
         object_.set_attr(root=self.path_object.root)
@@ -251,23 +301,22 @@ class TaskPanel(QtWidgets.QWidget):
             # this indicates a selection within the module, but not a specific selected files
             pass
         self.update_location(object_)
+        for each in data:
+            dir_ = os.path.dirname(object_.path_root)
+            new_data.append(os.path.join(dir_, each[0]))
+        self.source_selection_changed.emit(new_data)
         self.clear_task_selection_except(self.sender().task)
         self.sender().parent().show_tool_buttons()
-        self.load_render_files()
-        if object_.context == 'source':
-            self.sender().parent().review_button.hide()
-            self.sender().parent().publish_button.hide()
 
     def on_render_selected(self, data):
-        object_ = PathObject(self.current_location)
-        object_.set_attr(root=self.root)
-        object_.set_attr(context='render')
-        object_.set_attr(filename=data[0][0])
-        self.update_location(object_)
-        self.sender().parent().show_tool_buttons()
-        self.clear_task_selection_except()
+        widget = self.sender().parent()
+        print widget
+        widget.review_button.setEnabled(True)
+        widget.publish_button.setEnabled(True)
 
-    def on_new_version_clicked(self):
+    def new_version_from_latest(self):
+        print 'version up_latest'
+        return
         current = PathObject(self.current_location)
         next_minor = current.new_minor_version_object()
         shutil.copytree(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
@@ -275,16 +324,17 @@ class TaskPanel(QtWidgets.QWidget):
         # reselect the original asset.
         self.on_main_asset_selected(current)
 
+    def new_empty_version_clicked(self):
+        print 'new empty version'
+
+    def version_up_selected_clicked(self):
+        print 'version up selected'
+
     def on_open_clicked(self):
-        if '####' in self.path_root:
-            print 'Nothing set for sequences yet'
-            # config = app_config()['paths']
-            # settings = app_config()['default']
-            # cmd = "%s -framerate %s %s" % (config['ffplay'], settings['frame_rate'],
-            # self.path_root.replace('####', '%04d'))
-            # subprocess.Popen(cmd)
-        else:
-            start(self.path_root)
+        self.open_signal.emit()
+
+    def on_import_clicked(self):
+        self.import_signal.emit()
 
     def on_task_version_changed(self):
         self.reload_task_widget(self.sender().parent(), populate_versions=False)
@@ -318,7 +368,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.update_location(path_object=self.path_object)
 
     def show_in_folder(self):
-        show_in_folder(self.path_root)
+        show_in_folder(self.path_object.path_root)
 
     def show_in_shotgun(self):
         CreateProductionData(path_object=self.current_location, file_system=False,
@@ -326,11 +376,11 @@ class TaskPanel(QtWidgets.QWidget):
 
     def copy_folder_path(self):
         clipboard = QtWidgets.QApplication.clipboard()
-        clipboard.setText(os.path.dirname(self.path_root))
+        clipboard.setText(os.path.dirname(self.path_object.path_root))
 
     def copy_file_path(self):
         clipboard = QtWidgets.QApplication.clipboard()
-        clipboard.setText(self.path_root)
+        clipboard.setText(self.path_object.path_root)
 
     @staticmethod
     def import_versions_from():
@@ -350,31 +400,51 @@ class TaskPanel(QtWidgets.QWidget):
 
     # LOAD FUNCTIONS
     def on_file_dragged_to_source(self, data):
+
         # Only do this if it's dragged into a thing that hasn't been selected
         object_ = PathObject(self.current_location)
+        if object_.task in self.auto_publish_tasks:
+            dialog = InputDialog(title='Auto-publish files?',
+                                 message='Would you like me to publish this %s \n'
+                                         'to make it available to other tasks?' % object_.task,
+                                 buttons=['Skip', 'Publish'])
+            dialog.exec_()
+            if dialog.button == 'Publish':
+                print 'Auto Publishing Files'
+
         parent = self.sender().parent()
-        object_.set_attr(root=self.root)
+        #object_.set_attr(root=self.root)
         object_.set_attr(version=parent.versions.currentText())
         object_.set_attr(context='source')
         object_.set_attr(resolution=parent.resolutions.currentText())
         object_.set_attr(user=parent.users.currentText())
         object_.set_attr(task=self.sender().task)
+        # object_.set_attr(ext=None)
         self.update_location(object_)
         self.clear_task_selection_except(self.sender().task)
+        to_path = object_.path_root
+        if os.path.isfile(to_path):
+            to_path = os.path.dirname(to_path)
         for d in data:
+            path_, filename_ = os.path.split(d)
             if os.path.isfile(d):
-                path_, filename_ = os.path.split(d)
                 # need to make the filenames safe (no illegal chars)
                 filename_ = replace_illegal_filename_characters(filename_)
-                logging.info('Copying File From %s to %s' % (d, os.path.join(self.path_root, filename_)))
-                shutil.copy2(d, os.path.join(self.path_root, filename_))
-                self.reload_task_widget(self.sender().parent())
+                logging.info('Copying File From %s to %s' % (d, os.path.join(to_path, filename_)))
+                shutil.copy2(d, os.path.join(to_path, filename_))
+                # self.reload_task_widget(self.sender().parent(), path_object=object_)
             elif os.path.isdir(d):
-                print 'No support for directories yet'
+                logging.info('Copying Folder From %s to %s' % (d, os.path.join(to_path, filename_)))
+                shutil.copytree(d, os.path.join(object_.path_root, filename_))
+                # self.reload_task_widget(self.sender().parent())
 
-    def reload_task_widget(self, widget, populate_versions=True):
-        path_obj = PathObject(self.current_location)
-        path_obj.set_attr(filename='*')
+        self.on_main_asset_selected(object_.data)
+
+    def reload_task_widget(self, widget, path_object=None, populate_versions=True):
+        if path_object:
+            path_obj = PathObject(path_object)
+        else:
+            path_obj = PathObject(self.current_location)
         path_obj.set_attr(user=widget.users.currentText())
         if populate_versions:
             path_obj.set_attr(version=self.populate_versions_combo(widget, path_obj, widget.label))
@@ -383,8 +453,8 @@ class TaskPanel(QtWidgets.QWidget):
             path_obj.set_attr(resolution=widget.resolutions.currentText())
         path_obj.set_attr(task=widget.task)
         self.update_location(path_obj)
-        files_ = path_obj.glob_project_element('filename')
-        widget.setup(ListItemModel(self.prep_list_for_table(files_), ['Name']))
+        files_ = path_obj.glob_project_element('filename', full_path=True)
+        widget.setup(widget.data_table, ListItemModel(self.prep_list_for_table(files_), ['Name']))
         self.clear_layout(self.render_layout)
 
     def clear_task_selection_except(self, task=None):
@@ -405,27 +475,29 @@ class TaskPanel(QtWidgets.QWidget):
                             child.widget().data_table.clearSelection()
         return
 
-    def load_render_files(self):
-        print 'loading render files'
+    def load_render_files(self, widget):
+        render_table = widget.data_table2
         self.clear_layout(self.render_layout)
         current = PathObject(self.current_location)
-        renders = current.copy(context='render', filename='*')
-        files_ = renders.glob_project_element('filename')
-        if files_:
-            label = QtWidgets.QLabel('<b>%s: Published Files</b>' % renders.task)
-            render_widget = TaskWidget(self, 'Output', 'Output')
-            render_widget.showall()
-            render_widget.title.hide()
-            # render_widget.search_box.hide()
-            render_widget.hide_button.hide()
-            self.render_layout.addWidget(label)
-            self.render_layout.addWidget(render_widget)
-            self.render_layout.addItem((QtWidgets.QSpacerItem(340, 0, QtWidgets.QSizePolicy.Minimum,
-                                                              QtWidgets.QSizePolicy.Expanding)))
-            render_widget.setup(ListItemModel(self.prep_list_for_table(files_, split_for_file=True), ['Name']))
-            render_widget.data_table.selected.connect(self.on_render_selected)
-        else:
-            print 'No Published Files for %s' % current.path_root
+        if widget.data_table.user:
+            renders = current.copy(context='render', task=widget.task, user=widget.data_table.user,
+                                   version=widget.data_table.version, resolution=widget.data_table.resolution,
+                                   filename='*')
+            files_ = glob.glob(renders.path_root)
+            if files_:
+                widget.setup(render_table, ListItemModel(self.prep_list_for_table(files_, basename=True), ['Name']))
+                render_table.show()
+                widget.open_button.show()
+                widget.new_version_button.show()
+                widget.export_label.show()
+                widget.publish_button.show()
+                widget.publish_button.setEnabled(False)
+                widget.review_button.show()
+                widget.review_button.setEnabled(False)
+            else:
+                widget.export_label.hide()
+                render_table.hide()
+                print 'No Published Files for %s' % current.path_root
 
     def clear_layout(self, layout=None):
         if not layout:
@@ -438,16 +510,38 @@ class TaskPanel(QtWidgets.QWidget):
                 self.clear_layout(child.layout())
 
     @staticmethod
-    def prep_list_for_table(list_, path_filter=None, split_for_file=False):
-        # TODO - would be awesome to make this smart enough to know what to do with a dict, list, etc...
+    def prep_list_for_table(list_, path_filter=None, basename=False):
+        """
+        Allows us to prepare lists for display in LJTables.
+        :param list_: list to put into the table.
+        :param path_filter: return a specific element from the path rather than the filename.  For instance if you
+        wanted to pull out only the "shot" name you'd use 'shot' as a path filter.
+        :param basename: if true we only return the os.path.basename() result of the string.
+        :return: list of prepared files/items.
+        """
+        if not list_:
+            return
         list_.sort()
         output_ = []
+        dirname = os.path.dirname(list_[0])
         for each in list_:
             if path_filter:
                 filtered = PathObject(each).data[path_filter]
                 output_.append([filtered])
             else:
-                if split_for_file:
-                    each = os.path.split(each)[-1]
-                output_.append([each])
+                if basename:
+                    seq_string = str(seq_from_file(os.path.basename(each)))
+                    if seq_string:
+                        if [seq_string] not in output_:
+                            output_.append([seq_string])
+                    else:
+                        output_.append([each])
+                else:
+                    output_.append([each])
+        for each in output_:
+            if '#' in each[0]:
+                frange = get_frange_from_seq(os.path.join(dirname, each[0]))
+                if frange:
+                    each[0] = '%s %s' % (each[0], frange)
         return output_
+

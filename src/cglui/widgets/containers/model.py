@@ -7,7 +7,10 @@ class LJItemModel(QAbstractTableModel):
             return self.headers[section]
 
     def rowCount(self, index):
-        return len(self.data_)
+        if self.data_:
+            return len(self.data_)
+        else:
+            return None
 
     def columnCount(self, index):
         return len(self.headers)
@@ -41,8 +44,6 @@ class LGShotgunListDictionaryItemModel(LGListDictionaryItemModel):
             self.data_filter = True
             if display_filter:
                 for key in display_filter:
-                    print 'key', key
-                    print 'display+filter', display_filter.keys()
                     self.keys = display_filter.keys()
                     self.headers.append(display_filter[key])
             else:

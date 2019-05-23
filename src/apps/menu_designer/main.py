@@ -17,10 +17,11 @@ GUI_DICT = {'shelves.yaml': ['button name', 'command', 'icon', 'order', 'annotat
 class MenuDesigner(LJDialog):
     def __init__(self, parent=None):
         LJDialog.__init__(self, parent)
+        self.menu_dict = {}
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.setMovable(True)
         self.tabs.tabnum = 0
-        self.company_config_dir = os.path.dirname(parent.centralWidget().initial_path_object.company_config)
+        self.company_config_dir = os.path.dirname(parent.centralWidget().path_object.company_config)
         self.tabs.tabBar().tabMoved.connect(lambda: self.reorder_top())
 
         self.root = self.company_config_dir
@@ -66,26 +67,60 @@ class MenuDesigner(LJDialog):
         self.type_combo.currentIndexChanged.connect(self.on_type_selected)
         self.add_shelf_btn.clicked.connect(self.add_shelf)
 
+    def load_yaml(self, filepath):
+        with open(filepath, 'r') as yaml_file:
+            self.menu_dict = yaml.load(yaml_file)
+
+    def save_yaml(self, filepath, dict=None):
+        print filepath
+        if dict:
+            self.menu_dict = dict
+        with open(filepath, 'w') as yaml_file:
+            yaml.dump(self.menu_dict, yaml_file)
+
     def reorder_top(self):
-        with open(self.file, 'r') as yaml_file:
-            y = yaml.load(yaml_file)
-
-            for x in range(0, self.tabs.tabnum):
-                y[self.software][self.tabs.tabText(x).encode('utf-8')]["order"] = x+1
-
-        with open(self.file, 'w') as yaml_file:
-            yaml.dump(y, yaml_file)
+        y = self.menu_dict
+        for x in range(0, self.tabs.tabnum):
+            y[self.software][self.tabs.tabText(x).encode('utf-8')]["order"] = x+1
+        self.menu_dict = y
+        self.save_yaml(self.file)
 
     def reorder_bottom(self, newtabs):
-        with open(self.file, 'r') as yaml_file:
-            y = yaml.load(yaml_file)
-
-            for x in range(0, newtabs.tabnum):
+        y = self.menu_dict
+        for x in range(0, newtabs.tabnum):
+            try:
                 if newtabs.tabText(x) != "+":
                     y[self.software][self.tabs.tabText(self.tabs.currentIndex()).encode('utf-8')][newtabs.tabText(x).encode('utf-8')]["order"] = x+1
+            except KeyError:
+                pass
+        self.menu_dict = y
+        self.save_yaml(self.file)
 
-        with open(self.file, 'w') as yaml_file:
-            yaml.dump(y, yaml_file)
+    def on_button_info_changed(self, newtabs, tabname, rows, row_name='label'):
+        menu_tab_widget = newtabs.parent().parent().parent().parent().parent()
+        index = menu_tab_widget.currentIndex()
+        menu = self.tabs.tabText(index)
+        button = tabname
+        # give me access to the dictionary
+        self.menu_dict[self.software][menu][button][row_name] = str(rows[row_name].edit.text())
+        # give me access to text_edit
+        self.save_yaml(self.file)
+
+    def on_text_edit_changed(self, text_edit, newtabs, tabname):
+        code = text_edit.document().toPlainText()
+        tp = newtabs.currentIndex()
+        menu = self.tabs.tabText(tp)
+        button = tabname
+        button_file = os.path.join(self.company_config_dir, 'cgl_tools', self.software, self.current_type, menu,
+                                   "%s.py" % button)
+        self.save_python_file(button_file, code)
+
+    @staticmethod
+    def save_python_file(button_file, button_code):
+        if not os.path.exists(os.path.dirname(button_file)):
+            os.makedirs(os.path.dirname(button_file))
+        with open(button_file, 'w+') as y:
+            y.write(button_code)
 
     def add_software(self):
         software, result = QtWidgets.QInputDialog.getText(self, "Add New Software", "New Software Name:")
@@ -115,8 +150,9 @@ class MenuDesigner(LJDialog):
                 y = dict()
                 y[software.encode('utf-8')] = {}
 
-                with open(shelves_yaml, 'w') as yaml_file:
-                    yaml.dump(y, yaml_file)
+                #with open(shelves_yaml, 'w') as yaml_file:
+                #    yaml.dump(y, yaml_file)
+                self.save_yaml(shelves_yaml)
 
                 self.software = software.encode('utf-8')
                 self.software_dict[self.software] = shelves_yaml
@@ -126,7 +162,6 @@ class MenuDesigner(LJDialog):
         self.software_combo.clear()
         cfg = os.path.join(self.root, 'cgl_tools', '*')
         yamls = glob.glob(cfg)
-        print yamls
         shelves = []
         software_list = ['']
         for each in yamls:
@@ -200,16 +235,15 @@ class MenuDesigner(LJDialog):
     def add_shelf(self):
         shelf_name, result = QtWidgets.QInputDialog.getText(self, "Add a New Shelf", "New Shelf Name:")
         if result:
-            with open(self.file, 'r') as yaml_file:
-                shelf = yaml.load(yaml_file)
+            shelf = self.menu_dict
 
             self.tabs.setTabText(self.tabs.tabnum, shelf_name.encode('utf-8'))
             self.tabs.tabnum += 1
 
             shelf[self.software][shelf_name.encode('utf-8')] = {"order": self.tabs.tabnum}
-
-            with open(self.file, 'w') as yaml_file:
-                yaml.dump(shelf, yaml_file)
+            self.save_yaml(self.file, dict=shelf)
+            #with open(self.file, 'w') as yaml_file:
+            #    yaml.dump(shelf, yaml_file)
 
             software_folder, shelves_folder, shelf_name_folder = self.get_software_folder(self.software, shelf_name)
             if not os.path.exists(shelf_name_folder):
@@ -220,6 +254,16 @@ class MenuDesigner(LJDialog):
             self.make_init(shelf_name_folder)
 
             self.parse(self.file)
+
+    def delete_button(self, button_tabs, button_name):
+        menu_tab_widget = button_tabs.parent().parent().parent().parent().parent()
+        index = menu_tab_widget.currentIndex()
+        menu = menu_tab_widget.tabText(index)
+        b_index = button_tabs.currentIndex()
+        button = button_name
+        button_tabs.removeTab(b_index)
+        del self.menu_dict[self.software][menu][button]
+        self.reorder_bottom(button_tabs)
 
     def add_page(self, newtabs, tabname, newname, rows):
         tp = newtabs.currentIndex()
@@ -249,8 +293,7 @@ class MenuDesigner(LJDialog):
             newtabs.removeTab(int(rows["order"].edit.text())-1)
             newtabs.insertTab(int(rows["order"].edit.text())-1, scroll_area, newname)
 
-            with open(self.file, 'r') as yaml_file:
-                y = yaml.load(yaml_file)
+            y = self.menu_dict
 
             name = self.tabs.tabText(self.tabs.currentIndex())
             oldcom = y[self.software][name][oldname]["command"]
@@ -264,8 +307,9 @@ class MenuDesigner(LJDialog):
             if oldname is not newname:
                 y[self.software][name].pop(oldname, None)
 
-            with open(self.file, 'w') as yaml_file:
-                yaml.dump(y, yaml_file)
+            self.save_yaml(self.file, dict=y)
+            #with open(self.file, 'w') as yaml_file:
+            #    yaml.dump(y, yaml_file)
 
         newtabs.setTabText(int(rows["order"].edit.text()) - 1, newname)
 
@@ -276,10 +320,8 @@ class MenuDesigner(LJDialog):
                 button_dict[rows[x].label.text().encode('utf-8').lower()] = rows[x].edit.text().encode('utf-8')
 
         button_dict["order"] = int(button_dict["order"])
-        print rows["command"].edit.text()
         cgl_tools, software, shelves, shelf_name, button = rows["command"].edit.text().encode('utf-8').split()[1].split('.')
         button_file = os.path.join(self.company_config_dir, 'cgl_tools', software, self.current_type, shelf_name, "%s.py" % button)
-        print 1, button_file
         if not os.path.exists(os.path.dirname(button_file)):
             os.makedirs(os.path.dirname(button_file))
         with open(button_file, 'w+') as y:
@@ -298,6 +340,7 @@ class MenuDesigner(LJDialog):
 
         self.append_yaml(path, button_dict)
         newtabs.setCurrentIndex(tp)
+        self.parse(self.file)
 
     def append_yaml(self, path, button_dict):
         with open(self.file, 'r') as yaml_file:
@@ -309,6 +352,13 @@ class MenuDesigner(LJDialog):
                 yaml.dump(y, yaml_file)
 
     def make_new_button(self, newtabs, tabname, index_):
+        """
+        This is the function that creates the default "+" button that allows us to create a new button.
+        :param newtabs:
+        :param tabname:
+        :param index_:
+        :return:
+        """
         self.disable_label_edit = True
         scroll_area = QtWidgets.QScrollArea()
         tab = QtWidgets.QWidget()
@@ -346,30 +396,28 @@ class MenuDesigner(LJDialog):
 
         layout.addLayout(icon)
 
-        test_btn = QtWidgets.QPushButton("Test")
-        save_btn = QtWidgets.QPushButton("Save")
+        create_new_button = QtWidgets.QPushButton("Create New Button")
 
-        syn = QtWidgets.QPlainTextEdit()
-        scroll_area.syn = syn
-        highlighter = Highlighter(syn.document())
+        code_text_edit = QtWidgets.QPlainTextEdit()
+        metrics = QtWidgets.QFontMetrics(code_text_edit.font())
+        code_text_edit.setTabStopWidth(4 * metrics.width(' '))
+        scroll_area.syn = code_text_edit
+        highlighter = Highlighter(code_text_edit.document())
         synrow = QtWidgets.QHBoxLayout()
-        synrow.addWidget(syn)
+        synrow.addWidget(code_text_edit)
         layout.addLayout(synrow)
 
         rows = {"bname": bname, "label": label_name, "anno": anno, "command": command,
-                "order": order, "icon": icon, "plaintext": syn}
-        save_btn.clicked.connect(lambda: self.add_page(newtabs, tabname, bname.edit.text(), rows))
-        test_btn.clicked.connect(lambda: self.test_exec(newtabs, tabname, bname.edit.text(), rows))
-
+                "order": order, "icon": icon, "plaintext": code_text_edit}
+        create_new_button.clicked.connect(lambda: self.add_page(newtabs, tabname, bname.edit.text(), rows))
         rows["plaintext"].insertPlainText("def run():\n    print(\"hello world:\")")
-
         rows["bname"].edit.textChanged[str].connect(lambda: self.set_command(rows, tabname))
-
         rows["order"].edit.setText(str(newtabs.tabnum+1))
+        code_text_edit.textChanged.connect(lambda: self.on_text_edit_changed(code_text_edit, newtabs, tabname))
 
         button_row2 = QtWidgets.QHBoxLayout()
-        button_row2.addWidget(test_btn)
-        button_row2.addWidget(save_btn)
+        button_row2.addStretch(1)
+        button_row2.addWidget(create_new_button)
 
         layout.addLayout(button_row2)
 
@@ -401,7 +449,6 @@ class MenuDesigner(LJDialog):
                 rows['label'].edit.setText(rows["bname"].edit.text())
             document = rows['plaintext'].document().toPlainText()
             if '"hello world:' in document:
-                print 'found it'
                 changed_command = "def run():\n    print(\"hello world: %s\")" % rows["bname"].edit.text()
                 rows["plaintext"].clear()
                 rows["plaintext"].insertPlainText(changed_command)
@@ -411,20 +458,16 @@ class MenuDesigner(LJDialog):
     def parse(self, filename, type='shelves.yaml'):
         self.clear_tabs()
         if type == 'shelves.yaml':
-            print 'made it with %s' % type
-            with open(filename, 'r') as stream:
-                f = yaml.load(stream)
-                if len(f) == 0:
-                    return
-
-                for cgl_tools in f:
+            self.load_yaml(filename)
+            if self.menu_dict:
+                for cgl_tools in self.menu_dict:
                     order = 1
-                    while order <= len(f[cgl_tools]):
-                        for tabs_dict in f[cgl_tools]:
-                            if f[cgl_tools][tabs_dict]["order"] == order:
+                    while order <= len(self.menu_dict[cgl_tools]):
+                        for tabs_dict in self.menu_dict[cgl_tools]:
+                            if self.menu_dict[cgl_tools][tabs_dict]["order"] == order:
                                 order += 1
                                 tab = QtWidgets.QWidget()
-                                tab.setLayout(self.generate_buttons(f[cgl_tools][tabs_dict], tabs_dict))
+                                tab.setLayout(self.generate_buttons(self.menu_dict[cgl_tools][tabs_dict], tabs_dict))
                                 scroll_area = QtWidgets.QScrollArea()
                                 scroll_area.setWidget(tab)
                                 scroll_area.setWidgetResizable(True)
@@ -432,22 +475,18 @@ class MenuDesigner(LJDialog):
                                 self.tabs.addTab(scroll_area, str(tabs_dict))
             # need a way to auto resize the GUI to expand as far as necessary
         else:
-            print filename, 0
-            with open(filename, 'r') as stream:
-                f = yaml.load(stream)
-                if len(f) == 0:
-                    return
-
-                for cgl_tools in f:
+            self.load_yaml(filename)
+            if self.menu_dict:
+                for cgl_tools in self.menu_dict:
                     order = 1
-                    while order <= len(f[cgl_tools]):
-                        for tabs_dict in f[cgl_tools]:
-                            if f[cgl_tools][tabs_dict]["order"] == order:
+                    while order <= len(self.menu_dict[cgl_tools]):
+                        for tabs_dict in self.menu_dict[cgl_tools]:
+                            if self.menu_dict[cgl_tools][tabs_dict]["order"] == order:
                                 order += 1
-                                # Create the task level tabs
+                                # Create the menu level tabs
                                 tab = QtWidgets.QWidget()
                                 # Create the buttons within the task
-                                tab.setLayout(self.generate_buttons(f[cgl_tools][tabs_dict], tabs_dict))
+                                tab.setLayout(self.generate_buttons(self.menu_dict[cgl_tools][tabs_dict], tabs_dict))
                                 scroll_area = QtWidgets.QScrollArea()
                                 scroll_area.setWidget(tab)
                                 scroll_area.setWidgetResizable(True)
@@ -527,21 +566,22 @@ class MenuDesigner(LJDialog):
         layout = QtWidgets.QVBoxLayout()
         self.tn = tabname
         folder_, file_ = os.path.split(self.file)
-        r = {}
+        rows = {}
 
         if type(tabs_dict) is dict:
             for x in tabs_dict:
                 #
                 if type(tabs_dict[x]) is unicode:
                     if str(x) != "order":
-                        layout.addLayout(self.get_label_row(x, tabs_dict[x].encode('utf-8'), [x]))
+                        rows[x] = self.get_label_row(x, tabs_dict[x].encode('utf-8'), [x])
+                        layout.addLayout(rows[x])
                 elif type(tabs_dict[x]) is not dict:
                     if x == 'icon':
-                        r[x] = self.get_label_row_with_button(x, str(tabs_dict[x]), [x], tab_widget, index_)
+                        rows[x] = self.get_label_row_with_button(x, str(tabs_dict[x]), [x], tab_widget, index_)
                     else:
-                        r[x] = self.get_label_row(x, str(tabs_dict[x]), [x])
+                        rows[x] = self.get_label_row(x, str(tabs_dict[x]), [x])
                     if str(x) != "order":
-                        layout.addLayout(r[x])
+                        layout.addLayout(rows[x])
                 if type(tabs_dict[x]) is dict:
                     layout.addWidget(QtWidgets.QLabel("<b>%s<b>" % x))
                     widget = QtWidgets.QWidget()
@@ -550,25 +590,33 @@ class MenuDesigner(LJDialog):
                     widget.setLayout(self.iterate_over_dict(tabs_dict[x], new_layout, [x]))
 
             syn = QtWidgets.QPlainTextEdit()
+            metrics = QtWidgets.QFontMetrics(syn.font())
+            syn.setTabStopWidth(4 * metrics.width(' '))
             if self.get_command(tabs_dict["command"]):
                 syn.setPlainText(self.get_command(tabs_dict["command"]))
             else:
                 syn.setPlainText("Can't Display Module")
-            syn.setEnabled(False)
             highlighter = Highlighter(syn.document())
             synrow = QtWidgets.QHBoxLayout()
             synrow.addWidget(syn)
             layout.addLayout(synrow)
+            # disable editing the button name
+            rows['button name'].edit.setEnabled(False)
+            rows['command'].edit.setEnabled(False)
 
             # Create Buttons at the bottom
-            test_btn = QtWidgets.QPushButton("Test")
-            save_btn = QtWidgets.QPushButton("Save")
-            # Create the Save Row
+            delete_btn = QtWidgets.QPushButton('Delete')
             save_row = QtWidgets.QHBoxLayout()
-            save_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
-            save_row.addWidget(test_btn)
-            save_row.addWidget(save_btn)
+            save_row.addStretch(1)
+            save_row.addWidget(delete_btn)
             layout.addLayout(save_row)
+            rows['label'].edit.textChanged.connect(lambda: self.on_button_info_changed(newtabs, tabname, rows,
+                                                                                       row_name='label'))
+            rows['annotation'].edit.textChanged.connect(lambda: self.on_button_info_changed(newtabs, tabname, rows,
+                                                                                            row_name='annotation'))
+            delete_btn.clicked.connect(lambda: self.delete_button(newtabs, tabname))
+            syn.textChanged.connect(lambda: self.on_text_edit_changed(syn, newtabs, tabname))
+            # test_btn.hide()
             return layout
 
     def generate_tab(self, newtabs, tabs_dict, tabname, tab_widget, index_):
@@ -601,6 +649,8 @@ class MenuDesigner(LJDialog):
         if type(tabs_dict) is dict:
             if self.get_command(tabs_dict["command"]):
                 syn = QtWidgets.QPlainTextEdit()
+                metrics = QtWidgets.QFontMetrics(syn.font())
+                syn.setTabStopWidth(4 * metrics.width(' '))
 
                 syn.setPlainText(self.get_command(tabs_dict["command"]))
                 highlighter = Highlighter(syn.document())
@@ -623,21 +673,28 @@ class MenuDesigner(LJDialog):
 
 
                     test_btn = QtWidgets.QPushButton("Test")
-                    save_btn = QtWidgets.QPushButton("Save")
+                    delete_btn = QtWidgets.QPushButton("Delete")
+                    save_btn = QtWidgets.QPushButton("Create New Button")
 
+                    rows["bname"].edit.textChanged[str].connect(lambda: self.on_rows_text_changed(rows))
                     save_btn.clicked.connect(lambda: self.add_page(newtabs, tabname, rows["bname"].edit.text(), rows))
+                    delete_btn.clicked.connect(lambda: self.delete_button(newtabs, tabname, rows["bname"].edit.text(), rows))
                     test_btn.clicked.connect(lambda: self.test_exec(newtabs, tabname, rows["bname"].edit.text(), rows))
 
                     button_row2 = QtWidgets.QHBoxLayout()
                     button_row2.addWidget(test_btn)
+                    button_row2.addWidget(delete_btn)
                     button_row2.addWidget(save_btn)
 
                     layout.addLayout(button_row2)
+                    test_btn.hide()
 
             else:
                 syn = QtWidgets.QPlainTextEdit()
+                metrics = QtWidgets.QFontMetrics(syn.font())
+                syn.setTabStopWidth(4 * metrics.width(' '))
                 syn.setPlainText("Can't Display Module")
-                syn.setEnabled(False)
+                # syn.setEnabled(False)
                 highlighter = Highlighter(syn.document())
                 synrow = QtWidgets.QHBoxLayout()
                 synrow.addWidget(syn)
@@ -686,7 +743,6 @@ class MenuDesigner(LJDialog):
             f = y
             if type(y) is not dict:
                 break
-
 
     def get_label_row(self, lab, ed, path):
         label = QtWidgets.QLabel("%s" % lab)

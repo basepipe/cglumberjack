@@ -9,6 +9,34 @@ from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
 
 
+class VersionButton(QtWidgets.QPushButton):
+
+    def __init__(self, parent):
+        QtWidgets.QPushButton.__init__(self, parent)
+        self.menu = QtWidgets.QMenu()
+        self.setText(self.tr("Version Up"))
+        self.empty_act = self.menu.addAction(self.tr("Empty"))
+        self.empty_act.setToolTip(self.tr("Create a new empty version"))
+        self.empty_act.triggered.connect(lambda: self.parent().create_empty_version.emit())
+        self.selected_act = self.menu.addAction(self.tr("Copy Current Version"))
+        self.selected_act.triggered.connect(lambda: self.parent().copy_selected_version.emit())
+        self.selected_act.setToolTip(self.tr("Create a new version copying from current version"))
+        self.latest_act = self.menu.addAction(self.tr("Copy Latest Version"))
+        self.latest_act.triggered.connect(lambda: self.parent().copy_latest_version.emit())
+        self.latest_act.setToolTip(self.tr("Create a new version copying from the latest version"))
+        self.setMenu(self.menu)
+
+    def set_new_version(self):
+        self.selected_act.setVisible(False)
+        self.latest_act.setVisible(False)
+        self.setEnabled(True)
+
+    def set_version_selected(self):
+        self.selected_act.setVisible(True)
+        self.latest_act.setVisible(True)
+        self.setEnabled(True)
+
+
 class EmptyStateWidget(QtWidgets.QPushButton):
     files_added = QtCore.Signal(object)
 
@@ -21,6 +49,7 @@ class EmptyStateWidget(QtWidgets.QPushButton):
         self.setText('Drag/Drop to Add Files')
         self.setStyleSheet("background-color: white; border:1px dashed black;")
         self.to_path = ''
+        self.to_object = None
 
     def mouseReleaseEvent(self, e):
         super(EmptyStateWidget, self).mouseReleaseEvent(e)
@@ -44,6 +73,7 @@ class EmptyStateWidget(QtWidgets.QPushButton):
                                         resolution=self.parent().resolutions.currentText(), filename=None,
                                         ext=None, filename_base=None)
         self.to_path = new_obj.path_root
+        self.to_object = new_obj
         if e.mimeData().hasUrls:
             e.setDropAction(QtCore.Qt.CopyAction)
             e.accept()
@@ -125,64 +155,32 @@ class FileTable(LJTableWidget):
             e.ignore()
 
 
-class AssetWidget(QtWidgets.QWidget):
-    button_clicked = QtCore.Signal(object)
-    filter_changed = QtCore.Signal()
-
-    def __init__(self, parent, title, filter_string=None):
-        QtWidgets.QWidget.__init__(self, parent)
-        v_layout = QtWidgets.QVBoxLayout(self)
-        h_layout = QtWidgets.QHBoxLayout(self)
-        self.filter_string = filter_string
-        self.label = title
-        self.title = QtWidgets.QLabel("<b>%s</b>" % title)
-        self.message = QtWidgets.QLabel("")
-        self.search_box = LJSearchEdit(self)
-        self.button = QtWidgets.QToolButton()
-        self.button.setText("+")
-        self.data_table = LJTableWidget(self)
-        self.data_table.setMinimumHeight(200)
-
-        # this is where the filter needs to be!
-        h_layout.addWidget(self.title)
-        h_layout.addWidget(self.search_box)
-        h_layout.addWidget(self.button)
-
-        v_layout.addLayout(h_layout)
-        v_layout.addWidget(self.message)
-        v_layout.addWidget(self.data_table, 1)
-
-        self.message.hide()
-        self.button.clicked.connect(self.on_button_clicked)
-
-    def setup(self, mdl):
-        self.data_table.set_item_model(mdl)
-        self.data_table.set_search_box(self.search_box)
-
-    def on_button_clicked(self):
-        data = {'title': self.label}
-        self.button_clicked.emit(data)
-
-    def set_title(self, new_title):
-        self.title.setText('<b>%s</b>' % new_title.title())
-
-
 class TaskWidget(QtWidgets.QFrame):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
     start_task_clicked = QtCore.Signal(object)
     open_button_clicked = QtCore.Signal()
+    import_button_clicked = QtCore.Signal()
     new_version_clicked = QtCore.Signal()
+    create_empty_version = QtCore.Signal()
+    copy_selected_version = QtCore.Signal()
+    copy_latest_version = QtCore.Signal()
 
-    def __init__(self, parent, title, short_title, filter_string=None, path_object=None):
+    def __init__(self, parent, title, short_title, filter_string=None, path_object=None, show_import=False):
         QtWidgets.QFrame.__init__(self, parent)
         self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
+        self.setAutoFillBackground(True)
+        p = self.palette()
+        brightness = 235
+        p.setColor(self.backgroundRole(), QtGui.QColor(brightness, brightness, brightness))
+        self.setPalette(p)
         v_layout = QtWidgets.QVBoxLayout(self)
         task_row = QtWidgets.QHBoxLayout()
+        self.show_import = show_import
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
-        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Maximum)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
@@ -191,10 +189,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.user = None
         self.in_file_tree = None
         self.versions = AdvComboBox()
-        # self.versions.setMinimumWidth(200)
         self.versions.hide()
-        self.setMinimumWidth(300)
-        #self.setMinimumHeight(200)
 
         self.users_label = QtWidgets.QLabel("User:")
         self.users = AdvComboBox()
@@ -214,9 +209,6 @@ class TaskWidget(QtWidgets.QFrame):
         self.resolutions_layout.addWidget(self.resolutions)
         self.resolutions_layout.setContentsMargins(0, 0, 0, 0)
 
-        # self.search_box = LJSearchEdit(self)
-        # self.add_button = QtWidgets.QToolButton()
-        # self.add_button.setText("+")
         self.show_button = QtWidgets.QToolButton()
         self.show_button.setText("more")
         self.start_task_button = QtWidgets.QPushButton()
@@ -227,14 +219,23 @@ class TaskWidget(QtWidgets.QFrame):
         self.data_table.set_draggable(True)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.data_table.setMinimumHeight(50)
-        self.data_table.setMinimumWidth(150)
+        self.data_table2 = FileTableWidget(self)
+        self.data_table2.set_draggable(True)
+        self.data_table2.title = 'blob'
+        self.data_table2.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.my_files_label = QtWidgets.QLabel('My Files')
+        self.export_label = QtWidgets.QLabel('Ready to Review/Publish')
+        self.export_label_row = QtWidgets.QHBoxLayout()
+        self.export_label_row.addWidget(self.export_label)
+        self.export_label.hide()
+        self.my_files_label.hide()
 
         # build the tool button row
         self.open_button = QtWidgets.QToolButton()
         self.open_button.setText('Open')
-        self.new_version_button = QtWidgets.QToolButton()
-        self.new_version_button.setText('Version Up')
+        self.import_button = QtWidgets.QToolButton()
+        self.import_button.setText('Import')
+        self.new_version_button = VersionButton(self)
         self.review_button = QtWidgets.QToolButton()
         self.review_button.setText('Review')
         self.publish_button = QtWidgets.QToolButton()
@@ -242,34 +243,32 @@ class TaskWidget(QtWidgets.QFrame):
         self.tool_button_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
                                                               QtWidgets.QSizePolicy.Minimum))
         self.tool_button_layout.addWidget(self.open_button)
+        self.tool_button_layout.addWidget(self.import_button)
         self.tool_button_layout.addWidget(self.new_version_button)
         self.tool_button_layout.addWidget(self.review_button)
         self.tool_button_layout.addWidget(self.publish_button)
 
         # this is where the filter needs to be!
-        task_row.addWidget(self.title)
+        task_row.addWidget(self.my_files_label)
         task_row.addWidget(self.versions)
-        # task_row.addWidget(self.search_box)
         task_row.addWidget(self.show_button)
         task_row.addWidget(self.hide_button)
-        # task_row.addWidget(self.assign_button)
-        # task_row.addWidget(self.add_button)
 
         self.empty_state = EmptyStateWidget(path_object=self.path_object)
         self.empty_state.hide()
 
+        v_layout.addWidget(self.title)
         v_layout.addLayout(task_row)
-        # v_layout.addWidget(self.message)
         v_layout.addWidget(self.start_task_button)
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
+
         v_layout.addWidget(self.data_table, 1)
+        v_layout.addLayout(self.export_label_row)
+        v_layout.addWidget(self.data_table2, 1)
         v_layout.addWidget(self.empty_state)
-        v_layout.addItem((QtWidgets.QSpacerItem(0, 25, QtWidgets.QSizePolicy.Minimum,
-                                                QtWidgets.QSizePolicy.Minimum)))
         v_layout.addLayout(self.tool_button_layout)
-        v_layout.addItem((QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
-                                                QtWidgets.QSizePolicy.MinimumExpanding)))
+        v_layout.addStretch(1)
         self.setLayout(v_layout)
         self.hide_combos()
 
@@ -281,6 +280,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.start_task_button.clicked.connect(self.on_start_task_clicked)
         self.open_button.clicked.connect(self.on_open_button_clicked)
         self.new_version_button.clicked.connect(self.on_new_version_clicked)
+        self.import_button.clicked.connect(self.on_import_clicked)
         self.hide_tool_buttons()
 
     def get_category_label(self):
@@ -319,6 +319,7 @@ class TaskWidget(QtWidgets.QFrame):
 
     def hide_tool_buttons(self):
         self.open_button.hide()
+        self.import_button.hide()
         self.new_version_button.hide()
         self.publish_button.hide()
         self.review_button.hide()
@@ -339,6 +340,8 @@ class TaskWidget(QtWidgets.QFrame):
 
     def show_tool_buttons(self):
         self.open_button.show()
+        if self.show_import:
+            self.import_button.show()
         self.new_version_button.show()
         self.publish_button.show()
         self.review_button.show()
@@ -364,18 +367,20 @@ class TaskWidget(QtWidgets.QFrame):
         self.show_button.hide()
         self.data_table.show()
 
-    def setup(self, mdl):
-        # This is where i add the layout
-        self.data_table.set_item_model(mdl)
-        self.empty_state.hide()
-        if not self.data_table.model().rowCount():
-            self.data_table.hide()
-            if not self.start_task_button.isVisible():
-                self.empty_state.show()
-        # self.data_table.set_search_box(self.search_box)
+    def setup(self, table, mdl):
+        if mdl:
+            table.set_item_model(mdl)
+            self.empty_state.hide()
+            if not table.model().rowCount():
+                table.hide()
+                if not self.start_task_button.isVisible():
+                    self.empty_state.show()
 
     def on_new_version_clicked(self):
         self.new_version_clicked.emit()
+
+    def on_import_clicked(self):
+        self.import_button_clicked.emit()
 
     def on_open_button_clicked(self):
         self.open_button_clicked.emit()
@@ -495,14 +500,17 @@ class AssetWidget(QtWidgets.QWidget):
         self.filter_string = filter_string
         self.label = title
         #self.title = QtWidgets.QLabel("<h2>Project: %s</h2>" % title)
-        self.scope_title = QtWidgets.QLabel("<b>%s</b>" % 'Assets')
+        #self.scope_title = QtWidgets.QLabel("<b>%s</b>" % 'Assets')
         self.task = None
         self.user = None
         minWidth = 340
 
         self.message = QtWidgets.QLabel("")
         self.message.setMinimumWidth(minWidth)
-        self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        try:
+            self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        except AttributeError:
+            print 'PySide2 Natively does not have QtGui.QSizePolicy'
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.search_box = LJSearchEdit(self)
         self.add_button = QtWidgets.QToolButton()
@@ -519,10 +527,10 @@ class AssetWidget(QtWidgets.QWidget):
         self.radio_group_scope.addButton(self.shots_radio)
         self.radio_group_scope.addButton(self.assets_radio)
 
-        scope_layout.addWidget(self.scope_title)
-        scope_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        #scope_layout.addWidget(self.scope_title)
         scope_layout.addWidget(self.shots_radio)
         scope_layout.addWidget(self.assets_radio)
+        scope_layout.addStretch(1)
         scope_layout.addWidget(self.add_button)
 
         v_list.addItem(QtWidgets.QSpacerItem(0, 3, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
@@ -566,8 +574,8 @@ class AssetWidget(QtWidgets.QWidget):
     def set_title(self, new_title):
         self.title.setText('<h2>Project:  %s</h2>' % new_title.title())
 
-    def set_scope_title(self, new_title):
-        self.scope_title.setText('<b>%s</b>' % new_title.title())
+    #def set_scope_title(self, new_title):
+    #    self.scope_title.setText('<b>%s</b>' % new_title.title())
 
 
 class FileTableWidget(LJTableWidget):
@@ -602,7 +610,7 @@ class FileTableWidget(LJTableWidget):
         # self.item_right_click_menu.addSeparator()
         self.customContextMenuRequested.connect(self.item_right_click)
         self.setAcceptDrops(True)
-        self.setMaximumHeight(self.height_hint)
+        # self.setMaximumHeight(self.height_hint)
 
     def item_right_click(self, position):
         self.item_right_click_menu.exec_(self.mapToGlobal(position))
@@ -619,3 +627,35 @@ class FileTableWidget(LJTableWidget):
             e.accept()
         else:
             e.ignore()
+
+    def sizeHint(self):
+        return QtCore.QSize(300, 150)
+
+
+class LJListWidget(QtWidgets.QWidget):
+    def __init__(self, label):
+        QtWidgets.QWidget.__init__(self)
+        layout = QtWidgets.QVBoxLayout(self)
+        self.label = QtWidgets.QLabel("<b>%s</b>" % label)
+        self.add_button = QtWidgets.QToolButton()
+        self.add_button.setText('+')
+        self.h_layout = QtWidgets.QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.h_layout.addWidget(self.label)
+        self.h_layout.addWidget(self.add_button)
+        self.list = QtWidgets.QListWidget()
+        self.list.setMaximumHeight(80)
+        layout.addLayout(self.h_layout)
+        layout.addWidget(self.list)
+
+    def hide(self):
+        self.label.hide()
+        self.add_button.hide()
+        self.list.hide()
+        # self.combo.hide()
+
+    def show(self):
+        self.label.show()
+        self.add_button.show()
+        self.list.show()
+

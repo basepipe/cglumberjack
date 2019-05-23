@@ -71,7 +71,6 @@ class AssetIngestor(QtWidgets.QDialog):
             self.path_dict['resolution'] = 'high'
             self.path_dict['user'] = self.current_user
             self.path_dict['version'] = '000.000'
-        print self.path_dict
 
         self.table = AssetIngestTable()
         self.table.setColumnCount(8)

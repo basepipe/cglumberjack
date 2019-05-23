@@ -4,42 +4,22 @@ import pandas as pd
 import logging
 import glob
 from Qt import QtCore, QtGui, QtWidgets
-from cglui.widgets.base import LJDialog
+from cglui.widgets.dialog import InputDialog
 from cglui.widgets.file_system import LJFileBrowser
 from cglui.widgets.combo import AdvComboBox
-from widgets import LJListWidget
+from widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
 from cglcore.path import PathObject, CreateProductionData
 
 
-class EmptyStateWidget(QtWidgets.QPushButton):
+class EmptyStateWidgetIO(EmptyStateWidget):
     files_added = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None):
-        QtWidgets.QPushButton.__init__(self, parent)
+        EmptyStateWidget.__init__(self, parent)
         self.path_object = path_object
-        self.setAcceptDrops(True)
-        self.setMinimumWidth(300)
-        self.setMinimumHeight(100)
-        self.setText('Drag/Drop to Add Files')
+        self.setText('Drag/Drop to Create a \nNew Import Version')
         self.setStyleSheet("background-color: white; border:1px dashed black;")
-        self.to_path = ''
-
-    def mouseReleaseEvent(self, e):
-        super(EmptyStateWidget, self).mouseReleaseEvent(e)
-
-    def dragEnterEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.accept()
-        else:
-            e.ignore()
-
-    def dragMoveEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.setDropAction(QtCore.Qt.CopyAction)
-            e.accept()
-        else:
-            e.ignore()
 
     def dropEvent(self, e):
         new_obj = self.path_object.copy()
@@ -73,21 +53,24 @@ class PandasModel(QtCore.QAbstractTableModel):
                 return str(self._data.values[index.row()][index.column()])
 
 
-class ImportBrowser(LJDialog):
+class IOPanel(QtWidgets.QWidget):
+    location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None):
-        super(ImportBrowser, self).__init__()
-        v_layout = QtWidgets.QVBoxLayout(self)
-        h_layout = QtWidgets.QHBoxLayout()
+        QtWidgets.QWidget.__init__(self, parent)
         if path_object:
             self.path_object = path_object
         else:
             print 'No Path Object found, exiting'
             return
-        self.title = 'Import to %s' % path_object.project
 
+        self.path_object_next = None
+        self.panel = QtWidgets.QVBoxLayout(self)
+        h_layout = QtWidgets.QHBoxLayout()
+        self.title = 'Import to %s' % path_object.project
         self.task = None
-        self.version = None
+        self.version = '000.000'
+        self.latest_version = '000.000'
         self.user = None
         self.resolution = None
         self.root = None
@@ -105,8 +88,9 @@ class ImportBrowser(LJDialog):
         self.file_tree.setMinimumHeight(200)
         self.file_tree.setMinimumWidth(800)
 
-        self.company_widget = LJListWidget('Import Sources')
-        self.import_events = LJListWidget('Import Versions')
+        self.source_widget = LJListWidget('Sources')
+        self.import_events = LJListWidget('Previous Ingests')
+        self.import_events.hide()
 
         self.tags_title = QtWidgets.QLabel("<b>Select File(s) or Folder(s) to tag</b>")
         self.tags_title_row = QtWidgets.QHBoxLayout()
@@ -150,30 +134,29 @@ class ImportBrowser(LJDialog):
         self.publish_button = QtWidgets.QPushButton('Publish Tagged')
         self.buttons_row.addStretch(1)
         self.buttons_row.addWidget(self.publish_button)
-        self.empty_state = EmptyStateWidget(path_object=self.path_object)
-        self.empty_state.hide()
+        self.empty_state = EmptyStateWidgetIO(path_object=self.path_object)
+        self.empty_state.setText('Select a Source:\n Click + to Create a new one')
+        # self.empty_state.hide()
 
         self.tags_title_row.addStretch(1)
 
-        h_layout.addWidget(self.company_widget)
+        h_layout.addWidget(self.source_widget)
         h_layout.addWidget(self.import_events)
-        v_layout.addLayout(h_layout)
-        v_layout.addWidget(self.empty_state)
-        v_layout.addWidget(self.file_tree)
+        self.panel.addLayout(h_layout)
+        self.panel.addWidget(self.empty_state)
+        self.panel.addWidget(self.file_tree)
 
-        v_layout.addLayout(self.tags_title_row)
-        v_layout.addLayout(self.radio_row)
-        v_layout.addLayout(self.seq_row)
-        v_layout.addLayout(self.tags_row)
-        v_layout.addLayout(self.buttons_row)
-        v_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
-                                               QtWidgets.QSizePolicy.Expanding))
+        self.panel.addLayout(self.tags_title_row)
+        self.panel.addLayout(self.radio_row)
+        self.panel.addLayout(self.seq_row)
+        self.panel.addLayout(self.tags_row)
+        self.panel.addLayout(self.buttons_row)
+        self.panel.addStretch(1)
 
         self.load_companies()
         self.hide_tags()
         self.file_tree.hide()
 
-        self.import_events.add_button.clicked.connect(self.on_add_ingest_event)
         self.shot_radio_button.clicked.connect(self.on_radio_clicked)
         self.asset_radio_button.clicked.connect(self.on_radio_clicked)
         self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
@@ -183,16 +166,30 @@ class ImportBrowser(LJDialog):
         self.shot_combo.editTextChanged.connect(self.edit_data_frame)
         self.task_combo.editTextChanged.connect(self.edit_data_frame)
         self.tags_line_edit.textChanged.connect(self.edit_tags)
-        self.company_widget.list.clicked.connect(self.on_company_changed)
+        self.source_widget.add_button.clicked.connect(self.on_source_add_clicked)
+        self.source_widget.list.clicked.connect(self.on_company_changed)
         self.import_events.list.clicked.connect(self.on_event_selected)
+        self.import_events.add_button.clicked.connect(self.on_add_ingest_event)
         self.publish_button.clicked.connect(self.publish_tagged_assets)
         self.empty_state.files_added.connect(self.new_files_dragged)
 
+    def on_source_add_clicked(self):
+        dialog = InputDialog(title='Add Source Company or Gear', message='Add an Import Source:', line_edit=True,
+                             buttons=['Cancel', 'Add Source'])
+        dialog.exec_()
+
+        if dialog.button == 'Add Source':
+            print "I'm creating a new source for you"
+
     def new_files_dragged(self, files):
+        if self.path_object.ingest_source == '*':
+            print 'Please Select An Ingest Source Before Dragging Files'
+            return
+        to_folder = self.path_object_next.path_root
+        if not os.path.exists(to_folder):
+            os.makedirs(to_folder)
         for f in files:
             file_ = os.path.split(f)[-1]
-            to_object = PathObject(self.sender().to_path)
-            to_folder = to_object.path_root
             to_file = os.path.join(to_folder, file_)
             if '.' in file_:
                 logging.info('Copying File From %s to %s' % (f, to_file))
@@ -200,28 +197,41 @@ class ImportBrowser(LJDialog):
             else:
                 logging.info('Copying Folder From %s to %s' % (f, to_file))
                 shutil.copy(f, to_file)
+        self.load_import_events()
+        num = self.import_events.list.count()
+        item = self.import_events.list.item(num - 1)
+        item.setSelected(True)
         self.on_event_selected()
 
     def load_companies(self):
-        self.company_widget.list.clear()
+        self.source_widget.list.clear()
         dir_ = self.path_object.glob_project_element('ingest_source')
-        self.company_widget.list.addItems(dir_)
-        #self.on_company_changed()
+        if 'CLIENT' not in dir_:
+            dir_.insert(0, 'CLIENT')
+        self.source_widget.list.addItems(dir_)
 
     def on_company_changed(self):
-        self.company_widget.list.selectedItems()[-1].text()
-        self.path_object.set_attr(ingest_source=self.company_widget.list.selectedItems()[-1].text())
-        self.path_object.set_attr(version='000.0000')
+        self.hide_tags()
+        self.file_tree.hide()
+        self.empty_state.show()
+        self.source_widget.list.selectedItems()[-1].text()
+        self.empty_state.setText('Drag Media Here to Create New Ingest Version')
+        self.path_object.set_attr(ingest_source=self.source_widget.list.selectedItems()[-1].text())
         self.load_import_events()
 
-    def load_import_events(self):
+    def load_import_events(self, select_latest=False):
         latest = '-001.000'
         self.import_events.list.clear()
         events = glob.glob('%s/%s' % (self.path_object.split_after('ingest_source'), '*'))
-        for e in events:
+        if events:
+            self.import_events.show()
+            for e in events:
+                self.import_events.list.addItem(os.path.split(e)[-1])
+                # self.import_events.list.setItemSelected(item)
             latest = os.path.split(e)[-1]
-            self.import_events.list.addItem(os.path.split(e)[-1])
         self.path_object.set_attr(version=latest)
+        self.path_object_next = self.path_object.next_major_version()
+        self.empty_state.setText('Drag Media Here to Create Ingest %s' % self.path_object_next.version)
 
     def on_event_selected(self):
         self.hide_tags()
@@ -229,6 +239,7 @@ class ImportBrowser(LJDialog):
         self.path_object.set_attr(version=self.import_events.list.selectedItems()[-1].text())
         # Load the Tree Widget
         self.populate_tree()
+        self.location_changed.emit(self.path_object)
 
     def populate_tree(self):
         if os.listdir(self.path_object.path_root):
@@ -444,12 +455,12 @@ class ImportBrowser(LJDialog):
         self.sender().parent().show_line_edit_info(data)
 
     def on_add_ingest_event(self):
-        version = self.path_object.next_major_version()
-        if not os.path.exists(version.path_root):
-            print 'Creating Version at: %s' % version.path_root
-            os.makedirs(version.path_root)
-        self.on_company_changed()
-        # self.populate_tree()
+        # deselect everything in the event
+        # change the file path to reflect no selection
+        self.hide_tags()
+        self.file_tree.hide()
+        self.empty_state.show()
+
 
     def publish_tagged_assets(self):
         # TODO - We need to be changing status to 'Published' on this.
@@ -473,12 +484,13 @@ class ImportBrowser(LJDialog):
         self.save_data_frame()
         self.populate_tree()
 
+    def clear_layout(self, layout=None):
+        if not layout:
+            layout = self.panel
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget() is not None:
+                child.widget().deleteLater()
+            elif child.layout() is not None:
+                self.clear_layout(child.layout())
 
-if __name__ == "__main__":
-    from cglui.startup import do_gui_init
-    app = do_gui_init()
-    td = ImportBrowser()
-    td.setWindowTitle('Ingest-o-matic')
-    td.show()
-    td.raise_()
-    app.exec_()

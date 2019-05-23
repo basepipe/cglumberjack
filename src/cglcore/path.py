@@ -14,6 +14,8 @@ from cglcore.config import app_config, UserConfig
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 EXT_MAP = app_config()['ext_map']
 ROOT = app_config()['paths']['root']
+SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
+SEQ_REGEX = re.compile("\\.[0-9]{4,}\\.")
 
 
 class PathObject(object):
@@ -75,7 +77,7 @@ class PathObject(object):
         self.due = None
         self.assigned = None
         self.priority = None
-        self.input_company = '*'
+        self.ingest_source = '*'
 
         if type(path_object) is unicode:
             path_object = str(path_object)
@@ -139,12 +141,18 @@ class PathObject(object):
             if t in self.data:
                 if self.data[t]:
                     current_ = t
+            elif t in app_config()['rules']['scope_list']:
+                current_ = 'scope'
+
         return current_
 
     def get_template(self):
         self.template = []
         if self.context:
             if self.scope:
+                if self.scope == '*':
+                    self.template = ['company', 'context', 'project', 'scope']
+                    return
                 try:
                     path_template = app_config()['templates'][self.scope][self.context]['path'].split('/')
                     if path_template[-1] == '':
@@ -261,14 +269,14 @@ class PathObject(object):
                 else:
                     if self.__dict__[attr]:
                         path_string = os.path.join(path_string, self.__dict__[attr])
-        #path_string = path_string.replace('\\', '/')
-        # if windows
-        
+
+        path_string = path_string.replace('\\', '/')
+
         if sys.platform == 'win32':
-            self.path_root = '%s\\%s' % (self.root, path_string)
+            self.path_root = '%s/%s' % (self.root, path_string)
             path_, file_ = os.path.split(self.path_root)
         else:
-            self.path_root = os.path.join(self.root, path_string)
+            self.path_root = os.path.join(self.root, path_string).replace('\\', '/')
             path_, file_ = os.path.split(self.path_root)
         self.path = path_string
         if self.filename:
@@ -351,40 +359,50 @@ class PathObject(object):
                     self.__dict__['filename_base'] = base
                     self.data['filename_base'] = base
             elif attr == 'version':
-                major, minor = value.split('.')
-                self.__dict__['major_version'] = major
-                self.data['major_version'] = major
-                self.__dict__['minor_version'] = minor
-                self.data['minor_version'] = minor
+                if value:
+                    if value is not '*' and value is not '.':
+                        major, minor = value.split('.')
+                    else:
+                        major = '000'
+                        minor = '000'
+                    self.__dict__['major_version'] = major
+                    self.data['major_version'] = major
+                    self.__dict__['minor_version'] = minor
+                    self.data['minor_version'] = minor
         self.set_path()
 
     def glob_project_element(self, attr, full_path=False):
         """
-        Simple Glob Function.  "I want to return all "projects"" for instance would be written this way:
-        glob_project_element(self, 'project')
-        this would return a list of project names.  Use the full_path flag to return a list of paths.
+        returns all of the project elements of type "attr" from the system.  Example - you want all projects on disk.
+        glob_project_element(attr='project')
         :param self: self
         :param attr: attribute name: 'project', 'scope', 'version', filename, etc...
         :param full_path: if True returns full paths for everything globbed
         :return: returns list of items, or paths.
         """
-        # this does not account for duplicate values - need a system that does.
-        # TODO this does not account for templates
-        try:
-            value = self.data[attr]
-            if value:
-                glob_path = self.path_root.split(value)[0]
-                list_ = []
-                if not full_path:
-                    for each in glob.glob(os.path.join(glob_path, '*')):
-                        list_.append(os.path.split(each)[-1])
-                else:
-                    list_ = glob.glob(os.path.join(glob_path, '*'))
-                return list_
-        except KeyError:
-            return None
+
+        list_ = []
+        index = self.template.index(attr)
+        parts = self.path.split('/')
+        i = 0
+        path_ = ''
+        if index < len(parts):
+            while i < index:
+                path_ = os.path.join(path_, parts[i])
+                i += 1
+            path_ = os.path.join(path_, '*')
+            path_ = os.path.join(self.root, path_)
+            if not full_path:
+                for each in glob.glob(path_):
+                    list_.append(os.path.basename(each))
+            else:
+                list_ = glob.glob(path_)
+            return list_
+        else:
+            return []
 
     def split_after(self, attr):
+        # TODO - this must be updated to match how glob_project_element works
         """
         convenience function that returns the path after splitting it at the desired attribute.
         for example split at project would return the path up to and including the project variable.
@@ -463,7 +481,6 @@ class PathObject(object):
         new_obj = copy.deepcopy(self)
         if new_obj.user:
             latest_version = new_obj.glob_project_element('version')
-            print latest_version
             if latest_version:
                 new_obj.set_attr(version=latest_version[-1])
                 return new_obj
@@ -490,7 +507,6 @@ class PathObject(object):
         next_major_version which will return a PathObject.
         :return:
         """
-        print self.latest_version().version , '8888888888888888'
         major = self.latest_version().major_version
         next_major = '%03d' % (int(major)+1)
         return '%s.%s' % (next_major, '000')
@@ -624,9 +640,7 @@ class CreateProductionData(object):
         :return:
         """
         if self.path_object.scope != 'IO':
-            print self.path_object.scope
             if self.path_object.task_json:
-                print self.path_object.task_json
                 self.update_task_json(assigned=self.path_object.user, priority=self.path_object.priority,
                                       status=self.path_object.status)
             if self.path_object.asset_json:
@@ -822,7 +836,7 @@ def start(filepath):
 
 
 def replace_illegal_filename_characters(filename):
-    return re.sub('[^A-Za-z0-9\.#]+', '_', filename)
+    return re.sub(r'[^A-Za-z0-9\.#]+', '_', filename)
 
 
 def show_in_folder(path_string):
@@ -851,7 +865,28 @@ def create_project_config(company, project):
             shutil.copy2(company_config, project_config)
 
 
+def seq_from_file(basename):
+    numbers = re.search(SEQ_REGEX, basename)
+    if numbers:
+        numbers = numbers.group(0).replace('.', '')
+        string = '#' * int(len(numbers))
+        string = '.%s.' % string
+        this = re.sub(SEQ_REGEX, string, basename)
+        return this
+    else:
+        return basename
 
+
+def get_frange_from_seq(filepath):
+    glob_string = filepath.split('#')[0]
+    frames = glob.glob('%s*' % glob_string)
+    if frames:
+        sframe = re.search(SEQ_REGEX, frames[0]).group(0).replace('.', '')
+        eframe = re.search(SEQ_REGEX, frames[-1]).group(0).replace('.', '')
+        if sframe and eframe:
+            return '%s-%s' % (sframe, eframe)
+    else:
+        return None
 
 
 

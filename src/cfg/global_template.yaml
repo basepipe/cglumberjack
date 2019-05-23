@@ -1,8 +1,4 @@
 account_info:
-  companies: ["", "cgl-cglumberjack", 'VFX', 'cgl-blobgroup', 'cgl-blobbyfun', 'cgl-pod_advertising']
-  company: cgl-cglumberjack
-  user: tmikota
-  user_favorites: ['PADL_dev', 'tmiko', 'tmikota']
   user_directory: C:\Users\tmiko\Documents\cglumberjack
   project_management: lumbermill
 logging:
@@ -11,8 +7,8 @@ logging:
     debug:
         format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'
 paths:
-  root: ''
-  code_root: C:\Users\tmikota\PycharmProjects\cglumberjack
+  root: 'D:'
+  code_root: C:\Users\tmiko\PycharmProjects\cglumberjack
   ffmpeg: C:\ffmpeg\bin\ffmpeg.exe
   oiiotool: C:\OpenImageIO-1.5.0-OCIO\bin\oiiotool.exe
   ffprobe: C:\ffmpeg\bin\ffprobe.exe
@@ -21,12 +17,16 @@ paths:
   mayapy: C:\PROGRA~1\Autodesk\Maya2018\bin\mayapy.exe
   maketx: C:\OpenImageIO-1.5.0-OCIO\bin\maketx.exe
 rules:
-  context_list: ['render', 'source', 'unity']
-  scope_list: ['assets', 'shots']
+  context_list: ['render', 'source', 'unity', 'unreal']
+  scope_list: ['assets', 'shots', 'IO']
   path_variables:
+    root:
+      regex: "[A-Za-z0-9_\\:]+"
     company:
       regex: "cgl-[A-Za-z0-9_]+"
       example: "Company Names must have 'cgl-' in the beginning of the name"
+    ingest_source:
+      regex: "[A-Za-z0-9_]+"
     project:
       regex: "[A-Za-z0-9_]+"
       example: "Any characters or numbers are allowed for project names"
@@ -37,7 +37,7 @@ rules:
       regex: "[a-z]+"
       example: "examples: source, render"
     seq:
-      regex: "^[0-9]{3}$"
+      regex: "^[0-9]{3}$|^[A-Z]{3}$"
       example: "examples: 000, 010, 020"
     shot:
       regex: "^[0-9]{4}$"
@@ -50,6 +50,9 @@ rules:
     asset:
       regex: "[a-zA-Z]{3,}$"
       example: "examples:\n\tkingkong - [creates single asset 'kingkong' in 'default' category]\n\tkingkong, trex [creates 2 assets in 'default' category]\n\tProp:kingkong [creates kingkong in 'Prop' category]\n\tProp:kingkong, trex [creates multiple assets in 'Prop' category]"
+    assetname:
+      regex: "[a-zA-Z_]+$"
+      example: ""
     shotname:
       regex: "[A-Z0-9]{3}\\_[0-9]{4}$"
       example: 'eg: 050_0100, THC_0500 (SEQ_SHOT)'
@@ -76,8 +79,12 @@ rules:
     resolution:
       regex: "[A-Za-z0-9]+"
     user_email:
-      regex: "[A-Za-z0-9@]+"
+      regex: "[A-Za-z0-9]+"
+    date:
+      regex: "[0-9_]+"
   general:
+    file_sequence:
+      regex: "\\.[0-9]+\\."
     valid_sequence:
       regex: "[aA-zZ]+(\\.|\\_|\\-)[0-9]{2,4}\\."
     taskname:
@@ -118,6 +125,13 @@ templates:
     unity:
       path:    "{company}/unity/{project}/Assets/{seq}/{shot}/{task}"
       version: "{filename}.{ext}"
+  IO:
+    source:
+      path: "{company}/source/{project}/IO/{ingest_source}"
+      version: "{version}"
+    render:
+      path: "{company}/render/{project}/IO/{ingest_source}"
+      version: "{version}"
 ext_map:
   .mov: 'movie'
   .mp4: 'movie'
@@ -199,6 +213,7 @@ pipeline_steps:
     Storyboards: boards
     Color Editing: color
     Camera: cam
+    Plate: plate
   assets:
     default_steps: ['ref', 'mdl', 'tex', 'shd']
     Conception/Previs/R&D: ref
@@ -215,30 +230,34 @@ pipeline_steps:
     Bundle: bndl
     HDRI: hdri
   short_to_long:
-    mdl: modelling
-    tex: textures
-    shd: shading
-    rig: rigging
-    lite: lighting
-    comp: compositing
-    ref: reference
+    cam: Camera
+    mdl: Modeling/UV
+    tex: Texturing
+    shd: Shading
+    rig: Rigging
+    lite: Lighting
+    comp: Compositing
+    ref: Conception/Previs/R&D
     fx: effects
-    cncpt: concept art
-    lay: layout
-    bndl: bundle
-    hdri: hdri
-    edit: editorial
-    boards: storyboards
-    color: color correct
-    prev: previs
-    sim: simulation
-    aud: audio
-    trn: transcript
-    mm: matchmove
-    mcp: motion capture
-    matte: matte painting
-    sound: sound editing
-    anim: animation
+    cncpt: Concept
+    lay: Asset Layout
+    bndl: Bundle
+    hdri: HDRI
+    edit: Picture Editing
+    boards: Storyboards
+    color: Color Editing
+    prev: Previs
+    sim: Simulation
+    aud: Audio
+    trn: Transcript
+    mm: MatchMove
+    mcp: Motion Capture
+    matte: Matte Painting/Environment
+    sound: Sound Editing
+    anim: Animation
+    blocking: Blocking
+    amtc: Animatic
+    plate: Plate
 default:
   linear_gamma: 2.2
   frame_rate: 24
@@ -257,7 +276,6 @@ default:
     half: 960x540
     third: 640x360
     quarter: 480x270
-
 dvp:
   frame_rate: 24
 

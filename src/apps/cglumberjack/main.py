@@ -2,16 +2,17 @@ from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
-from import_main import ImportBrowser
-from cglcore.path import PathObject
-from panels import CompanyPanel, ProjectPanel, IOPanel
+from cglcore.path import PathObject, start
+from panels import ProjectPanel, ProductionPanel, ScopePanel
+from IOPanel import IOPanel
 from TaskPanel import TaskPanel
+from import_main import ImportBrowser
 
 
 class PathWidget(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path=None):
+    def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.back_button = QtWidgets.QToolButton()
         self.back_button.setText('<')
@@ -33,8 +34,12 @@ class PathWidget(QtWidgets.QWidget):
 
     def set_text(self, text):
         self.current_location_line_edit.setText(text.replace('\\', '/'))
-        fm = QtWidgets.QFontMetrics(self.current_location_line_edit.font())
-        self.current_location_line_edit.setFixedWidth(fm.boundingRect(text).width() + 25)
+        # TODO - PYSIDE fix is QtCore instead of QtWidgets for Nuke (Pyside2)
+        try:
+            fm = QtWidgets.QFontMetrics(self.current_location_line_edit.font())
+            self.current_location_line_edit.setFixedWidth(fm.boundingRect(text).width() + 25)
+        except AttributeError:
+            pass
         if self.current_location_line_edit.text():
             path_object = PathObject(self.current_location_line_edit.text())
             if path_object.project:
@@ -43,31 +48,47 @@ class PathWidget(QtWidgets.QWidget):
                 else:
                     self.project_label.setText('<h2>Choose Project</h2>')
 
-
     def back_button_pressed(self):
         path_object = PathObject(self.current_location_line_edit.text())
+        print 4, path_object.ingest_source
+        print 5, path_object.scope
         # if i'm a task, show me all the assets or shots
         if path_object.version:
-            new_path = '%s/%s' % (path_object.split_after('scope'), '*')
+            print 6
+            if path_object.scope == 'IO':
+                new_path = '%s/%s' % (path_object.split_after('scope'), path_object.ingest_source)
+            else:
+                new_path = '%s/%s' % (path_object.split_after('scope'), '*')
         elif path_object.task:
+            print 7
             new_path = '%s/%s' % (path_object.split_after('scope'), '*')
         elif path_object.shot:
+            print 8
             new_path = '%s/%s' % (path_object.split_after('scope'), '*')
+        elif path_object.scope:
+            print 9
+            print path_object.scope
+            if path_object.scope == '*':
+                new_path = '%s/%s' % (path_object.split_after('context'), '*')
+            else:
+                new_path = '%s/%s' % (path_object.split_after('project'), '*')
         elif path_object.project:
+            print 10
             new_path = '%s/%s' % (path_object.split_after('context'), '*')
         else:
+            print 11
             new_path = path_object.root
         new_object = PathObject(new_path)
-        #if new_object.path_root.replace('\\', '/') == self.current_location_line_edit.text():
-        #    return
         self.location_changed.emit(new_object)
 
 
 class CGLumberjackWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None):
+    def __init__(self, parent=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None,
+                 show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
         # Environment Stuff
+        self.show_import = show_import
         self.user = user_name
         self.default_user = user_name
         self.user_email = user_email
@@ -79,44 +100,40 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.user_root = app_config()['cg_lumberjack_dir']
         self.user = None
         self.context = 'source'
-        self.initial_path_object = None
+        self.path_object = None
         self.panel = None
         self.radio_filter = radio_filter
+        self.source_selection = []
 
         self.layout = QtWidgets.QVBoxLayout(self)
         if path:
             try:
-                self.initial_path_object = PathObject(path)
+                self.path_object = PathObject(path)
             except IndexError:
                 pass
         self.project = '*'
         self.scope = 'assets'
         self.shot = '*'
         self.seq = '*'
-        self.input_company = '*'
-        if self.initial_path_object:
-            if self.initial_path_object.project:
-                self.project = self.initial_path_object.project
-            if self.initial_path_object.scope:
-                self.scope = self.initial_path_object.scope
-            if self.initial_path_object.shot:
-                self.shot = self.initial_path_object.shot
-            if self.initial_path_object.seq:
-                self.seq = self.initial_path_object.seq
+        self.ingest_source = '*'
+        if self.path_object:
+            if self.path_object.project:
+                self.project = self.path_object.project
+            if self.path_object.scope:
+                self.scope = self.path_object.scope
+            if self.path_object.shot:
+                self.shot = self.path_object.shot
+            if self.path_object.seq:
+                self.seq = self.path_object.seq
         self.user_favorites = ''
-        self.version = ''
         self.task = ''
         self.resolution = ''
-        self.current_location = {}
-        self.path_root = ''
-        self.path = ''
         self.in_file_tree = None
-
-        self.path_widget = PathWidget(path=self.initial_path_object.path_root)
+        self.path_widget = PathWidget()
         self.path_widget.location_changed.connect(self.update_location)
         self.layout.addWidget(self.path_widget)
         # TODO - make a path object the currency rather than a dict, makes it easier.
-        self.update_location(self.initial_path_object)
+        self.update_location(self.path_object)
 
     def update_location(self, data):
         try:
@@ -129,57 +146,49 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             pass
         path_object = None
         if type(data) == dict:
-            self.current_location = data
             path_object = PathObject(data)
         elif type(data) == PathObject:
             path_object = PathObject(data)
-        self.path_root = str(path_object.path_root)
         self.path_widget.set_text(path_object.path_root)
         last = path_object.get_last_attr()
         shot_attrs = ['seq', 'shot', 'type', 'asset']
 
-        print last, '---------------------------------', path_object.path_root
+        if path_object.scope == 'IO':
+            if path_object.version:
+                return
         if last == 'filename':
-            print 0, 'filename'
             if self.panel:
                 return
             else:
-                print 'Last %s:%s' % (last, path_object.data[last])
                 # TODO -  This needs to actually display the render panel as well, and reselect the actual filename.
-                self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                       user_name=self.user_name)
+                new_path_object = path_object.copy(user=None, resolution='high', filename=None)
+                self.load_task_panel(path_object=new_path_object)
         else:
-            print 1, 'clearing'
             if self.panel:
                 self.panel.clear_layout()
         if last == 'resolution':
-            print 2, 'resolution'
-            print 'Made it resolution: %s' % path_object.path_root
-            self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                   user_name=self.user_name)
+            self.load_task_panel(path_object)
         if last == 'company' or last == 'project':
-            print 3
             if path_object.project == '*':
-                self.panel = CompanyPanel(path_object=path_object)
-            else:
                 self.panel = ProjectPanel(path_object=path_object)
+            else:
+                self.panel = ProductionPanel(path_object=path_object)
+        if last == 'scope':
+            if path_object.scope == '*':
+                self.panel = ScopePanel(path_object=path_object)
+            elif path_object.scope == 'IO':
+                self.panel = IOPanel(path_object=path_object)
+            else:
+                self.panel = ProductionPanel(path_object=path_object)
         elif last in shot_attrs:
-            print 4
-            print 'shot, or seq %s' % path_object.data[last]
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
-                self.panel = ProjectPanel(path_object=path_object)
+                self.panel = ProductionPanel(path_object=path_object)
             else:
-                self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                       user_name=self.user_name)
-        elif last == 'input_company':
-            if path_object.input_company == '*':
-                self.panel = ProjectPanel(path_object=path_object)
-            else:
-                self.panel = IOPanel(path_object=path_object, user_email=self.user_email, user_name=self.user_name,
-                                     render_layout=None)
+                self.load_task_panel(path_object)
+        elif last == 'ingest_source':
+            self.panel = IOPanel(path_object=path_object)
         elif last == 'task':
-            self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                                   user_name=self.user_name)
+            self.load_task_panel(path_object)
 
         if self.panel:
             self.panel.location_changed.connect(self.update_location)
@@ -188,11 +197,39 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             # Why do i have to do this?!?!?
             for i in range(self.layout.count()):
                 if i > 1:
-                    print i-1, self.layout.count()
                     child = self.layout.takeAt(i-1)
                     to_delete.append(child)
             for each in to_delete:
                 each.widget().deleteLater()
+
+    def load_task_panel(self, path_object):
+        self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
+                               user_name=self.user_name, show_import=self.show_import)
+        self.panel.open_signal.connect(self.open_clicked)
+        self.panel.import_signal.connect(self.import_clicked)
+        self.panel.new_version_signal.connect(self.new_version_clicked)
+        self.panel.source_selection_changed.connect(self.set_source_selection)
+
+    def set_source_selection(self, data):
+        self.source_selection = data
+
+    def open_clicked(self):
+        if '####' in self.path_object.path_root:
+            print 'Nothing set for sequences yet'
+            # config = app_config()['paths']
+            # settings = app_config()['default']
+            # cmd = "%s -framerate %s %s" % (config['ffplay'], settings['frame_rate'],
+            # self.path_root.replace('####', '%04d'))
+            # subprocess.Popen(cmd)
+        else:
+            print 'Opening %s' % self.path_object.path_root
+            start(self.path_object.path_root)
+
+    def import_clicked(self):
+        print 'import clicked'
+
+    def new_version_clicked(self):
+        print 'New Version Clicked'
 
 
 class CGLumberjack(LJMainWindow):
@@ -233,21 +270,23 @@ class CGLumberjack(LJMainWindow):
         self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
         settings.setShortcut('Ctrl+,')
-        shelves = QtWidgets.QAction('Menu Designer', self)
+        menu_designer = QtWidgets.QAction('Menu Designer', self)
         ingest_dialog = QtWidgets.QAction('Ingest Tool', self)
         # add actions to the file menu
         tools_menu.addAction(settings)
-        tools_menu.addAction(shelves)
+        tools_menu.addAction(menu_designer)
         tools_menu.addAction(ingest_dialog)
         # connect signals and slots
         settings.triggered.connect(self.on_settings_clicked)
-        shelves.triggered.connect(self.on_shelves_clicked)
+        menu_designer.triggered.connect(self.on_shelves_clicked)
         login.triggered.connect(self.on_login_clicked)
         import_tool.triggered.connect(self.on_import_clicked)
 
     def on_import_clicked(self):
+
         print 'Opening the Import Dialog'
-        import_dialog = ImportBrowser()
+        text = self.centralWidget().path_widget.current_location_line_edit.text()
+        import_dialog = ImportBrowser(path_object=PathObject(text))
         import_dialog.exec_()
 
     def load_user_config(self):
@@ -288,7 +327,7 @@ class CGLumberjack(LJMainWindow):
         user_config = UserConfig(company=self.centralWidget().company,
                                  user_email=self.centralWidget().user_email,
                                  user_name=self.centralWidget().user_name,
-                                 current_path=self.centralWidget().path_root)
+                                 current_path=self.centralWidget().path_object.path_root)
         print 'Saving Session to -> %s' % user_config.user_config_path
         user_config.update_all()
 
