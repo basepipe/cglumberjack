@@ -1,6 +1,6 @@
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.base import LJMainWindow
-import core.assetcore as ac
+import cglcore.assetcore as ac
 from cglcore.config import app_config
 
 

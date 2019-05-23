@@ -4,13 +4,13 @@ import logging
 import json
 import datetime
 import glob
-from Qt import QtWidgets, QtCore, QtGui
+from Qt import QtWidgets, QtCore
 from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
 from cglcore.path import PathObject, CreateProductionData
 from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file, get_frange_from_seq
-from widgets import AssetWidget, TaskWidget, FileTableModel
+from apps.lumbermill.elements.widgets import AssetWidget, TaskWidget, FileTableModel
 
 
 class TaskPanel(QtWidgets.QWidget):
@@ -87,7 +87,6 @@ class TaskPanel(QtWidgets.QWidget):
 
                         task_widget = TaskWidget(parent=self,
                                                  title=title,
-                                                 short_title=task,
                                                  path_object=current, show_import=self.show_import)
                         task_widget.task = task
                         task_widget.showall()
@@ -151,6 +150,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.panel_source.addStretch(1)
 
     def new_files_dragged(self, files):
+        data = {}
         to_object = PathObject(self.sender().to_object)
         to_folder = to_object.path_root
         if to_object.task in self.auto_publish_tasks:
@@ -162,7 +162,6 @@ class TaskPanel(QtWidgets.QWidget):
             if dialog.button == 'Publish':
                 d = datetime.datetime.today()
                 current_date = d.strftime('%d-%m-%Y %H:%M:%S')
-                data = {}
                 data[current_date] = {'files added': files,
                                       'to folder': to_folder}
                 path_ = os.path.join(to_object.path_root, 'ingest_record.cgl')
@@ -203,7 +202,7 @@ class TaskPanel(QtWidgets.QWidget):
             self.path_object = path_object.copy()
             self.location_changed.emit(path_object)
 
-    def on_create_asset(self, set_vars=False):
+    def on_create_asset(self):
         if self.current_location['scope'] == 'IO':
             dialog = InputDialog(self, title='Create Input Company', message='Enter the CLIENT or name of VENDOR',
                                  combo_box_items=['CLIENT'])
@@ -213,7 +212,7 @@ class TaskPanel(QtWidgets.QWidget):
             if ingest_source_location.endswith(dialog.combo_box.currentText()):
                 CreateProductionData(self.current_location, json=False)
         else:
-            import asset_creator
+            from apps.lumbermill.elements import asset_creator
             if 'asset' in self.current_location:
                 task_mode = True
             else:
@@ -309,6 +308,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.sender().parent().show_tool_buttons()
 
     def on_render_selected(self, data):
+        print data
         widget = self.sender().parent()
         print widget
         widget.review_button.setEnabled(True)
@@ -316,19 +316,17 @@ class TaskPanel(QtWidgets.QWidget):
 
     def new_version_from_latest(self):
         print 'version up_latest'
-        return
+
+    def new_empty_version_clicked(self):
+        print 'new empty version'
+
+    def version_up_selected_clicked(self):
         current = PathObject(self.current_location)
         next_minor = current.new_minor_version_object()
         shutil.copytree(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
         CreateProductionData(next_minor)
         # reselect the original asset.
         self.on_main_asset_selected(current)
-
-    def new_empty_version_clicked(self):
-        print 'new empty version'
-
-    def version_up_selected_clicked(self):
-        print 'version up selected'
 
     def on_open_clicked(self):
         self.open_signal.emit()
@@ -413,7 +411,6 @@ class TaskPanel(QtWidgets.QWidget):
                 print 'Auto Publishing Files'
 
         parent = self.sender().parent()
-        #object_.set_attr(root=self.root)
         object_.set_attr(version=parent.versions.currentText())
         object_.set_attr(context='source')
         object_.set_attr(resolution=parent.resolutions.currentText())
@@ -428,15 +425,12 @@ class TaskPanel(QtWidgets.QWidget):
         for d in data:
             path_, filename_ = os.path.split(d)
             if os.path.isfile(d):
-                # need to make the filenames safe (no illegal chars)
                 filename_ = replace_illegal_filename_characters(filename_)
                 logging.info('Copying File From %s to %s' % (d, os.path.join(to_path, filename_)))
                 shutil.copy2(d, os.path.join(to_path, filename_))
-                # self.reload_task_widget(self.sender().parent(), path_object=object_)
             elif os.path.isdir(d):
                 logging.info('Copying Folder From %s to %s' % (d, os.path.join(to_path, filename_)))
                 shutil.copytree(d, os.path.join(object_.path_root, filename_))
-                # self.reload_task_widget(self.sender().parent())
 
         self.on_main_asset_selected(object_.data)
 
