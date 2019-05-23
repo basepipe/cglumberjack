@@ -44,6 +44,8 @@ class PathWidget(QtWidgets.QWidget):
                     self.project_label.setText('<h2>%s</h2>' % path_object.project.title())
                 else:
                     self.project_label.setText('<h2>Choose Project</h2>')
+            elif path_object.company:
+                self.project_label.setText('<h2>Choose Company</h2>')
 
     def back_button_pressed(self):
         path_object = PathObject(self.current_location_line_edit.text())
@@ -70,14 +72,17 @@ class PathWidget(QtWidgets.QWidget):
             else:
                 new_path = '%s/%s' % (path_object.split_after('project'), '*')
         elif path_object.project:
-            if path_object.project == '*':
-                new_path = '%s/%s' % (path_object.root, '*')
-            else:
-                new_path = '%s/%s' % (path_object.split_after('context'), '*')
+            if not path_object.context:
+                if path_object.context != '*':
+                    if path_object.project == '*':
+                        new_path = '%s/%s' % (path_object.root, '*')
+                    else:
+                        new_path = '%s/%s' % (path_object.split_after('context'), '*')
         else:
             print 11
             new_path = path_object.root
         new_object = PathObject(new_path)
+        print new_object.path_root
         self.location_changed.emit(new_object)
 
 

@@ -29,7 +29,7 @@ class CompanyPanel(QtWidgets.QWidget):
         self.company_widget.list.clicked.connect(self.on_company_changed)
 
     def on_company_changed(self):
-        self.path_object.company = self.company_widget.list.selectedItems()[0].text()
+        self.path_object.set_attr(company=self.company_widget.list.selectedItems()[0].text())
         if self.path_object.company:
             if self.path_object.company != '*':
                 self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
@@ -48,14 +48,13 @@ class CompanyPanel(QtWidgets.QWidget):
             self.create_company_globals(dialog.line_edit.text())
             CreateProductionData(d)
             self.load_companies()
-            self.load_projects()
 
     def create_company_globals(self, company):
         print 'Creating Company Globals %s' % company
         dir_ = os.path.join(self.user_root, 'companies', company)
         if not os.path.exists(dir_):
             print '%s doesnt exist, making it' % dir_
-            # os.makedirs(dir_)
+            os.makedirs(dir_)
 
     def check_default_company_globals(self):
         """
@@ -68,7 +67,7 @@ class CompanyPanel(QtWidgets.QWidget):
             if self.path_object.company != '*':
                 dir_ = os.path.dirname(self.path_object.company_config)
                 if not os.path.exists(dir_):
-                    print 'Creating Directory for Company Config File'
+                    print 'Creating Directory for Company Config File %s' % dir_
                     os.makedirs(dir_)
 
     def load_companies(self):
@@ -90,11 +89,11 @@ class CompanyPanel(QtWidgets.QWidget):
                 self.clear_layout(child.layout())
 
     def update_location(self, path_object=None):
-        if path_object:
-            self.location_changed.emit(path_object.data)
-        else:
-            print 'no path_object specified'
-            self.location_changed.emit(self.path_object.data)
+        if not path_object:
+          path_object = self.path_object
+        path_object.set_attr(context='source')
+        path_object.set_attr(project='*')
+        self.location_changed.emit(path_object.data)
 
 
 class ProjectPanel(QtWidgets.QWidget):
@@ -104,11 +103,7 @@ class ProjectPanel(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
 
         self.path_object = path_object
-        if path_object.company:
-            self.company = path_object.company
-        if path_object.project:
-            self.project = path_object.project
-        self.project_management = app_config(company=self.company)['account_info']['project_management']
+        self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
         self.root = app_config()['paths']['root']  # Company Specific
         self.user_root = app_config()['cg_lumberjack_dir']
         self.left_column_visibility = True
@@ -143,6 +138,7 @@ class ProjectPanel(QtWidgets.QWidget):
         self.project_filter.show_all()
 
     def load_projects(self):
+        self.path_object.set_attr(project='*')
         projects = self.path_object.glob_project_element('project')
         if not projects:
             print 'no projects for %s' % self.path_object.company
@@ -153,35 +149,28 @@ class ProjectPanel(QtWidgets.QWidget):
             self.project_filter.search_box.setEnabled(True)
             self.project_filter.data_table.setEnabled(True)
             self.project_filter.add_button.setText('+')
+
         self.project_filter.setup(ListItemModel(prep_list_for_table(projects, split_for_file=True), ['Name']))
-        if self.project != '*':
-            self.project_filter.data_table.select_row_by_text(self.path_object.project)
-            self.on_project_changed(data=[self.project])
+
         self.update_location(self.path_object)
 
     def update_location(self, path_object=None):
-        if path_object:
-            self.location_changed.emit(path_object.data)
-        else:
-            print 'no path_object specified'
-            self.location_changed.emit(self.path_object.data)
+        if not path_object:
+            path_object = self.path_object
+        self.location_changed.emit(path_object.data)
 
     def on_create_project(self):
-        print 'CURRENT LOCATION: %s' % self.current_location
         dialog = InputDialog(title='Create Project', message='Type a Project Name & Choose Proj Management',
                              line_edit=True, combo_box_items=['lumbermill', 'shotgun', 'ftrack'])
         dialog.exec_()
         if dialog.button == 'Ok':
             project_name = dialog.line_edit.text()
-            self.project = project_name
-            self.update_location()
-            CreateProductionData(self.current_location, project_management=self.project_management)
+            self.path_object.set_attr(project=project_name)
+            CreateProductionData(self.path_object, project_management=self.project_management)
             production_management = dialog.combo_box.currentText()
             print 'setting project management to %s' % production_management
-            self.load_projects()
-            create_project_config(self.company, self.project)
-        else:
-            pass
+            create_project_config(self.path_object.company, self.path_object.project)
+        self.load_projects()
 
     def clear_layout(self, layout=None):
         if not layout:

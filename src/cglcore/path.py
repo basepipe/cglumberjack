@@ -136,6 +136,7 @@ class PathObject(object):
         self.set_shotname()
 
     def get_last_attr(self):
+        current_ = 'company'
         self.get_template()
         for t in self.template:
             if t in self.data:
@@ -199,17 +200,13 @@ class PathObject(object):
         # can be something we do upon creatoin of a company through the interface, but needs to handle companies outside
         # the interface as well.
         path_string = path_string.replace('\\', '/')
-        temp_ = path_string.split(self.root)[-1]
-        temp_ = temp_.replace('\\', '/')
-        c = split_all(temp_)[1]
-        self.set_attr(company=c)
-        #companies = app_config()['account_info']['companies']
-        #for c in companies:
-        #    if c in path_string:
-        #        self.set_attr(company=c)
-        #if not self.company:
-        #    logging.error("No Valid Company defined in path provided - invalid path: %s" % path_string)
-        #    return
+        try:
+            temp_ = path_string.split(self.root)[-1]
+            temp_ = temp_.replace('\\', '/')
+            c = split_all(temp_)[1]
+            self.set_attr(company=c)
+        except IndexError:
+            self.set_attr(company='*')
 
     def unpack_path(self, path_string):
         path_string = os.path.normpath(path_string.split(self.company)[-1])
