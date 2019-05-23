@@ -205,8 +205,6 @@ class ImportBrowser(LJDialog):
     def load_companies(self):
         self.company_widget.list.clear()
         dir_ = self.path_object.glob_project_element('ingest_source')
-        if 'INTERNAL' not in dir_:
-            dir_.insert(0, 'INTERNAL')
         self.company_widget.list.addItems(dir_)
         #self.on_company_changed()
 

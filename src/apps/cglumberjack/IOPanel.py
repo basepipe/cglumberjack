@@ -64,6 +64,7 @@ class IOPanel(QtWidgets.QWidget):
             print 'No Path Object found, exiting'
             return
 
+        self.path_object_next = None
         self.panel = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout()
         self.title = 'Import to %s' % path_object.project
@@ -88,7 +89,7 @@ class IOPanel(QtWidgets.QWidget):
         self.file_tree.setMinimumWidth(800)
 
         self.source_widget = LJListWidget('Sources')
-        self.import_events = LJListWidget('Previous Imports')
+        self.import_events = LJListWidget('Previous Ingests')
         self.import_events.hide()
 
         self.tags_title = QtWidgets.QLabel("<b>Select File(s) or Folder(s) to tag</b>")
@@ -156,7 +157,6 @@ class IOPanel(QtWidgets.QWidget):
         self.hide_tags()
         self.file_tree.hide()
 
-        self.import_events.add_button.clicked.connect(self.on_add_ingest_event)
         self.shot_radio_button.clicked.connect(self.on_radio_clicked)
         self.asset_radio_button.clicked.connect(self.on_radio_clicked)
         self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
@@ -185,50 +185,53 @@ class IOPanel(QtWidgets.QWidget):
         if self.path_object.ingest_source == '*':
             print 'Please Select An Ingest Source Before Dragging Files'
             return
-        to_object = PathObject(self.sender().to_path)
-        to_folder = to_object.path_root
+        to_folder = self.path_object_next.path_root
         if not os.path.exists(to_folder):
             os.makedirs(to_folder)
         for f in files:
             file_ = os.path.split(f)[-1]
             to_file = os.path.join(to_folder, file_)
             if '.' in file_:
-
                 logging.info('Copying File From %s to %s' % (f, to_file))
                 shutil.copy2(f, to_file)
             else:
                 logging.info('Copying Folder From %s to %s' % (f, to_file))
                 shutil.copy(f, to_file)
-        # self.on_event_selected()
+        self.load_import_events()
+        num = self.import_events.list.count()
+        item = self.import_events.list.item(num - 1)
+        item.setSelected(True)
+        self.on_event_selected()
 
     def load_companies(self):
         self.source_widget.list.clear()
         dir_ = self.path_object.glob_project_element('ingest_source')
-        if 'INTERNAL' not in dir_:
-            dir_.insert(0, 'INTERNAL')
         if 'CLIENT' not in dir_:
             dir_.insert(0, 'CLIENT')
         self.source_widget.list.addItems(dir_)
-        #self.on_company_changed()
 
     def on_company_changed(self):
+        self.hide_tags()
+        self.file_tree.hide()
+        self.empty_state.show()
         self.source_widget.list.selectedItems()[-1].text()
-        self.empty_state.setText('Drag Media Here to Ingest')
+        self.empty_state.setText('Drag Media Here to Create New Ingest Version')
         self.path_object.set_attr(ingest_source=self.source_widget.list.selectedItems()[-1].text())
         self.load_import_events()
 
-    def load_import_events(self):
-        latest = '000.000'
+    def load_import_events(self, select_latest=False):
+        latest = '-001.000'
         self.import_events.list.clear()
-        print '%s/%s' % (self.path_object.split_after('ingest_source'), '*')
         events = glob.glob('%s/%s' % (self.path_object.split_after('ingest_source'), '*'))
         if events:
             self.import_events.show()
             for e in events:
-                latest = os.path.split(e)[-1]
                 self.import_events.list.addItem(os.path.split(e)[-1])
-        self.latest_version = latest
-        print 'latest version is: %s' % latest
+                # self.import_events.list.setItemSelected(item)
+            latest = os.path.split(e)[-1]
+        self.path_object.set_attr(version=latest)
+        self.path_object_next = self.path_object.next_major_version()
+        self.empty_state.setText('Drag Media Here to Create Ingest %s' % self.path_object_next.version)
 
     def on_event_selected(self):
         self.hide_tags()
@@ -236,7 +239,6 @@ class IOPanel(QtWidgets.QWidget):
         self.path_object.set_attr(version=self.import_events.list.selectedItems()[-1].text())
         # Load the Tree Widget
         self.populate_tree()
-        print 3, self.path_object.path_root
         self.location_changed.emit(self.path_object)
 
     def populate_tree(self):
@@ -453,12 +455,12 @@ class IOPanel(QtWidgets.QWidget):
         self.sender().parent().show_line_edit_info(data)
 
     def on_add_ingest_event(self):
-        version = self.path_object.next_major_version()
-        if not os.path.exists(version.path_root):
-            print 'Creating Version at: %s' % version.path_root
-            os.makedirs(version.path_root)
-        self.on_company_changed()
-        # self.populate_tree()
+        # deselect everything in the event
+        # change the file path to reflect no selection
+        self.hide_tags()
+        self.file_tree.hide()
+        self.empty_state.show()
+
 
     def publish_tagged_assets(self):
         # TODO - We need to be changing status to 'Published' on this.

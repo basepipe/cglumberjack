@@ -9,6 +9,34 @@ from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
 
 
+class VersionButton(QtWidgets.QPushButton):
+
+    def __init__(self, parent):
+        QtWidgets.QPushButton.__init__(self, parent)
+        self.menu = QtWidgets.QMenu()
+        self.setText(self.tr("Version Up"))
+        self.empty_act = self.menu.addAction(self.tr("Empty"))
+        self.empty_act.setToolTip(self.tr("Create a new empty version"))
+        self.empty_act.triggered.connect(lambda: self.parent().create_empty_version.emit())
+        self.selected_act = self.menu.addAction(self.tr("Copy Current Version"))
+        self.selected_act.triggered.connect(lambda: self.parent().copy_selected_version.emit())
+        self.selected_act.setToolTip(self.tr("Create a new version copying from current version"))
+        self.latest_act = self.menu.addAction(self.tr("Copy Latest Version"))
+        self.latest_act.triggered.connect(lambda: self.parent().copy_latest_version.emit())
+        self.latest_act.setToolTip(self.tr("Create a new version copying from the latest version"))
+        self.setMenu(self.menu)
+
+    def set_new_version(self):
+        self.selected_act.setVisible(False)
+        self.latest_act.setVisible(False)
+        self.setEnabled(True)
+
+    def set_version_selected(self):
+        self.selected_act.setVisible(True)
+        self.latest_act.setVisible(True)
+        self.setEnabled(True)
+
+
 class EmptyStateWidget(QtWidgets.QPushButton):
     files_added = QtCore.Signal(object)
 
@@ -135,6 +163,9 @@ class TaskWidget(QtWidgets.QFrame):
     open_button_clicked = QtCore.Signal()
     import_button_clicked = QtCore.Signal()
     new_version_clicked = QtCore.Signal()
+    create_empty_version = QtCore.Signal()
+    copy_selected_version = QtCore.Signal()
+    copy_latest_version = QtCore.Signal()
 
     def __init__(self, parent, title, short_title, filter_string=None, path_object=None, show_import=False):
         QtWidgets.QFrame.__init__(self, parent)
@@ -204,8 +235,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.open_button.setText('Open')
         self.import_button = QtWidgets.QToolButton()
         self.import_button.setText('Import')
-        self.new_version_button = QtWidgets.QToolButton()
-        self.new_version_button.setText('Version Up')
+        self.new_version_button = VersionButton(self)
         self.review_button = QtWidgets.QToolButton()
         self.review_button.setText('Review')
         self.publish_button = QtWidgets.QToolButton()
@@ -219,7 +249,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.tool_button_layout.addWidget(self.publish_button)
 
         # this is where the filter needs to be!
-        task_row.addWidget(self.title)
+        task_row.addWidget(self.my_files_label)
         task_row.addWidget(self.versions)
         task_row.addWidget(self.show_button)
         task_row.addWidget(self.hide_button)
@@ -227,11 +257,12 @@ class TaskWidget(QtWidgets.QFrame):
         self.empty_state = EmptyStateWidget(path_object=self.path_object)
         self.empty_state.hide()
 
+        v_layout.addWidget(self.title)
         v_layout.addLayout(task_row)
         v_layout.addWidget(self.start_task_button)
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
-        v_layout.addWidget(self.my_files_label)
+
         v_layout.addWidget(self.data_table, 1)
         v_layout.addLayout(self.export_label_row)
         v_layout.addWidget(self.data_table2, 1)

@@ -115,11 +115,14 @@ class TaskPanel(QtWidgets.QWidget):
                                           FileTableModel(self.prep_list_for_table(files_, basename=True), ['Name']))
                         self.load_render_files(task_widget)
 
+                        task_widget.create_empty_version.connect(self.new_empty_version_clicked)
+                        task_widget.copy_latest_version.connect(self.new_version_from_latest)
+                        task_widget.copy_selected_version.connect(self.version_up_selected_clicked)
                         task_widget.data_table.selected.connect(self.on_source_selected)
+                        task_widget.data_table2.selected.connect(self.on_render_selected)
                         task_widget.data_table.doubleClicked.connect(self.on_open_clicked)
                         task_widget.open_button.clicked.connect(self.on_open_clicked)
                         task_widget.import_button.clicked.connect(self.on_import_clicked)
-                        task_widget.new_version_button.clicked.connect(self.on_new_version_clicked)
                         task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
                         task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
                         task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
@@ -304,26 +307,28 @@ class TaskPanel(QtWidgets.QWidget):
         self.source_selection_changed.emit(new_data)
         self.clear_task_selection_except(self.sender().task)
         self.sender().parent().show_tool_buttons()
-        if object_.context == 'source':
-            self.sender().parent().review_button.hide()
-            self.sender().parent().publish_button.hide()
 
     def on_render_selected(self, data):
-        object_ = PathObject(self.current_location)
-        object_.set_attr(root=self.root)
-        object_.set_attr(context='render')
-        object_.set_attr(filename=data[0][0])
-        self.update_location(object_)
-        self.sender().parent().show_tool_buttons()
-        self.clear_task_selection_except()
+        widget = self.sender().parent()
+        print widget
+        widget.review_button.setEnabled(True)
+        widget.publish_button.setEnabled(True)
 
-    def on_new_version_clicked(self):
+    def new_version_from_latest(self):
+        print 'version up_latest'
+        return
         current = PathObject(self.current_location)
         next_minor = current.new_minor_version_object()
         shutil.copytree(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
         CreateProductionData(next_minor)
         # reselect the original asset.
         self.on_main_asset_selected(current)
+
+    def new_empty_version_clicked(self):
+        print 'new empty version'
+
+    def version_up_selected_clicked(self):
+        print 'version up selected'
 
     def on_open_clicked(self):
         self.open_signal.emit()
@@ -482,7 +487,13 @@ class TaskPanel(QtWidgets.QWidget):
             if files_:
                 widget.setup(render_table, ListItemModel(self.prep_list_for_table(files_, basename=True), ['Name']))
                 render_table.show()
+                widget.open_button.show()
+                widget.new_version_button.show()
                 widget.export_label.show()
+                widget.publish_button.show()
+                widget.publish_button.setEnabled(False)
+                widget.review_button.show()
+                widget.review_button.setEnabled(False)
             else:
                 widget.export_label.hide()
                 render_table.hide()
