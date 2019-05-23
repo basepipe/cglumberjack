@@ -68,7 +68,10 @@ class PathWidget(QtWidgets.QWidget):
         elif path_object.scope:
             print 9
             print path_object.scope
-            new_path = '%s/%s' % (path_object.split_after('project'), '*')
+            if path_object.scope == '*':
+                new_path = '%s/%s' % (path_object.split_after('context'), '*')
+            else:
+                new_path = '%s/%s' % (path_object.split_after('project'), '*')
         elif path_object.project:
             print 10
             new_path = '%s/%s' % (path_object.split_after('context'), '*')
