@@ -144,7 +144,6 @@ class PathObject(object):
                     current_ = t
             elif t in app_config()['rules']['scope_list']:
                 current_ = 'scope'
-
         return current_
 
     def get_template(self):
@@ -167,7 +166,7 @@ class PathObject(object):
                         self.template.append(each)
                     return self.template
                 except KeyError:
-                    logging.error("No valid scope (assets/shots) or context (source/render) on pathObject")
+                    logging.info("Config ERROR: Can't find either %s or %s within app config 'templates'" % (self.scope, self.context))
                     return
             else:
                 self.template = ['company', 'context', 'project', 'scope']
@@ -266,9 +265,7 @@ class PathObject(object):
                 else:
                     if self.__dict__[attr]:
                         path_string = os.path.join(path_string, self.__dict__[attr])
-
         path_string = path_string.replace('\\', '/')
-
         if sys.platform == 'win32':
             self.path_root = '%s/%s' % (self.root, path_string)
             path_, file_ = os.path.split(self.path_root)
@@ -302,8 +299,8 @@ class PathObject(object):
             if value == '*':
                 self.__dict__[attr] = value
                 self.data[attr] = value
+                self.set_path()
             else:
-                # if value:
                 if value == 'io':
                     value = value.upper()
                 if attr == 'scope':
@@ -311,43 +308,44 @@ class PathObject(object):
                         if value in self.scope_list:
                             self.__dict__[attr] = value
                             self.data[attr] = value
+                            self.set_path()
                         else:
-                            logging.error('Scope %s not found in %s' % (value, self.scope_list))
+                            logging.error('Scope %s not found in globals: %s' % (value, self.scope_list))
                             return
                 elif attr == 'context':
                     if value:
                         if value not in self.context_list:
-                            logging.error('Context %s not found in %s' % (value, self.context_list))
+                            logging.error('Context %s not found in globals: %s' % (value, self.context_list))
                             return
                         else:
                             self.__dict__[attr] = value
                             self.data[attr] = value
+                            self.set_path()
                 else:
-                    #if regex:
-                    #    try:
-                    #        if not re.match(regex, value):
-                    #            logging.error('%s does not follow regex for %s: %s' % (value, attr, regex))
-                    #            # return
-                    #    except TypeError:
-                    #        pass
                     self.__dict__[attr] = value
                     self.data[attr] = value
+                    self.set_path()
             if attr == 'shot':
                 self.__dict__['asset'] = value
                 self.data['asset'] = value
+                self.set_path()
             elif attr == 'asset':
                 self.__dict__['shot'] = value
                 self.data['shot'] = value
+                self.set_path()
             elif attr == 'seq':
                 self.__dict__['type'] = value
                 self.data['type'] = value
+                self.set_path()
             elif attr == 'type':
                 self.__dict__['seq'] = value
                 self.data['seq'] = value
+                self.set_path()
             elif attr == 'ext':
                 if self.filename:
                     base, ext = os.path.splitext(self.filename)
                     self.filename = '%s.%s' % (base, self.ext)
+                    self.set_path()
             elif attr == 'filename':
                 if value:
                     self.__dict__['filename'] = value
@@ -357,6 +355,7 @@ class PathObject(object):
                     self.data['ext'] = ext.replace('.', '')
                     self.__dict__['filename_base'] = base
                     self.data['filename_base'] = base
+                    self.set_path()
             elif attr == 'version':
                 if value:
                     if value is not '*' and value is not '.':
@@ -368,7 +367,7 @@ class PathObject(object):
                     self.data['major_version'] = major
                     self.__dict__['minor_version'] = minor
                     self.data['minor_version'] = minor
-        self.set_path()
+                    self.set_path()
 
     def glob_project_element(self, attr, full_path=False):
         """

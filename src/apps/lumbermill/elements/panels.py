@@ -204,8 +204,11 @@ class ScopePanel(QtWidgets.QWidget):
 
     def on_button_clicked(self):
         scope = self.sender().text()
-        self.path_object.set_attr(scope=scope)
-        self.location_changed.emit(self.path_object)
+        if scope:
+            self.path_object.set_attr(scope=scope)
+            if scope is not 'IO':
+                self.path_object.set_attr(seq='*')
+            self.location_changed.emit(self.path_object)
 
     def clear_layout(self, layout=None):
         if not layout:
