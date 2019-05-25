@@ -3,9 +3,84 @@ from cglcore.config import app_config, UserConfig
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start
-from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel
+from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel
 from apps.lumbermill.elements.IOPanel import IOPanel
 from apps.lumbermill.elements.TaskPanel import TaskPanel
+
+
+class BreadCrumb(QtWidgets.QWidget):
+
+    def __init__(self, parent=None, path_object=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.path_object = path_object
+        self.layout = QtWidgets.QHBoxLayout(self)
+        self.layout.setSpacing(1)
+
+    def update_buttons(self, path_object=None):
+        self.clear_layout()
+        if not path_object:
+            path_object = self.path_object
+        buttons = []
+        print path_object.path_root
+        print path_object.company, path_object.project, path_object.scope, path_object.seq, path_object.type
+        if path_object.company == '*':
+            buttons = ['company']
+        elif path_object.project == '*':
+            buttons = ['company']
+        elif path_object.scope == 'IO':
+            buttons = ['company', 'project']
+        elif path_object.scope == '*':
+            buttons = ['company', 'project']
+        elif path_object.seq == '*':
+            buttons = ['company', 'project', path_object.scope]
+        elif path_object.type == '*':
+            buttons = ['company', 'project', path_object.scope]
+        else:
+            buttons = ['company', 'project', path_object.scope]
+        # button color
+        brightness = 50
+        for each in buttons:
+            button = QtWidgets.QPushButton(each)
+            button.name = each
+            if each == 'company' or each == 'project' or each == 'assets' or each == 'shots':
+                if path_object.company:
+                    if path_object.company != '*':
+                        button.name = 'Choose %s' % each.title()
+                        button.setText(button.name)
+            if button.name == 'ingest':
+                brightness += 50
+
+            button.setStyleSheet("background-color:rgb(%s,%s,%s);"
+                                 "color: white" % (brightness, brightness, brightness))
+            button.setMaximumHeight(20)
+            self.layout.addWidget(button)
+            button.clicked.connect(self.update_location)
+
+    def update_location(self):
+        print self.sender().name
+        if 'project' in self.sender().name:
+            self.path_object.set_attr(project='*')
+            self.path_object.set_attr(seq='')
+            self.path_object.set_attr(shot='')
+            self.path_object.set_attr(scope='*')
+        elif 'company' in self.sender().name:
+            self.path_object.set_attr(company='*')
+            self.path_object.set_attr(context='*')
+            self.path_object.set_attr(project='')
+            self.path_object.set_attr(seq='')
+            self.path_object.set_attr(shot='')
+            self.path_object.set_attr(scope='*')
+
+        print self.path_object.path_root
+        print 'update location'
+
+    def clear_layout(self):
+        while self.layout.count():
+            child = self.layout.takeAt(0)
+            if child.widget() is not None:
+                child.widget().deleteLater()
+            elif child.layout() is not None:
+                self.clear_layout(child.layout())
 
 
 class PathWidget(QtWidgets.QWidget):
@@ -29,6 +104,9 @@ class PathWidget(QtWidgets.QWidget):
                              QtWidgets.QSizePolicy.Minimum)))
         self.back_button.clicked.connect(self.back_button_pressed)
 
+    def text(self):
+        return self.current_location_line_edit.text()
+
     def set_text(self, text):
         self.current_location_line_edit.setText(text.replace('\\', '/'))
         # TODO - PYSIDE fix is QtCore instead of QtWidgets for Nuke (Pyside2)
@@ -44,38 +122,39 @@ class PathWidget(QtWidgets.QWidget):
                     self.project_label.setText('<h2>%s</h2>' % path_object.project.title())
                 else:
                     self.project_label.setText('<h2>Choose Project</h2>')
+            elif path_object.company:
+                self.project_label.setText('<h2>Choose Company</h2>')
 
     def back_button_pressed(self):
         path_object = PathObject(self.current_location_line_edit.text())
-        print 4, path_object.ingest_source
-        print 5, path_object.scope
         # if i'm a task, show me all the assets or shots
         if path_object.version:
-            print 6
             if path_object.scope == 'IO':
                 new_path = '%s/%s' % (path_object.split_after('scope'), path_object.ingest_source)
             else:
                 new_path = '%s/%s' % (path_object.split_after('scope'), '*')
         elif path_object.task:
-            print 7
             new_path = '%s/%s' % (path_object.split_after('scope'), '*')
         elif path_object.shot:
-            print 8
             new_path = '%s/%s' % (path_object.split_after('scope'), '*')
         elif path_object.scope:
-            print 9
-            print path_object.scope
             if path_object.scope == '*':
                 new_path = '%s/%s' % (path_object.split_after('context'), '*')
             else:
                 new_path = '%s/%s' % (path_object.split_after('project'), '*')
         elif path_object.project:
-            print 10
-            new_path = '%s/%s' % (path_object.split_after('context'), '*')
+            if not path_object.context:
+                if path_object.context != '*':
+                    if path_object.project == '*':
+                        new_path = '%s/%s' % (path_object.root, '*')
+                    else:
+                        new_path = '%s/%s' % (path_object.split_after('context'), '*')
+            if path_object.project == '*':
+                new_path = '%s/%s' % (path_object.root, '*')
         else:
-            print 11
             new_path = path_object.root
         new_object = PathObject(new_path)
+
         self.location_changed.emit(new_object)
 
 
@@ -103,6 +182,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.source_selection = []
 
         self.layout = QtWidgets.QVBoxLayout(self)
+        #self.layout.setSpacing(0)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.layout.setContentsMargins(0, 2, 0, 0)
         if path:
             try:
                 self.path_object = PathObject(path)
@@ -126,10 +208,15 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.task = ''
         self.resolution = ''
         self.in_file_tree = None
+        self.breadcrumb = BreadCrumb(path_object=self.path_object)
+        self.breadcrumb.update_buttons()
         self.path_widget = PathWidget()
+        self.path_widget.set_text(self.path_object.path_root)
+
         self.path_widget.location_changed.connect(self.update_location)
-        self.layout.addWidget(self.path_widget)
         # TODO - make a path object the currency rather than a dict, makes it easier.
+        self.layout.addWidget(self.breadcrumb)
+        self.layout.addWidget(self.path_widget)
         self.update_location(self.path_object)
 
     def update_location(self, data):
@@ -147,9 +234,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         elif type(data) == PathObject:
             path_object = PathObject(data)
         self.path_widget.set_text(path_object.path_root)
+        self.breadcrumb.update_buttons(path_object=path_object)
         last = path_object.get_last_attr()
         shot_attrs = ['seq', 'shot', 'type', 'asset']
-
         if path_object.scope == 'IO':
             if path_object.version:
                 return
@@ -165,7 +252,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.panel.clear_layout()
         if last == 'resolution':
             self.load_task_panel(path_object)
-        if last == 'company' or last == 'project':
+        if last == 'project':
             if path_object.project == '*':
                 self.panel = ProjectPanel(path_object=path_object)
             else:
@@ -186,14 +273,15 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.panel = IOPanel(path_object=path_object)
         elif last == 'task':
             self.load_task_panel(path_object)
-
+        elif last == 'company':
+            self.panel = CompanyPanel(path_object=path_object)
         if self.panel:
             self.panel.location_changed.connect(self.update_location)
             self.layout.addWidget(self.panel)
             to_delete = []
             # Why do i have to do this?!?!?
             for i in range(self.layout.count()):
-                if i > 1:
+                if i > 2:
                     child = self.layout.takeAt(i-1)
                     to_delete.append(child)
             for each in to_delete:
@@ -311,7 +399,7 @@ class CGLumberjack(LJMainWindow):
         user_config = UserConfig(company=self.centralWidget().company,
                                  user_email=self.centralWidget().user_email,
                                  user_name=self.centralWidget().user_name,
-                                 current_path=self.centralWidget().path_object.path_root)
+                                 current_path=self.centralWidget().path_widget.text())
         print 'Saving Session to -> %s' % user_config.user_config_path
         user_config.update_all()
 

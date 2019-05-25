@@ -79,6 +79,7 @@ class IOPanel(QtWidgets.QWidget):
         self.company = None
         self.project = None
         self.data_frame = None
+        self.scope = 'shots'
 
         self.path_object.set_attr(scope='IO')
         self.path_object.set_attr(ingest_source='*')
@@ -98,19 +99,16 @@ class IOPanel(QtWidgets.QWidget):
         self.tags_title_row = QtWidgets.QHBoxLayout()
         self.tags_title_row.addWidget(self.tags_title)
 
-        self.shot_radio_button = QtWidgets.QRadioButton('Shots')
-        self.shot_radio_button.setChecked(True)
-        self.asset_radio_button = QtWidgets.QRadioButton('Assets')
-        self.radio_row = QtWidgets.QHBoxLayout()
-
-        self.radio_row.addWidget(self.shot_radio_button)
-        self.radio_row.addWidget(self.asset_radio_button)
-        self.radio_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                     QtWidgets.QSizePolicy.Minimum))
+        self.scope_label = QtWidgets.QLabel('Scope')
+        self.scope_combo = AdvComboBox()
+        self.scope_combo.addItems(['assets', 'shots'])
+        self.seq_row = QtWidgets.QHBoxLayout()
+        self.seq_row.addWidget(self.scope_label)
+        self.seq_row.addWidget(self.scope_combo)
 
         self.seq_label = QtWidgets.QLabel('Seq ')
         self.seq_combo = AdvComboBox()
-        self.seq_row = QtWidgets.QHBoxLayout()
+
         self.seq_row.addWidget(self.seq_label)
         self.seq_row.addWidget(self.seq_combo)
 
@@ -134,7 +132,9 @@ class IOPanel(QtWidgets.QWidget):
         # create buttons row
         self.buttons_row = QtWidgets.QHBoxLayout()
         self.publish_button = QtWidgets.QPushButton('Publish Tagged')
+        self.refresh_button = QtWidgets.QPushButton('Refresh Status')
         self.buttons_row.addStretch(1)
+        self.buttons_row.addWidget(self.refresh_button)
         self.buttons_row.addWidget(self.publish_button)
         self.empty_state = EmptyStateWidgetIO(path_object=self.path_object)
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
@@ -149,7 +149,6 @@ class IOPanel(QtWidgets.QWidget):
         self.panel.addWidget(self.file_tree)
 
         self.panel.addLayout(self.tags_title_row)
-        self.panel.addLayout(self.radio_row)
         self.panel.addLayout(self.seq_row)
         self.panel.addLayout(self.tags_row)
         self.panel.addLayout(self.buttons_row)
@@ -159,8 +158,8 @@ class IOPanel(QtWidgets.QWidget):
         self.hide_tags()
         self.file_tree.hide()
 
-        self.shot_radio_button.clicked.connect(self.on_radio_clicked)
-        self.asset_radio_button.clicked.connect(self.on_radio_clicked)
+        self.refresh_button.clicked.connect(self.on_event_selected)
+        self.scope_combo.currentIndexChanged.connect(self.on_scope_changed)
         self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
         self.file_tree.initialized.connect(self.load_data_frame)
         self.file_tree.selected.connect(self.on_client_file_selected)
@@ -174,6 +173,7 @@ class IOPanel(QtWidgets.QWidget):
         self.import_events.add_button.clicked.connect(self.on_add_ingest_event)
         self.publish_button.clicked.connect(self.publish_tagged_assets)
         self.empty_state.files_added.connect(self.new_files_dragged)
+        self.on_scope_changed()
 
     @staticmethod
     def on_source_add_clicked():
@@ -243,12 +243,13 @@ class IOPanel(QtWidgets.QWidget):
         self.populate_tree()
         self.location_changed.emit(self.path_object)
 
+
     def populate_tree(self):
         if os.listdir(self.path_object.path_root):
             self.empty_state.hide()
             self.file_tree.show()
             self.file_tree.populate(directory=self.path_object.path_root)
-            self.show_tags()
+            self.show_tags_gui()
         else:
             self.file_tree.hide()
             self.hide_tags()
@@ -257,7 +258,7 @@ class IOPanel(QtWidgets.QWidget):
     def load_data_frame(self):
         self.pandas_path = os.path.join(self.file_tree.directory, 'publish_data.csv')
         if os.path.exists(self.pandas_path):
-            self.data_frame = pd.read_csv(self.pandas_path, names=["Filepath", "Tags", "Keep Client Naming",
+            self.data_frame = pd.read_csv(self.pandas_path, names=["Filepath", "Tags", "Keep Client Naming", "Scope",
                                                                    "Seq", "Shot", "Task", "Project Filepath", "Status"])
         else:
             data = []
@@ -266,15 +267,17 @@ class IOPanel(QtWidgets.QWidget):
             for root, _, files in os.walk(self.file_tree.directory):
                 for filename in files:
                     fullpath = os.path.join(os.path.abspath(root), filename)
-                    data.append((fullpath, '', True, '', '', '', '', self.io_statuses[0]))
-            self.data_frame = pd.DataFrame(data, columns=["Filepath", "Tags", "Keep Client Naming",
-                                                          "Seq", "Shot", "Task",
-                                                          "Project Filepath", "Status"])
+                    data.append((fullpath, '', True, '', '', '', '', '', self.io_statuses[0]))
+            self.data_frame = pd.DataFrame(data, columns=["Filepath", "Tags", "Keep Client Naming", "Scope",
+                                                          "Seq", "Shot", "Task", "Project Filepath", "Status"])
+        self.save_data_frame()
 
     def save_data_frame(self):
         dropped_dupes = self.data_frame.drop_duplicates()
+        print 2
         dropped_dupes.to_csv(self.pandas_path)
-        self.on_event_selected()
+        print 3
+        # self.on_event_selected()
 
     def edit_tags(self):
         files = self.file_tree.selected_items
@@ -287,21 +290,15 @@ class IOPanel(QtWidgets.QWidget):
             self.save_data_frame()
 
     def edit_data_frame(self):
-        scope = ''
         files = self.file_tree.selected_items
-        if self.shot_radio_button.isChecked():
-            scope = 'shots'
-        elif self.asset_radio_button.isChecked():
-            scope = 'assets'
         if self.seq_combo.currentText():
             seq = str(self.seq_combo.currentText())
             if self.shot_combo.currentText():
                 shot = str(self.shot_combo.currentText())
-
                 if self.task_combo.currentText():
                     try:
-                        task = app_config()['pipeline_steps'][scope][str(self.task_combo.currentText())]
-                        to_object = self.path_object.copy(scope=scope,
+                        task = app_config()['pipeline_steps'][self.scope][str(self.task_combo.currentText())]
+                        to_object = self.path_object.copy(scope=self.scope,
                                                           seq=seq,
                                                           shot=shot,
                                                           task=task,
@@ -309,10 +306,12 @@ class IOPanel(QtWidgets.QWidget):
                                                           version='000.000',
                                                           user='publish',
                                                           resolution='high')
+                        print 'Pub Path: %s' % to_object.path_root
                         for f in files:
                             f = f.replace('/', '\\')
                             row = self.data_frame.loc[self.data_frame['Filepath'] == f].index[0]
                             to_path = os.path.join(to_object.path_root, os.path.split(f)[-1])
+                            self.data_frame.at[row, 'Scope'] = self.scope
                             self.data_frame.at[row, 'Seq'] = seq
                             self.data_frame.at[row, 'Shot'] = shot
                             self.data_frame.at[row, 'Task'] = task
@@ -320,15 +319,24 @@ class IOPanel(QtWidgets.QWidget):
                             self.data_frame.at[row, 'Status'] = self.io_statuses[1]
                         self.save_data_frame()
                     except KeyError:
+                        print 'Error with something:'
+                        print 'scope', self.scope
+                        print 'seq', seq
+                        print 'shot', shot
                         pass
 
     def clear_all(self):
-        self.shot_combo.clear()
         self.seq_combo.clear()
+        self.shot_combo.clear()
         self.task_combo.clear()
         self.tags_line_edit.clear()
 
-    def show_line_edit_info(self, data):
+    def show_tags_info(self, data):
+        """
+        Shows all the information for the tags.
+        :param data:
+        :return:
+        """
         self.tags_line_edit.clear()
         filepath = data[-1].replace('/', '\\')
         row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
@@ -347,42 +355,44 @@ class IOPanel(QtWidgets.QWidget):
 
     def show_combo_info(self, data):
         if data:
-            filepath = data[-1].replace('/', '\\')
-            row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
+            print data[-1]
+            filepath = r'%s' % data[-1].replace('/', '\\')
+            print filepath
+            try:
+                row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
+                print row
+                print self.data_frame.loc[row, 'Filepath']
+            except IndexError:
+                self.hide_tags()
+                return
             seq = self.data_frame.loc[row, 'Seq']
             shot = self.data_frame.loc[row, 'Shot']
             task = self.data_frame.loc[row, 'Task']
             _ = self.data_frame.loc[row, 'Status']
             if type(seq) != float:
                 if seq:
-                    seq = '%03d' % int(seq)
-                    self.set_combo_to_text(self.seq_combo, seq)
+                    try:
+                        seq = '%03d' % int(seq)
+                        self.set_combo_to_text(self.seq_combo, seq)
+                    except ValueError:
+                        self.set_combo_to_text(self.seq_combo, seq)
             if type(shot) != float:
                 if shot:
-                    shot = '%04d' % int(shot)
-                    self.set_combo_to_text(self.shot_combo, shot)
+                    try:
+                        shot = '%04d' % int(shot)
+                        self.set_combo_to_text(self.shot_combo, shot)
+                    except ValueError:
+                        self.set_combo_to_text(self.shot_combo, shot)
             if type(task) != float:
                 if task:
                     task = app_config()['pipeline_steps']['short_to_long'][task]
                     self.set_combo_to_text(self.task_combo, task)
 
-    def on_radio_clicked(self):
-        self.clear_all()
-        if self.shot_radio_button.isChecked():
-            self.seq_label.setText('Seq ')
-            self.shot_label.setText('Shot')
-            self.tags_label.setText('Tags')
-        if self.asset_radio_button.isChecked():
-            self.seq_label.setText('Category')
-            self.shot_label.setText('Asset')
-            self.tags_label.setText('Tags        ')
-        self.populate_combos()
-
     def hide_tags(self):
         self.tags_title.setText("<b>Select File(s) or Folder(s) to tag</b>")
         self.tags_title.hide()
-        self.asset_radio_button.hide()
-        self.shot_radio_button.hide()
+        self.scope_label.hide()
+        self.scope_combo.hide()
         self.seq_label.hide()
         self.seq_combo.hide()
         self.shot_label.hide()
@@ -393,7 +403,7 @@ class IOPanel(QtWidgets.QWidget):
         self.tags_line_edit.hide()
         self.publish_button.hide()
 
-    def show_tags(self, files=None):
+    def show_tags_gui(self, files=None):
         if not files:
             files_text = 'files'
         else:
@@ -404,8 +414,8 @@ class IOPanel(QtWidgets.QWidget):
 
         self.tags_title.setText("<b>Tag %s for Publish</b>" % os.path.split(files_text)[-1])
         self.tags_title.show()
-        self.asset_radio_button.show()
-        self.shot_radio_button.show()
+        self.scope_combo.show()
+        self.scope_label.show()
         self.seq_label.show()
         self.seq_combo.show()
         self.shot_label.show()
@@ -418,12 +428,12 @@ class IOPanel(QtWidgets.QWidget):
 
     def populate_combos(self):
         ignore = ['default_steps', '']
-        if self.shot_radio_button.isChecked():
-            scope = 'shots'
+        if self.scope == 'shots':
+            element = 'seq'
         else:
-            scope = 'assets'
-        tasks = app_config()['pipeline_steps'][scope]
-        seqs = self.path_object.copy(seq='*', scope=scope).glob_project_element('seq')
+            element = 'type'
+        tasks = app_config()['pipeline_steps'][self.scope]
+        seqs = self.path_object.copy(seq='*', scope=self.scope).glob_project_element(element)
         task_names = ['']
         for each in tasks:
             if each not in ignore:
@@ -432,16 +442,26 @@ class IOPanel(QtWidgets.QWidget):
         seqs.insert(0, '')
         self.seq_combo.addItems(seqs)
 
+    def on_scope_changed(self):
+        self.scope = self.scope_combo.currentText()
+        if self.scope == 'assets':
+            self.seq_label.setText('Type')
+            self.shot_label.setText('Asset')
+        elif self.scope == 'shots':
+            self.seq_label.setText('Seq ')
+            self.shot_label.setText('Shot')
+
+
     def on_seq_changed(self):
         self.shot_combo.clear()
-        if self.shot_radio_button.isChecked():
-            scope = 'shots'
-        else:
-            scope = 'assets'
+        scope = self.scope
         seq = self.seq_combo.currentText()
         if seq:
             _ = self.path_object.copy(scope=scope, seq=seq, shot='*')
-            shots = self.path_object.copy(scope=scope, seq=seq, shot='*').glob_project_element('shot')
+            if self.scope == 'shots':
+                shots = self.path_object.copy(scope=scope, seq=seq, shot='*').glob_project_element('shot')
+            elif self.scope == 'assets':
+                shots = self.path_object.copy(scope=scope, seq=seq, shot='*').glob_project_element('asset')
             if shots:
                 shots.insert(0, '')
                 self.shot_combo.addItems(shots)
@@ -451,11 +471,14 @@ class IOPanel(QtWidgets.QWidget):
         for each in data:
             path_, filename_ = os.path.split(each)
             files.append(filename_)
-        self.sender().parent().clear_all()
-        self.sender().parent().show_tags(files=files)
+        self.seq_combo.clear()
+        self.shot_combo.clear()
+        self.task_combo.clear()
+        self.tags_line_edit.clear()
         self.sender().parent().populate_combos()
         self.sender().parent().show_combo_info(data)
-        self.sender().parent().show_line_edit_info(data)
+        self.sender().parent().show_tags_gui(files=files)
+        self.sender().parent().show_tags_info(data)
 
     def on_add_ingest_event(self):
         # deselect everything in the event

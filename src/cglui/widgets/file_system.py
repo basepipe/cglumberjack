@@ -5,7 +5,7 @@ from Qt import QtCore, QtGui, QtWidgets
 from cglcore.path import start
 
 
-class LJFileBrowser(QtWidgets.QTreeView):
+class LJFileBrowser2(QtWidgets.QTreeView):
     def __init__(self, parent=None, directory=None):
         QtWidgets.QTreeView.__init__(self, parent)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -131,15 +131,15 @@ class LJFileSystemModel(QtWidgets.QFileSystemModel):
         self.df = None
         self.df_exists = False
         if os.path.exists(pandas_file):
-            self.df = pd.read_csv(pandas_file, names=["Filepath", "Tags", "Keep Client Naming",
+            self.df = pd.read_csv(pandas_file, names=["Filepath", "Tags", "Keep Client Naming", "Scope",
                                                       "Seq", "Shot", "Task", "Project Filepath", "Status"])
             self.df_exists = True
 
-    def columnCount(self, parent = QtCore.QModelIndex()):
-        return super(LJFileSystemModel, self).columnCount()+2
+    def columnCount(self, parent=QtCore.QModelIndex()):
+        return super(LJFileSystemModel, self).columnCount()+1
 
     def data(self, i, role):
-        if i.column() == self.columnCount()-2:
+        if i.column() == self.columnCount()-1:
             if role == QtCore.Qt.DisplayRole:
                 try:
                     if self.df_exists:
@@ -151,14 +151,14 @@ class LJFileSystemModel(QtWidgets.QFileSystemModel):
                     pass
             if role == QtCore.Qt.TextAlignmentRole:
                 return QtCore.Qt.AlignHCenter
-        if i.column() == self.columnCount()-1:
-            if role == QtCore.Qt.DisplayRole:
-                try:
-                    if self.df_exists:
-                        row = self.df.loc[self.df['Filepath'] == self.filePath(i).replace('/', '\\')].index[0]
-                        return self.df.loc[row, 'Project Filepath']
-                    else:
-                        return 'Click To Tag'
-                except IndexError:
-                    pass
+        #if i.column() == self.columnCount()-1:
+        #    if role == QtCore.Qt.DisplayRole:
+        #        try:
+        #            if self.df_exists:
+        #                row = self.df.loc[self.df['Filepath'] == self.filePath(i).replace('/', '\\')].index[0]
+        #                return self.df.loc[row, 'Project Filepath']
+        #            else:
+        #                return 'Click To Tag'
+        #        except IndexError:
+        #            pass
         return super(LJFileSystemModel, self).data(i, role)

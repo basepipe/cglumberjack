@@ -82,6 +82,8 @@ rules:
       regex: "[A-Za-z0-9]+"
     date:
       regex: "[0-9_]+"
+    ingest_source:
+      regex: "[a-z]+"
   general:
     file_sequence:
       regex: "\\.[0-9]+\\."
