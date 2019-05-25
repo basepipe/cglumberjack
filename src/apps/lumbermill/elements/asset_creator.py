@@ -80,7 +80,6 @@ class AssetCreator(LJDialog):
         elif self.scope == 'shots':
             self.asset_string_example = app_config()['rules']['path_variables']['shotname']['example']
         self.v_layout = QtWidgets.QVBoxLayout(self)
-        self.grid_layout = QtWidgets.QGridLayout(self)
         self.scope_row = QtWidgets.QHBoxLayout()
         self.asset_row = QtWidgets.QHBoxLayout(self)
         self.tasks = []
@@ -252,52 +251,6 @@ class AssetCreator(LJDialog):
                 self.asset_widget.message.show()
             self.hide_layout_items(self.task_layout)
             self.create_button.setEnabled(False)
-
-    def process_asset_string_old(self, asset_string):
-        # TODO - add something here that also filters by the argument(s) given.
-        asset_rules = r'^[a-zA-Z]{3,}:([a-zA-Z]{3,},\s*)*([a-zA-Z]{3,}$)|^([a-zA-Z]{3,},\s*)*([a-zA-Z]{3,}$)'
-        self.regex = re.compile(r'%s' % asset_rules)
-        if re.match(self.regex, asset_string):
-            print '%s matches regex' % asset_string
-            # if it has a :
-            if ':' in asset_string:
-                print 'found :'
-                self.seq, asset_string = asset_string.split(':')
-                # if it's a bunch of assets comma separated
-                if ',' in asset_string:
-                    self.asset_list = self.remove_spaces_on_list(asset_string.split(','))
-                    if self.seq in self.valid_categories:
-                        if self.asset_list:
-                            self.asset_message_string = 'Click Enter to Create:'
-                            for i, _ in enumerate(self.asset_list):
-                                name = '%s:%s' % (self.seq, self.asset_list[i])
-                                self.asset_list[i] = name
-                                self.asset_message_string = '%s\n%s' % (self.asset_message_string, name)
-                    else:
-                        self.asset_message_string = '%s Not Valid Category! Try: %s' % (self.seq,
-                                                                                        self.valid_categories_string)
-                else:
-                    self.asset_message_string = 'Click Enter to Create: \n%s:%s' % (self.seq, asset_string)
-            elif ',' in asset_string:
-                print 'asset_string:', asset_string
-                self.asset_list = self.remove_spaces_on_list(asset_string.split(','))
-                if self.asset_list:
-                    self.asset_message_string = 'Click Enter to Create:'
-                    for i, _ in enumerate(self.asset_list):
-                        name = '%s:%s' % ('Prop', self.asset_list[i])
-                        self.asset_list[i] = name
-                        self.asset_message_string = '%s\n%s' % (self.asset_message_string, name)
-            else:
-                self.asset_list = []
-                if not self.seq:
-                    self.seq = 'Prop'
-                self.asset_list.append('%s:%s' % (self.seq, asset_string))
-                self.asset_message_string = 'Click Enter to Create: \n%s' % self.asset_list[0]
-
-        else:
-            print '%s does not match regex' % asset_string
-            self.asset_message_string = '%s does not pass naming convention\n%s' % (asset_string,
-                                                                                    self.asset_string_example)
 
     def get_valid_categories(self):
         categories = app_config()['asset_categories']

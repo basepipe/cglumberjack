@@ -887,6 +887,18 @@ def get_frange_from_seq(filepath):
         return None
 
 
+def test_string_against_path_rules(variable, string):
+    regex = app_config()['rules']['path_variables'][variable]['regex']
+    example = app_config()['rules']['path_variables'][variable]['example']
+    compiled_regex = re.compile(r'%s' % regex)
+    if re.match(compiled_regex, string):
+        return ''
+    else:
+        message_string = '%s is not a valid %s: \n\n%s' % (string, variable, example)
+        return message_string
+
+
+
 
 
 

@@ -8,7 +8,7 @@ from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
 from cglcore.path import PathObject, CreateProductionData
 from cglcore.path import create_project_config
-from apps.lumbermill.elements.widgets import ProjectWidget, AssetWidget
+from apps.lumbermill.elements.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
 
 
 class CompanyPanel(QtWidgets.QWidget):
@@ -19,6 +19,9 @@ class CompanyPanel(QtWidgets.QWidget):
         self.path_object = path_object
         self.panel = QtWidgets.QVBoxLayout(self)
         self.company_widget = LJListWidget('Companies')
+        self.company_widget.setMaximumHeight(5000)
+        self.company_widget.list.setMaximumHeight(5000)
+        self.company_widget.list.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.user_root = app_config()['cg_lumberjack_dir']
         self.panel.addWidget(self.company_widget)
         self.panel.addStretch(1)
@@ -37,16 +40,14 @@ class CompanyPanel(QtWidgets.QWidget):
         self.update_location()
 
     def on_create_company(self):
-        dialog = InputDialog(title='Create Company', message='Type a Company Name & Choose Project Management',
-                             line_edit=True, combo_box_items=['lumbermil', 'ftrack', 'shotgun'],
-                             line_edit_text='Company Name')
+        dialog = CreateProjectDialog(parent=None, variable='company')
         dialog.exec_()
+
         if dialog.button == 'Ok':
-            self.path_object.company = '%s' % dialog.line_edit.text()
-            d = {'root': self.path_object.root,
-                 'company': dialog.line_edit.text()}
-            self.create_company_globals(dialog.line_edit.text())
-            CreateProductionData(d)
+            company = dialog.proj_line_edit.text()
+            self.path_object.set_attr(company=company)
+            self.create_company_globals(company)
+            CreateProductionData(self.path_object, project_management=dialog.proj_management_combo.currentText())
             self.load_companies()
 
     def create_company_globals(self, company):
@@ -160,17 +161,18 @@ class ProjectPanel(QtWidgets.QWidget):
         self.location_changed.emit(path_object.data)
 
     def on_create_project(self):
-        dialog = InputDialog(title='Create Project', message='Type a Project Name & Choose Proj Management',
-                             line_edit=True, combo_box_items=['lumbermill', 'shotgun', 'ftrack'])
+        dialog = CreateProjectDialog(parent=None, variable='project')
         dialog.exec_()
+
         if dialog.button == 'Ok':
-            project_name = dialog.line_edit.text()
+            project_name = dialog.proj_line_edit.text()
             self.path_object.set_attr(project=project_name)
             CreateProductionData(self.path_object, project_management=self.project_management)
-            production_management = dialog.combo_box.currentText()
+            production_management = dialog.proj_management_combo.currentText()
             print 'setting project management to %s' % production_management
             create_project_config(self.path_object.company, self.path_object.project)
-        self.load_projects()
+        self.path_object.set_attr(project='*')
+        self.update_location()
 
     def clear_layout(self, layout=None):
         if not layout:

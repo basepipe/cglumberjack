@@ -62,6 +62,7 @@ class TaskPanel(QtWidgets.QWidget):
             else:
                 task_label = QtWidgets.QLabel('<H2>%s: Tasks</H2>' % self.path_object.shot.title())
             self.panel_title.addWidget(task_label)
+
             task_add = QtWidgets.QToolButton()
             task_add.setText('+')
             if not current.task:
@@ -74,7 +75,7 @@ class TaskPanel(QtWidgets.QWidget):
             # Get the list of tasks for the selection
             task_list = current.glob_project_element('task')
             self.update_location(path_object=current)
-            self.panel_title.addStretch(1)
+
             self.panel_source.tasks = []
             for task in task_list:
                 if '.' not in task:
@@ -145,6 +146,7 @@ class TaskPanel(QtWidgets.QWidget):
                             task_widget.start_task_button.show()
                             task_widget.empty_state.hide()
             self.panel_title.addWidget(task_add)
+            self.panel_title.addStretch(1)
 
     def add_stretch_to_source(self):
         self.panel_source.addStretch(1)

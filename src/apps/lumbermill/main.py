@@ -9,6 +9,7 @@ from apps.lumbermill.elements.TaskPanel import TaskPanel
 
 
 class BreadCrumb(QtWidgets.QWidget):
+    location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None):
         QtWidgets.QWidget.__init__(self, parent)
@@ -20,32 +21,29 @@ class BreadCrumb(QtWidgets.QWidget):
         self.clear_layout()
         if not path_object:
             path_object = self.path_object
-        buttons = []
-        print path_object.path_root
-        print path_object.company, path_object.project, path_object.scope, path_object.seq, path_object.type
         if path_object.company == '*':
-            buttons = ['company']
+            buttons = ['companies']
         elif path_object.project == '*':
-            buttons = ['company']
+            buttons = ['companies']
         elif path_object.scope == 'IO':
-            buttons = ['company', 'project']
+            buttons = ['companies', 'projects']
         elif path_object.scope == '*':
-            buttons = ['company', 'project']
+            buttons = ['companies', 'projects']
         elif path_object.seq == '*':
-            buttons = ['company', 'project', path_object.scope]
+            buttons = ['companies', 'projects', path_object.scope]
         elif path_object.type == '*':
-            buttons = ['company', 'project', path_object.scope]
+            buttons = ['companies', 'projects', path_object.scope]
         else:
-            buttons = ['company', 'project', path_object.scope]
-        # button color
+            buttons = ['companies', 'projects', path_object.scope]
         brightness = 50
+        self.path_object = path_object
         for each in buttons:
             button = QtWidgets.QPushButton(each)
             button.name = each
-            if each == 'company' or each == 'project' or each == 'assets' or each == 'shots':
+            if each == 'companies' or each == 'projects' or each == 'assets' or each == 'shots':
                 if path_object.company:
                     if path_object.company != '*':
-                        button.name = 'Choose %s' % each.title()
+                        button.name = '%s' % each.title()
                         button.setText(button.name)
             if button.name == 'ingest':
                 brightness += 50
@@ -57,22 +55,15 @@ class BreadCrumb(QtWidgets.QWidget):
             button.clicked.connect(self.update_location)
 
     def update_location(self):
-        print self.sender().name
-        if 'project' in self.sender().name:
-            self.path_object.set_attr(project='*')
-            self.path_object.set_attr(seq='')
-            self.path_object.set_attr(shot='')
-            self.path_object.set_attr(scope='*')
-        elif 'company' in self.sender().name:
-            self.path_object.set_attr(company='*')
-            self.path_object.set_attr(context='*')
-            self.path_object.set_attr(project='')
-            self.path_object.set_attr(seq='')
-            self.path_object.set_attr(shot='')
-            self.path_object.set_attr(scope='*')
-
-        print self.path_object.path_root
-        print 'update location'
+        if 'Projects' in self.sender().name:
+            path = '%s/%s/source/*' % (self.path_object.root, self.path_object.company)
+            print path
+        elif 'Companies' in self.sender().name:
+            print 'setting company'
+            path = '%s/%s' % (self.path_object.root, '*')
+        new_obj = PathObject(path)
+        print new_obj.path_root
+        self.location_changed.emit(new_obj)
 
     def clear_layout(self):
         while self.layout.count():
@@ -90,18 +81,12 @@ class PathWidget(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         self.back_button = QtWidgets.QToolButton()
         self.back_button.setText('<')
-        self.project_label = QtWidgets.QLabel('<h2>Choose Project</h2>')
         self.current_location_line_edit = QtWidgets.QLineEdit()
         self.current_location_line_edit.setReadOnly(True)
 
         self.cl_row = QtWidgets.QHBoxLayout(self)
-        self.cl_row.addWidget(self.project_label)
-        self.cl_row.addItem((QtWidgets.QSpacerItem(20, 0, QtWidgets.QSizePolicy.Minimum,
-                                                   QtWidgets.QSizePolicy.Minimum)))
         self.cl_row.addWidget(self.back_button)
         self.cl_row.addWidget(self.current_location_line_edit)
-        self.cl_row.addItem((QtWidgets.QSpacerItem(20, 0, QtWidgets.QSizePolicy.MinimumExpanding,
-                             QtWidgets.QSizePolicy.Minimum)))
         self.back_button.clicked.connect(self.back_button_pressed)
 
     def text(self):
@@ -109,21 +94,14 @@ class PathWidget(QtWidgets.QWidget):
 
     def set_text(self, text):
         self.current_location_line_edit.setText(text.replace('\\', '/'))
-        # TODO - PYSIDE fix is QtCore instead of QtWidgets for Nuke (Pyside2)
-        try:
-            fm = QtWidgets.QFontMetrics(self.current_location_line_edit.font())
-            self.current_location_line_edit.setFixedWidth(fm.boundingRect(text).width() + 25)
-        except AttributeError:
-            pass
+        ## TODO - PYSIDE fix is QtCore instead of QtWidgets for Nuke (Pyside2)
+        #try:
+        #    fm = QtWidgets.QFontMetrics(self.current_location_line_edit.font())
+        #    self.current_location_line_edit.setFixedWidth(fm.boundingRect(text).width() + 25)
+        #except AttributeError:
+        #    pass
         if self.current_location_line_edit.text():
             path_object = PathObject(self.current_location_line_edit.text())
-            if path_object.project:
-                if path_object.project != '*':
-                    self.project_label.setText('<h2>%s</h2>' % path_object.project.title())
-                else:
-                    self.project_label.setText('<h2>Choose Project</h2>')
-            elif path_object.company:
-                self.project_label.setText('<h2>Choose Company</h2>')
 
     def back_button_pressed(self):
         path_object = PathObject(self.current_location_line_edit.text())
@@ -154,7 +132,6 @@ class PathWidget(QtWidgets.QWidget):
         else:
             new_path = path_object.root
         new_object = PathObject(new_path)
-
         self.location_changed.emit(new_object)
 
 
@@ -214,6 +191,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path_widget.set_text(self.path_object.path_root)
 
         self.path_widget.location_changed.connect(self.update_location)
+        self.breadcrumb.location_changed.connect(self.update_location)
         # TODO - make a path object the currency rather than a dict, makes it easier.
         self.layout.addWidget(self.breadcrumb)
         self.layout.addWidget(self.path_widget)

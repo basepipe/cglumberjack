@@ -296,6 +296,7 @@ class MenuDesigner(LJDialog):
             y = self.menu_dict
 
             name = self.tabs.tabText(self.tabs.currentIndex())
+            print self.software, name, oldname
             oldcom = y[self.software][name][oldname]["command"]
 
             m = re.search("cgl_tools\.([a-zA-Z_1-9]*)\.shelves.([a-zA-Z_1-9]*)\.([a-zA-Z_1-9]*)",

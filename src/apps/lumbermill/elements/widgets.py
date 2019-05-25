@@ -277,7 +277,6 @@ class TaskWidget(QtWidgets.QFrame):
         self.hideall()
         self.show_button.clicked.connect(self.on_show_button_clicked)
         self.hide_button.clicked.connect(self.on_hide_button_clicked)
-        # self.add_button.clicked.connect(self.on_add_button_clicked)
         self.start_task_button.clicked.connect(self.on_start_task_clicked)
         self.open_button.clicked.connect(self.on_open_button_clicked)
         self.new_version_button.clicked.connect(self.on_new_version_clicked)
@@ -437,6 +436,7 @@ class ProjectWidget(QtWidgets.QWidget):
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         h_layout.addWidget(self.title)
         h_layout.addWidget(self.add_button)
+        h_layout.addStretch(1)
 
         v_layout.addLayout(h_layout)
         v_layout.addWidget(self.search_box)
@@ -527,8 +527,9 @@ class AssetWidget(QtWidgets.QWidget):
 
         scope_layout.addWidget(self.shots_radio)
         scope_layout.addWidget(self.assets_radio)
-        scope_layout.addStretch(1)
         scope_layout.addWidget(self.add_button)
+        scope_layout.addStretch(1)
+
 
         v_list.addItem(QtWidgets.QSpacerItem(0, 3, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
         v_list.addWidget(self.search_box)
@@ -627,6 +628,7 @@ class FileTableWidget(LJTableWidget):
 class LJListWidget(QtWidgets.QWidget):
     def __init__(self, label):
         QtWidgets.QWidget.__init__(self)
+        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
         layout = QtWidgets.QVBoxLayout(self)
         self.label = QtWidgets.QLabel("<b>%s</b>" % label)
         self.add_button = QtWidgets.QToolButton()
@@ -635,6 +637,7 @@ class LJListWidget(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.h_layout.addWidget(self.label)
         self.h_layout.addWidget(self.add_button)
+        self.h_layout.addStretch(1)
         self.list = QtWidgets.QListWidget()
         self.list.setMaximumHeight(80)
         layout.addLayout(self.h_layout)
@@ -650,4 +653,66 @@ class LJListWidget(QtWidgets.QWidget):
         self.label.show()
         self.add_button.show()
         self.list.show()
+
+
+class CreateProjectDialog(QtWidgets.QDialog):
+
+    def __init__(self, parent, variable):
+        QtWidgets.QDialog.__init__(self, parent=parent)
+        self.variable = variable
+        proj_management_label = QtWidgets.QLabel('Project Management')
+        layout = QtWidgets.QVBoxLayout(self)
+        self.proj_management_combo = QtWidgets.QComboBox()
+        self.proj_management_combo.addItems(['lumbermill', 'ftrack', 'shotgun', 'google_docs'])
+        self.red_palette = QtGui.QPalette()
+        self.red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
+        self.green_palette = QtGui.QPalette()
+        self.green_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 255, 0))
+        self.black_palette = QtGui.QPalette()
+        self.black_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 0, 0))
+        self.cancel_button = QtWidgets.QPushButton('Cancel')
+        self.ok_button = QtWidgets.QPushButton('Ok')
+        self.button = ''
+
+        button_layout = QtWidgets.QHBoxLayout()
+        button_layout.addStretch(1)
+        button_layout.addWidget(self.cancel_button)
+        button_layout.addWidget(self.ok_button)
+
+        proj_label = QtWidgets.QLabel('%s Name' % self.variable.title())
+        self.proj_line_edit = QtWidgets.QLineEdit('')
+        self.message = QtWidgets.QLabel()
+
+        self.grid_layout = QtWidgets.QGridLayout()
+        self.grid_layout.addWidget(proj_label, 0, 0)
+        self.grid_layout.addWidget(self.proj_line_edit, 0, 1)
+        self.grid_layout.addWidget(proj_management_label, 2, 0)
+        self.grid_layout.addWidget(self.proj_management_combo, 2, 1)
+
+        layout.addLayout(self.grid_layout)
+        layout.addWidget(self.message)
+        layout.addLayout(button_layout)
+
+        self.proj_line_edit.textChanged.connect(self.on_project_text_changed)
+        self.ok_button.clicked.connect(self.on_ok_clicked)
+        self.cancel_button.clicked.connect(self.on_cancel_clicked)
+
+    def on_project_text_changed(self):
+        input_text = self.proj_line_edit.text()
+        message = path.test_string_against_path_rules(self.variable, input_text)
+        if input_text:
+            if message:
+                self.message.setText(message)
+                self.message.setPalette(self.red_palette)
+            else:
+                self.message.setText('Creating %s: %s' % (self.variable, input_text))
+        else:
+            self.message.setText('')
+
+    def on_ok_clicked(self):
+        self.button = 'Ok'
+        self.accept()
+
+    def on_cancel_clicked(self):
+        self.accept()
 
