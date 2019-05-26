@@ -1,0 +1,23 @@
+QHeaderView::section {
+    Background-color:rgb(255, 255, 255);
+    height: 30px;
+    padding-left: 5px;
+    border-radius:16 px;
+    font: 10pt Monospaced;
+}
+
+QTableView::item{
+    border: 0px;
+    padding: 10px;
+    font: 8pt Monospaced;
+}
+
+QTableView::indicator:checked {
+    color: #b1b1b1;
+    background-color: #323232;
+    border: 1px solid #b1b1b1;
+    border-radius: 1px;
+    width: 7px;
+    height: 7px;
+    margin: 0px 5px 0 5px;
+}

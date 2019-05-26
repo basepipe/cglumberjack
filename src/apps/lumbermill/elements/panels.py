@@ -2,13 +2,12 @@ import glob
 import os
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
-from cglui.widgets.combo import LabelComboRow
-from apps.lumbermill.elements.widgets import LJListWidget
+from cglui.widgets.widgets import LJListWidget, LJButton
 from cglui.widgets.containers.model import ListItemModel
-from cglui.widgets.dialog import InputDialog
-from cglcore.path import PathObject, CreateProductionData
+from cglcore.path import PathObject, CreateProductionData, icon_path
 from cglcore.path import create_project_config
-from apps.lumbermill.elements.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
+from cglui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
+from cglui.widgets.palettes import set_color
 
 
 class CompanyPanel(QtWidgets.QWidget):
@@ -19,12 +18,10 @@ class CompanyPanel(QtWidgets.QWidget):
         self.path_object = path_object
         self.panel = QtWidgets.QVBoxLayout(self)
         self.company_widget = LJListWidget('Companies')
-        self.company_widget.setMaximumHeight(5000)
-        self.company_widget.list.setMaximumHeight(5000)
-        self.company_widget.list.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.company_widget.list.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Expanding)
         self.user_root = app_config()['cg_lumberjack_dir']
         self.panel.addWidget(self.company_widget)
-        self.panel.addStretch(1)
+        self.panel.addStretch(0)
         self.load_companies()
         self.project_management = 'lumbermill'
 
@@ -111,7 +108,7 @@ class ProjectPanel(QtWidgets.QWidget):
 
         # Create the Left Panel
         self.panel = QtWidgets.QVBoxLayout(self)
-        self.project_filter = ProjectWidget(title="%s Projects" % self.path_object.company.title())
+        self.project_filter = ProjectWidget(title="Projects")
 
         self.panel.addWidget(self.project_filter)
         self.load_projects()
@@ -195,11 +192,21 @@ class ScopePanel(QtWidgets.QWidget):
                                                 user=None, scope=None)
         else:
             return
-
+        GUI = app_config()['gui']
         self.panel = QtWidgets.QVBoxLayout(self)
         for each in ['assets', 'shots', 'IO']:
-            button = QtWidgets.QPushButton(str(each))
+            if each == 'assets':
+                image_name = 'flower_80px.png'
+            elif each == 'shots':
+                image_name = 'shots96px.png'
+            else:
+                image_name = 'ingest96px.png'
+            button = LJButton(str(each))
+            button.setIcon(QtGui.QIcon(QtGui.QPixmap(os.path.join(icon_path(), image_name))))
+            button.setIconSize(QtCore.QSize(50, 50))
             button.setMinimumHeight(100)
+            button.setFont(QtGui.QFont(GUI['super']['font']['name'], GUI['super']['font']['size']))
+            set_color(button, GUI['super']['font']['color'])
             self.panel.addWidget(button)
             button.clicked.connect(self.on_button_clicked)
         self.panel.addStretch(1)

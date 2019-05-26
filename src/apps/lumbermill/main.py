@@ -1,11 +1,14 @@
+import os
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
-from cglcore.path import PathObject, start
+from cglcore.path import PathObject, start, icon_path, font_path
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel
 from apps.lumbermill.elements.IOPanel import IOPanel
 from apps.lumbermill.elements.TaskPanel import TaskPanel
+
+ICON_WIDTH = 24
 
 
 class BreadCrumb(QtWidgets.QWidget):
@@ -77,31 +80,117 @@ class BreadCrumb(QtWidgets.QWidget):
 class PathWidget(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, path_object=None):
         QtWidgets.QWidget.__init__(self, parent)
-        self.back_button = QtWidgets.QToolButton()
-        self.back_button.setText('<')
+        if path_object:
+            self.path_object = path_object
+        else:
+            return
+
+        self.back_button = QtWidgets.QPushButton()
+        self.back_button.setToolTip('Go back')
+        self.projects_button = QtWidgets.QPushButton()
+        self.projects_button.setToolTip('Go to Projects')
+        self.companies_button = QtWidgets.QPushButton()
+        self.companies_button.setToolTip('Go to Companies')
+        self.production_button = QtWidgets.QPushButton()
+        self.production_button.setToolTip('Go to Shots')
+        self.back_button.setStyleSheet("background: transparent;")
+        self.projects_button.setStyleSheet("background: transparent;")
+        self.companies_button.setStyleSheet("background: transparent;")
+        self.production_button.setStyleSheet("background: transparent;")
+        back_icon = os.path.join(icon_path(), 'back24px.png')
+        home_icon = os.path.join(icon_path(), 'project24px.png')
+        company_icon = os.path.join(icon_path(), 'company24px.png')
+        self.shots_icon = os.path.join(icon_path(), 'shots24px.png')
+        self.assets_icon = os.path.join(icon_path(), 'flower_40px.png')
+        self.back_button.setIcon(QtGui.QIcon(back_icon))
+        self.back_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
+        self.companies_button.setIcon(QtGui.QIcon(company_icon))
+        self.companies_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
+        self.projects_button.setIcon(QtGui.QIcon(home_icon))
+        self.projects_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
+        self.production_button.setIcon(QtGui.QIcon(self.shots_icon))
+        self.production_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
         self.current_location_line_edit = QtWidgets.QLineEdit()
         self.current_location_line_edit.setReadOnly(True)
+        self.current_location_line_edit.setMinimumHeight(ICON_WIDTH*1.28)
 
         self.cl_row = QtWidgets.QHBoxLayout(self)
         self.cl_row.addWidget(self.back_button)
+        self.cl_row.addWidget(self.companies_button)
+        self.cl_row.addWidget(self.projects_button)
+        self.cl_row.addWidget(self.production_button)
         self.cl_row.addWidget(self.current_location_line_edit)
         self.back_button.clicked.connect(self.back_button_pressed)
+        self.companies_button.clicked.connect(self.buttons_pressed)
+        self.projects_button.clicked.connect(self.buttons_pressed)
+        self.set_text(self.path_object.path_root)
 
     def text(self):
         return self.current_location_line_edit.text()
 
     def set_text(self, text):
         self.current_location_line_edit.setText(text.replace('\\', '/'))
-        ## TODO - PYSIDE fix is QtCore instead of QtWidgets for Nuke (Pyside2)
-        #try:
-        #    fm = QtWidgets.QFontMetrics(self.current_location_line_edit.font())
-        #    self.current_location_line_edit.setFixedWidth(fm.boundingRect(text).width() + 25)
-        #except AttributeError:
-        #    pass
         if self.current_location_line_edit.text():
-            path_object = PathObject(self.current_location_line_edit.text())
+            self.path_object = PathObject(self.current_location_line_edit.text())
+            
+    def show_company(self):
+        self.production_button.hide()
+        self.companies_button.show()
+        self.projects_button.hide()
+        
+    def show_projects(self):
+        self.production_button.hide()
+        self.companies_button.show()
+        self.projects_button.show()
+        
+    def show_production(self):
+        self.production_button.show()
+        self.companies_button.show()
+        self.projects_button.show()
+        if self.path_object.scope == 'assets':
+            self.production_button.setIcon(QtGui.QIcon(self.assets_icon))
+            self.production_button.setToolTip('Go to Assets')
+        elif self.path_object.scope == 'shots':
+            self.production_button.setIcon(QtGui.QIcon(self.shots_icon))
+            self.production_button.setToolTip('Go to Shots')
+
+    def show_none(self):
+        self.production_button.hide()
+        self.companies_button.hide()
+        self.projects_button.hide()
+            
+    def update_buttons(self, path_object=None):
+        if not path_object:
+            path_object = self.path_object
+        if not path_object.company:
+            self.show_none()
+        elif path_object.company == '*':
+            self.show_none()
+        elif path_object.project == '*':
+            self.show_company()
+        elif path_object.scope == 'IO':
+            self.show_projects()
+        elif path_object.scope == '*':
+            self.show_projects()
+        elif path_object.seq == '*':
+            self.show_projects()
+        elif path_object.type == '*':
+            self.show_production()
+        else:
+            self.show_production()
+
+    def buttons_pressed(self):
+        if self.sender() == self.projects_button:
+            path = '%s/%s/source/*' % (self.path_object.root, self.path_object.company)
+        elif self.sender() == self.companies_button:
+            path = '%s/%s' % (self.path_object.root, '*')
+        elif self.sender() == self.production_button:
+            pass
+        new_obj = PathObject(path)
+        self.location_changed.emit(new_obj)
+
 
     def back_button_pressed(self):
         path_object = PathObject(self.current_location_line_edit.text())
@@ -131,8 +220,9 @@ class PathWidget(QtWidgets.QWidget):
                 new_path = '%s/%s' % (path_object.root, '*')
         else:
             new_path = path_object.root
-        new_object = PathObject(new_path)
-        self.location_changed.emit(new_object)
+        self.path_object = PathObject(new_path)
+        self.update_buttons()
+        self.location_changed.emit(self.path_object)
 
 
 class CGLumberjackWidget(QtWidgets.QWidget):
@@ -140,6 +230,15 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def __init__(self, parent=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None,
                  show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
+        font_db = QtWidgets.QFontDatabase()
+        font_db.addApplicationFont(os.path.join(font_path(), 'ARCADECLASSIC.TTF'))
+        font_db.addApplicationFont(os.path.join(font_path(), 'ka1.ttf'))
+
+        #arcade_classic_font = QtGui.QFont('ArcadeClassic', 20)
+        #karmatic_arcade_font = QtGui.QFont('Karmatic Arcade', 20)
+        #courier_new_font = QtGui.QFont('Courier New')
+        #self.setFont(courier_new_font)
+
         # Environment Stuff
         self.show_import = show_import
         self.user = user_name
@@ -185,15 +284,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.task = ''
         self.resolution = ''
         self.in_file_tree = None
-        self.breadcrumb = BreadCrumb(path_object=self.path_object)
-        self.breadcrumb.update_buttons()
-        self.path_widget = PathWidget()
-        self.path_widget.set_text(self.path_object.path_root)
+        #self.breadcrumb = BreadCrumb(path_object=self.path_object)
+        #self.breadcrumb.update_buttons()
+        self.path_widget = PathWidget(path_object=self.path_object)
+        self.path_widget.update_buttons()
 
         self.path_widget.location_changed.connect(self.update_location)
-        self.breadcrumb.location_changed.connect(self.update_location)
         # TODO - make a path object the currency rather than a dict, makes it easier.
-        self.layout.addWidget(self.breadcrumb)
         self.layout.addWidget(self.path_widget)
         self.update_location(self.path_object)
 
@@ -212,7 +309,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         elif type(data) == PathObject:
             path_object = PathObject(data)
         self.path_widget.set_text(path_object.path_root)
-        self.breadcrumb.update_buttons(path_object=path_object)
+        self.path_widget.update_buttons(path_object=path_object)
         last = path_object.get_last_attr()
         shot_attrs = ['seq', 'shot', 'type', 'asset']
         if path_object.scope == 'IO':
@@ -259,7 +356,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             to_delete = []
             # Why do i have to do this?!?!?
             for i in range(self.layout.count()):
-                if i > 2:
+                if i > 1:
                     child = self.layout.takeAt(i-1)
                     to_delete.append(child)
             for each in to_delete:
@@ -315,6 +412,10 @@ class CGLumberjack(LJMainWindow):
             self.setWindowTitle("Lumbermill - Log In")
         self.status_bar = QtWidgets.QStatusBar()
         self.setStatusBar(self.status_bar)
+        p = self.palette()
+        brightness = 255
+        p.setColor(self.backgroundRole(), QtGui.QColor(brightness, brightness, brightness))
+        self.setPalette(p)
         w = 400
         h = 500
 
@@ -327,17 +428,27 @@ class CGLumberjack(LJMainWindow):
         tools_menu = menu_bar.addMenu('&Tools')
         self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
+        open_globals = QtWidgets.QAction('Edit Globals', self)
         settings.setShortcut('Ctrl+,')
         menu_designer = QtWidgets.QAction('Menu Designer', self)
         ingest_dialog = QtWidgets.QAction('Ingest Tool', self)
         # add actions to the file menu
         tools_menu.addAction(settings)
+        tools_menu.addAction(open_globals)
         tools_menu.addAction(menu_designer)
         tools_menu.addAction(ingest_dialog)
         # connect signals and slots
+        open_globals.triggered.connect(self.open_company_globals)
         settings.triggered.connect(self.on_settings_clicked)
         menu_designer.triggered.connect(self.on_shelves_clicked)
         login.triggered.connect(self.on_login_clicked)
+
+    def open_company_globals(self):
+        # Need a gui for choosing these bad boys
+        print app_config()['account_info']['user_directory']
+        print self.centralWidget().path_object.company_config
+        print self.centralWidget().path_object.project_config
+        start(self.centralWidget().path_object.company_config)
 
     def load_user_config(self):
         user_config = UserConfig()

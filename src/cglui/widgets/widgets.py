@@ -2,17 +2,39 @@ import os
 from Qt.QtCore import Qt
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore import path
-from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
+from cglcore.config import app_config
+from palettes import set_color
+
+MBW = 130
+MBH = 28
+
+GUI = app_config()['gui']
 
 
-class VersionButton(QtWidgets.QPushButton):
+class LJButton(QtWidgets.QPushButton):
 
-    def __init__(self, parent):
+    def __init__(self, parent=None, mh=MBH, mw=MBW, color='white', border=1, border_color='grey', font=None):
         QtWidgets.QPushButton.__init__(self, parent)
+        if font:
+            self.setFont(font)
+        else:
+            font = QtGui.QFont(GUI['button']['font']['name'], GUI['button']['font']['size'])
+            self.setFont(font)
+        self.setMinimumHeight(mh)
+        self.setMinimumWidth(mw)
+        self.setStyleSheet("background-color: %s; border:%spx solid %s;" % (color, border, border_color))
+
+
+class VersionButton(LJButton):
+
+    def __init__(self, parent, font=None):
+        LJButton.__init__(self, parent)
+        if font:
+            self.setFont(font)
         self.menu = QtWidgets.QMenu()
         self.setText(self.tr("Version Up"))
         self.empty_act = self.menu.addAction(self.tr("Empty"))
@@ -88,6 +110,7 @@ class EmptyStateWidget(QtWidgets.QPushButton):
 
 
 class FileTableModel(ListItemModel):
+
     def data(self, index, role):
         row = index.row()
         col = index.column()
@@ -156,7 +179,122 @@ class FileTable(LJTableWidget):
             e.ignore()
 
 
-class TaskWidget(QtWidgets.QFrame):
+class FilesWidget(QtWidgets.QFrame):
+
+    def __init__(self, parent, show_import=False, font=None):
+        QtWidgets.QFrame.__init__(self, parent)
+        self.show_import = show_import
+        brightness = 255
+        #self.setAutoFillBackground(True)
+        #p = self.palette()
+        #p.setColor(self.backgroundRole(), QtGui.QColor(brightness, brightness, brightness))
+        #self.setPalette(p)
+        layout = QtWidgets.QVBoxLayout(self)
+        table_layout = QtWidgets.QVBoxLayout()
+        table_layout.setSpacing(0)
+        tool_button_layout = QtWidgets.QHBoxLayout()
+
+        table_font = QtGui.QFont('Monospaced', 8)
+        layout.addLayout(table_layout)
+        layout.addLayout(tool_button_layout)
+        to_icon = os.path.join(path.icon_path(), 'arrow-right_12px.png')
+        #self.to_button = QtWidgets.QPushButton()
+        #self.to_button.hide()
+        #self.to_button.setStyleSheet("background: transparent;")
+        #self.to_button.setIcon(QtGui.QIcon(to_icon))
+
+        # The Files Area
+        self.work_files_table = FileTableWidget(self, hide_header=False)
+        self.work_files_table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
+        self.work_files_table.set_draggable(True)
+        self.work_files_table.title = 'work_files'
+        self.work_files_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.export_files_table = FileTableWidget(self, hide_header=False)
+        self.export_files_table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
+        self.export_files_table.set_draggable(True)
+        self.export_files_table.title = 'outputs'
+        self.export_files_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        to_icon = os.path.join(path.icon_path(), 'arrow-right_12px.png')
+
+        self.open_button = LJButton(font=font)
+        self.open_button.setText('Open')
+        self.import_button = LJButton(font=font)
+        self.import_button.setText('Import')
+        self.new_version_button = VersionButton(self, font=font)
+        self.review_button = LJButton(font=font)
+        self.review_button.setText('Review')
+        self.publish_button = LJButton(font=font)
+        self.publish_button.setText('Publish')
+
+        tool_button_layout.addStretch()
+        tool_button_layout.addWidget(self.open_button)
+        tool_button_layout.addWidget(self.import_button)
+        tool_button_layout.addWidget(self.new_version_button)
+        tool_button_layout.addWidget(self.review_button)
+        tool_button_layout.addWidget(self.publish_button)
+
+        # Create the Frame
+
+        table_layout.setSpacing(0)
+        table_layout.addWidget(self.work_files_table)
+        # table_layout.addWidget(self.to_button)
+        table_layout.addWidget(self.export_files_table)
+        table_layout.addLayout(tool_button_layout)
+
+        self.open_button.clicked.connect(self.on_open_button_clicked)
+        self.new_version_button.clicked.connect(self.on_new_version_clicked)
+        self.import_button.clicked.connect(self.on_import_clicked)
+
+    def hide_files(self):
+        self.to_button.hide()
+        self.work_files_table.hide()
+        self.export_files_table.hide()
+
+    def show_files(self):
+        self.to_button.show()
+        self.work_files_table.show()
+        self.export_files_table.show()
+
+    def hide_tool_buttons(self):
+        self.open_button.hide()
+        self.import_button.hide()
+        self.new_version_button.hide()
+        self.publish_button.hide()
+        self.review_button.hide()
+
+    def show_tool_buttons(self):
+        self.open_button.show()
+        if self.show_import:
+            self.import_button.show()
+        self.new_version_button.show()
+        self.publish_button.show()
+        self.review_button.show()
+
+    def on_new_version_clicked(self):
+        self.new_version_clicked.emit()
+
+    def on_import_clicked(self):
+        self.import_button_clicked.emit()
+
+    def on_open_button_clicked(self):
+        self.open_button_clicked.emit()
+
+
+class QHLine(QtWidgets.QFrame):
+    def __init__(self):
+        super(QHLine, self).__init__()
+        self.setFrameShape(QtWidgets.QFrame.HLine)
+        self.setFrameShadow(QtWidgets.QFrame.Sunken)
+
+
+class QVLine(QtWidgets.QFrame):
+    def __init__(self):
+        super(QVLine, self).__init__()
+        self.setFrameShape(QtWidgets.QFrame.VLine)
+        self.setFrameShadow(QtWidgets.QFrame.Sunken)
+
+
+class TaskWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
@@ -169,13 +307,14 @@ class TaskWidget(QtWidgets.QFrame):
     copy_latest_version = QtCore.Signal()
 
     def __init__(self, parent, title, filter_string=None, path_object=None, show_import=False):
-        QtWidgets.QFrame.__init__(self, parent)
-        self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
-        self.setAutoFillBackground(True)
-        p = self.palette()
-        brightness = 235
-        p.setColor(self.backgroundRole(), QtGui.QColor(brightness, brightness, brightness))
-        self.setPalette(p)
+        QtWidgets.QWidget.__init__(self, parent)
+        #self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
+        font_db = QtWidgets.QFontDatabase()
+        font_db.addApplicationFont(os.path.join(path.font_path(), 'ARCADECLASSIC.TTF'))
+        font_db.addApplicationFont(os.path.join(path.font_path(), 'ka1.ttf'))
+
+        font = QtGui.QFont('Courier New', 10)
+        # font = QtGui.QFont(GUI['button']['font']['name'], int(GUI['button']['font']['size']))
         v_layout = QtWidgets.QVBoxLayout(self)
         task_row = QtWidgets.QHBoxLayout()
         self.show_import = show_import
@@ -186,14 +325,25 @@ class TaskWidget(QtWidgets.QFrame):
         self.filter_string = filter_string
         self.label = title
         self.title = QtWidgets.QLabel("<b>%s</b>" % title.title())
+        self.title.setFont(QtGui.QFont(GUI['title']['font']['name'], GUI['title']['font']['size']))
+        set_color(self.title, GUI['title']['font']['color'])
+
+        # self.title.setForeground(QtGui.QColor(GUI['title']['font']['color']))
         self.task = None
         self.user = None
         self.in_file_tree = None
         self.versions = AdvComboBox()
+        self.versions.setFont(font)
+        set_color(self.versions, GUI['title']['font']['color'])
         self.versions.hide()
 
         self.users_label = QtWidgets.QLabel("User:")
+        self.users_label.setFont(font)
+        set_color(self.versions, GUI['title']['font']['color'])
         self.users = AdvComboBox()
+        self.users.setMaximumWidth(MBW)
+        self.users.setFont(font)
+        set_color(self.versions, GUI['title']['font']['color'])
         self.users_layout = QtWidgets.QHBoxLayout()
         self.users_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
                                                         QtWidgets.QSizePolicy.Minimum))
@@ -202,71 +352,51 @@ class TaskWidget(QtWidgets.QFrame):
         self.users_layout.addWidget(self.users)
 
         self.resolutions = AdvComboBox()
+        self.resolutions.setMaximumWidth(MBW)
+        self.resolutions.setFont(font)
+        set_color(self.resolutions, GUI['button']['font']['color'])
         self.resolutions_layout = QtWidgets.QHBoxLayout()
         self.resolutions_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
                                                               QtWidgets.QSizePolicy.Minimum))
         self.resolutions_label = QtWidgets.QLabel("Resolution:")
+        self.resolutions_label.setFont(font)
+        set_color(self.resolutions_label, GUI['button']['font']['color'])
         self.resolutions_layout.addWidget(self.resolutions_label)
         self.resolutions_layout.addWidget(self.resolutions)
         self.resolutions_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.show_button = QtWidgets.QToolButton()
+        self.show_button = LJButton()
         self.show_button.setText("more")
-        self.start_task_button = QtWidgets.QPushButton()
+        self.start_task_button = LJButton()
         self.start_task_button.setText("Start Task")
-        self.hide_button = QtWidgets.QToolButton()
-        self.hide_button.setText("less")
-        self.data_table = FileTableWidget(self)
-        self.data_table.set_draggable(True)
-        self.data_table.title = title
-        self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.data_table2 = FileTableWidget(self)
-        self.data_table2.set_draggable(True)
-        self.data_table2.title = 'blob'
-        self.data_table2.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.my_files_label = QtWidgets.QLabel('My Files')
-        self.export_label = QtWidgets.QLabel('Ready to Review/Publish')
+        self.start_task_button.setMinimumWidth(150)
+        self.start_task_button.setMinimumHeight(MBH)
+        self.export_label = QtWidgets.QLabel('   Ready to Review/Publish')
+        self.export_label.setFont(font)
+        set_color(self.export_label, GUI['button']['font']['color'])
         self.export_label_row = QtWidgets.QHBoxLayout()
         self.export_label_row.addWidget(self.export_label)
         self.export_label.hide()
-        self.my_files_label.hide()
+        self.hide_button = LJButton()
+        self.hide_button.setText("less")
 
-        # build the tool button row
-        self.open_button = QtWidgets.QToolButton()
-        self.open_button.setText('Open')
-        self.import_button = QtWidgets.QToolButton()
-        self.import_button.setText('Import')
-        self.new_version_button = VersionButton(self)
-        self.review_button = QtWidgets.QToolButton()
-        self.review_button.setText('Review')
-        self.publish_button = QtWidgets.QToolButton()
-        self.publish_button.setText('Publish')
-        self.tool_button_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                              QtWidgets.QSizePolicy.Minimum))
-        self.tool_button_layout.addWidget(self.open_button)
-        self.tool_button_layout.addWidget(self.import_button)
-        self.tool_button_layout.addWidget(self.new_version_button)
-        self.tool_button_layout.addWidget(self.review_button)
-        self.tool_button_layout.addWidget(self.publish_button)
-
-        # this is where the filter needs to be!
-        task_row.addWidget(self.my_files_label)
-        task_row.addWidget(self.versions)
-        task_row.addWidget(self.show_button)
-        task_row.addWidget(self.hide_button)
+        self.title_row = QtWidgets.QHBoxLayout()
+        self.title_row.addWidget(self.title)
+        self.title_row.addStretch(1)
+        self.title_row.addWidget(self.versions)
+        self.title_row.addWidget(self.show_button)
+        self.title_row.addWidget(self.hide_button)
+        self.title_row.addWidget(self.start_task_button)
 
         self.empty_state = EmptyStateWidget(path_object=self.path_object)
         self.empty_state.hide()
+        self.files_area = FilesWidget(self)
 
-        v_layout.addWidget(self.title)
+        v_layout.addLayout(self.title_row)
         v_layout.addLayout(task_row)
-        v_layout.addWidget(self.start_task_button)
         v_layout.addLayout(self.users_layout)
         v_layout.addLayout(self.resolutions_layout)
-
-        v_layout.addWidget(self.data_table, 1)
-        v_layout.addLayout(self.export_label_row)
-        v_layout.addWidget(self.data_table2, 1)
+        v_layout.addWidget(self.files_area)
         v_layout.addWidget(self.empty_state)
         v_layout.addLayout(self.tool_button_layout)
         v_layout.addStretch(1)
@@ -278,10 +408,7 @@ class TaskWidget(QtWidgets.QFrame):
         self.show_button.clicked.connect(self.on_show_button_clicked)
         self.hide_button.clicked.connect(self.on_hide_button_clicked)
         self.start_task_button.clicked.connect(self.on_start_task_clicked)
-        self.open_button.clicked.connect(self.on_open_button_clicked)
-        self.new_version_button.clicked.connect(self.on_new_version_clicked)
-        self.import_button.clicked.connect(self.on_import_clicked)
-        self.hide_tool_buttons()
+        self.files_area.hide_tool_buttons()
 
     def get_category_label(self):
         if self.scope == 'assets':
@@ -317,13 +444,6 @@ class TaskWidget(QtWidgets.QFrame):
         if combos:
             self.show_combos()
 
-    def hide_tool_buttons(self):
-        self.open_button.hide()
-        self.import_button.hide()
-        self.new_version_button.hide()
-        self.publish_button.hide()
-        self.review_button.hide()
-
     def show_filters(self):
         self.category_combo.show()
         self.category_label.show()
@@ -337,14 +457,6 @@ class TaskWidget(QtWidgets.QFrame):
         self.assets_radio.hide()
         self.shots_radio.hide()
         self.io_radio.hide()
-
-    def show_tool_buttons(self):
-        self.open_button.show()
-        if self.show_import:
-            self.import_button.show()
-        self.new_version_button.show()
-        self.publish_button.show()
-        self.review_button.show()
 
     def show_combos(self):
         self.users.show()
@@ -360,12 +472,10 @@ class TaskWidget(QtWidgets.QFrame):
 
     def hideall(self):
         self.hide_button.hide()
-        self.data_table.hide()
 
     def showall(self):
         self.hide_button.show()
         self.show_button.hide()
-        self.data_table.show()
 
     def setup(self, table, mdl):
         if mdl:
@@ -375,15 +485,6 @@ class TaskWidget(QtWidgets.QFrame):
                 table.hide()
                 if not self.start_task_button.isVisible():
                     self.empty_state.show()
-
-    def on_new_version_clicked(self):
-        self.new_version_clicked.emit()
-
-    def on_import_clicked(self):
-        self.import_button_clicked.emit()
-
-    def on_open_button_clicked(self):
-        self.open_button_clicked.emit()
 
     def on_add_button_clicked(self):
         self.add_clicked.emit()
@@ -422,7 +523,9 @@ class ProjectWidget(QtWidgets.QWidget):
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
-        self.title = QtWidgets.QLabel("<b>%s</b>" % title)
+        self.title = QtWidgets.QLabel("%s" % title)
+        self.title.setFont(QtGui.QFont(GUI['super']['font']['name'], GUI['super']['font']['size']))
+        set_color(self.title, GUI['super']['font']['color'])
         self.task = None
         self.user = None
 
@@ -581,10 +684,32 @@ class FileTableWidget(LJTableWidget):
     pull_from_cloud = QtCore.Signal()
     share_download_link = QtCore.Signal()
 
-    def __init__(self, parent):
+    def __init__(self, parent, hide_header=True, header_color=GUI['table_header']['background_color'], table_color=False):
         LJTableWidget.__init__(self, parent)
+        # Deal with Stylesheets
+        header_stylesheet = "QHeaderView::section{Background-color:rgb(%s, %s, %s); " \
+                     "height: 30px; " \
+                     "padding-left: 5px;" \
+                     "padding-top: 2px; " \
+                     "border-radius:16 px;}" % (header_color[0], header_color[1], header_color[2])
+        #stylesheet = "QTableView::item{padding: 10px;}"
+        self.horizontalHeader().setFixedHeight(24)
+        # Set fonts from Globals
+        table_font = QtGui.QFont(GUI['table']['font']['name'], GUI['table']['font']['size'])
+        header_font = QtGui.QFont(GUI['table_header']['font']['name'], GUI['table_header']['font']['size'])
+        self.setFont(table_font)
+        set_color(self, GUI['table']['font']['color'])
+        self.horizontalHeader().setFont(header_font)
+        self.horizontalHeader().setStyleSheet(header_stylesheet)
+        #self.setStyleSheet(stylesheet)
+
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.setSortingEnabled(False)
+        if table_color:
+            print 'table color defined'
         # Set The Right Click Menu
-        self.horizontalHeader().hide()
+        if hide_header:
+            self.horizontalHeader().hide()
         self.item_right_click_menu = LJMenu(self)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.item_right_click_menu.create_action("Show In Folder", self.show_in_folder)
@@ -603,7 +728,6 @@ class FileTableWidget(LJTableWidget):
         # self.item_right_click_menu.addSeparator()
         self.customContextMenuRequested.connect(self.item_right_click)
         self.setAcceptDrops(True)
-        # self.setMaximumHeight(self.height_hint)
 
     def item_right_click(self, position):
         self.item_right_click_menu.exec_(self.mapToGlobal(position))
@@ -622,7 +746,7 @@ class FileTableWidget(LJTableWidget):
             e.ignore()
 
     def sizeHint(self):
-        return QtCore.QSize(300, 150)
+        return QtCore.QSize(350, 150)
 
 
 class LJListWidget(QtWidgets.QWidget):
@@ -631,6 +755,8 @@ class LJListWidget(QtWidgets.QWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
         layout = QtWidgets.QVBoxLayout(self)
         self.label = QtWidgets.QLabel("<b>%s</b>" % label)
+        self.label.setFont(QtGui.QFont(GUI['super']['font']['name'], GUI['super']['font']['size']))
+        set_color(self.label, GUI['super']['font']['color'])
         self.add_button = QtWidgets.QToolButton()
         self.add_button.setText('+')
         self.h_layout = QtWidgets.QHBoxLayout()
@@ -639,7 +765,7 @@ class LJListWidget(QtWidgets.QWidget):
         self.h_layout.addWidget(self.add_button)
         self.h_layout.addStretch(1)
         self.list = QtWidgets.QListWidget()
-        self.list.setMaximumHeight(80)
+        #self.list.setMaximumHeight(80)
         layout.addLayout(self.h_layout)
         layout.addWidget(self.list)
 
@@ -716,3 +842,212 @@ class CreateProjectDialog(QtWidgets.QDialog):
     def on_cancel_clicked(self):
         self.accept()
 
+
+class LabelComboRow(QtWidgets.QVBoxLayout):
+    def __init__(self, label, button=True, bold=True):
+        QtWidgets.QVBoxLayout.__init__(self)
+        if bold:
+            self.label = QtWidgets.QLabel("<b>%s</b>" % label)
+        else:
+            self.label = QtWidgets.QLabel("%s" % label)
+        self.combo = AdvComboBox()
+        self.h_layout = QtWidgets.QHBoxLayout()
+        self.h_layout.addWidget(self.label)
+        self.h_layout.addWidget(self.combo)
+        if button:
+            self.button = button
+            self.add_button = LJButton
+            self.add_button.setText('+')
+            self.h_layout.addWidget(self.add_button)
+            self.addLayout(self.h_layout)
+            #self.addWidget(self.combo)
+        else:
+            self.h_layout.addWidget(self.combo)
+            self.addLayout(self.h_layout)
+
+    def hide(self):
+        self.label.hide()
+        self.combo.hide()
+        if self.button:
+            self.add_button.hide()
+
+    def show(self):
+        self.label.show()
+        self.combo.show()
+        if self.button:
+            self.add_button.show()
+
+
+class AdvComboBoxLabeled(QtWidgets.QVBoxLayout):
+    def __init__(self, label):
+        QtWidgets.QVBoxLayout.__init__(self)
+        self.label = QtWidgets.QLabel("<b>%s</b>" % label)
+
+
+class AdvComboBox(QtWidgets.QComboBox):
+    def __init__(self, parent=None):
+        super(AdvComboBox, self).__init__(parent)
+
+        self.userselected = False
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.setEditable(True)
+        self.setMinimumWidth(90)
+        self.SizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+        # self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
+        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
+        # add a filter model to filter matching items
+        self.pFilterModel = QtCore.QSortFilterProxyModel(self)
+        self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.pFilterModel.setSourceModel(self.model())
+
+        # add a completer
+        self.completer = QtWidgets.QCompleter(self)
+        # Set the model that the QCompleter uses
+        # - in PySide doing this as a separate step worked better
+        self.completer.setModel(self.pFilterModel)
+        # always show all (filtered) completions
+        self.completer.setCompletionMode(QtWidgets.QCompleter.UnfilteredPopupCompletion)
+
+        self.setCompleter(self.completer)
+
+        # connect signals
+
+        def filter_(text):
+            self.pFilterModel.setFilterFixedString(str(text))
+
+        self.lineEdit().textEdited[unicode].connect(filter_)
+        self.completer.activated.connect(self.on_completer_activated)
+
+    # on selection of an item from the completer, select the corresponding item from combobox
+    def on_completer_activated(self, text):
+        if text:
+            index = self.findText(str(text))
+            self.setCurrentIndex(index)
+
+    # on model change, update the models of the filter and completer as well
+    def setModel(self, model):
+        super(AdvComboBox, self).setModel(model)
+        self.pFilterModel.setSourceModel(model)
+        self.completer.setModel(self.pFilterModel)
+
+    # on model column change, update the model column of the filter and completer as well
+    def setModelColumn(self, column):
+        self.completer.setCompletionColumn(column)
+        self.pFilterModel.setFilterKeyColumn(column)
+        super(AdvComboBox, self).setModelColumn(column)
+
+    def populate_from_project(self, keys):
+        self.clear()
+        # load the shading/texture assets from the library
+        # clear duplicates
+        objlist = []
+        for key in keys:
+            if str(key) not in objlist:
+                objlist.append(str(key))
+        for item in objlist:
+            self.addItem(item)
+
+
+class LabelComboRow(QtWidgets.QVBoxLayout):
+    def __init__(self, label, button=True, bold=True):
+        QtWidgets.QVBoxLayout.__init__(self)
+        if bold:
+            self.label = QtWidgets.QLabel("<b>%s</b>" % label)
+        else:
+            self.label = QtWidgets.QLabel("%s" % label)
+        self.combo = AdvComboBox()
+        self.h_layout = QtWidgets.QHBoxLayout()
+        self.h_layout.addWidget(self.label)
+        self.h_layout.addWidget(self.combo)
+        if button:
+            self.button = button
+            self.add_button = LJButton()
+            self.add_button.setText('+')
+            self.h_layout.addWidget(self.add_button)
+            self.addLayout(self.h_layout)
+            #self.addWidget(self.combo)
+        else:
+            self.h_layout.addWidget(self.combo)
+            self.addLayout(self.h_layout)
+
+    def hide(self):
+        self.label.hide()
+        self.combo.hide()
+        if self.button:
+            self.add_button.hide()
+
+    def show(self):
+        self.label.show()
+        self.combo.show()
+        if self.button:
+            self.add_button.show()
+
+
+class AdvComboBoxLabeled(QtWidgets.QVBoxLayout):
+    def __init__(self, label):
+        QtWidgets.QVBoxLayout.__init__(self)
+        self.label = QtWidgets.QLabel("<b>%s</b>" % label)
+
+
+class AdvComboBox(QtWidgets.QComboBox):
+    def __init__(self, parent=None):
+        super(AdvComboBox, self).__init__(parent)
+
+        self.userselected = False
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.setEditable(True)
+        self.setMinimumWidth(90)
+        self.SizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+        # self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
+        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
+        # add a filter model to filter matching items
+        self.pFilterModel = QtCore.QSortFilterProxyModel(self)
+        self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.pFilterModel.setSourceModel(self.model())
+
+        # add a completer
+        self.completer = QtWidgets.QCompleter(self)
+        # Set the model that the QCompleter uses
+        # - in PySide doing this as a separate step worked better
+        self.completer.setModel(self.pFilterModel)
+        # always show all (filtered) completions
+        self.completer.setCompletionMode(QtWidgets.QCompleter.UnfilteredPopupCompletion)
+
+        self.setCompleter(self.completer)
+
+        # connect signals
+
+        def filter_(text):
+            self.pFilterModel.setFilterFixedString(str(text))
+
+        self.lineEdit().textEdited[unicode].connect(filter_)
+        self.completer.activated.connect(self.on_completer_activated)
+
+    # on selection of an item from the completer, select the corresponding item from combobox
+    def on_completer_activated(self, text):
+        if text:
+            index = self.findText(str(text))
+            self.setCurrentIndex(index)
+
+    # on model change, update the models of the filter and completer as well
+    def setModel(self, model):
+        super(AdvComboBox, self).setModel(model)
+        self.pFilterModel.setSourceModel(model)
+        self.completer.setModel(self.pFilterModel)
+
+    # on model column change, update the model column of the filter and completer as well
+    def setModelColumn(self, column):
+        self.completer.setCompletionColumn(column)
+        self.pFilterModel.setFilterKeyColumn(column)
+        super(AdvComboBox, self).setModelColumn(column)
+
+    def populate_from_project(self, keys):
+        self.clear()
+        # load the shading/texture assets from the library
+        # clear duplicates
+        objlist = []
+        for key in keys:
+            if str(key) not in objlist:
+                objlist.append(str(key))
+        for item in objlist:
+            self.addItem(item)

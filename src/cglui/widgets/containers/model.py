@@ -91,6 +91,7 @@ class DictionaryItemModel(LJItemModel):
 class ListItemModel(LJItemModel):
     def __init__(self, data_list, header_titles=None, data_filter=False):
         LJItemModel.__init__(self)
+        # self.setHeaderData(Qt.Horizontal, Qt.AlignLeft, Qt.TextAlignmentRole)
         self.data_ = data_list
         self.headers = header_titles
         self.data_filter = data_filter

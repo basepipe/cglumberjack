@@ -8,7 +8,7 @@ from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.file_system import LJFileBrowser
 from cglui.widgets.combo import AdvComboBox
-from apps.lumbermill.elements.widgets import LJListWidget, EmptyStateWidget
+from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
 from cglcore.path import CreateProductionData
 

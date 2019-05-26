@@ -2,7 +2,7 @@ import yaml
 import os
 from Qt import QtWidgets, QtGui, QtCore
 from cglcore.config import app_config, UserConfig
-from cglui.widgets.combo import AdvComboBox
+from cglui.widgets.widgets import AdvComboBox
 from cglui.widgets.base import LJDialog
 import copy
 

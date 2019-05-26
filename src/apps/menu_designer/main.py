@@ -296,7 +296,6 @@ class MenuDesigner(LJDialog):
             y = self.menu_dict
 
             name = self.tabs.tabText(self.tabs.currentIndex())
-            print self.software, name, oldname
             oldcom = y[self.software][name][oldname]["command"]
 
             m = re.search("cgl_tools\.([a-zA-Z_1-9]*)\.shelves.([a-zA-Z_1-9]*)\.([a-zA-Z_1-9]*)",
@@ -309,8 +308,6 @@ class MenuDesigner(LJDialog):
                 y[self.software][name].pop(oldname, None)
 
             self.save_yaml(self.file, dict=y)
-            #with open(self.file, 'w') as yaml_file:
-            #    yaml.dump(y, yaml_file)
 
         newtabs.setTabText(int(rows["order"].edit.text()) - 1, newname)
 

@@ -11,7 +11,7 @@ from cglcore.util import current_user, test_string_against_rules
 from cglcore.config import app_config, user_config
 #from cglcore import screen_grab
 from cglui.widgets.containers.model import ListItemModel
-from cglui.widgets.combo import AdvComboBox
+from cglui.widgets.widgets import AdvComboBox
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.base import LJDialog

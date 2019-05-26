@@ -798,7 +798,11 @@ class CreateProductionData(object):
 
 
 def icon_path():
-    return os.path.join(app_config()['paths']['code_root'], 'resources', 'images')
+    return os.path.join(app_config()['paths']['code_root'], 'resources', 'icons')
+
+
+def font_path():
+    return os.path.join(app_config()['paths']['code_root'], 'resources', 'fonts')
 
 
 def get_projects(company):
@@ -896,6 +900,15 @@ def test_string_against_path_rules(variable, string):
     else:
         message_string = '%s is not a valid %s: \n\n%s' % (string, variable, example)
         return message_string
+
+
+def loadStyleSheet(styleFile):
+    f = open(styleFile, 'r')
+    data = f.read()
+    data.strip('\n')
+    # path = APP_PATH.replace('\\', '/')
+    # data = data.replace('<PATH>', path)
+    return data
 
 
 
