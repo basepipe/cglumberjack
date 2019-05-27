@@ -91,8 +91,8 @@ class IOPanel(QtWidgets.QWidget):
         self.file_tree.setMinimumHeight(200)
         self.file_tree.setMinimumWidth(800)
 
-        self.source_widget = LJListWidget('Sources')
-        self.import_events = LJListWidget('Previous Ingests')
+        self.source_widget = LJListWidget('Sources', pixmap=None)
+        self.import_events = LJListWidget('Previous Ingests', pixmap=None)
         self.import_events.hide()
 
         self.tags_title = QtWidgets.QLabel("<b>Select File(s) or Folder(s) to tag</b>")
@@ -133,6 +133,8 @@ class IOPanel(QtWidgets.QWidget):
         self.buttons_row = QtWidgets.QHBoxLayout()
         self.publish_button = QtWidgets.QPushButton('Publish Tagged')
         self.refresh_button = QtWidgets.QPushButton('Refresh Status')
+        self.publish_button.setProperty('class', 'basic')
+        self.refresh_button.setProperty('class', 'basic')
         self.buttons_row.addStretch(1)
         self.buttons_row.addWidget(self.refresh_button)
         self.buttons_row.addWidget(self.publish_button)

@@ -29,6 +29,7 @@ class LJTableWidget(QTableView):
         self.activated.connect(self.row_selected)
         self.height_hint = 0
         self.width_hint = 0
+        # self.setProperty('class', 'basic')
 
     def row_count(self):
         return self.model().rowCount()

@@ -797,8 +797,11 @@ class CreateProductionData(object):
         shutil.copy2(default_file, self.path_object.path_root)
 
 
-def icon_path():
-    return os.path.join(app_config()['paths']['code_root'], 'resources', 'icons')
+def icon_path(icon=None):
+    if icon:
+        return os.path.join(app_config()['paths']['code_root'], 'resources', 'icons', icon)
+    else:
+        return os.path.join(app_config()['paths']['code_root'], 'resources', 'icons')
 
 
 def font_path():
@@ -902,8 +905,8 @@ def test_string_against_path_rules(variable, string):
         return message_string
 
 
-def loadStyleSheet(styleFile):
-    f = open(styleFile, 'r')
+def load_style_sheet(style_file='stylesheet.css'):
+    f = open(style_file, 'r')
     data = f.read()
     data.strip('\n')
     # path = APP_PATH.replace('\\', '/')

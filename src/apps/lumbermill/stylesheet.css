@@ -1,23 +1,155 @@
-QHeaderView::section {
-    Background-color:rgb(255, 255, 255);
+QLineEdit.medium_grey{
+    background-color: #A7A7A7;
+    border: 0px;
+    color: white;
+    font-family: "Courier New";
+    font-size: 12pt;
+    padding-left: 5px;
+    height: 28px;
+}
+
+QLineEdit.medium_grey_rounded{
+    background-color: #A7A7A7;
+    border: 0px;
+    border-radius: 8px;
+    padding: 2px;
+    color: white;
+    font-family: "Courier New";
+    font-size: 12pt;
+    padding-left: 5px;
+    height: 28px;
+}
+
+QLineEdit.dark_grey{
+    background-color: #707070;
+    border: 0px;
+    color: white;
+}
+
+
+QFrame.light_grey{
+    background-color: #BFBFBF;
+    border: 0px;
+}
+
+QFrame.medium_grey{
+    background-color: #A7A7A7;
+    border: 0px;
+}
+
+QFrame.dark_grey{
+    background-color: #707070;
+    border: 0px;
+}
+
+QPushButton.basic{
+    background-color: white;
+    border: 1px solid #707070;
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    height: 24px;
+    width: 120px;
+}
+
+QToolButton.add_button{
+    background-color: powderblue;
+    border: 3px solid #707070;
+    font-family: "ArcadeClassic";
+    font-size: 14pt;
+    color: #707070;
+    height: 20px;
+    width: 120px;
+}
+
+QPushButton.empty_state{
+    background-color: white;
+    border: 1px dashed red;
+    font-family: "Courier New";
+    font-size: 14pt;
+    color: #707070;
+}
+
+QPushButton.ultra_button{
+    background-color: white;
+    border: 3px solid #707070;
+    font-family: "Karmatic Arcade";
+    font-size: 18pt;
+    color: #707070;
+    height: 100px;
+}
+
+QLabel.title_text{
+    font-family: "ArcadeClassic";
+    font-size: 18pt;
+    color: #707070;
+}
+
+QLabel.ultra_title{
+    font-family: "Karmatic Arcade";
+    font-size: 16pt;
+    color: #707070;
+}
+
+QLabel{
+    font-family: "Courier New";
+    font-size: 10pt;
+    color: #707070;
+}
+
+
+
+QTableView.QHeaderView.header{
+    background-color: red;
     height: 30px;
     padding-left: 5px;
-    border-radius:16 px;
-    font: 10pt Monospaced;
+    padding-top: 5px;
+    border-radius: 16px;
+}
+
+
+QListWidget{
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    border: 2px solid #707070;
+}
+
+
+QTableView{
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    border: 2px solid #707070;
 }
 
 QTableView::item{
-    border: 0px;
-    padding: 10px;
-    font: 8pt Monospaced;
+    height: 24px;
+    padding-left: 12px;
+    color: #707070;
 }
 
-QTableView::indicator:checked {
-    color: #b1b1b1;
-    background-color: #323232;
-    border: 1px solid #b1b1b1;
-    border-radius: 1px;
-    width: 7px;
-    height: 7px;
-    margin: 0px 5px 0 5px;
+QComboBox{
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    height: 20px;
+    width: 95px;
+}
+
+QHeaderView::section{
+    background-color: whitesmoke;
+    height: 24px;
+    padding-left: 5px;
+    padding-top: 5px;
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    border: 0px;
+}
+
+QRadioButton{
+    font-family: "Courier New";
+    font-size: 14pt;
+    color: #707070;
 }

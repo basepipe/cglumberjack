@@ -6,35 +6,19 @@ from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
-from cglcore.config import app_config
-from palettes import set_color
-
-MBW = 130
-MBH = 28
-
-GUI = app_config()['gui']
 
 
 class LJButton(QtWidgets.QPushButton):
 
-    def __init__(self, parent=None, mh=MBH, mw=MBW, color='white', border=1, border_color='grey', font=None):
+    def __init__(self, parent=None):
         QtWidgets.QPushButton.__init__(self, parent)
-        if font:
-            self.setFont(font)
-        else:
-            font = QtGui.QFont(GUI['button']['font']['name'], GUI['button']['font']['size'])
-            self.setFont(font)
-        self.setMinimumHeight(mh)
-        self.setMinimumWidth(mw)
-        self.setStyleSheet("background-color: %s; border:%spx solid %s;" % (color, border, border_color))
+        self.setProperty('class', 'basic')
 
 
 class VersionButton(LJButton):
 
-    def __init__(self, parent, font=None):
+    def __init__(self, parent):
         LJButton.__init__(self, parent)
-        if font:
-            self.setFont(font)
         self.menu = QtWidgets.QMenu()
         self.setText(self.tr("Version Up"))
         self.empty_act = self.menu.addAction(self.tr("Empty"))
@@ -70,7 +54,7 @@ class EmptyStateWidget(QtWidgets.QPushButton):
         self.setMinimumWidth(300)
         self.setMinimumHeight(100)
         self.setText('Drag/Drop to Add Files')
-        self.setStyleSheet("background-color: white; border:1px dashed black;")
+        self.setProperty('class', 'empty_state')
         self.to_path = ''
         self.to_object = None
 
@@ -184,28 +168,20 @@ class FilesWidget(QtWidgets.QFrame):
     def __init__(self, parent, show_import=False, font=None):
         QtWidgets.QFrame.__init__(self, parent)
         self.show_import = show_import
-        brightness = 255
-        #self.setAutoFillBackground(True)
-        #p = self.palette()
-        #p.setColor(self.backgroundRole(), QtGui.QColor(brightness, brightness, brightness))
-        #self.setPalette(p)
+
         layout = QtWidgets.QVBoxLayout(self)
         table_layout = QtWidgets.QVBoxLayout()
         table_layout.setSpacing(0)
         tool_button_layout = QtWidgets.QHBoxLayout()
 
-        table_font = QtGui.QFont('Monospaced', 8)
         layout.addLayout(table_layout)
         layout.addLayout(tool_button_layout)
         to_icon = os.path.join(path.icon_path(), 'arrow-right_12px.png')
-        #self.to_button = QtWidgets.QPushButton()
-        #self.to_button.hide()
-        #self.to_button.setStyleSheet("background: transparent;")
-        #self.to_button.setIcon(QtGui.QIcon(to_icon))
 
         # The Files Area
         self.work_files_table = FileTableWidget(self, hide_header=False)
         self.work_files_table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
+        # self.work_files_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.work_files_table.set_draggable(True)
         self.work_files_table.title = 'work_files'
         self.work_files_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -216,14 +192,14 @@ class FilesWidget(QtWidgets.QFrame):
         self.export_files_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         to_icon = os.path.join(path.icon_path(), 'arrow-right_12px.png')
 
-        self.open_button = LJButton(font=font)
+        self.open_button = LJButton()
         self.open_button.setText('Open')
-        self.import_button = LJButton(font=font)
+        self.import_button = LJButton()
         self.import_button.setText('Import')
-        self.new_version_button = VersionButton(self, font=font)
-        self.review_button = LJButton(font=font)
+        self.new_version_button = VersionButton(self, )
+        self.review_button = LJButton()
         self.review_button.setText('Review')
-        self.publish_button = LJButton(font=font)
+        self.publish_button = LJButton()
         self.publish_button.setText('Publish')
 
         tool_button_layout.addStretch()
@@ -308,13 +284,6 @@ class TaskWidget(QtWidgets.QWidget):
 
     def __init__(self, parent, title, filter_string=None, path_object=None, show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
-        #self.setFrameStyle(QtWidgets.QFrame.StyledPanel | QtWidgets.QFrame.Sunken)
-        font_db = QtWidgets.QFontDatabase()
-        font_db.addApplicationFont(os.path.join(path.font_path(), 'ARCADECLASSIC.TTF'))
-        font_db.addApplicationFont(os.path.join(path.font_path(), 'ka1.ttf'))
-
-        font = QtGui.QFont('Courier New', 10)
-        # font = QtGui.QFont(GUI['button']['font']['name'], int(GUI['button']['font']['size']))
         v_layout = QtWidgets.QVBoxLayout(self)
         task_row = QtWidgets.QHBoxLayout()
         self.show_import = show_import
@@ -325,42 +294,25 @@ class TaskWidget(QtWidgets.QWidget):
         self.filter_string = filter_string
         self.label = title
         self.title = QtWidgets.QLabel("<b>%s</b>" % title.title())
-        self.title.setFont(QtGui.QFont(GUI['title']['font']['name'], GUI['title']['font']['size']))
-        set_color(self.title, GUI['title']['font']['color'])
+        self.title.setProperty('class', 'title_text')
 
-        # self.title.setForeground(QtGui.QColor(GUI['title']['font']['color']))
         self.task = None
         self.user = None
         self.in_file_tree = None
         self.versions = AdvComboBox()
-        self.versions.setFont(font)
-        set_color(self.versions, GUI['title']['font']['color'])
         self.versions.hide()
 
         self.users_label = QtWidgets.QLabel("User:")
-        self.users_label.setFont(font)
-        set_color(self.versions, GUI['title']['font']['color'])
         self.users = AdvComboBox()
-        self.users.setMaximumWidth(MBW)
-        self.users.setFont(font)
-        set_color(self.versions, GUI['title']['font']['color'])
         self.users_layout = QtWidgets.QHBoxLayout()
-        self.users_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                        QtWidgets.QSizePolicy.Minimum))
+        self.users_layout.addStretch(1)
         self.users_layout.addWidget(self.users_label)
-
         self.users_layout.addWidget(self.users)
 
         self.resolutions = AdvComboBox()
-        self.resolutions.setMaximumWidth(MBW)
-        self.resolutions.setFont(font)
-        set_color(self.resolutions, GUI['button']['font']['color'])
         self.resolutions_layout = QtWidgets.QHBoxLayout()
-        self.resolutions_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                              QtWidgets.QSizePolicy.Minimum))
+        self.resolutions_layout.addStretch(1)
         self.resolutions_label = QtWidgets.QLabel("Resolution:")
-        self.resolutions_label.setFont(font)
-        set_color(self.resolutions_label, GUI['button']['font']['color'])
         self.resolutions_layout.addWidget(self.resolutions_label)
         self.resolutions_layout.addWidget(self.resolutions)
         self.resolutions_layout.setContentsMargins(0, 0, 0, 0)
@@ -369,11 +321,8 @@ class TaskWidget(QtWidgets.QWidget):
         self.show_button.setText("more")
         self.start_task_button = LJButton()
         self.start_task_button.setText("Start Task")
-        self.start_task_button.setMinimumWidth(150)
-        self.start_task_button.setMinimumHeight(MBH)
         self.export_label = QtWidgets.QLabel('   Ready to Review/Publish')
-        self.export_label.setFont(font)
-        set_color(self.export_label, GUI['button']['font']['color'])
+        self.export_label.setProperty('class', 'basic')
         self.export_label_row = QtWidgets.QHBoxLayout()
         self.export_label_row.addWidget(self.export_label)
         self.export_label.hide()
@@ -409,12 +358,6 @@ class TaskWidget(QtWidgets.QWidget):
         self.hide_button.clicked.connect(self.on_hide_button_clicked)
         self.start_task_button.clicked.connect(self.on_start_task_clicked)
         self.files_area.hide_tool_buttons()
-
-    def get_category_label(self):
-        if self.scope == 'assets':
-            return 'Category'
-        elif self.scope == 'shots':
-            return 'Sequence'
 
     def hide(self):
         self.hide_button.hide()
@@ -512,7 +455,7 @@ class ProjectWidget(QtWidgets.QWidget):
     add_clicked = QtCore.Signal()
     assign_clicked = QtCore.Signal(object)
 
-    def __init__(self, parent=None, title='', filter_string=None, path_object=None):
+    def __init__(self, parent=None, title='', filter_string=None, path_object=None, pixmap=None, search_box=None):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout()
@@ -524,27 +467,34 @@ class ProjectWidget(QtWidgets.QWidget):
         self.filter_string = filter_string
         self.label = title
         self.title = QtWidgets.QLabel("%s" % title)
-        self.title.setFont(QtGui.QFont(GUI['super']['font']['name'], GUI['super']['font']['size']))
-        set_color(self.title, GUI['super']['font']['color'])
+        self.title.setProperty('class', 'ultra_title')
         self.task = None
         self.user = None
+        self.search_box = search_box
 
         self.message = QtWidgets.QLabel("")
-        # TODO - need to remove the dropdown button on this instance
-        self.search_box = LJSearchEdit(self)
+        self.message.setProperty('class', 'basic')
         self.add_button = QtWidgets.QToolButton()
-        self.add_button.setText("+")
+        self.add_button.setText("add project")
+        self.add_button.setProperty('class', 'add_button')
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+
+        if pixmap:
+            self.icon = QtWidgets.QLabel()
+            self.icon.setPixmap(pixmap)
+            h_layout.addWidget(self.icon)
         h_layout.addWidget(self.title)
-        h_layout.addWidget(self.add_button)
         h_layout.addStretch(1)
+        h_layout.addWidget(self.add_button)
 
         v_layout.addLayout(h_layout)
-        v_layout.addWidget(self.search_box)
+        if not search_box:
+
+            v_layout.addWidget(self.search_box)
         v_layout.addWidget(self.data_table, 1)
-        v_layout.setContentsMargins(0, 20, 0, 0)
+        v_layout.setContentsMargins(0, 0, 0, 0)
 
         self.add_button.clicked.connect(self.on_add_button_clicked)
 
@@ -590,11 +540,14 @@ class AssetWidget(QtWidgets.QWidget):
     add_clicked = QtCore.Signal()
     assign_clicked = QtCore.Signal(object)
 
-    def __init__(self, parent, title, filter_string=None, path_object=None):
+    def __init__(self, parent, title, filter_string=None, path_object=None, search_box=None):
         QtWidgets.QWidget.__init__(self, parent)
+        self.shots_icon = QtGui.QPixmap(path.icon_path('shots24px.png'))
+        self.assets_icon = QtGui.QPixmap(path.icon_path('assets24px.png'))
+
         self.v_layout = QtWidgets.QVBoxLayout(self)
         v_list = QtWidgets.QVBoxLayout()
-        scope_layout = QtWidgets.QHBoxLayout()
+        self.scope_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
@@ -613,7 +566,7 @@ class AssetWidget(QtWidgets.QWidget):
         except AttributeError:
             print 'PySide2 Natively does not have QtGui.QSizePolicy'
         self.message.setAlignment(QtCore.Qt.AlignCenter)
-        self.search_box = LJSearchEdit(self)
+        self.search_box = search_box
         self.add_button = QtWidgets.QToolButton()
         self.add_button.setText("+")
         self.data_table = LJTableWidget(self)
@@ -627,28 +580,35 @@ class AssetWidget(QtWidgets.QWidget):
         self.radio_group_scope = QtWidgets.QButtonGroup(self)
         self.radio_group_scope.addButton(self.shots_radio)
         self.radio_group_scope.addButton(self.assets_radio)
+        self.shot_icon = QtWidgets.QLabel()
+        self.shot_icon.setPixmap(self.shots_icon)
+        self.asset_icon = QtWidgets.QLabel()
+        self.asset_icon.setPixmap(self.assets_icon)
 
-        scope_layout.addWidget(self.shots_radio)
-        scope_layout.addWidget(self.assets_radio)
-        scope_layout.addWidget(self.add_button)
-        scope_layout.addStretch(1)
+        self.scope_layout.addWidget(self.shot_icon)
+        self.scope_layout.addWidget(self.shots_radio)
+        self.scope_layout.addWidget(self.asset_icon)
+        self.scope_layout.addWidget(self.assets_radio)
+        self.scope_layout.addWidget(self.add_button)
+        self.scope_layout.addStretch(1)
 
 
         v_list.addItem(QtWidgets.QSpacerItem(0, 3, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
-        v_list.addWidget(self.search_box)
+        # v_list.addWidget(self.search_box)
         v_list.addWidget(self.data_table, 1)
-        self.v_layout.addLayout(scope_layout)
+        self.v_layout.addLayout(self.scope_layout)
         self.v_layout.addWidget(self.message)
         self.v_layout.addLayout(v_list)
         self.v_layout.setContentsMargins(0, 12, 0, 0)
 
         self.add_button.clicked.connect(self.on_add_button_clicked)
 
-    def get_category_label(self):
-        if self.scope == 'assets':
-            return 'Category'
-        elif self.scope == 'shots':
-            return 'Sequence'
+    def set_icon(self, scope='assets'):
+        if scope == 'assets':
+            self.shot_icon.setPixmap(self.assets_icon)
+        elif scope == 'shots':
+            self.shot_icon.setPixmap(self.shots_icon)
+
 
     def setup(self, mdl):
         self.data_table.set_item_model(mdl)
@@ -684,29 +644,12 @@ class FileTableWidget(LJTableWidget):
     pull_from_cloud = QtCore.Signal()
     share_download_link = QtCore.Signal()
 
-    def __init__(self, parent, hide_header=True, header_color=GUI['table_header']['background_color'], table_color=False):
+    def __init__(self, parent, hide_header=True):
         LJTableWidget.__init__(self, parent)
         # Deal with Stylesheets
-        header_stylesheet = "QHeaderView::section{Background-color:rgb(%s, %s, %s); " \
-                     "height: 30px; " \
-                     "padding-left: 5px;" \
-                     "padding-top: 2px; " \
-                     "border-radius:16 px;}" % (header_color[0], header_color[1], header_color[2])
-        #stylesheet = "QTableView::item{padding: 10px;}"
-        self.horizontalHeader().setFixedHeight(24)
-        # Set fonts from Globals
-        table_font = QtGui.QFont(GUI['table']['font']['name'], GUI['table']['font']['size'])
-        header_font = QtGui.QFont(GUI['table_header']['font']['name'], GUI['table_header']['font']['size'])
-        self.setFont(table_font)
-        set_color(self, GUI['table']['font']['color'])
-        self.horizontalHeader().setFont(header_font)
-        self.horizontalHeader().setStyleSheet(header_stylesheet)
-        #self.setStyleSheet(stylesheet)
 
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSortingEnabled(False)
-        if table_color:
-            print 'table color defined'
         # Set The Right Click Menu
         if hide_header:
             self.horizontalHeader().hide()
@@ -750,22 +693,26 @@ class FileTableWidget(LJTableWidget):
 
 
 class LJListWidget(QtWidgets.QWidget):
-    def __init__(self, label):
+    def __init__(self, label, pixmap):
         QtWidgets.QWidget.__init__(self)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
         layout = QtWidgets.QVBoxLayout(self)
-        self.label = QtWidgets.QLabel("<b>%s</b>" % label)
-        self.label.setFont(QtGui.QFont(GUI['super']['font']['name'], GUI['super']['font']['size']))
-        set_color(self.label, GUI['super']['font']['color'])
+        self.label = QtWidgets.QLabel(label)
+        self.label.setProperty('class', 'ultra_title')
         self.add_button = QtWidgets.QToolButton()
         self.add_button.setText('+')
+        self.add_button.setProperty('class', 'add_button')
         self.h_layout = QtWidgets.QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        if pixmap:
+            self.icon = QtWidgets.QLabel()
+            self.icon.setPixmap(pixmap)
+            self.h_layout.addWidget(self.icon)
         self.h_layout.addWidget(self.label)
-        self.h_layout.addWidget(self.add_button)
         self.h_layout.addStretch(1)
+        self.h_layout.addWidget(self.add_button)
         self.list = QtWidgets.QListWidget()
-        #self.list.setMaximumHeight(80)
+        self.list.setProperty('class', 'basic')
         layout.addLayout(self.h_layout)
         layout.addWidget(self.list)
 
@@ -891,15 +838,12 @@ class AdvComboBox(QtWidgets.QComboBox):
         self.userselected = False
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setEditable(True)
-        self.setMinimumWidth(90)
         self.SizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
-        # self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
         # add a filter model to filter matching items
         self.pFilterModel = QtCore.QSortFilterProxyModel(self)
         self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
         self.pFilterModel.setSourceModel(self.model())
-
         # add a completer
         self.completer = QtWidgets.QCompleter(self)
         # Set the model that the QCompleter uses
@@ -907,10 +851,8 @@ class AdvComboBox(QtWidgets.QComboBox):
         self.completer.setModel(self.pFilterModel)
         # always show all (filtered) completions
         self.completer.setCompletionMode(QtWidgets.QCompleter.UnfilteredPopupCompletion)
-
         self.setCompleter(self.completer)
-
-        # connect signals
+        self.setProperty('class', 'basic')
 
         def filter_(text):
             self.pFilterModel.setFilterFixedString(str(text))

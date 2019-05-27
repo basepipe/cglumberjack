@@ -13,11 +13,13 @@ from cglui.widgets.palettes import set_color
 class CompanyPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None):
+    def __init__(self, parent=None, path_object=None, search_box=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.path_object = path_object
         self.panel = QtWidgets.QVBoxLayout(self)
-        self.company_widget = LJListWidget('Companies')
+        pixmap = QtGui.QPixmap(icon_path('company24px.png'))
+        self.company_widget = LJListWidget('Companies', pixmap=pixmap)
+        self.company_widget.add_button.setText('add company')
         self.company_widget.list.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Expanding)
         self.user_root = app_config()['cg_lumberjack_dir']
         self.panel.addWidget(self.company_widget)
@@ -97,7 +99,7 @@ class CompanyPanel(QtWidgets.QWidget):
 class ProjectPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None):
+    def __init__(self, parent=None, path_object=None, search_box=None):
         QtWidgets.QWidget.__init__(self, parent)
 
         self.path_object = path_object
@@ -108,7 +110,9 @@ class ProjectPanel(QtWidgets.QWidget):
 
         # Create the Left Panel
         self.panel = QtWidgets.QVBoxLayout(self)
-        self.project_filter = ProjectWidget(title="Projects")
+
+        self.project_filter = ProjectWidget(title="Projects", pixmap=QtGui.QPixmap(icon_path('project24px.png')),
+                                            search_box=search_box)
 
         self.panel.addWidget(self.project_filter)
         self.load_projects()
@@ -140,13 +144,11 @@ class ProjectPanel(QtWidgets.QWidget):
         projects = self.path_object.glob_project_element('project')
         if not projects:
             print 'no projects for %s' % self.path_object.company
-            self.project_filter.search_box.setEnabled(False)
             self.project_filter.data_table.setEnabled(False)
             self.project_filter.add_button.setText('Create First Project')
         else:
-            self.project_filter.search_box.setEnabled(True)
             self.project_filter.data_table.setEnabled(True)
-            self.project_filter.add_button.setText('+')
+            self.project_filter.add_button.setText('Add Project')
 
         self.project_filter.setup(ListItemModel(prep_list_for_table(projects, split_for_file=True), ['Name']))
 
@@ -182,6 +184,49 @@ class ProjectPanel(QtWidgets.QWidget):
                 self.clear_layout(child.layout())
 
 
+class VButtonPanel(QtWidgets.QWidget):
+    location_changed = QtCore.Signal(object)
+
+    def __init__(self, parent=None, path_object=None, element='task'):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.element = element
+        if path_object:
+            self.path_object = path_object
+            elements = self.path_object.glob_project_element(element)
+        else:
+            return
+        self.panel = QtWidgets.QVBoxLayout(self)
+        for each in elements:
+            task = app_config()['pipeline_steps']['short_to_long'][each]
+            button = LJButton(str(task))
+            # button.setIcon(QtGui.QIcon(QtGui.QPixmap(os.path.join(icon_path(), image_name))))
+            # button.setIconSize(QtCore.QSize(50, 50))
+            button.setProperty('class', 'ultra_button')
+            self.panel.addWidget(button)
+            button.clicked.connect(self.on_button_clicked)
+        self.panel.addStretch(1)
+
+    def on_button_clicked(self):
+        text = self.sender().text()
+        if text:
+            short = app_config()['pipeline_steps'][self.path_object.scope][text]
+            self.path_object.__dict__[self.element] = short
+            self.path_object.data[self.element] = short
+            self.path_object.set_path()
+            print 1, self.path_object.path_root
+            self.location_changed.emit(self.path_object)
+
+    def clear_layout(self, layout=None):
+        if not layout:
+            layout = self.panel
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget() is not None:
+                child.widget().deleteLater()
+            elif child.layout() is not None:
+                self.clear_layout(child.layout())
+
+
 class ScopePanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
@@ -192,9 +237,8 @@ class ScopePanel(QtWidgets.QWidget):
                                                 user=None, scope=None)
         else:
             return
-        GUI = app_config()['gui']
         self.panel = QtWidgets.QVBoxLayout(self)
-        for each in ['assets', 'shots', 'IO']:
+        for each in ['assets', 'shots', 'ingest']:
             if each == 'assets':
                 image_name = 'flower_80px.png'
             elif each == 'shots':
@@ -204,15 +248,16 @@ class ScopePanel(QtWidgets.QWidget):
             button = LJButton(str(each))
             button.setIcon(QtGui.QIcon(QtGui.QPixmap(os.path.join(icon_path(), image_name))))
             button.setIconSize(QtCore.QSize(50, 50))
-            button.setMinimumHeight(100)
-            button.setFont(QtGui.QFont(GUI['super']['font']['name'], GUI['super']['font']['size']))
-            set_color(button, GUI['super']['font']['color'])
+            button.setProperty('class', 'ultra_button')
             self.panel.addWidget(button)
             button.clicked.connect(self.on_button_clicked)
         self.panel.addStretch(1)
 
     def on_button_clicked(self):
-        scope = self.sender().text()
+        if self.sender().text() == 'ingest':
+            scope = 'IO'
+        else:
+            scope = self.sender().text()
         if scope:
             self.path_object.set_attr(scope=scope)
             if scope is not 'IO':
@@ -233,7 +278,7 @@ class ScopePanel(QtWidgets.QWidget):
 class ProductionPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None):
+    def __init__(self, parent=None, path_object=None, search_box=None):
         QtWidgets.QWidget.__init__(self, parent)
         # Create the Middle Panel
         if path_object:
@@ -248,7 +293,7 @@ class ProductionPanel(QtWidgets.QWidget):
         self.root = app_config()['paths']['root']
         self.radio_filter = 'Everything'
         self.clear_layout()
-        self.assets = AssetWidget(self, title="")
+        self.assets = AssetWidget(self, title="", search_box=search_box)
 
         self.assets.add_button.show()
         self.set_scope_radio()
@@ -300,6 +345,7 @@ class ProductionPanel(QtWidgets.QWidget):
     def on_main_asset_selected(self, data):
         if data:
             p_o = PathObject(data[0][2])
+            p_o.set_attr(task='*')
             self.update_location(p_o)
 
     def update_location(self, path_object=None):
@@ -331,8 +377,10 @@ class ProductionPanel(QtWidgets.QWidget):
     def on_filter_radio_changed(self):
         if self.sender().text() == 'Assets':
             self.path_object.set_attr(scope='assets')
+            self.sender().parent().set_icon('assets')
         elif self.sender().text() == 'Shots':
             self.path_object.set_attr(scope='shots')
+            self.sender().parent().set_icon('shots')
         self.update_location(self.path_object)
 
     def clear_layout(self, layout=None):

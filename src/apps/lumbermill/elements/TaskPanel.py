@@ -24,17 +24,13 @@ class TaskPanel(QtWidgets.QWidget):
     def __init__(self, parent=None, path_object=None, user_email='', user_name='', show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
+        self.task = path_object.task
         self.task_widgets_dict = {}
         self.show_import = show_import
         self.path_object = path_object
         self.current_location = path_object.data
         self.panel = QtWidgets.QVBoxLayout(self)
         self.panel.setContentsMargins(10, 0, 10, 0)
-
-        self.panel_title = QtWidgets.QHBoxLayout()
-        self.panel_title.addItem(QtWidgets.QSpacerItem(10, 0, QtWidgets.QSizePolicy.Minimum,
-                                                       QtWidgets.QSizePolicy.Minimum))
-        #self.panel_title.setContentsMargins(0, 0, 0, 0)  # left, top, right, bottom
         self.tasks = QtWidgets.QHBoxLayout()
         self.tasks.setSpacing(30)
         self.tasks.setContentsMargins(0, 20, 0, 0)
@@ -46,7 +42,6 @@ class TaskPanel(QtWidgets.QWidget):
         self.default_user = user_name
         self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
         self.on_main_asset_selected(self.path_object.data)
-        self.panel.addLayout(self.panel_title)
         self.panel.addLayout(self.tasks)
         self.panel.addStretch(1)
 
@@ -65,109 +60,82 @@ class TaskPanel(QtWidgets.QWidget):
         if data:
             # reset the GUI
             self.clear_layout(self.panel)
-            if self.path_object.scope == 'shots':
-                task_label = QtWidgets.QLabel('Project: %s\nShot: %s_%s' % (self.path_object.project,
-                                                                            self.path_object.seq,
-                                                                            self.path_object.shot))
-            else:
-                task_label = QtWidgets.QLabel('Project: %s\nAsset: %s: Tasks' % (self.path_object.project.title(),
-                                                                                 self.path_object.shot.title()))
-            font = QtGui.QFont(app_config()['gui']['info']['font']['name'],
-                               app_config()['gui']['info']['font']['size'])
-            task_label.setFont(font)
-            self.panel_title.addWidget(task_label)
-
-            task_add = LJButton()
-            task_add.setMinimumHeight(40)
-            task_add.setMinimumWidth(120)
-            task_add.setText('New Task')
             if not current.task:
                 current.set_attr(task='*')
             current.set_attr(root=self.path_object.root)
             current.set_attr(user_email=self.user_email)
             self.panel.seq = current.seq
             self.panel.shot = current.shot
-            task_add.clicked.connect(self.on_create_asset)
+            # task_add.clicked.connect(self.on_create_asset)
             # Get the list of tasks for the selection
             task_list = current.glob_project_element('task')
             self.update_location(path_object=current)
 
             self.panel.tasks = []
-            for task in task_list:
-                if '.' not in task:
-                    if task not in self.panel.tasks:
-                        # version_location = copy.copy(self.current_location)
-                        try:
-                            title = app_config()['pipeline_steps']['short_to_long'][task]
-                        except KeyError:
-                            return
-                        line = QVLine()
 
-                        task_widget = TaskWidget(parent=self,
-                                                 title=title,
-                                                 path_object=current, show_import=self.show_import)
-                        task_widget.task = task
-                        task_widget.showall()
-                        task_widget.hide_button.hide()
-                        task_widget.show_button.show()
-                        task_widget.files_area.export_files_table.hide()
-                        self.task_widgets_dict[task] = task_widget
+            try:
+                title = app_config()['pipeline_steps']['short_to_long'][self.task]
+            except KeyError:
+                return
+            task_widget = TaskWidget(parent=self,
+                                     title=title,
+                                     path_object=current, show_import=self.show_import)
+            task_widget.task = self.task
+            task_widget.showall()
+            task_widget.hide_button.hide()
+            task_widget.show_button.show()
+            task_widget.files_area.export_files_table.hide()
+            self.task_widgets_dict[self.task] = task_widget
 
-                        # find the version information for the task:
-                        user = self.populate_users_combo(task_widget, current, task)
-                        version = self.populate_versions_combo(task_widget, current, task)
-                        resolution = self.populate_resolutions_combo(task_widget, current, task)
-                        self.tasks.addWidget(line)
-                        self.tasks.addWidget(task_widget)
-                        self.panel.tasks.append(task)
-                        version_obj = current.copy(task=task, user=user, version=version,
-                                                   resolution=resolution, filename='*')
-                        task_widget.files_area.work_files_table.task = version_obj.task
-                        task_widget.files_area.work_files_table.user = version_obj.user
-                        task_widget.files_area.work_files_table.version = version_obj.version
-                        task_widget.files_area.work_files_table.resolution = version_obj.resolution
-                        files_ = version_obj.glob_project_element('filename', full_path=True)
-                        #if files_:
-                        #    task_widget.my_files_label.show()
-                        task_widget.setup(task_widget.files_area.work_files_table,
-                                          FileTableModel(self.prep_list_for_table(files_, basename=True), ['My Work Files']))
-                        self.load_render_files(task_widget)
+            # find the version information for the task:
+            user = self.populate_users_combo(task_widget, current, self.task)
+            version = self.populate_versions_combo(task_widget, current, self.task)
+            resolution = self.populate_resolutions_combo(task_widget, current, self.task)
+            self.panel.addWidget(task_widget)
+            self.panel.tasks.append(self.task)
+            version_obj = current.copy(task=self.task, user=user, version=version,
+                                       resolution=resolution, filename='*')
+            task_widget.files_area.work_files_table.task = version_obj.task
+            task_widget.files_area.work_files_table.user = version_obj.user
+            task_widget.files_area.work_files_table.version = version_obj.version
+            task_widget.files_area.work_files_table.resolution = version_obj.resolution
+            files_ = version_obj.glob_project_element('filename', full_path=True)
+            #if files_:
+            #    task_widget.my_files_label.show()
+            task_widget.setup(task_widget.files_area.work_files_table,
+                              FileTableModel(self.prep_list_for_table(files_, basename=True), ['My Work Files']))
+            self.load_render_files(task_widget)
 
-                        task_widget.create_empty_version.connect(self.new_empty_version_clicked)
-                        task_widget.copy_latest_version.connect(self.new_version_from_latest)
-                        task_widget.copy_selected_version.connect(self.version_up_selected_clicked)
-                        task_widget.files_area.work_files_table.selected.connect(self.on_source_selected)
-                        task_widget.files_area.export_files_table.selected.connect(self.on_render_selected)
-                        task_widget.files_area.work_files_table.doubleClicked.connect(self.on_open_clicked)
-                        task_widget.files_area.open_button.clicked.connect(self.on_open_clicked)
-                        task_widget.files_area.import_button.clicked.connect(self.on_import_clicked)
-                        task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
-                        task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
-                        task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
-                        task_widget.start_task_clicked.connect(self.on_assign_button_clicked)
-                        task_widget.files_area.work_files_table.dropped.connect(self.on_file_dragged_to_source)
-                        task_widget.files_area.work_files_table.show_in_folder.connect(self.show_in_folder)
-                        task_widget.files_area.work_files_table.show_in_shotgun.connect(self.show_in_shotgun)
-                        task_widget.files_area.work_files_table.copy_folder_path.connect(self.copy_folder_path)
-                        task_widget.files_area.work_files_table.copy_file_path.connect(self.copy_file_path)
-                        task_widget.files_area.work_files_table.import_version_from.connect(self.import_versions_from)
-                        task_widget.files_area.work_files_table.push_to_cloud.connect(self.push)
-                        task_widget.files_area.work_files_table.pull_from_cloud.connect(self.pull)
-                        task_widget.files_area.work_files_table.share_download_link.connect(self.share_download_link)
-                        task_widget.empty_state.files_added.connect(self.new_files_dragged)
-                        if not user:
-                            task_widget.users_label.hide()
-                            task_widget.users.hide()
-                            task_widget.files_area.hide()
-                            task_widget.versions.hide()
-                            task_widget.show_button.hide()
-                            task_widget.start_task_button.show()
-                            task_widget.empty_state.hide()
-            self.panel_title.addStretch(1)
-            self.panel_title.addWidget(task_add)
-            self.panel_title.addItem(QtWidgets.QSpacerItem(10, 0, QtWidgets.QSizePolicy.Minimum,
-                                                           QtWidgets.QSizePolicy.Minimum))
-
+            task_widget.create_empty_version.connect(self.new_empty_version_clicked)
+            task_widget.copy_latest_version.connect(self.new_version_from_latest)
+            task_widget.copy_selected_version.connect(self.version_up_selected_clicked)
+            task_widget.files_area.work_files_table.selected.connect(self.on_source_selected)
+            task_widget.files_area.export_files_table.selected.connect(self.on_render_selected)
+            task_widget.files_area.work_files_table.doubleClicked.connect(self.on_open_clicked)
+            task_widget.files_area.open_button.clicked.connect(self.on_open_clicked)
+            task_widget.files_area.import_button.clicked.connect(self.on_import_clicked)
+            task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
+            task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
+            task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
+            task_widget.start_task_clicked.connect(self.on_assign_button_clicked)
+            task_widget.files_area.work_files_table.dropped.connect(self.on_file_dragged_to_source)
+            task_widget.files_area.work_files_table.show_in_folder.connect(self.show_in_folder)
+            task_widget.files_area.work_files_table.show_in_shotgun.connect(self.show_in_shotgun)
+            task_widget.files_area.work_files_table.copy_folder_path.connect(self.copy_folder_path)
+            task_widget.files_area.work_files_table.copy_file_path.connect(self.copy_file_path)
+            task_widget.files_area.work_files_table.import_version_from.connect(self.import_versions_from)
+            task_widget.files_area.work_files_table.push_to_cloud.connect(self.push)
+            task_widget.files_area.work_files_table.pull_from_cloud.connect(self.pull)
+            task_widget.files_area.work_files_table.share_download_link.connect(self.share_download_link)
+            task_widget.empty_state.files_added.connect(self.new_files_dragged)
+            if not user:
+                task_widget.users_label.hide()
+                task_widget.users.hide()
+                task_widget.files_area.hide()
+                task_widget.versions.hide()
+                task_widget.show_button.hide()
+                task_widget.start_task_button.show()
+                task_widget.empty_state.hide()
 
     def add_stretch_to_source(self):
         self.panel.addStretch(1)

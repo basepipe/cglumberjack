@@ -1,8 +1,9 @@
 from Qt import QtCore, QtWidgets
 from cglui.widgets.widgets import LJButton
 
+
 class LabelComboRow(QtWidgets.QVBoxLayout):
-    def __init__(self, label, button=True, bold=True):
+    def __init__(self, label, button=True, bold=True, text=''):
         QtWidgets.QVBoxLayout.__init__(self)
         if bold:
             self.label = QtWidgets.QLabel("<b>%s</b>" % label)
@@ -15,7 +16,10 @@ class LabelComboRow(QtWidgets.QVBoxLayout):
         if button:
             self.button = button
             self.add_button = LJButton
-            self.add_button.setText('+')
+            if not text:
+                self.add_button.setText('+')
+            else:
+                self.add_button.setText(text)
             self.h_layout.addWidget(self.add_button)
             self.addLayout(self.h_layout)
             #self.addWidget(self.combo)
