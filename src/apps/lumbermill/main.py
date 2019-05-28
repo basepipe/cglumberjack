@@ -7,7 +7,7 @@ from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, VButtonPanel
 from apps.lumbermill.elements.IOPanel import IOPanel
-from apps.lumbermill.elements.TaskPanel import TaskPanel
+from apps.lumbermill.elements.FilesPanel import FilesPanel
 
 ICON_WIDTH = 24
 
@@ -241,7 +241,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
         self.layout = QtWidgets.QVBoxLayout(self)
         self.setContentsMargins(0, 0, 0, 0)
-        self.layout.setContentsMargins(0, 2, 0, 0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
         if path:
             try:
                 self.path_object = PathObject(path)
@@ -354,8 +354,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.layout.addWidget(self.path_widget)
 
     def load_task_panel(self, path_object):
-        self.panel = TaskPanel(path_object=path_object, user_email=self.user_email,
-                               user_name=self.user_name, show_import=self.show_import)
+        self.panel = FilesPanel(path_object=path_object, user_email=self.user_email,
+                                user_name=self.user_name, show_import=self.show_import)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
         self.panel.new_version_signal.connect(self.new_version_clicked)
@@ -383,6 +383,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 class CGLumberjack(LJMainWindow):
     def __init__(self):
         LJMainWindow.__init__(self)
+        #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.user_name = ''
         self.user_email = ''
         self.company = ''

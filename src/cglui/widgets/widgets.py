@@ -42,7 +42,6 @@ class VersionButton(LJButton):
         self.latest_act.setVisible(True)
         self.setEnabled(True)
 
-
 # noinspection PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming
 class EmptyStateWidget(QtWidgets.QPushButton):
     files_added = QtCore.Signal(object)
@@ -568,7 +567,8 @@ class AssetWidget(QtWidgets.QWidget):
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.search_box = search_box
         self.add_button = QtWidgets.QToolButton()
-        self.add_button.setText("+")
+        self.add_button.setProperty('class', 'add_button')
+        self.add_button.setText("add")
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -589,9 +589,8 @@ class AssetWidget(QtWidgets.QWidget):
         self.scope_layout.addWidget(self.shots_radio)
         self.scope_layout.addWidget(self.asset_icon)
         self.scope_layout.addWidget(self.assets_radio)
-        self.scope_layout.addWidget(self.add_button)
         self.scope_layout.addStretch(1)
-
+        self.scope_layout.addWidget(self.add_button)
 
         v_list.addItem(QtWidgets.QSpacerItem(0, 3, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
         # v_list.addWidget(self.search_box)
@@ -606,9 +605,10 @@ class AssetWidget(QtWidgets.QWidget):
     def set_icon(self, scope='assets'):
         if scope == 'assets':
             self.shot_icon.setPixmap(self.assets_icon)
+            self.add_button.setText('add asset')
         elif scope == 'shots':
             self.shot_icon.setPixmap(self.shots_icon)
-
+            self.add_button.setText('add shot')
 
     def setup(self, mdl):
         self.data_table.set_item_model(mdl)
@@ -693,7 +693,7 @@ class FileTableWidget(LJTableWidget):
 
 
 class LJListWidget(QtWidgets.QWidget):
-    def __init__(self, label, pixmap):
+    def __init__(self, label, pixmap, empty_state_text='', empty_state_icon=None):
         QtWidgets.QWidget.__init__(self)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
         layout = QtWidgets.QVBoxLayout(self)
@@ -713,8 +713,18 @@ class LJListWidget(QtWidgets.QWidget):
         self.h_layout.addWidget(self.add_button)
         self.list = QtWidgets.QListWidget()
         self.list.setProperty('class', 'basic')
+        self.empty_state = QtWidgets.QPushButton(empty_state_text)
+        if empty_state_icon:
+            self.set_icon(empty_state_icon)
+        self.empty_state.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.empty_state.setProperty('class', 'empty_state2')
+        self.empty_state.hide()
         layout.addLayout(self.h_layout)
         layout.addWidget(self.list)
+        layout.addWidget(self.empty_state)
+
+    def set_icon(self, icon):
+        self.empty_state.setIcon(icon)
 
     def hide(self):
         self.label.hide()

@@ -187,7 +187,7 @@ class ProjectPanel(QtWidgets.QWidget):
 class VButtonPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None, element='task'):
+    def __init__(self, parent=None, path_object=None, element='task', pixmap=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.element = element
         if path_object:
@@ -196,6 +196,22 @@ class VButtonPanel(QtWidgets.QWidget):
         else:
             return
         self.panel = QtWidgets.QVBoxLayout(self)
+        self.title_layout = QtWidgets.QHBoxLayout()
+        self.task_button = QtWidgets.QToolButton()
+        self.task_button.setText('add %s' % element)
+        self.task_button.setProperty('class', 'add_button')
+        if pixmap:
+            self.icon = QtWidgets.QLabel()
+            self.icon.setPixmap(pixmap)
+            self.h_layout.addWidget(self.icon)
+            self.title_layout.addWidget(pixmap)
+        self.title = QtWidgets.QLabel('%ss' % element.title())
+        self.title.setProperty('class', 'ultra_title')
+        self.title_layout.addWidget(self.title)
+        self.title_layout.addStretch(1)
+        self.title_layout.addWidget(self.task_button)
+
+        self.panel.addLayout(self.title_layout)
         for each in elements:
             task = app_config()['pipeline_steps']['short_to_long'][each]
             button = LJButton(str(task))

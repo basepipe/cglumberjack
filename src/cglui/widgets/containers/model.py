@@ -114,6 +114,29 @@ class ListItemModel(LJItemModel):
                 return ''
 
 
+class TreeItemModel(LJItemModel):
+    def __init__(self, data_list, header_titles=None, data_filter=False):
+        self.data_ = data_list
+        self.headers = header_titles
+        self.data_filter = data_filter
+
+    def data(self, index, role):
+        row = index.row()
+        col = index.column()
+        if role == Qt.DisplayRole:
+            try:
+                data = self.data_[row][col]
+                if data is None:
+                    return ""
+                if isinstance(data, dict):
+                    if 'name' in data:
+                        return data['name']
+                    elif 'code' in data:
+                        return data['code']
+                return str(data)
+            except KeyError:
+                return ''
+
 class FileTableModel(ListItemModel):
     def data(self, index, role):
         row = index.row()

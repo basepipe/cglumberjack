@@ -14,14 +14,14 @@ from cglcore.path import replace_illegal_filename_characters, show_in_folder, se
 from cglui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 
 
-class TaskPanel(QtWidgets.QWidget):
+class FilesPanel(QtWidgets.QWidget):
     source_selection_changed = QtCore.Signal(object)
     location_changed = QtCore.Signal(object)
     open_signal = QtCore.Signal()
     import_signal = QtCore.Signal()
     new_version_signal = QtCore.Signal()
 
-    def __init__(self, parent=None, path_object=None, user_email='', user_name='', show_import=False):
+    def __init__(self, parent=None, path_object=None, user_email='', user_name='', show_import=False, pixmap=False):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
         self.task = path_object.task
@@ -30,10 +30,7 @@ class TaskPanel(QtWidgets.QWidget):
         self.path_object = path_object
         self.current_location = path_object.data
         self.panel = QtWidgets.QVBoxLayout(self)
-        self.panel.setContentsMargins(10, 0, 10, 0)
         self.tasks = QtWidgets.QHBoxLayout()
-        self.tasks.setSpacing(30)
-        self.tasks.setContentsMargins(0, 20, 0, 0)
         self.in_file_tree = None
         self.user_changed_versions = False
         self.user_email = user_email
@@ -42,14 +39,12 @@ class TaskPanel(QtWidgets.QWidget):
         self.default_user = user_name
         self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
         self.on_main_asset_selected(self.path_object.data)
+
         self.panel.addLayout(self.tasks)
         self.panel.addStretch(1)
 
         self.force_clear = False
         self.auto_publish_tasks = ['plate', 'element']
-        font_db = QtWidgets.QFontDatabase()
-        font_db.addApplicationFont(os.path.join(font_path(), 'ARCADECLASSIC.TTF'))
-        font_db.addApplicationFont(os.path.join(font_path(), 'ka1.ttf'))
 
     def on_main_asset_selected(self, data):
         try:
@@ -59,7 +54,6 @@ class TaskPanel(QtWidgets.QWidget):
             return
         if data:
             # reset the GUI
-            self.clear_layout(self.panel)
             if not current.task:
                 current.set_attr(task='*')
             current.set_attr(root=self.path_object.root)

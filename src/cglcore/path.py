@@ -914,6 +914,63 @@ def load_style_sheet(style_file='stylesheet.css'):
     return data
 
 
+def list_dir(directory, path_filter=None, basename=False):
+    """
+    Returns Files that are ready to be displayed in a LJWidget, essentially we run
+    all output
+    :param list_: list to put into the table.
+    :param path_filter: return a specific element from the path rather than the filename.  For instance if you
+    wanted to pull out only the "shot" name you'd use 'shot' as a path filter.
+    :param basename: if true we only return the os.path.basename() result of the string.
+    :return: list of prepared files/items.
+    """
+    ignore = ['publish_data.csv']
+    list_ = os.listdir(directory)
+    if not list_:
+        return
+    list_.sort()
+    output_ = []
+    dirname = os.path.dirname(list_[0])
+    for each in list_:
+        if path_filter:
+            filtered = PathObject(each).data[path_filter]
+            output_.append([filtered])
+        else:
+            if basename:
+                seq_string = str(seq_from_file(os.path.basename(each)))
+                if seq_string:
+                    if seq_string not in output_:
+                        output_.append(seq_string)
+                else:
+                    output_.append(each)
+            else:
+                output_.append(each)
+    for each in output_:
+        if '#' in each:
+            frange = get_frange_from_seq(os.path.join(directory, each))
+            if frange:
+                index = output_.index(each)
+                output_[index] = '%s %s' % (each, frange)
+        if each in ignore:
+            output_.remove(each)
+    return output_
+
+
+def get_file_icon(filepath):
+    if "." not in filepath:
+        ip = icon_path('folder24px.png')
+    if '###' in filepath:
+        ip = icon_path('sequence24px.png')
+    return ip
+
+def get_file_type(filepath):
+    if "." not in filepath:
+        ft = 'folder'
+    if '###' in filepath:
+        ft = 'sequence'
+    return ft
+
+
 
 
 

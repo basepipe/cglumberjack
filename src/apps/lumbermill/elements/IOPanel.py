@@ -6,11 +6,12 @@ import glob
 # noinspection PyUnresolvedReferences
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.dialog import InputDialog
+from cglui.widgets.containers.tree import LJTreeWidget
 from cglui.widgets.file_system import LJFileBrowser
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
-from cglcore.path import CreateProductionData
+from cglcore.path import CreateProductionData, icon_path, list_dir
 
 
 class EmptyStateWidgetIO(EmptyStateWidget):
@@ -20,7 +21,7 @@ class EmptyStateWidgetIO(EmptyStateWidget):
         EmptyStateWidget.__init__(self, parent)
         self.path_object = path_object
         self.setText('Drag/Drop to Create a \nNew Import Version')
-        self.setStyleSheet("background-color: white; border:1px dashed black;")
+        self.setProperty('class', 'empty_state')
 
     def dropEvent(self, e):
         new_obj = self.path_object.copy()
@@ -87,13 +88,17 @@ class IOPanel(QtWidgets.QWidget):
         self.pandas_path = ''
         self.io_statuses = ['Imported', 'Tagged', 'Published']
 
-        self.file_tree = LJFileBrowser(self)
+        self.file_tree = LJTreeWidget(self, header_list=['Name', 'Type', 'Date Ingested', 'Status'])
         self.file_tree.setMinimumHeight(200)
         self.file_tree.setMinimumWidth(800)
 
+        pixmap = QtGui.QPixmap(icon_path('back24px.png'))
+        import_empty_icon = QtGui.QIcon(pixmap)
+
         self.source_widget = LJListWidget('Sources', pixmap=None)
-        self.import_events = LJListWidget('Previous Ingests', pixmap=None)
-        self.import_events.hide()
+        self.ingest_widget = LJListWidget('Ingests', pixmap=None, empty_state_text='Select Source',
+                                          empty_state_icon=import_empty_icon)
+        #self.import_events.hide()
 
         self.tags_title = QtWidgets.QLabel("<b>Select File(s) or Folder(s) to tag</b>")
         self.tags_title_row = QtWidgets.QHBoxLayout()
@@ -131,8 +136,9 @@ class IOPanel(QtWidgets.QWidget):
         self.tags_row.addWidget(self.tags_line_edit)
         # create buttons row
         self.buttons_row = QtWidgets.QHBoxLayout()
-        self.publish_button = QtWidgets.QPushButton('Publish Tagged')
-        self.refresh_button = QtWidgets.QPushButton('Refresh Status')
+        self.publish_button = QtWidgets.QPushButton('Publish')
+        self.refresh_button = QtWidgets.QPushButton('Refresh')
+        self.refresh_button.hide()
         self.publish_button.setProperty('class', 'basic')
         self.refresh_button.setProperty('class', 'basic')
         self.buttons_row.addStretch(1)
@@ -140,12 +146,12 @@ class IOPanel(QtWidgets.QWidget):
         self.buttons_row.addWidget(self.publish_button)
         self.empty_state = EmptyStateWidgetIO(path_object=self.path_object)
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
-        # self.empty_state.hide()
+        self.empty_state.hide()
 
         self.tags_title_row.addStretch(1)
 
         h_layout.addWidget(self.source_widget)
-        h_layout.addWidget(self.import_events)
+        h_layout.addWidget(self.ingest_widget)
         self.panel.addLayout(h_layout)
         self.panel.addWidget(self.empty_state)
         self.panel.addWidget(self.file_tree)
@@ -157,22 +163,23 @@ class IOPanel(QtWidgets.QWidget):
         self.panel.addStretch(1)
 
         self.load_companies()
+        self.ingest_widget.empty_state.show()
+        self.ingest_widget.list.hide()
         self.hide_tags()
         self.file_tree.hide()
 
-        self.refresh_button.clicked.connect(self.on_event_selected)
+        self.refresh_button.clicked.connect(self.on_ingest_selected)
         self.scope_combo.currentIndexChanged.connect(self.on_scope_changed)
         self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
-        self.file_tree.initialized.connect(self.load_data_frame)
         self.file_tree.selected.connect(self.on_client_file_selected)
         self.seq_combo.editTextChanged.connect(self.edit_data_frame)
         self.shot_combo.editTextChanged.connect(self.edit_data_frame)
         self.task_combo.editTextChanged.connect(self.edit_data_frame)
         self.tags_line_edit.textChanged.connect(self.edit_tags)
         self.source_widget.add_button.clicked.connect(self.on_source_add_clicked)
-        self.source_widget.list.clicked.connect(self.on_company_changed)
-        self.import_events.list.clicked.connect(self.on_event_selected)
-        self.import_events.add_button.clicked.connect(self.on_add_ingest_event)
+        self.source_widget.list.clicked.connect(self.on_source_selected)
+        self.ingest_widget.list.clicked.connect(self.on_ingest_selected)
+        self.ingest_widget.add_button.clicked.connect(self.on_add_ingest_event)
         self.publish_button.clicked.connect(self.publish_tagged_assets)
         self.empty_state.files_added.connect(self.new_files_dragged)
         self.on_scope_changed()
@@ -203,10 +210,10 @@ class IOPanel(QtWidgets.QWidget):
                 logging.info('Copying Folder From %s to %s' % (f, to_file))
                 shutil.copy(f, to_file)
         self.load_import_events()
-        num = self.import_events.list.count()
-        item = self.import_events.list.item(num - 1)
+        num = self.ingest_widget.list.count()
+        item = self.ingest_widget.list.item(num - 1)
         item.setSelected(True)
-        self.on_event_selected()
+        self.on_ingest_selected()
 
     def load_companies(self):
         self.source_widget.list.clear()
@@ -215,43 +222,55 @@ class IOPanel(QtWidgets.QWidget):
             dir_.insert(0, 'CLIENT')
         self.source_widget.list.addItems(dir_)
 
-    def on_company_changed(self):
+    def on_source_selected(self):
         self.hide_tags()
         self.file_tree.hide()
         self.empty_state.show()
         self.source_widget.list.selectedItems()[-1].text()
-        self.empty_state.setText('Drag Media Here to Create New Ingest Version')
+        self.empty_state.setText('Drag Media Here \nto Create New Ingest Version')
         self.path_object.set_attr(ingest_source=self.source_widget.list.selectedItems()[-1].text())
         self.load_import_events()
 
     def load_import_events(self):
         latest = '-001.000'
-        self.import_events.list.clear()
+        self.ingest_widget.list.clear()
         events = glob.glob('%s/%s' % (self.path_object.split_after('ingest_source'), '*'))
         if events:
-            self.import_events.show()
+            self.ingest_widget.empty_state.hide()
+            self.ingest_widget.show()
             for e in events:
-                self.import_events.list.addItem(os.path.split(e)[-1])
+                self.ingest_widget.list.addItem(os.path.split(e)[-1])
                 latest = os.path.split(e)[-1]
+        else:
+            self.ingest_widget.empty_state.show()
+            self.ingest_widget.empty_state.setText("No Ingests")
+            pixmap = QtGui.QPixmap(icon_path('axeWarning24px.png'))
+            icon = QtGui.QIcon(pixmap)
+            self.ingest_widget.set_icon(icon)
         self.path_object.set_attr(version=latest)
         self.path_object_next = self.path_object.next_major_version()
         self.empty_state.setText('Drag Media Here to Create Ingest %s' % self.path_object_next.version)
 
-    def on_event_selected(self):
+    def on_ingest_selected(self):
+        self.ingest_widget.empty_state.hide()
         self.hide_tags()
         self.clear_all()
-        self.path_object.set_attr(version=self.import_events.list.selectedItems()[-1].text())
+        self.path_object.set_attr(version=self.ingest_widget.list.selectedItems()[-1].text())
         # Load the Tree Widget
         self.populate_tree()
+        self.load_data_frame()
         self.location_changed.emit(self.path_object)
 
-
     def populate_tree(self):
+        self.file_tree.clear()
         if os.listdir(self.path_object.path_root):
             self.empty_state.hide()
             self.file_tree.show()
-            self.file_tree.populate(directory=self.path_object.path_root)
+            self.file_tree.directory = self.path_object.path_root
+            self.file_tree.populate_parents(list_dir(self.file_tree.directory, basename=True))
+            print 'I should be showing the files from the directory'
             self.show_tags_gui()
+            return
         else:
             self.file_tree.hide()
             self.hide_tags()
@@ -276,10 +295,8 @@ class IOPanel(QtWidgets.QWidget):
 
     def save_data_frame(self):
         dropped_dupes = self.data_frame.drop_duplicates()
-        print 2
         dropped_dupes.to_csv(self.pandas_path)
-        print 3
-        # self.on_event_selected()
+        # self.on_ingest_selected()
 
     def edit_tags(self):
         files = self.file_tree.selected_items
@@ -340,7 +357,10 @@ class IOPanel(QtWidgets.QWidget):
         :return:
         """
         self.tags_line_edit.clear()
-        filepath = data[-1].replace('/', '\\')
+        filepath = data[-1][0].replace('/', '\\')
+        if data[-1][1] == 'sequence':
+            print 'found a sequence, doing different'
+        # if this is a sequence do something different.
         row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
         tags = self.data_frame.loc[row, 'Tags']
         if type(tags) != float:
@@ -358,7 +378,7 @@ class IOPanel(QtWidgets.QWidget):
     def show_combo_info(self, data):
         if data:
             print data[-1]
-            filepath = r'%s' % data[-1].replace('/', '\\')
+            filepath = r'%s' % data[-1][0].replace('/', '\\')
             print filepath
             try:
                 row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
@@ -470,8 +490,13 @@ class IOPanel(QtWidgets.QWidget):
 
     def on_client_file_selected(self, data):
         files = []
-        for each in data:
-            path_, filename_ = os.path.split(each)
+        print data
+        for row in data:
+            fname = row[0]
+            type_ = row[1]
+            if type_ == 'sequence':
+                print 'Have to do something special for these'
+            path_, filename_ = os.path.split(fname)
             files.append(filename_)
         self.seq_combo.clear()
         self.shot_combo.clear()
