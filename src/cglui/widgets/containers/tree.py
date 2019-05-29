@@ -1,37 +1,114 @@
 from Qt import QtCore, QtWidgets, QtGui
 from cglui.util import UISettings, widget_name
 from cglui.widgets.base import StateSavers
+from cglui.widgets.combo import AdvComboBox
 from cglcore.path import get_file_icon, get_file_type
 from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.containers.proxy import LJTableSearchProxy
+
+FILEPATH = 0
+FILENAME = 1
+FILETYPE = 2
+FRANGE = 3
+TAGS = 4
+KEEP_CLIENT_NAMING = 5
+SCOPE = 6
+SEQ = 7
+SHOT = 8
+TASK = 9
+PUBLISH_FILEPATH = 10
+STATUS = 11
+
+
+class ProductionComboDelegate(QtWidgets.QItemDelegate):
+    index_changed = QtCore.Signal(object)
+
+    def __init__(self, parent, items):
+        QtWidgets.QItemDelegate.__init__(self, parent)
+        self.items = items
+
+    def createEditor(self, parent, option, index):
+        combo = AdvComboBox(parent)
+        combo.addItems(self.items)
+        combo.setEnabled(True)
+        if not self.items:
+            combo.setEnabled(False)
+        combo.currentIndexChanged.connect(self.send_index_change)
+        return combo
+
+    def setEditorData(self, editor, index):
+        print editor, index
+
+    def send_index_change(self):
+        print self.sender()
+        self.index_changed.emit(self.sender().currentText())
 
 
 class LJTreeWidget(QtWidgets.QTreeView):
     selected = QtCore.Signal(object)
     dropped = QtCore.Signal(object)
 
-    def __init__(self, parent, header_list=[], parents=[]):
+    def __init__(self, parent, parents=[]):
         QtWidgets.QTreeView.__init__(self, parent)
         StateSavers.remember_me(self)
+
         self.items_ = []
         self.model = QtGui.QStandardItemModel()
-        self.header_labels = header_list
-        self.set_header_labels(self.model, headers=self.header_labels)
         self.setUniformRowHeights(True)
         # connect items
         if parents:
             self.populate_tree(parents)
         self.clicked.connect(self.row_selected)
         self.activated.connect(self.row_selected)
+        self.horizontalScrollBar().setEnabled(False)
+        self.height_hint = 150
+        self.width_hint = 0
+        self.path_object = None
 
-    def populate_parents(self, list):
-        # go through the first
-        for p in list:
-            parent1 = QtWidgets.QStandardItem(p)
-            type_ = get_file_type(p)
-            parent1.setIcon(QtGui.QIcon(get_file_icon(p)))
-            file_type = QtWidgets.QStandardItem(type_)
-            self.model.appendRow([parent1, file_type])
+    def populate_from_data_frame(self, path_object, data_frame, header):
+        self.path_object = path_object
+        scopes = ['CLICK TO SET', 'assets', 'shots']
+        for row in data_frame.itertuples():
+            filename_item = QtWidgets.QStandardItem(row.Filename)
+            filename_item.setIcon(QtGui.QIcon(get_file_icon(row.Filename)))
+            self.model.appendRow([QtWidgets.QStandardItem(row.Filepath),
+                                  filename_item,
+                                  QtWidgets.QStandardItem(row.Filetype),
+                                  QtWidgets.QStandardItem(row.Frame_Range),
+                                  QtWidgets.QStandardItem(row.Tags),
+                                  QtWidgets.QStandardItem(row.Keep_Client_Naming),
+                                  QtWidgets.QStandardItem(row.Scope),
+                                  QtWidgets.QStandardItem(row.Seq),
+                                  QtWidgets.QStandardItem(row.Shot),
+                                  QtWidgets.QStandardItem(row.Task),
+                                  QtWidgets.QStandardItem(row.Publish_Filepath),
+                                  QtWidgets.QStandardItem(row.Status)])
+        self.model.setHorizontalHeaderLabels(header)
+        self.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.header().setMinimumSectionSize(120)
+        scopes_del = ProductionComboDelegate(self, scopes)
+        seq_del = ProductionComboDelegate(self, [])
+        shot_del = ProductionComboDelegate(self, [])
+        task_del = ProductionComboDelegate(self, [])
+
+        scopes_del.index_changed.connect(self.seq_changed)
+        self.setItemDelegateForColumn(SCOPE, scopes_del)
+        # connect combo box change to updating
+        self.setItemDelegateForColumn(SEQ, seq_del)
+        self.setItemDelegateForColumn(SHOT, shot_del)
+        self.setItemDelegateForColumn(TASK, task_del)
+        self.hideColumn(FILEPATH)
+        self.hideColumn(FILETYPE)
+        self.hideColumn(KEEP_CLIENT_NAMING)
+
+        # resize the tree view to the actual stuff.
+        self.setMinimumWidth(self.width_hint)
+        self.setMinimumHeight(self.height_hint)
+
+    def seq_changed(self, scope):
+        self.path_object.set_attr(scope=scope)
+        self.path_object.set_attr(version='')
+        print self.path_object.path_root
 
     def set_header_labels(self, mdl, headers):
         self.header_labels = headers
@@ -83,7 +160,30 @@ class LJTreeWidget(QtWidgets.QTreeView):
 
     def on_closing(self):
         settings = UISettings.settings()
-        hheading = self.horizontalHeader()
-        settings.setValue(widget_name(self) + ":hheading", hheading.saveState())
+        #hheading = self.horizontalHeader()
+        #settings.setValue(widget_name(self) + ":hheading", hheading.saveState())
+
+    def resizeEvent(self, event):
+        # TODO - this doesn't work on mac, but does on windows
+        """ Resize all sections to content and user interactive """
+        super(LJTreeWidget, self).resizeEvent(event)
+        header = self.header()
+        total_width = 0
+        for column in range(header.count()):
+            try:
+                header.setResizeMode(column, QtWidgets.QHeaderView.ResizeToContents)
+                width = header.sectionSize(column)
+                header.setResizeMode(column, QtWidgets.QHeaderView.Interactive)
+                header.resizeSection(column, width)
+                total_width += width
+            except AttributeError:
+                print 'PySide2 compatibilty issue: setResizeMode'
+        for row in range(self.row_count()):
+            self.height_hint += 24
+        self.width_hint = total_width
+        self.sizeHint()
+
+    def sizeHint(self):
+        return QtCore.QSize(self.height_hint, self.width_hint)
 
 

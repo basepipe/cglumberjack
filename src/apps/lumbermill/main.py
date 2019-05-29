@@ -174,15 +174,22 @@ class NavigationWidget(QtWidgets.QFrame):
             last = 'task'
         if last == 'resolution':
             last = 'task'
+        if last == 'version':
+            if path_object.scope == 'IO':
+                last = 'scope'
+            else:
+                last = 'task'
         if last == 'user':
             last = 'task'
         if last == 'task':
             if path_object.task == '*':
                 new_path = self.format_new_path(path_object, 'scope')
             else:
+                # send them to the tasks page
                 new_path = self.format_new_path(path_object, 'shot')
         elif last == 'seq' or last == 'type':
             if path_object.seq == '*' or path_object.type == '*':
+                # send them to the projects page
                 new_path = self.format_new_path(path_object, split_after='project')
             else:
                 new_path = self.format_new_path(path_object, split_after='scope')
@@ -191,15 +198,19 @@ class NavigationWidget(QtWidgets.QFrame):
             new_path = self.format_new_path(path_object, split_after='scope')
         elif last == 'scope':
             if path_object.scope == '*':
+                # send them to the scope page
                 new_path = self.format_new_path(path_object, split_after='context')
             else:
+                # send them to the projects page
                 new_path = self.format_new_path(path_object, split_after='project')
         elif last == 'project' or last == 'company':
+            # send them to the "Companies" page
             new_path = path_object.root
         elif last == 'ingest_source':
+            # send them to projects page
             new_path = self.format_new_path(path_object, split_after='project')
         else:
-            print path_object.root
+            print path_object.path_root
             print 'Nothing built for %s' % last
             return
         self.path_object = PathObject(new_path)
@@ -296,6 +307,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         shot_attrs = ['shot', 'asset']
         if path_object.scope == 'IO':
             if path_object.version:
+                if not self.panel:
+                    self.panel = IOPanel(parent=self, path_object=path_object)
+                    self.setMinimumWidth(1100)
+                    self.setMinimumHeight(500)
+                    self.panel.location_changed.connect(self.update_location)
+                    self.panel.location_changed.connect(self.path_widget.update_path)
+                    self.layout.addWidget(self.panel)
+                    self.layout.addWidget(self.path_widget)
                 return
         if last == 'filename':
             if self.panel:

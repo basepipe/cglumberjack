@@ -16,6 +16,7 @@ EXT_MAP = app_config()['ext_map']
 ROOT = app_config()['paths']['root']
 SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
 SEQ_REGEX = re.compile("\\.[0-9]{4,}\\.")
+SPLIT_SEQ_REGEX = re.compile("\\ [0-9]{4,}-[0-9]{4,}$")
 
 
 class PathObject(object):
@@ -914,7 +915,7 @@ def load_style_sheet(style_file='stylesheet.css'):
     return data
 
 
-def list_dir(directory, path_filter=None, basename=False):
+def lj_list_dir(directory, path_filter=None, basename=False):
     """
     Returns Files that are ready to be displayed in a LJWidget, essentially we run
     all output
@@ -956,6 +957,18 @@ def list_dir(directory, path_filter=None, basename=False):
     return output_
 
 
+def split_sequence_frange(sequence):
+    """
+    takes the result of a lj_list_dir, and gives back the file path as well as the sequence
+    :return:
+    """
+    frange = re.search(SPLIT_SEQ_REGEX, sequence)
+    if frange:
+        return sequence.split(frange.group(0))[0], frange.group(0).replace(' ', '')
+    else:
+        return
+
+
 def get_file_icon(filepath):
     if "." not in filepath:
         ip = icon_path('folder24px.png')
@@ -963,12 +976,14 @@ def get_file_icon(filepath):
         ip = icon_path('sequence24px.png')
     return ip
 
+
 def get_file_type(filepath):
     if "." not in filepath:
         ft = 'folder'
     if '###' in filepath:
         ft = 'sequence'
     return ft
+
 
 
 

@@ -11,7 +11,7 @@ from cglui.widgets.file_system import LJFileBrowser
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
-from cglcore.path import CreateProductionData, icon_path, list_dir
+from cglcore.path import CreateProductionData, icon_path, lj_list_dir, split_sequence_frange, get_file_type
 
 
 class EmptyStateWidgetIO(EmptyStateWidget):
@@ -81,6 +81,8 @@ class IOPanel(QtWidgets.QWidget):
         self.project = None
         self.data_frame = None
         self.scope = 'shots'
+        self.width_hint = 1100
+        self.height_hint = 300
 
         self.path_object.set_attr(scope='IO')
         self.path_object.set_attr(ingest_source='*')
@@ -88,9 +90,9 @@ class IOPanel(QtWidgets.QWidget):
         self.pandas_path = ''
         self.io_statuses = ['Imported', 'Tagged', 'Published']
 
-        self.file_tree = LJTreeWidget(self, header_list=['Name', 'Type', 'Date Ingested', 'Status'])
-        self.file_tree.setMinimumHeight(200)
-        self.file_tree.setMinimumWidth(800)
+        self.file_tree = LJTreeWidget(self)
+        self.width_hint = self.file_tree.width_hint
+        print self.parent()
 
         pixmap = QtGui.QPixmap(icon_path('back24px.png'))
         import_empty_icon = QtGui.QIcon(pixmap)
@@ -257,8 +259,8 @@ class IOPanel(QtWidgets.QWidget):
         self.clear_all()
         self.path_object.set_attr(version=self.ingest_widget.list.selectedItems()[-1].text())
         # Load the Tree Widget
-        self.populate_tree()
         self.load_data_frame()
+        self.populate_tree()
         self.location_changed.emit(self.path_object)
 
     def populate_tree(self):
@@ -267,9 +269,9 @@ class IOPanel(QtWidgets.QWidget):
             self.empty_state.hide()
             self.file_tree.show()
             self.file_tree.directory = self.path_object.path_root
-            self.file_tree.populate_parents(list_dir(self.file_tree.directory, basename=True))
-            print 'I should be showing the files from the directory'
-            self.show_tags_gui()
+            self.file_tree.populate_from_data_frame(self.path_object, self.data_frame,
+                                                    app_config()['definitions']['ingest_browser_header'])
+            #self.show_tags_gui()
             return
         else:
             self.file_tree.hide()
@@ -277,25 +279,29 @@ class IOPanel(QtWidgets.QWidget):
             self.empty_state.show()
 
     def load_data_frame(self):
-        self.pandas_path = os.path.join(self.file_tree.directory, 'publish_data.csv')
+        dir_ = self.path_object.path_root
+        self.pandas_path = os.path.join(dir_, 'publish_data.csv')
         if os.path.exists(self.pandas_path):
-            self.data_frame = pd.read_csv(self.pandas_path, names=["Filepath", "Tags", "Keep Client Naming", "Scope",
-                                                                   "Seq", "Shot", "Task", "Project Filepath", "Status"])
+            self.data_frame = pd.read_csv(self.pandas_path)
         else:
             data = []
             # msg = "Generating Pandas DataFrame from folder: %s" % folder
             # LOG.info(msg)
-            for root, _, files in os.walk(self.file_tree.directory):
-                for filename in files:
-                    fullpath = os.path.join(os.path.abspath(root), filename)
-                    data.append((fullpath, '', True, '', '', '', '', '', self.io_statuses[0]))
-            self.data_frame = pd.DataFrame(data, columns=["Filepath", "Tags", "Keep Client Naming", "Scope",
-                                                          "Seq", "Shot", "Task", "Project Filepath", "Status"])
+            for filename in lj_list_dir(dir_, basename=True):
+                file_ = filename
+                frange = ' '
+                fullpath = os.path.join(os.path.abspath(dir_), filename)
+                type_ = get_file_type(filename)
+                if type_ == 'sequence':
+                    file_, frange = split_sequence_frange(filename)
+                # ["Filepath", "Filetype", "Tags", "Keep Client Naming", "Scope", "Seq", "Shot", "Task", "Project Filepath", "Status"]
+                data.append((fullpath, file_, type_, frange, ' ', False, ' ', ' ', ' ', ' ', ' ', self.io_statuses[0]))
+            self.data_frame = pd.DataFrame(data, columns=app_config()['definitions']['ingest_browser_header'])
         self.save_data_frame()
 
     def save_data_frame(self):
         dropped_dupes = self.data_frame.drop_duplicates()
-        dropped_dupes.to_csv(self.pandas_path)
+        dropped_dupes.to_csv(self.pandas_path, index=False)
         # self.on_ingest_selected()
 
     def edit_tags(self):
@@ -491,21 +497,24 @@ class IOPanel(QtWidgets.QWidget):
     def on_client_file_selected(self, data):
         files = []
         print data
-        for row in data:
-            fname = row[0]
-            type_ = row[1]
-            if type_ == 'sequence':
-                print 'Have to do something special for these'
-            path_, filename_ = os.path.split(fname)
-            files.append(filename_)
-        self.seq_combo.clear()
-        self.shot_combo.clear()
-        self.task_combo.clear()
-        self.tags_line_edit.clear()
-        self.sender().parent().populate_combos()
-        self.sender().parent().show_combo_info(data)
-        self.sender().parent().show_tags_gui(files=files)
-        self.sender().parent().show_tags_info(data)
+
+
+        #for row in data:
+        #    fname = row[0]
+        ##    type_ = row[1]
+        #    if type_ == 'sequence':
+        #        print 'Have to do something special for these'
+        #    path_, filename_ = os.path.split(fname)
+        #    files.append(filename_)
+
+        #self.seq_combo.clear()
+        #self.shot_combo.clear()
+        #self.task_combo.clear()
+        #self.tags_line_edit.clear()
+        #self.sender().parent().populate_combos()
+        #self.sender().parent().show_combo_info(data)
+        #self.sender().parent().show_tags_gui(files=files)
+        #self.sender().parent().show_tags_info(data)
 
     def on_add_ingest_event(self):
         # deselect everything in the event
@@ -545,4 +554,7 @@ class IOPanel(QtWidgets.QWidget):
                 child.widget().deleteLater()
             elif child.layout() is not None:
                 self.clear_layout(child.layout())
+
+    def sizeHint(self):
+        return QtCore.QSize(self.height_hint, self.width_hint)
 
