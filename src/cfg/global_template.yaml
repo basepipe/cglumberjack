@@ -7,7 +7,7 @@ logging:
     debug:
         format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'
 paths:
-  root: 'D:'
+  root: 'D:\VFX\companies'
   code_root: C:\Users\tmiko\PycharmProjects\cglumberjack
   ffmpeg: C:\ffmpeg\bin\ffmpeg.exe
   oiiotool: C:\OpenImageIO-1.5.0-OCIO\bin\oiiotool.exe
@@ -16,6 +16,9 @@ paths:
   dev_pkg: C:\Python27\Lib\site-packages
   mayapy: C:\PROGRA~1\Autodesk\Maya2018\bin\mayapy.exe
   maketx: C:\OpenImageIO-1.5.0-OCIO\bin\maketx.exe
+  nuke: C:\PROGRA~1\Nuke11.3v4\Nuke11.3.exe
+definitions:
+  ingest_browser_header: ["Filepath", "Filename", "Filetype", "Frame_Range", "Tags", "Keep_Client_Naming", "Scope", "Seq", "Shot", "Task", "Publish_Filepath", "Publish_Date", "Status"]
 rules:
   context_list: ['render', 'source', 'unity', 'unreal']
   scope_list: ['assets', 'shots', 'IO']
@@ -23,13 +26,13 @@ rules:
     root:
       regex: "[A-Za-z0-9_\\:]+"
     company:
-      regex: "cgl-[A-Za-z0-9_]+"
-      example: "Company Names must have 'cgl-' in the beginning of the name"
+      regex: "[A-Za-z_]{3,}$"
+      example: "Company name rules:\n    Underscores are ok ('_')\n    Letters of the alphabet (a-z, A-Z)\n    Must Contain 3 or more characters"
     ingest_source:
       regex: "[A-Za-z0-9_]+"
     project:
-      regex: "[A-Za-z0-9_]+"
-      example: "Any characters or numbers are allowed for project names"
+      regex: "[A-Za-z_]{3,}$"
+      example: "Project name rules:\n    Underscores are ok ('_')\n    Letters of the alphabet (a-z, A-Z)\n    Must Contain 3 or more characters"
     scope:
       regex: "[a-z]+"
       example: "examples: assets, shots"
@@ -82,8 +85,6 @@ rules:
       regex: "[A-Za-z0-9]+"
     date:
       regex: "[0-9_]+"
-    ingest_source:
-      regex: "[a-z]+"
   general:
     file_sequence:
       regex: "\\.[0-9]+\\."
@@ -193,6 +194,7 @@ asset_categories:
   Character: char
   Production: prod
   Library: lib
+asset_category_long_list: ['Prop', 'Environment', 'Vehicle', 'Character', 'Production', 'Library']
 pipeline_steps:
   shots:
     default_steps: ['prev', 'anim', 'lite', 'comp']
@@ -204,58 +206,58 @@ pipeline_steps:
     Inbetween: inbetween
     polish: polish
     Animation: anim
-    Shading & Lighting: lite
-    effects: fx
+    Lighting: lite
+    Effects: fx
     Compositing: comp
     MatchMove: mm
     Motion Capture: mcp
-    Matte Painting/Environment: matte
-    Picture Editing: edit
-    Sound Editing: sound
+    Matte Painting: matte
+    Editing: edit
+    Sound: sound
     Storyboards: boards
-    Color Editing: color
+    Color: color
     Camera: cam
     Plate: plate
+    Reference: ref
   assets:
     default_steps: ['ref', 'mdl', 'tex', 'shd']
-    Conception/Previs/R&D: ref
-    Modeling/UV: mdl
+    Reference: ref
+    Modeling: mdl
     Texturing: tex
-    Shading & Lighting: shd
+    Shading: shd
     Simulation: sim
     Rigging: rig
-    Asset Layout: lay
+    Layout: lay
     Concept: cncpt
     Audio: aud
     Transcript: trn
-    Layout: lay
     Bundle: bndl
     HDRI: hdri
   short_to_long:
     cam: Camera
-    mdl: Modeling/UV
+    mdl: Modeling
     tex: Texturing
     shd: Shading
     rig: Rigging
     lite: Lighting
     comp: Compositing
-    ref: Conception/Previs/R&D
+    ref: Reference
     fx: effects
     cncpt: Concept
-    lay: Asset Layout
+    lay: Layout
     bndl: Bundle
     hdri: HDRI
-    edit: Picture Editing
+    edit: Editing
     boards: Storyboards
-    color: Color Editing
+    color: Color
     prev: Previs
     sim: Simulation
     aud: Audio
     trn: Transcript
     mm: MatchMove
     mcp: Motion Capture
-    matte: Matte Painting/Environment
-    sound: Sound Editing
+    matte: Matte Painting
+    sound: Sound
     anim: Animation
     blocking: Blocking
     amtc: Animatic
@@ -280,5 +282,7 @@ default:
     quarter: 480x270
 dvp:
   frame_rate: 24
+
+
 
 

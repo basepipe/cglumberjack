@@ -16,7 +16,7 @@ class LJTableSearchProxy(QtCore.QSortFilterProxyModel):
 
     def invalidateFilter(self):
         text = self.search_wgt.text()
-        logging.debug("search: filtering on %s" % text)
+        # logging.debug("search: filtering on %s" % text)
         if text:
             self.search_text = text.lower()
         else:

@@ -1,8 +1,9 @@
-from Qt import QtCore, QtWidgets, QtGui
+from Qt import QtCore, QtWidgets
+from cglui.widgets.widgets import LJButton
 
 
 class LabelComboRow(QtWidgets.QVBoxLayout):
-    def __init__(self, label, button=True, bold=True):
+    def __init__(self, label, button=True, bold=True, text=''):
         QtWidgets.QVBoxLayout.__init__(self)
         if bold:
             self.label = QtWidgets.QLabel("<b>%s</b>" % label)
@@ -14,8 +15,11 @@ class LabelComboRow(QtWidgets.QVBoxLayout):
         self.h_layout.addWidget(self.combo)
         if button:
             self.button = button
-            self.add_button = QtWidgets.QToolButton()
-            self.add_button.setText('+')
+            self.add_button = LJButton
+            if not text:
+                self.add_button.setText('+')
+            else:
+                self.add_button.setText(text)
             self.h_layout.addWidget(self.add_button)
             self.addLayout(self.h_layout)
             #self.addWidget(self.combo)
@@ -75,6 +79,10 @@ class AdvComboBox(QtWidgets.QComboBox):
 
         self.lineEdit().textEdited[unicode].connect(filter_)
         self.completer.activated.connect(self.on_completer_activated)
+        self.set_placeholder_text()
+
+    def set_placeholder_text(self, text='Type or Choose below...'):
+        self.lineEdit().setPlaceholderText(text)
 
     # on selection of an item from the completer, select the corresponding item from combobox
     def on_completer_activated(self, text):

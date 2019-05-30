@@ -16,6 +16,8 @@ EXT_MAP = app_config()['ext_map']
 ROOT = app_config()['paths']['root']
 SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
 SEQ_REGEX = re.compile("\\.[0-9]{4,}\\.")
+SPLIT_SEQ_REGEX = re.compile("\\ [0-9]{4,}-[0-9]{4,}$")
+SEQ_SPLIT = re.compile("\\#{4,}")
 
 
 class PathObject(object):
@@ -598,9 +600,12 @@ class PathObject(object):
             cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
         else:
             cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
+        print cg_lumberjack_dir, '888888888888888'
         if self.company:
+            print self.company
             self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
         if self.project:
+            print self.project
             self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'global.yaml')
 
     def set_json(self):
@@ -797,8 +802,22 @@ class CreateProductionData(object):
         shutil.copy2(default_file, self.path_object.path_root)
 
 
-def icon_path():
-    return os.path.join(app_config()['paths']['code_root'], 'resources', 'images')
+def image_path(image=None):
+    if image:
+        return os.path.join(app_config()['paths']['code_root'], 'resources', 'images', image)
+    else:
+        return os.path.join(app_config()['paths']['code_root'], 'resources', 'images')
+
+
+def icon_path(icon=None):
+    if icon:
+        return os.path.join(app_config()['paths']['code_root'], 'resources', 'icons', icon)
+    else:
+        return os.path.join(app_config()['paths']['code_root'], 'resources', 'icons')
+
+
+def font_path():
+    return os.path.join(app_config()['paths']['code_root'], 'resources', 'fonts')
 
 
 def get_projects(company):
@@ -885,6 +904,107 @@ def get_frange_from_seq(filepath):
             return '%s-%s' % (sframe, eframe)
     else:
         return None
+
+
+def test_string_against_path_rules(variable, string):
+    regex = app_config()['rules']['path_variables'][variable]['regex']
+    example = app_config()['rules']['path_variables'][variable]['example']
+    compiled_regex = re.compile(r'%s' % regex)
+    if re.match(compiled_regex, string):
+        return ''
+    else:
+        message_string = '%s is not a valid %s: \n\n%s' % (string, variable, example)
+        return message_string
+
+
+def load_style_sheet(style_file='stylesheet.css'):
+    f = open(style_file, 'r')
+    data = f.read()
+    data.strip('\n')
+    # path = APP_PATH.replace('\\', '/')
+    # data = data.replace('<PATH>', path)
+    return data
+
+
+def lj_list_dir(directory, path_filter=None, basename=False):
+    """
+    Returns Files that are ready to be displayed in a LJWidget, essentially we run
+    all output
+    :param list_: list to put into the table.
+    :param path_filter: return a specific element from the path rather than the filename.  For instance if you
+    wanted to pull out only the "shot" name you'd use 'shot' as a path filter.
+    :param basename: if true we only return the os.path.basename() result of the string.
+    :return: list of prepared files/items.
+    """
+    ignore = ['publish_data.csv']
+    list_ = os.listdir(directory)
+    if not list_:
+        return
+    list_.sort()
+    output_ = []
+    dirname = os.path.dirname(list_[0])
+    for each in list_:
+        if path_filter:
+            filtered = PathObject(each).data[path_filter]
+            output_.append([filtered])
+        else:
+            if basename:
+                seq_string = str(seq_from_file(os.path.basename(each)))
+                if seq_string:
+                    if seq_string not in output_:
+                        output_.append(seq_string)
+                else:
+                    output_.append(each)
+            else:
+                output_.append(each)
+    for each in output_:
+        if '#' in each:
+            frange = get_frange_from_seq(os.path.join(directory, each))
+            if frange:
+                index = output_.index(each)
+                output_[index] = '%s %s' % (each, frange)
+        if each in ignore:
+            output_.remove(each)
+    return output_
+
+
+def split_sequence_frange(sequence):
+    """
+    takes the result of a lj_list_dir, and gives back the file path as well as the sequence
+    :return:
+    """
+    frange = re.search(SPLIT_SEQ_REGEX, sequence)
+    if frange:
+        return sequence.split(frange.group(0))[0], frange.group(0).replace(' ', '')
+    else:
+        return
+
+def split_sequence(sequence):
+    frange = re.search(SEQ_SPLIT, sequence)
+    print frange
+    print frange.group(0)
+    if frange:
+        return sequence.split(frange.group(0))[0]
+    else:
+        return
+
+
+def get_file_icon(filepath):
+    if "." not in filepath:
+        ip = icon_path('folder24px.png')
+    if '###' in filepath:
+        ip = icon_path('sequence24px.png')
+    return ip
+
+
+def get_file_type(filepath):
+    if "." not in filepath:
+        ft = 'folder'
+    if '###' in filepath:
+        ft = 'sequence'
+    return ft
+
+
 
 
 
