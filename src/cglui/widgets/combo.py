@@ -79,6 +79,10 @@ class AdvComboBox(QtWidgets.QComboBox):
 
         self.lineEdit().textEdited[unicode].connect(filter_)
         self.completer.activated.connect(self.on_completer_activated)
+        self.set_placeholder_text()
+
+    def set_placeholder_text(self, text='Type or Choose below...'):
+        self.lineEdit().setPlaceholderText(text)
 
     # on selection of an item from the completer, select the corresponding item from combobox
     def on_completer_activated(self, text):

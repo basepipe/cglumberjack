@@ -3,6 +3,7 @@ import shutil
 import pandas as pd
 import logging
 import glob
+import datetime
 # noinspection PyUnresolvedReferences
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.dialog import InputDialog
@@ -11,8 +12,21 @@ from cglui.widgets.file_system import LJFileBrowser
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
-from cglcore.path import CreateProductionData, icon_path, lj_list_dir, split_sequence_frange, get_file_type
+from cglcore.path import PathObject, CreateProductionData, icon_path, lj_list_dir, split_sequence_frange, get_file_type, split_sequence
 
+FILEPATH = 0
+FILENAME = 1
+FILETYPE = 2
+FRANGE = 3
+TAGS = 4
+KEEP_CLIENT_NAMING = 5
+SCOPE = 6
+SEQ = 7
+SHOT = 8
+TASK = 9
+PUBLISH_FILEPATH = 10
+PUBLISH_DATE = 11
+STATUS = 12
 
 class EmptyStateWidgetIO(EmptyStateWidget):
     files_added = QtCore.Signal(object)
@@ -80,9 +94,9 @@ class IOPanel(QtWidgets.QWidget):
         self.company = None
         self.project = None
         self.data_frame = None
-        self.scope = 'shots'
         self.width_hint = 1100
         self.height_hint = 300
+        self.current_selection = None
 
         self.path_object.set_attr(scope='IO')
         self.path_object.set_attr(ingest_source='*')
@@ -100,18 +114,20 @@ class IOPanel(QtWidgets.QWidget):
         self.source_widget = LJListWidget('Sources', pixmap=None)
         self.ingest_widget = LJListWidget('Ingests', pixmap=None, empty_state_text='Select Source',
                                           empty_state_icon=import_empty_icon)
-        #self.import_events.hide()
+        #self.import_events.hide()f
 
         self.tags_title = QtWidgets.QLabel("<b>Select File(s) or Folder(s) to tag</b>")
+        self.tags_title.setProperty('class', 'feedback')
         self.tags_title_row = QtWidgets.QHBoxLayout()
         self.tags_title_row.addWidget(self.tags_title)
 
         self.scope_label = QtWidgets.QLabel('Scope')
         self.scope_combo = AdvComboBox()
-        self.scope_combo.addItems(['assets', 'shots'])
+        self.scope_combo.addItems(['', 'assets', 'shots'])
         self.seq_row = QtWidgets.QHBoxLayout()
         self.seq_row.addWidget(self.scope_label)
         self.seq_row.addWidget(self.scope_combo)
+        self.feedback_area = QtWidgets.QLabel('')
 
         self.seq_label = QtWidgets.QLabel('Seq ')
         self.seq_combo = AdvComboBox()
@@ -126,6 +142,7 @@ class IOPanel(QtWidgets.QWidget):
 
         self.task_label = QtWidgets.QLabel('Task')
         self.task_combo = AdvComboBox()
+        self.task_combo.setEditable(False)
         self.seq_row.addWidget(self.task_label)
         self.seq_row.addWidget(self.task_combo)
 
@@ -150,8 +167,6 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
         self.empty_state.hide()
 
-        self.tags_title_row.addStretch(1)
-
         h_layout.addWidget(self.source_widget)
         h_layout.addWidget(self.ingest_widget)
         self.panel.addLayout(h_layout)
@@ -162,6 +177,7 @@ class IOPanel(QtWidgets.QWidget):
         self.panel.addLayout(self.seq_row)
         self.panel.addLayout(self.tags_row)
         self.panel.addLayout(self.buttons_row)
+        self.panel.addWidget(self.feedback_area)
         self.panel.addStretch(1)
 
         self.load_companies()
@@ -173,10 +189,10 @@ class IOPanel(QtWidgets.QWidget):
         self.refresh_button.clicked.connect(self.on_ingest_selected)
         self.scope_combo.currentIndexChanged.connect(self.on_scope_changed)
         self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
-        self.file_tree.selected.connect(self.on_client_file_selected)
-        self.seq_combo.editTextChanged.connect(self.edit_data_frame)
-        self.shot_combo.editTextChanged.connect(self.edit_data_frame)
-        self.task_combo.editTextChanged.connect(self.edit_data_frame)
+        self.file_tree.selected.connect(self.on_file_selected)
+        self.seq_combo.currentIndexChanged.connect(self.edit_data_frame)
+        self.shot_combo.currentIndexChanged.connect(self.edit_data_frame)
+        self.task_combo.currentIndexChanged.connect(self.edit_data_frame)
         self.tags_line_edit.textChanged.connect(self.edit_tags)
         self.source_widget.add_button.clicked.connect(self.on_source_add_clicked)
         self.source_widget.list.clicked.connect(self.on_source_selected)
@@ -271,7 +287,7 @@ class IOPanel(QtWidgets.QWidget):
             self.file_tree.directory = self.path_object.path_root
             self.file_tree.populate_from_data_frame(self.path_object, self.data_frame,
                                                     app_config()['definitions']['ingest_browser_header'])
-            #self.show_tags_gui()
+            self.tags_title.show()
             return
         else:
             self.file_tree.hide()
@@ -285,8 +301,6 @@ class IOPanel(QtWidgets.QWidget):
             self.data_frame = pd.read_csv(self.pandas_path)
         else:
             data = []
-            # msg = "Generating Pandas DataFrame from folder: %s" % folder
-            # LOG.info(msg)
             for filename in lj_list_dir(dir_, basename=True):
                 file_ = filename
                 frange = ' '
@@ -294,36 +308,38 @@ class IOPanel(QtWidgets.QWidget):
                 type_ = get_file_type(filename)
                 if type_ == 'sequence':
                     file_, frange = split_sequence_frange(filename)
-                # ["Filepath", "Filetype", "Tags", "Keep Client Naming", "Scope", "Seq", "Shot", "Task", "Project Filepath", "Status"]
-                data.append((fullpath, file_, type_, frange, ' ', False, ' ', ' ', ' ', ' ', ' ', self.io_statuses[0]))
+                data.append((fullpath, file_, type_, frange, ' ', False, ' ', ' ', ' ', ' ', ' ', ' ', self.io_statuses[0]))
             self.data_frame = pd.DataFrame(data, columns=app_config()['definitions']['ingest_browser_header'])
         self.save_data_frame()
 
     def save_data_frame(self):
-        dropped_dupes = self.data_frame.drop_duplicates()
-        dropped_dupes.to_csv(self.pandas_path, index=False)
-        # self.on_ingest_selected()
+        self.data_frame.to_csv(self.pandas_path, index=False)
+        # can i set the value of the "Status" in the row?
 
     def edit_tags(self):
-        files = self.file_tree.selected_items
+        files = self.current_selection
         tags = self.tags_line_edit.text()
         if tags:
             for f in files:
-                f = f.replace('/', '\\')
-                row = self.data_frame.loc[self.data_frame['Filepath'] == f].index[0]
+                row = self.data_frame.loc[self.data_frame['Filename'] == f[1]].index[0]
                 self.data_frame.at[row, 'Tags'] = tags
             self.save_data_frame()
 
     def edit_data_frame(self):
-        files = self.file_tree.selected_items
+        files = self.current_selection
+
         if self.seq_combo.currentText():
             seq = str(self.seq_combo.currentText())
+            self.tags_title.setText('CGL:> Choose a %s Name or Type to Create a New One' % self.shot_label.text().title())
             if self.shot_combo.currentText():
                 shot = str(self.shot_combo.currentText())
+                self.tags_title.setText('CGL:> Which Task will this be published to?')
                 if self.task_combo.currentText():
+
                     try:
-                        task = app_config()['pipeline_steps'][self.scope][str(self.task_combo.currentText())]
-                        to_object = self.path_object.copy(scope=self.scope,
+                        self.tags_title.setText('CGL:>  Tagged & Ready For Publish!')
+                        task = app_config()['pipeline_steps'][self.scope_combo.currentText()][str(self.task_combo.currentText())]
+                        to_object = self.path_object.copy(scope=self.scope_combo.currentText(),
                                                           seq=seq,
                                                           shot=shot,
                                                           task=task,
@@ -333,24 +349,29 @@ class IOPanel(QtWidgets.QWidget):
                                                           resolution='high')
                         print 'Pub Path: %s' % to_object.path_root
                         for f in files:
-                            f = f.replace('/', '\\')
-                            row = self.data_frame.loc[self.data_frame['Filepath'] == f].index[0]
-                            to_path = os.path.join(to_object.path_root, os.path.split(f)[-1])
-                            self.data_frame.at[row, 'Scope'] = self.scope
+                            row = self.data_frame.loc[self.data_frame['Filename'] == f[1]].index[0]
+                            status = self.data_frame.at[row, 'Status']
+                            if status == 'Imported':
+                                status = 'Tagged'
+                            to_path = os.path.join(to_object.path_root, f[1])
+                            self.data_frame.at[row, 'Scope'] = self.scope_combo.currentText()
                             self.data_frame.at[row, 'Seq'] = seq
                             self.data_frame.at[row, 'Shot'] = shot
                             self.data_frame.at[row, 'Task'] = task
-                            self.data_frame.at[row, 'Project Filepath'] = to_path
-                            self.data_frame.at[row, 'Status'] = self.io_statuses[1]
+                            self.data_frame.at[row, 'Publish_Filepath'] = to_path
+                            self.data_frame.at[row, 'Status'] = status
+                        for each in self.file_tree.selectionModel().selectedRows():
+                            self.file_tree.model.item(each.row(), STATUS).setText(status)
                         self.save_data_frame()
                     except KeyError:
                         print 'Error with something:'
-                        print 'scope', self.scope
+                        print 'scope', self.scope_combo.currentText()
                         print 'seq', seq
                         print 'shot', shot
-                        pass
+        # UPDATE the tree with this info.
 
     def clear_all(self):
+        self.scope_combo.setCurrentIndex(0)
         self.seq_combo.clear()
         self.shot_combo.clear()
         self.task_combo.clear()
@@ -383,38 +404,43 @@ class IOPanel(QtWidgets.QWidget):
 
     def show_combo_info(self, data):
         if data:
-            print data[-1]
-            filepath = r'%s' % data[-1][0].replace('/', '\\')
-            print filepath
+            f = data[0]
             try:
-                row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
+                row = self.data_frame.loc[self.data_frame['Filename'] == f[1]].index[0]
                 print row
-                print self.data_frame.loc[row, 'Filepath']
+                print self.data_frame.loc[row, 'Filename']
             except IndexError:
                 self.hide_tags()
                 return
+            scope = self.data_frame.loc[row, 'Scope']
             seq = self.data_frame.loc[row, 'Seq']
             shot = self.data_frame.loc[row, 'Shot']
             task = self.data_frame.loc[row, 'Task']
-            _ = self.data_frame.loc[row, 'Status']
+            if type(scope) != float:
+                if scope:
+                    if scope != ' ':
+                        self.set_combo_to_text(self.scope_combo, scope)
             if type(seq) != float:
                 if seq:
-                    try:
-                        seq = '%03d' % int(seq)
-                        self.set_combo_to_text(self.seq_combo, seq)
-                    except ValueError:
-                        self.set_combo_to_text(self.seq_combo, seq)
+                    if seq != ' ':
+                        try:
+                            seq = '%03d' % int(seq)
+                            self.set_combo_to_text(self.seq_combo, seq)
+                        except ValueError:
+                            self.set_combo_to_text(self.seq_combo, seq)
             if type(shot) != float:
                 if shot:
-                    try:
-                        shot = '%04d' % int(shot)
-                        self.set_combo_to_text(self.shot_combo, shot)
-                    except ValueError:
-                        self.set_combo_to_text(self.shot_combo, shot)
+                    if shot != ' ':
+                        try:
+                            shot = '%04d' % int(shot)
+                            self.set_combo_to_text(self.shot_combo, shot)
+                        except ValueError:
+                            self.set_combo_to_text(self.shot_combo, shot)
             if type(task) != float:
                 if task:
-                    task = app_config()['pipeline_steps']['short_to_long'][task]
-                    self.set_combo_to_text(self.task_combo, task)
+                    if task != ' ':
+                        task = app_config()['pipeline_steps']['short_to_long'][task]
+                        self.set_combo_to_text(self.task_combo, task)
 
     def hide_tags(self):
         self.tags_title.setText("<b>Select File(s) or Folder(s) to tag</b>")
@@ -439,8 +465,6 @@ class IOPanel(QtWidgets.QWidget):
                 files_text = files[0]
             else:
                 files_text = '%s files' % len(files)
-
-        self.tags_title.setText("<b>Tag %s for Publish</b>" % os.path.split(files_text)[-1])
         self.tags_title.show()
         self.scope_combo.show()
         self.scope_label.show()
@@ -454,65 +478,75 @@ class IOPanel(QtWidgets.QWidget):
         self.tags_line_edit.show()
         self.publish_button.show()
 
-    def populate_combos(self):
+    def populate_tasks(self):
+        self.task_combo.clear()
         ignore = ['default_steps', '']
-        if self.scope == 'shots':
-            element = 'seq'
-        else:
-            element = 'type'
-        tasks = app_config()['pipeline_steps'][self.scope]
-        seqs = self.path_object.copy(seq='*', scope=self.scope).glob_project_element(element)
+        tasks = app_config()['pipeline_steps'][self.scope_combo.currentText()]
+        seqs = self.populate_seq()
         task_names = ['']
         for each in tasks:
             if each not in ignore:
                 task_names.append(each)
         self.task_combo.addItems(sorted(task_names))
-        seqs.insert(0, '')
+
+    def populate_seq(self):
+        self.seq_combo.clear()
+        self.seq_combo.lineEdit().setPlaceholderText('Type, or Choose')
+        seqs = []
+        if self.scope_combo.currentText() == 'shots':
+            element = 'seq'
+        else:
+            element = 'type'
+        if self.scope_combo.currentText() == 'shots':
+            seqs = self.path_object.copy(seq='*', scope=self.scope_combo.currentText()).glob_project_element(element)
+        elif self.scope_combo.currentText() == 'assets':
+            seqs = app_config()['asset_category_long_list']
+        if seqs[0] != '':
+            seqs.insert(0, '')
         self.seq_combo.addItems(seqs)
+        return seqs
 
     def on_scope_changed(self):
-        self.scope = self.scope_combo.currentText()
-        if self.scope == 'assets':
-            self.seq_label.setText('Type')
-            self.shot_label.setText('Asset')
-        elif self.scope == 'shots':
-            self.seq_label.setText('Seq ')
-            self.shot_label.setText('Shot')
-
+        # see if we can set scope based off the data_frame
+        if self.scope_combo.currentText():
+            if self.scope_combo.currentText() == 'assets':
+                self.seq_label.setText('Type')
+                self.shot_label.setText('Asset')
+            elif self.scope_combo.currentText() == 'shots':
+                self.seq_label.setText('Sequence')
+                self.shot_label.setText('Shot')
+            self.tags_title.setText("<b>CGL:></b>  Type to Create a %s or Choose it from the list" %
+                                    (self.seq_label.text()))
+            self.populate_seq()
+            self.populate_tasks()
+        else:
+            print 'no scope chosen'
 
     def on_seq_changed(self):
+        shots = None
         self.shot_combo.clear()
-        scope = self.scope
+        scope = self.scope_combo.currentText()
         seq = self.seq_combo.currentText()
         if seq:
             _ = self.path_object.copy(scope=scope, seq=seq, shot='*')
-            if self.scope == 'shots':
+            if self.scope_combo.currentText() == 'shots':
                 shots = self.path_object.copy(scope=scope, seq=seq, shot='*').glob_project_element('shot')
-            elif self.scope == 'assets':
+            elif self.scope_combo.currentText() == 'assets':
                 shots = self.path_object.copy(scope=scope, seq=seq, shot='*').glob_project_element('asset')
             if shots:
                 shots.insert(0, '')
                 self.shot_combo.addItems(shots)
 
-    def on_client_file_selected(self, data):
-        files = []
-        print data
-
-
-        #for row in data:
-        #    fname = row[0]
-        ##    type_ = row[1]
-        #    if type_ == 'sequence':
-        #        print 'Have to do something special for these'
-        #    path_, filename_ = os.path.split(fname)
-        #    files.append(filename_)
-
-        #self.seq_combo.clear()
-        #self.shot_combo.clear()
-        #self.task_combo.clear()
-        #self.tags_line_edit.clear()
-        #self.sender().parent().populate_combos()
-        #self.sender().parent().show_combo_info(data)
+    def on_file_selected(self, data):
+        self.tags_title.setText("<b>CGL:></b>  Choose 'Assets' or 'Shots' for your scope")
+        self.show_tags_gui()
+        self.current_selection = data
+        self.scope_combo.setCurrentIndex(0)
+        self.seq_combo.clear()
+        self.shot_combo.clear()
+        self.task_combo.clear()
+        self.tags_line_edit.clear()
+        self.sender().parent().show_combo_info(data)
         #self.sender().parent().show_tags_gui(files=files)
         #self.sender().parent().show_tags_info(data)
 
@@ -524,26 +558,73 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.show()
 
     def publish_tagged_assets(self):
-        # TODO - We need to be changing status to 'Published' on this.
-        # TODO - I need to create a .txt file in the src directory detailing this publish
+        d = datetime.datetime.today()
+        current_date = d.strftime('%d-%m-%Y %H:%M:%S')
         for index, row in self.data_frame.iterrows():
             if row['Status'] == 'Tagged':
                 from_file = row['Filepath']
-                to_file = row['Project Filepath']
-                if os.path.splitext(to_file)[-1]:
-                    dir_ = os.path.dirname(to_file)
-                else:
-                    dir_ = to_file
-                if not os.path.exists(dir_):
-                    print 'Making Dirs: %s' % dir_
-                    os.makedirs(dir_)
-                if not os.path.exists(to_file):
+                to_file = row['Publish_Filepath']
+                if row['Filetype'] == 'folder':
+                    print "Folder"
                     print 'Copying %s to %s' % (from_file, to_file)
-                    CreateProductionData(to_file)
-                    shutil.copy2(from_file, to_file)
-                row['Status'] = 'Published'
+
+                    shutil.copytree(from_file, to_file)
+                    CreateProductionData(to_file, json=True)
+                    self.file_tree.model.item(index, STATUS).setText('Published')
+                    self.data_frame.at[index, 'Status'] = 'Published'
+                    self.data_frame.at[index, 'Publish_Date'] = current_date
+                    row['Publish_Date'] = current_date
+                    row['Status'] = 'Published'
+                    self.make_source_file(to_file, row)
+
+                # What to do with Sequences:
+                else:
+                    to_dir = os.path.dirname(to_file)
+                    if not os.path.exists(to_dir):
+                        print 'Creating Folders for %s' % to_dir
+                        os.makedirs(to_dir)
+                    if row['Filetype'] == 'sequence':
+
+                        CreateProductionData(to_dir, json=True)
+                        from_query = split_sequence(from_file)
+                        for f in glob.glob('%s*' % from_query):
+                            to_file = os.path.join(to_dir, os.path.basename(f))
+                            print 'Copying %s to %s' % (f, to_file)
+                            shutil.copy2(f, to_file)
+                        self.file_tree.model.item(index, STATUS).setText('Published')
+                        self.data_frame.at[index, 'Status'] = 'Published'
+                        self.data_frame.at[index, 'Publish_Date'] = current_date
+                        row['Publish_Date'] = current_date
+                        row['Status'] = 'Published'
+                        self.make_source_file(to_dir, row)
+                    else:
+                        print 'File'
+                        print 'Copying %s to %s' % (from_file, to_file)
+                        CreateProductionData(to_file, json=True)
+                        shutil.copy2(f, to_file)
+                        self.file_tree.model.item(index, STATUS).setText('Published')
+                        self.data_frame.at[index, 'Status'] = 'Published'
+                        self.data_frame.at[index, 'Publish_Date'] = current_date
+                        row['Publish_Date'] = current_date
+                        row['Status'] = 'Published'
+                        self.make_source_file(to_file, row)
+                        self.make_source_file(to_file)
         self.save_data_frame()
-        self.populate_tree()
+
+    def make_source_file(self, to_path, row):
+        source_path = PathObject(to_path)
+        source_path.set_attr(context='source')
+        source_path.set_attr(filename='system_report.csv')
+        dir = os.path.dirname(source_path.path_root)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+        print 'creating: %s' % source_path.path_root
+        data = []
+        data.append((row["Filepath"], row["Filename"], row["Filetype"], row["Frame_Range"], row["Tags"],
+                     row["Keep_Client_Naming"], row["Scope"], row["Seq"], row["Shot"], row["Task"],
+                     row["Publish_Filepath"], row["Publish_Date"], row["Status"]))
+        df = pd.DataFrame(data, columns=app_config()['definitions']['ingest_browser_header'])
+        df.to_csv(source_path.path_root, index=False)
 
     def clear_layout(self, layout=None):
         if not layout:

@@ -1,10 +1,8 @@
 from Qt import QtCore, QtWidgets, QtGui
-from cglui.util import UISettings, widget_name
+from cglui.util import UISettings
 from cglui.widgets.base import StateSavers
 from cglui.widgets.combo import AdvComboBox
-from cglcore.path import get_file_icon, get_file_type
-from cglui.widgets.containers.menu import LJMenu
-from cglui.widgets.containers.proxy import LJTableSearchProxy
+from cglcore.path import get_file_icon
 
 FILEPATH = 0
 FILENAME = 1
@@ -17,7 +15,9 @@ SEQ = 7
 SHOT = 8
 TASK = 9
 PUBLISH_FILEPATH = 10
-STATUS = 11
+PUBLISH_DATE = 11
+STATUS = 12
+
 
 
 class ProductionComboDelegate(QtWidgets.QItemDelegate):
@@ -40,11 +40,15 @@ class ProductionComboDelegate(QtWidgets.QItemDelegate):
         print editor, index
 
     def send_index_change(self):
-        print self.sender()
+        print self.__dict__
         self.index_changed.emit(self.sender().currentText())
+
+    def reload_items(self, items):
+        print items
 
 
 class LJTreeWidget(QtWidgets.QTreeView):
+    nothing_selected = QtCore.Signal()
     selected = QtCore.Signal(object)
     dropped = QtCore.Signal(object)
 
@@ -66,8 +70,8 @@ class LJTreeWidget(QtWidgets.QTreeView):
         self.path_object = None
 
     def populate_from_data_frame(self, path_object, data_frame, header):
+        self.height_hint = 150
         self.path_object = path_object
-        scopes = ['CLICK TO SET', 'assets', 'shots']
         for row in data_frame.itertuples():
             filename_item = QtWidgets.QStandardItem(row.Filename)
             filename_item.setIcon(QtGui.QIcon(get_file_icon(row.Filename)))
@@ -82,33 +86,27 @@ class LJTreeWidget(QtWidgets.QTreeView):
                                   QtWidgets.QStandardItem(row.Shot),
                                   QtWidgets.QStandardItem(row.Task),
                                   QtWidgets.QStandardItem(row.Publish_Filepath),
+                                  QtWidgets.QStandardItem(row.Publish_Date),
                                   QtWidgets.QStandardItem(row.Status)])
         self.model.setHorizontalHeaderLabels(header)
         self.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
-        self.header().setMinimumSectionSize(120)
-        scopes_del = ProductionComboDelegate(self, scopes)
-        seq_del = ProductionComboDelegate(self, [])
-        shot_del = ProductionComboDelegate(self, [])
-        task_del = ProductionComboDelegate(self, [])
-
-        scopes_del.index_changed.connect(self.seq_changed)
-        self.setItemDelegateForColumn(SCOPE, scopes_del)
-        # connect combo box change to updating
-        self.setItemDelegateForColumn(SEQ, seq_del)
-        self.setItemDelegateForColumn(SHOT, shot_del)
-        self.setItemDelegateForColumn(TASK, task_del)
+        self.header().setMinimumSectionSize(140)
+        # scopes_del = ProductionComboDelegate(self, scopes)
+        # scopes_del.index_changed.connect(self.scope_changed)
+        # self.setItemDelegateForColumn(SCOPE, scopes_del)
         self.hideColumn(FILEPATH)
         self.hideColumn(FILETYPE)
         self.hideColumn(KEEP_CLIENT_NAMING)
+        self.hideColumn(SEQ)
+        self.hideColumn(SHOT)
+        self.hideColumn(SCOPE)
+        self.hideColumn(TASK)
+        self.hideColumn(TAGS)
+        self.hideColumn(PUBLISH_FILEPATH)
 
         # resize the tree view to the actual stuff.
         self.setMinimumWidth(self.width_hint)
         self.setMinimumHeight(self.height_hint)
-
-    def seq_changed(self, scope):
-        self.path_object.set_attr(scope=scope)
-        self.path_object.set_attr(version='')
-        print self.path_object.path_root
 
     def set_header_labels(self, mdl, headers):
         self.header_labels = headers
@@ -124,10 +122,10 @@ class LJTreeWidget(QtWidgets.QTreeView):
     def row_selected(self):
         items = []
         if self.selectionModel():
-            print 'column count', self.column_count()
             for r in self.selectionModel().selectedRows():
                 row = []
                 for column in range(self.column_count()):
+                    print column, self.model.item(r.row(), column).text()
                     item = self.model.item(r.row(), column).text()
                     row.append(item)
             items.append(row)

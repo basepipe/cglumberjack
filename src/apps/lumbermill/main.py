@@ -305,17 +305,19 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         last = path_object.get_last_attr()
         seq_attrs = ['seq', 'type']
         shot_attrs = ['shot', 'asset']
+        self.setMinimumWidth(500)
         if path_object.scope == 'IO':
             if path_object.version:
                 if not self.panel:
                     self.panel = IOPanel(parent=self, path_object=path_object)
                     self.setMinimumWidth(1100)
-                    self.setMinimumHeight(500)
+                    self.setMinimumHeight(700)
                     self.panel.location_changed.connect(self.update_location)
                     self.panel.location_changed.connect(self.path_widget.update_path)
                     self.layout.addWidget(self.panel)
                     self.layout.addWidget(self.path_widget)
                 return
+
         if last == 'filename':
             if self.panel:
                 return

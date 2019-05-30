@@ -17,6 +17,7 @@ ROOT = app_config()['paths']['root']
 SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
 SEQ_REGEX = re.compile("\\.[0-9]{4,}\\.")
 SPLIT_SEQ_REGEX = re.compile("\\ [0-9]{4,}-[0-9]{4,}$")
+SEQ_SPLIT = re.compile("\\#{4,}")
 
 
 class PathObject(object):
@@ -965,6 +966,15 @@ def split_sequence_frange(sequence):
     frange = re.search(SPLIT_SEQ_REGEX, sequence)
     if frange:
         return sequence.split(frange.group(0))[0], frange.group(0).replace(' ', '')
+    else:
+        return
+
+def split_sequence(sequence):
+    frange = re.search(SEQ_SPLIT, sequence)
+    print frange
+    print frange.group(0)
+    if frange:
+        return sequence.split(frange.group(0))[0]
     else:
         return
 
