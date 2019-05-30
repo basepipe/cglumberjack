@@ -4,7 +4,7 @@ from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
-from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet
+from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, image_path
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, VButtonPanel
 from apps.lumbermill.elements.IOPanel import IOPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
@@ -322,15 +322,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if self.panel:
                 return
             else:
-                # TODO -  This needs to actually display the render panel as well, and reselect the actual filename.
                 new_path_object = path_object.copy(user=None, resolution='high', filename=None)
-                self.load_task_panel(path_object=new_path_object)
+                self.load_files_panel(path_object=new_path_object)
         else:
             if self.panel:
                 self.panel.clear_layout()
         if last == 'resolution':
             pass
-            self.load_task_panel(path_object)
+            self.load_files_panel(path_object)
         if last == 'project':
             if path_object.project == '*':
                 self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box)
@@ -348,6 +347,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
             else:
                 self.panel = VButtonPanel(path_object=path_object, element='task')
+                self.panel.add_button.connect(self.add_task)
         elif last in seq_attrs:
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
@@ -356,8 +356,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         elif last == 'task':
             if path_object.task == '*':
                 self.panel = VButtonPanel(path_object=path_object, element='task')
+                self.panel.add_button.connect(self.add_task)
             else:
-                self.load_task_panel(path_object)
+                self.load_files_panel(path_object)
         elif last == 'company':
             self.panel = CompanyPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         if self.panel:
@@ -374,7 +375,16 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 each.widget().deleteLater()
         self.layout.addWidget(self.path_widget)
 
-    def load_task_panel(self, path_object):
+    def add_task(self, path_object):
+        print 'Adding Task'
+        from apps.lumbermill.elements import asset_creator
+        task_mode = True
+        dialog = asset_creator.AssetCreator(self, path_dict=path_object.data, task_mode=task_mode)
+        dialog.exec_()
+        self.update_location(path_object.data)
+
+    def load_files_panel(self, path_object):
+        print path_object.path_root
         self.panel = FilesPanel(path_object=path_object, user_email=self.user_email,
                                 user_name=self.user_name, show_import=self.show_import)
         self.panel.open_signal.connect(self.open_clicked)
@@ -389,8 +399,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         if '####' in self.path_object.path_root:
             print 'Nothing set for sequences yet'
         else:
-            print 'Opening %s' % self.path_object.path_root
-            start(self.path_object.path_root)
+            print 'Opening %s' % self.path_widget.path_line_edit.text()
+            start(self.path_widget.path_line_edit.text())
 
     @staticmethod
     def import_clicked():
@@ -511,10 +521,15 @@ class CGLumberjack(LJMainWindow):
 if __name__ == "__main__":
     from cglui.startup import do_gui_init
     app = do_gui_init()
+    splash_pix = QtGui.QPixmap(image_path('night_rider.gif'))
+    splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+    splash.setMask(splash_pix.mask())
+    splash.show()
     td = CGLumberjack()
     td.show()
     td.raise_()
     # setup stylesheet
     style_sheet = load_style_sheet()
     app.setStyleSheet(style_sheet)
+    splash.finish(td)
     app.exec_()

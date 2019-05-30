@@ -600,9 +600,12 @@ class PathObject(object):
             cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
         else:
             cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
+        print cg_lumberjack_dir, '888888888888888'
         if self.company:
+            print self.company
             self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
         if self.project:
+            print self.project
             self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'global.yaml')
 
     def set_json(self):
@@ -797,6 +800,13 @@ class CreateProductionData(object):
         default_file = "%ssrc/%s" % (this, r'plugins/%s/templates/default.%s' % (software, ext))
         logging.info('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
         shutil.copy2(default_file, self.path_object.path_root)
+
+
+def image_path(image=None):
+    if image:
+        return os.path.join(app_config()['paths']['code_root'], 'resources', 'images', image)
+    else:
+        return os.path.join(app_config()['paths']['code_root'], 'resources', 'images')
 
 
 def icon_path(icon=None):

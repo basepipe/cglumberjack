@@ -185,6 +185,7 @@ class ProjectPanel(QtWidgets.QWidget):
 
 
 class VButtonPanel(QtWidgets.QWidget):
+    add_button = QtCore.Signal(object)
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, element='task', pixmap=None):
@@ -212,6 +213,7 @@ class VButtonPanel(QtWidgets.QWidget):
         self.title_layout.addWidget(self.task_button)
 
         self.panel.addLayout(self.title_layout)
+        self.task_button.clicked.connect(self.add_button_clicked)
         for each in elements:
             task = app_config()['pipeline_steps']['short_to_long'][each]
             button = LJButton(str(task))
@@ -221,6 +223,9 @@ class VButtonPanel(QtWidgets.QWidget):
             self.panel.addWidget(button)
             button.clicked.connect(self.on_button_clicked)
         self.panel.addStretch(1)
+
+    def add_button_clicked(self):
+        self.add_button.emit(self.path_object)
 
     def on_button_clicked(self):
         text = self.sender().text()

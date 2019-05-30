@@ -23,16 +23,19 @@ class CustomMenu(object):
     """
 
     def __init__(self, software, type_):
+        self.path_object = None
         self.software = software
         self.type = type_
         self.scene_path = self.get_scene_path()
         self.menu_parent = self.set_menu_parent()
+        self.set_path_object()
         if self.scene_path:
             self.path_object = PathObject(str(self.scene_path))
         else:
             print 'No Valid Scene Path'
             return
-        self.company_config = os.path.dirname(self.path_object.company_config.replace('/', '\\'))
+        self.company_config = os.path.dirname(self.path_object.company_config)
+        print 'Company Config is: %s' % self.company_config
         if not os.path.exists(self.company_config):
             print 'Company Config %s: does no exist' % self.company_config
             return
@@ -40,6 +43,13 @@ class CustomMenu(object):
         self.menus = self.load_yaml()
         self.menus_folder = os.path.join(os.path.dirname(self.menus_yaml), type_)
         self.menu_dict = {}
+
+    def set_path_object(self):
+        if self.scene_path:
+            print 'Setting PathObjecty with %s' % self.scene_path
+            print self.scene_path
+            self.path_object = PathObject(str(self.scene_path))
+
 
     def load_yaml(self):
         """

@@ -163,6 +163,9 @@ class FileTable(LJTableWidget):
 
 
 class FilesWidget(QtWidgets.QFrame):
+    open_button_clicked = QtCore.Signal()
+    import_button_clicked = QtCore.Signal()
+    new_version_clicked = QtCore.Signal()
 
     def __init__(self, parent, show_import=False, font=None):
         QtWidgets.QFrame.__init__(self, parent)
@@ -643,11 +646,11 @@ class FileTableWidget(LJTableWidget):
     push_to_cloud = QtCore.Signal()
     pull_from_cloud = QtCore.Signal()
     share_download_link = QtCore.Signal()
+    render_nuke_command_line = QtCore.Signal()
+    render_nuke_farm = QtCore.Signal()
 
     def __init__(self, parent, hide_header=True):
         LJTableWidget.__init__(self, parent)
-        # Deal with Stylesheets
-
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSortingEnabled(False)
         # Set The Right Click Menu
@@ -671,6 +674,14 @@ class FileTableWidget(LJTableWidget):
         # self.item_right_click_menu.addSeparator()
         self.customContextMenuRequested.connect(self.item_right_click)
         self.setAcceptDrops(True)
+        self.selected.connect(self.on_row_selected)
+
+    def on_row_selected(self, data):
+        dict_ = {'.nk': 'nuke'}
+        file = data[-1][0]
+        file, ext = os.path.splitext(file)
+        if dict_[ext]:
+            self.add_custom_menu(self.item_right_click_menu, dict_[ext])
 
     def item_right_click(self, position):
         self.item_right_click_menu.exec_(self.mapToGlobal(position))
@@ -690,6 +701,22 @@ class FileTableWidget(LJTableWidget):
 
     def sizeHint(self):
         return QtCore.QSize(350, 150)
+
+    def add_custom_menu(self, menu, software):
+        # For this to really work i need to be able to connect these signals to slots from another script entirely.
+        # i would want to pass the file name for instance to a script within the nuke plugins directory.
+        # That's the holy grail in terms of flexibility.
+
+        add = True
+        if software == 'nuke':
+            print 0
+            for each in menu.actions():
+                print each.text(), 1
+                if each.text() == 'Render Local' or each.text() == 'Render on Farm':
+                    add = False
+        if add:
+            menu.create_action('Render Local', self.render_nuke_command_line)
+            menu.create_action('Render on Farm', self.render_nuke_farm)
 
 
 class LJListWidget(QtWidgets.QWidget):

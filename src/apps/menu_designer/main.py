@@ -8,6 +8,7 @@ from Qt import QtWidgets, QtGui, QtCore
 from cglui.widgets.base import LJDialog
 from cglui.widgets.text import Highlighter
 from cglcore.config import app_config
+from cglcore.path import start
 
 GUI_DICT = {'shelves.yaml': ['button name', 'command', 'icon', 'order', 'annotation', 'label'],
             'preflights.yaml': ['order', 'module', 'name', 'required'],
@@ -36,6 +37,7 @@ class MenuDesigner(LJDialog):
         self.type_combo = QtWidgets.QComboBox()
         self.add_software_btn = QtWidgets.QPushButton("New Software")
         self.add_shelf_btn = QtWidgets.QPushButton("Add New Shelf")
+        self.go_to_files_btn = QtWidgets.QPushButton("Go To Files")
         self.type_label.hide()
         self.type_combo.hide()
 
@@ -46,8 +48,9 @@ class MenuDesigner(LJDialog):
         self.software_row.addWidget(self.type_combo)
         self.software_row.addWidget(self.add_software_btn)
         self.software_row.addWidget(self.add_shelf_btn)
-        self.software_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                        QtWidgets.QSizePolicy.Minimum))
+        self.software_row.addWidget(self.go_to_files_btn)
+        self.software_row.addStretch(1)
+
         self.inner = QtWidgets.QVBoxLayout()
         self.layout = QtWidgets.QVBoxLayout()
 
@@ -66,6 +69,13 @@ class MenuDesigner(LJDialog):
         self.software_combo.currentIndexChanged.connect(self.on_software_selected)
         self.type_combo.currentIndexChanged.connect(self.on_type_selected)
         self.add_shelf_btn.clicked.connect(self.add_shelf)
+        self.go_to_files_btn.clicked.connect(self.open_file_location)
+
+    def open_file_location(self):
+        if os.path.isdir(self.file):
+            print start(self.file)
+        else:
+            print start(os.path.dirname(self.file))
 
     def load_yaml(self, filepath):
         with open(filepath, 'r') as yaml_file:
@@ -107,12 +117,16 @@ class MenuDesigner(LJDialog):
         self.save_yaml(self.file)
 
     def on_text_edit_changed(self, text_edit, newtabs, tabname):
+        # I want to somehow ignore this on initial loac
+        print "Text is Changing - saving code file."
+        menu_tab_widget = newtabs.parent().parent().parent().parent().parent()
         code = text_edit.document().toPlainText()
-        tp = newtabs.currentIndex()
-        menu = self.tabs.tabText(tp)
+        index = menu_tab_widget.currentIndex()
+        menu = self.tabs.tabText(index)
         button = tabname
         button_file = os.path.join(self.company_config_dir, 'cgl_tools', self.software, self.current_type, menu,
                                    "%s.py" % button)
+        print button_file
         self.save_python_file(button_file, code)
 
     @staticmethod
