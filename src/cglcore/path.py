@@ -600,7 +600,6 @@ class PathObject(object):
             cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
         else:
             cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
-        print cg_lumberjack_dir, '888888888888888'
         if self.company:
             print self.company
             self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
@@ -1003,6 +1002,16 @@ def get_file_type(filepath):
     if '###' in filepath:
         ft = 'sequence'
     return ft
+
+def get_company_config():
+    user_dir = os.path.expanduser("~")
+    if 'Documents' in user_dir:
+        cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
+    else:
+        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
+    return cg_lumberjack_dir
+
+
 
 
 

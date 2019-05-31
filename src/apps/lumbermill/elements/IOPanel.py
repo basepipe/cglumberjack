@@ -8,7 +8,6 @@ import datetime
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.containers.tree import LJTreeWidget
-from cglui.widgets.file_system import LJFileBrowser
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
@@ -567,7 +566,7 @@ class IOPanel(QtWidgets.QWidget):
                 if row['Filetype'] == 'folder':
                     print "Folder"
                     print 'Copying %s to %s' % (from_file, to_file)
-
+                    # Send this to the Preflights - No matter what basically
                     shutil.copytree(from_file, to_file)
                     CreateProductionData(to_file, json=True)
                     self.file_tree.model.item(index, STATUS).setText('Published')
