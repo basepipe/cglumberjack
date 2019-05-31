@@ -236,6 +236,7 @@ class InputDialog(LJDialog):
         :param parent:
         :param message:
         """
+        self.original_message = message
         LJDialog.__init__(self, parent)
         if buttons is None:
             buttons = ['Cancel', 'Ok', '']
@@ -292,18 +293,39 @@ class InputDialog(LJDialog):
         self.btn3.clicked.connect(self.close)
         if regex:
             self.line_edit.textChanged.connect(self.on_text_changed_regex)
+            self.combo_box.textChanged.connect(self.on_text_changed_regex)
 
     def on_button_clicked(self):
         self.button = self.sender().text()
         self.input_text = self.line_edit.text()
 
     def on_text_changed_regex(self):
-        if self.line_edit.text():
-            if re.match(self.regex, self.line_edit.text()):
-                message = '%s Passes! Click Rename' % self.line_edit.text()
-            else:
-                bad_name = '%s does not pass' % (self.line_edit.text())
-                message = '%s\n%s' % (bad_name, self.name_example)
+        if self.sender() == self.line_edit:
+            if self.line_edit.text():
+                if re.match(self.regex, self.line_edit.text()):
+                    message = '%s\n%s Passes!' % (self.original_message, self.line_edit.text())
+                    self.btn1.setEnabled(True)
+                    self.btn2.setEnabled(True)
+                    self.btn3.setEnabled(True)
+                else:
+                    bad_name = '%s\n%s does not pass' % (self.original_message, self.line_edit.text())
+                    message = '%s\n%s' % (bad_name, self.name_example)
+                    self.btn1.setEnabled(False)
+                    self.btn2.setEnabled(False)
+                    self.btn3.setEnabled(False)
+        if self.sender() == self.combo_box:
+            if self.combo_box.currentText:
+                if re.match(self.regex, self.combo_box.currentText()):
+                    message = '%s\n%s Passes!' % (self.original_message, self.combo_box.currentText())
+                    self.btn1.setEnabled(True)
+                    self.btn2.setEnabled(True)
+                    self.btn3.setEnabled(True)
+                else:
+                    bad_name = '%s\n%s does not pass' % (self.original_message, self.combo_box.currentText())
+                    message = '%s\n%s' % (bad_name, self.name_example)
+                    self.btn1.setEnabled(False)
+                    self.btn2.setEnabled(False)
+                    self.btn3.setEnabled(False)
             self.message.setText(message)
 
 
@@ -908,6 +930,5 @@ class LoginDialog(LJDialog):
              }
         with open(self.user_config, 'w') as outfile:
             yaml.dump(d, outfile, default_flow_style=False)
-
 
 

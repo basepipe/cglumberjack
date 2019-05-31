@@ -210,7 +210,10 @@ class MenuDesigner(LJDialog):
         file_ = os.path.split(file_)[-1]
         if self.type_combo.currentText():
             self.current_type, ext = os.path.splitext(self.type_combo.currentText())
+            print self.current_type
+            print self.file
             self.parse(self.file, type=self.type_combo.currentText())
+            return
             self.add_software_btn.show()
             self.add_shelf_btn.show()
             self.add_shelf_btn.setText('Add New %s' % file_)
@@ -487,23 +490,28 @@ class MenuDesigner(LJDialog):
                                 self.tabs.addTab(scroll_area, str(tabs_dict))
             # need a way to auto resize the GUI to expand as far as necessary
         else:
-            self.load_yaml(filename)
-            if self.menu_dict:
-                for cgl_tools in self.menu_dict:
-                    order = 1
-                    while order <= len(self.menu_dict[cgl_tools]):
-                        for tabs_dict in self.menu_dict[cgl_tools]:
-                            if self.menu_dict[cgl_tools][tabs_dict]["order"] == order:
-                                order += 1
-                                # Create the menu level tabs
-                                tab = QtWidgets.QWidget()
-                                # Create the buttons within the task
-                                tab.setLayout(self.generate_buttons(self.menu_dict[cgl_tools][tabs_dict], tabs_dict))
-                                scroll_area = QtWidgets.QScrollArea()
-                                scroll_area.setWidget(tab)
-                                scroll_area.setWidgetResizable(True)
-                                self.tabs.tabnum += 1
-                                self.tabs.addTab(scroll_area, str(tabs_dict))
+            if not os.path.exists(filename):
+                print 'No File: %s' % filename
+                return
+            else:
+                self.load_yaml(filename)
+                if self.menu_dict:
+                    print 2, self.menu_dict
+                    for cgl_tools in self.menu_dict:
+                        order = 1
+                        while order <= len(self.menu_dict[cgl_tools]):
+                            for tabs_dict in self.menu_dict[cgl_tools]:
+                                if self.menu_dict[cgl_tools][tabs_dict]["order"] == order:
+                                    order += 1
+                                    # Create the menu level tabs
+                                    tab = QtWidgets.QWidget()
+                                    # Create the buttons within the task
+                                    tab.setLayout(self.generate_buttons(self.menu_dict[cgl_tools][tabs_dict], tabs_dict))
+                                    scroll_area = QtWidgets.QScrollArea()
+                                    scroll_area.setWidget(tab)
+                                    scroll_area.setWidgetResizable(True)
+                                    self.tabs.tabnum += 1
+                                    self.tabs.addTab(scroll_area, str(tabs_dict))
 
     def clear_tabs(self):
         for x in range(0, self.tabs.tabnum):
@@ -787,7 +795,6 @@ class MenuDesigner(LJDialog):
         edit.setText(ed)
         row = QtWidgets.QHBoxLayout()
         edit.dict_path = copy.copy(path)
-        # edit.textChanged[str].connect(lambda: self.save_change(edit))
         row.addWidget(label)
         row.addWidget(button)
         row.addWidget(edit)
