@@ -51,8 +51,6 @@ class LJTabWidget(QtWidgets.QTabWidget):
 
 
 class MenuButton(QtWidgets.QWidget):
-    autosave = QtCore.Signal()
-    save_code_path = QtCore.Signal(object)
 
     def __init__(self, parent=None, menu_name='', button_name='', attrs={}, menu_path=''):
         QtWidgets.QWidget.__init__(self, parent)
@@ -111,16 +109,15 @@ class MenuButton(QtWidgets.QWidget):
         
         # Signals and Slots
         self.button_name_line_edit.textChanged.connect(self.set_button_name)
-        self.label_line_edit.textChanged.connect(self.autosave)
+        #self.label_line_edit.textChanged.connect(self.on_code_changed)
         self.code_text_edit.textChanged.connect(self.on_code_changed)
         delete_button.clicked.connect(self.on_delete_clicked)
         self.load_attrs()
 
     def on_code_changed(self):
         code_path = os.path.join(os.path.dirname(self.menu_path), 'menus', self.menu_name, '%s.py' % self.name)
-        print code_path
         self.do_save = True
-        self.save_code_path.emit([self.menu_name, self])
+        print 'Changing %s setting do save True' % self.name
 
     def load_attrs(self):
         for attr in self.attrs:
@@ -131,11 +128,11 @@ class MenuButton(QtWidgets.QWidget):
         if code_text:
             self.do_save = False
             self.code_text_edit.setPlainText(code_text)
-            print 'set do save false'
+            print 'loading %s from disk set do save false' % self.name
         else:
             code_text = self.load_default_text()
             self.code_text_edit.setPlainText(code_text)
-            self.on_code_changed()
+            #self.on_code_changed()
 
     def load_code_text(self):
         code_path = os.path.join(os.path.dirname(self.menu_path), 'menus', self.menu_name, '%s.py' % self.name)
@@ -158,7 +155,6 @@ class MenuButton(QtWidgets.QWidget):
 
 
 class CGLMenu(QtWidgets.QWidget):
-    save_code_path = QtCore.Signal(object)
 
     def __init__(self, parent=None, software=None, menu_name='', menu={}, menu_path=''):
         QtWidgets.QWidget.__init__(self, parent)
@@ -207,7 +203,6 @@ class CGLMenu(QtWidgets.QWidget):
                      'command': command}
             new_button_widget = MenuButton(menu_name=self.menu_name, button_name=button_name,
                                            attrs=attrs, menu_path=self.menu_path)
-            new_button_widget.save_code_path.connect(self.save_initialized)
             index = self.buttons.addTab(new_button_widget, button_name)
             self.buttons.setCurrentIndex(index)
 
@@ -341,7 +336,6 @@ class MenuDesigner(LJDialog):
             file_ = os.path.join(self.company_config, self.company, 'cgl_tools', self.software, 'menus.yaml')
             new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
                                menu_path=file_)
-            new_menu.save_code_path.connect(self.save_code)
             index = self.menus.addTab(new_menu, menu_name)
             self.menus.setCurrentIndex(index)
 
@@ -408,11 +402,10 @@ class MenuDesigner(LJDialog):
         if not os.path.exists(dir_):
             os.makedirs(dir_)
         if button_widget.do_save:
-            print button_file
-        #    with open(button_file, 'w+') as x:
-        #        x.write(code)
-        #    button_widget.do_save = False
-
+            print 1, button_file
+            with open(button_file, 'w+') as x:
+               x.write(code)
+            button_widget.do_save = False
 
     def make_init(self, folder):
         print 'creating init for %s' % folder
