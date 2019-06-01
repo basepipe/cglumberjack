@@ -4,7 +4,7 @@ import sys
 import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
-from cglcore.path import icon_path
+from cglcore.path import icon_path, get_company_config
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.startup import do_gui_init
 from cglui.widgets.containers.model import ListItemModel
@@ -62,13 +62,16 @@ class ItemTable(LJTableWidget):
             self.nothing_selected.emit()
 
 
-class Preflight(QtWidgets.QWidget):
+class Preflight(QtWidgets.QDialog):
 
-    def __init__(self, parent=None, software='maya', task='', model=None, **kwargs):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.preflight_dir = os.path.join(app_config()['paths']['code_root'], 'src', 'tools', software, 'preflight')
+    def __init__(self, parent=None, software='maya', preflight='', model=None, **kwargs):
+        QtWidgets.QDialog.__init__(self, parent)
+        self.software = software
+        self.preflight = preflight
+        self.software_dir = os.path.join(get_company_config(), 'cgl-fsutests', 'cgl_tools', software)
+        self.preflight_dir = os.path.join(self.software_dir, 'preflights')
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-        self.yaml_file = os.path.join(self.preflight_dir, task, 'order.yaml')
+        self.json_file = os.path.join(self.software_dir, 'preflights.cgl')
         self.modules = {}
         self.ignore = ['__init__.py']
         self.selected_checks = []
@@ -107,48 +110,44 @@ class Preflight(QtWidgets.QWidget):
         button_bar.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         button_bar.addWidget(self.run_selected)
         button_bar.addWidget(self.run_all)
-        #button_bar.addWidget(self.publish_button)
         v_layout.addLayout(combo_layout)
         v_layout.addWidget(self.preflights)
         v_layout.addLayout(button_bar)
 
         # load the GUI
-        self._load_yaml()
+        self._load_json()
         self.populate_table()
         self.preflights.item_selected.connect(self.update_selection)
         self.run_selected.clicked.connect(self.run_selected_clicked)
         self.run_all.clicked.connect(self.run_all_clicked)
-        #self.publish_button.clicked.connect(self.publish_clicked)
 
-    def publish_clicked(self):
-        pass
-
-    def _load_yaml(self):
-        print self.yaml_file
-        with open(self.yaml_file, 'r') as stream:
+    def _load_json(self):
+        print self.json_file
+        with open(self.json_file, 'r') as stream:
             try:
-                self.modules = yaml.load(stream)
+                self.modules = yaml.load(stream)[self.software][self.preflight]
             except yaml.YAMLError as exc:
                 logging.error(exc)
                 sys.exit(99)
 
     def populate_table(self):
+        import sys
+        source_dir = r"C:\Users\tmiko\Documents\cglumberjack\companies\cgl-fsutests"
+        sys.path.insert(0, source_dir)
         data = []
         for item in self.modules:
-            print self.preflight_dir
-            module = self.modules[item]['module']
-            print module
-            module_name = module.split('.')[-1]
-            print module_name
-            loaded_module = __import__(module, globals(), locals(), module_name, -1)
-            class_ = getattr(loaded_module, module_name)
-            c = class_()
-            self.function_d.update({self.modules[item]['name']: c})
-            data.append([self.modules[item]['name'],
-                         'Untested',
-                         self.modules[item]['module'],
-                         self.modules[item]['order'],
-                         self.modules[item]['required']])
+            if item != 'order':
+                module = self.modules[item]['module']
+                module_name = module.split('.')[-1]
+                loaded_module = __import__(module, globals(), locals(), module_name, -1)
+                class_ = getattr(loaded_module, module_name)
+                c = class_()
+                self.function_d.update({self.modules[item]['label']: c})
+                data.append([self.modules[item]['label'],
+                             'Untested',
+                             self.modules[item]['module'],
+                             self.modules[item]['order'],
+                             self.modules[item]['required']])
         self.table_data = data
         self.preflights.set_item_model(FileTableModel(data, ["Check", "Status", "Path", "Order", "Required"]))
         self.preflights.sortByColumn(3, QtCore.Qt.SortOrder(0))
@@ -224,7 +223,7 @@ class Preflight(QtWidgets.QWidget):
 def main():
     app = do_gui_init()
     task = 'mdl'
-    mw = Preflight(software='Maya', task=task)
+    mw = Preflight(software='Maya', preflight=task)
     mw.setWindowTitle('%s Preflight' % task)
     mw.show()
     mw.raise_()

@@ -1,7 +1,7 @@
 from Qt import QtCore
 
 from Qt.QtWidgets import QTableView, QHeaderView
-
+from cglcore.path import split_sequence_frange
 from cglui.util import UISettings, widget_name
 from cglui.widgets.base import StateSavers
 from cglui.widgets.containers.proxy import LJTableSearchProxy
@@ -96,6 +96,8 @@ class LJTableWidget(QTableView):
                 mdl = self.model().sourceModel()
                 row = mdl_index.row()
                 sel = mdl.data_[row]
+                if '###' in sel[0]:
+                    sel = [split_sequence_frange(sel[0])[0]]
                 items.append(sel)
         else:
             print 'No data to select'

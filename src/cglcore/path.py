@@ -601,10 +601,8 @@ class PathObject(object):
         else:
             cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
         if self.company:
-            print self.company
             self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
         if self.project:
-            print self.project
             self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'global.yaml')
 
     def set_json(self):
@@ -978,6 +976,7 @@ def split_sequence_frange(sequence):
     else:
         return
 
+
 def split_sequence(sequence):
     frange = re.search(SEQ_SPLIT, sequence)
     print frange
@@ -1002,6 +1001,7 @@ def get_file_type(filepath):
     if '###' in filepath:
         ft = 'sequence'
     return ft
+
 
 def get_company_config():
     user_dir = os.path.expanduser("~")

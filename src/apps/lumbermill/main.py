@@ -6,7 +6,7 @@ from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, image_path
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, VButtonPanel
-from apps.lumbermill.elements.IOPanel import IOPanel
+
 from apps.lumbermill.elements.FilesPanel import FilesPanel
 
 ICON_WIDTH = 24
@@ -166,7 +166,7 @@ class NavigationWidget(QtWidgets.QFrame):
 
     def back_button_pressed(self):
         path_object = PathObject(self.current_location_line_edit.text())
-        print
+        path_object.set_attr(context='source')
         # if i'm a task, show me all the assets or shots
         last = path_object.get_last_attr()
 
@@ -228,9 +228,12 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def __init__(self, parent=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None,
                  show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
-        font_db = QtWidgets.QFontDatabase()
-        font_db.addApplicationFont(os.path.join(font_path(), 'ARCADECLASSIC.TTF'))
-        font_db.addApplicationFont(os.path.join(font_path(), 'ka1.ttf'))
+        try:
+            font_db = QtWidgets.QFontDatabase()
+            font_db.addApplicationFont(os.path.join(font_path(), 'ARCADECLASSIC.TTF'))
+            font_db.addApplicationFont(os.path.join(font_path(), 'ka1.ttf'))
+        except AttributeError:
+            print 'Skipping Loading Fonts - possible Pyside2 issue'
 
         # Environment Stuff
         self.show_import = show_import
@@ -256,6 +259,12 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         if path:
             try:
                 self.path_object = PathObject(path)
+                if self.path_object.context == 'render':
+                    self.path_object.set_attr(context='source')
+                    self.path_object.set_attr(resolution=None)
+                    self.path_object.set_attr(version=None)
+                    self.path_object.set_attr(user='')
+                    self.path_object.set_attr(task='*')
             except IndexError:
                 pass
         self.project = '*'
@@ -289,7 +298,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def update_location(self, data):
         try:
             if self.sender().force_clear:
-                print 'I gotta clear this widget'
                 if self.panel:
                     self.panel.clear_layout()
                     self.panel = None
@@ -309,6 +317,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         if path_object.scope == 'IO':
             if path_object.version:
                 if not self.panel:
+                    from apps.lumbermill.elements.IOPanel import IOPanel
                     self.panel = IOPanel(parent=self, path_object=path_object)
                     self.setMinimumWidth(1100)
                     self.setMinimumHeight(700)
@@ -339,6 +348,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.scope == '*':
                 self.panel = ScopePanel(path_object=path_object)
             elif path_object.scope == 'IO':
+                from apps.lumbermill.elements.IOPanel import IOPanel
                 self.panel = IOPanel(path_object=path_object)
             else:
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
@@ -352,6 +362,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last == 'ingest_source':
+            from apps.lumbermill.elements.IOPanel import IOPanel
             self.panel = IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
@@ -412,7 +423,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
 
 class CGLumberjack(LJMainWindow):
-    def __init__(self):
+    def __init__(self, show_import=False):
         LJMainWindow.__init__(self)
         #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.user_name = ''
@@ -428,7 +439,7 @@ class CGLumberjack(LJMainWindow):
                                                  user_name=self.user_name,
                                                  company=self.company,
                                                  path=self.previous_path,
-                                                 radio_filter=self.filter))
+                                                 radio_filter=self.filter, show_import=show_import))
         if self.user_name:
             self.setWindowTitle('Lumbermill - Logged in as %s' % self.user_name)
         else:
@@ -437,10 +448,6 @@ class CGLumberjack(LJMainWindow):
         self.setStatusBar(self.status_bar)
 
         # Load Style Sheet and set up Styles:
-        p = self.palette()
-        brightness = 255
-        p.setColor(self.backgroundRole(), QtGui.QColor(brightness, brightness, brightness))
-        self.setPalette(p)
         w = 400
         h = 500
 
@@ -456,16 +463,19 @@ class CGLumberjack(LJMainWindow):
         open_globals = QtWidgets.QAction('Edit Globals', self)
         settings.setShortcut('Ctrl+,')
         menu_designer = QtWidgets.QAction('Menu Designer', self)
+        preflight_designer = QtWidgets.QAction('Preflight Designer', self)
         ingest_dialog = QtWidgets.QAction('Ingest Tool', self)
         # add actions to the file menu
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
         tools_menu.addAction(menu_designer)
+        tools_menu.addAction(preflight_designer)
         tools_menu.addAction(ingest_dialog)
         # connect signals and slots
         open_globals.triggered.connect(self.open_company_globals)
         settings.triggered.connect(self.on_settings_clicked)
-        menu_designer.triggered.connect(self.on_shelves_clicked)
+        menu_designer.triggered.connect(self.on_menu_designer_clicked)
+        preflight_designer.triggered.connect(self.on_preflight_designer_clicked)
         login.triggered.connect(self.on_login_clicked)
 
     def open_company_globals(self):
@@ -504,9 +514,18 @@ class CGLumberjack(LJMainWindow):
         dialog = Configurator(self, self.company)
         dialog.exec_()
 
-    def on_shelves_clicked(self):
-        from apps.menu_designer.main import MenuDesigner
-        dialog = MenuDesigner(self)
+    def on_preflight_designer_clicked(self):
+        from apps.pipeline.preflight_designer import PreflightDesigner
+        dialog = PreflightDesigner(self, path_object=self.centralWidget().path_object)
+        dialog.setMinimumWidth(1200)
+        dialog.setMinimumHeight(500)
+        dialog.exec_()
+
+    def on_menu_designer_clicked(self):
+        from apps.pipeline.menu_designer import MenuDesigner
+        dialog = MenuDesigner(self, path_object=self.centralWidget().path_object)
+        dialog.setMinimumWidth(1200)
+        dialog.setMinimumHeight(500)
         dialog.exec_()
 
     def closeEvent(self, event):
@@ -514,7 +533,6 @@ class CGLumberjack(LJMainWindow):
                                  user_email=self.centralWidget().user_email,
                                  user_name=self.centralWidget().user_name,
                                  current_path=self.centralWidget().path_widget.text)
-        print 'Saving Session to -> %s' % user_config.user_config_path
         user_config.update_all()
 
 

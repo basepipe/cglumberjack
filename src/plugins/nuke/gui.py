@@ -18,6 +18,8 @@ class NukeBrowserWidget(CGLumberjackWidget):
 
     def import_clicked(self):
         for selection in self.source_selection:
+            print selection
+            continue
             if selection.endswith('.nk'):
                 cglnuke.import_script(selection)
             else:
@@ -35,10 +37,10 @@ class CGLNuke(CGLumberjack):
 
 def launch():
     gui = CGLNuke(parent=cglnuke.get_main_window(), path=cglnuke.get_file_name())
-    startup.do_nuke_gui_init(gui)
+    app = startup.do_nuke_gui_init(gui)
     gui.setWindowFlags(QtCore.Qt.Window)
     gui.setWindowTitle('CG LUmberjack')
     gui.setAttribute(QtCore.Qt.WA_DeleteOnClose)
     gui.show()
     gui.raise_()
-    gui.exec_()
+    app.exec_()

@@ -23,7 +23,7 @@ class NukeCustomMenu(CustomMenu):
     def add_button(self, menu, label='', annotation='', command='', icon='', image_overlay_label='', hot_key=''):
         menu_ = self.menu_dict[menu]
         if not hot_key:
-            menu_.addCommand(label, command)
+            menu_.addCommand(label, str(command))
         else:
             menu_.addCommand(label, command, hot_key)
 

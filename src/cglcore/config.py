@@ -112,12 +112,10 @@ class UserConfig(object):
         self.user_name = user_name
 
     def update_all(self):
-        print self.d
         self.update_path()
         self.update_user_email()
         self.update_user_name()
         self.update_company()
-        print self.d
         self._write_yaml()
 
     def update_path(self):
