@@ -1,3 +1,10 @@
+/*
+    background = white
+    borders =
+    line_edit =
+
+ */
+
 QLineEdit.medium_grey{
     background-color: #A7A7A7;
     border: 0px;
@@ -49,11 +56,13 @@ QPushButton.basic{
     font-size: 12pt;
     color: #707070;
     height: 24px;
-    width: 120px;
+    width: 160px;
+    padding-left: 15px;
+    padding-right: 15px;
 }
 
 QToolButton.add_button{
-    background-color: powderblue;
+    background-color: #B5E9E9;
     border: 3px solid #707070;
     font-family: "ArcadeClassic";
     font-size: 14pt;
@@ -110,9 +119,20 @@ QLabel{
 QLabel.feedback{
     background-color: #383838;
     border: 1px solid #A7A7A7;
+    font-family: ArcadeClassic;
+    font-size: 18pt;
+    padding-left: 6px;
+    height: 80px;
+    color: #E24545;
+}
+
+QLineEdit.feedback{
+    background-color: #383838;
+    border: 1px solid #A7A7A7;
     font-family: "Courier New";
     font-size: 12pt;
-    padding: 6px;
+    padding-left: 6px;
+    height: 24px;
     color: #E24545;
 }
 
@@ -197,4 +217,74 @@ QMenuBar::item{
 QMenuBar::item::selected{
     background-color: #A7A7A7;
     color: #F5F5F5;
+}
+
+
+QTabBar.vertical{
+    background-color: white;
+    color: #707070;
+    font-family: 'Courier New';
+    font-size: 15px;
+
+}
+
+QTabBar::tab::selected.vertical{
+    background-color: #A7A7A7;
+    font-family: 'Courier New';
+    font-size: 15px;
+    color: #F5F5F5;
+    height: 200px;
+}
+
+QTabBar::tab.vertical{
+    background-color: #F5F5F5;
+}
+
+QTabWidget::pane.vertical{ /* The Buttons info widget  */
+    border-left: 10px solid white;
+    background-color: #A7A7A7;
+    color: #F5F5F5;
+}
+
+/* The Menu Tabs */
+QTabBar.add_button{
+    color: red;
+    font-family: 'Courier New';
+    font-size: 15px;
+}
+
+QTabBar{/* Unselected Tabs On the Menu Bar*/
+    color: #707070;
+    font-family: 'Courier New';
+    font-size: 15px;
+}
+
+QTabBar::tab::selected{/* Selected Tabs On the Menu Bar*/
+    background-color: #A7A7A7;
+    font-family: 'Courier New';
+    font-size: 15px;
+    color: #F5F5F5;
+}
+
+QPlainTextEdit{
+    background-color: #383838;
+}
+
+QDialog{/* The Main Dialog */
+    background-color: white;
+}
+
+QPushButton.add_button{
+    background-color: #B5E9E9;
+    border: 3px solid #707070;
+    font-family: "ArcadeClassic";
+    font-size: 12pt;
+    color: #707070;
+    height: 20px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+QMainWindow{
+    background-color: white;
 }

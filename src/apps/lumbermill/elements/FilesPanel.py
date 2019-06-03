@@ -294,10 +294,32 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_render_selected(self, data):
         print data
-        widget = self.sender().parent()
-        print widget
-        widget.review_button.setEnabled(True)
-        widget.publish_button.setEnabled(True)
+        new_data = []
+        object_ = PathObject(self.current_location)
+        parent = self.sender().parent()
+        object_.set_attr(root=self.path_object.root)
+        object_.set_attr(version=parent.parent().versions.currentText())
+        object_.set_attr(context='render')
+        object_.set_attr(resolution=parent.parent().resolutions.currentText())
+        object_.set_attr(user=parent.parent().users.currentText())
+        # object_.set_attr(task=self.sender().task)
+        try:
+            object_.set_attr(filename=data[0][0])
+            filename_base, ext = os.path.splitext(data[0][0])
+            object_.set_attr(filename_base=filename_base)
+            object_.set_attr(ext=ext.replace('.', ''))
+        except IndexError:
+            # this indicates a selection within the module, but not a specific selected files
+            pass
+        self.update_location(object_)
+        for each in data:
+            dir_ = os.path.dirname(object_.path_root)
+            new_data.append(os.path.join(dir_, each[0]))
+        self.source_selection_changed.emit(new_data)
+        # self.clear_task_selection_except(self.sender().task)
+        self.sender().parent().show_tool_buttons()
+        self.sender().parent().review_button.setEnabled(True)
+        self.sender().parent().publish_button.setEnabled(True)
 
     def new_version_from_latest(self):
         print 'version up_latest'
@@ -463,6 +485,7 @@ class FilesPanel(QtWidgets.QWidget):
                                    filename='*')
             files_ = glob.glob(renders.path_root)
             if files_:
+                print 'Published Files for %s' % current.path_root
                 widget.setup(render_table, ListItemModel(self.prep_list_for_table(files_, basename=True),
                                                          ['Ready to Review/Publish']))
                 render_table.show()

@@ -6,6 +6,7 @@ class PreflightCheck(object):
     shared_data = {}
 
     def __init__(self, parent=None):
+        self.parent = parent
         self.status = False
         self.items = []
 
@@ -37,3 +38,4 @@ class PreflightCheck(object):
         message = 'Publish Successful - you can close this window'
         dialog = InputDialog(title='Publish Successful', message=message, buttons=['Ok'])
         dialog.exec_()
+

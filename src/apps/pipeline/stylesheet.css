@@ -180,13 +180,6 @@ QTabWidget::pane.vertical{ /* The Buttons info widget  */
     color: #F5F5F5;
 }
 
-/* The Menu Tabs */
-QTabBar.add_button{
-    color: red;
-    font-family: 'Courier New';
-    font-size: 15px;
-}
-
 QTabBar{/* Unselected Tabs On the Menu Bar*/
     color: #707070;
     font-family: 'Courier New';

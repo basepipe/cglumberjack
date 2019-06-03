@@ -2,7 +2,6 @@ import os
 from Qt.QtCore import Qt
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore import path
-from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
@@ -170,7 +169,6 @@ class FilesWidget(QtWidgets.QFrame):
     def __init__(self, parent, show_import=False, font=None):
         QtWidgets.QFrame.__init__(self, parent)
         self.show_import = show_import
-
         layout = QtWidgets.QVBoxLayout(self)
         table_layout = QtWidgets.QVBoxLayout()
         table_layout.setSpacing(0)
@@ -222,6 +220,8 @@ class FilesWidget(QtWidgets.QFrame):
         self.open_button.clicked.connect(self.on_open_button_clicked)
         self.new_version_button.clicked.connect(self.on_new_version_clicked)
         self.import_button.clicked.connect(self.on_import_clicked)
+        if self.show_import:
+            self.import_button.show()
 
     def hide_files(self):
         self.to_button.hide()
@@ -242,8 +242,7 @@ class FilesWidget(QtWidgets.QFrame):
 
     def show_tool_buttons(self):
         self.open_button.show()
-        if self.show_import:
-            self.import_button.show()
+        self.import_button.show()
         self.new_version_button.show()
         self.publish_button.show()
         self.review_button.show()
@@ -289,6 +288,8 @@ class TaskWidget(QtWidgets.QWidget):
         v_layout = QtWidgets.QVBoxLayout(self)
         task_row = QtWidgets.QHBoxLayout()
         self.show_import = show_import
+        print '-=-------------------------'
+        print 'Show Import TaskWidget: %s' % self.show_import
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -341,7 +342,7 @@ class TaskWidget(QtWidgets.QWidget):
 
         self.empty_state = EmptyStateWidget(path_object=self.path_object)
         self.empty_state.hide()
-        self.files_area = FilesWidget(self)
+        self.files_area = FilesWidget(self, show_import=self.show_import)
 
         v_layout.addLayout(self.title_row)
         v_layout.addLayout(task_row)
@@ -678,9 +679,9 @@ class FileTableWidget(LJTableWidget):
 
     def on_row_selected(self, data):
         dict_ = {'.nk': 'nuke'}
-        file = data[-1][0]
-        file, ext = os.path.splitext(file)
-        if dict_[ext]:
+        file_name = data[-1][0]
+        file_name, ext = os.path.splitext(file_name)
+        if ext in dict_:
             self.add_custom_menu(self.item_right_click_menu, dict_[ext])
 
     def item_right_click(self, position):
@@ -925,6 +926,51 @@ class AdvComboBox(QtWidgets.QComboBox):
                 objlist.append(str(key))
         for item in objlist:
             self.addItem(item)
+
+
+class GifWidget(QtWidgets.QWidget):
+    def __init__(self, parent=None, gif_path=None, animated=True):
+        QtWidgets.QWidget.__init__(self)
+        self.setProperty('class', 'gif_widget')
+        self.animated = animated
+        layout = QtWidgets.QHBoxLayout()
+        self.image = QtWidgets.QLabel()
+        self.label_1 = QtWidgets.QLabel('Working...')
+        self.label_2 = QtWidgets.QLabel('Working...')
+        self.label_1.setProperty('class', 'feedback')
+        self.label_2.setProperty('class', 'feedback')
+        self.label_1.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
+        self.label_2.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+
+        # Create the Actual Gif Thingy
+        if animated:
+            print 1
+            self.gif = QtGui.QMovie(gif_path)
+            self.image.setMovie(self.gif)
+        else:
+            print 2
+            self.gif = QtGui.QPixmap(gif_path)
+            self.image.setPixmap(self.gif)
+
+        self.gif.setScaledSize(QtCore.QSize(120, 80))
+        layout.addWidget(self.label_1)
+        layout.addWidget(self.image)
+        layout.addWidget(self.label_2)
+        self.setLayout(layout)
+
+    def start(self):
+        if self.animated:
+            self.show()
+            self.gif.start()
+
+    def stop(self):
+        self.gif.stop()
+        self.hide()
+
+
 
 
 class LabelComboRow(QtWidgets.QVBoxLayout):

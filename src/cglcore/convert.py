@@ -4,7 +4,7 @@ import glob
 import logging
 
 from cglcore.config import app_config
-from cglcore.path import PathObject
+from cglcore.path import PathObject, CreateProductionData, split_sequence, hash_to_number
 
 # Important note regarding ffmpeg and .h264 encoding:  There was a lot of discussion about whether this is ok
 # to be distributing software with .h264 encoding.  I called the law firm that handles licensing and they said that
@@ -135,6 +135,123 @@ def get_file_type(input_file):
 #               CREATION
 #
 #####################################################################
+
+
+def _execute(command):
+    print 'executing command: %s' % command
+    p = subprocess.Popen(command,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
+    for each in p.stdout:
+        each = each.strip()
+        try:
+            if "ERROR" in each:
+                logging.error(each)
+        except TypeError:
+            pass
+
+
+def create_proxy(sequence, ext='jpg'):
+    """
+    Creates a Jpeg proxy resolution based off the resolution of the given path.
+    :param sequence:
+    :param ext:
+    :return:
+    """
+    path_object = PathObject(sequence)
+    new_res = '%s%s' % (path_object.resolution, 'Proxy')
+    path_object_output = path_object.copy(resolution=new_res)
+    output_dir = os.path.dirname(path_object_output.path_root)
+    if not os.path.exists(output_dir):
+        CreateProductionData(path_object=output_dir)
+    if '####' in sequence:
+        # replace ### with "*"
+        hashes, number = hash_to_number(sequence)
+        in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
+        out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
+        command = 'magick %s %s' % (in_seq, out_seq)
+    else:
+        sequence = ''
+        fileout = ''
+
+    _execute(command)
+    return out_seq.replace(number, hashes)
+
+
+def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height=False):
+    if do_height:
+        res = height
+    else:
+        res = width
+    path_object = PathObject(sequence)
+    new_res = 'hdProxy'
+    path_object_output = path_object.copy(resolution=new_res)
+    output_dir = os.path.dirname(path_object_output.path_root)
+    if not os.path.exists(output_dir):
+        CreateProductionData(path_object=output_dir)
+    if '####' in sequence:
+        # replace ### with "*"
+        hashes, number = hash_to_number(sequence)
+        in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
+        out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
+        command = 'magick %s -resize %s %s' % (in_seq, res, out_seq)
+    else:
+        command = 'not a sequence?'
+        sequence = ''
+        fileout = ''
+
+    _execute(command)
+    return out_seq.replace(number, hashes)
+
+
+def create_gif_proxy(sequence, ext='gif', width='480', height='x100', do_height=False):
+    if do_height:
+        res = height
+    else:
+        res = width
+    path_object = PathObject(sequence)
+    new_res = 'gif'
+    path_object_output = path_object.copy(resolution=new_res)
+    output_dir = os.path.dirname(path_object_output.path_root)
+    if not os.path.exists(output_dir):
+        CreateProductionData(path_object=output_dir)
+    if '####' in sequence:
+        in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
+        out_seq = '%s/%s%s' % (output_dir, os.path.basename(split_sequence(sequence)), ext)
+        command = 'magick %s -resize %s %s' % (in_seq, res, out_seq)
+    else:
+        sequence = ''
+        fileout = ''
+
+    print command
+    return out_seq
+    _execute(command)
+
+
+def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=True):
+    if do_height:
+        res = height
+    else:
+        res = width
+    path_object = PathObject(sequence)
+    new_res = 'gif'
+    path_object_output = path_object.copy(resolution=new_res)
+    output_dir = os.path.dirname(path_object_output.path_root)
+    if not os.path.exists(output_dir):
+        CreateProductionData(path_object=output_dir)
+    if '####' in sequence:
+        in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
+        out_seq = '%s/%sthumb.%s' % (output_dir, os.path.basename(split_sequence(sequence)), ext)
+        command = 'magick %s -resize %s %s' % (in_seq, res, out_seq)
+    else:
+        sequence = ''
+        fileout = ''
+
+    print command
+    return out_seq
+    _execute(command)
+
+
 
 
 def make_movie_thumb(input_file, output_file=None, frame='middle', thumb=True):

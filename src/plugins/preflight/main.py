@@ -1,13 +1,14 @@
 import os
-import yaml
+import json
 import sys
 import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
-from cglcore.path import icon_path
+from cglcore.path import icon_path, get_company_config, image_path
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.startup import do_gui_init
 from cglui.widgets.containers.model import ListItemModel
+from cglui.widgets.widgets import GifWidget
 from preflight_check import PreflightCheck
 
 
@@ -62,13 +63,17 @@ class ItemTable(LJTableWidget):
             self.nothing_selected.emit()
 
 
-class Preflight(QtWidgets.QWidget):
+class Preflight(QtWidgets.QDialog):
+    signal_one = QtCore.Signal(object)
 
-    def __init__(self, parent=None, software='maya', task='', model=None, **kwargs):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.preflight_dir = os.path.join(app_config()['paths']['code_root'], 'src', 'tools', software, 'preflight')
+    def __init__(self, parent=None, software='maya', preflight='', model=None, **kwargs):
+        QtWidgets.QDialog.__init__(self, parent)
+        self.software = software
+        self.preflight = preflight
+        self.software_dir = os.path.join(get_company_config(), 'cgl-fsutests', 'cgl_tools', software)
+        self.preflight_dir = os.path.join(self.software_dir, 'preflights')
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-        self.yaml_file = os.path.join(self.preflight_dir, task, 'order.yaml')
+        self.json_file = os.path.join(self.software_dir, 'preflights.cgl')
         self.modules = {}
         self.ignore = ['__init__.py']
         self.selected_checks = []
@@ -88,67 +93,67 @@ class Preflight(QtWidgets.QWidget):
 
         # create the widgets
         self.preflights = ItemTable(self)
-        self.software_label = QtWidgets.QLabel('Software')
-        self.software_selector = QtWidgets.QComboBox(self)
-        self.preflight_label = QtWidgets.QLabel('Preflight')
-        self.preflight_selector = QtWidgets.QComboBox(self)
+        self.preflights.setMinimumWidth(800)
+        self.preflights.setMinimumHeight(250)
+        self.software_label = QtWidgets.QLabel('Preflight Checks')
+        self.software_label.setProperty('class', 'ultra_title')
+
+        self.image_plane = GifWidget(gif_path=image_path('rolling_logs.gif'))
+        # self.image_plane.start()
+        self.image_plane.hide()
+
         self.run_all = QtWidgets.QPushButton('Run All')
-        # self.run_all.hide()
+        self.run_all.setProperty('class', 'add_button')
         self.run_selected = QtWidgets.QPushButton('Run Selected')
-        #self.publish_button = QtWidgets.QPushButton('Publish')
+        self.run_selected.setProperty('class', 'basic')
 
         # construct the GUI
         combo_layout.addWidget(self.software_label)
-        combo_layout.addWidget(self.software_selector)
-        combo_layout.addWidget(self.preflight_label)
-        combo_layout.addWidget(self.preflight_selector)
-        combo_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        combo_layout.addStretch(1)
+        ##combo_layout.addWidget(self.software_selector)
+        #c#ombo_layout.addWidget(self.preflight_label)
+        #c#ombo_layout.addWidget(self.preflight_selector)
+        #combo_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         button_bar = QtWidgets.QHBoxLayout(self)
         button_bar.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         button_bar.addWidget(self.run_selected)
         button_bar.addWidget(self.run_all)
-        #button_bar.addWidget(self.publish_button)
         v_layout.addLayout(combo_layout)
         v_layout.addWidget(self.preflights)
+        v_layout.addWidget(self.image_plane)
         v_layout.addLayout(button_bar)
 
         # load the GUI
-        self._load_yaml()
+        self._load_json()
         self.populate_table()
         self.preflights.item_selected.connect(self.update_selection)
         self.run_selected.clicked.connect(self.run_selected_clicked)
         self.run_all.clicked.connect(self.run_all_clicked)
-        #self.publish_button.clicked.connect(self.publish_clicked)
 
-    def publish_clicked(self):
-        pass
-
-    def _load_yaml(self):
-        print self.yaml_file
-        with open(self.yaml_file, 'r') as stream:
-            try:
-                self.modules = yaml.load(stream)
-            except yaml.YAMLError as exc:
-                logging.error(exc)
-                sys.exit(99)
+    def _load_json(self):
+        print self.json_file
+        print self.software, self.preflight
+        with open(self.json_file, 'r') as stream:
+            self.modules = json.load(stream)[self.software][self.preflight]
 
     def populate_table(self):
+        import sys
+        source_dir = r"C:\Users\tmiko\Documents\cglumberjack\companies\cgl-fsutests"
+        sys.path.insert(0, source_dir)
         data = []
         for item in self.modules:
-            print self.preflight_dir
-            module = self.modules[item]['module']
-            print module
-            module_name = module.split('.')[-1]
-            print module_name
-            loaded_module = __import__(module, globals(), locals(), module_name, -1)
-            class_ = getattr(loaded_module, module_name)
-            c = class_()
-            self.function_d.update({self.modules[item]['name']: c})
-            data.append([self.modules[item]['name'],
-                         'Untested',
-                         self.modules[item]['module'],
-                         self.modules[item]['order'],
-                         self.modules[item]['required']])
+            if item != 'order':
+                module = self.modules[item]['module']
+                module_name = module.split('.')[-1]
+                loaded_module = __import__(module, globals(), locals(), module_name, -1)
+                class_ = getattr(loaded_module, module_name)
+                c = class_()
+                self.function_d.update({self.modules[item]['label']: c})
+                data.append([self.modules[item]['label'],
+                             'Untested',
+                             self.modules[item]['module'],
+                             self.modules[item]['order'],
+                             self.modules[item]['required']])
         self.table_data = data
         self.preflights.set_item_model(FileTableModel(data, ["Check", "Status", "Path", "Order", "Required"]))
         self.preflights.sortByColumn(3, QtCore.Qt.SortOrder(0))
@@ -159,6 +164,7 @@ class Preflight(QtWidgets.QWidget):
         self.selected_checks = data
 
     def run_selected_clicked(self, checks=None):
+        # TODO - probably need to figure out how to multithread this so i can run gifs at the same time ;)
         if not checks:
             checks = self.selected_checks
         for each in checks:
@@ -172,6 +178,9 @@ class Preflight(QtWidgets.QWidget):
                 self.update_status(check=each['Check'], status=each['Status'])
             else:
                 print "Can't run a check when previous required checks have not passed"
+
+    def send_signal_one(self, data):
+        self.signal_one.emit(data)
 
     def previous_checks_passed(self, check):
         mdl = self.preflights.model()
@@ -208,6 +217,7 @@ class Preflight(QtWidgets.QWidget):
         self.preflights.hideColumn(3)
 
     def run_all_clicked(self):
+        self.image_plane.start()
         model = self.preflights.model()
         all_rows = []
         for irow in range(model.rowCount()):
@@ -219,12 +229,13 @@ class Preflight(QtWidgets.QWidget):
             all_rows.append(data)
 
         self.run_selected_clicked(checks=all_rows)
+        self.image_plane.stop()
 
 
 def main():
     app = do_gui_init()
     task = 'mdl'
-    mw = Preflight(software='Maya', task=task)
+    mw = Preflight(software='Maya', preflight=task)
     mw.setWindowTitle('%s Preflight' % task)
     mw.show()
     mw.raise_()

@@ -106,6 +106,7 @@ class PathObject(object):
             self.priority = 'medium'
 
     def process_string(self, path_object):
+        path_object = path_object.replace('\\', '/')
         self.get_company(path_object)
         self.unpack_path(path_object)
         self.set_data_from_attrs()
@@ -601,10 +602,8 @@ class PathObject(object):
         else:
             cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
         if self.company:
-            print self.company
             self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
         if self.project:
-            print self.project
             self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'global.yaml')
 
     def set_json(self):
@@ -739,14 +738,14 @@ class CreateProductionData(object):
         if path_object.context:
             new_context = d[path_object.context]
             new_obj = path_object.copy(context=new_context)
-            self.safe_makedirs(new_obj)
+            self.safe_makedirs(new_obj, test=self.test)
 
     def create_other_scope(self, path_object):
         if path_object.scope:
             for each in app_config()['rules']['scope_list']:
                 if each != path_object.scope:
                     new_obj = path_object.copy(scope=each)
-                    self.safe_makedirs(new_obj)
+                    self.safe_makedirs(new_obj, test=self.test)
                     self.create_other_context(new_obj)
 
     @staticmethod
@@ -758,11 +757,13 @@ class CreateProductionData(object):
         if path_object.ext:
             if os.path.splitext(path_):
                 path_ = os.path.dirname(path_)
+        # at this stage we're making path_
+        print 'Creating Directory: %s' % path_
         if not test:
             if not os.path.exists(path_):
                 os.makedirs(path_)
         else:
-            print 'TEST MODE: makeing dirs: %s' % path_
+            print 'TEST MODE: No directories were created'
 
     @staticmethod
     def create_project_management_data(path_object, project_management):
@@ -925,7 +926,7 @@ def load_style_sheet(style_file='stylesheet.css'):
     return data
 
 
-def lj_list_dir(directory, path_filter=None, basename=False):
+def lj_list_dir(directory, path_filter=None, basename=True):
     """
     Returns Files that are ready to be displayed in a LJWidget, essentially we run
     all output
@@ -978,10 +979,9 @@ def split_sequence_frange(sequence):
     else:
         return
 
+
 def split_sequence(sequence):
     frange = re.search(SEQ_SPLIT, sequence)
-    print frange
-    print frange.group(0)
     if frange:
         return sequence.split(frange.group(0))[0]
     else:
@@ -989,6 +989,7 @@ def split_sequence(sequence):
 
 
 def get_file_icon(filepath):
+    ip = icon_path('picture24px.png')
     if "." not in filepath:
         ip = icon_path('folder24px.png')
     if '###' in filepath:
@@ -997,11 +998,13 @@ def get_file_icon(filepath):
 
 
 def get_file_type(filepath):
+    ft = 'file'
     if "." not in filepath:
         ft = 'folder'
     if '###' in filepath:
         ft = 'sequence'
     return ft
+
 
 def get_company_config():
     user_dir = os.path.expanduser("~")
@@ -1010,6 +1013,18 @@ def get_company_config():
     else:
         cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
     return cg_lumberjack_dir
+
+
+def hash_to_number(sequence):
+    frange = re.search(SEQ_SPLIT, sequence)
+    print frange.group(0)
+    count = frange.group(0).count('#')
+    print count
+    if count < 10:
+        return frange.group(0), '%0'+str(count)+'d'
+    else:
+        return frange.group(0), '%'+str(count)+'d'
+
 
 
 

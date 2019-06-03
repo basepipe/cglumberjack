@@ -12,6 +12,7 @@ from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
 from cglcore.path import PathObject, CreateProductionData, icon_path, lj_list_dir, split_sequence_frange, get_file_type, split_sequence
+from plugins.preflight.main import Preflight
 
 FILEPATH = 0
 FILENAME = 1
@@ -47,7 +48,6 @@ class EmptyStateWidgetIO(EmptyStateWidget):
                 file_list.append(str(url.toLocalFile()))
             self.files_added.emit(file_list)
         else:
-            print 'invalid'
             e.ignore()
 
 
@@ -93,8 +93,8 @@ class IOPanel(QtWidgets.QWidget):
         self.company = None
         self.project = None
         self.data_frame = None
-        self.width_hint = 1100
-        self.height_hint = 300
+        self.width_hint = 1300
+        self.height_hint = 600
         self.current_selection = None
 
         self.path_object.set_attr(scope='IO')
@@ -105,7 +105,6 @@ class IOPanel(QtWidgets.QWidget):
 
         self.file_tree = LJTreeWidget(self)
         self.width_hint = self.file_tree.width_hint
-        print self.parent()
 
         pixmap = QtGui.QPixmap(icon_path('back24px.png'))
         import_empty_icon = QtGui.QIcon(pixmap)
@@ -115,10 +114,16 @@ class IOPanel(QtWidgets.QWidget):
                                           empty_state_icon=import_empty_icon)
         #self.import_events.hide()f
 
-        self.tags_title = QtWidgets.QLabel("<b>Select File(s) or Folder(s) to tag</b>")
+        self.tags_title = QtWidgets.QLineEdit("<b>Select File(s) or Folder(s) to tag</b>")
+        self.tags_title.setReadOnly(True)
         self.tags_title.setProperty('class', 'feedback')
+        self.tags_button = QtWidgets.QPushButton('View Publish')
+        self.tags_button.setProperty('class', 'basic')
+        self.tags_button.setMaximumWidth(180)
         self.tags_title_row = QtWidgets.QHBoxLayout()
         self.tags_title_row.addWidget(self.tags_title)
+        self.tags_title_row.addWidget(self.tags_button)
+        self.tags_button.hide()
 
         self.scope_label = QtWidgets.QLabel('Scope')
         self.scope_combo = AdvComboBox()
@@ -336,7 +341,7 @@ class IOPanel(QtWidgets.QWidget):
                 if self.task_combo.currentText():
 
                     try:
-                        self.tags_title.setText('CGL:>  Tagged & Ready For Publish!')
+
                         task = app_config()['pipeline_steps'][self.scope_combo.currentText()][str(self.task_combo.currentText())]
                         to_object = self.path_object.copy(scope=self.scope_combo.currentText(),
                                                           seq=seq,
@@ -346,13 +351,19 @@ class IOPanel(QtWidgets.QWidget):
                                                           version='000.000',
                                                           user='publish',
                                                           resolution='high')
-                        print 'Pub Path: %s' % to_object.path_root
                         for f in files:
                             row = self.data_frame.loc[self.data_frame['Filename'] == f[1]].index[0]
                             status = self.data_frame.at[row, 'Status']
                             if status == 'Imported':
                                 status = 'Tagged'
                             to_path = os.path.join(to_object.path_root, f[1])
+                            if status == 'Published':
+                                self.tags_title.setText('CGL:>  Published!')
+                                self.tags_button.clicked.connect(lambda: self.go_to_location(to_path))
+                                self.tags_button.show()
+                                # self.publish_button.hide()
+                            else:
+                                self.tags_title.setText('CGL:>  Tagged & Ready For Publish!')
                             self.data_frame.at[row, 'Scope'] = self.scope_combo.currentText()
                             self.data_frame.at[row, 'Seq'] = seq
                             self.data_frame.at[row, 'Shot'] = shot
@@ -368,6 +379,11 @@ class IOPanel(QtWidgets.QWidget):
                         print 'seq', seq
                         print 'shot', shot
         # UPDATE the tree with this info.
+
+    def go_to_location(self, to_path):
+        path_object = PathObject(to_path).copy(context='source', user='', resolution='', filename='', ext='', filename_base='', version='')
+        self.location_changed.emit(path_object)
+
 
     def clear_all(self):
         self.scope_combo.setCurrentIndex(0)
@@ -406,8 +422,6 @@ class IOPanel(QtWidgets.QWidget):
             f = data[0]
             try:
                 row = self.data_frame.loc[self.data_frame['Filename'] == f[1]].index[0]
-                print row
-                print self.data_frame.loc[row, 'Filename']
             except IndexError:
                 self.hide_tags()
                 return
@@ -557,67 +571,28 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.show()
 
     def publish_tagged_assets(self):
-        d = datetime.datetime.today()
-        current_date = d.strftime('%d-%m-%Y %H:%M:%S')
-        for index, row in self.data_frame.iterrows():
-            if row['Status'] == 'Tagged':
-                from_file = row['Filepath']
-                to_file = row['Publish_Filepath']
-                if row['Filetype'] == 'folder':
-                    print "Folder"
-                    print 'Copying %s to %s' % (from_file, to_file)
-                    # Send this to the Preflights - No matter what basically
-                    shutil.copytree(from_file, to_file)
-                    CreateProductionData(to_file, json=True)
-                    self.file_tree.model.item(index, STATUS).setText('Published')
-                    self.data_frame.at[index, 'Status'] = 'Published'
-                    self.data_frame.at[index, 'Publish_Date'] = current_date
-                    row['Publish_Date'] = current_date
-                    row['Status'] = 'Published'
-                    self.make_source_file(to_file, row)
+        # figure out what task we're publishing this thing to
+        scope = self.scope_combo.currentText()
+        task = app_config()['pipeline_steps'][scope][self.task_combo.currentText()]
+        try:
+            this = Preflight(self, software='lumbermill', preflight=task, data_frame=self.data_frame,
+                             file_tree=self.file_tree, pandas_path=self.pandas_path,
+                             ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
+        except KeyError:
+            this = Preflight(self, software='lumbermill', preflight='ingest_default', data_frame=self.data_frame,
+                             file_tree=self.file_tree, pandas_path=self.pandas_path,
+                             ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
+        this.exec_()
+        return
 
-                # What to do with Sequences:
-                else:
-                    to_dir = os.path.dirname(to_file)
-                    if not os.path.exists(to_dir):
-                        print 'Creating Folders for %s' % to_dir
-                        os.makedirs(to_dir)
-                    if row['Filetype'] == 'sequence':
-
-                        CreateProductionData(to_dir, json=True)
-                        from_query = split_sequence(from_file)
-                        for f in glob.glob('%s*' % from_query):
-                            to_file = os.path.join(to_dir, os.path.basename(f))
-                            print 'Copying %s to %s' % (f, to_file)
-                            shutil.copy2(f, to_file)
-                        self.file_tree.model.item(index, STATUS).setText('Published')
-                        self.data_frame.at[index, 'Status'] = 'Published'
-                        self.data_frame.at[index, 'Publish_Date'] = current_date
-                        row['Publish_Date'] = current_date
-                        row['Status'] = 'Published'
-                        self.make_source_file(to_dir, row)
-                    else:
-                        print 'File'
-                        print 'Copying %s to %s' % (from_file, to_file)
-                        CreateProductionData(to_file, json=True)
-                        shutil.copy2(f, to_file)
-                        self.file_tree.model.item(index, STATUS).setText('Published')
-                        self.data_frame.at[index, 'Status'] = 'Published'
-                        self.data_frame.at[index, 'Publish_Date'] = current_date
-                        row['Publish_Date'] = current_date
-                        row['Status'] = 'Published'
-                        self.make_source_file(to_file, row)
-                        self.make_source_file(to_file)
-        self.save_data_frame()
-
-    def make_source_file(self, to_path, row):
+    @staticmethod
+    def make_source_file(to_path, row):
         source_path = PathObject(to_path)
         source_path.set_attr(context='source')
         source_path.set_attr(filename='system_report.csv')
         dir = os.path.dirname(source_path.path_root)
         if not os.path.exists(dir):
             os.makedirs(dir)
-        print 'creating: %s' % source_path.path_root
         data = []
         data.append((row["Filepath"], row["Filename"], row["Filetype"], row["Frame_Range"], row["Tags"],
                      row["Keep_Client_Naming"], row["Scope"], row["Seq"], row["Shot"], row["Task"],

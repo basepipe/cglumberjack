@@ -1,6 +1,6 @@
 import os
 import sys
-import yaml
+import json
 from cglcore.path import PathObject
 
 
@@ -39,9 +39,9 @@ class CustomMenu(object):
         if not os.path.exists(self.company_config):
             print 'Company Config %s: does no exist' % self.company_config
             return
-        self.menus_yaml = os.path.join(self.company_config, 'cgl_tools', software, '%s.yaml' % type_)
-        self.menus = self.load_yaml()
-        self.menus_folder = os.path.join(os.path.dirname(self.menus_yaml), type_)
+        self.menus_file = os.path.join(self.company_config, 'cgl_tools', software, '%s.cgl' % type_)
+        self.menus = self.load_cgl()
+        self.menus_folder = os.path.join(os.path.dirname(self.menus_file), type_)
         self.menu_dict = {}
 
     def set_path_object(self):
@@ -50,27 +50,25 @@ class CustomMenu(object):
             print self.scene_path
             self.path_object = PathObject(str(self.scene_path))
 
-
-    def load_yaml(self):
+    def load_cgl(self):
         """
-        returns all the shelves, menus, or preflights from the yaml file
+        returns all the shelves, menus, or preflights from the json file
         :return:
         """
-        with open(self.menus_yaml, 'r') as stream:
-            try:
-                result = yaml.load(stream)
-                if result:
-                    return result[self.software]
-                else:
-                    return {}
-            except yaml.YAMLError as exc:
-                print(exc)
-                sys.exit(99)
+        if os.path.exists(self.menus_file):
+            with open(self.menus_file, 'r') as stream:
+                    result = json.load(stream)
+                    if result:
+                        return result[self.software]
+                    else:
+                        return
+        else:
+            print 'No menu file found!'
 
     @staticmethod
     def order_menus(menus):
         """
-        Orders the Menus from the Yaml file correctly.  This is necessary for the menus to show up in the correct
+        Orders the Menus from the json file correctly.  This is necessary for the menus to show up in the correct
         order within the interface.
         :return:
         """
@@ -141,14 +139,18 @@ class CustomMenu(object):
     def add_menu_buttons(self, menu, buttons):
         for button in buttons:
             label = self.menus[menu][button]['button name']
-            icon_file = self.get_icon_path(menu, button)
-            if icon_file:
-                label = ''
-            self.add_button(menu, label=self.menus[menu][button]['button name'],
-                            annotation=self.menus[menu][button]['annotation'],
-                            command=self.menus[menu][button]['command'],
-                            icon=icon_file,
-                            image_overlay_label=label)
+            try:
+                icon_file = self.get_icon_path(menu, button)
+                if icon_file:
+                    label = ''
+                self.add_button(menu, label=self.menus[menu][button]['button name'],
+                                annotation=self.menus[menu][button]['annotation'],
+                                command=self.menus[menu][button]['command'],
+                                icon=icon_file,
+                                image_overlay_label=label)
+            except KeyError:
+                self.add_button(menu, label=self.menus[menu][button]['button name'],
+                                command=self.menus[menu][button]['command'])
 
     def load_menus(self):
         self.delete_menus()
