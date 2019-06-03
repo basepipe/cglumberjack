@@ -111,7 +111,8 @@ templates:
   assets:
     render:
       path:    "{company}/render/{project}/assets/{type}/{asset}/{task}/{user}"
-      version: "{version}/{resolution}/{cam}/{render_pass}/{aov}/{filename}.{ext}"
+      version: "{version}/{resolution}/{filename}.{ext}"
+      file: "{cam}/{render_pass}/{aov}/{filename}.{ext}"
     source:
       path:    "{company}/source/{project}/assets/{type}/{asset}/{task}/{user}"
       version: "{version}/{resolution}/{filename}.{ext}"
@@ -121,7 +122,8 @@ templates:
   shots:
     render:
       path:    "{company}/render/{project}/shots/{seq}/{shot}/{task}/{user}"
-      version: "{version}/{resolution}/{cam}/{render_pass}/{aov}/{filename}.{ext}"
+      version: "{version}/{resolution}/{filename}.{ext}"
+      file: "{cam}/{render_pass}/{aov}/{filename}.{ext}"
     source:
       path:    "{company}/source/{project}/shots/{seq}/{shot}/{task}/{user}"
       version: "{version}/{resolution}/{filename}.{ext}"

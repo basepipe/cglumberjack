@@ -1,11 +1,10 @@
-import yaml
 import os
 import json
 from Qt import QtWidgets, QtCore, QtGui
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.base import LJDialog
 from cglcore.path import load_style_sheet, get_company_config
-from utils import CGLMenu, MenuButton
+from utils import CGLMenu
 
 
 class PreflightDesigner(LJDialog):
@@ -193,22 +192,34 @@ class PreflightDesigner(LJDialog):
         dir_ = os.path.dirname(button_file)
         if not os.path.exists(dir_):
             os.makedirs(dir_)
+        self.make_init_for_folders_in_path(dir_)
         if button_widget.do_save:
             with open(button_file, 'w+') as x:
                 x.write(code)
             button_widget.do_save = False
 
     def make_init_for_folders_in_path(self, folder):
-        pass
+        config = self.company_config.replace('\\', '/')
+        folder = folder.replace('\\', '/')
+        folder = folder.replace(config, '')
+        parts = folder.split('/')
+        parts.remove('')
+        string = config
+        for p in parts:
+            if '.' not in p:
+                string = '%s/%s' % (string, p)
+                init = '%s/__init__.py' % string
+                if not os.path.exists(init):
+                    self.make_init(os.path.dirname(init))
 
     def make_init(self, folder):
         print 'creating init for %s' % folder
         with open(os.path.join(folder, '__init__.py'), 'w+') as i:
             i.write("")
 
-    @staticmethod
-    def save_json(filepath, data):
+    def save_json(self, filepath, data):
         print filepath
+        self.make_init_for_folders_in_path(filepath)
         with open(filepath, 'w') as outfile:
             json.dump(data, outfile, indent=4, sort_keys=True)
 

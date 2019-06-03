@@ -2,6 +2,7 @@ import os
 from Qt import QtWidgets, QtCore, QtGui
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.text import Highlighter
+from cglcore.path import start
 
 
 GUI_DICT = {'shelves.yaml': ['button name', 'command', 'icon', 'order', 'annotation', 'label'],
@@ -78,6 +79,9 @@ class PreflightStep(QtWidgets.QWidget):
 
         # tool buttons
         delete_button = QtWidgets.QPushButton('Delete')
+        delete_button.setProperty('class', 'basic')
+        open_button = QtWidgets.QPushButton('Open')
+        open_button.setProperty('class', 'basic')
 
         # Text Edit
         self.code_text_edit = QtWidgets.QPlainTextEdit()
@@ -95,6 +99,7 @@ class PreflightStep(QtWidgets.QWidget):
 
         # Layout the tool row
         tool_row.addStretch(1)
+        tool_row.addWidget(open_button)
         tool_row.addWidget(delete_button)
 
         # layout the widget
@@ -105,8 +110,15 @@ class PreflightStep(QtWidgets.QWidget):
         # Signals and Slots
         self.code_text_edit.textChanged.connect(self.on_code_changed)
         delete_button.clicked.connect(self.on_delete_clicked)
+        open_button.clicked.connect(self.on_open_clicked)
         self.load_attrs()
         self.label_line_edit.textChanged.connect(self.on_code_changed)
+
+    def on_open_clicked(self):
+        code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
+                                 '%s.py' % self.preflight_step_name)
+        print code_path
+        start(code_path)
 
     def on_code_changed(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
@@ -132,6 +144,7 @@ class PreflightStep(QtWidgets.QWidget):
         code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
                                  '%s.py' % self.preflight_step_name)
         print code_path, 'importing'
+
         if os.path.exists(code_path):
             try:
                 return open(code_path).read()
@@ -193,6 +206,9 @@ class MenuButton(QtWidgets.QWidget):
 
         # tool buttons
         delete_button = QtWidgets.QPushButton('Delete')
+        delete_button.setProperty('class', 'basic')
+        open_button = QtWidgets.QPushButton('Open')
+        open_button.setProperty('class', 'basic')
 
         # Text Edit
         self.code_text_edit = QtWidgets.QPlainTextEdit()
@@ -210,6 +226,7 @@ class MenuButton(QtWidgets.QWidget):
 
         # Layout the tool row
         tool_row.addStretch(1)
+        tool_row.addWidget(open_button)
         tool_row.addWidget(delete_button)
 
         # layout the widget
@@ -221,8 +238,14 @@ class MenuButton(QtWidgets.QWidget):
         self.button_name_line_edit.textChanged.connect(self.set_button_name)
         self.code_text_edit.textChanged.connect(self.on_code_changed)
         delete_button.clicked.connect(self.on_delete_clicked)
+        open_button.clicked.connect(self.on_open_clicked)
         self.load_attrs()
         self.label_line_edit.textChanged.connect(self.on_code_changed)
+
+    def on_open_clicked(self):
+        code_path = os.path.join(os.path.dirname(self.menu_path), 'menus', self.menu_name, '%s.py' % self.name)
+        print code_path
+        start(code_path)
 
     def on_code_changed(self):
         code_path = os.path.join(os.path.dirname(self.menu_path), 'menus', self.menu_name, '%s.py' % self.name)

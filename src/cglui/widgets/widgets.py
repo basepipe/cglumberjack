@@ -928,6 +928,51 @@ class AdvComboBox(QtWidgets.QComboBox):
             self.addItem(item)
 
 
+class GifWidget(QtWidgets.QWidget):
+    def __init__(self, parent=None, gif_path=None, animated=True):
+        QtWidgets.QWidget.__init__(self)
+        self.setProperty('class', 'gif_widget')
+        self.animated = animated
+        layout = QtWidgets.QHBoxLayout()
+        self.image = QtWidgets.QLabel()
+        self.label_1 = QtWidgets.QLabel('Working...')
+        self.label_2 = QtWidgets.QLabel('Working...')
+        self.label_1.setProperty('class', 'feedback')
+        self.label_2.setProperty('class', 'feedback')
+        self.label_1.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
+        self.label_2.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+
+        # Create the Actual Gif Thingy
+        if animated:
+            print 1
+            self.gif = QtGui.QMovie(gif_path)
+            self.image.setMovie(self.gif)
+        else:
+            print 2
+            self.gif = QtGui.QPixmap(gif_path)
+            self.image.setPixmap(self.gif)
+
+        self.gif.setScaledSize(QtCore.QSize(120, 80))
+        layout.addWidget(self.label_1)
+        layout.addWidget(self.image)
+        layout.addWidget(self.label_2)
+        self.setLayout(layout)
+
+    def start(self):
+        if self.animated:
+            self.show()
+            self.gif.start()
+
+    def stop(self):
+        self.gif.stop()
+        self.hide()
+
+
+
+
 class LabelComboRow(QtWidgets.QVBoxLayout):
     def __init__(self, label, button=True, bold=True):
         QtWidgets.QVBoxLayout.__init__(self)
