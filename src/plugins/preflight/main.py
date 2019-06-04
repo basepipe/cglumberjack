@@ -4,7 +4,7 @@ import sys
 import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
-from cglcore.path import icon_path, get_company_config, image_path
+from cglcore.path import icon_path, image_path, get_cgl_config
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.startup import do_gui_init
 from cglui.widgets.containers.model import ListItemModel
@@ -66,11 +66,11 @@ class ItemTable(LJTableWidget):
 class Preflight(QtWidgets.QDialog):
     signal_one = QtCore.Signal(object)
 
-    def __init__(self, parent=None, software='maya', preflight='', model=None, **kwargs):
+    def __init__(self, parent=None, software='lumbermill', preflight='', model=None, **kwargs):
         QtWidgets.QDialog.__init__(self, parent)
         self.software = software
         self.preflight = preflight
-        self.software_dir = os.path.join(get_company_config(), 'cgl-fsutests', 'cgl_tools', software)
+        self.software_dir = os.path.join(get_cgl_config(), 'cgl_tools', software)
         self.preflight_dir = os.path.join(self.software_dir, 'preflights')
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.json_file = os.path.join(self.software_dir, 'preflights.cgl')
@@ -138,7 +138,9 @@ class Preflight(QtWidgets.QDialog):
 
     def populate_table(self):
         import sys
-        source_dir = r"C:\Users\tmiko\Documents\cglumberjack\companies\cgl-fsutests"
+        source_dir = os.path.join(get_cgl_config())
+        print source_dir
+        # source_dir = r"C:\Users\tmiko\Documents\cglumberjack\companies\cgl-fsutests"
         sys.path.insert(0, source_dir)
         data = []
         for item in self.modules:

@@ -4,7 +4,7 @@ from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
-from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, image_path
+from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, image_path, split_sequence_frange
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, VButtonPanel
 
 from apps.lumbermill.elements.FilesPanel import FilesPanel
@@ -35,6 +35,15 @@ class PathWidget(QtWidgets.QFrame):
     def update_path(self, path_object):
         if path_object:
             path_object = PathObject(path_object)
+            if path_object.filename:
+                if '###' in path_object.filename:
+                    print path_object.filename
+                    try:
+                        filename = split_sequence_frange(path_object.filename)[0]
+                        path_object.set_attr(filename=filename)
+                    except TypeError:
+                        print 'passing'
+
             print 'updating to %s' % path_object.path_root
             self.text = path_object.path_root
             self.path_line_edit.setText(path_object.path_root)
@@ -298,6 +307,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(self.path_object)
 
     def update_location(self, data):
+        print
         try:
             if self.sender().force_clear:
                 if self.panel:
@@ -317,7 +327,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         shot_attrs = ['shot', 'asset']
 
         try:
-            print 'Updating location to: %s' % PathObject.path_root
+            print 'Updating location to: %s' % path_object.path_root
         except AttributeError:
             print 'nothing found'
         if path_object.scope == 'IO':
@@ -334,7 +344,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 return
 
         if last == 'filename':
-            print 1
             if self.panel:
                 # if we already have a panel, and we're getting a filename it means it's a currently selected file
                 # and we don't want to reload the panel or it gets into a loop and won't select the file
@@ -346,17 +355,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if self.panel:
                 self.panel.clear_layout()
         if last == 'resolution':
-            print 2
             pass
             self.load_files_panel(path_object)
         if last == 'project':
-            print 4
             if path_object.project == '*':
                 self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box)
             else:
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         if last == 'scope':
-            print 5
             if path_object.scope == '*':
                 self.panel = ScopePanel(path_object=path_object)
             elif path_object.scope == 'IO':
@@ -365,32 +371,26 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             else:
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last in shot_attrs:
-            print 6
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
             else:
                 self.panel = VButtonPanel(path_object=path_object, element='task')
                 self.panel.add_button.connect(self.add_task)
         elif last in seq_attrs:
-            print 7
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last == 'ingest_source':
-            print 8
             from apps.lumbermill.elements.IOPanel import IOPanel
             self.panel = IOPanel(path_object=path_object)
         elif last == 'task':
-            print 9
             if path_object.task == '*':
                 self.panel = VButtonPanel(path_object=path_object, element='task')
                 self.panel.add_button.connect(self.add_task)
             else:
                 self.load_files_panel(path_object)
         elif last == 'company':
-            print 10
             self.panel = CompanyPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         if self.panel:
-            print 11
             self.panel.location_changed.connect(self.update_location)
             self.panel.location_changed.connect(self.path_widget.update_path)
             self.layout.addWidget(self.panel)
@@ -413,7 +413,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(path_object.data)
 
     def load_files_panel(self, path_object):
-        print 33, path_object.path_root
         self.panel = FilesPanel(path_object=path_object, user_email=self.user_email,
                                 user_name=self.user_name, show_import=self.show_import)
         self.panel.open_signal.connect(self.open_clicked)
@@ -425,7 +424,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.source_selection = data
 
     def open_clicked(self):
-        if '####' in self.path_object.path_root:
+        if '####' in self.path_widget.path_line_edit.text():
             print 'Nothing set for sequences yet'
         else:
             print 'Opening %s' % self.path_widget.path_line_edit.text()
@@ -441,7 +440,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
 
 class CGLumberjack(LJMainWindow):
-    def __init__(self, show_import=False):
+    def __init__(self, show_import=False, ):
         LJMainWindow.__init__(self)
         #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.user_name = ''
@@ -535,14 +534,14 @@ class CGLumberjack(LJMainWindow):
 
     def on_preflight_designer_clicked(self):
         from apps.pipeline.preflight_designer import PreflightDesigner
-        dialog = PreflightDesigner(self, path_object=self.centralWidget().path_object)
+        dialog = PreflightDesigner(self)
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)
         dialog.exec_()
 
     def on_menu_designer_clicked(self):
         from apps.pipeline.menu_designer import MenuDesigner
-        dialog = MenuDesigner(self, path_object=self.centralWidget().path_object)
+        dialog = MenuDesigner(self)
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)
         dialog.exec_()
@@ -559,7 +558,7 @@ class CGLumberjack(LJMainWindow):
 if __name__ == "__main__":
     from cglui.startup import do_gui_init
     app = do_gui_init()
-    splash_pix = QtGui.QPixmap(image_path('night_rider.gif'))
+    splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
     splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
     splash.setMask(splash_pix.mask())
     splash.show()

@@ -1,9 +1,9 @@
 import path
-from cglcore.convert import create_proxy, create_hd_proxy, create_gif_proxy, create_gif_thumb
+from cglcore.convert import create_proxy, create_hd_proxy, create_gif_proxy, create_mov_hd_proxy
 
-test = r'D:\VFX\companies\cgl-fsutests\render\comptestB\shots\SEA\1500\plate\publish\000.000\high\A082C007_181012_R25Y.#######.dpx'
+test = r'D:/VFX/companies/cgl-fsutests/source/ingest_Test/shots/SEA/0160/comp/tmikota/000.000/high/SEA_0160_comp.nk'
 
-create_proxy(test)
-#create_hd_proxy(test)
-#create_gif_proxy(test)
-#create_gif_thumb(test)
+
+this = path.PathObject(test)
+
+'%s/*' % this.split_after('shot')

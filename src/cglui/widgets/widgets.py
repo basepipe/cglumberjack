@@ -947,11 +947,9 @@ class GifWidget(QtWidgets.QWidget):
 
         # Create the Actual Gif Thingy
         if animated:
-            print 1
             self.gif = QtGui.QMovie(gif_path)
             self.image.setMovie(self.gif)
         else:
-            print 2
             self.gif = QtGui.QPixmap(gif_path)
             self.image.setPixmap(self.gif)
 

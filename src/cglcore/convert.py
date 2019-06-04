@@ -151,7 +151,7 @@ def _execute(command):
             pass
 
 
-def create_proxy(sequence, ext='jpg'):
+def create_proxy(sequence, ext='jpg', start_frame='1001'):
     """
     Creates a Jpeg proxy resolution based off the resolution of the given path.
     :param sequence:
@@ -169,7 +169,7 @@ def create_proxy(sequence, ext='jpg'):
         hashes, number = hash_to_number(sequence)
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
-        command = 'magick %s %s' % (in_seq, out_seq)
+        command = '%s %s -scene %s %s' % (config['magick'], in_seq, start_frame, out_seq)
     else:
         sequence = ''
         fileout = ''
@@ -178,7 +178,7 @@ def create_proxy(sequence, ext='jpg'):
     return out_seq.replace(number, hashes)
 
 
-def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height=False):
+def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height=False, start_frame='1001'):
     if do_height:
         res = height
     else:
@@ -194,7 +194,7 @@ def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height
         hashes, number = hash_to_number(sequence)
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
-        command = 'magick %s -resize %s %s' % (in_seq, res, out_seq)
+        command = '%s %s -scene %s -resize %s %s' % (config['magick'], in_seq, start_frame, res, out_seq)
     else:
         command = 'not a sequence?'
         sequence = ''
@@ -218,14 +218,13 @@ def create_gif_proxy(sequence, ext='gif', width='480', height='x100', do_height=
     if '####' in sequence:
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s' % (output_dir, os.path.basename(split_sequence(sequence)), ext)
-        command = 'magick %s -resize %s %s' % (in_seq, res, out_seq)
+        command = '%s %s -resize %s %s' % (config['magick'], in_seq, res, out_seq)
     else:
         sequence = ''
         fileout = ''
 
-    print command
-    return out_seq
     _execute(command)
+    return out_seq
 
 
 def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=True):
@@ -242,15 +241,59 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
     if '####' in sequence:
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%sthumb.%s' % (output_dir, os.path.basename(split_sequence(sequence)), ext)
-        command = 'magick %s -resize %s %s' % (in_seq, res, out_seq)
+        command = '%s %s -resize %s %s' % (config['magick'], in_seq, res, out_seq)
     else:
         sequence = ''
         fileout = ''
 
-    print command
-    return out_seq
     _execute(command)
+    return out_seq
 
+
+def create_mov_hd_proxy(sequence, framerate=settings['frame_rate'], start_frame=None,
+                        output_frame_rate=None, res=settings['resolution']['video_review']):
+    if not start_frame:
+        print 'No Start Frame Defined'
+        return
+
+    path_object = PathObject(sequence)
+    path_object_output = path_object.copy(resolution='movWeb')
+    output_dir = os.path.dirname(path_object_output.path_root)
+    hashes, number = hash_to_number(sequence)
+    if not os.path.exists(output_dir):
+        CreateProductionData(path_object=output_dir)
+    input_file = '%s%s.%s' % (split_sequence(sequence), number, path_object.ext)
+    output_file = '%s/%s%s' % (output_dir, os.path.basename(split_sequence(sequence)), 'mov')
+
+    if os.path.splitext(input_file)[-1] == '.exr':
+        logging.info('applying gamma 2.2 to linear .exr sequence')
+        gamma = 2.2
+    else:
+        gamma = 1
+
+    if not output_frame_rate:
+        output_frame_rate = framerate
+    encoder = "libx264"
+    profile = 'high'
+    constant_rate_factor = "24"  # i need to test this with stuff that's not created at 24fps -
+    pixel_format = 'yuv420p'
+
+    res_list = res.split('x')
+    width = res_list[0]
+    height = res_list[1]
+    filter_arg = r' -filter:v "scale=iw*min($width/iw\,$height/ih):ih*min($width/iw\,$height/ih),' \
+                 r' pad=$width:$height:($width-iw*min($width/iw\,$height/ih))/2:' \
+                 r'($height-ih*min($width/iw\,$height/ih))/2" '.replace('$width', width).replace('$height',
+                                                                                                 height)
+    ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
+                 r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'],
+                                                        start_frame, framerate, gamma, input_file, res, encoder,
+                                                        profile, constant_rate_factor, pixel_format,
+                                                        output_frame_rate, filter_arg, output_file)
+    print ffmpeg_cmd
+    p = subprocess.Popen(ffmpeg_cmd, shell=True)
+    p.wait()
+    return output_file
 
 
 
@@ -386,7 +429,7 @@ def get_thumb_res(input_file):
 
 def make_web_mov(input_file, output_file=None, framerate=frame_rate, output_frame_rate=None,
                  res=settings['resolution']['video_review']):
-
+    print input_file
     if get_file_type(input_file) is 'sequence':
         # This section may have to be augmented or replaced to work with something that is licensed to deal with .h264
         if os.path.splitext(input_file)[-1] == '.exr':
@@ -433,6 +476,8 @@ def make_web_mov(input_file, output_file=None, framerate=frame_rate, output_fram
                                                             start_number, framerate, gamma, input_file, res, encoder,
                                                             profile, constant_rate_factor, pixel_format,
                                                             output_frame_rate, filter_arg, output_file)
+        print ffmpeg_cmd
+        return
         if not os.path.isdir(os.path.dirname(output_file)):
             os.makedirs(os.path.dirname(output_file))
         p = subprocess.Popen(ffmpeg_cmd, shell=True)

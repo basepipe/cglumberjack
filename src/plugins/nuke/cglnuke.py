@@ -45,6 +45,10 @@ def import_media(filepath):
     """
     readNode = nuke.createNode('Read')
     readNode.knob('file').fromUserText(filepath)
+    path_object = PathObject(filepath).copy(resolution='hdProxy', ext='jpg')
+    dir_ = os.path.dirname(path_object.path_root)
+    if os.path.exists(dir_):
+        readNode.knob('proxy').fromUserText(path_object.path_root)
 
 
 def create_scene_write_node():
