@@ -72,7 +72,8 @@ class CompanyPanel(QtWidgets.QWidget):
 
     def load_companies(self):
         self.company_widget.list.clear()
-        companies = glob.glob(self.path_object.path_root)
+        companies_loc = '%s/*' % self.path_object.root
+        companies = glob.glob(companies_loc)
         if companies:
             for each in companies:
                 c = os.path.basename(each)
@@ -234,7 +235,6 @@ class VButtonPanel(QtWidgets.QWidget):
             self.path_object.__dict__[self.element] = short
             self.path_object.data[self.element] = short
             self.path_object.set_path()
-            print 1, self.path_object.path_root
             self.location_changed.emit(self.path_object)
 
     def clear_layout(self, layout=None):
@@ -276,14 +276,13 @@ class ScopePanel(QtWidgets.QWidget):
 
     def on_button_clicked(self):
         if self.sender().text() == 'ingest':
-            scope = 'IO'
+            self.path_object.set_attr(scope='IO')
+            print 'set the scope'
         else:
             scope = self.sender().text()
-        if scope:
             self.path_object.set_attr(scope=scope)
-            if scope is not 'IO':
-                self.path_object.set_attr(seq='*')
-            self.location_changed.emit(self.path_object)
+            self.path_object.set_attr(seq='*')
+        self.location_changed.emit(self.path_object)
 
     def clear_layout(self, layout=None):
         if not layout:

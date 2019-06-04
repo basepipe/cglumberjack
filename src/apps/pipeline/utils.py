@@ -302,9 +302,9 @@ class CGLMenu(QtWidgets.QWidget):
         self.buttons = LJTabWidget()
         self.buttons.setProperty('class', 'vertical')
         self.buttons.tabBar().setProperty('class', 'vertical')
-        if self.type == 'menu':
+        if self.type == 'menus':
             self.title = QtWidgets.QLabel('%s %s Buttons: (Drag to Reorder)' % (self.menu_name, self.type.title()))
-        elif self.type == 'preflight':
+        elif self.type == 'preflights':
             self.title = QtWidgets.QLabel('%s %s Steps: (Drag to Reorder)' % (self.menu_name, self.type.title()))
         self.title.setProperty('class', 'title')
         self.add_button = QtWidgets.QPushButton('add %s button' % self.type)
@@ -327,7 +327,7 @@ class CGLMenu(QtWidgets.QWidget):
 
     def on_add_menu_button(self):
         print self.menu_path, 'is path'
-        if self.type == 'menu':
+        if self.type == 'menus':
             dialog = InputDialog(title='Add Menu Button', message='Enter a Name for your Button', line_edit=True,
                                  regex='[a-zA-Z0-0]{3,}', name_example='Only letters & Numbers Allowed in Button Names')
             dialog.exec_()
@@ -341,7 +341,7 @@ class CGLMenu(QtWidgets.QWidget):
                                                attrs=attrs, menu_path=self.menu_path)
                 index = self.buttons.addTab(new_button_widget, button_name)
                 self.buttons.setCurrentIndex(index)
-        elif self.type == 'preflight':
+        elif self.type == 'preflights':
             dialog = InputDialog(title='Add Preflight Step', message='Enter a Name for your Preflight Step',
                                  line_edit=True, regex='[a-zA-Z]{3,}',
                                  name_example='Ideally Preflights are CamelCase - ExamplePreflightName')
@@ -370,11 +370,11 @@ class CGLMenu(QtWidgets.QWidget):
             for button in self.menu:
                 if button != 'order':
                     if i == self.menu[button]['order']:
-                        if self.type == 'menu':
+                        if self.type == 'menus':
                             button_widget = MenuButton(parent=self.buttons, menu_name=self.menu_name, button_name=button,
                                                        attrs=self.menu[button], menu_path=self.menu_path)
                             self.buttons.addTab(button_widget, button)
-                        elif self.type == 'preflight':
+                        elif self.type == 'preflights':
                             button_widget = PreflightStep(parent=self.buttons, preflight_name=self.menu_name,
                                                           preflight_step_name=button,
                                                           attrs=self.menu[button], preflight_path=self.menu_path)

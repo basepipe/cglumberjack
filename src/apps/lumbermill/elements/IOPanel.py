@@ -505,7 +505,7 @@ class IOPanel(QtWidgets.QWidget):
     def populate_seq(self):
         self.seq_combo.clear()
         self.seq_combo.lineEdit().setPlaceholderText('Type, or Choose')
-        seqs = []
+        seqs = ['']
         if self.scope_combo.currentText() == 'shots':
             element = 'seq'
         else:
@@ -514,8 +514,8 @@ class IOPanel(QtWidgets.QWidget):
             seqs = self.path_object.copy(seq='*', scope=self.scope_combo.currentText()).glob_project_element(element)
         elif self.scope_combo.currentText() == 'assets':
             seqs = app_config()['asset_category_long_list']
-        if seqs[0] != '':
-            seqs.insert(0, '')
+        if not seqs:
+            seqs = ['']
         self.seq_combo.addItems(seqs)
         return seqs
 

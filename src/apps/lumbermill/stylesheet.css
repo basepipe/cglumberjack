@@ -65,10 +65,12 @@ QToolButton.add_button{
     background-color: #B5E9E9;
     border: 3px solid #707070;
     font-family: "ArcadeClassic";
-    font-size: 14pt;
+    font-size: 12pt;
     color: #707070;
     height: 20px;
-    width: 120px;
+    width: 170px;
+    padding-left: 15px;
+    padding-right: 15px;
 }
 
 QPushButton.empty_state{
@@ -175,7 +177,7 @@ QComboBox{
     font-size: 12pt;
     color: #707070;
     height: 20px;
-    width: 95px;
+    width: 180px;
 }
 
 QHeaderView::section{

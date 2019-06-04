@@ -9,14 +9,15 @@ logging:
 paths:
   root: 'D:\VFX\companies'
   code_root: C:\Users\tmiko\PycharmProjects\cglumberjack
-  ffmpeg: C:\ffmpeg\bin\ffmpeg.exe
+  ffmpeg: C:\ProgramData\chocolatey\lib\ffmpeg\tools\ffmpeg\bin\ffmpeg.exe
   oiiotool: C:\OpenImageIO-1.5.0-OCIO\bin\oiiotool.exe
-  ffprobe: C:\ffmpeg\bin\ffprobe.exe
-  ffplay: C:\ffmpeg\bin\ffplay.exe
+  ffprobe: C:\ProgramData\chocolatey\lib\ffmpeg\tools\ffmpeg\bin\ffprobe.exe
+  ffplay: C:\ProgramData\chocolatey\lib\ffmpeg\tools\ffmpeg\bin\ffplay.exe
   dev_pkg: C:\Python27\Lib\site-packages
   mayapy: C:\PROGRA~1\Autodesk\Maya2018\bin\mayapy.exe
   maketx: C:\OpenImageIO-1.5.0-OCIO\bin\maketx.exe
   nuke: C:\PROGRA~1\Nuke11.3v4\Nuke11.3.exe
+  magick: C:\PROGRA~1\ImageMagick-7.0.8-Q16\magick.exe
 definitions:
   ingest_browser_header: ["Filepath", "Filename", "Filetype", "Frame_Range", "Tags", "Keep_Client_Naming", "Scope", "Seq", "Shot", "Task", "Publish_Filepath", "Publish_Date", "Status"]
 rules:

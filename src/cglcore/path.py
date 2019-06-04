@@ -169,7 +169,8 @@ class PathObject(object):
                         self.template.append(each)
                     return self.template
                 except KeyError:
-                    logging.info("Config ERROR: Can't find either %s or %s within app config 'templates'" % (self.scope, self.context))
+                    logging.info("Config ERROR: Can't find either %s or %s within app config 'templates'"
+                                 % (self.scope, self.context))
                     return
             else:
                 self.template = ['company', 'context', 'project', 'scope']
@@ -304,8 +305,6 @@ class PathObject(object):
                 self.data[attr] = value
                 self.set_path()
             else:
-                if value == 'io':
-                    value = value.upper()
                 if attr == 'scope':
                     if value:
                         if value in self.scope_list:
@@ -1012,6 +1011,15 @@ def get_company_config():
         cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
     else:
         cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
+    return cg_lumberjack_dir
+
+
+def get_cgl_config():
+    user_dir = os.path.expanduser("~")
+    if 'Documents' in user_dir:
+        cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack')
+    else:
+        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
     return cg_lumberjack_dir
 
 
