@@ -620,8 +620,11 @@ class PathObject(object):
 
 
 class CreateProductionData(object):
-    def __init__(self, path_object=None, file_system=True, project_management=PROJ_MANAGEMENT,
-                 do_scope=False, test=False, json=True):
+    def __init__(self, path_object=None, file_system=True,
+                 project_management=PROJ_MANAGEMENT,
+                 proj_management_user=None,
+                 do_scope=False, test=False, json=False):
+        self.proj_management_user = proj_management_user
         self.test = test
         self.path_object = PathObject(path_object)
         self.do_scope = do_scope
@@ -633,8 +636,8 @@ class CreateProductionData(object):
         if self.path_object.resolution:
             if self.path_object.version == '000.000':
                 self.create_default_file()
-        #if json:
-        #    self.update_json()
+        if json:
+            self.update_json()
 
     def update_json(self):
         """
@@ -766,15 +769,12 @@ class CreateProductionData(object):
         else:
             print 'TEST MODE: No directories were created'
 
-    @staticmethod
-    def create_project_management_data(path_object, project_management):
-        # TODO I need to do something that syncs my globals to the cloud in case they get toasted.
-        # management software
-        # and another studio wants a different kind of project management software by default.
+    def create_project_management_data(self, path_object, project_management):
         if project_management != 'lumbermill':
             module = "plugins.project_management.%s.main" % project_management
             loaded_module = __import__(module, globals(), locals(), 'main', -1)
-            loaded_module.ProjectManagementData(path_object).create_project_management_data()
+            loaded_module.ProjectManagementData(path_object,
+                                                user_email=self.proj_management_user).create_project_management_data()
         else:
             print 'Using Lumbermill built in proj management'
 

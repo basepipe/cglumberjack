@@ -1,5 +1,5 @@
 import json
-from cglcore.config import app_config
+from cglcore.config import app_config, user_config
 import ftrack_api
 
 SCHEMAS = ['Generic', 'Development', 'INTERNO', "VFX", 'PRODUCCION', 'ANIMATION']  # These are queryable
@@ -55,6 +55,10 @@ class ProjectManagementData(object):
         for key in kwargs:
             self.__dict__[key] = kwargs[key]
 
+        if not self.user_email:
+            print 'No User Email Defined, cant create Ftrack Production Data'
+            return
+
         if not self.project:
             print 'No Project Defined, skipping' 
             return
@@ -106,7 +110,11 @@ class ProjectManagementData(object):
     def create_project_management_data(self):
         self.project_data = self.entity_exists('project')
         if not self.project_data:
-            self.project_data = self.create_project()
+            if self.project:
+                self.project_data = self.create_project()
+            else:
+                print 'No Project Defined, Skipping Project creation'
+                return
         if not self.user_group:
             self.add_group_to_project()
         if self.scope == 'assets':
@@ -298,6 +306,7 @@ class ProjectManagementData(object):
 
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
+        print 99, self.user_email
         self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).one()
         new_membership = self.ftrack.ensure('Membership', {"group_id": self.user_group['id'],
                                                            "user_id": self.user_data['id']})
@@ -344,14 +353,17 @@ class ProjectManagementData(object):
         else:
             print 'User {} already in assigned to project {}'.format(self.user_data['username'], self.project_data['name'])
 
-
     def find_project(self):
-        self.project_data = self.ftrack.query('Project where status is active and name is %s' % self.project_short_name).first()
-        if self.project_data:
-            return self.project_data
-        else:
-            print '%s Not Found' % self.project
-            return False
+        try:
+            self.project_data = self.ftrack.query('Project where status is active and name is %s' % self.project_short_name).first()
+            if self.project_data:
+                return self.project_data
+            else:
+                print '%s Not Found' % self.project
+                return False
+        except AttributeError:
+            print 'No Ftrack Project Found, skipping'
+            pass
 
     def find_asset(self):
         asset = self.ftrack.query('AssetBuild where '

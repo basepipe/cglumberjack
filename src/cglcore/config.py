@@ -18,7 +18,10 @@ class Configuration(object):
         cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
     user_config = os.path.join(cg_lumberjack_dir, 'user_config.yaml')
 
-    def __init__(self, company=None):
+    def __init__(self, company=None, proj_management=None):
+        self.proj_management = None
+        if proj_management:
+            self.proj_management = proj_management
         if company:
             Configuration.LOADED_CONFIG = {}
         if not Configuration.LOADED_CONFIG:
@@ -51,15 +54,24 @@ class Configuration(object):
     def make_company_global_dir(self):
         default_global = os.path.join(self.cg_lumberjack_dir, 'global.yaml')
         to_path = os.path.join(self.company_global_dir, 'global.yaml')
-        print 'made it here'
         if os.path.exists(self.company_global_dir):
             print 'Copying from %s to %s' % (default_global, to_path)
             if 'global.yaml' not in os.listdir(self.company_global_dir):
                 shutil.copy2(default_global, to_path)
+                if self.proj_management:
+                    self.update_proj_management()
         else:
             print '%s does not exist' % self.company_global_dir
             os.makedirs(self.company_global_dir)
             shutil.copy2(default_global, to_path)
+            if self.proj_management:
+                self.update_proj_management()
+
+    def update_proj_management(self):
+        yaml_file = os.path.join(self.company_global_dir, 'global.yaml')
+        config_dict = self._load_yaml(yaml_file)
+        config_dict['account_info']['project_management'] = self.proj_management
+        self._write_yaml(yaml_file, config_dict)
 
     def _find_config_file(self):
         template_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cfg")
@@ -96,6 +108,11 @@ class Configuration(object):
             except yaml.YAMLError as exc:
                 print(exc)
                 sys.exit(99)
+
+    @staticmethod
+    def _write_yaml(filepath, config_dict=None):
+        with open(filepath, 'w') as yaml_file:
+            yaml.dump(config_dict, yaml_file)
 
 
 class UserConfig(object):
@@ -172,14 +189,14 @@ def config():
     return Configuration().LOADED_CONFIG
 
 
-def app_config(company=None):
+def app_config(company=None, proj_management=None):
     """
     get the app configuration
 
     Returns: dict
 
     """
-    return Configuration(company=company).LOADED_CONFIG['app']
+    return Configuration(company=company, proj_management=proj_management).LOADED_CONFIG['app']
 
 
 def user_config():

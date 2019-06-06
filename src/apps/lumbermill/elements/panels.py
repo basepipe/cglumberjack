@@ -34,7 +34,7 @@ class CompanyPanel(QtWidgets.QWidget):
         self.path_object.set_attr(company=self.company_widget.list.selectedItems()[0].text())
         if self.path_object.company:
             if self.path_object.company != '*':
-                self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
+                self.project_management = app_config()['account_info']['project_management']
                 self.check_default_company_globals()
         self.update_location()
 
@@ -44,17 +44,20 @@ class CompanyPanel(QtWidgets.QWidget):
 
         if dialog.button == 'Ok':
             company = dialog.proj_line_edit.text()
+            proj_man = dialog.proj_management_combo.currentText()
             self.path_object.set_attr(company=company)
-            self.create_company_globals(company)
+            self.create_company_globals(company, dialog.proj_management_combo.currentText())
             CreateProductionData(self.path_object, project_management=dialog.proj_management_combo.currentText())
             self.load_companies()
 
-    def create_company_globals(self, company):
+    def create_company_globals(self, company, proj_management):
         print 'Creating Company Globals %s' % company
         dir_ = os.path.join(self.user_root, 'companies', company)
         if not os.path.exists(dir_):
             print '%s doesnt exist, making it' % dir_
             os.makedirs(dir_)
+            app_config(company=company, proj_management=proj_management)
+            #set the config stuff according to what's up
 
     def check_default_company_globals(self):
         """
