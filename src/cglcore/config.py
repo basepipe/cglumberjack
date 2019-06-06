@@ -124,9 +124,18 @@ class UserConfig(object):
         else:
             return None
         self.current_path = current_path
-        self.company = company
-        self.user_email = user_email
-        self.user_name = user_name
+        if company:
+            self.company = company
+        else:
+            self.company = self.d['company']
+        if user_email:
+            self.user_email = user_email
+        else:
+            self.user_email = self.d['user_email']
+        if user_name:
+            self.user_name = user_name
+        else:
+            self.user_name = self.d['user_name']
 
     def update_all(self):
         self.update_path()

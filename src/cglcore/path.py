@@ -773,8 +773,8 @@ class CreateProductionData(object):
         if project_management != 'lumbermill':
             module = "plugins.project_management.%s.main" % project_management
             loaded_module = __import__(module, globals(), locals(), 'main', -1)
-            loaded_module.ProjectManagementData(path_object,
-                                                user_email=self.proj_management_user).create_project_management_data()
+            print 1, self.proj_management_user
+            loaded_module.ProjectManagementData(path_object, user_email=self.proj_management_user).create_project_management_data()
         else:
             print 'Using Lumbermill built in proj management'
 

@@ -1,0 +1,25 @@
+Top Priorities:
+
+Ftrack Integration:
+* set up globals creation as a completely seperate task (seperate from app_config)
+* figure out how to get the task dictionaries from the proj_management system into the globals with a command
+* test asset creation
+* test shot creation
+* test mov upload
+* test ingestion
+* Playlist Creation for FTrack
+* download an Ftrack project and create it on disk (Sync Ftrack to Local)
+
+
+Before LC Install:
+* Working Globals Setup Systems
+*
+
+
+
+
+
+
+
+
+Before Making Marketing Tutorials:
