@@ -4,7 +4,7 @@ import glob
 import logging
 
 from cglcore.config import app_config
-from cglcore.path import PathObject, CreateProductionData, split_sequence, hash_to_number
+from cglcore.path import PathObject, CreateProductionData, split_sequence, hash_to_number, get_start_frame, prep_seq_delimiter
 
 # Important note regarding ffmpeg and .h264 encoding:  There was a lot of discussion about whether this is ok
 # to be distributing software with .h264 encoding.  I called the law firm that handles licensing and they said that
@@ -250,23 +250,13 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
     return out_seq
 
 
-def create_mov_hd_proxy(sequence, framerate=settings['frame_rate'], start_frame=None,
-                        output_frame_rate=None, res=settings['resolution']['video_review']):
-    if not start_frame:
-        print 'No Start Frame Defined'
-        return
-
-    path_object = PathObject(sequence)
-    path_object_output = path_object.copy(resolution='movWeb')
-    output_dir = os.path.dirname(path_object_output.path_root)
-    hashes, number = hash_to_number(sequence)
-    if not os.path.exists(output_dir):
-        CreateProductionData(path_object=output_dir)
-    input_file = '%s%s.%s' % (split_sequence(sequence), number, path_object.ext)
-    output_file = '%s/%s%s' % (output_dir, os.path.basename(split_sequence(sequence)), 'mov')
-
-    if os.path.splitext(input_file)[-1] == '.exr':
-        logging.info('applying gamma 2.2 to linear .exr sequence')
+def create_mov(sequence, framerate=settings['frame_rate'], output_frame_rate=None,
+               res=settings['resolution']['video_review']):
+    start_frame = get_start_frame(sequence)
+    input_file = prep_seq_delimiter(sequence, replace_with='%')
+    output_file = '%smov' % split_sequence(sequence)
+    if os.path.splitext(input_file)[-1] == '.exr' or os.path.splitext(input_file)[-1] == '.dpx':
+        logging.info('applying gamma 2.2 to linear sequence')
         gamma = 2.2
     else:
         gamma = 1

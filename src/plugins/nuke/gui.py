@@ -34,6 +34,83 @@ class CGLNuke(CGLumberjack):
                                                 radio_filter=None, show_import=True))
 
 
+class RenderDialog(QtWidgets.QDialog):
+    def __init__(self, parent=cglnuke.get_main_window(), write_node=''):
+        QtWidgets.QDialog.__init__(self, parent)
+
+        self.write_node = write_node
+        self.render_path = ''
+        self.sframe = nuke.knob("root.first_frame")
+        self.eframe = nuke.knob("root.last_frame")
+        self.byframe = 1
+        self.setWindowTitle("Render %s" % self.write_node)
+
+        # define the layouts
+        layout = QtWidgets.QVBoxLayout(self)
+        grid_layout = QtWidgets.QGridLayout()
+        button_row = QtWidgets.QHBoxLayout()
+
+        # define the widgets
+        # self.title = QtWidgets.QLabel('Render Write Node:')
+        frange_label = QtWidgets.QLabel('Frame Range')
+        render_by_label = QtWidgets.QLabel('Render By')
+
+        self.frange_line_edit = QtWidgets.QLineEdit()
+        self.render_by_line_edit = QtWidgets.QLineEdit()
+        self.render_by_line_edit.setText("1")
+
+        self.cancel_button = QtWidgets.QPushButton('Cancel')
+        self.render_button = QtWidgets.QPushButton('Render')
+
+        # add stuff to layouts
+        grid_layout.addWidget(frange_label, 0, 0)
+        grid_layout.addWidget(self.frange_line_edit, 0, 1)
+        grid_layout.addWidget(render_by_label, 1, 0)
+        grid_layout.addWidget(self.render_by_line_edit, 1, 1)
+
+        button_row.addWidget(self.cancel_button)
+        button_row.addWidget(self.render_button)
+
+        layout.addLayout(grid_layout)
+        layout.addLayout(button_row)
+
+        self.render_button.clicked.connect(self.on_render_clicked)
+        self.render_by_line_edit.textChanged.connect(self.on_text_changed)
+        self.frange_line_edit.textChanged.connect(self.on_text_changed)
+        self.cancel_button.clicked.connect(self.on_cancel_clicked)
+
+        self.get_frame_range()
+
+    def on_cancel_clicked(self):
+        self.accept()
+
+    def get_frame_range(self):
+        print 'Getting Frame Range'
+        self.frange_line_edit.setText('%s-%s' % (self.sframe, self.eframe))
+
+    def on_render_clicked(self):
+        print 'Rendering %s-%s by %s' % (self.sframe, self.eframe, self.byframe)
+        nuke.execute(self.write_node, start=int(self.sframe), end=int(self.eframe), incr=int(self.byframe))
+        n = nuke.toNode(self.write_node)
+        self.render_path = n['file'].value()
+        self.accept()
+        return self.render_path
+
+    def on_text_changed(self):
+        frange = self.frange_line_edit.text()
+        self.sframe, self.eframe = frange.split('-')
+        self.byframe = self.render_by_line_edit.text()
+
+
+def render_all_write_nodes():
+    render_paths = []
+    for n in nuke.allNodes('Write'):
+        dialog = RenderDialog(write_node=n.name())
+        dialog.exec_()
+        render_paths.append(dialog.render_path)
+    return render_paths
+
+
 def launch():
     scene = PathObject(cglnuke.get_file_name())
     location = '%s/*' % scene.split_after('shot')

@@ -18,6 +18,8 @@ SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
 SEQ_REGEX = re.compile("\\.[0-9]{4,}\\.")
 SPLIT_SEQ_REGEX = re.compile("\\ [0-9]{4,}-[0-9]{4,}$")
 SEQ_SPLIT = re.compile("\\#{4,}")
+SEQ2_SPLIT = re.compile("[%0-9]{2,}d")
+SEQ = re.compile('[0-9]{3,}-[0-9]{3,}')
 
 
 class PathObject(object):
@@ -894,8 +896,10 @@ def seq_from_file(basename):
 
 
 def get_frange_from_seq(filepath):
+    _, ext = os.path.splitext(filepath)
     glob_string = filepath.split('#')[0]
-    frames = glob.glob('%s*' % glob_string)
+    frames = glob.glob('%s*%s' % (glob_string, ext))
+    print frames
     if frames:
         sframe = re.search(SEQ_REGEX, frames[0]).group(0).replace('.', '')
         eframe = re.search(SEQ_REGEX, frames[-1]).group(0).replace('.', '')
@@ -980,9 +984,22 @@ def split_sequence_frange(sequence):
 
 
 def split_sequence(sequence):
-    frange = re.search(SEQ_SPLIT, sequence)
+    """
+    Splits a sequence with a match for ######, as well as %0#d
+    :param sequence:
+    :return:
+    """
+    if '#' in sequence:
+        frange = re.search(SEQ_SPLIT, sequence)
+        group = frange.group(0)
+    elif '%' in sequence:
+        frange = re.search(SEQ2_SPLIT, sequence)
+        group = frange.group(0)
+    elif '.*.' in sequence:
+        frange = 'this'
+        group = '*.'
     if frange:
-        return sequence.split(frange.group(0))[0]
+        return sequence.split(group)[0]
     else:
         return
 
@@ -1025,14 +1042,63 @@ def get_cgl_config():
 
 def hash_to_number(sequence):
     frange = re.search(SEQ_SPLIT, sequence)
-    print frange.group(0)
     count = frange.group(0).count('#')
-    print count
     if count < 10:
-        return frange.group(0), '%0'+str(count)+'d'
+        num = '%0'+str(count)+'d'
     else:
-        return frange.group(0), '%'+str(count)+'d'
+        num = '%'+str(count)+'d'
+    return num
 
+
+def number_to_hash(sequence, full=True):
+    frange = re.search(SEQ2_SPLIT, sequence)
+    number = frange.group(0)
+    count = frange.group(0).replace('%', '').replace('d', '')
+    if full:
+        return sequence.replace(number, '%'+count+'d')
+    else:
+        return '#'*int(count)
+
+
+def get_start_frame(sequence):
+
+
+    dir_, file_ = os.path.split(sequence)
+    seq_split = split_sequence(sequence)
+    results = lj_list_dir(dir_)
+    hash_seq = ''
+    for each in results:
+        this = re.search(SEQ, each)
+        if this:
+            return this.group(0).split('-')[0]
+    else:
+        return None
+
+
+def prep_seq_delimiter(sequence, replace_with='*'):
+    """
+    takes a sequence ('####', '%04d', '*') transforms it to another type.  This is used for instances where one
+    piece of software needs sequences delimited in a particlar way.
+    :param sequence: file sequence - sequence.*.dpx, sequence.%04d.dpx, sequence.####.dpx
+    :param replace_with: '*': for sequences like .*.dpx, '%': for %04d style sequence definition, '#': for '####' style sequence definition
+    :return:
+    """
+    path_object = PathObject(sequence)
+    dir_ = os.path.dirname(sequence)
+    seq_split = split_sequence(sequence)
+    stuff = lj_list_dir(dir_)
+    hash_seq = ''
+    for each in stuff:
+        this = re.search(SEQ, each)
+        if this:
+            frange = this.group(0).split('-')[0]
+            hash_seq = each.replace(' %s' % frange, '')
+    if replace_with == '*':
+        return '%s%s.%s' % (split_sequence(sequence), replace_with, path_object.ext)
+    if replace_with == '#':
+        return os.path.join(dir_, hash_seq)
+    if replace_with == '%':
+        return '%s%s.%s' % (seq_split, hash_to_number(hash_seq), path_object.ext)
 
 
 

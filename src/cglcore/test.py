@@ -1,9 +1,18 @@
 import path
-from cglcore.convert import create_proxy, create_hd_proxy, create_gif_proxy, create_mov_hd_proxy
-
-test = r'D:/VFX/companies/cgl-fsutests/source/ingest_Test/shots/SEA/0160/comp/tmikota/000.000/high/SEA_0160_comp.nk'
+from cglcore.convert import create_proxy, create_hd_proxy, create_gif_proxy, create_mov, get_start_frame
 
 
-this = path.PathObject(test)
+test = r'D:/VFX/companies/cglumberjack/render/ninjaNunsII/shots/010/0100/comp/tmikota/000.000/high/010_0100_comp.%06d.dpx'
+#test = r'D:/VFX/companies/cglumberjack/render/ninjaNunsII/shots/010/0100/comp/tmikota/000.000/high/010_0100_comp.######.dpx'
+#test = r'D:/VFX/companies/cglumberjack/render/ninjaNunsII/shots/010/0100/comp/tmikota/000.000/high/010_0100_comp.*.dpx'
 
-'%s/*' % this.split_after('shot')
+this = create_mov(test)
+# print path.get_start_frame(test)
+#print path.prep_seq_delimiter(test, replace_with='#')
+#print path.prep_seq_delimiter(test, replace_with='%')
+
+#input_file = path.replace_seq(test)
+#output_file = '%s.mov' % input_file.split('.*')[0]
+
+#print input_file
+#print output_file
