@@ -2,6 +2,13 @@
 #   Top Priorities:
 ##########################################
 
+Globals Management:
+* seperate globals creation & manipulation from app_config().
+1) Check for Company Globals
+    * global location
+    * project management default
+    * if required project management details
+
 Ftrack Integration:
 * set up globals creation as a completely seperate task (seperate from app_config)
 * figure out how to get the task dictionaries from the proj_management system into the globals with a command
@@ -37,7 +44,7 @@ Refreshing the table after a preflight isn't goingwell.
 #  Someday:
 ##########################################
 * I need a better way of understanding where i'm at visually in the pipeline
-
+* Can i build some kind of offline mode? This would allow me to work offline and then connect ProdManagement stuff when i connect to the internet again
 
 ##########################################
 #  Notes:

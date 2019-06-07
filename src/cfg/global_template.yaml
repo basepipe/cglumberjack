@@ -1,6 +1,6 @@
 account_info:
-  user_directory: C:\Users\tmiko\Documents\cglumberjack
-  project_management: lumbermill
+  user_directory: ''
+  project_management: ''
 logging:
     level: debug
     format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'

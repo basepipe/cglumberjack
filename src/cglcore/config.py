@@ -1,13 +1,115 @@
 import os
 import sys
 import yaml
+import json
 import shutil
+
+
+class InitializeConfig(object):
+    """
+    This creates globals for companies.
+    """
+    def __init__(self, default_company=None, default_pm='lumbermill', server_url=None, api_key=None, api_user=None,
+                 api_script=None):
+        self.server_url = server_url
+        self.api_key = api_key
+        self.api_user = api_user
+        self.api_script = api_script
+        self.user_dir = os.path.expanduser("~")
+        self.default_company = default_company
+        self.default_pm = default_pm
+        # first priority - figure out where the cgl_directory is going to be, or currently is.
+        self.cgl_dir = self.get_default_cgl_dir()
+        self.default_globals = os.path.join(self.cgl_dir, 'globals.yaml')
+        self.default_globals_json = os.path.join(self.cgl_dir, 'globals.json')
+        # Check for default globals, if they don't exist create them
+        self.create_default_globals()
+        # Set the default location in the globals
+        self.set_default_location()
+        self.set_proj_management_details()
+
+    def get_default_cgl_dir(self):
+        if 'Documents' in self.user_dir:
+            cg_lumberjack_dir = os.path.join(self.user_dir, 'cglumberjack')
+        else:
+            cg_lumberjack_dir = os.path.join(self.user_dir, 'Documents', 'cglumberjack')
+        return cg_lumberjack_dir
+
+    def create_default_globals(self):
+        """
+        Creates default globals in the correct direcgory if they don't exist - this will pull from the default CGL
+        configuration.
+        :return:
+        """
+        base = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cfg", "global_template.yaml")
+        to_path = os.path.join(self.cgl_dir, 'global.yaml')
+        if os.path.exists(self.cgl_dir):
+            # make the "studio level" global.yaml
+            if 'global.yaml' not in os.listdir(self.cgl_dir):
+                shutil.copy2(base, to_path)
+        else:
+            os.makedirs(self.cgl_dir)
+            shutil.copy2(base, to_path)
+
+    def set_default_location(self):
+        config = self._load_yaml(self.default_globals)
+        config['account_info']['user_directory'] = self.cgl_dir
+        self._write_yaml(self.default_globals, config)
+        self._write_json(self.default_globals_json, config)
+
+    def set_proj_management_details(self):
+        if self.default_pm != 'lumbermill':
+            config = self._load_yaml(self.default_globals)
+            if self.default_pm == 'ftrack':
+                config['ftrack']['server_url'] = self.server_url
+                config['ftrack']['api_key'] = self.api_key
+                config['ftrack']['api_user'] = self.api_user
+                self._write_yaml(self.default_globals, config)
+                self._write_json(self.default_globals_json, config)
+            elif self.default_pm == 'shotgun':
+                config['shotgun']['url'] = self.server_url
+                config['shotgun']['api_key'] = self.api_key
+                config['shotgun']['api_script'] = self.api_script
+                config['shotgun']['username'] = self.api_user
+                self._write_yaml(self.default_globals, config)
+                self._write_json(self.default_globals_json, config)
+
+    @staticmethod
+    def _load_yaml(path):
+        with open(path, 'r') as stream:
+            try:
+                result = yaml.load(stream)
+                if result:
+                    return result
+                else:
+                    return {}
+            except yaml.YAMLError as exc:
+                print(exc)
+                sys.exit(99)
+
+    @staticmethod
+    def _write_yaml(filepath, data):
+        with open(filepath, 'w') as yaml_file:
+            yaml.dump(data, yaml_file)
+
+    @staticmethod
+    def _write_json(filepath, data):
+        with open(filepath, 'w') as outfile:
+            json.dump(data, outfile, indent=4, sort_keys=True)
+
+    @staticmethod
+    def _load_json(filepath):
+        with open(filepath) as jsonfile:
+            data = json.load(jsonfile)
+        return data
+
+
 
 
 class Configuration(object):
     """
 
-    class for storing config values from files, usable simply as a dictionary
+    This asssumes that proper config files are in place - at minimum a default globals script to read from.
 
     """
     LOADED_CONFIG = {}

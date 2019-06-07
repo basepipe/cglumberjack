@@ -443,6 +443,11 @@ class CGLumberjack(LJMainWindow):
     def __init__(self, show_import=False, ):
         LJMainWindow.__init__(self)
         #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+        # Check Globals first off:
+        # Do i have a default company?
+        # What is the default project management?
+        # if not lumbermill do i have my proj_management settings?
+        # what do i do if i'm not connect to the internet and i am using a project management service?
         self.user_name = ''
         self.user_email = ''
         self.company = ''
