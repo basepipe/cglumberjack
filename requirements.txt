@@ -4,9 +4,6 @@ PyInstaller
 requests
 sphinx
 pylint
-altgraph==0.15
-py2app
-ipdb
 pandas
 
 #  http://aka.ms/vcpython27

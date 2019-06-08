@@ -1,15 +1,41 @@
-# Use the latest 2.1 version of CircleCI pipeline processing engine, see https://circleci.com/docs/2.0/configuration-reference/
+# .circleci/config.yml
 version: 2.1
+jobs:
+  build:
+    macos:
+      #Xcode 7.0 is 10.11
+      xcode: "9.1.0"
+    working_directory: ~/repo
+    steps:
+      - checkout
 
-# Use a package of configuration called an orb, see https://circleci.com/docs/2.0/orb-intro/
-orbs:
-  # Declare a dependency on the welcome-orb
-  welcome: circleci/welcome-orb@0.3.1
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
 
-# Orchestrate or schedule a set of jobs, see https://circleci.com/docs/2.0/workflows/
-workflows:
-  # Name the workflow "Welcome"
-  Welcome:
-    # Run the welcome/run job in its own container
-    jobs:
-      - welcome/run
+      - run:
+          name: Pre-Python Installs
+          command: |
+            virtualenv venv
+            . venv/bin/activate
+            make pre-python-installs
+      - run:
+          name: install python packages
+          command: |
+            . venv/bin/activate
+            make install
+
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            #. venv/bin/activate
+            echo "nothing for now"

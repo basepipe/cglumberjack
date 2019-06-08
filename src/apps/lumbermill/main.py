@@ -1,6 +1,6 @@
 import os
 from Qt import QtWidgets, QtCore, QtGui
-from cglcore.config import app_config, UserConfig
+from cglcore.config import app_config, UserConfig, InitializeConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
@@ -454,15 +454,17 @@ class CGLumberjack(LJMainWindow):
         self.previous_path = ''
         self.filter = 'Everything'
         self.previous_paths = {}
-        self.load_user_config()
-        if not self.user_name:
-            self.on_login_clicked()
+
+
+
         self.setCentralWidget(CGLumberjackWidget(self, user_email=self.user_email,
                                                  user_name=self.user_name,
                                                  company=self.company,
                                                  path=self.previous_path,
                                                  radio_filter=self.filter,
                                                  show_import=show_import))
+
+
         if self.user_name:
             self.setWindowTitle('Lumbermill - Logged in as %s' % self.user_name)
         else:
@@ -500,6 +502,9 @@ class CGLumberjack(LJMainWindow):
         menu_designer.triggered.connect(self.on_menu_designer_clicked)
         preflight_designer.triggered.connect(self.on_preflight_designer_clicked)
         login.triggered.connect(self.on_login_clicked)
+
+    def check_configs(self):
+        return False
 
     def open_company_globals(self):
         # Need a gui for choosing these bad boys
@@ -552,26 +557,37 @@ class CGLumberjack(LJMainWindow):
         dialog.exec_()
 
     def closeEvent(self, event):
-        # set the current path so that it works on the load better.
-        user_config = UserConfig(company=self.centralWidget().company,
-                                 user_email=self.centralWidget().user_email,
-                                 user_name=self.centralWidget().user_name,
-                                 current_path=self.centralWidget().path_widget.text)
-        user_config.update_all()
+        try:
+            # set the current path so that it works on the load better.
+            user_config = UserConfig(company=self.centralWidget().company,
+                                     user_email=self.centralWidget().user_email,
+                                     user_name=self.centralWidget().user_name,
+                                     current_path=self.centralWidget().path_widget.text)
+            user_config.update_all()
+        except AttributeError:
+            pass
+
+
+def check_configs():
+    InitializeConfig()
 
 
 if __name__ == "__main__":
     from cglui.startup import do_gui_init
-    app = do_gui_init()
-    splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
-    splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
-    splash.setMask(splash_pix.mask())
-    splash.show()
-    td = CGLumberjack()
-    td.show()
-    td.raise_()
-    # setup stylesheet
-    style_sheet = load_style_sheet()
-    app.setStyleSheet(style_sheet)
-    splash.finish(td)
-    app.exec_()
+
+    if check_configs():
+        app = do_gui_init()
+        splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
+        splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+        splash.setMask(splash_pix.mask())
+        splash.show()
+        td = CGLumberjack()
+        td.show()
+        td.raise_()
+        # setup stylesheet
+        style_sheet = load_style_sheet()
+        app.setStyleSheet(style_sheet)
+        splash.finish(td)
+        app.exec_()
+    else:
+        print 'Configs Not Found'
