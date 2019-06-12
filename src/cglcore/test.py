@@ -2,7 +2,7 @@ import path
 from cglcore.convert import create_proxy, create_hd_proxy, create_gif_proxy, create_mov, get_start_frame
 
 
-test = r'D:/VFX/companies/cglumberjack/render/ninjaNunsII/shots/010/0100/comp/tmikota/000.000/high/010_0100_comp.%06d.dpx'
+test = r'C:\Users\tmikota\PycharmProjects\cglumberjack\src\cfg\global_template.yaml'
 #test = r'D:/VFX/companies/cglumberjack/render/ninjaNunsII/shots/010/0100/comp/tmikota/000.000/high/010_0100_comp.######.dpx'
 #test = r'D:/VFX/companies/cglumberjack/render/ninjaNunsII/shots/010/0100/comp/tmikota/000.000/high/010_0100_comp.*.dpx'
 

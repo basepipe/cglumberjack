@@ -1,6 +1,6 @@
 import os
 from Qt import QtWidgets, QtCore, QtGui
-from cglcore.config import app_config, UserConfig
+from cglcore.config import app_config, UserConfig, InitializeConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
@@ -145,7 +145,10 @@ class NavigationWidget(QtWidgets.QFrame):
             
     def update_buttons(self, path_object=None):
         if not path_object:
-            path_object = self.path_object
+            if self.path_object:
+                path_object = self.path_object
+            else:
+                return
         if not path_object.company:
             self.show_none()
         elif path_object.company == '*':
@@ -277,7 +280,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                     self.path_object.set_attr(user='')
                     self.path_object.set_attr(task='*')
             except IndexError:
+                print 'Path is not set'
                 pass
+        else:
+            self.path_object = PathObject(self.root)
+
+        print self.path_object.path_root
+        print '------------------------'
         self.project = '*'
         self.scope = 'assets'
         self.shot = '*'
@@ -298,7 +307,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.in_file_tree = None
         self.nav_widget = NavigationWidget(path_object=self.path_object)
         self.path_widget = PathWidget(path_object=self.path_object)
-        self.nav_widget.update_buttons()
+        # self.nav_widget.update_buttons()
         self.path_widget.update_path(path_object=self.path_object)
 
         self.nav_widget.location_changed.connect(self.update_location)
@@ -443,15 +452,17 @@ class CGLumberjack(LJMainWindow):
     def __init__(self, show_import=False, ):
         LJMainWindow.__init__(self)
         #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+        # Check Globals first off:
+        # Do i have a default company?
+        # What is the default project management?
+        # if not lumbermill do i have my proj_management settings?
+        # what do i do if i'm not connect to the internet and i am using a project management service?
         self.user_name = ''
         self.user_email = ''
         self.company = ''
         self.previous_path = ''
         self.filter = 'Everything'
         self.previous_paths = {}
-        self.load_user_config()
-        if not self.user_name:
-            self.on_login_clicked()
         self.setCentralWidget(CGLumberjackWidget(self, user_email=self.user_email,
                                                  user_name=self.user_name,
                                                  company=self.company,
@@ -495,6 +506,9 @@ class CGLumberjack(LJMainWindow):
         menu_designer.triggered.connect(self.on_menu_designer_clicked)
         preflight_designer.triggered.connect(self.on_preflight_designer_clicked)
         login.triggered.connect(self.on_login_clicked)
+
+    def check_configs(self):
+        return False
 
     def open_company_globals(self):
         # Need a gui for choosing these bad boys
@@ -547,26 +561,44 @@ class CGLumberjack(LJMainWindow):
         dialog.exec_()
 
     def closeEvent(self, event):
-        # set the current path so that it works on the load better.
-        user_config = UserConfig(company=self.centralWidget().company,
-                                 user_email=self.centralWidget().user_email,
-                                 user_name=self.centralWidget().user_name,
-                                 current_path=self.centralWidget().path_widget.text)
-        user_config.update_all()
+        try:
+            # set the current path so that it works on the load better.
+            user_config = UserConfig(company=self.centralWidget().company,
+                                     user_email=self.centralWidget().user_email,
+                                     user_name=self.centralWidget().user_name,
+                                     current_path=self.centralWidget().path_widget.text)
+            user_config.update_all()
+        except AttributeError:
+            pass
+
+
+def check_configs():
+    config_ = InitializeConfig()
+    config_.create_default_globals()
+    if config_.local_config_not_set():
+        config_.set_proj_management_details()
+        return True
+    else:
+        return True
+    # check the config file to see if it has a default company and a default location
 
 
 if __name__ == "__main__":
     from cglui.startup import do_gui_init
-    app = do_gui_init()
-    splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
-    splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
-    splash.setMask(splash_pix.mask())
-    splash.show()
-    td = CGLumberjack()
-    td.show()
-    td.raise_()
-    # setup stylesheet
-    style_sheet = load_style_sheet()
-    app.setStyleSheet(style_sheet)
-    splash.finish(td)
-    app.exec_()
+
+    if check_configs():
+        app = do_gui_init()
+        splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
+        splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+        splash.setMask(splash_pix.mask())
+        splash.show()
+        td = CGLumberjack()
+        td.show()
+        td.raise_()
+        # setup stylesheet
+        style_sheet = load_style_sheet()
+        app.setStyleSheet(style_sheet)
+        splash.finish(td)
+        app.exec_()
+    else:
+        print 'Configs Not Found'

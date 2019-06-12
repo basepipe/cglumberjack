@@ -1,0 +1,78 @@
+# Check if the root directory exists
+# check if the ftrack credentials are good
+
+
+
+
+
+
+
+##########################################
+#   Top Priorities:
+##########################################
+
+Globals Management:
+* seperate globals creation & manipulation from app_config().
+1) Check for Company Globals
+    * global location
+    * project management default
+    * if required project management details
+
+Ftrack Integration:
+* set up globals creation as a completely seperate task (seperate from app_config)
+* figure out how to get the task dictionaries from the proj_management system into the globals with a command
+* test asset creation
+* test shot creation
+* test mov upload
+* test ingestion
+* Playlist Creation for FTrack
+* download an Ftrack project and create it on disk (Sync Ftrack to Local)
+
+
+
+
+##########################################
+#   Before LC Install:
+##########################################
+
+* Working Globals Setup Systems
+* I should probably create a base class for the menu layout - right now prelights and menus are pulling from different classes that share a lot in common.
+Refreshing the table after a preflight isn't goingwell.
+	* change color after pass and disable selection?
+	When i Successfully complete my preflights i should remove the run selected buttons and give them a "done" button
+	that done button should refresh the treeWidget and it should close the thingy.
+* BUG - on ingest i'm not versioning up if i publish to the same place twice.
+* BUG - i should be setting the status as Published on the last Preflight as a seperate Preflight!
+* BUG - app.exec_() error when launching a nuke GUI window.
+* BUG - in nuke i need a better way of ensuring that the app doesn't end up on the IO panel!
+* I want to be able to delete an entire menu.
+
+
+
+##########################################
+#  Someday:
+##########################################
+* I need a better way of understanding where i'm at visually in the pipeline
+* Can i build some kind of offline mode? This would allow me to work offline and then connect ProdManagement stuff when i connect to the internet again
+
+##########################################
+#  Notes:
+##########################################
+
+Notes:
+
+ftrack:
+  server_url: https://lone-coconut.ftrackapp.com
+  api_key: ZTU3ZDZkMDUtMWI3OS00ZWU1LWE2NGItZGJiYmQyOGExZTZiOjoyMTUyYmI2ZC1kNzk2LTRmZmUtYjUzZS0wMjBiMzA5MGZhMDA
+  api_user: LoneCoconutMail@gmail.com
+
+
+VIDEOS:
+	"Creating Companies in Lumbermill"
+	https://vimeo.com/340433827
+	"Ingesting Media into Lumbermill and publishing it to projects"
+	https://vimeo.com/340433626/3e459348f6
+	"Nuke: Importing Media, Creating error free Write Nodes"
+	https://vimeo.com/340433778/a8ad45e839
+	"Nuke: Rendering Locally with a Preflight"
+	"Nuke/Ftrack: Submitting a render for Review"

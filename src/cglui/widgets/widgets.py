@@ -771,7 +771,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
     def __init__(self, parent, variable):
         QtWidgets.QDialog.__init__(self, parent=parent)
         self.variable = variable
-        proj_management_label = QtWidgets.QLabel('Project Management')
+        self.proj_management_label = QtWidgets.QLabel('Project Management')
         layout = QtWidgets.QVBoxLayout(self)
         self.proj_management_combo = QtWidgets.QComboBox()
         self.proj_management_combo.addItems(['lumbermill', 'ftrack', 'shotgun', 'google_docs'])
@@ -781,6 +781,14 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.green_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 255, 0))
         self.black_palette = QtGui.QPalette()
         self.black_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 0, 0))
+
+        self.server_label = QtWidgets.QLabel('server url:')
+        self.api_key_label = QtWidgets.QLabel('api key:')
+        self.api_user = QtWidgets.QLabel('api user:')
+        self.server_line_edit = QtWidgets.QLineEdit()
+        self.api_key_line_edit = QtWidgets.QLineEdit()
+        self.api_user_line_edit = QtWidgets.QLineEdit()
+
         self.cancel_button = QtWidgets.QPushButton('Cancel')
         self.ok_button = QtWidgets.QPushButton('Ok')
         self.button = ''
@@ -797,8 +805,14 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.grid_layout = QtWidgets.QGridLayout()
         self.grid_layout.addWidget(proj_label, 0, 0)
         self.grid_layout.addWidget(self.proj_line_edit, 0, 1)
-        self.grid_layout.addWidget(proj_management_label, 2, 0)
+        self.grid_layout.addWidget(self.proj_management_label, 2, 0)
         self.grid_layout.addWidget(self.proj_management_combo, 2, 1)
+        self.grid_layout.addWidget(self.server_label, 3, 0)
+        self.grid_layout.addWidget(self.server_line_edit, 3, 1)
+        self.grid_layout.addWidget(self.api_key_label, 4, 0)
+        self.grid_layout.addWidget(self.api_key_line_edit, 4, 1)
+        self.grid_layout.addWidget(self.api_user, 5, 0)
+        self.grid_layout.addWidget(self.api_user_line_edit, 5, 1)
 
         layout.addLayout(self.grid_layout)
         layout.addWidget(self.message)
@@ -807,6 +821,56 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.proj_line_edit.textChanged.connect(self.on_project_text_changed)
         self.ok_button.clicked.connect(self.on_ok_clicked)
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
+        self.proj_management_combo.currentIndexChanged.connect(self.on_pm_changed)
+        self.adjust_to_variable()
+        self.set_project_management()
+
+    def set_existing_globls(self):
+        # read the gloabls and set all the line edits accordingly based on what project managment we're using
+        # TODO: Kyle
+        pass
+
+    def set_project_management(self):
+        from cglcore.config import app_config
+        proj_man = app_config()['account_info']['project_management']
+        index = self.proj_management_combo.findText(proj_man)
+        self.proj_management_combo.setCurrentIndex(index)
+
+    def adjust_to_variable(self):
+        if self.variable == 'project':
+            self.setWindowTitle('Create a Project')
+            self.hide_api_info()
+            #self.proj_management_combo.hide()
+            #self.proj_management_label.hide()
+        elif self.variable == 'company':
+            self.setWindowTitle('Create a Company')
+            self.hide_api_info()
+            self.proj_management_combo.show()
+            self.proj_management_label.show()
+
+    def hide_api_info(self):
+        self.server_label.hide()
+        self.api_key_label.hide()
+        self.api_user.hide()
+        self.server_line_edit.hide()
+        self.api_key_line_edit.hide()
+        self.api_user_line_edit.hide()
+
+    def show_api_info(self):
+        self.server_label.show()
+        self.api_key_label.show()
+        self.api_user.show()
+        self.server_line_edit.show()
+        self.api_key_line_edit.show()
+        self.api_user_line_edit.show()
+        
+    def on_pm_changed(self):
+        if self.proj_management_combo.currentText() == 'lumbermill':
+            self.hide_api_info()
+        else:
+            self.show_api_info()
+
+            
 
     def on_project_text_changed(self):
         input_text = self.proj_line_edit.text()

@@ -1,0 +1,399 @@
+{
+    "account_info": {
+        "default_company": "cglumberjack", 
+        "project_management": "ftrack", 
+        "user_directory": ""
+    }, 
+    "asset_categories": {
+        "Character": "char", 
+        "Environment": "env", 
+        "Library": "lib", 
+        "Production": "prod", 
+        "Prop": "prop", 
+        "Vehicle": "veh"
+    }, 
+    "asset_category_long_list": [
+        "Prop", 
+        "Environment", 
+        "Vehicle", 
+        "Character", 
+        "Production", 
+        "Library"
+    ], 
+    "default": {
+        "frame_rate": 24, 
+        "linear_gamma": 2.2, 
+        "output_colorspace": "rec709", 
+        "padding": 4, 
+        "resolution": {
+            "full": "1920x1080", 
+            "half": "960x540", 
+            "image_review": "1920x1080", 
+            "maya_icon": "24x24", 
+            "quarter": "480x270", 
+            "retina_icon": "48x48", 
+            "third": "640x360", 
+            "thumb": "200x200", 
+            "thumb_cine": "200x112", 
+            "video_review": "1920x1080"
+        }, 
+        "reviews": "t5h0j5z4q3q2b9h5@fsu-cmpa.slack.com", 
+        "working_colorspace": "linear"
+    }, 
+    "definitions": {
+        "ingest_browser_header": [
+            "Filepath", 
+            "Filename", 
+            "Filetype", 
+            "Frame_Range", 
+            "Tags", 
+            "Keep_Client_Naming", 
+            "Scope", 
+            "Seq", 
+            "Shot", 
+            "Task", 
+            "Publish_Filepath", 
+            "Publish_Date", 
+            "Status"
+        ]
+    }, 
+    "dvp": {
+        "frame_rate": 24
+    }, 
+    "email": {
+        "bcc": "tom@cglumberjack.com", 
+        "bugs": "c5r2y1k1t5h5o4l9@fsu-cmpa.slack.com", 
+        "from": "tom@cglumberjack.com", 
+        "lj_domain": "https://api.mailgun.net/v3/cglumberjack.com/messages", 
+        "mailgun_key": "key-3714d0480ab5669b65dc08b8a59c49f7", 
+        "reviews": "t5h0j5z4q3q2b9h5@fsu-cmpa.slack.com"
+    }, 
+    "ext_map": {
+        ".ai": "image", 
+        ".avi": "movie", 
+        ".bmp": "image", 
+        ".dpx": "image", 
+        ".exr": "image", 
+        ".gif": "image", 
+        ".hdr": "image", 
+        ".ico": "image", 
+        ".jpeg": "image", 
+        ".jpg": "image", 
+        ".mlv": "movie", 
+        ".mov": "movie", 
+        ".mp4": "movie", 
+        ".mpg": "movie", 
+        ".pdf": "pdf", 
+        ".png": "image", 
+        ".pnm": "image", 
+        ".ppt": "ppt", 
+        ".pptx": "ppt", 
+        ".psd": "image", 
+        ".qt": "movie", 
+        ".tex": "image", 
+        ".tif": "image", 
+        ".tiff": "image", 
+        ".tx": "image", 
+        ".xbm": "image"
+    }, 
+    "ftrack": {
+        "api_key": "",
+        "api_user": "",
+        "server_url": ""
+    }, 
+    "helpdesk": {
+        "help_menu": "https://fsucmpa.freshdesk.com/support/home"
+    }, 
+    "logging": {
+        "debug": {
+            "format": "%(asctime)-15s  %(levelname)s %(message)s \"%(pathname)s:%(lineno)d\""
+        }, 
+        "format": "%(asctime)-15s  %(levelname)s %(message)s \"%(pathname)s:%(lineno)d\"", 
+        "level": "debug"
+    }, 
+    "lumberjack_sync": {
+        "AWS_ACCESS_KEY_ID": "AKIAJ4HU6QEBIGKH7DRQ", 
+        "AWS_SECRET_ACCESS_KEY": "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"
+    }, 
+    "paths": {
+        "code_root": "C:\\Users\\tmiko\\PycharmProjects\\cglumberjack", 
+        "dev_pkg": "C:\\Python27\\Lib\\site-packages", 
+        "ffmpeg": "C:\\ProgramData\\chocolatey\\lib\\ffmpeg\\tools\\ffmpeg\\bin\\ffmpeg.exe", 
+        "ffplay": "C:\\ProgramData\\chocolatey\\lib\\ffmpeg\\tools\\ffmpeg\\bin\\ffplay.exe", 
+        "ffprobe": "C:\\ProgramData\\chocolatey\\lib\\ffmpeg\\tools\\ffmpeg\\bin\\ffprobe.exe", 
+        "magick": "C:\\PROGRA~1\\ImageMagick-7.0.8-Q16\\magick.exe", 
+        "maketx": "C:\\OpenImageIO-1.5.0-OCIO\\bin\\maketx.exe", 
+        "mayapy": "C:\\PROGRA~1\\Autodesk\\Maya2018\\bin\\mayapy.exe", 
+        "nuke": "C:\\PROGRA~1\\Nuke11.3v4\\Nuke11.3.exe", 
+        "oiiotool": "C:\\OpenImageIO-1.5.0-OCIO\\bin\\oiiotool.exe", 
+        "root": ""
+    }, 
+    "pipeline_steps": {
+        "assets": {
+            "Audio": "aud", 
+            "Bundle": "bndl", 
+            "Concept": "cncpt", 
+            "HDRI": "hdri", 
+            "Layout": "lay", 
+            "Modeling": "mdl", 
+            "Reference": "ref", 
+            "Rigging": "rig", 
+            "Shading": "shd", 
+            "Simulation": "sim", 
+            "Texturing": "tex", 
+            "Transcript": "trn", 
+            "default_steps": [
+                "ref", 
+                "mdl", 
+                "tex", 
+                "shd"
+            ]
+        }, 
+        "short_to_long": {
+            "amtc": "Animatic", 
+            "anim": "Animation", 
+            "aud": "Audio", 
+            "blocking": "Blocking", 
+            "bndl": "Bundle", 
+            "boards": "Storyboards", 
+            "cam": "Camera", 
+            "cncpt": "Concept", 
+            "color": "Color", 
+            "comp": "Compositing", 
+            "edit": "Editing", 
+            "fx": "effects", 
+            "hdri": "HDRI", 
+            "lay": "Layout", 
+            "lite": "Lighting", 
+            "matte": "Matte Painting", 
+            "mcp": "Motion Capture", 
+            "mdl": "Modeling", 
+            "mm": "MatchMove", 
+            "plate": "Plate", 
+            "prev": "Previs", 
+            "ref": "Reference", 
+            "rig": "Rigging", 
+            "shd": "Shading", 
+            "sim": "Simulation", 
+            "sound": "Sound", 
+            "tex": "Texturing", 
+            "trn": "Transcript"
+        }, 
+        "shots": {
+            "Animatics": "amtc", 
+            "Animation": "anim", 
+            "Blocking": "blocking", 
+            "Camera": "cam", 
+            "Color": "color", 
+            "Compositing": "comp", 
+            "Editing": "edit", 
+            "Effects": "fx", 
+            "Inbetween": "inbetween", 
+            "Keyframe": "key", 
+            "Layout": "lay", 
+            "Lighting": "lite", 
+            "MatchMove": "mm", 
+            "Matte Painting": "matte", 
+            "Motion Capture": "mcp", 
+            "Plate": "plate", 
+            "Previs": "prev", 
+            "Reference": "ref", 
+            "Sound": "sound", 
+            "Storyboards": "boards", 
+            "default_steps": [
+                "prev", 
+                "anim", 
+                "lite", 
+                "comp"
+            ], 
+            "polish": "polish"
+        }
+    }, 
+    "rules": {
+        "context_list": [
+            "render", 
+            "source", 
+            "unity", 
+            "unreal"
+        ], 
+        "general": {
+            "file_sequence": {
+                "regex": "\\.[0-9]+\\."
+            }, 
+            "model_geo": {
+                "example": "Example Geo Names: wood, wood2, wood22, wood222, wood2222, wood22222", 
+                "regex": "^[a-zA-Z]{3,}[0-9]{0,5}$"
+            }, 
+            "model_material": {
+                "example": "Example Mat names: wood_mtl", 
+                "regex": "^[a-zA-Z]{3,}[A-Z]?_mtl$"
+            }, 
+            "shot_cam": {
+                "example": "Example Shot Cam: cam010_0200", 
+                "regex": "^cam[0-9]{3}_[0-9]{4}$"
+            }, 
+            "taskname": {
+                "example": "eg: animation, anim", 
+                "regex": "[a-z]{3,9}$"
+            }, 
+            "texture_channel": {
+                "example": "Example Texture Channel: diffuse", 
+                "regex": "^[A-Za-z]+$"
+            }, 
+            "valid_chars": {
+                "regex": "[^a-zA-Z0-9._#]"
+            }, 
+            "valid_sequence": {
+                "regex": "[aA-zZ]+(\\.|\\_|\\-)[0-9]{2,4}\\."
+            }
+        }, 
+        "path_variables": {
+            "aov": {
+                "regex": "[A-Za-z0-9]+"
+            }, 
+            "asset": {
+                "example": "examples:\n\tkingkong - [creates single asset 'kingkong' in 'default' category]\n\tkingkong, trex [creates 2 assets in 'default' category]\n\tProp:kingkong [creates kingkong in 'Prop' category]\n\tProp:kingkong, trex [creates multiple assets in 'Prop' category]", 
+                "regex": "[a-zA-Z]{3,}$"
+            }, 
+            "assetname": {
+                "example": "", 
+                "regex": "[a-zA-Z_]+$"
+            }, 
+            "cam": {
+                "regex": "[A-Za-z0-9]+"
+            }, 
+            "company": {
+                "example": "Company name rules:\n    Underscores are ok ('_')\n    Letters of the alphabet (a-z, A-Z)\n    Must Contain 3 or more characters", 
+                "regex": "[A-Za-z_]{3,}$"
+            }, 
+            "context": {
+                "example": "examples: source, render", 
+                "regex": "[a-z]+"
+            }, 
+            "date": {
+                "regex": "[0-9_]+"
+            }, 
+            "ext": {
+                "regex": "[a-z]{2,5}"
+            }, 
+            "filename": {
+                "regex": "\\w+"
+            }, 
+            "filename_base": {
+                "regex": "\\w+"
+            }, 
+            "frame": {
+                "regex": "[0-9]{4}"
+            }, 
+            "ingest_source": {
+                "regex": "[A-Za-z0-9_]+"
+            }, 
+            "major_version": {
+                "regex": "[0-9]{3}"
+            }, 
+            "minor_version": {
+                "regex": "[0-9]{3}"
+            }, 
+            "project": {
+                "example": "Project name rules:\n    Underscores are ok ('_')\n    Letters of the alphabet (a-z, A-Z)\n    Must Contain 3 or more characters", 
+                "regex": "[A-Za-z_]{3,}$"
+            }, 
+            "render_pass": {
+                "regex": "[A-Za-z0-9]+"
+            }, 
+            "resolution": {
+                "regex": "[A-Za-z0-9]+"
+            }, 
+            "root": {
+                "regex": "[A-Za-z0-9_\\:]+"
+            }, 
+            "scope": {
+                "example": "examples: assets, shots", 
+                "regex": "[a-z]+"
+            }, 
+            "seq": {
+                "example": "examples: 000, 010, 020", 
+                "regex": "^[0-9]{3}$|^[A-Z]{3}$"
+            }, 
+            "shot": {
+                "regex": "^[0-9]{4}$"
+            }, 
+            "shotname": {
+                "example": "eg: 050_0100, THC_0500 (SEQ_SHOT)", 
+                "regex": "[A-Z0-9]{3}\\_[0-9]{4}$"
+            }, 
+            "task": {
+                "regex": "[a-z]+"
+            }, 
+            "type": {
+                "regex": "[a-zA-Z]+"
+            }, 
+            "user": {
+                "regex": "[a-z]+"
+            }, 
+            "user_email": {
+                "regex": "[A-Za-z0-9]+"
+            }, 
+            "version": {
+                "regex": "[0-9]{3,5}"
+            }
+        }, 
+        "scope_list": [
+            "assets", 
+            "shots", 
+            "IO"
+        ]
+    }, 
+    "shotgun": {
+        "api_key": "bc29cd2fd4ce9fe3c2598c4d559b09f88eaa95b05edfd12a834a23aea0797e2f", 
+        "api_script": "core_tools", 
+        "api_user": "tmikota", 
+        "concurrent": 4, 
+        "concurrent_low": 0, 
+        "notes": "ensure short codes exist for all pipeline steps in shotgun, might want a wizard for this.", 
+        "project_short_name": "sg_code", 
+        "server_url": "https://fsuada.shotgunstudio.com"
+    }, 
+    "templates": {
+        "IO": {
+            "render": {
+                "path": "{company}/render/{project}/IO/{ingest_source}", 
+                "version": "{version}"
+            }, 
+            "source": {
+                "path": "{company}/source/{project}/IO/{ingest_source}", 
+                "version": "{version}"
+            }
+        }, 
+        "assets": {
+            "render": {
+                "file": "{cam}/{render_pass}/{aov}/{filename}.{ext}", 
+                "path": "{company}/render/{project}/assets/{type}/{asset}/{task}/{user}", 
+                "version": "{version}/{resolution}/{filename}.{ext}"
+            }, 
+            "source": {
+                "path": "{company}/source/{project}/assets/{type}/{asset}/{task}/{user}", 
+                "version": "{version}/{resolution}/{filename}.{ext}"
+            }, 
+            "unity": {
+                "path": "{company}/unity/{project}/Assets/{seq}/{shot}/{task}/", 
+                "version": "{filename}.{ext}"
+            }
+        }, 
+        "shots": {
+            "render": {
+                "file": "{cam}/{render_pass}/{aov}/{filename}.{ext}", 
+                "path": "{company}/render/{project}/shots/{seq}/{shot}/{task}/{user}", 
+                "version": "{version}/{resolution}/{filename}.{ext}"
+            }, 
+            "source": {
+                "path": "{company}/source/{project}/shots/{seq}/{shot}/{task}/{user}", 
+                "version": "{version}/{resolution}/{filename}.{ext}"
+            }, 
+            "unity": {
+                "path": "{company}/unity/{project}/Assets/{seq}/{shot}/{task}", 
+                "version": "{filename}.{ext}"
+            }
+        }
+    }
+}
