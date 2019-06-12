@@ -1,7 +1,7 @@
 account_info:
   user_directory: ''
   project_management: ''
-  company: ''
+  default_company: ''
 logging:
     level: debug
     format: '%(asctime)-15s  %(levelname)s %(message)s "%(pathname)s:%(lineno)d"'
@@ -167,14 +167,14 @@ ext_map:
   .tex: 'image'
   .pdf: 'pdf'
 shotgun:
-  url: https://fsuada.shotgunstudio.com
+  server_url: https://fsuada.shotgunstudio.com
   api_script: core_tools
   api_key: bc29cd2fd4ce9fe3c2598c4d559b09f88eaa95b05edfd12a834a23aea0797e2f
   concurrent: 4
   concurrent_low: 0
   project_short_name: sg_code
   notes: ensure short codes exist for all pipeline steps in shotgun, might want a wizard for this.
-  username: tmikota
+  api_user: tmikota
 ftrack:
   server_url: https://lone-coconut.ftrackapp.com
   api_key: ZTU3ZDZkMDUtMWI3OS00ZWU1LWE2NGItZGJiYmQyOGExZTZiOjoyMTUyYmI2ZC1kNzk2LTRmZmUtYjUzZS0wMjBiMzA5MGZhMDA

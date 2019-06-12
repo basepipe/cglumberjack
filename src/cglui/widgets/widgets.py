@@ -825,6 +825,11 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.adjust_to_variable()
         self.set_project_management()
 
+    def set_existing_globls(self):
+        # read the gloabls and set all the line edits accordingly based on what project managment we're using
+        # TODO: Kyle
+        pass
+
     def set_project_management(self):
         from cglcore.config import app_config
         proj_man = app_config()['account_info']['project_management']

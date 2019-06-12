@@ -145,7 +145,10 @@ class NavigationWidget(QtWidgets.QFrame):
             
     def update_buttons(self, path_object=None):
         if not path_object:
-            path_object = self.path_object
+            if self.path_object:
+                path_object = self.path_object
+            else:
+                return
         if not path_object.company:
             self.show_none()
         elif path_object.company == '*':
@@ -277,7 +280,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                     self.path_object.set_attr(user='')
                     self.path_object.set_attr(task='*')
             except IndexError:
+                print 'Path is not set'
                 pass
+        else:
+            self.path_object = PathObject(self.root)
+
+        print self.path_object.path_root
+        print '------------------------'
         self.project = '*'
         self.scope = 'assets'
         self.shot = '*'
@@ -298,7 +307,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.in_file_tree = None
         self.nav_widget = NavigationWidget(path_object=self.path_object)
         self.path_widget = PathWidget(path_object=self.path_object)
-        self.nav_widget.update_buttons()
+        # self.nav_widget.update_buttons()
         self.path_widget.update_path(path_object=self.path_object)
 
         self.nav_widget.location_changed.connect(self.update_location)
@@ -454,17 +463,12 @@ class CGLumberjack(LJMainWindow):
         self.previous_path = ''
         self.filter = 'Everything'
         self.previous_paths = {}
-
-
-
         self.setCentralWidget(CGLumberjackWidget(self, user_email=self.user_email,
                                                  user_name=self.user_name,
                                                  company=self.company,
                                                  path=self.previous_path,
                                                  radio_filter=self.filter,
                                                  show_import=show_import))
-
-
         if self.user_name:
             self.setWindowTitle('Lumbermill - Logged in as %s' % self.user_name)
         else:
@@ -569,7 +573,14 @@ class CGLumberjack(LJMainWindow):
 
 
 def check_configs():
-    InitializeConfig()
+    config_ = InitializeConfig()
+    config_.create_default_globals()
+    if config_.local_config_not_set():
+        config_.set_proj_management_details()
+        return True
+    else:
+        return True
+    # check the config file to see if it has a default company and a default location
 
 
 if __name__ == "__main__":

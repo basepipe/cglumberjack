@@ -1,3 +1,12 @@
+# Check if the root directory exists
+# check if the ftrack credentials are good
+
+
+
+
+
+
+
 ##########################################
 #   Top Priorities:
 ##########################################
