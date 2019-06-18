@@ -292,7 +292,7 @@ class UserConfig(object):
 
     def __init__(self, company=None, user_email=None, user_name=None, current_path=None):
         if os.path.exists(self.user_config_path):
-            self.d = self._load_yaml(self.user_config_path)
+            self.d = self._load_json(self.user_config_path)
         else:
             return None
         self.current_path = current_path

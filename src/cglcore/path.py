@@ -597,15 +597,11 @@ class PathObject(object):
         self.set_attr(assetname='%s_%s' % (self.seq, self.shot))
 
     def set_project_config(self):
-        user_dir = os.path.expanduser("~")
-        if 'Documents' in user_dir:
-            cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
-        else:
-            cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
+        cg_lumberjack_dir = os.path.join(app_config()['account_info']['globals_dir'], 'companies')
         if self.company:
-            self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
+            self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.json')
         if self.project:
-            self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'global.yaml')
+            self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'global.json')
 
     def set_json(self):
         json_obj = self.copy(latest=True, context='render', ext='json', task='lay', set_proper_filename=True)
