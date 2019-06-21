@@ -13,10 +13,8 @@ class Designer(LJDialog):
         self.type = type_
         self.cgl_config_dir = get_cgl_config()
 
-
         self.menu_path = menu_path
         self.software = ''
-
 
         # create layouts
         layout = QtWidgets.QVBoxLayout(self)
@@ -155,6 +153,10 @@ class Designer(LJDialog):
                                                      'label': button_widget.label_line_edit.text(),
                                                      'order': bi+1
                                                      }
+                #menu_dict[menu_name][button_name] = {'module': button_widget.module_line_edit.text(),
+                #                                     'label': button_widget.label_line_edit.text(),
+                #                                     'order': bi + 1
+                #                                     }
                 self.save_code(menu_name, button_widget)
         json_object = {self.software: menu_dict}
         self.save_json(self.menu_path, json_object)
