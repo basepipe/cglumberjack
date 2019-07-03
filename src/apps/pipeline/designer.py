@@ -149,23 +149,23 @@ class Designer(LJDialog):
                 button_name = menu.buttons.tabText(bi)
                 button_widget = menu.buttons.widget(bi)
                 print button_widget
-                try:
-                    menu_dict[menu_name][button_name] = {'required': button_widget.required_line_edit.text(),
-                                                         'module': button_widget.module_line_edit.text(),
-                                                         'label': button_widget.label_line_edit.text(),
-                                                         'order': bi+1
-                                                         }
-                except AttributeError:
-                    menu_dict[menu_name][button_name] = {'module': button_widget.module_line_edit.text(),
-                                                         'label': button_widget.label_line_edit.text(),
-                                                         'order': bi + 1
-                                                         }
+                print button_widget.label_line_edit.text()
+
+                menu_dict[menu_name][button_name] = {
+                                                     'module': button_widget.command_line_edit.text(),
+                                                     'label': button_widget.label_line_edit.text(),
+                                                     'order': bi+1
+                                                     }
+
                 self.save_code(menu_name, button_widget)
         json_object = {self.software: menu_dict}
         self.save_json(self.menu_path, json_object)
 
     def save_code(self, menu_name, button_widget):
-        button_name = button_widget.preflight_step_name
+        try:
+            button_name = button_widget.preflight_step_name
+        except:
+            button_name = button_widget.name
         code = button_widget.code_text_edit.document().toPlainText()
         button_file = os.path.join(self.cgl_config_dir, 'cgl_tools', self.software, self.type, menu_name,
                                    "%s.py" % button_name)
@@ -179,7 +179,7 @@ class Designer(LJDialog):
             button_widget.do_save = False
 
     def make_init_for_folders_in_path(self, folder):
-        config = self.cgl_config_dir.replace('\\', '/')
+        config = self.cgl_tools.replace('\\', '/')
         folder = folder.replace('\\', '/')
         folder = folder.replace(config, '')
         parts = folder.split('/')
