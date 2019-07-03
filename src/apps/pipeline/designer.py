@@ -3,7 +3,7 @@ import json
 from Qt import QtWidgets, QtCore, QtGui
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.base import LJDialog
-from cglcore.path import load_style_sheet, get_cgl_config
+from cglcore.path import load_style_sheet, get_cgl_config, get_cgl_tools
 from utils import CGLMenu
 
 
@@ -12,6 +12,7 @@ class Designer(LJDialog):
         LJDialog.__init__(self, parent)
         self.type = type_
         self.cgl_config_dir = get_cgl_config()
+        self.cgl_tools = get_cgl_tools()
 
         self.menu_path = menu_path
         self.software = ''
@@ -72,8 +73,7 @@ class Designer(LJDialog):
 
         # Load the Menu Designer
         if not self.cgl_config_dir:
-            self.cgl_config_dir = get_cgl_config()
-
+            self.cgl_config_dir = app_config()['paths']['cgltools']
         self.load_software()
         self.software_combo.currentIndexChanged.connect(self.update_menu_path)
 
@@ -83,7 +83,7 @@ class Designer(LJDialog):
         self.new_software_button.show()
         self.software_combo.clear()
 
-        dir_ = os.path.join(self.cgl_config_dir, 'cgl_tools')
+        dir_ = self.cgl_tools
         if os.path.exists(dir_):
             softwares = os.listdir(dir_)
             for s in softwares:
@@ -94,7 +94,7 @@ class Designer(LJDialog):
 
     def update_menu_path(self):
         self.software = self.software_combo.currentText()
-        self.menu_path = os.path.join(self.cgl_config_dir, 'cgl_tools', self.software, '%s.cgl' % self.type)
+        self.menu_path = os.path.join(self.cgl_tools, self.software, '%s.cgl' % self.type)
         self.load_menus()
 
     def on_add_menu_clicked(self):
@@ -148,15 +148,18 @@ class Designer(LJDialog):
             for bi in range(menu.buttons.count()):
                 button_name = menu.buttons.tabText(bi)
                 button_widget = menu.buttons.widget(bi)
-                menu_dict[menu_name][button_name] = {'required': button_widget.required_line_edit.text(),
-                                                     'module': button_widget.module_line_edit.text(),
-                                                     'label': button_widget.label_line_edit.text(),
-                                                     'order': bi+1
-                                                     }
-                #menu_dict[menu_name][button_name] = {'module': button_widget.module_line_edit.text(),
-                #                                     'label': button_widget.label_line_edit.text(),
-                #                                     'order': bi + 1
-                #                                     }
+                print button_widget
+                try:
+                    menu_dict[menu_name][button_name] = {'required': button_widget.required_line_edit.text(),
+                                                         'module': button_widget.module_line_edit.text(),
+                                                         'label': button_widget.label_line_edit.text(),
+                                                         'order': bi+1
+                                                         }
+                except AttributeError:
+                    menu_dict[menu_name][button_name] = {'module': button_widget.module_line_edit.text(),
+                                                         'label': button_widget.label_line_edit.text(),
+                                                         'order': bi + 1
+                                                         }
                 self.save_code(menu_name, button_widget)
         json_object = {self.software: menu_dict}
         self.save_json(self.menu_path, json_object)

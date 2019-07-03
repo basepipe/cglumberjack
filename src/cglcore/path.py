@@ -1028,12 +1028,16 @@ def get_company_config():
 
 
 def get_cgl_config():
+
     user_dir = os.path.expanduser("~")
     if 'Documents' in user_dir:
         cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack')
     else:
         cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
     return cg_lumberjack_dir
+
+def get_cgl_tools():
+    return app_config()['paths']['cgl_tools']
 
 
 def hash_to_number(sequence):
