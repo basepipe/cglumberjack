@@ -1,0 +1,31 @@
+{
+    "nuke": {
+        "render": {
+            "CheckWriteNode": {
+                "label": "Check Write Node", 
+                "module": "cgl_tools.nuke.preflights.render.CheckWriteNode", 
+                "order": 1, 
+                "required": "True"
+            }, 
+            "ClosePreflight": {
+                "label": "Close Preflight", 
+                "module": "cgl_tools.nuke.preflights.render.ClosePreflight", 
+                "order": 4, 
+                "required": "True"
+            }, 
+            "CreateMOV": {
+                "label": "Create MOV", 
+                "module": "cgl_tools.nuke.preflights.render.CreateMOV", 
+                "order": 3, 
+                "required": "True"
+            }, 
+            "RenderFrameRange": {
+                "label": "Render Frame Range", 
+                "module": "cgl_tools.nuke.preflights.render.RenderFrameRange", 
+                "order": 2, 
+                "required": "True"
+            }, 
+            "order": 1
+        }
+    }
+}
