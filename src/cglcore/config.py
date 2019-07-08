@@ -128,24 +128,6 @@ class InitializeConfig(object):
                     self._write_json(self.default_globals_json, config_)
 
     @staticmethod
-    def _load_yaml(path):
-        with open(path, 'r') as stream:
-            try:
-                result = yaml.load(stream)
-                if result:
-                    return result
-                else:
-                    return {}
-            except yaml.YAMLError as exc:
-                print(exc)
-                sys.exit(99)
-
-    @staticmethod
-    def _write_yaml(filepath, data):
-        with open(filepath, 'w') as yaml_file:
-            yaml.dump(data, yaml_file)
-
-    @staticmethod
     def _write_json(filepath, data):
         print filepath, '---------------------------'
         with open(filepath, 'w') as outfile:
@@ -173,7 +155,10 @@ class Configuration(object):
     user_config = os.path.join(cg_lumberjack_dir, 'config.json')
 
     def __init__(self, company=None, proj_management=None):
-        self.globals = self.default_globals_json = self._load_json(self.user_config)['globals']
+        if not os.path.exists(self.user_config):
+            dialog = 'tests'
+            print 'User Config Not Found: %s' % self.user_config
+        self.globals = self._load_json(self.user_config)['globals']
         if not os.path.exists(self.globals):
             print 'No Globals Found at %s' % self.globals
             return
@@ -229,10 +214,10 @@ class Configuration(object):
                 self.update_proj_management()
 
     def update_proj_management(self):
-        yaml_file = os.path.join(self.company_global_dir, 'global.json')
-        config_dict = self._load_json(yaml_file)
+        json_file = os.path.join(self.company_global_dir, 'global.json')
+        config_dict = self._load_json(json_file)
         config_dict['account_info']['project_management'] = self.proj_management
-        self._write_json(yaml_file, config_dict)
+        self._write_json(json_file, config_dict)
 
     def _find_config_file(self):
         template_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cfg")
@@ -262,28 +247,10 @@ class Configuration(object):
         return global_cfg, app_cfg
 
     @staticmethod
-    def _load_yaml(path):
-        with open(path, 'r') as stream:
-            try:
-                result = yaml.load(stream)
-                if result:
-                    return result
-                else:
-                    return {}
-            except yaml.YAMLError as exc:
-                print(exc)
-                sys.exit(99)
-
-    @staticmethod
     def _load_json(filepath):
         with open(filepath) as jsonfile:
             data = json.load(jsonfile)
         return data
-
-    @staticmethod
-    def _write_yaml(filepath, config_dict=None):
-        with open(filepath, 'w') as yaml_file:
-            yaml.dump(config_dict, yaml_file)
 
     @staticmethod
     def _write_json(filepath, data):
@@ -344,23 +311,6 @@ class UserConfig(object):
         if self.company:
             self.d['company'] = self.company
 
-    def _write_yaml(self):
-        with open(self.user_config_path, 'w') as f:
-            yaml.dump(self.d, f, default_flow_style=False)
-
-    @staticmethod
-    def _load_yaml(path):
-        with open(path, 'r') as stream:
-            try:
-                result = yaml.load(stream)
-                if result:
-                    return result
-                else:
-                    return {}
-            except yaml.YAMLError as exc:
-                print(exc)
-                sys.exit(99)
-
     def _write_json(self, data):
         with open(self.user_config_path, 'w') as outfile:
             json.dump(data, outfile, indent=4, sort_keys=True)
@@ -390,7 +340,6 @@ class CheckGlobalsDialog(QtWidgets.QDialog):
         self.green_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 255, 0))
         self.black_palette = QtGui.QPalette()
         self.black_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 0, 0))
-
 
         company_label = QtWidgets.QLabel('Your Company')
         self.company_line_edit = QtWidgets.QLineEdit()

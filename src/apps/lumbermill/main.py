@@ -99,7 +99,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.cl_row.addWidget(self.projects_button)
         self.cl_row.addWidget(self.production_button)
         self.cl_row.addWidget(self.search_box)
-        #self.cl_row.addStretch(1)
+        self.cl_row.addStretch(1)
 
         layout.addLayout(self.cl_row)
         layout.addWidget(self.current_location_line_edit)
