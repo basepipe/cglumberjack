@@ -597,11 +597,12 @@ class PathObject(object):
         self.set_attr(assetname='%s_%s' % (self.seq, self.shot))
 
     def set_project_config(self):
-        cg_lumberjack_dir = os.path.join(app_config()['account_info']['globals_dir'], 'companies')
-        if self.company:
-            self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.json')
-        if self.project:
-            self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'global.json')
+        self.company_config = os.path.join(app_config()['account_info']['globals_path'], 'globals.json')
+        self.project_config = os.path.join(app_config()['account_info']['globals_path'], 'globals.json')
+        #if self.company:
+        #    self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'globals.json')
+        #if self.project:
+        #    self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'globals.json')
 
     def set_json(self):
         json_obj = self.copy(latest=True, context='render', ext='json', task='lay', set_proper_filename=True)

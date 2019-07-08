@@ -21,7 +21,7 @@ class InitializeConfig(object):
         self.default_pm = default_pm
         # first priority - figure out where the cgl_directory is going to be, or currently is.
         self.cgl_dir = self.get_default_cgl_dir()
-        self.user_globals = os.path.join(self.cgl_dir, 'config.json')
+        self.user_globals = os.path.join(self.cgl_dir, 'user_globals.json')
         self.default_globals_json = self._load_json(self.user_globals)['globals']
         self.cgl_dir = os.path.dirname(self.default_globals_json)
 
@@ -29,11 +29,8 @@ class InitializeConfig(object):
         config_not_set = False
         config = self._load_json(self.default_globals_json)
         # If the config exists and has valid values just continue on
-        company = config['account_info']['default_company']
-        user_directory = config['account_info']['user_directory']
         project_management = config['account_info']['project_management']
         root_ = config['paths']['root']
-
         if project_management:
             if project_management == 'ftrack':
                 if not config['ftrack']['server_url']:
@@ -70,8 +67,8 @@ class InitializeConfig(object):
         to_path = self.default_globals_json
         if os.path.exists(os.path.dirname(self.default_globals_json)):
             # make the "studio level" global.yaml
-            if 'global.json' not in os.listdir(self.cgl_dir):
-                print 'cant find global.json in %s' % self.cgl_dir
+            if 'globals.json' not in os.listdir(self.cgl_dir):
+                print 'cant find globals.json in %s' % self.cgl_dir
                 shutil.copy2(base, to_path)
                 print 'Created Global: %s' % to_path
             else:
@@ -152,7 +149,7 @@ class Configuration(object):
         cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack')
     else:
         cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
-    user_config = os.path.join(cg_lumberjack_dir, 'config.json')
+    user_config = os.path.join(cg_lumberjack_dir, 'user_globals.json')
 
     def __init__(self, company=None, proj_management=None):
         if not os.path.exists(self.user_config):
@@ -187,10 +184,10 @@ class Configuration(object):
 
     def make_cglumberjack_dir(self):
         base = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cfg", "global_template.json")
-        to_path = os.path.join(self.cg_lumberjack_dir, 'global.json')
+        to_path = os.path.join(self.cg_lumberjack_dir, 'globals.json')
         if os.path.exists(self.cg_lumberjack_dir):
             # make the "studio level" global.yaml
-            if 'global.json' not in os.listdir(self.cg_lumberjack_dir):
+            if 'globals.json' not in os.listdir(self.cg_lumberjack_dir):
                 # shutil.copy2(base, to_path
                 pass
         else:
@@ -198,11 +195,11 @@ class Configuration(object):
             # shutil.copy2(base, to_path)
 
     def make_company_global_dir(self):
-        default_global = os.path.join(self.cg_lumberjack_dir, 'global.json')
-        to_path = os.path.join(self.company_global_dir, 'global.json')
+        default_global = os.path.join(self.cg_lumberjack_dir, 'globals.json')
+        to_path = os.path.join(self.company_global_dir, 'globals.json')
         if os.path.exists(self.company_global_dir):
             print 'Copying from %s to %s' % (default_global, to_path)
-            if 'global.json' not in os.listdir(self.company_global_dir):
+            if 'globals.json' not in os.listdir(self.company_global_dir):
                 shutil.copy2(default_global, to_path)
                 if self.proj_management:
                     self.update_proj_management()
@@ -214,7 +211,7 @@ class Configuration(object):
                 self.update_proj_management()
 
     def update_proj_management(self):
-        json_file = os.path.join(self.company_global_dir, 'global.json')
+        json_file = os.path.join(self.company_global_dir, 'globals.json')
         config_dict = self._load_json(json_file)
         config_dict['account_info']['project_management'] = self.proj_management
         self._write_json(json_file, config_dict)
@@ -224,23 +221,23 @@ class Configuration(object):
         app_name = os.path.basename(sys.argv[0])
         # this doesn't seem to be used but it's a great idea
         app_cfg = os.path.join(template_folder, os.path.splitext(app_name)[0] + ".json")
-        global_cfg = os.path.join(self.cg_lumberjack_dir, 'global.json')
+        global_cfg = os.path.join(self.cg_lumberjack_dir, 'globals.json')
         """
         This is for when we want to start having globals for each company
         if self.company_global_dir:
             if os.path.exists(self.company_global_dir):
-                global_cfg = os.path.join(self.company_global_dir, 'global.json')
+                global_cfg = os.path.join(self.company_global_dir, 'globals.json')
                 if not os.path.exists(global_cfg):
                     self.make_company_global_dir()
             else:
                 self.make_company_global_dir()
-                global_cfg = os.path.join(self.company_global_dir, 'global.json')
+                global_cfg = os.path.join(self.company_global_dir, 'globals.json')
         else:
             if os.path.exists(self.cg_lumberjack_dir):
-                global_cfg = os.path.join(self.cg_lumberjack_dir, 'global.json')
+                global_cfg = os.path.join(self.cg_lumberjack_dir, 'globals.json')
             else:
                 self.make_cglumberjack_dir()
-                global_cfg = os.path.join(self.cg_lumberjack_dir, 'global.json')
+                global_cfg = os.path.join(self.cg_lumberjack_dir, 'globals.json')
 
         print 'Global Config Location: ', global_cfg
         """
@@ -261,16 +258,12 @@ class Configuration(object):
 class UserConfig(object):
     user_config_path = Configuration().user_config
 
-    def __init__(self, company=None, user_email=None, user_name=None, current_path=None):
+    def __init__(self, user_email=None, user_name=None, current_path=None):
         if os.path.exists(self.user_config_path):
             self.d = self._load_json(self.user_config_path)
         else:
             return None
         self.current_path = current_path
-        if company:
-            self.company = company
-        else:
-            self.company = self.d['company']
         if user_email:
             self.user_email = user_email
         else:
