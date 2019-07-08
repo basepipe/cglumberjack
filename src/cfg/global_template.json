@@ -1,7 +1,7 @@
 {
     "account_info": {
-        "default_company": "cglumberjack", 
-        "project_management": "ftrack", 
+        "default_company": "",
+        "project_management": "lumbermill",
         "user_directory": ""
     }, 
     "asset_categories": {
