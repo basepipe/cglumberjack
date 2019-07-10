@@ -52,7 +52,7 @@ class PreflightStep(QtWidgets.QWidget):
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs={}, preflight_path=''):
         QtWidgets.QWidget.__init__(self, parent)
         self.attrs = attrs
-        self.preflight_step_name = preflight_step_name
+        self.name = preflight_step_name
         self.parent = parent
         self.preflight_name = preflight_name
         self.preflight_path = preflight_path

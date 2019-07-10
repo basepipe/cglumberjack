@@ -162,7 +162,7 @@ class Designer(LJDialog):
         self.save_json(self.menu_path, json_object)
 
     def save_code(self, menu_name, button_widget):
-        button_name = button_widget.preflight_step_name
+        button_name = button_widget.name
         code = button_widget.code_text_edit.document().toPlainText()
         button_file = os.path.join(self.cgl_config_dir, 'cgl_tools', self.software, self.type, menu_name,
                                    "%s.py" % button_name)

@@ -139,8 +139,7 @@ class Preflight(QtWidgets.QDialog):
     def populate_table(self):
         import sys
         source_dir = os.path.join(app_config()['paths']['cgl_tools'])
-        print 'source_dir', source_dir
-        source_dir = r"D:\VFX\test_root2\_config"
+        source_dir = os.path.dirname(source_dir)
         sys.path.insert(0, source_dir)
         data = []
         for item in self.modules:
