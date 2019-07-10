@@ -1,6 +1,6 @@
 import os
 import nuke
-from PySide2 import QtWidgets
+from Qt import QtWidgets
 
 from cglcore.path import PathObject
 
