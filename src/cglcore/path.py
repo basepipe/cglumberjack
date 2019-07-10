@@ -15,7 +15,7 @@ PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 EXT_MAP = app_config()['ext_map']
 ROOT = app_config()['paths']['root']
 SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
-SEQ_REGEX = re.compile("\\.[0-9]{4,}\\.")
+SEQ_REGEX = re.compile("[0-9]{4,}\\.")
 SPLIT_SEQ_REGEX = re.compile("\\ [0-9]{4,}-[0-9]{4,}$")
 SEQ_SPLIT = re.compile("\\#{4,}")
 SEQ2_SPLIT = re.compile("[%0-9]{2,}d")
@@ -885,7 +885,7 @@ def seq_from_file(basename):
     if numbers:
         numbers = numbers.group(0).replace('.', '')
         string = '#' * int(len(numbers))
-        string = '.%s.' % string
+        string = '%s.' % string
         this = re.sub(SEQ_REGEX, string, basename)
         return this
     else:
