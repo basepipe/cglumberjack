@@ -21,19 +21,16 @@ class InitializeConfig(object):
         self.default_pm = default_pm
         # first priority - figure out where the cgl_directory is going to be, or currently is.
         self.cgl_dir = self.get_default_cgl_dir()
-        self.default_globals = os.path.join(self.cgl_dir, 'global.yaml')
-        self.default_globals_json = os.path.join(self.cgl_dir, 'global.json')
-        # Check for default globals, if they don't exist create them
+        self.user_globals = os.path.join(self.cgl_dir, 'user_globals.json')
+        self.default_globals_json = self._load_json(self.user_globals)['globals']
+        self.cgl_dir = os.path.dirname(self.default_globals_json)
 
     def local_config_not_set(self):
         config_not_set = False
         config = self._load_json(self.default_globals_json)
         # If the config exists and has valid values just continue on
-        company = config['account_info']['default_company']
-        user_directory = config['account_info']['user_directory']
         project_management = config['account_info']['project_management']
         root_ = config['paths']['root']
-
         if project_management:
             if project_management == 'ftrack':
                 if not config['ftrack']['server_url']:
@@ -67,81 +64,69 @@ class InitializeConfig(object):
         :return:
         """
         base = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cfg", "global_template.json")
-        to_path = os.path.join(self.cgl_dir, 'global.json')
-        if os.path.exists(self.cgl_dir):
-
+        to_path = self.default_globals_json
+        if os.path.exists(os.path.dirname(self.default_globals_json)):
             # make the "studio level" global.yaml
-            if 'global.json' not in os.listdir(self.cgl_dir):
-                print 'cant find global.json in %s' % self.cgl_dir
+            if 'globals.json' not in os.listdir(self.cgl_dir):
+                print 'cant find globals.json in %s' % self.cgl_dir
                 shutil.copy2(base, to_path)
                 print 'Created Global: %s' % to_path
+            else:
+                print 'Found Globals at: %s' % to_path
         else:
-            os.makedirs(self.cgl_dir)
+            os.makedirs(os.path.dirname(self.default_globals_json))
             shutil.copy2(base, to_path)
             print 'Created Global: %s' % to_path
 
     def set_default_location(self):
-        config = self._load_json(self.default_globals)
-        config['account_info']['user_directory'] = self.cgl_dir
+        config_ = self._load_json(self.default_globals_json)
+        config_['account_info']['user_directory'] = self.cgl_dir
         # self._write_yaml(self.default_globals, config)
-        self._write_json(self.default_globals_json, config)
+        self._write_json(self.default_globals_json, config_)
 
     def set_proj_management_details(self):
         if self.default_pm != 'lumbermill':
             from cglui.startup import do_gui_init
             if self.local_config_not_set():
                 app = do_gui_init()
-                dialog = CheckGlobalsDialog(company=config['account_info']['default_company'],
-                                            project_management=config['account_info']['project_management'],
-                                            user_directory=config['account_info']['user_directory'],
-                                            config_dict=config)
+                config_ = self._load_json(self.default_globals_json)
+                dialog = CheckGlobalsDialog(company=config_['account_info']['default_company'],
+                                            project_management=config_['account_info']['project_management'],
+                                            user_directory=config_['account_info']['user_directory'],
+                                            config_dict=config_)
                 dialog.show()
                 app.exec_()
                 contents = dialog.contents
+
                 self.default_pm = contents['project_management']
                 self.server_url = contents['api_server']
                 self.api_key = contents['api_key']
                 self.api_user = contents['api_user']
                 self.default_company = contents['company']
 
-                config['account_info']['default_company'] = self.default_company
-                config['paths']['root'] = contents['root']
-                config['account_info']['project_management'] = self.default_pm
+                config_['account_info']['default_company'] = self.default_company
+                config_['paths']['root'] = contents['root']
+                config_['account_info']['project_management'] = self.default_pm
 
                 if self.default_pm == 'ftrack':
-                    config['ftrack']['server_url'] = self.server_url
-                    config['ftrack']['api_key'] = self.api_key
-                    config['ftrack']['api_user'] = self.api_user
+                    config_['ftrack']['server_url'] = self.server_url
+                    config_['ftrack']['api_key'] = self.api_key
+                    config_['ftrack']['api_user'] = self.api_user
                     # self._write_yaml(self.default_globals, config)
-                    self._write_json(self.default_globals_json, config)
+                    print config_['ftrack']
+                    print config_['paths']
+                    self._write_json(self.default_globals_json, config_)
                 elif self.default_pm == 'shotgun':
-                    config['shotgun']['url'] = self.server_url
-                    config['shotgun']['api_key'] = self.api_key
-                    config['shotgun']['api_script'] = self.api_script
-                    config['shotgun']['username'] = self.api_user
+                    config_['shotgun']['url'] = self.server_url
+                    config_['shotgun']['api_key'] = self.api_key
+                    config_['shotgun']['api_script'] = self.api_script
+                    config_['shotgun']['username'] = self.api_user
                     # self._write_yaml(self.default_globals, config)
-                    self._write_json(self.default_globals_json, config)
-
-    @staticmethod
-    def _load_yaml(path):
-        with open(path, 'r') as stream:
-            try:
-                result = yaml.load(stream)
-                if result:
-                    return result
-                else:
-                    return {}
-            except yaml.YAMLError as exc:
-                print(exc)
-                sys.exit(99)
-
-    @staticmethod
-    def _write_yaml(filepath, data):
-        with open(filepath, 'w') as yaml_file:
-            yaml.dump(data, yaml_file)
+                    self._write_json(self.default_globals_json, config_)
 
     @staticmethod
     def _write_json(filepath, data):
+        print filepath, '---------------------------'
         with open(filepath, 'w') as outfile:
             json.dump(data, outfile, indent=4, sort_keys=True)
 
@@ -164,9 +149,18 @@ class Configuration(object):
         cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack')
     else:
         cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
-    user_config = os.path.join(cg_lumberjack_dir, 'user_config.yaml')
+    user_config = os.path.join(cg_lumberjack_dir, 'user_globals.json')
 
     def __init__(self, company=None, proj_management=None):
+        if not os.path.exists(self.user_config):
+            dialog = 'tests'
+            print 'User Config Not Found: %s' % self.user_config
+        self.globals = self._load_json(self.user_config)['globals']
+        if not os.path.exists(self.globals):
+            print 'No Globals Found at %s' % self.globals
+            return
+        else:
+            self.cg_lumberjack_dir = os.path.dirname(self.globals)
         self.proj_management = None
         if proj_management:
             self.proj_management = proj_management
@@ -181,7 +175,7 @@ class Configuration(object):
             global_cfg, app_cfg = self._find_config_file()
             print 'Global Config:', global_cfg
             cfg = {}
-            cfg['cg_lumberjack_dir'] = self.cg_lumberjack_dir
+            cfg['cg_lumberjack_dir'] = os.path.dirname(self.globals)
             if os.path.isfile(global_cfg):
                 cfg.update(self._load_json(global_cfg))
             if os.path.isfile(app_cfg):
@@ -190,21 +184,22 @@ class Configuration(object):
 
     def make_cglumberjack_dir(self):
         base = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cfg", "global_template.json")
-        to_path = os.path.join(self.cg_lumberjack_dir, 'global.json')
+        to_path = os.path.join(self.cg_lumberjack_dir, 'globals.json')
         if os.path.exists(self.cg_lumberjack_dir):
             # make the "studio level" global.yaml
-            if 'global.json' not in os.listdir(self.cg_lumberjack_dir):
-                shutil.copy2(base, to_path)
+            if 'globals.json' not in os.listdir(self.cg_lumberjack_dir):
+                # shutil.copy2(base, to_path
+                pass
         else:
             os.makedirs(self.cg_lumberjack_dir)
-            shutil.copy2(base, to_path)
+            # shutil.copy2(base, to_path)
 
     def make_company_global_dir(self):
-        default_global = os.path.join(self.cg_lumberjack_dir, 'global.json')
-        to_path = os.path.join(self.company_global_dir, 'global.json')
+        default_global = os.path.join(self.cg_lumberjack_dir, 'globals.json')
+        to_path = os.path.join(self.company_global_dir, 'globals.json')
         if os.path.exists(self.company_global_dir):
             print 'Copying from %s to %s' % (default_global, to_path)
-            if 'global.json' not in os.listdir(self.company_global_dir):
+            if 'globals.json' not in os.listdir(self.company_global_dir):
                 shutil.copy2(default_global, to_path)
                 if self.proj_management:
                     self.update_proj_management()
@@ -216,57 +211,43 @@ class Configuration(object):
                 self.update_proj_management()
 
     def update_proj_management(self):
-        yaml_file = os.path.join(self.company_global_dir, 'global.json')
-        config_dict = self._load_json(yaml_file)
+        json_file = os.path.join(self.company_global_dir, 'globals.json')
+        config_dict = self._load_json(json_file)
         config_dict['account_info']['project_management'] = self.proj_management
-        self._write_json(yaml_file, config_dict)
+        self._write_json(json_file, config_dict)
 
     def _find_config_file(self):
         template_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cfg")
         app_name = os.path.basename(sys.argv[0])
         # this doesn't seem to be used but it's a great idea
         app_cfg = os.path.join(template_folder, os.path.splitext(app_name)[0] + ".json")
+        global_cfg = os.path.join(self.cg_lumberjack_dir, 'globals.json')
+        """
+        This is for when we want to start having globals for each company
         if self.company_global_dir:
             if os.path.exists(self.company_global_dir):
-                global_cfg = os.path.join(self.company_global_dir, 'global.json')
+                global_cfg = os.path.join(self.company_global_dir, 'globals.json')
                 if not os.path.exists(global_cfg):
                     self.make_company_global_dir()
             else:
                 self.make_company_global_dir()
-                global_cfg = os.path.join(self.company_global_dir, 'global.json')
+                global_cfg = os.path.join(self.company_global_dir, 'globals.json')
         else:
             if os.path.exists(self.cg_lumberjack_dir):
-                global_cfg = os.path.join(self.cg_lumberjack_dir, 'global.json')
+                global_cfg = os.path.join(self.cg_lumberjack_dir, 'globals.json')
             else:
                 self.make_cglumberjack_dir()
-                global_cfg = os.path.join(self.cg_lumberjack_dir, 'global.json')
+                global_cfg = os.path.join(self.cg_lumberjack_dir, 'globals.json')
 
         print 'Global Config Location: ', global_cfg
+        """
         return global_cfg, app_cfg
-
-    @staticmethod
-    def _load_yaml(path):
-        with open(path, 'r') as stream:
-            try:
-                result = yaml.load(stream)
-                if result:
-                    return result
-                else:
-                    return {}
-            except yaml.YAMLError as exc:
-                print(exc)
-                sys.exit(99)
 
     @staticmethod
     def _load_json(filepath):
         with open(filepath) as jsonfile:
             data = json.load(jsonfile)
         return data
-
-    @staticmethod
-    def _write_yaml(filepath, config_dict=None):
-        with open(filepath, 'w') as yaml_file:
-            yaml.dump(config_dict, yaml_file)
 
     @staticmethod
     def _write_json(filepath, data):
@@ -277,16 +258,12 @@ class Configuration(object):
 class UserConfig(object):
     user_config_path = Configuration().user_config
 
-    def __init__(self, company=None, user_email=None, user_name=None, current_path=None):
+    def __init__(self, user_email=None, user_name=None, current_path=None):
         if os.path.exists(self.user_config_path):
-            self.d = self._load_yaml(self.user_config_path)
+            self.d = self._load_json(self.user_config_path)
         else:
             return None
         self.current_path = current_path
-        if company:
-            self.company = company
-        else:
-            self.company = self.d['company']
         if user_email:
             self.user_email = user_email
         else:
@@ -327,23 +304,6 @@ class UserConfig(object):
         if self.company:
             self.d['company'] = self.company
 
-    def _write_yaml(self):
-        with open(self.user_config_path, 'w') as f:
-            yaml.dump(self.d, f, default_flow_style=False)
-
-    @staticmethod
-    def _load_yaml(path):
-        with open(path, 'r') as stream:
-            try:
-                result = yaml.load(stream)
-                if result:
-                    return result
-                else:
-                    return {}
-            except yaml.YAMLError as exc:
-                print(exc)
-                sys.exit(99)
-
     def _write_json(self, data):
         with open(self.user_config_path, 'w') as outfile:
             json.dump(data, outfile, indent=4, sort_keys=True)
@@ -373,7 +333,6 @@ class CheckGlobalsDialog(QtWidgets.QDialog):
         self.green_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 255, 0))
         self.black_palette = QtGui.QPalette()
         self.black_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 0, 0))
-
 
         company_label = QtWidgets.QLabel('Your Company')
         self.company_line_edit = QtWidgets.QLineEdit()

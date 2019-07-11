@@ -99,7 +99,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.cl_row.addWidget(self.projects_button)
         self.cl_row.addWidget(self.production_button)
         self.cl_row.addWidget(self.search_box)
-        #self.cl_row.addStretch(1)
+        self.cl_row.addStretch(1)
 
         layout.addLayout(self.cl_row)
         layout.addWidget(self.current_location_line_edit)
@@ -563,8 +563,7 @@ class CGLumberjack(LJMainWindow):
     def closeEvent(self, event):
         try:
             # set the current path so that it works on the load better.
-            user_config = UserConfig(company=self.centralWidget().company,
-                                     user_email=self.centralWidget().user_email,
+            user_config = UserConfig(user_email=self.centralWidget().user_email,
                                      user_name=self.centralWidget().user_name,
                                      current_path=self.centralWidget().path_widget.text)
             user_config.update_all()

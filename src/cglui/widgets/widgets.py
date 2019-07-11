@@ -789,6 +789,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.api_key_line_edit = QtWidgets.QLineEdit()
         self.api_user_line_edit = QtWidgets.QLineEdit()
 
+
         self.cancel_button = QtWidgets.QPushButton('Cancel')
         self.ok_button = QtWidgets.QPushButton('Ok')
         self.button = ''
@@ -821,7 +822,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.proj_line_edit.textChanged.connect(self.on_project_text_changed)
         self.ok_button.clicked.connect(self.on_ok_clicked)
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
-        self.proj_management_combo.currentIndexChanged.connect(self.on_pm_changed)
+        # self.proj_management_combo.currentIndexChanged.connect(self.on_pm_changed)
         self.adjust_to_variable()
         self.set_project_management()
 

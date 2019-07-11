@@ -56,8 +56,10 @@ class ProjectManagementData(object):
             self.__dict__[key] = kwargs[key]
 
         if not self.user_email:
-            print 'No User Email Defined, cant create Ftrack Production Data'
-            return
+            self.user_email = app_config()['ftrack']['api_user']
+            if not self.user_email:
+                print 'No User Email Defined, cant create Ftrack Production Data'
+                return
 
         if not self.project:
             print 'No Project Defined, skipping' 
@@ -105,6 +107,7 @@ class ProjectManagementData(object):
             print '\t', task['name'], full_name
             if task['name'] == full_name:
                 return task
+        print 'Could Not Find a Task of %s' % task['name']
         return None
 
     def create_project_management_data(self):

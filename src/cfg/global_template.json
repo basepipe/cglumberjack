@@ -1,9 +1,9 @@
 {
     "account_info": {
-        "default_company": "cglumberjack", 
-        "project_management": "ftrack", 
-        "user_directory": ""
-    }, 
+        "default_company": "",
+        "project_management": "",
+        "globals_path": ""
+    },
     "asset_categories": {
         "Character": "char", 
         "Environment": "env", 
@@ -116,7 +116,7 @@
         "AWS_SECRET_ACCESS_KEY": "jDEloNF6cmQwn7i0Bz1For8KJNGYhIU6DdJdUEj5"
     }, 
     "paths": {
-        "code_root": "C:\\Users\\tmiko\\PycharmProjects\\cglumberjack", 
+        "code_root": "",
         "dev_pkg": "C:\\Python27\\Lib\\site-packages", 
         "ffmpeg": "C:\\ProgramData\\chocolatey\\lib\\ffmpeg\\tools\\ffmpeg\\bin\\ffmpeg.exe", 
         "ffplay": "C:\\ProgramData\\chocolatey\\lib\\ffmpeg\\tools\\ffmpeg\\bin\\ffplay.exe", 
@@ -126,7 +126,8 @@
         "mayapy": "C:\\PROGRA~1\\Autodesk\\Maya2018\\bin\\mayapy.exe", 
         "nuke": "C:\\PROGRA~1\\Nuke11.3v4\\Nuke11.3.exe", 
         "oiiotool": "C:\\OpenImageIO-1.5.0-OCIO\\bin\\oiiotool.exe", 
-        "root": ""
+        "root": "",
+        "cgl_tools": ""
     }, 
     "pipeline_steps": {
         "assets": {

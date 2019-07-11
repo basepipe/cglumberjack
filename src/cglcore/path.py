@@ -15,7 +15,7 @@ PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 EXT_MAP = app_config()['ext_map']
 ROOT = app_config()['paths']['root']
 SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
-SEQ_REGEX = re.compile("\\.[0-9]{4,}\\.")
+SEQ_REGEX = re.compile("[0-9]{4,}\\.")
 SPLIT_SEQ_REGEX = re.compile("\\ [0-9]{4,}-[0-9]{4,}$")
 SEQ_SPLIT = re.compile("\\#{4,}")
 SEQ2_SPLIT = re.compile("[%0-9]{2,}d")
@@ -597,15 +597,12 @@ class PathObject(object):
         self.set_attr(assetname='%s_%s' % (self.seq, self.shot))
 
     def set_project_config(self):
-        user_dir = os.path.expanduser("~")
-        if 'Documents' in user_dir:
-            cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
-        else:
-            cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
-        if self.company:
-            self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
-        if self.project:
-            self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'global.yaml')
+        self.company_config = os.path.join(app_config()['account_info']['globals_path'], 'globals.json')
+        self.project_config = os.path.join(app_config()['account_info']['globals_path'], 'globals.json')
+        #if self.company:
+        #    self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'globals.json')
+        #if self.project:
+        #    self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'globals.json')
 
     def set_json(self):
         json_obj = self.copy(latest=True, context='render', ext='json', task='lay', set_proper_filename=True)
@@ -888,7 +885,7 @@ def seq_from_file(basename):
     if numbers:
         numbers = numbers.group(0).replace('.', '')
         string = '#' * int(len(numbers))
-        string = '.%s.' % string
+        string = '%s.' % string
         this = re.sub(SEQ_REGEX, string, basename)
         return this
     else:
@@ -1032,12 +1029,16 @@ def get_company_config():
 
 
 def get_cgl_config():
+
     user_dir = os.path.expanduser("~")
     if 'Documents' in user_dir:
         cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack')
     else:
         cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
     return cg_lumberjack_dir
+
+def get_cgl_tools():
+    return app_config()['paths']['cgl_tools']
 
 
 def hash_to_number(sequence):

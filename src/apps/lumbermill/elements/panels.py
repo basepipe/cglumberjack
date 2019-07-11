@@ -79,8 +79,9 @@ class CompanyPanel(QtWidgets.QWidget):
         companies = glob.glob(companies_loc)
         if companies:
             for each in companies:
-                c = os.path.basename(each)
-                self.company_widget.list.addItem(c)
+                if '_config' not in each:
+                    c = os.path.basename(each)
+                    self.company_widget.list.addItem(c)
 
     def clear_layout(self, layout=None):
         if not layout:
