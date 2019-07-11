@@ -63,7 +63,7 @@ class TaskSetupGUI(QtWidgets.QDialog):
             schema = self.task_table.item(row, 3).text()
             #self.schemas[long_name]['long_name'] = long_name
             self.schemas[long_name]['short_name'] = short_name
-            self.schemas[long_name]['type_'] = type_
+            self.schemas[long_name]['type'] = type_
             #self.schemas[long_name]['schema'] = schema
 
     def load_schemas(self):
@@ -88,9 +88,9 @@ class TaskSetupGUI(QtWidgets.QDialog):
             return self._load_json(os.path.join(app_config()['paths']['root'], '_config', 'lc_schemas.json'))
         else:
             print 'Starting FTrack Session'
-            session = ftrack_api.Session(server_url=app_config()['ftrack']['server_url'],
-                                         api_key=app_config()['ftrack']['api_key'],
-                                         api_user=app_config()['ftrack']['api_user'])
+            session = ftrack_api.Session(server_url=app_config()['project_management']['ftrack']['api']['server_url'],
+                                         api_key=app_config()['project_management']['ftrack']['api']['api_key'],
+                                         api_user=app_config()['project_management']['ftrack']['api']['api_user'])
             print 'Querying Ftrack for Schemas & Tasks'
             schemas = session.query('ProjectSchema').all()
             all_tasks = {}
@@ -132,21 +132,43 @@ class TaskSetupGUI(QtWidgets.QDialog):
                 # there needs to be a dictionary for each kind of schema
                 if s not in output_d.keys():
                     output_d[s] = {}
-
                 if 'long_to_short' not in output_d[s].keys():
                     output_d[s]['long_to_short'] = {}
-                # there needs to be a dictionary for each type_
-                if type_ not in output_d[s]['long_to_short'].keys():
-                    output_d[s]['long_to_short'][type_] = {}
-                if long_name not in output_d[s]['long_to_short'].keys():
-                    output_d[s]['long_to_short'][type_][long_name] = short_name
                 if 'short_to_long' not in output_d[s].keys():
                     output_d[s]['short_to_long'] = {}
+
+
                 # there needs to be a dictionary for each type_
-                if type_ not in output_d[s]['short_to_long'].keys():
-                    output_d[s]['short_to_long'][type_] = {}
-                if long_name not in output_d[s]['short_to_long'].keys():
-                    output_d[s]['short_to_long'][type_][short_name] = long_name
+                if type_ == 'both':
+                    if 'assets' not in output_d[s]['long_to_short'].keys():
+                        output_d[s]['long_to_short']['assets'] = {}
+                    if 'assets' not in output_d[s]['short_to_long'].keys():
+                        output_d[s]['short_to_long']['assets'] = {}
+                    if long_name not in output_d[s]['long_to_short'].keys():
+                        output_d[s]['long_to_short']['assets'][long_name] = short_name
+                    if long_name not in output_d[s]['short_to_long'].keys():
+                        output_d[s]['short_to_long']['assets'][short_name] = long_name
+
+                    if 'shots' not in output_d[s]['long_to_short'].keys():
+                        output_d[s]['long_to_short']['assets'] = {}
+                    if 'shots' not in output_d[s]['short_to_long'].keys():
+                        output_d[s]['short_to_long']['shots'] = {}
+                    if long_name not in output_d[s]['long_to_short'].keys():
+                        output_d[s]['long_to_short']['shots'][long_name] = short_name
+                    if long_name not in output_d[s]['short_to_long'].keys():
+                        output_d[s]['short_to_long']['shots'][short_name] = long_name
+                else:
+
+                    if type_ not in output_d[s]['long_to_short'].keys():
+                        output_d[s]['long_to_short'][type_] = {}
+                    if long_name not in output_d[s]['long_to_short'].keys():
+                        output_d[s]['long_to_short'][type_][long_name] = short_name
+
+                    # there needs to be a dictionary for each type_
+                    if type_ not in output_d[s]['short_to_long'].keys():
+                        output_d[s]['short_to_long'][type_] = {}
+                    if long_name not in output_d[s]['short_to_long'].keys():
+                        output_d[s]['short_to_long'][type_][short_name] = long_name
         return output_d
         pass
 

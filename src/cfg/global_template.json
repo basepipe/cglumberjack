@@ -95,12 +95,7 @@
         ".tiff": "image", 
         ".tx": "image", 
         ".xbm": "image"
-    }, 
-    "ftrack": {
-        "api_key": "",
-        "api_user": "",
-        "server_url": ""
-    }, 
+    },
     "helpdesk": {
         "help_menu": "https://fsucmpa.freshdesk.com/support/home"
     }, 
@@ -129,87 +124,255 @@
         "root": "",
         "cgl_tools": ""
     }, 
-    "pipeline_steps": {
-        "assets": {
-            "Audio": "aud", 
-            "Bundle": "bndl", 
-            "Concept": "cncpt", 
-            "HDRI": "hdri", 
-            "Layout": "lay", 
-            "Modeling": "mdl", 
-            "Reference": "ref", 
-            "Rigging": "rig", 
-            "Shading": "shd", 
-            "Simulation": "sim", 
-            "Texturing": "tex", 
-            "Transcript": "trn", 
-            "default_steps": [
-                "ref", 
-                "mdl", 
-                "tex", 
-                "shd"
-            ]
-        }, 
-        "short_to_long": {
-            "amtc": "Animatic", 
-            "anim": "Animation", 
-            "aud": "Audio", 
-            "blocking": "Blocking", 
-            "bndl": "Bundle", 
-            "boards": "Storyboards", 
-            "cam": "Camera", 
-            "cncpt": "Concept", 
-            "color": "Color", 
-            "comp": "Compositing", 
-            "edit": "Editing", 
-            "fx": "effects", 
-            "hdri": "HDRI", 
-            "lay": "Layout", 
-            "lite": "Lighting", 
-            "matte": "Matte Painting", 
-            "mcp": "Motion Capture", 
-            "mdl": "Modeling", 
-            "mm": "MatchMove", 
-            "plate": "Plate", 
-            "prev": "Previs", 
-            "ref": "Reference", 
-            "rig": "Rigging", 
-            "shd": "Shading", 
-            "sim": "Simulation", 
-            "sound": "Sound", 
-            "tex": "Texturing", 
-            "trn": "Transcript"
-        }, 
-        "shots": {
-            "Animatics": "amtc", 
-            "Animation": "anim", 
-            "Blocking": "blocking", 
-            "Camera": "cam", 
-            "Color": "color", 
-            "Compositing": "comp", 
-            "Editing": "edit", 
-            "Effects": "fx", 
-            "Inbetween": "inbetween", 
-            "Keyframe": "key", 
-            "Layout": "lay", 
-            "Lighting": "lite", 
-            "MatchMove": "mm", 
-            "Matte Painting": "matte", 
-            "Motion Capture": "mcp", 
-            "Plate": "plate", 
-            "Previs": "prev", 
-            "Reference": "ref", 
-            "Sound": "sound", 
-            "Storyboards": "boards", 
-            "default_steps": [
-                "prev", 
-                "anim", 
-                "lite", 
-                "comp"
-            ], 
-            "polish": "polish"
+    "project_management": {
+        "lumbermill":{
+            "api": {},
+            "tasks": {
+                "default": {
+                    "long_to_short":{},
+                    "short_to_long":{}
+                }
+            }
+        },
+        "ftrack":{
+            "api": {
+                "api_key": "",
+                "api_user": "",
+                "server_url": "",
+                "default_schema": ""
+            },
+            "tasks": {
+                "ANIMATION": {
+                    "long_to_short": {
+                        "shots": {
+                            "Animation": "anim",
+                            "Background 2d": "bg",
+                            "Bundle": "bndl",
+                            "Camera": "cam",
+                            "Character Design": "design",
+                            "Cleanup 2d": "cleanup",
+                            "Color": "color",
+                            "Color 2d": "color2d",
+                            "Compositing": "comp",
+                            "Concept Art": "cncpt",
+                            "Environment": "env",
+                            "Export": "export",
+                            "FX": "fx",
+                            "Layout": "lay",
+                            "Lighting": "light",
+                            "Lookdev": "ldev",
+                            "Modeling": "mdl",
+                            "Paint and Cleanup": "paint",
+                            "Presentacion": "pres",
+                            "Previz": "prev",
+                            "Prop Design": "design",
+                            "Reference": "ref",
+                            "Rigging": "rig",
+                            "Rough Anim": "ranim",
+                            "SHADING": "shd",
+                            "Storyboard": "story",
+                            "TEXTURING": "tex"
+                        }
+                    },
+                    "short_to_long": {
+                        "shots": {
+                            "anim": "Animation",
+                            "bg": "Background 2d",
+                            "bndl": "Bundle",
+                            "cam": "Camera",
+                            "cleanup": "Cleanup 2d",
+                            "cncpt": "Concept Art",
+                            "color": "Color",
+                            "color2d": "Color 2d",
+                            "comp": "Compositing",
+                            "design": "Character Design",
+                            "env": "Environment",
+                            "export": "Export",
+                            "fx": "FX",
+                            "lay": "Layout",
+                            "ldev": "Lookdev",
+                            "light": "Lighting",
+                            "mdl": "Modeling",
+                            "paint": "Paint and Cleanup",
+                            "pres": "Presentacion",
+                            "prev": "Previz",
+                            "ranim": "Rough Anim",
+                            "ref": "Reference",
+                            "rig": "Rigging",
+                            "shd": "SHADING",
+                            "story": "Storyboard",
+                            "tex": "TEXTURING"
+                        }
+                    }
+                },
+                "Development": {
+                    "long_to_short": {
+                        "shots": {
+                            "Bug": "bug",
+                            "Documentation": "docu",
+                            "Feature": "feat",
+                            "Improvement": "imp",
+                            "Refactor": "refact",
+                            "Research": "resrch",
+                            "Test": "tst"
+                        }
+                    },
+                    "short_to_long": {
+                        "shots": {
+                            "bug": "Bug",
+                            "docu": "Documentation",
+                            "feat": "Feature",
+                            "imp": "Improvement",
+                            "refact": "Refactor",
+                            "resrch": "Research",
+                            "tst": "Test"
+                        }
+                    }
+                },
+                "Generic": {
+                    "long_to_short": {
+                        "shots": {
+                            "Deliverable": "deliv",
+                            "Digital Debree": "debris",
+                            "Generic": "gen",
+                            "Remove Crew": "remc",
+                            "Rig Removal": "remr",
+                            "Set Extension": "setext",
+                            "Wire Removal": "remw"
+                        }
+                    },
+                    "short_to_long": {
+                        "shots": {
+                            "debris": "Digital Debree",
+                            "deliv": "Deliverable",
+                            "gen": "Generic",
+                            "remc": "Remove Crew",
+                            "remr": "Rig Removal",
+                            "remw": "Wire Removal",
+                            "setext": "Set Extension"
+                        }
+                    }
+                },
+                "PRODUCCION": {
+                    "long_to_short": {
+                        "shots": {
+                            "Deliverable": "deliv",
+                            "Documentation": "docu",
+                            "Editing": "edit",
+                            "Export": "export",
+                            "Improvement": "imp",
+                            "Lookdev": "ldev",
+                            "Presentacion": "pres",
+                            "Production": "prod",
+                            "Research": "resrch",
+                            "Storyboard": "story",
+                            "Test": "tst"
+                        }
+                    },
+                    "short_to_long": {
+                        "shots": {
+                            "deliv": "Deliverable",
+                            "docu": "Documentation",
+                            "edit": "Editing",
+                            "export": "Export",
+                            "imp": "Improvement",
+                            "ldev": "Lookdev",
+                            "pres": "Presentacion",
+                            "prod": "Production",
+                            "resrch": "Research",
+                            "story": "Storyboard",
+                            "tst": "Test"
+                        }
+                    }
+                },
+                "VFX": {
+                    "long_to_short": {
+                        "shots": {
+                            "Animation": "anim",
+                            "Bundle": "bndl",
+                            "Camera": "cam",
+                            "Color": "color",
+                            "Compositing": "comp",
+                            "Deliverable": "deliv",
+                            "Digital Debree": "debris",
+                            "Digital Element": "elem",
+                            "Editing": "edit",
+                            "Export": "export",
+                            "FX": "fx",
+                            "Generic": "gen",
+                            "Image Sequence": "images",
+                            "Key": "key",
+                            "Lighting": "light",
+                            "Lookdev": "ldev",
+                            "Matte Painting": "matte",
+                            "Modeling": "mdl",
+                            "Previz": "prev",
+                            "Production": "prod",
+                            "Reference": "ref",
+                            "Remove Crew": "remc",
+                            "Rig Removal": "remr",
+                            "Rigging": "rig",
+                            "Rotoscoping": "roto",
+                            "SHADING": "shd",
+                            "Set Extension": "setext",
+                            "Storyboard": "story",
+                            "TEXTURING": "tex",
+                            "Tracking": "track",
+                            "Wire Removal": "remw"
+                        }
+                    },
+                    "short_to_long": {
+                        "shots": {
+                            "anim": "Animation",
+                            "bndl": "Bundle",
+                            "cam": "Camera",
+                            "color": "Color",
+                            "comp": "Compositing",
+                            "debris": "Digital Debree",
+                            "deliv": "Deliverable",
+                            "edit": "Editing",
+                            "elem": "Digital Element",
+                            "export": "Export",
+                            "fx": "FX",
+                            "gen": "Generic",
+                            "images": "Image Sequence",
+                            "key": "Key",
+                            "ldev": "Lookdev",
+                            "light": "Lighting",
+                            "matte": "Matte Painting",
+                            "mdl": "Modeling",
+                            "prev": "Previz",
+                            "prod": "Production",
+                            "ref": "Reference",
+                            "remc": "Remove Crew",
+                            "remr": "Rig Removal",
+                            "remw": "Wire Removal",
+                            "rig": "Rigging",
+                            "roto": "Rotoscoping",
+                            "setext": "Set Extension",
+                            "shd": "SHADING",
+                            "story": "Storyboard",
+                            "tex": "TEXTURING",
+                            "track": "Tracking"
+                        }
+                    }
+                }
+            }
+        },
+        "shotgun":{
+            "api": {
+                "api_key": "bc29cd2fd4ce9fe3c2598c4d559b09f88eaa95b05edfd12a834a23aea0797e2f",
+                "api_script": "core_tools",
+                "api_user": "tmikota",
+                "concurrent": 4,
+                "concurrent_low": 0,
+                "notes": "ensure short codes exist for all pipeline steps in shotgun, might want a wizard for this.",
+                "project_short_name": "sg_code",
+                "server_url": "https://fsuada.shotgunstudio.com"
+            },
+            "tasks": {}
         }
-    }, 
+    },
     "rules": {
         "context_list": [
             "render", 
@@ -344,17 +507,7 @@
             "shots", 
             "IO"
         ]
-    }, 
-    "shotgun": {
-        "api_key": "bc29cd2fd4ce9fe3c2598c4d559b09f88eaa95b05edfd12a834a23aea0797e2f", 
-        "api_script": "core_tools", 
-        "api_user": "tmikota", 
-        "concurrent": 4, 
-        "concurrent_low": 0, 
-        "notes": "ensure short codes exist for all pipeline steps in shotgun, might want a wizard for this.", 
-        "project_short_name": "sg_code", 
-        "server_url": "https://fsuada.shotgunstudio.com"
-    }, 
+    },
     "templates": {
         "IO": {
             "render": {

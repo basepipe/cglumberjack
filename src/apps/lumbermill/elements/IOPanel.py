@@ -79,6 +79,11 @@ class IOPanel(QtWidgets.QWidget):
         else:
             print 'No Path Object found, exiting'
             return
+        self.project_management = app_config()['account_info']['project_management']
+        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
+        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
+        self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
 
         self.path_object_next = None
         self.panel = QtWidgets.QVBoxLayout(self)
@@ -452,7 +457,7 @@ class IOPanel(QtWidgets.QWidget):
             if type(task) != float:
                 if task:
                     if task != ' ':
-                        task = app_config()['pipeline_steps']['short_to_long'][task]
+                        task = self.proj_man_tasks_short_to_long[task]
                         self.set_combo_to_text(self.task_combo, task)
 
     def hide_tags(self):

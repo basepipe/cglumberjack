@@ -1,9 +1,6 @@
 import json
-from cglcore.config import app_config, user_config
+from cglcore.config import app_config
 import ftrack_api
-
-SCHEMAS = ['Generic', 'Development', 'INTERNO', "VFX", 'PRODUCCION', 'ANIMATION']  # These are queryable
-ASSET_CATEGORIES = ['Character', 'Environment', 'Prop', 'Matte Painting']  # These are queryable
 
 
 class ProjectManagementData(object):
@@ -27,7 +24,7 @@ class ProjectManagementData(object):
     user_data = None
     time_entry = None
     note = None
-    schema = SCHEMAS[3]
+    schema = app_config()['project_management']['ftrack']['api']['default_schema']
     schema_data = None
     version = None
     version_data = None
@@ -54,9 +51,9 @@ class ProjectManagementData(object):
                 self.__dict__[key] = path_object.__dict__[key]
         for key in kwargs:
             self.__dict__[key] = kwargs[key]
-
+        self.shot_name = '%s_%s' % (self.seq, self.shot)
         if not self.user_email:
-            self.user_email = app_config()['ftrack']['api_user']
+            self.user_email = app_config()['project_management']['ftrack']['api']['api_user']
             if not self.user_email:
                 print 'No User Email Defined, cant create Ftrack Production Data'
                 return
@@ -81,9 +78,9 @@ class ProjectManagementData(object):
         if self.task == '*':
             self.task = None
 
-        self.ftrack = ftrack_api.Session(server_url=app_config()['ftrack']['server_url'],
-                                         api_key=app_config()['ftrack']['api_key'],
-                                         api_user=app_config()['ftrack']['api_user'])
+        self.ftrack = ftrack_api.Session(server_url=app_config()['project_management']['ftrack']['api']['server_url'],
+                                         api_key=app_config()['project_management']['ftrack']['api']['api_key'],
+                                         api_user=app_config()['project_management']['ftrack']['api']['api_user'])
 
         self.project_schema = self.ftrack.query('ProjectSchema where name is %s' % self.schema).first()
         # Retrieve default types.
@@ -98,7 +95,8 @@ class ProjectManagementData(object):
         print 'Creating Entries for ftrack:'
 
     def get_current_task_type(self):
-        ftrack_tasks = app_config()['pipeline_steps'][self.scope]
+        schema = app_config()['project_management']['ftrack']['tasks'][self.schema]
+        ftrack_tasks = schema['long_to_short'][self.scope.lower()]
         for t in ftrack_tasks:
             if ftrack_tasks[t] == self.task:
                 full_name = t
@@ -216,6 +214,7 @@ class ProjectManagementData(object):
         return self.seq_data
 
     def create_shot(self):
+        self.shot_name = '%s_%s' % (self.seq, self.shot)
         print "Creating Shot %s" % self.shot_name
         self.shot_data = self.ftrack.create('Shot', {
             'name': self.shot_name,

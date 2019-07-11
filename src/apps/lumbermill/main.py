@@ -1,6 +1,6 @@
 import os
 from Qt import QtWidgets, QtCore, QtGui
-from cglcore.config import app_config, UserConfig, InitializeConfig
+from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
@@ -570,34 +570,21 @@ class CGLumberjack(LJMainWindow):
         except AttributeError:
             pass
 
-
-def check_configs():
-    config_ = InitializeConfig()
-    config_.create_default_globals()
-    if config_.local_config_not_set():
-        config_.set_proj_management_details()
-        return True
-    else:
-        return True
     # check the config file to see if it has a default company and a default location
 
 
 if __name__ == "__main__":
     from cglui.startup import do_gui_init
-
-    if check_configs():
-        app = do_gui_init()
-        splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
-        splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
-        splash.setMask(splash_pix.mask())
-        splash.show()
-        td = CGLumberjack()
-        td.show()
-        td.raise_()
-        # setup stylesheet
-        style_sheet = load_style_sheet()
-        app.setStyleSheet(style_sheet)
-        splash.finish(td)
-        app.exec_()
-    else:
-        print 'Configs Not Found'
+    app = do_gui_init()
+    splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
+    splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+    splash.setMask(splash_pix.mask())
+    splash.show()
+    td = CGLumberjack()
+    td.show()
+    td.raise_()
+    # setup stylesheet
+    style_sheet = load_style_sheet()
+    app.setStyleSheet(style_sheet)
+    splash.finish(td)
+    app.exec_()

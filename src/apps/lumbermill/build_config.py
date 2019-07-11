@@ -237,14 +237,14 @@ class ConfigDialog(QtWidgets.QDialog):
             self.global_config['account_info']['project_management'] = self.project_management
             self.global_config['account_info']['globals_path'] = self.globals_line_edit.text()
             if self.project_management == 'ftrack':
-                self.global_config[self.project_management]['api_key'] = self.api_key_line_edit.text()
-                self.global_config[self.project_management]['server_url'] = self.server_line_edit.text()
-                self.global_config[self.project_management]['api_user'] = self.api_user_line_edit.text()
+                self.global_config['project_management'][self.project_management]['api']['api_key'] = self.api_key_line_edit.text()
+                self.global_config['project_management'][self.project_management]['api']['server_url'] = self.server_line_edit.text()
+                self.global_config['project_management'][self.project_management]['api']['api_user'] = self.api_user_line_edit.text()
             elif self.project_management == 'shotgun':
-                self.global_config[self.project_management]['api_key'] = self.api_key_line_edit.text()
-                self.global_config[self.project_management]['server_url'] = self.server_line_edit.text()
-                self.global_config[self.project_management]['api_user'] = self.api_user_line_edit.text()
-                self.global_config[self.project_management]['api_script'] = self.api_script_line_edit.text()
+                self.global_config['project_management'][self.project_management]['api']['api_key'] = self.api_key_line_edit.text()
+                self.global_config['project_management'][self.project_management]['api']['server_url'] = self.server_line_edit.text()
+                self.global_config['project_management'][self.project_management]['api']['api_user'] = self.api_user_line_edit.text()
+                self.global_config['project_management'][self.project_management]['api']['api_script'] = self.api_script_line_edit.text()
             if not os.path.exists(os.path.dirname(self.globals_line_edit.text())):
                 os.makedirs(os.path.dirname(self.globals_line_edit.text()))
             self._write_json(self.globals_line_edit.text(), self.global_config)

@@ -165,6 +165,9 @@ class FilesWidget(QtWidgets.QFrame):
     open_button_clicked = QtCore.Signal()
     import_button_clicked = QtCore.Signal()
     new_version_clicked = QtCore.Signal()
+    create_empty_version = QtCore.Signal()
+    copy_latest_version = QtCore.Signal()
+    copy_selected_version = QtCore.Signal()
 
     def __init__(self, parent, show_import=False, font=None):
         QtWidgets.QFrame.__init__(self, parent)
@@ -196,7 +199,7 @@ class FilesWidget(QtWidgets.QFrame):
         self.open_button.setText('Open')
         self.import_button = LJButton()
         self.import_button.setText('Import')
-        self.new_version_button = VersionButton(self, )
+        self.new_version_button = VersionButton(self)
         self.review_button = LJButton()
         self.review_button.setText('Review')
         self.publish_button = LJButton()
@@ -222,6 +225,9 @@ class FilesWidget(QtWidgets.QFrame):
         self.import_button.clicked.connect(self.on_import_clicked)
         if self.show_import:
             self.import_button.show()
+
+    def clear(self):
+        self.export_files_table.clear()
 
     def hide_files(self):
         self.to_button.hide()
@@ -280,16 +286,14 @@ class TaskWidget(QtWidgets.QWidget):
     import_button_clicked = QtCore.Signal()
     new_version_clicked = QtCore.Signal()
     create_empty_version = QtCore.Signal()
-    copy_selected_version = QtCore.Signal()
     copy_latest_version = QtCore.Signal()
+    copy_selected_version = QtCore.Signal()
 
     def __init__(self, parent, title, filter_string=None, path_object=None, show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         task_row = QtWidgets.QHBoxLayout()
         self.show_import = show_import
-        print '-=-------------------------'
-        print 'Show Import TaskWidget: %s' % self.show_import
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -360,7 +364,19 @@ class TaskWidget(QtWidgets.QWidget):
         self.show_button.clicked.connect(self.on_show_button_clicked)
         self.hide_button.clicked.connect(self.on_hide_button_clicked)
         self.start_task_button.clicked.connect(self.on_start_task_clicked)
+        self.files_area.copy_latest_version.connect(self.copy_latest)
+        self.files_area.copy_selected_version.connect(self.copy_selected)
+        self.files_area.create_empty_version.connect(self.create_empty)
         self.files_area.hide_tool_buttons()
+
+    def create_empty(self):
+        self.create_empty_version.emit()
+
+    def copy_selected(self):
+        self.copy_selected_version.emit()
+
+    def copy_latest(self):
+        self.copy_latest_version.emit()
 
     def hide(self):
         self.hide_button.hide()

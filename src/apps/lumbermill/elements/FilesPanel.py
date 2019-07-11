@@ -28,6 +28,11 @@ class FilesPanel(QtWidgets.QWidget):
         self.task_widgets_dict = {}
         self.show_import = show_import
         self.path_object = path_object
+        self.project_management = app_config()['account_info']['project_management']
+        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
+        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
+        self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
         self.current_location = path_object.data
         self.panel = QtWidgets.QVBoxLayout(self)
         self.tasks = QtWidgets.QHBoxLayout()
@@ -39,7 +44,6 @@ class FilesPanel(QtWidgets.QWidget):
         self.default_user = user_name
         self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
         self.on_main_asset_selected(self.path_object.data)
-
         self.panel.addLayout(self.tasks)
         self.panel.addStretch(1)
 
@@ -68,7 +72,7 @@ class FilesPanel(QtWidgets.QWidget):
             self.panel.tasks = []
 
             try:
-                title = app_config()['pipeline_steps']['short_to_long'][self.task]
+                title = self.proj_man_tasks_short_to_long[self.task]
             except KeyError:
                 return
             task_widget = TaskWidget(parent=self,
@@ -342,6 +346,7 @@ class FilesPanel(QtWidgets.QWidget):
         self.import_signal.emit()
 
     def on_task_version_changed(self):
+        print 'reloading task widget'
         self.reload_task_widget(self.sender().parent(), populate_versions=False)
 
     def on_task_user_changed(self):
@@ -453,8 +458,15 @@ class FilesPanel(QtWidgets.QWidget):
             path_obj.set_attr(resolution=widget.resolutions.currentText())
         path_obj.set_attr(task=widget.task)
         self.update_location(path_obj)
-        files_ = path_obj.glob_project_element('filename', full_path=True)
-        widget.setup(widget.files_area.work_files_table, ListItemModel(self.prep_list_for_table(files_), ['Name']))
+        list_ = []
+        files_ = glob.glob('%s/*' % path_obj.path_root)
+        for each in files_:
+            list_.append(os.path.basename(each))
+        # this is what's doing the loading of the files.
+        # TODO - need to figure out how to refresh these files!
+        widget.files_area.clear()
+        #widget.setup(widget.files_area.work_files_table, FileTableModel(self.prep_list_for_table(list_), ['Name']))
+        #self.on_main_asset_selected(path_obj.data)
 
     def clear_task_selection_except(self, task=None):
         layout = self.panel
@@ -499,7 +511,7 @@ class FilesPanel(QtWidgets.QWidget):
             else:
                 widget.export_label.hide()
                 render_table.hide()
-                print 'No Published Files for %s' % current.path_root
+                print 'No Render Files for %s' % current.path_root
 
     def clear_layout(self, layout=None):
         if not layout:
