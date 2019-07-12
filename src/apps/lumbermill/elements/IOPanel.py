@@ -81,10 +81,8 @@ class IOPanel(QtWidgets.QWidget):
             return
         self.project_management = app_config()['account_info']['project_management']
         self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
-        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
-        self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
-        self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
-
+        self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        #self.tasks_dict = self.schema_dict['long_to_short'][self.scope_combo.currentText()]
         self.path_object_next = None
         self.panel = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout()
@@ -336,7 +334,8 @@ class IOPanel(QtWidgets.QWidget):
 
     def edit_data_frame(self):
         files = self.current_selection
-
+        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        proj_man_tasks = schema['long_to_short'][self.scope_combo.currentText()]
         if self.seq_combo.currentText():
             seq = str(self.seq_combo.currentText())
             self.tags_title.setText('CGL:> Choose a %s Name or Type to Create a New One' % self.shot_label.text().title())
@@ -344,10 +343,8 @@ class IOPanel(QtWidgets.QWidget):
                 shot = str(self.shot_combo.currentText())
                 self.tags_title.setText('CGL:> Which Task will this be published to?')
                 if self.task_combo.currentText():
-
                     try:
-
-                        task = app_config()['pipeline_steps'][self.scope_combo.currentText()][str(self.task_combo.currentText())]
+                        task = proj_man_tasks[str(self.task_combo.currentText())]
                         to_object = self.path_object.copy(scope=self.scope_combo.currentText(),
                                                           seq=seq,
                                                           shot=shot,
@@ -457,7 +454,8 @@ class IOPanel(QtWidgets.QWidget):
             if type(task) != float:
                 if task:
                     if task != ' ':
-                        task = self.proj_man_tasks_short_to_long[task]
+                        task = self.schema_dict['short_to_long'][self.scope_combo.currentText()][task]
+                        # task = self.proj_man_tasks_short_to_long[task]
                         self.set_combo_to_text(self.task_combo, task)
 
     def hide_tags(self):
@@ -499,7 +497,8 @@ class IOPanel(QtWidgets.QWidget):
     def populate_tasks(self):
         self.task_combo.clear()
         ignore = ['default_steps', '']
-        tasks = app_config()['pipeline_steps'][self.scope_combo.currentText()]
+        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        tasks = schema['long_to_short'][self.scope_combo.currentText()]
         seqs = self.populate_seq()
         task_names = ['']
         for each in tasks:
@@ -578,7 +577,8 @@ class IOPanel(QtWidgets.QWidget):
     def publish_tagged_assets(self):
         # figure out what task we're publishing this thing to
         scope = self.scope_combo.currentText()
-        task = app_config()['pipeline_steps'][scope][self.task_combo.currentText()]
+        task = self.schema_dict['long_to_short'][self.scope_combo.currentText()][self.task_combo.currentText()]
+        #task = app_config()['pipeline_steps'][scope][self.task_combo.currentText()]
         try:
             this = Preflight(self, software='lumbermill', preflight=task, data_frame=self.data_frame,
                              file_tree=self.file_tree, pandas_path=self.pandas_path,

@@ -1,5 +1,6 @@
 from Qt import QtCore, QtWidgets, QtGui
 from cglui.widgets.containers.dict_tree import DictionaryTreeWidget
+import plugins.project_management.ftrack.setup_tasks as setup_tasks
 import getpass
 import os
 import json
@@ -168,7 +169,6 @@ class ConfigDialog(QtWidgets.QDialog):
         self.get_input()
         self.hide_api_info()
         self.on_pm_changed()
-
         self.check_user_config()
 
     def on_code_root_changed(self):
@@ -222,6 +222,9 @@ class ConfigDialog(QtWidgets.QDialog):
         self.copy_cgl_tools()
         self.create_global_config()
         self.create_user_globals()
+        if self.project_management == 'ftrack':
+            form = setup_tasks.TaskSetupGUI()
+            form.exec_()
         self.accept()
 
     def copy_cgl_tools(self):
@@ -240,6 +243,7 @@ class ConfigDialog(QtWidgets.QDialog):
                 self.global_config['project_management'][self.project_management]['api']['api_key'] = self.api_key_line_edit.text()
                 self.global_config['project_management'][self.project_management]['api']['server_url'] = self.server_line_edit.text()
                 self.global_config['project_management'][self.project_management]['api']['api_user'] = self.api_user_line_edit.text()
+                self.global_config['project_management'][self.project_management]['api']['default_schema'] = 'VFX'
             elif self.project_management == 'shotgun':
                 self.global_config['project_management'][self.project_management]['api']['api_key'] = self.api_key_line_edit.text()
                 self.global_config['project_management'][self.project_management]['api']['server_url'] = self.server_line_edit.text()
@@ -250,6 +254,7 @@ class ConfigDialog(QtWidgets.QDialog):
             self._write_json(self.globals_line_edit.text(), self.global_config)
         else:
             print 'No Dictionary Loaded for Global Config'
+
 
     def check_user_config_exists(self):
         config = self.user_globals_line_edit.text()
@@ -273,7 +278,6 @@ class ConfigDialog(QtWidgets.QDialog):
             self._write_json(self.user_globals_line_edit.text(), d)
         else:
             print 'No Root Defined, cannot save user globals'
-
 
     def load_user_config(self):
         pass
@@ -444,7 +448,7 @@ class ConfigDialog(QtWidgets.QDialog):
                     'api_script': self.api_script,
                     'company': self.company,
                     'project_management': 'lumbermill',
-                    'root': self.root
+                    'root': self.root,
                     }
         if '' in info:
             self.ok_button.setEnabled(False)
@@ -467,6 +471,9 @@ class ConfigDialog(QtWidgets.QDialog):
         with open(filepath) as jsonfile:
             data = json.load(jsonfile)
         return data
+
+    def closeEvent(self, event):
+        pass
 
 
 if __name__ == "__main__":

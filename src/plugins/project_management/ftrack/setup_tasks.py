@@ -32,6 +32,7 @@ class TaskSetupGUI(QtWidgets.QDialog):
         #self.task_table.itemActivated.connect(self.on_table_edited)
         self.schemas = self.get_schemas()
         self.load_schemas()
+        self.temp_globals = self._load_json(os.path.join(app_config()['paths']['root'], '_config', 'globals.json'))
 
     # def on_item_clicked(self):
     #     print self.task_table.currentItem().text()
@@ -136,8 +137,6 @@ class TaskSetupGUI(QtWidgets.QDialog):
                     output_d[s]['long_to_short'] = {}
                 if 'short_to_long' not in output_d[s].keys():
                     output_d[s]['short_to_long'] = {}
-
-
                 # there needs to be a dictionary for each type_
                 if type_ == 'both':
                     if 'assets' not in output_d[s]['long_to_short'].keys():
@@ -174,8 +173,11 @@ class TaskSetupGUI(QtWidgets.QDialog):
 
     def closeEvent(self, event):
         self.iterate_over_table()
+        formatted_tasks = self.format_schemas()
+        self.temp_globals['project_management']['ftrack']['tasks'] = formatted_tasks
         print os.path.join(app_config()['paths']['root'], '_config', 'ftrack_tasks.json')
-        self._write_json(os.path.join(app_config()['paths']['root'], '_config', 'ftrack_tasks.json'), self.format_schemas())
+        self._write_json(os.path.join(app_config()['paths']['root'], '_config', 'globals.json'), self.temp_globals)
+        #self._write_json(os.path.join(app_config()['paths']['root'], '_config', 'ftrack_tasks.json'), formatted_tasks)
 
 
 if __name__ == "__main__":
