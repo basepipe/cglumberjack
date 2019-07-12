@@ -3,8 +3,8 @@ import json
 from Qt import QtWidgets, QtCore, QtGui
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.base import LJDialog
-from cglcore.path import load_style_sheet, get_cgl_config, get_cgl_tools
-from utils import CGLMenu
+from cglcore.path import load_style_sheet, get_cgl_tools
+from utils import CGLMenu, PreflightStep
 
 
 class Designer(LJDialog):
@@ -146,11 +146,19 @@ class Designer(LJDialog):
             for bi in range(menu.buttons.count()):
                 button_name = menu.buttons.tabText(bi)
                 button_widget = menu.buttons.widget(bi)
-                menu_dict[menu_name][button_name] = {
-                                                     'module': button_widget.command_line_edit.text(),
-                                                     'label': button_widget.label_line_edit.text(),
-                                                     'order': bi+1
-                                                     }
+                if isinstance(button_name, PreflightStep):
+                    menu_dict[menu_name][button_name] = {
+                        'module': button_widget.module_line_edit.text(),
+                        'label': button_widget.label_line_edit.text(),
+                        'order': bi + 1,
+                        'required': button_widget.required_line_edit.text()
+                    }
+                else:
+                    menu_dict[menu_name][button_name] = {
+                                                         'module': button_widget.command_line_edit.text(),
+                                                         'label': button_widget.label_line_edit.text(),
+                                                         'order': bi+1
+                                                         }
 
                 self.save_code(menu_name, button_widget)
         json_object = {self.software: menu_dict}

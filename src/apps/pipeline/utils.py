@@ -68,12 +68,12 @@ class PreflightStep(QtWidgets.QWidget):
         label_label = QtWidgets.QLabel('label')
 
         # line edits
-        self.module_line_edit = QtWidgets.QLineEdit()
-        self.module_line_edit.setEnabled(False)
+        self.command_line_edit = QtWidgets.QLineEdit()
+        self.command_line_edit.setEnabled(False)
         self.required_line_edit = QtWidgets.QLineEdit()
         self.required_line_edit.setEnabled(False)
         self.label_line_edit = QtWidgets.QLineEdit()
-        self.attrs_dict = {'module': self.module_line_edit,
+        self.attrs_dict = {'module': self.command_line_edit,
                            'required': self.required_line_edit,
                            'label': self.label_line_edit}
 
@@ -95,7 +95,7 @@ class PreflightStep(QtWidgets.QWidget):
         grid_layout.addWidget(label_label, 0, 0)
         grid_layout.addWidget(self.label_line_edit, 0, 1)
         grid_layout.addWidget(module_label, 1, 0)
-        grid_layout.addWidget(self.module_line_edit, 1, 1)
+        grid_layout.addWidget(self.command_line_edit, 1, 1)
 
         # Layout the tool row
         tool_row.addStretch(1)
@@ -116,13 +116,13 @@ class PreflightStep(QtWidgets.QWidget):
 
     def on_open_clicked(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
-                                 '%s.py' % self.preflight_step_name)
+                                 '%s.py' % self.name)
         print code_path
         start(code_path)
 
     def on_code_changed(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
-                                 '%s.py' % self.preflight_step_name)
+                                 '%s.py' % self.name)
         print code_path
         self.do_save = True
 
@@ -142,7 +142,7 @@ class PreflightStep(QtWidgets.QWidget):
 
     def load_code_text(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
-                                 '%s.py' % self.preflight_step_name)
+                                 '%s.py' % self.name)
         print code_path, 'importing'
 
         if os.path.exists(code_path):
@@ -164,7 +164,7 @@ class PreflightStep(QtWidgets.QWidget):
                     "    def run(self):\n" \
                     "        print '%s'\n" \
                     "        # self.pass_check('Check Passed')\n" \
-                    "        # self.fail_check('Check Failed')\n\n" % (self.preflight_step_name, self.preflight_step_name)
+                    "        # self.fail_check('Check Failed')\n\n" % (self.name, self.name)
         return preflight
 
     def on_delete_clicked(self):
