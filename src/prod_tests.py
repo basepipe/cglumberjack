@@ -33,6 +33,8 @@ path_object.set_attr(resolution='high')
 print path_object.path_root
 CreateProductionData(path_object, project_management=proj_man)
 # download this folder: https://media.xiph.org/tearsofsteel/linear-exr/03_2a/
+# wget -r -np -nH --cut-dirs=3 -R index.html https://media.xiph.org/tearsofsteel/linear-exr/03_2a/
+
 
 # Create a high res proxy of the plate
 
