@@ -492,12 +492,14 @@ class CGLumberjack(LJMainWindow):
         open_globals = QtWidgets.QAction('Edit Globals', self)
         settings.setShortcut('Ctrl+,')
         menu_designer = QtWidgets.QAction('Menu Designer', self)
+        shelf_designer = QtWidgets.QAction('Shelf Designer', self)
         preflight_designer = QtWidgets.QAction('Preflight Designer', self)
         ingest_dialog = QtWidgets.QAction('Ingest Tool', self)
         # add actions to the file menu
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
         tools_menu.addAction(menu_designer)
+        tools_menu.addAction(shelf_designer)
         tools_menu.addAction(preflight_designer)
         tools_menu.addAction(ingest_dialog)
         # connect signals and slots
@@ -505,6 +507,7 @@ class CGLumberjack(LJMainWindow):
         settings.triggered.connect(self.on_settings_clicked)
         menu_designer.triggered.connect(self.on_menu_designer_clicked)
         preflight_designer.triggered.connect(self.on_preflight_designer_clicked)
+        shelf_designer.triggered.connect(self.on_shelf_designer_clicked)
         login.triggered.connect(self.on_login_clicked)
 
     def check_configs(self):
@@ -549,6 +552,13 @@ class CGLumberjack(LJMainWindow):
     def on_preflight_designer_clicked(self):
         from apps.pipeline.preflight_designer import PreflightDesigner
         dialog = PreflightDesigner(self)
+        dialog.setMinimumWidth(1200)
+        dialog.setMinimumHeight(500)
+        dialog.exec_()
+
+    def on_shelf_designer_clicked(self):
+        from apps.pipeline.shelf_designer import ShelfDesigner
+        dialog = ShelfDesigner(self)
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)
         dialog.exec_()
