@@ -120,7 +120,8 @@
         "maketx": "C:\\OpenImageIO-1.5.0-OCIO\\bin\\maketx.exe", 
         "mayapy": "C:\\PROGRA~1\\Autodesk\\Maya2018\\bin\\mayapy.exe", 
         "nuke": "C:\\PROGRA~1\\Nuke11.3v4\\Nuke11.3.exe", 
-        "oiiotool": "C:\\OpenImageIO-1.5.0-OCIO\\bin\\oiiotool.exe", 
+        "oiiotool": "C:\\OpenImageIO-1.5.0-OCIO\\bin\\oiiotool.exe",
+        "wget": "C:\\ProgramData\\chocolatey\\lib\\Wget\\tools\\wget.exe",
         "root": "",
         "cgl_tools": ""
     }, 
