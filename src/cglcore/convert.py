@@ -2,15 +2,8 @@ import os
 import subprocess
 import glob
 import logging
-
 from cglcore.config import app_config
 from cglcore.path import PathObject, CreateProductionData, split_sequence, hash_to_number, get_start_frame, prep_seq_delimiter
-
-# Important note regarding ffmpeg and .h264 encoding:  There was a lot of discussion about whether this is ok
-# to be distributing software with .h264 encoding.  I called the law firm that handles licensing and they said that
-# as a software provider until we reach 100,000 sales they would never go after us.  Distributing software with ffmpeg
-# included in it therefore is perfectly legal.  Once you get to a certain volume of distribution however it needs to be
-# paid for.
 
 config = app_config()['paths']
 settings = app_config()['default']
@@ -163,19 +156,21 @@ def create_proxy(sequence, ext='jpg', start_frame='1001'):
     path_object_output = path_object.copy(resolution=new_res)
     output_dir = os.path.dirname(path_object_output.path_root)
     if not os.path.exists(output_dir):
-        CreateProductionData(path_object=output_dir)
+        CreateProductionData(path_object=output_dir, project_management=False)
     if '####' in sequence:
         # replace ### with "*"
         hashes, number = hash_to_number(sequence)
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
         command = '%s %s -scene %s %s' % (config['magick'], in_seq, start_frame, out_seq)
+        _execute(command)
+        return out_seq.replace(number, hashes)
     else:
+        print 'No # in sequence'
         sequence = ''
         fileout = ''
 
-    _execute(command)
-    return out_seq.replace(number, hashes)
+
 
 
 def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height=False, start_frame='1001'):
@@ -188,7 +183,7 @@ def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height
     path_object_output = path_object.copy(resolution=new_res)
     output_dir = os.path.dirname(path_object_output.path_root)
     if not os.path.exists(output_dir):
-        CreateProductionData(path_object=output_dir)
+        CreateProductionData(path_object=output_dir, project_management=False)
     if '####' in sequence:
         # replace ### with "*"
         hashes, number = hash_to_number(sequence)
@@ -214,7 +209,7 @@ def create_gif_proxy(sequence, ext='gif', width='480', height='x100', do_height=
     path_object_output = path_object.copy(resolution=new_res)
     output_dir = os.path.dirname(path_object_output.path_root)
     if not os.path.exists(output_dir):
-        CreateProductionData(path_object=output_dir)
+        CreateProductionData(path_object=output_dir, project_management=False)
     if '####' in sequence:
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s' % (output_dir, os.path.basename(split_sequence(sequence)), ext)
@@ -237,7 +232,7 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
     path_object_output = path_object.copy(resolution=new_res)
     output_dir = os.path.dirname(path_object_output.path_root)
     if not os.path.exists(output_dir):
-        CreateProductionData(path_object=output_dir)
+        CreateProductionData(path_object=output_dir, project_management=False)
     if '####' in sequence:
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%sthumb.%s' % (output_dir, os.path.basename(split_sequence(sequence)), ext)
@@ -252,6 +247,7 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
 
 def create_mov(sequence, framerate=settings['frame_rate'], output_frame_rate=None,
                res=settings['resolution']['video_review']):
+
     start_frame = get_start_frame(sequence)
     input_file = prep_seq_delimiter(sequence, replace_with='%')
     output_file = '%smov' % split_sequence(sequence)

@@ -71,7 +71,8 @@ class PreflightStep(QtWidgets.QWidget):
         self.command_line_edit = QtWidgets.QLineEdit()
         self.command_line_edit.setEnabled(False)
         self.required_line_edit = QtWidgets.QLineEdit()
-        self.required_line_edit.setEnabled(False)
+        self.required_line_edit.setText('True')
+        #self.required_line_edit.setEnabled(False)
         self.label_line_edit = QtWidgets.QLineEdit()
         self.attrs_dict = {'module': self.command_line_edit,
                            'required': self.required_line_edit,

@@ -6,8 +6,8 @@ from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, image_path, split_sequence_frange
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, VButtonPanel
-
 from apps.lumbermill.elements.FilesPanel import FilesPanel
+import apps.lumbermill.elements.IOPanel as IOP
 
 ICON_WIDTH = 24
 
@@ -340,10 +340,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         except AttributeError:
             print 'nothing found'
         if path_object.scope == 'IO':
+            print 1
             if path_object.version:
+                print 2
                 if not self.panel:
-                    from apps.lumbermill.elements.IOPanel import IOPanel
-                    self.panel = IOPanel(parent=self, path_object=path_object)
+                    self.panel = IOP.IOPanel(parent=self, path_object=path_object)
                     self.setMinimumWidth(1100)
                     self.setMinimumHeight(700)
                     self.panel.location_changed.connect(self.update_location)
@@ -375,8 +376,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.scope == '*':
                 self.panel = ScopePanel(path_object=path_object)
             elif path_object.scope == 'IO':
-                from apps.lumbermill.elements.IOPanel import IOPanel
-                self.panel = IOPanel(path_object=path_object)
+                self.panel = IOP.IOPanel(path_object=path_object)
             else:
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last in shot_attrs:
@@ -389,8 +389,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last == 'ingest_source':
-            from apps.lumbermill.elements.IOPanel import IOPanel
-            self.panel = IOPanel(path_object=path_object)
+            self.panel = IOP.IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
                 self.panel = VButtonPanel(path_object=path_object, element='task')

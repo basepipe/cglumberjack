@@ -1,3 +1,4 @@
+import logging
 import json
 from cglcore.config import app_config
 import ftrack_api
@@ -59,7 +60,7 @@ class ProjectManagementData(object):
                 return
 
         if not self.project:
-            print 'No Project Defined, skipping' 
+            print 'No Project Defined'
             return
 
         if not self.project_short_name:
@@ -92,7 +93,6 @@ class ProjectManagementData(object):
             self.task_type = self.get_current_task_type()
             self.task_statuses = self.project_schema.get_statuses('Task', self.task_type['id'])
             self.default_task_status = self.project_schema.get_statuses('Task', self.task_type['id'])[0]
-        print 'Creating Entries for ftrack:'
 
     def get_current_task_type(self):
         schema = app_config()['project_management']['ftrack']['tasks'][self.schema]
@@ -135,7 +135,7 @@ class ProjectManagementData(object):
                     self.shot_data = self.create_shot()
                 self.entity_data = self.shot_data
         else:
-            print 'No Scope Defined!'
+            logging.info('No Scope Defined!')
         if self.entity_data:
             if self.task:
                 # set task_name
@@ -183,13 +183,13 @@ class ProjectManagementData(object):
             data_ = self.find_version()
         try:
             if data_:
-                print 'Found %s: %s' % (data_type, data_['name'])
+                logging.info('Found %s: %s, No Need to Create' % (data_type, data_['name']))
             return data_
         except:
             return None
 
     def create_project(self):
-        print 'Creating Project %s' % self.project
+        logging.info('Creating Ftrack Project %s' % self.project)
         project = self.ftrack.create('Project', {
             'name': self.project_short_name,
             'full_name': self.project,
@@ -198,7 +198,7 @@ class ProjectManagementData(object):
         return project
 
     def create_asset(self):
-        print 'Creating Asset %s' % self.asset
+        logging.info('Creating Asset %s' % self.asset)
         self.asset_data = self.ftrack.create('AssetBuild', {
             'name': self.asset,
             'parent': self.project_data
@@ -206,7 +206,7 @@ class ProjectManagementData(object):
         return self.asset_data
 
     def create_sequence(self):
-        print 'Creating Sequence %s' % self.seq
+        logging.info('Creating Sequence %s' % self.seq)
         self.seq_data = self.ftrack.create('Sequence', {
             'name': self.seq,
             'parent': self.project_data
@@ -215,7 +215,7 @@ class ProjectManagementData(object):
 
     def create_shot(self):
         self.shot_name = '%s_%s' % (self.seq, self.shot)
-        print "Creating Shot %s" % self.shot_name
+        logging.info("Creating Shot %s" % self.shot_name)
         self.shot_data = self.ftrack.create('Shot', {
             'name': self.shot_name,
             'parent': self.seq_data,
@@ -224,7 +224,7 @@ class ProjectManagementData(object):
         return self.shot_data
 
     def create_task(self):
-        print 'Creating Task %s, %s' % (self.task_name, self.task_type['name'])
+        logging.info('Creating Task %s, %s' % (self.task_name, self.task_type['name']))
         self.task_data = self.ftrack.create('Task', {
             'name': self.task_name,
             'parent': self.entity_data,
@@ -274,8 +274,8 @@ class ProjectManagementData(object):
             'asset': asset,
             'task': self.task_data,
         })
-        if self.thumb_path_full:
-            self.version_data.create_thumbnail(self.thumb_path_full)
+        #if self.thumb_path_full:
+        #    self.version_data.create_thumbnail(self.thumb_path_full)
 
     def upload_media2(self):
         print 'Encoding Media For: %s' % 'This thing'
@@ -308,7 +308,6 @@ class ProjectManagementData(object):
 
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
-        print 99, self.user_email
         self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).one()
         new_membership = self.ftrack.ensure('Membership', {"group_id": self.user_group['id'],
                                                            "user_id": self.user_data['id']})
@@ -319,14 +318,16 @@ class ProjectManagementData(object):
         ).first()
 
         if not project_has_group:
-            print 'Assigning group {} to project {}'.format(self.user_group ['name'], self.project_data['name'])
+            logging.info('Assigning group {} to project {}'.format(self.user_group ['name'],
+                                                                   self.project_data['name']))
             self.ftrack.create('Appointment', {
                 'context': self.project_data,
                 'resource': self.user_group,
                 'type': 'allocation'
             })
         else:
-            print 'Group {} already in assigned to project {}'.format(self.user_group ['name'], self.project_data['name'])
+            logging.info('Group {} already in assigned to project {}'.format(self.user_group ['name'],
+                                                                             self.project_data['name']))
 
     def find_group_on_project(self):
         project_has_group = self.ftrack.query(
@@ -334,7 +335,6 @@ class ProjectManagementData(object):
                 self.project_data['id'], self.user_group['id']
             )
         ).first()
-        print '0 %s', project_has_group
         return project_has_group
 
     def add_user_to_project(self):
@@ -345,7 +345,7 @@ class ProjectManagementData(object):
         ).first()
 
         if not project_has_user:
-            print 'Assigning user {} to project {}'.format(self.user_data['username'], self.project_data['name'])
+            logging.info('Assigning user {} to project {}'.format(self.user_data['username'], self.project_data['name']))
             self.ftrack.create('Appointment', {
                 'context': self.project_data,
                 'resource': self.user_data,
@@ -353,7 +353,7 @@ class ProjectManagementData(object):
             })
 
         else:
-            print 'User {} already in assigned to project {}'.format(self.user_data['username'], self.project_data['name'])
+            logging.info('User {} already in assigned to project {}'.format(self.user_data['username'], self.project_data['name']))
 
     def find_project(self):
         try:
@@ -361,10 +361,10 @@ class ProjectManagementData(object):
             if self.project_data:
                 return self.project_data
             else:
-                print '%s Not Found' % self.project
+                logging.info('%s Not Found' % self.project)
                 return False
         except AttributeError:
-            print 'No Ftrack Project Found, skipping'
+            logging.info('No Ftrack Project Found, skipping')
             pass
 
     def find_asset(self):
@@ -383,9 +383,8 @@ class ProjectManagementData(object):
     def find_seq(self):
         seqs = self.ftrack.query('Sequence where project.id is "{0}"'.format(self.project_data['id']))
         for each in seqs:
-            print each['name']
             if each['name'] == self.seq:
-                print 'Found %s' % each['name']
+                logging.info('Found %s' % each['name'])
                 self.seq_data = each
                 return each
         return None

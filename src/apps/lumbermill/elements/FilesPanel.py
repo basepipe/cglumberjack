@@ -8,8 +8,7 @@ from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
-from cglui.widgets.widgets import LJButton, QHLine, QVLine
-from cglcore.path import PathObject, CreateProductionData, font_path
+from cglcore.path import PathObject, CreateProductionData
 from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file, get_frange_from_seq
 from cglui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 
