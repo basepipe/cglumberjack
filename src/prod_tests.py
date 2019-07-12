@@ -32,8 +32,7 @@ path_object.set_attr(version='000.000')
 path_object.set_attr(resolution='high')
 print path_object.path_root
 CreateProductionData(path_object, project_management=proj_man)
-
-# copy files over to the render folder of the Plate Task
+# download this folder: https://media.xiph.org/tearsofsteel/linear-exr/03_2a/
 
 # Create a high res proxy of the plate
 
