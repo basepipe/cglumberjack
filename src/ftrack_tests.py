@@ -10,11 +10,13 @@ session = ftrack_api.Session(server_url="https://lone-coconut.ftrackapp.com",
                              api_key="ZTU3ZDZkMDUtMWI3OS00ZWU1LWE2NGItZGJiYmQyOGExZTZiOjoyMTUyYmI2ZC1kNzk2LTRmZmUtYjUzZS0wMjBiMzA5MGZhMDA",
                              api_user="LoneCoconutMail@gmail.com")
 
+asset_version = session.query('AssetVersion where id is %s' % 'a49ad915-3377-4e97-be77-9c5ae3212d5f').one()
+print asset_version
 project_data = session.query('Project where status is active and name is %s' % 'cgl_unittest').first()
 review_session = session.create('ReviewSession', {
     'name': 'Dailies %s' % datetime.date.today(),
     'description': 'Review Session For Todays Date',
-    'project': project_data
+    'project': project_data['id']
 })
 print review_session['project']['name']
 
