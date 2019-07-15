@@ -1048,7 +1048,7 @@ def hash_to_number(sequence):
         num = '%0'+str(count)+'d'
     else:
         num = '%'+str(count)+'d'
-    return num
+    return frange.group(0), num
 
 
 def number_to_hash(sequence, full=True):
@@ -1099,7 +1099,7 @@ def prep_seq_delimiter(sequence, replace_with='*'):
     if replace_with == '#':
         return os.path.join(dir_, hash_seq)
     if replace_with == '%':
-        return '%s%s.%s' % (seq_split, hash_to_number(hash_seq), path_object.ext)
+        return '%s%s.%s' % (seq_split, hash_to_number(hash_seq)[-1], path_object.ext)
 
 
 

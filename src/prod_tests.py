@@ -1,4 +1,8 @@
-from cglcore.path import PathObject, CreateProductionData
+import os
+import json
+from cglcore.path import PathObject, CreateProductionData, lj_list_dir
+from cglcore.convert import _execute, create_proxy, create_hd_proxy, create_mov, create_gif_proxy, make_movie_thumb
+from plugins.project_management.ftrack.main import ProjectManagementData
 
 proj_man = 'ftrack'
 # Create a Company
@@ -18,37 +22,60 @@ CreateProductionData(path_object, project_management=proj_man)
 
 path_object.set_attr(scope='shots')
 path_object.set_attr(seq='000')
-path_object.set_attr(shot='0200')
+path_object.set_attr(shot='0000')
 print path_object.path_root
 CreateProductionData(path_object, project_management=proj_man)
 
     # Create a Plate Task
-# TODO - it'd be nice to have some tests in place for when someone doesn't provide necessary info.
-# currently when i create a task i have to go through all of the available tasks to find a match.
-# this is slow as hell.
 path_object.set_attr(task='plate')
-path_object.set_attr(user='system')
-path_object.set_attr(version='000.000')
-path_object.set_attr(resolution='high')
 print path_object.path_root
 CreateProductionData(path_object, project_management=proj_man)
-# download this folder: https://media.xiph.org/tearsofsteel/linear-exr/03_2a/
-wget -P C:\\Users\\tmikota\\Downloads\\wget_downloads -r -np -nH https://media.xiph.org/tearsofsteel/linear-exr/03_2a/
-# wget -r -np -nH --cut-dirs=3 -R index.html https://media.xiph.org/tearsofsteel/linear-exr/03_2a
+
+path_object.set_attr(user='system')
+path_object.set_attr(version='000.001')
+path_object.set_attr(resolution='high')
+print path_object.path_root
+CreateProductionData(path_object, project_management='lumbermill')
+
+# download some exr files that we will use for other purposes.
+#command = r'wget -P %s -r -np -nH -nd -e robots=off https://media.xiph.org/tearsofsteel/linear-exr/03_2a/' % path_object.path_root
+#_execute(command)
 
 # Create a high res proxy of the plate
+sequence = lj_list_dir(path_object.path_root)
+proxy = create_proxy(os.path.join(path_object.path_root, sequence[0].split(' ')[0]))
+hd_proxy = create_hd_proxy(os.path.join(path_object.path_root, sequence[0].split(' ')[0]))
+mov = create_mov(hd_proxy)
+# Create an Ftrack Review for this
+review_obj = PathObject(mov)
+metadata = {'frameIn': 1001,
+            'frameOut': 1020,
+            'frameRate': 24
+            }
+ProjectManagementData(path_object=review_obj).create_project_management_data(review=True, metadata=metadata)
 
-# Create a hd proxy of the plate
 
-# create a high quality qt of the plate
-
-# create a web qt of the plate
-
-# upload the qt of the plate to ftrack
-
-# upload a thumb of the plate to ftrack
-
-# publish the plate
-
-
+# from cglcore.config import app_config
+# import ftrack_api
+# session = ftrack_api.Session(server_url=app_config()['project_management']['ftrack']['api']['server_url'],
+#                                          api_key=app_config()['project_management']['ftrack']['api']['api_key'],
+#                                          api_user=app_config()['project_management']['ftrack']['api']['api_user'])
+#
+# version = session.query('AssetVersion', 'SOME-ID')
+# server_location = session.query('Location where name is "ftrack.server"').one()
+# component = version.create_component(
+#     path=mov,
+#     data={
+#         'name': 'ftrackreview-mp4'
+#     },
+#     location=server_location
+# )
+# # Meta data needs to contain *frameIn*, *frameOut* and *frameRate*.
+# component['metadata']['ftr_meta'] = json.dumps({
+#     'frameIn': 1001,
+#     'frameOut': 1020,
+#     'frameRate': 24
+# })
+#
+# component.session.commit()
 

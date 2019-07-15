@@ -171,8 +171,6 @@ def create_proxy(sequence, ext='jpg', start_frame='1001'):
         fileout = ''
 
 
-
-
 def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height=False, start_frame='1001'):
     if do_height:
         res = height
@@ -246,11 +244,15 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
 
 
 def create_mov(sequence, framerate=settings['frame_rate'], output_frame_rate=None,
-               res=settings['resolution']['video_review']):
+               res=settings['resolution']['video_review'], project_management='lumbermill'):
 
     start_frame = get_start_frame(sequence)
     input_file = prep_seq_delimiter(sequence, replace_with='%')
-    output_file = '%smov' % split_sequence(sequence)
+    sequence = split_sequence(sequence)
+    if sequence.endswith('.'):
+        output_file = '%smp4' % sequence
+    else:
+        output_file = '%s.mp4' % sequence
     if os.path.splitext(input_file)[-1] == '.exr' or os.path.splitext(input_file)[-1] == '.dpx':
         logging.info('applying gamma 2.2 to linear sequence')
         gamma = 2.2

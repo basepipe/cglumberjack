@@ -2,6 +2,7 @@ import logging
 import json
 from cglcore.config import app_config
 import ftrack_api
+import datetime
 
 
 class ProjectManagementData(object):
@@ -42,12 +43,15 @@ class ProjectManagementData(object):
     appointment = None
     path_root = None
     file_type = None
+    filename = None
+    ext = None
     ftrack_asset_type = 'Upload'
     type = None
     thumb_path_full = None
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
+            self.path_object = path_object
             for key in path_object.__dict__:
                 self.__dict__[key] = path_object.__dict__[key]
         for key in kwargs:
@@ -96,19 +100,14 @@ class ProjectManagementData(object):
 
     def get_current_task_type(self):
         schema = app_config()['project_management']['ftrack']['tasks'][self.schema]
-        ftrack_tasks = schema['long_to_short'][self.scope.lower()]
-        for t in ftrack_tasks:
-            if ftrack_tasks[t] == self.task:
-                full_name = t
-
+        full_name = schema['short_to_long'][self.scope.lower()][self.task]
         for task in self.task_types:
-            print '\t', task['name'], full_name
             if task['name'] == full_name:
                 return task
         print 'Could Not Find a Task of %s' % task['name']
         return None
 
-    def create_project_management_data(self):
+    def create_project_management_data(self, review=False, metadata={}):
         self.project_data = self.entity_exists('project')
         if not self.project_data:
             if self.project:
@@ -152,8 +151,8 @@ class ProjectManagementData(object):
                     if self.user_data:
                         if self.entity_data:
                             self.create_assignment()
-            if self.version:
-                self.create_version()
+            if review:
+                self.create_review(metadata=metadata)
         self.ftrack.commit()
         self.ftrack.close()
 
@@ -186,6 +185,7 @@ class ProjectManagementData(object):
                 logging.info('Found %s: %s, No Need to Create' % (data_type, data_['name']))
             return data_
         except:
+            logging.info('Did not find %s' % data_type)
             return None
 
     def create_project(self):
@@ -237,7 +237,7 @@ class ProjectManagementData(object):
         return self.task_data
 
     def create_assignment(self):
-        print 'Checking for Assignment %s' % self.task_data['name']
+        logging.info('Checking for Assignment %s' % self.task_data['name'])
         existing_assignment = self.ftrack.query(
             'Appointment where context.id is "{}" and resource.id = "{}" and type="assignment"'.format(
                 self.task_data['id'], self.user_data['id'])).first()
@@ -250,7 +250,6 @@ class ProjectManagementData(object):
             })
             return self.assignment_data
         else:
-            print 'Found Assignment: %s -->> %s' % (self.user_email, self.task_name)
             return None
 
     def create_version(self):
@@ -258,8 +257,8 @@ class ProjectManagementData(object):
             self.ftrack.event_hub.connect()
         except:
             pass
-        # TODO - need to look at if an "asset" exists already before creating it.
-        # TODO - need to look at whether a "version" exists already before creating it.
+
+        # first we'll create an AssetType - for now we're calling everything an "upload" lack of a better plan.
         asset_type = self.ftrack.query('AssetType where name is "%s"' % self.ftrack_asset_type).one()
         asset = self.ftrack.create('Asset', {
             'name': self.version,
@@ -269,42 +268,70 @@ class ProjectManagementData(object):
         if not asset:
             print 'Type: %s not found in ftrack - aborting' % self.task
             return
+
+        # now we'll create an "AssetVersion"
         print 'Creating Version %s for: %s' % (self.version, self.task_name)
         self.version_data = self.ftrack.create('AssetVersion', {
             'asset': asset,
             'task': self.task_data,
         })
-        #if self.thumb_path_full:
-        #    self.version_data.create_thumbnail(self.thumb_path_full)
 
-    def upload_media2(self):
-        print 'Encoding Media For: %s' % 'This thing'
-        self.ftrack.encode_media(self.path_root)
+    def create_review(self, metadata):
+        asset_type = self.ftrack.query('AssetType where name is "%s"' % self.ftrack_asset_type).one()
+        asset = self.ftrack.create('Asset', {
+            'name': self.version,
+            'type': asset_type,
+            'parent': self.entity_data
+        })
+        if not asset:
+            print 'Type: %s not found in ftrack - aborting' % self.task
+            return
 
-    def upload_media(self):
-        # TODO - need methods for deriving filetype as well as frameIn, frameOut, and frameRate
+        # now we'll create an "AssetVersion"
+        print 'Creating Version %s for: %s' % (self.version, self.task_name)
+        self.version_data = self.ftrack.create('AssetVersion', {
+            'asset': asset,
+            'task': self.task_data,
+        })
+        # The Actual Review Stuff
+        self.upload_media(metadata)
+
+    def upload_media(self, metadata={}):
+        # TODO - create a thumnail for the task after an upload
+        # TODO - create a 'for review' playlist for today's date
         server_location = self.ftrack.query('Location where name is "ftrack.server"').one()
-        component = self.version_data.create_component(
-            path=self.path_root,
-            data={
-                'name': self.version
-            },
-            location=server_location
-        )
         if self.file_type == 'movie':
-            component['metadata']['ftr_meta'] = json.dumps({
-                'frameIn': 0,
-                'frameOut': 150,
-                'frameRate': 24
-            })
+            if metadata:
+                component = self.version_data.create_component(
+                    path=self.path_root,
+                    data={
+                        'name': 'ftrackreview-mp4'
+                    },
+                    location=server_location
+                )
+                component['metadata']['ftr_meta'] = json.dumps(metadata)
+            else:
+                logging.info('No Metadata Defined, skipping mp4 review creation')
         elif self.file_type == 'image':
+            component = self.version_data.create_component(
+                path=self.path_root,
+                data={
+                    'name': 'ftrackreview-image'
+                },
+                location=server_location
+            )
             component['metadata']['ftr_meta'] = json.dumps({
                 'format': 'image'
             })
         print 'Committing Media'
         component.session.commit()
-        print 'Encoding Media'
-        self.ftrack.encode_media(component)
+
+    def create_review_session(self):
+        review_session = self.ftrack.create('ReviewSession', {
+            'name': 'Dailies %s' % datetime.date.today(),
+            'description': 'Review Session For Todays Data',
+            'project': self.project_data
+        })
 
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
@@ -328,6 +355,11 @@ class ProjectManagementData(object):
         else:
             logging.info('Group {} already in assigned to project {}'.format(self.user_group ['name'],
                                                                              self.project_data['name']))
+
+    def find_review_session(self):
+        project_review_sessions = self.project_data['review_sessions']
+        for each in project_review_sessions:
+            print each
 
     def find_group_on_project(self):
         project_has_group = self.ftrack.query(
@@ -411,9 +443,12 @@ class ProjectManagementData(object):
         return self.task_data
 
     def find_version(self):
-        return self.ftrack.query('AssetVersion where '
-                                 'task.id is "{0}"'.format(self.task_data['id']))
-        pass
+        #AssetVersion where asset.parent.project.name is "project_code" or parent.name is "project_code"
+        self.asset_data = self.ftrack.query('AssetVersion where asset.parent.id is "{0}"'.format(self.entity_data['id']))
+        print 'asset data:'
+        print self.asset_data
+        print self.asset_data.__dict__
+        return None
 
 
 if __name__ == "__main__":
