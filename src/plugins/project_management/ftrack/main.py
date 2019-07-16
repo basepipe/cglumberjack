@@ -337,19 +337,19 @@ class ProjectManagementData(object):
     def add_to_dailies(self):
         list_name = 'Dailies: %s' % datetime.date.today()
         list_category = self.ftrack.query('ListCategory where id is %s' % '77b9ab82-07c2-11e4-ba66-04011030cf01').one()
-        existing_list = self.ftrack.query('AssetVersionList where name is test_dailies_list').one()
-        print existing_list, 'list exists'
-        if isinstance(existing_list, ftrack_api.query.QueryResult) or not existing_list:
+        version_list = self.ftrack.query('AssetVersionList where name is "%s"' % list_name).one()
+        if isinstance(version_list, ftrack_api.query.QueryResult) or not version_list:
             version_list = self.ftrack.create('AssetVersionList', {
                 'name': list_name,
                 'owner': self.user_data,
                 'project': self.project_data,
                 'category': list_category
             })
+            print 'Adding version %s to %s' % (self.version_data['id'], list_name)
+            version_list['items'].append(self.version_data)
         else:
-            version_list = existing_list
-
-        version_list['items'].append(self.version_data)
+            print 'Adding version %s to %s' % (self.version_data['id'], list_name)
+            version_list['items'].append(self.version_data)
 
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
