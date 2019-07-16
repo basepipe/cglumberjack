@@ -265,7 +265,7 @@ class ProjectManagementData(object):
         except:
             pass
         # first we'll create an AssetType - for now we're calling everything an "upload" lack of a better plan.
-        asset_type = self.ftrack.query('AssetType where name is "%s"' % self.ftrack_asset_type).one()
+        asset_type = self.ftrack.query('AssetType where name is "%s"' % self.ftrack_asset_type).first()
 
         self.task_asset = self.find_task_asset()
         if isinstance(self.task_asset, ftrack_api.query.QueryResult) or not self.task_asset:
@@ -300,7 +300,7 @@ class ProjectManagementData(object):
     def upload_media(self, add_to_dailies=True):
         # TODO - need a way of knowing if a component already exists.
         # Alternatively it'd be a good idea to somehow track if something has been pushed to proj_man already within lumbermill
-        server_location = self.ftrack.query('Location where name is "ftrack.server"').one()
+        server_location = self.ftrack.query('Location where name is "ftrack.server"').first()
         if self.file_type == 'movie':
             component = self.version_data.create_component(
                 path=self.path_root,
@@ -336,8 +336,8 @@ class ProjectManagementData(object):
 
     def add_to_dailies(self):
         list_name = 'Dailies: %s' % datetime.date.today()
-        list_category = self.ftrack.query('ListCategory where id is %s' % '77b9ab82-07c2-11e4-ba66-04011030cf01').one()
-        version_list = self.ftrack.query('AssetVersionList where name is "%s"' % list_name).one()
+        list_category = self.ftrack.query('ListCategory where id is %s' % '77b9ab82-07c2-11e4-ba66-04011030cf01').first()
+        version_list = self.ftrack.query('AssetVersionList where name is "%s"' % list_name).first()
         if isinstance(version_list, ftrack_api.query.QueryResult) or not version_list:
             version_list = self.ftrack.create('AssetVersionList', {
                 'name': list_name,
@@ -353,7 +353,7 @@ class ProjectManagementData(object):
 
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
-        self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).one()
+        self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).first()
         new_membership = self.ftrack.ensure('Membership', {"group_id": self.user_group['id'],
                                                            "user_id": self.user_data['id']})
         project_has_group = self.ftrack.query(
@@ -439,13 +439,8 @@ class ProjectManagementData(object):
         return self.shot_data
 
     def find_seq(self):
-        seqs = self.ftrack.query('Sequence where project.id is "{0}"'.format(self.project_data['id']))
-        for each in seqs:
-            if each['name'] == self.seq:
-                logging.info('Found %s' % each['name'])
-                self.seq_data = each
-                return each
-        return None
+        seqs = self.ftrack.query('Sequence where name is "{0}" and project.id is "{1}"'.format(self.seq, self.project_data['id'])).first()
+        return seqs
 
     def find_project_team(self):
         self.project_team = set()
@@ -459,7 +454,7 @@ class ProjectManagementData(object):
 
     def find_user(self):
         if not self.user_data:
-            self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).one()
+            self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).first()
         self.add_user_to_project()
         return self.user_data
 
@@ -473,7 +468,7 @@ class ProjectManagementData(object):
         return self.version_data
 
     def get_proj_url(self, project):
-        project = self.ftrack.query('Project where status is active and name is %s' % project).one()
+        project = self.ftrack.query('Project where status is active and name is %s' % project).first()
         start_string = "https://lone-coconut.ftrackapp.com/#entityId=%s&entityType=" \
                        "show&itemId=projects&view=tasks" % project['id']
         return start_string
@@ -486,7 +481,7 @@ class ProjectManagementData(object):
         :param shot:
         :return:
         """
-        shot = self.ftrack.query('Shot where name is %s_%s and project.name is %s' % (seq, shot, project)).one()
+        shot = self.ftrack.query('Shot where name is %s_%s and project.name is %s' % (seq, shot, project)).first()
         start_string = 'https://lone-coconut.ftrackapp.com/#entityId=%s&entityType=' \
                        'task&itemId=projects&view=tasks' % shot['id']
         return start_string
@@ -495,24 +490,24 @@ class ProjectManagementData(object):
         # TODO - change this to work with the local variables
 
         if view == 'seq':
-            scope = self.ftrack.query('Sequence where name is %s and project.name is %s' % (seq, project)).one()
+            scope = self.ftrack.query('Sequence where name is %s and project.name is %s' % (seq, project)).first()
             scope_id = scope['id']
             task = self.ftrack.query(
-                'Task where name is %s_%s_%s and project.name is %s' % (seq, shot, task, project)).one()
+                'Task where name is %s_%s_%s and project.name is %s' % (seq, shot, task, project)).first()
             task_string = 'https://lone-coconut.ftrackapp.com/#slideEntityId=%s&slideEntityType=task&view=' \
                           'tasks&itemId=projects&entityId=%s&entityType=task' % (task['id'], scope_id)
         elif view == 'shot':
-            scope = self.ftrack.query('Shot where name is %s_%s and project.name is %s' % (seq, shot, project)).one()
+            scope = self.ftrack.query('Shot where name is %s_%s and project.name is %s' % (seq, shot, project)).first()
             scope_id = scope['id']
             task = self.ftrack.query(
-                'Task where name is %s_%s_%s and project.name is %s' % (seq, shot, task, project)).one()
+                'Task where name is %s_%s_%s and project.name is %s' % (seq, shot, task, project)).first()
             task_string = 'https://lone-coconut.ftrackapp.com/#slideEntityId=%s&slideEntityType=' \
                           'task&view=tasks&itemId=projects&entityId=%s&entityType=task' % (task['id'], scope_id)
         elif view == 'project':
-            scope = self.ftrack.query('Project where name is %s' % project).one()
+            scope = self.ftrack.query('Project where name is %s' % project).first()
             scope_id = scope['id']
             task = self.ftrack.query('Task where name is %s_%s_%s and '
-                                     'project.name is %s' % (seq, shot, task, project)).one()
+                                     'project.name is %s' % (seq, shot, task, project)).first()
             task_string = 'https://lone-coconut.ftrackapp.com/#slideEntityId=%s&slideEntityType=' \
                           'task&view=tasks&itemId=projects&entityId=%s&entityType=show' % (task['id'], scope_id)
 
