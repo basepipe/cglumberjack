@@ -20,6 +20,7 @@ SPLIT_SEQ_REGEX = re.compile("\\ [0-9]{4,}-[0-9]{4,}$")
 SEQ_SPLIT = re.compile("\\#{4,}")
 SEQ2_SPLIT = re.compile("[%0-9]{2,}d")
 SEQ = re.compile('[0-9]{3,}-[0-9]{3,}')
+CGL_SEQ_TEST = re.compile('.+#+.+\s[0-9]+-[0-9]+$')
 
 
 class PathObject(object):
@@ -565,9 +566,9 @@ class PathObject(object):
 
     def set_preview_path(self):
         if self.file_type == 'movie':
-            ext = '.mov'
+            ext = '.mp4'
         elif self.file_type == 'sequence':
-            ext = '.mov'
+            ext = '.mp4'
         elif self.file_type == 'image':
             ext = '.jpg'
         elif self.file_type == 'ppt':
@@ -576,9 +577,19 @@ class PathObject(object):
             ext = '.jpg'
         else:
             ext = '.jpg'
-        name_ = self.filename.replace('####', '')
-        name_, o_ext = os.path.splitext(name_)
-        name_ = name_.replace(o_ext, ext)
+        if '#' in self.filename:
+            name_ = self.filename.split('#')[0]
+            if name_.endswith('.'):
+                ext.replace('.', '')
+            name_ = '%s%s' % (name_, ext)
+        elif '%' in self.filename:
+            name_ = self.filename.split('%')[0]
+            if name_.endswith('.'):
+                ext.replace('.', '')
+            name_ = '%s%s' % (name_, ext)
+        else:
+            name_, o_ext = os.path.splitext(self.filename)
+            name_ = name_.replace(o_ext, ext)
         path_, file_ = os.path.split(self.path_root)
         if sys.platform == 'win32':
             self.preview_path_full = '%s\\%s\\%s' % (path_, '.preview', name_)
@@ -770,7 +781,6 @@ class CreateProductionData(object):
         if project_management != 'lumbermill':
             module = "plugins.project_management.%s.main" % project_management
             loaded_module = __import__(module, globals(), locals(), 'main', -1)
-            print 1, self.proj_management_user
             loaded_module.ProjectManagementData(path_object, user_email=self.proj_management_user).create_project_management_data()
         else:
             print 'Using Lumbermill built in proj management'
@@ -896,7 +906,6 @@ def get_frange_from_seq(filepath):
     _, ext = os.path.splitext(filepath)
     glob_string = filepath.split('#')[0]
     frames = glob.glob('%s*%s' % (glob_string, ext))
-    print frames
     if frames:
         sframe = re.search(SEQ_REGEX, frames[0]).group(0).replace('.', '')
         eframe = re.search(SEQ_REGEX, frames[-1]).group(0).replace('.', '')
@@ -926,7 +935,7 @@ def load_style_sheet(style_file='stylesheet.css'):
     return data
 
 
-def lj_list_dir(directory, path_filter=None, basename=True):
+def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=False):
     """
     Returns Files that are ready to be displayed in a LJWidget, essentially we run
     all output
@@ -965,7 +974,15 @@ def lj_list_dir(directory, path_filter=None, basename=True):
                 output_[index] = '%s %s' % (each, frange)
         if each in ignore:
             output_.remove(each)
-    return output_
+    if return_sequences:
+        seq_only = []
+        for each in output_:
+            this = re.search(CGL_SEQ_TEST, each)
+            if this:
+                seq_only.append(each)
+        return seq_only
+    else:
+        return output_
 
 
 def split_sequence_frange(sequence):
@@ -1076,7 +1093,7 @@ def get_start_frame(sequence):
         return None
 
 
-def prep_seq_delimiter(sequence, replace_with='*'):
+def prep_seq_delimiter(sequence, replace_with='*', ext=None):
     """
     takes a sequence ('####', '%04d', '*') transforms it to another type.  This is used for instances where one
     piece of software needs sequences delimited in a particlar way.
@@ -1085,7 +1102,10 @@ def prep_seq_delimiter(sequence, replace_with='*'):
     :return:
     """
     path_object = PathObject(sequence)
+    if not ext:
+        ext = path_object.ext
     dir_ = os.path.dirname(sequence)
+    print sequence
     seq_split = split_sequence(sequence)
     stuff = lj_list_dir(dir_)
     hash_seq = ''
@@ -1095,11 +1115,13 @@ def prep_seq_delimiter(sequence, replace_with='*'):
             frange = this.group(0).split('-')[0]
             hash_seq = each.replace(' %s' % frange, '')
     if replace_with == '*':
-        return '%s%s.%s' % (split_sequence(sequence), replace_with, path_object.ext)
-    if replace_with == '#':
+        return '%s%s.%s' % (split_sequence(sequence), replace_with, ext)
+    elif replace_with == '#':
         return os.path.join(dir_, hash_seq)
-    if replace_with == '%':
-        return '%s%s.%s' % (seq_split, hash_to_number(hash_seq)[-1], path_object.ext)
+    elif replace_with == '%':
+        return '%s%s.%s' % (seq_split, hash_to_number(hash_seq)[-1], ext)
+    elif replace_with == '':
+        return '%s.%s' % (split_sequence(sequence), ext)
 
 
 
