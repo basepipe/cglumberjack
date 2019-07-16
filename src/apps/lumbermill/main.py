@@ -43,8 +43,6 @@ class PathWidget(QtWidgets.QFrame):
                         path_object.set_attr(filename=filename)
                     except TypeError:
                         print 'passing'
-
-            print 'updating to %s' % path_object.path_root
             self.text = path_object.path_root
             self.path_line_edit.setText(path_object.path_root)
 
@@ -335,14 +333,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         seq_attrs = ['seq', 'type']
         shot_attrs = ['shot', 'asset']
 
-        try:
-            print 'Updating location to: %s' % path_object.path_root
-        except AttributeError:
-            print 'nothing found'
         if path_object.scope == 'IO':
-            print 1
             if path_object.version:
-                print 2
                 if not self.panel:
                     self.panel = IOP.IOPanel(parent=self, path_object=path_object)
                     self.setMinimumWidth(1100)

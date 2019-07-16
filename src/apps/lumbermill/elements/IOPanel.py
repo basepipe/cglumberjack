@@ -81,8 +81,9 @@ class IOPanel(QtWidgets.QWidget):
             print 'No Path Object found, exiting'
             return
         self.project_management = app_config()['account_info']['project_management']
-        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
-        self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        if self.project_management == 'ftrack':
+            self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
+            self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
         #self.tasks_dict = self.schema_dict['long_to_short'][self.scope_combo.currentText()]
         self.path_object_next = None
         self.panel = QtWidgets.QVBoxLayout(self)
@@ -220,6 +221,10 @@ class IOPanel(QtWidgets.QWidget):
             print "I'm creating a new source for you"
 
     def new_files_dragged(self, files):
+        from cglui.progress_gif import ProgressDialog
+        dialog = ProgressDialog()
+        # dialog.show()gif doesn't show in this version
+        dialog.exec_() # background doesn't run while this is going.
         if self.path_object.ingest_source == '*':
             print 'Please Select An Ingest Source Before Dragging Files'
             return
@@ -240,6 +245,7 @@ class IOPanel(QtWidgets.QWidget):
         item = self.ingest_widget.list.item(num - 1)
         item.setSelected(True)
         self.on_ingest_selected()
+        dialog.accept()
 
     def load_companies(self):
         self.source_widget.list.clear()
