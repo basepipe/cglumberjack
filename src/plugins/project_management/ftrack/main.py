@@ -268,7 +268,7 @@ class ProjectManagementData(object):
         asset_type = self.ftrack.query('AssetType where name is "%s"' % self.ftrack_asset_type).first()
 
         self.task_asset = self.find_task_asset()
-        if isinstance(self.task_asset, ftrack_api.query.QueryResult) or not self.task_asset:
+        if not self.task_asset:
             self.task_asset = self.ftrack.create('Asset', {
                 'name': self.version,
                 'type': asset_type,
@@ -276,7 +276,7 @@ class ProjectManagementData(object):
             })
 
         self.version_data = self.find_version()
-        if isinstance(self.version_data, ftrack_api.query.QueryResult) or not self.version_data:
+        if not self.version_data:
             self.version_data = self.ftrack.create('AssetVersion', {
                 'asset': self.task_asset,
                 'task': self.task_data,
@@ -338,7 +338,7 @@ class ProjectManagementData(object):
         list_name = 'Dailies: %s' % datetime.date.today()
         list_category = self.ftrack.query('ListCategory where id is %s' % '77b9ab82-07c2-11e4-ba66-04011030cf01').first()
         version_list = self.ftrack.query('AssetVersionList where name is "%s"' % list_name).first()
-        if isinstance(version_list, ftrack_api.query.QueryResult) or not version_list:
+        if not version_list:
             version_list = self.ftrack.create('AssetVersionList', {
                 'name': list_name,
                 'owner': self.user_data,
@@ -346,10 +346,12 @@ class ProjectManagementData(object):
                 'category': list_category
             })
             print 'Adding version %s to %s' % (self.version_data['id'], list_name)
-            version_list['items'].append(self.version_data)
+            if self.version_data not in version_list['items']:
+                version_list['items'].append(self.version_data)
         else:
             print 'Adding version %s to %s' % (self.version_data['id'], list_name)
-            version_list['items'].append(self.version_data)
+            if self.version_data not in version_list['items']:
+                version_list['items'].append(self.version_data)
 
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
