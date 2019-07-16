@@ -156,7 +156,7 @@ class ProjectManagementData(object):
             if self.version:
                 self.create_version()
             if review:
-                self.create_review(metadata=metadata)
+                self.upload_media()
             elif self.filename:
                 self.create_component()
         self.ftrack.commit()
@@ -268,17 +268,15 @@ class ProjectManagementData(object):
         asset_type = self.ftrack.query('AssetType where name is "%s"' % self.ftrack_asset_type).one()
 
         self.task_asset = self.find_task_asset()
-        if isinstance(self.task_asset, ftrack_api.query.QueryResult):
+        if isinstance(self.task_asset, ftrack_api.query.QueryResult) or not self.task_asset:
             self.task_asset = self.ftrack.create('Asset', {
                 'name': self.version,
                 'type': asset_type,
                 'parent': self.entity_data
             })
-        else:
-            logging.info('Found Asset, No Need to Create')
 
         self.version_data = self.find_version()
-        if isinstance(self.version_data, ftrack_api.query.QueryResult):
+        if isinstance(self.version_data, ftrack_api.query.QueryResult) or not self.version_data:
             self.version_data = self.ftrack.create('AssetVersion', {
                 'asset': self.task_asset,
                 'task': self.task_data,
@@ -286,26 +284,6 @@ class ProjectManagementData(object):
             print 'Creating Version %s for: %s' % (self.version, self.task_name)
         else:
             logging.info('Found %s, No Need to Create' % self.version)
-
-    def create_review(self, metadata):
-        asset_type = self.ftrack.query('AssetType where name is "%s"' % self.ftrack_asset_type).one()
-        asset = self.ftrack.create('Asset', {
-            'name': self.version,
-            'type': asset_type,
-            'parent': self.entity_data
-        })
-        if not asset:
-            print 'Type: %s not found in ftrack - aborting' % self.task
-            return
-        # "AssetVersion" Creation
-        print 'Creating Version %s for: %s' % (self.version, self.task_name)
-        self.version_data = self.ftrack.create('AssetVersion', {
-            'asset': asset,
-            'task': self.task_data,
-        })
-
-        # The Actual Review Stuff
-        self.upload_media(metadata)
 
     def create_component(self):
         from cglcore.path import lj_list_dir, prep_seq_delimiter
@@ -317,28 +295,24 @@ class ProjectManagementData(object):
         path = os.path.join(seq, seq2)
         ftrack_seq = '%s [%s]' % (prep_seq_delimiter(path, '%'), frange)
         logging.info('Creating Component for %s' % ftrack_seq)
-        server_location = self.ftrack.query('Location where name is "ftrack.server"').one()
         self.version_data.create_component(path=ftrack_seq, data={'name': self.resolution})
 
-    def upload_media(self, metadata={}):
+    def upload_media(self, add_to_dailies=True):
+        # TODO - need a way of knowing if a component already exists.
+        # Alternatively it'd be a good idea to somehow track if something has been pushed to proj_man already within lumbermill
         server_location = self.ftrack.query('Location where name is "ftrack.server"').one()
         if self.file_type == 'movie':
-            if metadata:
-                component = self.version_data.create_component(
-                    path=self.path_root,
-                    data={
-                        'name': 'ftrackreview-mp4'
-                    },
-                    location=server_location
-                )
-                component['metadata']['ftr_meta'] = json.dumps(metadata)
-                print 'Committing Media'
-                if os.path.exists(self.path_object.thumb_path_full):
-                    print 'Creating Thumbnail: %s' % self.path_objet.thumb_path_full
-                    self.version_data.create_thumbnail(self.path_objet.thumb_path_full)
-                component.session.commit()
-            else:
-                logging.info('No Metadata Defined, skipping mp4 review creation')
+            component = self.version_data.create_component(
+                path=self.path_root,
+                data={
+                    'name': self.resolution
+                },
+                location=server_location
+            )
+            self.version_data.encode_media(component)
+            self.add_to_dailies()
+            # component.session.commit()
+
         elif self.file_type == 'image':
             component = self.version_data.create_component(
                 path=self.path_root,
@@ -359,6 +333,23 @@ class ProjectManagementData(object):
             'description': 'Review Session For Todays Data',
             'project': self.project_data
         })
+
+    def add_to_dailies(self):
+        list_name = 'Dailies: %s' % datetime.date.today()
+        list_category = self.ftrack.query('ListCategory where id is %s' % '77b9ab82-07c2-11e4-ba66-04011030cf01').one()
+        existing_list = self.ftrack.query('AssetVersionList where name is test_dailies_list').one()
+        print existing_list, 'list exists'
+        if isinstance(existing_list, ftrack_api.query.QueryResult) or not existing_list:
+            version_list = self.ftrack.create('AssetVersionList', {
+                'name': list_name,
+                'owner': self.user_data,
+                'project': self.project_data,
+                'category': list_category
+            })
+        else:
+            version_list = existing_list
+
+        version_list['items'].append(self.version_data)
 
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
@@ -385,8 +376,11 @@ class ProjectManagementData(object):
 
     def find_task_asset(self):
         task_asset = self.ftrack.query('Asset where name is "{0}" and '
-                                       'parent.id is "{1}"'.format(self.version, self.entity_data['id'])).one()
-        return task_asset
+                                       'parent.id is "{1}"'.format(self.version, self.entity_data['id']))
+        if len(task_asset) > 0:
+            return task_asset[0]
+        else:
+            return task_asset
 
     def find_review_session(self):
         project_review_sessions = self.project_data['review_sessions']

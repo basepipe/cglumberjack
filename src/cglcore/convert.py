@@ -272,9 +272,6 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
         else:
             logging.info('Output does not end with .mp4, aborting conversion')
 
-    print sequence, output_file
-    return
-
     if not os.path.exists(os.path.dirname(output_file)):
         print 'making directories: %s' % os.path.dirname(output_file)
         os.makedirs(os.path.dirname(output_file))
