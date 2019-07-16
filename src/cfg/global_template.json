@@ -97,9 +97,9 @@
         ".xbm": "image"
     }, 
     "ftrack": {
-        "api_key": "",
-        "api_user": "",
-        "server_url": ""
+        "api_key": "tester",
+        "api_user": "kylu",
+        "server_url": "www.wwww.wwwww.com"
     }, 
     "helpdesk": {
         "help_menu": "https://fsucmpa.freshdesk.com/support/home"

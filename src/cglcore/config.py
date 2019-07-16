@@ -3,6 +3,7 @@ import sys
 import yaml
 import json
 import shutil
+import logging
 from Qt import QtWidgets, QtCore, QtGui
 
 
@@ -35,8 +36,10 @@ class InitializeConfig(object):
         root_ = config['paths']['root']
 
         if project_management:
+            print("proj managemenrt")
             if project_management == 'ftrack':
                 if not config['ftrack']['server_url']:
+                    print("shiiiiit")
                     config_not_set = True
                 if not config['ftrack']['api_key']:
                     config_not_set = True
@@ -409,6 +412,7 @@ class CheckGlobalsDialog(QtWidgets.QDialog):
             index = self.proj_management_combo.findText(self.project_management)
             self.proj_management_combo.setCurrentIndex(index)
         if self.project_management == 'ftrack' or self.project_management == 'shotgun':
+            logging.info("proj management is ftrack")
             self.api_key_line_edit.setText(self.app_config[self.project_management]['api_key'])
             self.api_script_line_edit.setText(self.app_config['shotgun']['api_script'])
             self.api_user_line_edit.setText(self.app_config[self.project_management]['api_user'])
@@ -474,6 +478,7 @@ class CheckGlobalsDialog(QtWidgets.QDialog):
         self.api_script_line_edit.hide()
 
     def show_api_info(self):
+        logging.info("Show api triggered")
         self.server_label.show()
         self.api_key_label.show()
         self.api_user_label.show()
@@ -482,6 +487,7 @@ class CheckGlobalsDialog(QtWidgets.QDialog):
         self.api_user_line_edit.show()
 
     def on_pm_changed(self):
+        logging.info("on pm triggered")
         self.api_key_line_edit.setText('')
         self.api_script_line_edit.setText('')
         self.api_user_line_edit.setText('')
@@ -512,6 +518,7 @@ class CheckGlobalsDialog(QtWidgets.QDialog):
 
     def on_line_edit_changed(self):
         # TODO make these dictionairies
+        logging.info("on edit triggered")
         self.get_input()
 
         print self.project_management
