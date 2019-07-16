@@ -6,8 +6,8 @@ from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, image_path, split_sequence_frange
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, VButtonPanel
-
 from apps.lumbermill.elements.FilesPanel import FilesPanel
+import apps.lumbermill.elements.IOPanel as IOP
 
 ICON_WIDTH = 24
 
@@ -340,10 +340,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         except AttributeError:
             print 'nothing found'
         if path_object.scope == 'IO':
+            print 1
             if path_object.version:
+                print 2
                 if not self.panel:
-                    from apps.lumbermill.elements.IOPanel import IOPanel
-                    self.panel = IOPanel(parent=self, path_object=path_object)
+                    self.panel = IOP.IOPanel(parent=self, path_object=path_object)
                     self.setMinimumWidth(1100)
                     self.setMinimumHeight(700)
                     self.panel.location_changed.connect(self.update_location)
@@ -375,8 +376,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.scope == '*':
                 self.panel = ScopePanel(path_object=path_object)
             elif path_object.scope == 'IO':
-                from apps.lumbermill.elements.IOPanel import IOPanel
-                self.panel = IOPanel(path_object=path_object)
+                self.panel = IOP.IOPanel(path_object=path_object)
             else:
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last in shot_attrs:
@@ -389,8 +389,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last == 'ingest_source':
-            from apps.lumbermill.elements.IOPanel import IOPanel
-            self.panel = IOPanel(path_object=path_object)
+            self.panel = IOP.IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
                 self.panel = VButtonPanel(path_object=path_object, element='task')
@@ -492,12 +491,14 @@ class CGLumberjack(LJMainWindow):
         open_globals = QtWidgets.QAction('Edit Globals', self)
         settings.setShortcut('Ctrl+,')
         menu_designer = QtWidgets.QAction('Menu Designer', self)
+        shelf_designer = QtWidgets.QAction('Shelf Designer', self)
         preflight_designer = QtWidgets.QAction('Preflight Designer', self)
         ingest_dialog = QtWidgets.QAction('Ingest Tool', self)
         # add actions to the file menu
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
         tools_menu.addAction(menu_designer)
+        tools_menu.addAction(shelf_designer)
         tools_menu.addAction(preflight_designer)
         tools_menu.addAction(ingest_dialog)
         # connect signals and slots
@@ -505,6 +506,7 @@ class CGLumberjack(LJMainWindow):
         settings.triggered.connect(self.on_settings_clicked)
         menu_designer.triggered.connect(self.on_menu_designer_clicked)
         preflight_designer.triggered.connect(self.on_preflight_designer_clicked)
+        shelf_designer.triggered.connect(self.on_shelf_designer_clicked)
         login.triggered.connect(self.on_login_clicked)
 
     def check_configs(self):
@@ -549,6 +551,13 @@ class CGLumberjack(LJMainWindow):
     def on_preflight_designer_clicked(self):
         from apps.pipeline.preflight_designer import PreflightDesigner
         dialog = PreflightDesigner(self)
+        dialog.setMinimumWidth(1200)
+        dialog.setMinimumHeight(500)
+        dialog.exec_()
+
+    def on_shelf_designer_clicked(self):
+        from apps.pipeline.shelf_designer import ShelfDesigner
+        dialog = ShelfDesigner(self)
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)
         dialog.exec_()

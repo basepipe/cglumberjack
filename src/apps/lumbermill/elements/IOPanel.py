@@ -28,6 +28,7 @@ PUBLISH_FILEPATH = 10
 PUBLISH_DATE = 11
 STATUS = 12
 
+
 class EmptyStateWidgetIO(EmptyStateWidget):
     files_added = QtCore.Signal(object)
 

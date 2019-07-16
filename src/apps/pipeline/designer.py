@@ -146,14 +146,16 @@ class Designer(LJDialog):
             for bi in range(menu.buttons.count()):
                 button_name = menu.buttons.tabText(bi)
                 button_widget = menu.buttons.widget(bi)
-                if isinstance(button_name, PreflightStep):
+                if self.type == 'preflights':
+                    print 'Preflight Step'
                     menu_dict[menu_name][button_name] = {
-                        'module': button_widget.module_line_edit.text(),
+                        'module': button_widget.command_line_edit.text(),
                         'label': button_widget.label_line_edit.text(),
                         'order': bi + 1,
                         'required': button_widget.required_line_edit.text()
                     }
                 else:
+                    print 'Menu Step'
                     menu_dict[menu_name][button_name] = {
                                                          'module': button_widget.command_line_edit.text(),
                                                          'label': button_widget.label_line_edit.text(),
