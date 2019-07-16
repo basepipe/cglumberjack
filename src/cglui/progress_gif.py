@@ -1,6 +1,7 @@
 import sys
 from Qt import QtCore, QtWidgets, QtGui
 import threading
+from cglcore.path import image_path
 
 
 class ProgressDialog(QtWidgets.QDialog):
@@ -11,8 +12,8 @@ class ProgressDialog(QtWidgets.QDialog):
 
         self.message = QtWidgets.QLabel('Working...')
         self.movie_screen = QtWidgets.QLabel()
-
-        self.movie = QtGui.QMovie('chopping_wood.gif')
+        # print image_path('chopping_wood.gif')
+        self.movie = QtGui.QMovie(image_path('going_nuts.gif'))
         self.movie.start()
 
         self.movie_screen.setMovie(self.movie)
