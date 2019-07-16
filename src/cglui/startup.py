@@ -2,13 +2,9 @@ import logging
 import os
 import time
 import signal
-
 from os.path import dirname, join
-
 from Qt import QtWidgets, QtCore
-
 import Qt
-
 from cglcore.startup import do_app_init
 from cglui.util import UISettings
 

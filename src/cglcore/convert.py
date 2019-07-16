@@ -2,15 +2,8 @@ import os
 import subprocess
 import glob
 import logging
-
 from cglcore.config import app_config
-from cglcore.path import PathObject, CreateProductionData, split_sequence, hash_to_number, get_start_frame, prep_seq_delimiter
-
-# Important note regarding ffmpeg and .h264 encoding:  There was a lot of discussion about whether this is ok
-# to be distributing software with .h264 encoding.  I called the law firm that handles licensing and they said that
-# as a software provider until we reach 100,000 sales they would never go after us.  Distributing software with ffmpeg
-# included in it therefore is perfectly legal.  Once you get to a certain volume of distribution however it needs to be
-# paid for.
+from cglcore.path import PathObject, CreateProductionData, split_sequence, hash_to_number, prep_seq_delimiter, lj_list_dir
 
 config = app_config()['paths']
 settings = app_config()['default']
@@ -32,24 +25,23 @@ OPTIONS = {'320p': ['180k', '360k', '-1:320'],
 #####################################################################
 
 
-def get_first_frame(input_file, return_type='string'):
-    input_file = input_file.replace('%04d', '*')
-    input_file = input_file.replace('####', '*')
+def get_first_frame(sequence, return_type='string'):
+    sequence = prep_seq_delimiter(sequence, '*')
+    print sequence
     try:
         # td - this will not pass some instances, we'll have to use REGEX eventually
-        first_frame = sorted(glob.glob(input_file))[0]
-        last_frame = sorted(glob.glob(input_file))[-1]
-        start_number = int(first_frame.rsplit(".", 2)[1])
-        last_number = int(last_frame.rsplit(".", 2)[1])
-        middle_number = (last_number - start_number)/2 + start_number
-        middle_string = '%04d' % middle_number
-        middle_frame = input_file.replace('*', middle_string)
+        for each in lj_list_dir(os.path.dirname(sequence)):
+            if ' ' in each:
+                first_frame, last_frame = each.split(' ')[-1].split('-')
+                middle_number = (int(last_frame) - int(first_frame)) / 2 + int(first_frame)
+        middle_string = '%05d' % middle_number
+        middle_frame = sequence.replace('*', middle_string)
         if return_type == 'string':
             return first_frame, middle_frame, last_frame
         else:
-            return start_number, middle_number, last_number
+            return first_frame, middle_number, last_frame
     except IndexError:
-        logging.info('can not find files like {0}'.format(input_file))
+        logging.info('can not find files like {0}'.format(sequence))
         return None
 
 
@@ -151,7 +143,7 @@ def _execute(command):
             pass
 
 
-def create_proxy(sequence, ext='jpg', start_frame='1001'):
+def create_proxy(sequence, ext='jpg', start_frame='1001', project_management='lumbermill'):
     """
     Creates a Jpeg proxy resolution based off the resolution of the given path.
     :param sequence:
@@ -163,22 +155,27 @@ def create_proxy(sequence, ext='jpg', start_frame='1001'):
     path_object_output = path_object.copy(resolution=new_res)
     output_dir = os.path.dirname(path_object_output.path_root)
     if not os.path.exists(output_dir):
-        CreateProductionData(path_object=output_dir)
+        CreateProductionData(path_object=output_dir, project_management=False)
     if '####' in sequence:
         # replace ### with "*"
         hashes, number = hash_to_number(sequence)
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
         command = '%s %s -scene %s %s' % (config['magick'], in_seq, start_frame, out_seq)
+        _execute(command)
+        if project_management == 'ftrack':
+            from plugins.project_management.ftrack.main import ProjectManagementData
+            path_object = PathObject(out_seq)
+            ProjectManagementData(path_object).create_project_management_data()
+        return out_seq.replace(number, hashes)
     else:
+        print 'No # in sequence'
         sequence = ''
         fileout = ''
 
-    _execute(command)
-    return out_seq.replace(number, hashes)
 
-
-def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height=False, start_frame='1001'):
+def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height=False, start_frame='1001',
+                    project_management='lumbermill'):
     if do_height:
         res = height
     else:
@@ -188,7 +185,7 @@ def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height
     path_object_output = path_object.copy(resolution=new_res)
     output_dir = os.path.dirname(path_object_output.path_root)
     if not os.path.exists(output_dir):
-        CreateProductionData(path_object=output_dir)
+        CreateProductionData(path_object=output_dir, project_management=False)
     if '####' in sequence:
         # replace ### with "*"
         hashes, number = hash_to_number(sequence)
@@ -201,6 +198,10 @@ def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height
         fileout = ''
 
     _execute(command)
+    if project_management == 'ftrack':
+        print 'Creating HD Proxy', path_object_output.path_root
+        from plugins.project_management.ftrack.main import ProjectManagementData
+        ProjectManagementData(path_object_output).create_project_management_data()
     return out_seq.replace(number, hashes)
 
 
@@ -214,7 +215,7 @@ def create_gif_proxy(sequence, ext='gif', width='480', height='x100', do_height=
     path_object_output = path_object.copy(resolution=new_res)
     output_dir = os.path.dirname(path_object_output.path_root)
     if not os.path.exists(output_dir):
-        CreateProductionData(path_object=output_dir)
+        CreateProductionData(path_object=output_dir, project_management=False)
     if '####' in sequence:
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s' % (output_dir, os.path.basename(split_sequence(sequence)), ext)
@@ -237,7 +238,7 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
     path_object_output = path_object.copy(resolution=new_res)
     output_dir = os.path.dirname(path_object_output.path_root)
     if not os.path.exists(output_dir):
-        CreateProductionData(path_object=output_dir)
+        CreateProductionData(path_object=output_dir, project_management=False)
     if '####' in sequence:
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%sthumb.%s' % (output_dir, os.path.basename(split_sequence(sequence)), ext)
@@ -250,11 +251,30 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
     return out_seq
 
 
-def create_mov(sequence, framerate=settings['frame_rate'], output_frame_rate=None,
-               res=settings['resolution']['video_review']):
-    start_frame = get_start_frame(sequence)
+def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_frame_rate=None,
+               res=settings['resolution']['video_review'], project_management='lumbermill'):
+
+    start_frame, middle_frame, end_frame = get_first_frame(sequence)
     input_file = prep_seq_delimiter(sequence, replace_with='%')
-    output_file = '%smov' % split_sequence(sequence)
+    if not output:
+        path_object = PathObject(sequence).copy(resolution='webMov')
+        output_file = path_object.path_root
+        output_file = output_file.split('#')[0]
+        if output_file.endswith('.'):
+            output_file = '%smp4' % output_file
+        else:
+            output_file = '%s.mp4' % output_file
+        filename = os.path.basename(output_file)
+        path_object.set_attr(filename=filename)
+    else:
+        if output.endswith('.mp4'):
+            output_file = output
+        else:
+            logging.info('Output does not end with .mp4, aborting conversion')
+
+    if not os.path.exists(os.path.dirname(output_file)):
+        print 'making directories: %s' % os.path.dirname(output_file)
+        os.makedirs(os.path.dirname(output_file))
     if os.path.splitext(input_file)[-1] == '.exr' or os.path.splitext(input_file)[-1] == '.dpx':
         logging.info('applying gamma 2.2 to linear sequence')
         gamma = 2.2
@@ -280,21 +300,30 @@ def create_mov(sequence, framerate=settings['frame_rate'], output_frame_rate=Non
                                                         start_frame, framerate, gamma, input_file, res, encoder,
                                                         profile, constant_rate_factor, pixel_format,
                                                         output_frame_rate, filter_arg, output_file)
-    print ffmpeg_cmd
     p = subprocess.Popen(ffmpeg_cmd, shell=True)
     p.wait()
+    make_movie_thumb(sequence)
+
+    if project_management == 'ftrack':
+        from plugins.project_management.ftrack.main import ProjectManagementData
+        metadata = {'frameIn': start_frame,
+                    'frameOut': end_frame,
+                    'frameRate': frame_rate
+                    }
+        logging.info('Uploading %s to ftrack' % path_object.path_root)
+        ProjectManagementData(path_object=path_object).create_project_management_data(review=True, metadata=metadata)
+
     return output_file
 
 
-
 def make_movie_thumb(input_file, output_file=None, frame='middle', thumb=True):
-    # what am i doing here?  Is this just creating a thumbnail?
     if not output_file:
-        output_file = PathObject(path_object=input_file).thumb_path_full
+        output_file = PathObject(path_object=input_file).copy(resolution='thumb').path_root
     if os.path.exists(output_file):
         os.remove(output_file)
+    if not os.path.exists(os.path.dirname(output_file)):
+        os.makedirs(os.path.dirname(output_file))
     if get_file_type(input_file) == 'movie':
-        print 'movie'
         if thumb:
             res = get_thumb_res(input_file)
             res.replace('x', ':')
@@ -329,27 +358,14 @@ def make_movie_thumb(input_file, output_file=None, frame='middle', thumb=True):
             elif frame == 'last':
                 input_file = end_frame
         # create the thumbnail
-        output_file = output_file.replace('####', 'seq')
+        #output_file = output_file.replace('####', 'seq')
         if thumb:
             res = thumb_res
         else:
             res = settings['resolution']['image_review']
-        command = r"%s %s --fit %s --ch R,G,B -o %s" % (config['oiiotool'], input_file, res, output_file)
-        if not os.path.exists(os.path.dirname(output_file)):
-            os.makedirs(os.path.dirname(output_file))
-        p = subprocess.Popen(command,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT,
-                             shell=True)
-        for each in p.stdout:
-            each = each.strip()
-            try:
-                if "ERROR" in each:
-                    logging.debug(each)
-                    logging.error(each)
-            except TypeError:
-                pass
-        logging.info(command)
+        # command = r"%s %s --fit %s --ch R,G,B -o %s" % (config['oiiotool'], input_file, res, output_file)
+        command = '%s %s -resize %s %s' % (config['magick'], input_file, res, output_file)
+        _execute(command)
         return output_file
 
 

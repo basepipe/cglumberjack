@@ -185,6 +185,10 @@ class LJTableWidget(QTableView):
     def sizeHint(self):
         return QtCore.QSize(self.height_hint, self.width_hint)
 
+    def clear(self):
+        self.clear()
+        print 'I should be clearing this'
+
 
 class LJKeyPairTableWidget(LJTableWidget):
     def __init__(self, parent):

@@ -75,10 +75,15 @@ class AssetCreator(LJDialog):
         # Environment Stuff
         self.root = app_config()['paths']['root']
         self.project_management = app_config()['account_info']['project_management']
+        # TODO - this eventually needs to be able to be done on a project basis.
+        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
         if self.scope == 'assets':
             self.asset_string_example = app_config()['rules']['path_variables']['asset']['example']
         elif self.scope == 'shots':
             self.asset_string_example = app_config()['rules']['path_variables']['shotname']['example']
+        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        self.proj_man_tasks = schema['long_to_short'][self.scope.lower()]
+        self.proj_man_tasks_short_to_long = schema['short_to_long'][self.scope.lower()]
         self.v_layout = QtWidgets.QVBoxLayout(self)
         self.scope_row = QtWidgets.QHBoxLayout()
         self.asset_row = QtWidgets.QHBoxLayout(self)
@@ -107,17 +112,10 @@ class AssetCreator(LJDialog):
         self.asset_row.addWidget(self.asset_widget)
         # task stuff
         self.task_layout = QtWidgets.QVBoxLayout(self)
-        for each in app_config()['pipeline_steps'][self.scope]:
-            defaults = app_config()['pipeline_steps'][self.scope]['default_steps']
-            if each == 'default_steps':
-                pass
-            else:
-                checkbox = QtWidgets.QCheckBox('%s (%s)' % (each, app_config()['pipeline_steps'][self.scope][each]))
-                checkbox.stateChanged.connect(self.on_checkbox_clicked)
-                self.task_layout.addWidget(checkbox)
-                if app_config()['pipeline_steps'][self.scope][each] in defaults:
-                    print each
-                    checkbox.setCheckState(QtCore.Qt.Checked)
+        for each in self.proj_man_tasks:
+            checkbox = QtWidgets.QCheckBox('%s (%s)' % (each, self.proj_man_tasks[each]))
+            checkbox.stateChanged.connect(self.on_checkbox_clicked)
+            self.task_layout.addWidget(checkbox)
 
         self.v_layout.addLayout(self.asset_row)
         self.v_layout.addLayout(self.radio_layout)
@@ -278,7 +276,7 @@ class AssetCreator(LJDialog):
         self.asset_widget.name_row.combo.addItems(assets)
 
     def load_tasks(self):
-        task_list = app_config()['pipeline_steps'][self.scope.lower()]
+        task_list = self.proj_man_tasks
         tasks = ['']
         for each in task_list:
             tasks.append(each)

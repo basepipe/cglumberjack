@@ -1,0 +1,8 @@
+nuke:
+  comp:
+    order: 1
+    render_local: {annotation: '', button name: render_local, command: import cgl_tools.nuke.lj_menu.comp.render_local
+        as render_local; render_local.run(), icon: '', label: Render Local, order: 1}
+    render_to_farm: {annotation: '', button name: render_to_farm, command: import
+        cgl_tools.nuke.cgl_context_menu.comp.render_to_farm as render_to_farm; render_to_farm.run(),
+      icon: '', label: Render To Farm, order: 2}

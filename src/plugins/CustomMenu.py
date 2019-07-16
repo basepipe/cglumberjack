@@ -1,7 +1,7 @@
 import os
 import sys
 import json
-from cglcore.path import PathObject, get_cgl_config
+from cglcore.path import PathObject, get_cgl_tools
 
 
 class CustomMenu(object):
@@ -39,7 +39,8 @@ class CustomMenu(object):
         if not os.path.exists(self.company_config):
             print 'Company Config %s: does no exist' % self.company_config
             return
-        self.menus_file = os.path.join(get_cgl_config(), 'cgl_tools', software, '%s.cgl' % self.type)
+
+        self.menus_file = os.path.join(get_cgl_tools(), software, '%s.cgl' % self.type)
         print self.menus_file
         self.menus = self.load_cgl()
         self.menus_folder = os.path.join(os.path.dirname(self.menus_file), type_)
@@ -47,7 +48,7 @@ class CustomMenu(object):
 
     def set_path_object(self):
         if self.scene_path:
-            print 'Setting PathObjecty with %s' % self.scene_path
+            print 'Setting PathObject with %s' % self.scene_path
             print self.scene_path
             self.path_object = PathObject(str(self.scene_path))
 
@@ -155,11 +156,12 @@ class CustomMenu(object):
 
     def load_menus(self):
         self.delete_menus()
+        tools_root = os.path.dirname(get_cgl_tools())
         for each in self.menus:
             menu_folder = os.path.join(self.menus_folder, each)
-            print '%s: adding %s to the PATH ' % (each, get_cgl_config())
-            if get_cgl_config() not in sys.path:
-                sys.path.insert(0, get_cgl_config())
+            print '%s: adding %s to the PATH ' % (each, tools_root)
+            if tools_root not in sys.path:
+                sys.path.insert(0, tools_root)
         try:
             menus = self.remove_inactive_menus()
         except KeyError:

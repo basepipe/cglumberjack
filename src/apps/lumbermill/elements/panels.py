@@ -79,8 +79,9 @@ class CompanyPanel(QtWidgets.QWidget):
         companies = glob.glob(companies_loc)
         if companies:
             for each in companies:
-                c = os.path.basename(each)
-                self.company_widget.list.addItem(c)
+                if '_config' not in each:
+                    c = os.path.basename(each)
+                    self.company_widget.list.addItem(c)
 
     def clear_layout(self, layout=None):
         if not layout:
@@ -202,6 +203,11 @@ class VButtonPanel(QtWidgets.QWidget):
             elements = self.path_object.glob_project_element(element)
         else:
             return
+        self.project_management = app_config()['account_info']['project_management']
+        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
+        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
+        self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
         self.panel = QtWidgets.QVBoxLayout(self)
         self.title_layout = QtWidgets.QHBoxLayout()
         self.task_button = QtWidgets.QToolButton()
@@ -221,7 +227,7 @@ class VButtonPanel(QtWidgets.QWidget):
         self.panel.addLayout(self.title_layout)
         self.task_button.clicked.connect(self.add_button_clicked)
         for each in elements:
-            task = app_config()['pipeline_steps']['short_to_long'][each]
+            task = self.proj_man_tasks_short_to_long[each]
             button = LJButton(str(task))
             # button.setIcon(QtGui.QIcon(QtGui.QPixmap(os.path.join(icon_path(), image_name))))
             # button.setIconSize(QtCore.QSize(50, 50))
@@ -236,7 +242,7 @@ class VButtonPanel(QtWidgets.QWidget):
     def on_button_clicked(self):
         text = self.sender().text()
         if text:
-            short = app_config()['pipeline_steps'][self.path_object.scope][text]
+            short = self.proj_man_tasks[text]
             self.path_object.__dict__[self.element] = short
             self.path_object.data[self.element] = short
             self.path_object.set_path()

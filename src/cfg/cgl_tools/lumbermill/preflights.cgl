@@ -1,0 +1,55 @@
+{
+    "lumbermill": {
+        "default": {
+            "order": 2, 
+            "testStep": {
+                "label": "testStep", 
+                "module": "cgl_tools.lumbermill.preflights.default.testStep", 
+                "order": 1, 
+                "required": "True"
+            }
+        }, 
+        "ingest_default": {
+            "PublishFromIngestDataFrame": {
+                "label": "Publish From Ingest Tool", 
+                "module": "cgl_tools.lumbermill.preflights.ingest_default.PublishFromIngestDataFrame", 
+                "order": 1, 
+                "required": "True"
+            }, 
+            "order": 3
+        }, 
+        "plate": {
+            "CreateProxy": {
+                "label": "Create Proxy", 
+                "module": "cgl_tools.lumbermill.preflights.plate.CreateProxy", 
+                "order": 2, 
+                "required": "True"
+            }, 
+            "CreateProxyGif": {
+                "label": "Create Proxy Gif", 
+                "module": "cgl_tools.lumbermill.preflights.plate.CreateProxyGif", 
+                "order": 5, 
+                "required": "True"
+            }, 
+            "CreateProxyHD": {
+                "label": "Create Proxy HD", 
+                "module": "cgl_tools.lumbermill.preflights.plate.CreateProxyHD", 
+                "order": 3, 
+                "required": "True"
+            }, 
+            "CreateProxyMov": {
+                "label": "Create Proxy Mov", 
+                "module": "cgl_tools.lumbermill.preflights.plate.CreateProxyMov", 
+                "order": 4, 
+                "required": "True"
+            }, 
+            "CreatePublishFiles": {
+                "label": "Publish Files", 
+                "module": "cgl_tools.lumbermill.preflights.plate.CreatePublishFiles", 
+                "order": 1, 
+                "required": "True"
+            }, 
+            "order": 1
+        }
+    }
+}

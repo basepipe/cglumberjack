@@ -70,7 +70,7 @@ class Preflight(QtWidgets.QDialog):
         QtWidgets.QDialog.__init__(self, parent)
         self.software = software
         self.preflight = preflight
-        self.software_dir = os.path.join(get_cgl_config(), 'cgl_tools', software)
+        self.software_dir = os.path.join(app_config()['paths']['cgl_tools'], software)
         self.preflight_dir = os.path.join(self.software_dir, 'preflights')
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.json_file = os.path.join(self.software_dir, 'preflights.cgl')
@@ -138,9 +138,8 @@ class Preflight(QtWidgets.QDialog):
 
     def populate_table(self):
         import sys
-        source_dir = os.path.join(get_cgl_config())
-        print source_dir
-        # source_dir = r"C:\Users\tmiko\Documents\cglumberjack\companies\cgl-fsutests"
+        source_dir = os.path.join(app_config()['paths']['cgl_tools'])
+        source_dir = os.path.dirname(source_dir)
         sys.path.insert(0, source_dir)
         data = []
         for item in self.modules:
