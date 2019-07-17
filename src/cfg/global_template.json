@@ -127,11 +127,67 @@
     }, 
     "project_management": {
         "lumbermill":{
-            "api": {},
+            "api": {"default_schema": "DEFAULT"},
             "tasks": {
-                "default": {
-                    "long_to_short":{},
-                    "short_to_long":{}
+                "DEFAULT": {
+                    "long_to_short": {
+                        "assets": {
+                            "Modeling": "mdl",
+                            "Reference": "ref",
+                            "Rigging": "rig",
+                            "Shading": "shd",
+                            "Textures": "tex",
+                            "Fur": "fur",
+                            "Cloth": "cloth"
+                        },
+                        "shots": {
+                            "Animation": "anim",
+                            "Bundle": "bndl",
+                            "Camera": "cam",
+                            "Color": "color",
+                            "Compositing": "comp",
+                            "Editing": "edit",
+                            "Element": "elem",
+                            "FX": "fx",
+                            "Lighting": "light",
+                            "Matte Painting": "matte",
+                            "Previs": "prev",
+                            "Production": "prod",
+                            "Reference": "ref",
+                            "Storyboard": "story",
+                            "Tracking": "track",
+                            "Plate": "plate"
+                        }
+                    },
+                    "short_to_long": {
+                        "assets": {
+                            "mdl": "Modeling",
+                            "ref": "Reference",
+                            "rig": "Rigging",
+                            "shd": "Shading",
+                            "tex": "Textures",
+                            "fur": "Fur",
+                            "cloth": "Cloth"
+                        },
+                        "shots": {
+                            "anim": "Animation",
+                            "bndl": "Bundle",
+                            "cam": "Camera",
+                            "color": "Color",
+                            "comp": "Compositing",
+                            "edit": "Editing",
+                            "elem": "Element",
+                            "fx": "FX",
+                            "light": "Lighting",
+                            "matte": "Matte Painting",
+                            "prev": "Previs",
+                            "prod": "Production",
+                            "ref": "Reference",
+                            "story": "Storyboard",
+                            "track": "Tracking",
+                            "plate": "Plate"
+                        }
+                    }
                 }
             }
         },
