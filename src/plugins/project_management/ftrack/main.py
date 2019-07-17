@@ -248,6 +248,7 @@ class ProjectManagementData(object):
         existing_assignment = self.ftrack.query(
             'Appointment where context.id is "{}" and resource.id = "{}" and type="assignment"'.format(
                 self.task_data['id'], self.user_data['id'])).first()
+        print 'existing assignment', existing_assignment
         if not existing_assignment:
             print 'Creating Assignment %s: for %s' % (self.task, self.user_email)
             self.assignment_data = self.ftrack.create('Appointment', {
@@ -363,18 +364,17 @@ class ProjectManagementData(object):
                 self.project_data['id'], self.user_group['id']
             )
         ).first()
+        print project_has_group
 
         if not project_has_group:
-            logging.info('Assigning group {} to project {}'.format(self.user_group ['name'],
-                                                                   self.project_data['name']))
+            logging.info('Assigning group {} to project {}'.format(self.user_group['name'], self.project_data['name']))
             self.ftrack.create('Appointment', {
                 'context': self.project_data,
                 'resource': self.user_group,
                 'type': 'allocation'
             })
         else:
-            logging.info('Group {} already in assigned to project {}'.format(self.user_group['name'],
-                                                                             self.project_data['name']))
+            logging.info('Group {} already in assigned to project {}'.format(self.user_group['name'], self.project_data['name']))
 
     def find_task_asset(self):
         task_asset = self.ftrack.query('Asset where name is "{0}" and '
