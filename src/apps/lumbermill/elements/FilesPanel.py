@@ -32,6 +32,7 @@ class FilesPanel(QtWidgets.QWidget):
         schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
         self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
         self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
+
         self.current_location = path_object.data
         self.panel = QtWidgets.QVBoxLayout(self)
         self.tasks = QtWidgets.QHBoxLayout()
@@ -42,14 +43,14 @@ class FilesPanel(QtWidgets.QWidget):
         self.user_default = self.user
         self.default_user = user_name
         self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
-        self.on_main_asset_selected(self.path_object.data)
+        self.on_task_selected(self.path_object.data)
         self.panel.addLayout(self.tasks)
         self.panel.addStretch(1)
 
         self.force_clear = False
         self.auto_publish_tasks = ['plate', 'element']
 
-    def on_main_asset_selected(self, data):
+    def on_task_selected(self, data):
         try:
             current = PathObject(data)
         except IndexError:
@@ -63,17 +64,15 @@ class FilesPanel(QtWidgets.QWidget):
             current.set_attr(user_email=self.user_email)
             self.panel.seq = current.seq
             self.panel.shot = current.shot
-            # task_add.clicked.connect(self.on_create_asset)
-            # Get the list of tasks for the selection
-            task_list = current.glob_project_element('task')
             self.update_location(path_object=current)
 
             self.panel.tasks = []
-
             try:
                 title = self.proj_man_tasks_short_to_long[self.task]
             except KeyError:
                 return
+            print 'Creating TaskWidget %s' % title
+            print current.path_root
             task_widget = TaskWidget(parent=self,
                                      title=title,
                                      path_object=current, show_import=self.show_import)
@@ -112,9 +111,9 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.files_area.work_files_table.doubleClicked.connect(self.on_open_clicked)
             task_widget.files_area.open_button.clicked.connect(self.on_open_clicked)
             task_widget.files_area.import_button.clicked.connect(self.on_import_clicked)
-            task_widget.versions.currentIndexChanged.connect(self.on_task_version_changed)
-            task_widget.users.currentIndexChanged.connect(self.on_task_user_changed)
-            task_widget.resolutions.currentIndexChanged.connect(self.on_task_resolution_changed)
+            task_widget.versions.currentIndexChanged.connect(self.on_task_info_changed)
+            task_widget.users.currentIndexChanged.connect(self.on_task_info_changed)
+            task_widget.resolutions.currentIndexChanged.connect(self.on_task_info_changed)
             task_widget.start_task_clicked.connect(self.on_assign_button_clicked)
             task_widget.files_area.work_files_table.dropped.connect(self.on_file_dragged_to_source)
             task_widget.files_area.work_files_table.show_in_folder.connect(self.show_in_folder)
@@ -173,12 +172,12 @@ class FilesPanel(QtWidgets.QWidget):
                 print 'Copying %s to %s' % (f, to_file)
                 shutil.copy2(f, to_file)
                 # CreateProductionData(path_object=to_object)
-                self.on_main_asset_selected(self.current_location)
+                self.on_task_selected(self.current_location)
             else:
                 print 'Copying directory %s to %s' % (f, to_file)
                 shutil.copytree(f, to_file)
                 # CreateProductionData(path_object=to_object)
-                self.on_main_asset_selected(self.current_location)
+                self.on_task_selected(self.current_location)
 
     def update_location(self, path_object):
         """
@@ -235,17 +234,21 @@ class FilesPanel(QtWidgets.QWidget):
 
     @staticmethod
     def populate_versions_combo(task_widget, path_object, task):
+        version = path_object.version
+        print version, 'populate_versions_combo'
         task_widget.versions.show()
         task_widget.versions.clear()
         object_ = path_object.copy(user=task_widget.users.currentText(), task=task, version='*')
         items = object_.glob_project_element('version')
         for each in items:
             task_widget.versions.insertItem(0, each)
-        #if len(items) == 1:
-        #    task_widget.versions.setEnabled(False)
-        #else:
         task_widget.versions.setEnabled(True)
-        task_widget.versions.setCurrentIndex(0)
+        index_ = task_widget.versions.findText(version)
+        if index_ != -1:
+            task_widget.versions.setCurrentIndex(index_)
+        else:
+            task_widget.versions.setCurrentIndex(0)
+        print 'current text is %s' % task_widget.versions.currentText()
         return task_widget.versions.currentText()
 
     @staticmethod
@@ -328,15 +331,21 @@ class FilesPanel(QtWidgets.QWidget):
         print 'version up_latest'
 
     def new_empty_version_clicked(self):
-        print 'new empty version'
+        current = PathObject(self.current_location)
+        next_minor = current.new_minor_version_object()
+        CreateProductionData(next_minor)
+        self.on_task_selected(next_minor)
 
     def version_up_selected_clicked(self):
         current = PathObject(self.current_location)
+        # current location needs to have the version in it.
         next_minor = current.new_minor_version_object()
+        print current.path_root
+        print next_minor.path_root
         shutil.copytree(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
         CreateProductionData(next_minor)
         # reselect the original asset.
-        self.on_main_asset_selected(current)
+        self.on_task_selected(current)
 
     def on_open_clicked(self):
         self.open_signal.emit()
@@ -344,15 +353,19 @@ class FilesPanel(QtWidgets.QWidget):
     def on_import_clicked(self):
         self.import_signal.emit()
 
-    def on_task_version_changed(self):
-        print 'reloading task widget'
-        self.reload_task_widget(self.sender().parent(), populate_versions=False)
-
-    def on_task_user_changed(self):
-        self.reload_task_widget(self.sender().parent())
-
-    def on_task_resolution_changed(self):
-        print 'resolution changed %s' % self.sender().currentText()
+    def on_task_info_changed(self):
+        """
+        This method runs whenever version, user, or resolution is changed in the TaskWidget
+        :return:
+        """
+        files_widget = self.sender().parent().parent()
+        version = self.sender().currentText()
+        resolution = self.sender().parent().resolutions.currentText()
+        user = self.sender().parent().users.currentText()
+        self.path_object.set_attr(version=version)
+        self.path_object.set_attr(user=user)
+        self.path_object.set_attr(resolution=resolution)
+        files_widget.on_task_selected(self.path_object.data)
 
     def on_assign_button_clicked(self, data):
         task = self.sender().task
@@ -442,7 +455,7 @@ class FilesPanel(QtWidgets.QWidget):
                 logging.info('Copying Folder From %s to %s' % (d, os.path.join(to_path, filename_)))
                 shutil.copytree(d, os.path.join(object_.path_root, filename_))
 
-        self.on_main_asset_selected(object_.data)
+        self.on_task_selected(object_.data)
 
     def reload_task_widget(self, widget, path_object=None, populate_versions=True):
         if path_object:
@@ -462,10 +475,9 @@ class FilesPanel(QtWidgets.QWidget):
         for each in files_:
             list_.append(os.path.basename(each))
         # this is what's doing the loading of the files.
-        # TODO - need to figure out how to refresh these files!
         widget.files_area.clear()
         #widget.setup(widget.files_area.work_files_table, FileTableModel(self.prep_list_for_table(list_), ['Name']))
-        #self.on_main_asset_selected(path_obj.data)
+        #self.on_task_selected(path_obj.data)
 
     def clear_task_selection_except(self, task=None):
         layout = self.panel

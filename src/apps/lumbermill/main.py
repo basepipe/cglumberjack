@@ -5,7 +5,7 @@ from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, image_path, split_sequence_frange
-from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, VButtonPanel
+from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
 import apps.lumbermill.elements.IOPanel as IOP
 
@@ -43,8 +43,6 @@ class PathWidget(QtWidgets.QFrame):
                         path_object.set_attr(filename=filename)
                     except TypeError:
                         print 'passing'
-
-            print 'updating to %s' % path_object.path_root
             self.text = path_object.path_root
             self.path_line_edit.setText(path_object.path_root)
 
@@ -284,9 +282,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 pass
         else:
             self.path_object = PathObject(self.root)
-
-        print self.path_object.path_root
-        print '------------------------'
         self.project = '*'
         self.scope = 'assets'
         self.shot = '*'
@@ -335,14 +330,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         seq_attrs = ['seq', 'type']
         shot_attrs = ['shot', 'asset']
 
-        try:
-            print 'Updating location to: %s' % path_object.path_root
-        except AttributeError:
-            print 'nothing found'
         if path_object.scope == 'IO':
-            print 1
             if path_object.version:
-                print 2
                 if not self.panel:
                     self.panel = IOP.IOPanel(parent=self, path_object=path_object)
                     self.setMinimumWidth(1100)
@@ -365,6 +354,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if self.panel:
                 self.panel.clear_layout()
         if last == 'resolution':
+            print 3
             pass
             self.load_files_panel(path_object)
         if last == 'project':
@@ -383,7 +373,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
             else:
-                self.panel = VButtonPanel(path_object=path_object, element='task')
+                self.panel = TaskPanel(path_object=path_object, element='task')
                 self.panel.add_button.connect(self.add_task)
         elif last in seq_attrs:
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
@@ -392,7 +382,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.panel = IOP.IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
-                self.panel = VButtonPanel(path_object=path_object, element='task')
+                self.panel = TaskPanel(path_object=path_object, element='task')
                 self.panel.add_button.connect(self.add_task)
             else:
                 self.load_files_panel(path_object)
@@ -413,7 +403,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.layout.addWidget(self.path_widget)
 
     def add_task(self, path_object):
-        print 'Adding Task'
         from apps.lumbermill.elements import asset_creator
         task_mode = True
         dialog = asset_creator.AssetCreator(self, path_dict=path_object.data, task_mode=task_mode)
@@ -421,12 +410,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(path_object.data)
 
     def load_files_panel(self, path_object):
+        print 'I need to be able to accept a PathObject that doesnt end at task'
         self.panel = FilesPanel(path_object=path_object, user_email=self.user_email,
                                 user_name=self.user_name, show_import=self.show_import)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
         self.panel.new_version_signal.connect(self.new_version_clicked)
         self.panel.source_selection_changed.connect(self.set_source_selection)
+        # TODO - what to do when i change versions etc...., perhaps we should be handling it here!
 
     def set_source_selection(self, data):
         self.source_selection = data
