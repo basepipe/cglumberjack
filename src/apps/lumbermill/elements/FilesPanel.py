@@ -71,15 +71,13 @@ class FilesPanel(QtWidgets.QWidget):
                 title = self.proj_man_tasks_short_to_long[self.task]
             except KeyError:
                 return
-            print 'Creating TaskWidget %s' % title
-            print current.path_root
             task_widget = TaskWidget(parent=self,
                                      title=title,
                                      path_object=current, show_import=self.show_import)
             task_widget.task = self.task
-            task_widget.showall()
-            task_widget.hide_button.hide()
-            task_widget.show_button.show()
+            # task_widget.showall()
+            # task_widget.hide_button.hide()
+            # task_widget.show_button.show()
             task_widget.files_area.export_files_table.hide()
             self.task_widgets_dict[self.task] = task_widget
 
@@ -214,8 +212,8 @@ class FilesPanel(QtWidgets.QWidget):
         for each in users:
             widget.users.addItem(each)
         # set the combo box according to what filters are currently selected.
-        widget.users.hide()
-        widget.users_label.hide()
+        #widget.users.hide()
+        #widget.users_label.hide()
         self.set_user_from_radio_buttons()
         if self.user == '*':
             widget.users.show()

@@ -306,63 +306,57 @@ class TaskWidget(QtWidgets.QWidget):
         self.task = None
         self.user = None
         self.in_file_tree = None
+        self.versions_label = QtWidgets.QLabel("Version:")
         self.versions = AdvComboBox()
-        self.versions.hide()
 
         self.users_label = QtWidgets.QLabel("User:")
         self.users = AdvComboBox()
-        self.users_layout = QtWidgets.QHBoxLayout()
-        self.users_layout.addStretch(1)
-        self.users_layout.addWidget(self.users_label)
-        self.users_layout.addWidget(self.users)
-
-        self.resolutions = AdvComboBox()
-        self.resolutions_layout = QtWidgets.QHBoxLayout()
-        self.resolutions_layout.addStretch(1)
         self.resolutions_label = QtWidgets.QLabel("Resolution:")
-        self.resolutions_layout.addWidget(self.resolutions_label)
-        self.resolutions_layout.addWidget(self.resolutions)
-        self.resolutions_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.show_button = LJButton()
-        self.show_button.setText("more")
+        self.resolutions = AdvComboBox()
         self.start_task_button = LJButton()
         self.start_task_button.setText("Start Task")
+
+        self.info_layout = QtWidgets.QHBoxLayout()
+        self.info_layout.addWidget(self.versions_label)
+        self.info_layout.addWidget(self.versions)
+        self.info_layout.addWidget(self.users_label)
+        self.info_layout.addWidget(self.users)
+        self.info_layout.addWidget(self.resolutions_label)
+        self.info_layout.addWidget(self.resolutions)
+        self.info_layout.addWidget(self.start_task_button)
+        #self.info_layout.setContentsMargins(0, 0, 0, 0)
+
         self.export_label = QtWidgets.QLabel('   Ready to Review/Publish')
         self.export_label.setProperty('class', 'basic')
         self.export_label_row = QtWidgets.QHBoxLayout()
         self.export_label_row.addWidget(self.export_label)
         self.export_label.hide()
-        self.hide_button = LJButton()
-        self.hide_button.setText("less")
 
         self.title_row = QtWidgets.QHBoxLayout()
+        self.create_assignment = QtWidgets.QPushButton("Create Assignment")
+        self.create_assignment.setProperty('class', 'add_button')
         self.title_row.addWidget(self.title)
         self.title_row.addStretch(1)
-        self.title_row.addWidget(self.versions)
-        self.title_row.addWidget(self.show_button)
-        self.title_row.addWidget(self.hide_button)
-        self.title_row.addWidget(self.start_task_button)
+        self.title_row.addWidget(self.create_assignment)
+
 
         self.empty_state = EmptyStateWidget(path_object=self.path_object)
         self.empty_state.hide()
         self.files_area = FilesWidget(self, show_import=self.show_import)
 
         v_layout.addLayout(self.title_row)
+        v_layout.addLayout(self.info_layout)
         v_layout.addLayout(task_row)
-        v_layout.addLayout(self.users_layout)
-        v_layout.addLayout(self.resolutions_layout)
         v_layout.addWidget(self.files_area)
         v_layout.addWidget(self.empty_state)
         v_layout.addLayout(self.tool_button_layout)
         v_layout.addStretch(1)
         self.setLayout(v_layout)
-        self.hide_combos()
+        # self.hide_combos()
 
         self.start_task_button.hide()
-        self.hideall()
-        self.show_button.clicked.connect(self.on_show_button_clicked)
-        self.hide_button.clicked.connect(self.on_hide_button_clicked)
+        # self.show_button.clicked.connect(self.on_show_button_clicked)
+        # self.hide_button.clicked.connect(self.on_hide_button_clicked)
         self.start_task_button.clicked.connect(self.on_start_task_clicked)
         self.files_area.copy_latest_version.connect(self.copy_latest)
         self.files_area.copy_selected_version.connect(self.copy_selected)
@@ -386,10 +380,10 @@ class TaskWidget(QtWidgets.QWidget):
         self.show_button.hide()
         self.hide_button.hide()
         self.title.hide()
-        self.users.hide()
-        self.users_label.hide()
-        self.resolutions.hide()
-        self.resolutions_label.hide()
+        # self.users.hide()
+        # self.users_label.hide()
+        # self.resolutions.hide()
+        # self.resolutions_label.hide()
         self.assets_radio.hide()
         self.shots_radio.hide()
         self.io_radio.hide()
@@ -432,13 +426,6 @@ class TaskWidget(QtWidgets.QWidget):
         self.resolutions.hide()
         self.resolutions_label.hide()
 
-    def hideall(self):
-        self.hide_button.hide()
-
-    def showall(self):
-        self.hide_button.show()
-        self.show_button.hide()
-
     def setup(self, table, mdl):
         if mdl:
             table.set_item_model(mdl)
@@ -451,15 +438,15 @@ class TaskWidget(QtWidgets.QWidget):
     def on_add_button_clicked(self):
         self.add_clicked.emit()
 
-    def on_show_button_clicked(self):
-        self.show_combos()
-        self.hide_button.show()
-        self.show_button.hide()
-
-    def on_hide_button_clicked(self):
-        self.hide_combos()
-        self.hide_button.hide()
-        self.show_button.show()
+    # def on_show_button_clicked(self):
+    #     self.show_combos()
+    #     self.hide_button.show()
+    #     self.show_button.hide()
+    #
+    # def on_hide_button_clicked(self):
+    #     self.hide_combos()
+    #     self.hide_button.hide()
+    #     self.show_button.show()
 
     def on_start_task_clicked(self):
         self.start_task_clicked.emit(self.path_object)
