@@ -191,7 +191,10 @@ class ProjectPanel(QtWidgets.QWidget):
                 self.clear_layout(child.layout())
 
 
-class VButtonPanel(QtWidgets.QWidget):
+class TaskPanel(QtWidgets.QWidget):
+    """
+    Vertical Button Panel - built to display tasks in a vertical line.  This is essentially the Task Panel
+    """
     add_button = QtCore.Signal(object)
     location_changed = QtCore.Signal(object)
 

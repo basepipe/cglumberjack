@@ -12,9 +12,9 @@ from plugins.project_management.ftrack.main import ProjectManagementData
 # EXR SEQUENCE
 # TODO - how cool would it be to have a GUI that allowed for different kinds of testing!?!?
 
-#path_object = PathObject(r'D:/VFX/testoby/testco/source/cgl_unittest/assets/prop/blob/mdl/system/000.001/high')
-path_object = PathObject(r'D:/VFX/testoby/testco/source/cgl_unittest/shots/050/1200/plate/system/000.001/high')
-print path_object.path_root
+path_object = PathObject(r'D:/VFX/testoby/testco/source/cgl_unittest/assets/prop/blob/mdl/system/000.001/high')
+#path_object = PathObject(r'D:/VFX/testoby/testco/render/cgl_unittestC/shots/010/0200/plate/publish/000.000/high')
+CreateProductionData(path_object)
 
 # command = r'wget -P %s -r -np -nH -nd -e robots=off https://media.xiph.org/tearsofsteel/linear-exr/03_2a/' % path_object.path_root
 # _execute(command)

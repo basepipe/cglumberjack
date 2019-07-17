@@ -5,6 +5,14 @@ from cglcore.config import app_config
 import ftrack_api
 import datetime
 
+# 2019-07-17 11:50:42,368  ERROR Server reported error: IntegrityError((_mysql_exceptions.IntegrityError)
+# (1062, "Duplicate entry '3e99caa3-0861-48df-a2fc-d8093982b823-010_0000_plate' for key 'context_parent_id_key'")
+# [SQL: u'INSERT INTO context (context_type, name, parent_id, id) VALUES (%s, %s, %s, %s)']
+# [parameters: (('task', '010', u'76f9d076-cb6c-4576-a714-5d19b3b94bcb', u'a1403595-67bc-4cb4-9aee-fe613c079e5e'),
+# ('task', '010_0000_plate', u'3e99caa3-0861-48df-a2fc-d8093982b823', u'69e978d7-ef3e-45ce-bf25-6877cecc3ebd'))]
+# (Background on this error at: http://sqlalche.me/e/gkpj))
+# "C:\Users\tmiko\AppData\Roaming\Python\Python27\site-packages\ftrack_api\session.py:1636"
+
 
 class ProjectManagementData(object):
     create = False
@@ -248,6 +256,7 @@ class ProjectManagementData(object):
         existing_assignment = self.ftrack.query(
             'Appointment where context.id is "{}" and resource.id = "{}" and type="assignment"'.format(
                 self.task_data['id'], self.user_data['id'])).first()
+        print 'existing assignment', existing_assignment
         if not existing_assignment:
             print 'Creating Assignment %s: for %s' % (self.task, self.user_email)
             self.assignment_data = self.ftrack.create('Appointment', {
@@ -276,6 +285,7 @@ class ProjectManagementData(object):
             })
 
         self.version_data = self.find_version()
+        print self.version_data
         if not self.version_data:
             self.version_data = self.ftrack.create('AssetVersion', {
                 'asset': self.task_asset,
@@ -336,8 +346,11 @@ class ProjectManagementData(object):
 
     def add_to_dailies(self):
         list_name = 'Dailies: %s' % datetime.date.today()
-        list_category = self.ftrack.query('ListCategory where id is %s' % '77b9ab82-07c2-11e4-ba66-04011030cf01').first()
-        version_list = self.ftrack.query('AssetVersionList where name is "%s"' % list_name).first()
+        # TODO - this is likely just for loneCoconut at the moment.
+        list_category = self.ftrack.query('ListCategory where id is %s' %
+                                          '77b9ab82-07c2-11e4-ba66-04011030cf01').first()
+        version_list = self.ftrack.query('AssetVersionList where name is "%s" and project.id is "%s"'
+                                         % (list_name, self.project_data['id'])).first()
         if not version_list:
             version_list = self.ftrack.create('AssetVersionList', {
                 'name': list_name,
@@ -363,10 +376,10 @@ class ProjectManagementData(object):
                 self.project_data['id'], self.user_group['id']
             )
         ).first()
+        print 'Project has Group', project_has_group
 
         if not project_has_group:
-            logging.info('Assigning group {} to project {}'.format(self.user_group ['name'],
-                                                                   self.project_data['name']))
+            logging.info('Assigning group {} to project {}'.format(self.user_group['name'], self.project_data['name']))
             self.ftrack.create('Appointment', {
                 'context': self.project_data,
                 'resource': self.user_group,
@@ -405,7 +418,8 @@ class ProjectManagementData(object):
         ).first()
 
         if not project_has_user:
-            logging.info('Assigning user {} to project {}'.format(self.user_data['username'], self.project_data['name']))
+            logging.info('Assigning user {} to project {}'.format(self.user_data['username'],
+                                                                  self.project_data['name']))
             self.ftrack.create('Appointment', {
                 'context': self.project_data,
                 'resource': self.user_data,
@@ -413,11 +427,13 @@ class ProjectManagementData(object):
             })
 
         else:
-            logging.info('User {} already in assigned to project {}'.format(self.user_data['username'], self.project_data['name']))
+            logging.info('User {} already in assigned to project {}'.format(self.user_data['username'],
+                                                                            self.project_data['name']))
 
     def find_project(self):
         try:
-            self.project_data = self.ftrack.query('Project where status is active and name is %s' % self.project_short_name).first()
+            self.project_data = self.ftrack.query('Project where status is active and name is %s' %
+                                                  self.project_short_name).first()
             if self.project_data:
                 return self.project_data
             else:
@@ -437,11 +453,13 @@ class ProjectManagementData(object):
             return self.create_asset()
 
     def find_shot(self):
-        self.shot_data = self.ftrack.query('Shot where name is %s' % self.shot_name).first()
+        self.shot_data = self.ftrack.query('Shot where name is %s and project.id is %s' %
+                                           (self.shot_name, self.project_data['id'])).first()
         return self.shot_data
 
     def find_seq(self):
-        seqs = self.ftrack.query('Sequence where name is "{0}" and project.id is "{1}"'.format(self.seq, self.project_data['id'])).first()
+        seqs = self.ftrack.query('Sequence where name is "{0}" '
+                                 'and project.id is "{1}"'.format(self.seq, self.project_data['id'])).first()
         return seqs
 
     def find_project_team(self):
