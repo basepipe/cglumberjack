@@ -15,11 +15,12 @@ PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 EXT_MAP = app_config()['ext_map']
 ROOT = app_config()['paths']['root']
 SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
-SEQ_REGEX = re.compile("\\.[0-9]{4,}\\.")
+SEQ_REGEX = re.compile("[0-9]{4,}\\.")
 SPLIT_SEQ_REGEX = re.compile("\\ [0-9]{4,}-[0-9]{4,}$")
 SEQ_SPLIT = re.compile("\\#{4,}")
 SEQ2_SPLIT = re.compile("[%0-9]{2,}d")
 SEQ = re.compile('[0-9]{3,}-[0-9]{3,}')
+CGL_SEQ_TEST = re.compile('.+#+.+\s[0-9]+-[0-9]+$')
 
 
 class PathObject(object):
@@ -565,9 +566,9 @@ class PathObject(object):
 
     def set_preview_path(self):
         if self.file_type == 'movie':
-            ext = '.mov'
+            ext = '.mp4'
         elif self.file_type == 'sequence':
-            ext = '.mov'
+            ext = '.mp4'
         elif self.file_type == 'image':
             ext = '.jpg'
         elif self.file_type == 'ppt':
@@ -576,9 +577,19 @@ class PathObject(object):
             ext = '.jpg'
         else:
             ext = '.jpg'
-        name_ = self.filename.replace('####', '')
-        name_, o_ext = os.path.splitext(name_)
-        name_ = name_.replace(o_ext, ext)
+        if '#' in self.filename:
+            name_ = self.filename.split('#')[0]
+            if name_.endswith('.'):
+                ext.replace('.', '')
+            name_ = '%s%s' % (name_, ext)
+        elif '%' in self.filename:
+            name_ = self.filename.split('%')[0]
+            if name_.endswith('.'):
+                ext.replace('.', '')
+            name_ = '%s%s' % (name_, ext)
+        else:
+            name_, o_ext = os.path.splitext(self.filename)
+            name_ = name_.replace(o_ext, ext)
         path_, file_ = os.path.split(self.path_root)
         if sys.platform == 'win32':
             self.preview_path_full = '%s\\%s\\%s' % (path_, '.preview', name_)
@@ -597,15 +608,12 @@ class PathObject(object):
         self.set_attr(assetname='%s_%s' % (self.seq, self.shot))
 
     def set_project_config(self):
-        user_dir = os.path.expanduser("~")
-        if 'Documents' in user_dir:
-            cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
-        else:
-            cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
-        if self.company:
-            self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'global.yaml')
-        if self.project:
-            self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'global.yaml')
+        self.company_config = os.path.join(app_config()['account_info']['globals_path'], 'globals.json')
+        self.project_config = os.path.join(app_config()['account_info']['globals_path'], 'globals.json')
+        #if self.company:
+        #    self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'globals.json')
+        #if self.project:
+        #    self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'globals.json')
 
     def set_json(self):
         json_obj = self.copy(latest=True, context='render', ext='json', task='lay', set_proper_filename=True)
@@ -773,7 +781,6 @@ class CreateProductionData(object):
         if project_management != 'lumbermill':
             module = "plugins.project_management.%s.main" % project_management
             loaded_module = __import__(module, globals(), locals(), 'main', -1)
-            print 1, self.proj_management_user
             loaded_module.ProjectManagementData(path_object, user_email=self.proj_management_user).create_project_management_data()
         else:
             print 'Using Lumbermill built in proj management'
@@ -888,7 +895,7 @@ def seq_from_file(basename):
     if numbers:
         numbers = numbers.group(0).replace('.', '')
         string = '#' * int(len(numbers))
-        string = '.%s.' % string
+        string = '%s.' % string
         this = re.sub(SEQ_REGEX, string, basename)
         return this
     else:
@@ -899,7 +906,6 @@ def get_frange_from_seq(filepath):
     _, ext = os.path.splitext(filepath)
     glob_string = filepath.split('#')[0]
     frames = glob.glob('%s*%s' % (glob_string, ext))
-    print frames
     if frames:
         sframe = re.search(SEQ_REGEX, frames[0]).group(0).replace('.', '')
         eframe = re.search(SEQ_REGEX, frames[-1]).group(0).replace('.', '')
@@ -929,7 +935,7 @@ def load_style_sheet(style_file='stylesheet.css'):
     return data
 
 
-def lj_list_dir(directory, path_filter=None, basename=True):
+def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=False):
     """
     Returns Files that are ready to be displayed in a LJWidget, essentially we run
     all output
@@ -968,7 +974,15 @@ def lj_list_dir(directory, path_filter=None, basename=True):
                 output_[index] = '%s %s' % (each, frange)
         if each in ignore:
             output_.remove(each)
-    return output_
+    if return_sequences:
+        seq_only = []
+        for each in output_:
+            this = re.search(CGL_SEQ_TEST, each)
+            if this:
+                seq_only.append(each)
+        return seq_only
+    else:
+        return output_
 
 
 def split_sequence_frange(sequence):
@@ -1032,12 +1046,16 @@ def get_company_config():
 
 
 def get_cgl_config():
+
     user_dir = os.path.expanduser("~")
     if 'Documents' in user_dir:
         cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack')
     else:
         cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
     return cg_lumberjack_dir
+
+def get_cgl_tools():
+    return app_config()['paths']['cgl_tools']
 
 
 def hash_to_number(sequence):
@@ -1047,7 +1065,7 @@ def hash_to_number(sequence):
         num = '%0'+str(count)+'d'
     else:
         num = '%'+str(count)+'d'
-    return num
+    return frange.group(0), num
 
 
 def number_to_hash(sequence, full=True):
@@ -1075,7 +1093,7 @@ def get_start_frame(sequence):
         return None
 
 
-def prep_seq_delimiter(sequence, replace_with='*'):
+def prep_seq_delimiter(sequence, replace_with='*', ext=None):
     """
     takes a sequence ('####', '%04d', '*') transforms it to another type.  This is used for instances where one
     piece of software needs sequences delimited in a particlar way.
@@ -1084,7 +1102,10 @@ def prep_seq_delimiter(sequence, replace_with='*'):
     :return:
     """
     path_object = PathObject(sequence)
+    if not ext:
+        ext = path_object.ext
     dir_ = os.path.dirname(sequence)
+    print sequence
     seq_split = split_sequence(sequence)
     stuff = lj_list_dir(dir_)
     hash_seq = ''
@@ -1094,11 +1115,13 @@ def prep_seq_delimiter(sequence, replace_with='*'):
             frange = this.group(0).split('-')[0]
             hash_seq = each.replace(' %s' % frange, '')
     if replace_with == '*':
-        return '%s%s.%s' % (split_sequence(sequence), replace_with, path_object.ext)
-    if replace_with == '#':
+        return '%s%s.%s' % (split_sequence(sequence), replace_with, ext)
+    elif replace_with == '#':
         return os.path.join(dir_, hash_seq)
-    if replace_with == '%':
-        return '%s%s.%s' % (seq_split, hash_to_number(hash_seq), path_object.ext)
+    elif replace_with == '%':
+        return '%s%s.%s' % (seq_split, hash_to_number(hash_seq)[-1], ext)
+    elif replace_with == '':
+        return '%s.%s' % (split_sequence(sequence), ext)
 
 
 
