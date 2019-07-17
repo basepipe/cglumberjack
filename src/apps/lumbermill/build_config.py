@@ -1,6 +1,5 @@
 from Qt import QtCore, QtWidgets, QtGui
 from cglui.widgets.containers.dict_tree import DictionaryTreeWidget
-import plugins.project_management.ftrack.setup_tasks as setup_tasks
 import getpass
 import os
 import json
@@ -223,6 +222,8 @@ class ConfigDialog(QtWidgets.QDialog):
         self.create_global_config()
         self.create_user_globals()
         if self.project_management == 'ftrack':
+            # eed a wayto inherit thte task di
+            import plugins.project_management.ftrack.setup_tasks as setup_tasks
             form = setup_tasks.TaskSetupGUI()
             form.exec_()
         self.accept()
