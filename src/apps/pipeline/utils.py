@@ -52,7 +52,7 @@ class PreflightStep(QtWidgets.QWidget):
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs={}, preflight_path=''):
         QtWidgets.QWidget.__init__(self, parent)
         self.attrs = attrs
-        self.preflight_step_name = preflight_step_name
+        self.name = preflight_step_name
         self.parent = parent
         self.preflight_name = preflight_name
         self.preflight_path = preflight_path
@@ -68,12 +68,13 @@ class PreflightStep(QtWidgets.QWidget):
         label_label = QtWidgets.QLabel('label')
 
         # line edits
-        self.module_line_edit = QtWidgets.QLineEdit()
-        self.module_line_edit.setEnabled(False)
+        self.command_line_edit = QtWidgets.QLineEdit()
+        self.command_line_edit.setEnabled(False)
         self.required_line_edit = QtWidgets.QLineEdit()
-        self.required_line_edit.setEnabled(False)
+        self.required_line_edit.setText('True')
+        #self.required_line_edit.setEnabled(False)
         self.label_line_edit = QtWidgets.QLineEdit()
-        self.attrs_dict = {'module': self.module_line_edit,
+        self.attrs_dict = {'module': self.command_line_edit,
                            'required': self.required_line_edit,
                            'label': self.label_line_edit}
 
@@ -95,7 +96,7 @@ class PreflightStep(QtWidgets.QWidget):
         grid_layout.addWidget(label_label, 0, 0)
         grid_layout.addWidget(self.label_line_edit, 0, 1)
         grid_layout.addWidget(module_label, 1, 0)
-        grid_layout.addWidget(self.module_line_edit, 1, 1)
+        grid_layout.addWidget(self.command_line_edit, 1, 1)
 
         # Layout the tool row
         tool_row.addStretch(1)
@@ -116,13 +117,13 @@ class PreflightStep(QtWidgets.QWidget):
 
     def on_open_clicked(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
-                                 '%s.py' % self.preflight_step_name)
+                                 '%s.py' % self.name)
         print code_path
         start(code_path)
 
     def on_code_changed(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
-                                 '%s.py' % self.preflight_step_name)
+                                 '%s.py' % self.name)
         print code_path
         self.do_save = True
 
@@ -142,7 +143,7 @@ class PreflightStep(QtWidgets.QWidget):
 
     def load_code_text(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
-                                 '%s.py' % self.preflight_step_name)
+                                 '%s.py' % self.name)
         print code_path, 'importing'
 
         if os.path.exists(code_path):
@@ -164,7 +165,7 @@ class PreflightStep(QtWidgets.QWidget):
                     "    def run(self):\n" \
                     "        print '%s'\n" \
                     "        # self.pass_check('Check Passed')\n" \
-                    "        # self.fail_check('Check Failed')\n\n" % (self.preflight_step_name, self.preflight_step_name)
+                    "        # self.fail_check('Check Failed')\n\n" % (self.name, self.name)
         return preflight
 
     def on_delete_clicked(self):
@@ -175,7 +176,8 @@ class PreflightStep(QtWidgets.QWidget):
 
 class MenuButton(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, menu_name='', button_name='', attrs={}, menu_path=''):
+    def __init__(self, parent=None, menu_name='', button_name='', attrs={}, menu_path='', icon=False,
+                 menu_type='menus'):
         QtWidgets.QWidget.__init__(self, parent)
         self.attrs = attrs
         self.name = button_name
@@ -192,6 +194,7 @@ class MenuButton(QtWidgets.QWidget):
         command_label = QtWidgets.QLabel('command')
         button_name_label = QtWidgets.QLabel('button name')
         label_label = QtWidgets.QLabel('label')
+        icon_label = QtWidgets.QLabel('icon')
 
 
         # line edits
@@ -200,11 +203,22 @@ class MenuButton(QtWidgets.QWidget):
         self.button_name_line_edit = QtWidgets.QLineEdit()
         self.button_name_line_edit.setEnabled(False)
         self.label_line_edit = QtWidgets.QLineEdit()
-        self.attrs_dict = {'command': self.command_line_edit,
-                           'button name': self.button_name_line_edit,
-                           'label': self.label_line_edit}
+        self.icon_line_edit = QtWidgets.QLineEdit()
+        if icon:
+            self.attrs_dict = {'command': self.command_line_edit,
+                               'button name': self.button_name_line_edit,
+                               'label': self.label_line_edit,
+                               'icon': self.icon_line_edit}
+        else:
+            self.attrs_dict = {'command': self.command_line_edit,
+                               'button name': self.button_name_line_edit,
+                               'label': self.label_line_edit}
+
+
 
         # tool buttons
+        find_icon_button = QtWidgets.QToolButton()
+        find_icon_button.setText('...')
         delete_button = QtWidgets.QPushButton('Delete')
         delete_button.setProperty('class', 'basic')
         open_button = QtWidgets.QPushButton('Open')
@@ -223,6 +237,14 @@ class MenuButton(QtWidgets.QWidget):
         grid_layout.addWidget(self.label_line_edit, 1, 1)
         grid_layout.addWidget(command_label, 2, 0)
         grid_layout.addWidget(self.command_line_edit, 2, 1)
+        if icon:
+            grid_layout.addWidget(icon_label, 3, 0)
+            grid_layout.addWidget(self.icon_line_edit, 3, 1)
+            grid_layout.addWidget(find_icon_button, 3, 2)
+        else:
+            icon_label.hide()
+            self.icon_line_edit.hide()
+            find_icon_button.hide()
 
         # Layout the tool row
         tool_row.addStretch(1)
@@ -302,12 +324,18 @@ class CGLMenu(QtWidgets.QWidget):
         self.buttons = LJTabWidget()
         self.buttons.setProperty('class', 'vertical')
         self.buttons.tabBar().setProperty('class', 'vertical')
+        self.title = ''
         if self.type == 'menus':
             self.title = QtWidgets.QLabel('%s %s Buttons: (Drag to Reorder)' % (self.menu_name, self.type.title()))
         elif self.type == 'preflights':
             self.title = QtWidgets.QLabel('%s %s Steps: (Drag to Reorder)' % (self.menu_name, self.type.title()))
+        elif self.type == 'shelves':
+            self.title = QtWidgets.QLabel('%s Shelf Buttons: (Drag to Reorder)' % self.menu_name)
         self.title.setProperty('class', 'title')
-        self.add_button = QtWidgets.QPushButton('add %s button' % self.type)
+        if self.type == 'shelves':
+            self.add_button = QtWidgets.QPushButton('add shelf button')
+        else:
+            self.add_button = QtWidgets.QPushButton('add %s button' % self.type)
         self.add_button.setProperty('class', 'add_button')
 
         # set parameters
@@ -333,7 +361,7 @@ class CGLMenu(QtWidgets.QWidget):
             dialog.exec_()
             if dialog.button == 'Ok':
                 button_name = dialog.line_edit.text()
-                command = self.get_command_text(button_name)
+                command = self.get_command_text(button_name, 'menus')
                 attrs = {'button name': button_name,
                          'label': button_name,
                          'command': command}
@@ -357,9 +385,25 @@ class CGLMenu(QtWidgets.QWidget):
                                                   attrs=attrs, preflight_path=self.menu_path)
                 index = self.buttons.addTab(new_button_widget, preflight_name)
                 self.buttons.setCurrentIndex(index)
+        elif self.type == 'shelves':
+            dialog = InputDialog(title='Add Shelf Button', message='Enter a Name for your Button',
+                                 line_edit=True, regex='[a-zA-Z0-0]{3,}',
+                                 name_example='Only letters & Numbers Allowed in Button Names')
+            dialog.exec_()
+            if dialog.button == 'Ok':
+                button_name = dialog.line_edit.text()
+                command = self.get_command_text(button_name, 'shelves')
+                attrs = {'button name': button_name,
+                         'label': button_name,
+                         'command': command,
+                         'icon': ''}
+                new_button_widget = MenuButton(menu_name=self.menu_name, button_name=button_name,
+                                               attrs=attrs, menu_path=self.menu_path, icon=True, menu_type='shelves')
+                index = self.buttons.addTab(new_button_widget, button_name)
+                self.buttons.setCurrentIndex(index)
 
-    def get_command_text(self, button_name):
-        return 'import cgl_tools.%s.menus.%s.%s as %s; %s.run()' % (self.software, self.menu_name, button_name,
+    def get_command_text(self, button_name, menu_type):
+        return 'import cgl_tools.%s.%s.%s.%s as %s; %s.run()' % (self.software, menu_type, self.menu_name, button_name,
                                                                     button_name, button_name)
 
     def default_preflight_text(self, preflight_name):

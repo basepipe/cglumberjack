@@ -1,13 +1,13 @@
 import os
 from Qt import QtWidgets, QtCore, QtGui
-from cglcore.config import app_config, UserConfig, InitializeConfig
+from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, image_path, split_sequence_frange
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, VButtonPanel
-
 from apps.lumbermill.elements.FilesPanel import FilesPanel
+import apps.lumbermill.elements.IOPanel as IOP
 
 ICON_WIDTH = 24
 
@@ -99,7 +99,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.cl_row.addWidget(self.projects_button)
         self.cl_row.addWidget(self.production_button)
         self.cl_row.addWidget(self.search_box)
-        #self.cl_row.addStretch(1)
+        self.cl_row.addStretch(1)
 
         layout.addLayout(self.cl_row)
         layout.addWidget(self.current_location_line_edit)
@@ -340,10 +340,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         except AttributeError:
             print 'nothing found'
         if path_object.scope == 'IO':
+            print 1
             if path_object.version:
+                print 2
                 if not self.panel:
-                    from apps.lumbermill.elements.IOPanel import IOPanel
-                    self.panel = IOPanel(parent=self, path_object=path_object)
+                    self.panel = IOP.IOPanel(parent=self, path_object=path_object)
                     self.setMinimumWidth(1100)
                     self.setMinimumHeight(700)
                     self.panel.location_changed.connect(self.update_location)
@@ -375,8 +376,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.scope == '*':
                 self.panel = ScopePanel(path_object=path_object)
             elif path_object.scope == 'IO':
-                from apps.lumbermill.elements.IOPanel import IOPanel
-                self.panel = IOPanel(path_object=path_object)
+                self.panel = IOP.IOPanel(path_object=path_object)
             else:
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last in shot_attrs:
@@ -389,8 +389,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last == 'ingest_source':
-            from apps.lumbermill.elements.IOPanel import IOPanel
-            self.panel = IOPanel(path_object=path_object)
+            self.panel = IOP.IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
                 self.panel = VButtonPanel(path_object=path_object, element='task')
@@ -492,12 +491,14 @@ class CGLumberjack(LJMainWindow):
         open_globals = QtWidgets.QAction('Edit Globals', self)
         settings.setShortcut('Ctrl+,')
         menu_designer = QtWidgets.QAction('Menu Designer', self)
+        shelf_designer = QtWidgets.QAction('Shelf Designer', self)
         preflight_designer = QtWidgets.QAction('Preflight Designer', self)
         ingest_dialog = QtWidgets.QAction('Ingest Tool', self)
         # add actions to the file menu
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
         tools_menu.addAction(menu_designer)
+        tools_menu.addAction(shelf_designer)
         tools_menu.addAction(preflight_designer)
         tools_menu.addAction(ingest_dialog)
         # connect signals and slots
@@ -505,6 +506,7 @@ class CGLumberjack(LJMainWindow):
         settings.triggered.connect(self.on_settings_clicked)
         menu_designer.triggered.connect(self.on_menu_designer_clicked)
         preflight_designer.triggered.connect(self.on_preflight_designer_clicked)
+        shelf_designer.triggered.connect(self.on_shelf_designer_clicked)
         login.triggered.connect(self.on_login_clicked)
 
     def check_configs(self):
@@ -553,6 +555,13 @@ class CGLumberjack(LJMainWindow):
         dialog.setMinimumHeight(500)
         dialog.exec_()
 
+    def on_shelf_designer_clicked(self):
+        from apps.pipeline.shelf_designer import ShelfDesigner
+        dialog = ShelfDesigner(self)
+        dialog.setMinimumWidth(1200)
+        dialog.setMinimumHeight(500)
+        dialog.exec_()
+
     def on_menu_designer_clicked(self):
         from apps.pipeline.menu_designer import MenuDesigner
         dialog = MenuDesigner(self)
@@ -563,42 +572,28 @@ class CGLumberjack(LJMainWindow):
     def closeEvent(self, event):
         try:
             # set the current path so that it works on the load better.
-            user_config = UserConfig(company=self.centralWidget().company,
-                                     user_email=self.centralWidget().user_email,
+            user_config = UserConfig(user_email=self.centralWidget().user_email,
                                      user_name=self.centralWidget().user_name,
                                      current_path=self.centralWidget().path_widget.text)
             user_config.update_all()
         except AttributeError:
             pass
 
-
-def check_configs():
-    config_ = InitializeConfig()
-    config_.create_default_globals()
-    if config_.local_config_not_set():
-        config_.set_proj_management_details()
-        return True
-    else:
-        return True
     # check the config file to see if it has a default company and a default location
 
 
 if __name__ == "__main__":
     from cglui.startup import do_gui_init
-
-    if check_configs():
-        app = do_gui_init()
-        splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
-        splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
-        splash.setMask(splash_pix.mask())
-        splash.show()
-        td = CGLumberjack()
-        td.show()
-        td.raise_()
-        # setup stylesheet
-        style_sheet = load_style_sheet()
-        app.setStyleSheet(style_sheet)
-        splash.finish(td)
-        app.exec_()
-    else:
-        print 'Configs Not Found'
+    app = do_gui_init()
+    splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
+    splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+    splash.setMask(splash_pix.mask())
+    splash.show()
+    td = CGLumberjack()
+    td.show()
+    td.raise_()
+    # setup stylesheet
+    style_sheet = load_style_sheet()
+    app.setStyleSheet(style_sheet)
+    splash.finish(td)
+    app.exec_()

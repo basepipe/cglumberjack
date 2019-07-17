@@ -3,20 +3,18 @@ import json
 from Qt import QtWidgets, QtCore, QtGui
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.base import LJDialog
-from cglcore.path import load_style_sheet, get_cgl_config
-from utils import CGLMenu
+from cglcore.path import load_style_sheet, get_cgl_tools
+from utils import CGLMenu, PreflightStep
 
 
 class Designer(LJDialog):
     def __init__(self, parent=None, type_=None, menu_path=None):
         LJDialog.__init__(self, parent)
         self.type = type_
-        self.cgl_config_dir = get_cgl_config()
-
+        self.cgl_tools = get_cgl_tools()
 
         self.menu_path = menu_path
         self.software = ''
-
 
         # create layouts
         layout = QtWidgets.QVBoxLayout(self)
@@ -73,9 +71,6 @@ class Designer(LJDialog):
         self.new_software_button.clicked.connect(self.on_new_software_clicked)
 
         # Load the Menu Designer
-        if not self.cgl_config_dir:
-            self.cgl_config_dir = get_cgl_config()
-
         self.load_software()
         self.software_combo.currentIndexChanged.connect(self.update_menu_path)
 
@@ -85,7 +80,7 @@ class Designer(LJDialog):
         self.new_software_button.show()
         self.software_combo.clear()
 
-        dir_ = os.path.join(self.cgl_config_dir, 'cgl_tools')
+        dir_ = self.cgl_tools
         if os.path.exists(dir_):
             softwares = os.listdir(dir_)
             for s in softwares:
@@ -96,7 +91,7 @@ class Designer(LJDialog):
 
     def update_menu_path(self):
         self.software = self.software_combo.currentText()
-        self.menu_path = os.path.join(self.cgl_config_dir, 'cgl_tools', self.software, '%s.cgl' % self.type)
+        self.menu_path = os.path.join(self.cgl_tools, self.software, '%s.cgl' % self.type)
         self.load_menus()
 
     def on_add_menu_clicked(self):
@@ -134,13 +129,14 @@ class Designer(LJDialog):
         dialog.exec_()
         if dialog.button == 'Ok':
             software_name = dialog.combo_box.currentText()
-            folder = os.path.join(self.cgl_config_dir, 'cgl_tools', software_name)
+            folder = os.path.join(self.cgl_tools, software_name)
             os.makedirs(folder)
             self.software_combo.addItem(software_name)
             num = self.software_combo.count()
             self.software_combo.setCurrentIndex(num)
 
     def save_menus(self):
+        print 'Saving Menus here: %s' % self.menu_path
         menu_dict = {}
         for mi in range(self.menus.count()):
             menu_name = self.menus.tabText(mi)
@@ -150,19 +146,30 @@ class Designer(LJDialog):
             for bi in range(menu.buttons.count()):
                 button_name = menu.buttons.tabText(bi)
                 button_widget = menu.buttons.widget(bi)
-                menu_dict[menu_name][button_name] = {'required': button_widget.required_line_edit.text(),
-                                                     'module': button_widget.module_line_edit.text(),
-                                                     'label': button_widget.label_line_edit.text(),
-                                                     'order': bi+1
-                                                     }
+                if self.type == 'preflights':
+                    print 'Preflight Step'
+                    menu_dict[menu_name][button_name] = {
+                        'module': button_widget.command_line_edit.text(),
+                        'label': button_widget.label_line_edit.text(),
+                        'order': bi + 1,
+                        'required': button_widget.required_line_edit.text()
+                    }
+                else:
+                    print 'Menu Step'
+                    menu_dict[menu_name][button_name] = {
+                                                         'module': button_widget.command_line_edit.text(),
+                                                         'label': button_widget.label_line_edit.text(),
+                                                         'order': bi+1
+                                                         }
+
                 self.save_code(menu_name, button_widget)
         json_object = {self.software: menu_dict}
         self.save_json(self.menu_path, json_object)
 
     def save_code(self, menu_name, button_widget):
-        button_name = button_widget.preflight_step_name
+        button_name = button_widget.name
         code = button_widget.code_text_edit.document().toPlainText()
-        button_file = os.path.join(self.cgl_config_dir, 'cgl_tools', self.software, self.type, menu_name,
+        button_file = os.path.join(self.cgl_tools, self.software, self.type, menu_name,
                                    "%s.py" % button_name)
         dir_ = os.path.dirname(button_file)
         if not os.path.exists(dir_):
@@ -174,18 +181,24 @@ class Designer(LJDialog):
             button_widget.do_save = False
 
     def make_init_for_folders_in_path(self, folder):
-        config = self.cgl_config_dir.replace('\\', '/')
+        print 'folder: %s' % folder
+        config = self.cgl_tools.replace('\\', '/')
+
+        print 'config: %s' % config
         folder = folder.replace('\\', '/')
         folder = folder.replace(config, '')
         parts = folder.split('/')
-        parts.remove('')
+        if '' in parts:
+            parts.remove('')
         string = config
         for p in parts:
-            if '.' not in p:
-                string = '%s/%s' % (string, p)
-                init = '%s/__init__.py' % string
-                if not os.path.exists(init):
-                    self.make_init(os.path.dirname(init))
+            if not ':' in p:
+                print p
+                if '.' not in p:
+                    string = '%s/%s' % (string, p)
+                    init = '%s/__init__.py' % string
+                    if not os.path.exists(init):
+                        self.make_init(os.path.dirname(init))
 
     def make_init(self, folder):
         if '*' not in folder:
