@@ -1,9 +1,79 @@
 from Qt import QtCore, QtWidgets, QtGui
 from cglui.widgets.containers.dict_tree import DictionaryTreeWidget
+from cglcore.path import icon_path
 import getpass
 import os
 import json
 import shutil
+
+
+class PathItemWidget(QtWidgets.QWidget):
+    def __init__(self, parent=None, paths_dict={}):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.layout = QtWidgets.QGridLayout(self)
+        i = -1
+        self.red_palette = QtGui.QPalette()
+        self.red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
+        self.green_palette = QtGui.QPalette()
+        self.green_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 255, 0))
+        self.black_palette = QtGui.QPalette()
+        self.black_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 0, 0))
+
+        for key in paths_dict:
+            i += 1
+            label = QtWidgets.QLabel(key)
+            line_edit = QtWidgets.QLineEdit()
+            line_edit.setText(paths_dict[key])
+            folder_button = QtWidgets.QToolButton()
+            folder_button.setIcon(QtGui.QIcon(icon_path('folder24px.png')))
+            folder_button.line_edit = line_edit
+            message = QtWidgets.QLabel('Path Not Found, Please Specify %s' % key)
+            message.setPalette(self.red_palette)
+            folder_button.message = message
+            self.layout.addWidget(label, i, 0)
+            self.layout.addWidget(line_edit, i, 1)
+            self.layout.addWidget(folder_button, i, 2)
+            i += 1
+            self.layout.addWidget(message, i, 1)
+            folder_button.clicked.connect(self.on_path_chosen)
+            self.check_path(key, label, line_edit, folder_button, message)
+
+    def check_path(self, path_name, label, line_edit, message, folder_button, hide_on_find=True):
+        path_ = line_edit.text()
+        if os.path.exists(path_):
+            line_edit.setEnabled(False)
+            message.setText('%s Found Path, Ready for Ass Kicking!' % path_name)
+            message.setPalette(self.black_palette)
+            if hide_on_find:
+                label.hide()
+                line_edit.hide()
+                message.hide()
+                folder_button.hide()
+        else:
+            if path_name == 'cgl_tools':
+                line_edit.setEnabled(False)
+                message.setText('%s Path Not Found, set "root"!' % path_name)
+                if hide_on_find:
+                    label.hide()
+                    line_edit.hide()
+                    message.hide()
+                    folder_button.hide()
+            elif path_name == 'code_root':
+                code_root = __file__.split('src')[0]
+                line_edit.setEnabled(False)
+                line_edit.setText(code_root)
+                message.setText('%s Found Path, Ready for Ass Kicking!' % path_name)
+                message.setPalette(self.black_palette)
+                if hide_on_find:
+                    label.hide()
+                    line_edit.hide()
+                    message.hide()
+                    folder_button.hide()
+
+    def on_path_chosen(self):
+        print self.sender()
+        print self.sender().message
+        print self.sender().line_edit
 
 
 class ConfigDialog(QtWidgets.QDialog):
@@ -79,24 +149,9 @@ class ConfigDialog(QtWidgets.QDialog):
         self.ok_button.setEnabled(False)
         self.create_globals_button = QtWidgets.QPushButton('Create Globals')
 
-        self.root_message = QtWidgets.QLabel('Choose Root Folder')
-        self.root_message.setPalette(self.red_palette)
-        self.user_config_message = QtWidgets.QLabel('User Globals will be created')
-        self.user_config_message.setPalette(self.red_palette)
-        self.globals_message = QtWidgets.QLabel('Company globals will be created')
-        self.globals_message.setPalette(self.red_palette)
-        self.create_user_config_button = QtWidgets.QPushButton('Create User Globals')
-        self.company_name_message = QtWidgets.QLabel('Enter Company Name to Continue')
-        self.user_name_message = QtWidgets.QLabel('Username Does not match system user name')
-        self.email_message = QtWidgets.QLabel('Enter Email to Continue')
-        self.code_root_message = QtWidgets.QLabel('Choose Code Root Folder')
-        self.code_root_message.setPalette(self.red_palette)
-        self.proj_management_message = QtWidgets.QLabel('Choose Project Management')
-        self.proj_management_message.setPalette(self.red_palette)
         # self.root_line_edit.setText(self.app_config['paths']['root'])
         # self.company_line_edit.setText(self.app_config['account_info']['default_company'])
         # self.project_management = self.app_config['account_info']['project_management']
-
 
         button_layout = QtWidgets.QHBoxLayout()
         button_layout.addStretch(1)
@@ -104,50 +159,12 @@ class ConfigDialog(QtWidgets.QDialog):
         button_layout.addWidget(self.create_globals_button)
         button_layout.addWidget(self.ok_button)
 
-        self.message = QtWidgets.QLabel()
-        self.user_grid_layout = QtWidgets.QGridLayout()
-        self.user_grid_layout.addWidget(user_config, 0, 0)
-        self.user_grid_layout.addWidget(self.root_label, 1, 0)
-        self.user_grid_layout.addWidget(self.root_line_edit, 1, 1)
-        self.user_grid_layout.addWidget(self.choose_root, 1, 2)
-        self.user_grid_layout.addWidget(self.root_message, 2, 1)
-        self.user_grid_layout.addWidget(self.user_globals_label, 3, 0)
-        self.user_grid_layout.addWidget(self.user_globals_line_edit, 3, 1)
-        self.user_grid_layout.addWidget(self.user_config_message, 4, 1)
-        self.user_grid_layout.addWidget(self.globals_label, 5, 0)
-        self.user_grid_layout.addWidget(self.globals_line_edit, 5, 1)
-        self.user_grid_layout.addWidget(self.globals_message, 6, 1)
-        self.user_grid_layout.addWidget(self.cgl_tools_label, 7, 0)
-        self.user_grid_layout.addWidget(self.cgl_tools_line_edit, 7, 1)
-        self.user_grid_layout.addWidget(self.code_root_label, 8, 0)
-        self.user_grid_layout.addWidget(self.code_root_line_edit, 8, 1)
-        self.user_grid_layout.addWidget(self.choose_code_root_button, 8, 2)
-        self.user_grid_layout.addWidget(self.code_root_message, 9, 1)
-
-        self.user_grid_layout.addWidget(self.user_name_label, 10, 0)
-        self.user_grid_layout.addWidget(self.user_name_line_edit, 10, 1)
-        self.user_grid_layout.addWidget(self.user_email_label, 11, 0)
-        self.user_grid_layout.addWidget(self.user_email_line_edit, 11, 1)
-
-        self.user_grid_layout.addWidget(self.proj_management_label, 12, 0)
-        self.user_grid_layout.addWidget(self.proj_management_combo, 12, 1)
-        self.user_grid_layout.addWidget(self.proj_management_message, 13, 1)
-        self.user_grid_layout.addWidget(self.api_key_line_edit, 14, 1)
-        self.user_grid_layout.addWidget(self.api_key_label, 14, 0)
-        self.user_grid_layout.addWidget(self.api_user_label, 15, 0)
-        self.user_grid_layout.addWidget(self.api_user_line_edit, 15, 1)
-        self.user_grid_layout.addWidget(self.server_label, 16, 0)
-        self.user_grid_layout.addWidget(self.server_line_edit, 16, 1)
-
-
-
-
         self.globals_tree_widget = DictionaryTreeWidget({})
-        layout.addLayout(self.user_grid_layout)
-        layout.addWidget(self.message)
+        this = __file__.split('src')[0]
+        dict_ = self._load_json(os.path.join(this, 'src', 'cfg', 'global_template.json'))
+        layout.addWidget(PathItemWidget(paths_dict=dict_['paths']))
         layout.addWidget(self.globals_tree_widget)
         layout.addLayout(button_layout)
-        self.hide_all()
 
         self.user_globals_line_edit.setEnabled(False)
         self.globals_line_edit.setEnabled(False)
@@ -199,9 +216,9 @@ class ConfigDialog(QtWidgets.QDialog):
             if os.path.exists(root):
                 self.root_message.hide()
                 self.globals_line_edit.show()
-                #self.globals_message.show()
+                # self.globals_message.show()
                 self.globals_label.show()
-                #self.user_config_message.show()
+                # self.user_config_message.show()
                 self.proj_management_message.show()
                 self.user_globals_label.show()
                 self.user_globals_line_edit.show()
@@ -337,38 +354,6 @@ class ConfigDialog(QtWidgets.QDialog):
 
     def cancel_clicked(self):
         self.accept()
-
-    def hide_all(self):
-        self.root_message.hide()
-        self.user_globals_label.hide()
-        self.user_globals_line_edit.hide()
-        self.user_config_message.hide()
-        self.globals_message.hide()
-        self.user_name_label.hide()
-        self.user_name_line_edit.hide()
-        self.user_email_label.hide()
-        self.user_email_line_edit.hide()
-        self.code_root_label.hide()
-        self.code_root_line_edit.hide()
-        self.choose_code_root_button.hide()
-        self.cgl_tools_label.hide()
-        self.cgl_tools_line_edit.hide()
-        self.proj_management_message.hide()
-
-        self.proj_management_label.hide()
-        self.proj_management_combo.hide()
-        self.api_key_line_edit.hide()
-        self.api_key_label.hide()
-        self.api_user_label.hide()
-        self.api_user_line_edit.hide()
-        self.server_label.hide()
-        self.server_line_edit.hide()
-        self.globals_label.hide()
-        self.globals_line_edit.hide()
-        self.globals_tree_widget.hide()
-        self.ok_button.hide()
-        self.cancel_button.hide()
-        self.create_globals_button.hide()
 
     def hide_api_info(self):
         self.server_label.hide()
