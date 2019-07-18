@@ -164,7 +164,6 @@ class AssetCreator(LJDialog):
             child = self.task_layout.itemAt(i)
             if child.widget().checkState() == QtCore.Qt.Checked:
                 self.tasks.append(child.widget().text().split('(')[-1].replace(')', ''))
-        print self.tasks
 
     @staticmethod
     def hide_layout_items(layout):
@@ -185,7 +184,6 @@ class AssetCreator(LJDialog):
 
     def on_seq_text_changed(self):
         self.seq = self.asset_widget.category_row.combo.currentText()
-        print app_config()['rules']['path_variables']['seq']['regex']
         seq_rules = app_config()['rules']['path_variables']['seq']['regex']
         example = app_config()['rules']['path_variables']['seq']['example']
         self.regex = re.compile(r'%s' % seq_rules)
@@ -201,13 +199,9 @@ class AssetCreator(LJDialog):
     def load_categories(self):
         if self.path_object.scope == 'assets':
             categories = app_config()['asset_categories']
-            print categories
-            print '00000000000000000000000000'
             cats = ['']
             for c in categories:
                 cats.append(categories[c])
-            print cats
-            print '00000000000000000000000000'
             self.asset_widget.category_row.combo.addItems(cats)
         elif self.path_object.scope == 'shots':
             seqs = self.path_object.glob_project_element('seq')
@@ -267,7 +261,6 @@ class AssetCreator(LJDialog):
         self.asset_widget.name_row.combo.clear()
         glob_path = self.path_object.path_root
         glob_path = re.sub('/+$', '', glob_path)
-        print glob_path
         list_ = glob.glob(glob_path)
         assets = ['']
         for each in list_:
@@ -280,8 +273,6 @@ class AssetCreator(LJDialog):
         tasks = ['']
         for each in task_list:
             tasks.append(each)
-        print tasks
-        print "I'm meant to load tasks in some kind of gui: %s" % tasks
 
     @staticmethod
     def is_valid_asset():
@@ -300,8 +291,6 @@ class AssetCreator(LJDialog):
                 self.path_object.set_attr(shot=self.asset_widget.name_row.combo.currentText())
                 self.path_object.set_attr(seq=self.seq)
             self.path_object.set_attr(task=each)
-            print 'Current Path With Root: %s' % self.path_object.path_root
-            print self.path_object.data
             CreateProductionData(self.path_object.data, project_management=self.project_management)
         self.accept()
         self.close()

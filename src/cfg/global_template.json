@@ -97,14 +97,14 @@
         ".xbm": "image"
     },
     "helpdesk": {
-        "help_menu": "https://fsucmpa.freshdesk.com/support/home"
+        "help_menu": ""
     }, 
     "logging": {
         "debug": {
             "format": "%(asctime)-15s  %(levelname)s %(message)s \"%(pathname)s:%(lineno)d\""
         }, 
         "format": "%(asctime)-15s  %(levelname)s %(message)s \"%(pathname)s:%(lineno)d\"", 
-        "level": "debug"
+        "level": "info"
     }, 
     "lumberjack_sync": {
         "AWS_ACCESS_KEY_ID": "AKIAJ4HU6QEBIGKH7DRQ", 

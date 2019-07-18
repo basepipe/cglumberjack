@@ -639,7 +639,7 @@ class CreateProductionData(object):
         if file_system:
             self.create_folders()
         if project_management:
-            logging.info('Creating Production Management Data for %s: %s' % (project_management, self.path_object.data))
+            logging.debug('Creating Production Management Data for %s: %s' % (project_management, self.path_object.data))
             self.create_project_management_data(self.path_object, project_management)
         if self.path_object.resolution:
             if self.path_object.version == '000.000':
@@ -770,12 +770,12 @@ class CreateProductionData(object):
             if os.path.splitext(path_):
                 path_ = os.path.dirname(path_)
         # at this stage we're making path_
-        print 'Creating Directory: %s' % path_
+        logging.info('Creating %s Directory: %s' % (path_object.context, path_))
         if not test:
             if not os.path.exists(path_):
                 os.makedirs(path_)
         else:
-            print 'TEST MODE: No directories were created'
+            logging.info('TEST MODE: No directories were created')
 
     def create_project_management_data(self, path_object, project_management):
         if project_management != 'lumbermill':
@@ -783,7 +783,7 @@ class CreateProductionData(object):
             loaded_module = __import__(module, globals(), locals(), 'main', -1)
             loaded_module.ProjectManagementData(path_object, user_email=self.proj_management_user).create_project_management_data()
         else:
-            print 'Using Lumbermill built in proj management'
+            logging.debug('Using Lumbermill built in proj management')
 
     def create_default_file(self):
         if self.path_object.task == 'prev':
@@ -1105,7 +1105,6 @@ def prep_seq_delimiter(sequence, replace_with='*', ext=None):
     if not ext:
         ext = path_object.ext
     dir_ = os.path.dirname(sequence)
-    print sequence
     seq_split = split_sequence(sequence)
     stuff = lj_list_dir(dir_)
     hash_seq = ''
