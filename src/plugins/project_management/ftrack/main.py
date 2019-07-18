@@ -70,11 +70,11 @@ class ProjectManagementData(object):
         if not self.user_email:
             self.user_email = app_config()['project_management']['ftrack']['api']['api_user']
             if not self.user_email:
-                print 'No User Email Defined, cant create Ftrack Production Data'
+                logging.debug('No User Email Defined, cant create Ftrack Production Data')
                 return
 
         if not self.project:
-            print 'No Project Defined'
+            logging.debug('No Project Defined')
             return
 
         if not self.project_short_name:
@@ -114,7 +114,7 @@ class ProjectManagementData(object):
         for task in self.task_types:
             if task['name'] == full_name:
                 return task
-        print 'Could Not Find a Task of %s' % task['name']
+        logging.debug('Could Not Find a Task of %s' % task['name'])
         return None
 
     def create_project_management_data(self, review=False, metadata={}):
@@ -123,7 +123,7 @@ class ProjectManagementData(object):
             if self.project:
                 self.project_data = self.create_project()
             else:
-                print 'No Project Defined, Skipping Project creation'
+                logging.debug('No Project Defined, Skipping Project creation')
                 return
         if not self.user_group:
             self.add_group_to_project()
@@ -196,10 +196,10 @@ class ProjectManagementData(object):
             data_ = self.create_version()
         try:
             if data_:
-                logging.info('Found %s: %s, No Need to Create' % (data_type, data_['name']))
+                logging.debug('Found %s: %s, No Need to Create' % (data_type, data_['name']))
             return data_
         except:
-            logging.info('Did not find %s' % data_type)
+            logging.debug('Did not find %s' % data_type)
             return None
 
     def create_project(self):
@@ -212,7 +212,7 @@ class ProjectManagementData(object):
         return project
 
     def create_asset(self):
-        logging.info('Creating Asset %s' % self.asset)
+        logging.info('Creating FTRACK Asset %s' % self.asset)
         self.asset_data = self.ftrack.create('AssetBuild', {
             'name': self.asset,
             'parent': self.project_data
@@ -220,7 +220,7 @@ class ProjectManagementData(object):
         return self.asset_data
 
     def create_sequence(self):
-        logging.info('Creating Sequence %s' % self.seq)
+        logging.info('Creating FTRACK Sequence %s' % self.seq)
         self.seq_data = self.ftrack.create('Sequence', {
             'name': self.seq,
             'parent': self.project_data
@@ -229,7 +229,7 @@ class ProjectManagementData(object):
 
     def create_shot(self):
         self.shot_name = '%s_%s' % (self.seq, self.shot)
-        logging.info("Creating Shot %s" % self.shot_name)
+        logging.info("Creating FTRACK Shot %s" % self.shot_name)
         self.shot_data = self.ftrack.create('Shot', {
             'name': self.shot_name,
             'parent': self.seq_data,
@@ -238,7 +238,7 @@ class ProjectManagementData(object):
         return self.shot_data
 
     def create_task(self):
-        logging.info('Creating Task %s, %s' % (self.task_name, self.task_type['name']))
+        logging.info('Creating FTRACK Task %s, %s' % (self.task_name, self.task_type['name']))
         self.task_data = self.ftrack.create('Task', {
             'name': self.task_name,
             'parent': self.entity_data,
@@ -247,18 +247,17 @@ class ProjectManagementData(object):
         })
         if self.thumb_path_full:
             if os.path.exists(self.thumb_path_full):
-                print self.thumb_path_full
+                logging.debug(self.thumb_path_full)
                 self.task_data.create_thumbnail(self.thumb_path_full)
         return self.task_data
 
     def create_assignment(self):
-        logging.info('Checking for Assignment %s' % self.task_data['name'])
+        logging.debug('Checking for Assignment %s' % self.task_data['name'])
         existing_assignment = self.ftrack.query(
             'Appointment where context.id is "{}" and resource.id = "{}" and type="assignment"'.format(
                 self.task_data['id'], self.user_data['id'])).first()
-        print 'existing assignment', existing_assignment
         if not existing_assignment:
-            print 'Creating Assignment %s: for %s' % (self.task, self.user_email)
+            logging.info('Creating FTRACK Assignment %s: for %s' % (self.task, self.user_email))
             self.assignment_data = self.ftrack.create('Appointment', {
                 'context': self.task_data,
                 'resource': self.user_data,
@@ -285,15 +284,14 @@ class ProjectManagementData(object):
             })
 
         self.version_data = self.find_version()
-        print self.version_data
         if not self.version_data:
             self.version_data = self.ftrack.create('AssetVersion', {
                 'asset': self.task_asset,
                 'task': self.task_data,
             })
-            print 'Creating Version %s for: %s' % (self.version, self.task_name)
+            logging.info('Creating FTRACK Version %s for: %s' % (self.version, self.task_name))
         else:
-            logging.info('Found %s, No Need to Create' % self.version)
+            logging.debug('Found %s, No Need to Create' % self.version)
 
     def create_component(self):
         from cglcore.path import lj_list_dir, prep_seq_delimiter
@@ -304,7 +302,7 @@ class ProjectManagementData(object):
         seq2, frange = sequence[0].split()
         path = os.path.join(seq, seq2)
         ftrack_seq = '%s [%s]' % (prep_seq_delimiter(path, '%'), frange)
-        logging.info('Creating Component for %s' % ftrack_seq)
+        logging.info('Creating FTRACK Component for %s' % ftrack_seq)
         self.version_data.create_component(path=ftrack_seq, data={'name': self.resolution})
 
     def upload_media(self, add_to_dailies=True):
@@ -334,7 +332,7 @@ class ProjectManagementData(object):
             component['metadata']['ftr_meta'] = json.dumps({
                 'format': 'image'
             })
-            print 'Committing Media'
+            logging.info('Committing Media')
             component.session.commit()
 
     def create_review_session(self):
@@ -358,11 +356,11 @@ class ProjectManagementData(object):
                 'project': self.project_data,
                 'category': list_category
             })
-            print 'Adding version %s to %s' % (self.version_data['id'], list_name)
+            logging.info('Adding FTRACK version %s to %s' % (self.version_data['id'], list_name))
             if self.version_data not in version_list['items']:
                 version_list['items'].append(self.version_data)
         else:
-            print 'Adding version %s to %s' % (self.version_data['id'], list_name)
+            logging.info('Adding FTRACK version %s to %s' % (self.version_data['id'], list_name))
             if self.version_data not in version_list['items']:
                 version_list['items'].append(self.version_data)
 
@@ -376,7 +374,6 @@ class ProjectManagementData(object):
                 self.project_data['id'], self.user_group['id']
             )
         ).first()
-        print 'Project has Group', project_has_group
 
         if not project_has_group:
             logging.info('Assigning group {} to project {}'.format(self.user_group['name'], self.project_data['name']))
@@ -386,7 +383,7 @@ class ProjectManagementData(object):
                 'type': 'allocation'
             })
         else:
-            logging.info('Group {} already in assigned to project {}'.format(self.user_group['name'],
+            logging.debug('Group {} already in assigned to project {}'.format(self.user_group['name'],
                                                                              self.project_data['name']))
 
     def find_task_asset(self):
@@ -396,11 +393,6 @@ class ProjectManagementData(object):
             return task_asset[0]
         else:
             return task_asset
-
-    def find_review_session(self):
-        project_review_sessions = self.project_data['review_sessions']
-        for each in project_review_sessions:
-            print each
 
     def find_group_on_project(self):
         project_has_group = self.ftrack.query(
@@ -427,21 +419,17 @@ class ProjectManagementData(object):
             })
 
         else:
-            logging.info('User {} already in assigned to project {}'.format(self.user_data['username'],
+            logging.debug('User {} already in assigned to project {}'.format(self.user_data['username'],
                                                                             self.project_data['name']))
 
     def find_project(self):
-        try:
-            self.project_data = self.ftrack.query('Project where status is active and name is %s' %
-                                                  self.project_short_name).first()
-            if self.project_data:
-                return self.project_data
-            else:
-                logging.info('%s Not Found' % self.project)
-                return False
-        except AttributeError:
-            logging.info('No Ftrack Project Found, skipping')
-            pass
+        self.project_data = self.ftrack.query('Project where status is active and name is %s' %
+                                              self.project_short_name).first()
+        if self.project_data:
+            return self.project_data
+        else:
+            logging.debug('%s Not Found' % self.project)
+            return False
 
     def find_asset_build(self):
         asset = self.ftrack.query('AssetBuild where '

@@ -1,4 +1,5 @@
 import os
+import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
@@ -8,6 +9,7 @@ from cglcore.path import PathObject, start, icon_path, font_path, load_style_she
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
 import apps.lumbermill.elements.IOPanel as IOP
+
 
 ICON_WIDTH = 24
 
@@ -37,12 +39,11 @@ class PathWidget(QtWidgets.QFrame):
             path_object = PathObject(path_object)
             if path_object.filename:
                 if '###' in path_object.filename:
-                    print path_object.filename
                     try:
                         filename = split_sequence_frange(path_object.filename)[0]
                         path_object.set_attr(filename=filename)
                     except TypeError:
-                        print 'passing'
+                        logging.error('passing update_path due to exeption')
             self.text = path_object.path_root
             self.path_line_edit.setText(path_object.path_root)
 
@@ -204,7 +205,6 @@ class NavigationWidget(QtWidgets.QFrame):
             else:
                 new_path = self.format_new_path(path_object, split_after='scope')
         elif last == 'shot' or last == 'asset':
-            print 'Made it to shot or asset, this is rare'
             new_path = self.format_new_path(path_object, split_after='scope')
         elif last == 'scope':
             if path_object.scope == '*':
@@ -220,8 +220,8 @@ class NavigationWidget(QtWidgets.QFrame):
             # send them to projects page
             new_path = self.format_new_path(path_object, split_after='project')
         else:
-            print path_object.path_root
-            print 'Nothing built for %s' % last
+            logging.debug(path_object.path_root)
+            logging.debug('Nothing built for %s' % last)
             return
         self.path_object = PathObject(new_path)
         self.update_buttons()
@@ -229,7 +229,6 @@ class NavigationWidget(QtWidgets.QFrame):
 
     def format_new_path(self, path_object, split_after=None):
         new_path = '%s/%s' % (path_object.split_after(split_after), '*')
-        print new_path
         return new_path
 
 
@@ -243,7 +242,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             font_db.addApplicationFont(os.path.join(font_path(), 'ARCADECLASSIC.TTF'))
             font_db.addApplicationFont(os.path.join(font_path(), 'ka1.ttf'))
         except AttributeError:
-            print 'Skipping Loading Fonts - possible Pyside2 issue'
+            logging.error('Skipping Loading Fonts - possible Pyside2 issue')
 
         # Environment Stuff
         self.show_import = show_import
@@ -278,7 +277,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                     self.path_object.set_attr(user='')
                     self.path_object.set_attr(task='*')
             except IndexError:
-                print 'Path is not set'
+                logging.error('Path is not set')
                 pass
         else:
             self.path_object = PathObject(self.root)
@@ -311,7 +310,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(self.path_object)
 
     def update_location(self, data):
-        print
         try:
             if self.sender().force_clear:
                 if self.panel:
@@ -354,7 +352,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if self.panel:
                 self.panel.clear_layout()
         if last == 'resolution':
-            print 3
             pass
             self.load_files_panel(path_object)
         if last == 'project':
@@ -410,23 +407,20 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(path_object.data)
 
     def load_files_panel(self, path_object):
-        print 'I need to be able to accept a PathObject that doesnt end at task'
         self.panel = FilesPanel(path_object=path_object, user_email=self.user_email,
                                 user_name=self.user_name, show_import=self.show_import)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
         self.panel.new_version_signal.connect(self.new_version_clicked)
         self.panel.source_selection_changed.connect(self.set_source_selection)
-        # TODO - what to do when i change versions etc...., perhaps we should be handling it here!
 
     def set_source_selection(self, data):
         self.source_selection = data
 
     def open_clicked(self):
         if '####' in self.path_widget.path_line_edit.text():
-            print 'Nothing set for sequences yet'
+            logging.error('Nothing set for sequences yet')
         else:
-            print 'Opening %s' % self.path_widget.path_line_edit.text()
             start(self.path_widget.path_line_edit.text())
 
     @staticmethod
@@ -505,9 +499,6 @@ class CGLumberjack(LJMainWindow):
 
     def open_company_globals(self):
         # Need a gui for choosing these bad boys
-        print app_config()['account_info']['user_directory']
-        print self.centralWidget().path_object.company_config
-        print self.centralWidget().path_object.project_config
         start(self.centralWidget().path_object.company_config)
 
     def load_user_config(self):

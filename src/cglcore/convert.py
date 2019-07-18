@@ -70,6 +70,7 @@ def get_info(input_file):
 
 
 def get_image_info(input_file):
+    # TODO - can we replace this with the metadata module i created?
     command = "%s --info %s" % (config['oiiotool'], input_file)
     p = subprocess.Popen(command,
                          stdout=subprocess.PIPE,
@@ -381,7 +382,7 @@ def make_full_res_jpg(input_file, preview_path=None):
         preview_path = PathObject(path_object=input_file).preview_path_full
         if not os.path.isdir(os.path.split(preview_path)[0]):
             os.makedirs(os.path.split(preview_path)[0])
-    command = r"%s %s --ch R,G,B -o %s" % (config['oiiotool'], input_file, preview_path)
+    command = r"%s %s --ch R,G,B -o %s" % (config['magick'], input_file, preview_path)
     p = subprocess.Popen(command,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
