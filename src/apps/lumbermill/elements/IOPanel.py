@@ -4,14 +4,16 @@ import pandas as pd
 import logging
 import glob
 import datetime
+import threading
 # noinspection PyUnresolvedReferences
 from Qt import QtCore, QtGui, QtWidgets
+from cglui.progress_gif import ProgressDialog
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.containers.tree import LJTreeWidget
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
-from cglcore.path import PathObject, CreateProductionData, icon_path, lj_list_dir, split_sequence_frange, get_file_type, split_sequence
+from cglcore.path import PathObject, CreateProductionData, icon_path, lj_list_dir, split_sequence_frange, get_file_type, split_sequence, image_path
 from plugins.preflight.main import Preflight
 
 FILEPATH = 0
@@ -80,9 +82,11 @@ class IOPanel(QtWidgets.QWidget):
         else:
             print 'No Path Object found, exiting'
             return
+
         self.project_management = app_config()['account_info']['project_management']
-        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
-        self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        if self.project_management == 'ftrack':
+            self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
+            self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
         #self.tasks_dict = self.schema_dict['long_to_short'][self.scope_combo.currentText()]
         self.path_object_next = None
         self.panel = QtWidgets.QVBoxLayout(self)
@@ -175,10 +179,15 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
         self.empty_state.hide()
 
+        self.progress_label = QtWidgets.QLabel()
+        self.progress_label.hide()
+        self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
+
         h_layout.addWidget(self.source_widget)
         h_layout.addWidget(self.ingest_widget)
         self.panel.addLayout(h_layout)
         self.panel.addWidget(self.empty_state)
+        self.panel.addWidget(self.progress_label)
         self.panel.addWidget(self.file_tree)
 
         self.panel.addLayout(self.tags_title_row)
@@ -208,6 +217,7 @@ class IOPanel(QtWidgets.QWidget):
         self.ingest_widget.add_button.clicked.connect(self.on_add_ingest_event)
         self.publish_button.clicked.connect(self.publish_tagged_assets)
         self.empty_state.files_added.connect(self.new_files_dragged)
+        logging.info('Testing the popup')
         self.on_scope_changed()
 
     @staticmethod
@@ -219,7 +229,13 @@ class IOPanel(QtWidgets.QWidget):
         if dialog.button == 'Add Source':
             print "I'm creating a new source for you"
 
-    def new_files_dragged(self, files):
+    def run_gif(self):
+        dialog = ProgressDialog()
+        dialog.show()
+        dialog.exec_()
+        dialog.accept()
+
+    def file_interaction(self, files):
         if self.path_object.ingest_source == '*':
             print 'Please Select An Ingest Source Before Dragging Files'
             return
@@ -239,7 +255,26 @@ class IOPanel(QtWidgets.QWidget):
         num = self.ingest_widget.list.count()
         item = self.ingest_widget.list.item(num - 1)
         item.setSelected(True)
+        logging.info('i log you log we all log')
         self.on_ingest_selected()
+
+    def new_files_dragged(self, files):
+        self.movie.start()
+        self.progress_label.setMovie(self.movie)
+
+        file_process = threading.Thread(self.file_interaction(files))
+        file_process.start()
+        self.progress_label.show()
+
+        logging.info('before exec')
+
+
+        logging.info('after exec')
+
+        file_process.join()
+        self.progress_label.hide()
+
+
 
     def load_companies(self):
         self.source_widget.list.clear()
