@@ -223,7 +223,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.globals_tree_widget = DictionaryTreeWidget({})
         this = __file__.split('src')[0]
         dict_ = self._load_json(os.path.join(this, 'src', 'cfg', 'global_template.json'))
-        self.path_item_widget = PathItemWidget(paths_dict=dict_['paths'], hide_on_find=False)
+        self.path_item_widget = PathItemWidget(paths_dict=dict_['paths'], hide_on_find=True)
         self.widget_dict = self.path_item_widget.widget_dict
         layout.addWidget(self.path_item_widget)
         # layout.addWidget(QHLine())
