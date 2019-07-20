@@ -11,6 +11,10 @@ class PathItemWidget(QtWidgets.QWidget):
     def __init__(self, parent=None, paths_dict={}):
         QtWidgets.QWidget.__init__(self, parent)
         self.layout = QtWidgets.QGridLayout(self)
+        self.user_dir = os.path.expanduser("~")
+        self.user_name = self.get_user_name()
+        self.cgl_dir = self.get_default_cgl_dir()
+        self.user_globals_path = self.get_user_config(self.cgl_dir)
         i = -1
         self.red_palette = QtGui.QPalette()
         self.red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
@@ -27,6 +31,7 @@ class PathItemWidget(QtWidgets.QWidget):
             folder_button = QtWidgets.QToolButton()
             folder_button.setIcon(QtGui.QIcon(icon_path('folder24px.png')))
             folder_button.line_edit = line_edit
+            folder_button.label = label
             message = QtWidgets.QLabel('Path Not Found, Please Specify %s' % key)
             message.setPalette(self.red_palette)
             folder_button.message = message
@@ -36,7 +41,7 @@ class PathItemWidget(QtWidgets.QWidget):
             i += 1
             self.layout.addWidget(message, i, 1)
             folder_button.clicked.connect(self.on_path_chosen)
-            self.check_path(key, label, line_edit, folder_button, message)
+            self.check_path(key, label, line_edit, message, folder_button)
 
     def check_path(self, path_name, label, line_edit, message, folder_button, hide_on_find=True):
         path_ = line_edit.text()
@@ -69,11 +74,39 @@ class PathItemWidget(QtWidgets.QWidget):
                     line_edit.hide()
                     message.hide()
                     folder_button.hide()
+            elif path_name == 'user_globals':
+                line_edit.setText(self.user_globals_path)
+                line_edit.setEnabled(False)
+                message.setText('Setting As Default Location, Click Folder Button to Change')
+                message.setPalette(self.black_palette)
 
     def on_path_chosen(self):
-        print self.sender()
-        print self.sender().message
-        print self.sender().line_edit
+        folder = QtWidgets.QFileDialog.getExistingDirectory()
+        self.sender().line_edit.setText(folder)
+        self.check_path(folder, self.sender().label, self.sender().line_edit, self.sender().message, self.sender(),
+                        hide_on_find=False)
+
+
+    @staticmethod
+    def get_user_name():
+        """
+            find the currently logged in user
+            Returns:
+                str: username
+
+        """
+        return getpass.getuser()
+
+    def get_default_cgl_dir(self):
+        if 'Documents' in self.user_dir:
+            cg_lumberjack_dir = os.path.join(self.user_dir, 'cglumberjack')
+        else:
+            cg_lumberjack_dir = os.path.join(self.user_dir, 'Documents', 'cglumberjack')
+        return cg_lumberjack_dir
+
+    @staticmethod
+    def get_user_config(cgl_dir):
+        return os.path.join(cgl_dir, 'user_globals.json')
 
 
 class ConfigDialog(QtWidgets.QDialog):
@@ -86,10 +119,8 @@ class ConfigDialog(QtWidgets.QDialog):
         self.company = company
         self.global_config = {}
         self.root = ''
-        self.user_dir = os.path.expanduser("~")
         self.user_name = self.get_user_name()
-        self.cgl_dir = self.get_default_cgl_dir()
-        self.user_globals_path = self.get_user_config(self.cgl_dir)
+
         layout = QtWidgets.QVBoxLayout(self)
         self.proj_management_combo = QtWidgets.QComboBox()
         self.proj_management_combo.addItems(['', 'lumbermill', 'ftrack', 'shotgun'])
@@ -103,9 +134,9 @@ class ConfigDialog(QtWidgets.QDialog):
         user_config = QtWidgets.QLabel('<b>User Settings:</b>')
         global_config_label = QtWidgets.QLabel('<b>Global Config:</b>')
         company_label = QtWidgets.QLabel('Company:')
-        self.user_globals_label = QtWidgets.QLabel('User Config Location:')
-        self.user_globals_line_edit = QtWidgets.QLineEdit()
-        self.user_globals_line_edit.setText(self.user_globals_path)
+        # self.user_globals_label = QtWidgets.QLabel('User Config Location:')
+        # self.user_globals_line_edit = QtWidgets.QLineEdit()
+        # self.user_globals_line_edit.setText(self.user_globals_path)
         self.user_email_label = QtWidgets.QLabel('User Email:')
         self.user_email_line_edit = QtWidgets.QLineEdit()
         self.user_name_label = QtWidgets.QLabel('User Name:')
@@ -166,7 +197,7 @@ class ConfigDialog(QtWidgets.QDialog):
         layout.addWidget(self.globals_tree_widget)
         layout.addLayout(button_layout)
 
-        self.user_globals_line_edit.setEnabled(False)
+        # self.user_globals_line_edit.setEnabled(False)
         self.globals_line_edit.setEnabled(False)
         self.proj_management_combo.currentIndexChanged.connect(self.on_pm_changed)
         self.server_line_edit.textChanged.connect(self.on_line_edit_changed)
@@ -178,7 +209,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.choose_root.clicked.connect(self.on_get_folder_clicked)
         self.choose_code_root_button.clicked.connect(self.on_choose_code_root_clicked)
         self.root_line_edit.textChanged.connect(self.on_root_changed)
-        self.user_globals_line_edit.textChanged.connect(self.on_user_config_changed)
+        # self.user_globals_line_edit.textChanged.connect(self.on_user_config_changed)
         self.globals_line_edit.textChanged.connect(self.on_globals_changed)
         self.create_globals_button.clicked.connect(self.on_create_globals_clicked)
         self.code_root_line_edit.textChanged.connect(self.on_code_root_changed)
@@ -186,6 +217,17 @@ class ConfigDialog(QtWidgets.QDialog):
         self.hide_api_info()
         self.on_pm_changed()
         self.check_user_config()
+        self.globals_tree_widget.hide()
+
+    @staticmethod
+    def get_user_name():
+        """
+            find the currently logged in user
+            Returns:
+                str: username
+
+        """
+        return getpass.getuser()
 
     def on_code_root_changed(self):
         code_root = self.code_root_line_edit.text()
@@ -320,26 +362,7 @@ class ConfigDialog(QtWidgets.QDialog):
             print 'Code Root Not Defined'
             return None
 
-    @staticmethod
-    def get_user_name():
-        """
-            find the currently logged in user
-            Returns:
-                str: username
 
-        """
-        return getpass.getuser()
-
-    def get_default_cgl_dir(self):
-        if 'Documents' in self.user_dir:
-            cg_lumberjack_dir = os.path.join(self.user_dir, 'cglumberjack')
-        else:
-            cg_lumberjack_dir = os.path.join(self.user_dir, 'Documents', 'cglumberjack')
-        return cg_lumberjack_dir
-
-    @staticmethod
-    def get_user_config(cgl_dir):
-        return os.path.join(cgl_dir, 'user_globals.json')
 
     def check_user_config(self):
         pass
