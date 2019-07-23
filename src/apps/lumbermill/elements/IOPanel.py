@@ -5,6 +5,7 @@ import logging
 import glob
 import datetime
 import threading
+import time
 # noinspection PyUnresolvedReferences
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.progress_gif import ProgressDialog
@@ -179,15 +180,18 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
         self.empty_state.hide()
 
-        self.progress_label = QtWidgets.QLabel()
-        self.progress_label.hide()
-        self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
+        self.progress_dialog = ProgressDialog()
+
+        """self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
+        self.progress_label.setMovie(self.movie)
+        self.movie.start()
+        self.progress_label.hide()"""
 
         h_layout.addWidget(self.source_widget)
         h_layout.addWidget(self.ingest_widget)
         self.panel.addLayout(h_layout)
         self.panel.addWidget(self.empty_state)
-        self.panel.addWidget(self.progress_label)
+        # self.panel.addWidget(self.progress_label)
         self.panel.addWidget(self.file_tree)
 
         self.panel.addLayout(self.tags_title_row)
@@ -229,17 +233,12 @@ class IOPanel(QtWidgets.QWidget):
         if dialog.button == 'Add Source':
             print "I'm creating a new source for you"
 
-    def run_gif(self):
-        dialog = ProgressDialog()
-        dialog.show()
-        dialog.exec_()
-        dialog.accept()
-
-    def file_interaction(self, files):
-        if self.path_object.ingest_source == '*':
+    def file_interaction(self, files, path, to_folder):
+        time.sleep(5)
+        if path == '*':
             print 'Please Select An Ingest Source Before Dragging Files'
             return
-        to_folder = self.path_object_next.path_root
+        # to_folder = self.path_object_next.path_root
         if not os.path.exists(to_folder):
             os.makedirs(to_folder)
         for f in files:
@@ -251,29 +250,38 @@ class IOPanel(QtWidgets.QWidget):
             else:
                 logging.info('Copying Folder From %s to %s' % (f, to_file))
                 shutil.copy(f, to_file)
-        self.load_import_events()
+        """self.load_import_events()
         num = self.ingest_widget.list.count()
         item = self.ingest_widget.list.item(num - 1)
         item.setSelected(True)
         logging.info('i log you log we all log')
-        self.on_ingest_selected()
+        #self.on_ingest_selected()"""
+        logging.info('done')
+        self.hide_gif()
+
+    def hide_gif(self):
+        self.progress_dialog.hide()
+
+    """def counter(self):
+        logging.info("1---------------------")
+        logging.info("2---------------------")
+        time.sleep(4)
+        shutil.copy2('C://Users//Molta//Documents//Counter.txt', 'C://Users//Molta//Documents//cglumberjack')
+        logging.info("3---------------------")
+        time.sleep(5)
+        logging.info("4---------------------")
+        logging.info('finishing function')"""
 
     def new_files_dragged(self, files):
-        self.movie.start()
-        self.progress_label.setMovie(self.movie)
-
-        file_process = threading.Thread(self.file_interaction(files))
+        path = self.path_object.ingest_source
+        to_folder = self.path_object_next.path_root
+        self.progress_dialog.show()
+        QtWidgets.qApp.processEvents()
+        file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
+        QtWidgets.qApp.processEvents()
+       # QtWidgets.qApp.processEvents()
         file_process.start()
-        self.progress_label.show()
-
-        logging.info('before exec')
-
-
-        logging.info('after exec')
-
-        file_process.join()
-        self.progress_label.hide()
-
+       # QtWidgets.qApp.processEvents()
 
 
     def load_companies(self):
