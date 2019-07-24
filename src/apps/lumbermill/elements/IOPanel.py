@@ -180,7 +180,7 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
         self.empty_state.hide()
 
-        self.progress_dialog = ProgressDialog()
+        self.progress_dialog = ProgressDialog('Working....', 'chopping_wood.gif')
 
         """self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
         self.progress_label.setMovie(self.movie)

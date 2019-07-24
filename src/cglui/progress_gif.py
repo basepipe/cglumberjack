@@ -7,14 +7,14 @@ import threading
 
 class ProgressDialog(QtWidgets.QDialog):
 
-    def __init__(self):
+    def __init__(self,message, gif_name):
         QtWidgets.QDialog.__init__(self)
         self.setWindowTitle("Gif Testerino")
 
-        self.message = QtWidgets.QLabel('Working...')
+        self.message = QtWidgets.QLabel(message)
         self.movie_screen = QtWidgets.QLabel()
 
-        self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
+        self.movie = QtGui.QMovie(image_path(gif_name))
         logging.info(self.movie.isValid())
         self.movie.start()
 
