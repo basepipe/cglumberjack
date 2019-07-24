@@ -179,17 +179,21 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
         self.empty_state.hide()
 
-        self.progress_dialog = ProgressDialog('Working....', 'chopping_wood.gif')
+        self.message = QtWidgets.QLabel('Working....')
+        self.movie_screen = QtWidgets.QLabel()
 
-        """self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
-        self.progress_label.setMovie(self.movie)
+        self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
         self.movie.start()
-        self.progress_label.hide()"""
+        self.movie_screen.setMovie(self.movie)
+        self.movie_screen.hide()
+
+
 
         h_layout.addWidget(self.source_widget)
         h_layout.addWidget(self.ingest_widget)
         self.panel.addLayout(h_layout)
         self.panel.addWidget(self.empty_state)
+        self.panel.addWidget(self.movie_screen)
         # self.panel.addWidget(self.progress_label)
         self.panel.addWidget(self.file_tree)
 
@@ -259,28 +263,20 @@ class IOPanel(QtWidgets.QWidget):
         self.hide_gif()
 
     def hide_gif(self):
-        self.progress_dialog.hide()
-
-    """def counter(self):
-        logging.info("1---------------------")
-        logging.info("2---------------------")
-        time.sleep(4)
-        shutil.copy2('C://Users//Molta//Documents//Counter.txt', 'C://Users//Molta//Documents//cglumberjack')
-        logging.info("3---------------------")
-        time.sleep(5)
-        logging.info("4---------------------")
-        logging.info('finishing function')"""
+        self.movie_screen.hide()
 
     def new_files_dragged(self, files):
         path = self.path_object.ingest_source
         to_folder = self.path_object_next.path_root
-        self.progress_dialog.show()
+
+        self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
+        self.movie.start()
+        self.movie_screen.setMovie(self.movie)
+        self.movie_screen.show()
         QtWidgets.qApp.processEvents()
         file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
         QtWidgets.qApp.processEvents()
-       # QtWidgets.qApp.processEvents()
         file_process.start()
-       # QtWidgets.qApp.processEvents()
 
 
     def load_companies(self):
