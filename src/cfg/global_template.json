@@ -123,7 +123,9 @@
         "oiiotool": "C:\\OpenImageIO-1.5.0-OCIO\\bin\\oiiotool.exe",
         "wget": "C:\\ProgramData\\chocolatey\\lib\\Wget\\tools\\wget.exe",
         "root": "",
-        "cgl_tools": ""
+        "cgl_tools": "",
+        "user_globals": "",
+        "globals": ""
     }, 
     "project_management": {
         "lumbermill":{
