@@ -9,7 +9,7 @@ from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, image_path, split_sequence_frange
 from cglui.progress_gif import ProgressDialog
-from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, VButtonPanel
+from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
 import apps.lumbermill.elements.IOPanel as IOP
 
@@ -607,3 +607,6 @@ if __name__ == "__main__":
     #splash.finish(td)
     splash_dialog.hide()
     app.exec_()
+
+# if the gif doesn't work 1 solution is to move any other ui references into a run function for background
+# only the gif will exist in the __main__ function

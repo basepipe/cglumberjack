@@ -85,9 +85,8 @@ class IOPanel(QtWidgets.QWidget):
             return
 
         self.project_management = app_config()['account_info']['project_management']
-        if self.project_management == 'ftrack':
-            self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
-            self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
+        self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
         #self.tasks_dict = self.schema_dict['long_to_short'][self.scope_combo.currentText()]
         self.path_object_next = None
         self.panel = QtWidgets.QVBoxLayout(self)

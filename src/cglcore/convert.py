@@ -10,6 +10,7 @@ settings = app_config()['default']
 thumb_res = settings['resolution']['thumb']
 frame_rate = settings['frame_rate']
 ext_map = app_config()['ext_map']
+PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 
 OPTIONS = {'320p': ['180k', '360k', '-1:320'],
            '360p': ['300k', '600k', '-1:360'],
@@ -69,6 +70,7 @@ def get_info(input_file):
 
 
 def get_image_info(input_file):
+    # TODO - can we replace this with the metadata module i created?
     command = "%s --info %s" % (config['oiiotool'], input_file)
     p = subprocess.Popen(command,
                          stdout=subprocess.PIPE,
@@ -143,7 +145,7 @@ def _execute(command):
             pass
 
 
-def create_proxy(sequence, ext='jpg', start_frame='1001', project_management='lumbermill'):
+def create_proxy(sequence, ext='jpg', start_frame='1001', project_management=PROJ_MANAGEMENT):
     """
     Creates a Jpeg proxy resolution based off the resolution of the given path.
     :param sequence:
@@ -175,7 +177,7 @@ def create_proxy(sequence, ext='jpg', start_frame='1001', project_management='lu
 
 
 def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height=False, start_frame='1001',
-                    project_management='lumbermill'):
+                    project_management=PROJ_MANAGEMENT):
     if do_height:
         res = height
     else:
@@ -198,10 +200,15 @@ def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height
         fileout = ''
 
     _execute(command)
+    print 'Project Management is %s' % project_management
     if project_management == 'ftrack':
         print 'Creating HD Proxy', path_object_output.path_root
         from plugins.project_management.ftrack.main import ProjectManagementData
         ProjectManagementData(path_object_output).create_project_management_data()
+    elif project_management == 'lumbermill':
+        print 'No Lumbermill Functionality For create_hd_proxy'
+    elif project_management == 'shotgun':
+        print 'No Lumbermill Functionality for Shotgun'
     return out_seq.replace(number, hashes)
 
 
@@ -252,7 +259,7 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
 
 
 def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_frame_rate=None,
-               res=settings['resolution']['video_review'], project_management='lumbermill'):
+               res=settings['resolution']['video_review'], project_management=PROJ_MANAGEMENT):
 
     start_frame, middle_frame, end_frame = get_first_frame(sequence)
     input_file = prep_seq_delimiter(sequence, replace_with='%')
@@ -375,7 +382,7 @@ def make_full_res_jpg(input_file, preview_path=None):
         preview_path = PathObject(path_object=input_file).preview_path_full
         if not os.path.isdir(os.path.split(preview_path)[0]):
             os.makedirs(os.path.split(preview_path)[0])
-    command = r"%s %s --ch R,G,B -o %s" % (config['oiiotool'], input_file, preview_path)
+    command = r"%s %s --ch R,G,B -o %s" % (config['magick'], input_file, preview_path)
     p = subprocess.Popen(command,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)

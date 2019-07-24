@@ -25,6 +25,10 @@ class ProgressDialog(QtWidgets.QDialog):
         layout.addWidget(self.movie_screen)
         self.setLayout(layout)
 
+    def update_gif(self):
+        for i in range(60):
+            QtWidgets.qApp.processEvents()
+
 
 if __name__ == '__main__':
     app = QtGui.QApplication([])

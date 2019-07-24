@@ -11,10 +11,7 @@ class CreateProxyMov(PreflightCheck):
         pass
 
     def run(self):
-        # get the sequence to be converted
-        frange = self.shared_data['frange']
-        sframe, eframe = frange.split('-')
-        create_mov(self.shared_data['hdProxy'], start_frame=sframe)
+        create_mov(self.shared_data['hdProxy'])
         self.pass_check('Movie Created!')
         
         

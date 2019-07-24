@@ -41,7 +41,6 @@ class CreatePublishFiles(PreflightCheck):
         source_path.set_attr(context='source')
         source_path.set_attr(filename='system_report.csv')
         dir = os.path.dirname(source_path.path_root)
-        # CreateProductionData(dir)
         data = []
         data.append((row["Filepath"], row["Filename"], row["Filetype"], row["Frame_Range"], row["Tags"],
                      row["Keep_Client_Naming"], row["Scope"], row["Seq"], row["Shot"], row["Task"],
@@ -57,11 +56,15 @@ class CreatePublishFiles(PreflightCheck):
     def run(self):
         d = datetime.datetime.today()
         current_date = d.strftime('%d-%m-%Y %H:%M:%S')
+        # This is publishing EVERYTHING, what about the scenario when we don't want that?
+        # can i get the selected row only?
         for index, row in self.data_frame.iterrows():
             print index, row
             if row['Status'] == 'Tagged':
                 from_file = row['Filepath']
                 to_file = row['Publish_Filepath']
+
+                # What to do if it's a Folder
                 if row['Filetype'] == 'folder':
                     print 'Copying %s to %s' % (from_file, to_file)
                     # Send this to the Preflights - No matter what basically
@@ -78,11 +81,11 @@ class CreatePublishFiles(PreflightCheck):
 
                 # What to do with Sequences:
                 else:
-                    print 1.4
                     to_dir = os.path.dirname(to_file)
                     if row['Filetype'] == 'sequence':
                         print '2, Sequence'
                         if not self.test:
+                            print 'Creating Directory: %s' % to_dir
                             CreateProductionData(to_dir)
                         file_sequence, self.shared_data['frange'] = split_sequence_frange(from_file)
                         from_query = split_sequence(from_file)
@@ -104,6 +107,7 @@ class CreatePublishFiles(PreflightCheck):
                         print '4 File'
                         print 'Copying %s to %s' % (from_file, to_file)
                         if not self.test:
+                            print 'Creating File: %s' % to_file
                             CreateProductionData(to_file, json=True)
                             shutil.copy2(from_file, to_file)
                         self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
@@ -115,5 +119,5 @@ class CreatePublishFiles(PreflightCheck):
                 self.save_data_frame()
                 self.pass_check('Check Passed')
             else:
-                self.fail_check('Selected not set to "Taqgged" Check Failed')
+                print 'Skipping Untagged assets'
 
