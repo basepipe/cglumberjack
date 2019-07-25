@@ -1,5 +1,4 @@
 import os
-import threading
 import time
 import logging
 from Qt import QtWidgets, QtCore, QtGui
@@ -7,7 +6,7 @@ from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
-from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, image_path, split_sequence_frange
+from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange
 from cglui.widgets.progress_gif import ProgressDialog
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
@@ -41,7 +40,6 @@ class PathWidget(QtWidgets.QFrame):
             path_object = PathObject(path_object)
             if path_object.filename:
                 if '###' in path_object.filename:
-                    print path_object.filename
                     try:
                         filename = split_sequence_frange(path_object.filename)[0]
                         path_object.set_attr(filename=filename)
@@ -208,7 +206,6 @@ class NavigationWidget(QtWidgets.QFrame):
             else:
                 new_path = self.format_new_path(path_object, split_after='scope')
         elif last == 'shot' or last == 'asset':
-            print 'Made it to shot or asset, this is rare'
             new_path = self.format_new_path(path_object, split_after='scope')
         elif last == 'scope':
             if path_object.scope == '*':
@@ -224,8 +221,8 @@ class NavigationWidget(QtWidgets.QFrame):
             # send them to projects page
             new_path = self.format_new_path(path_object, split_after='project')
         else:
-            print path_object.path_root
-            print 'Nothing built for %s' % last
+            logging.debug(path_object.path_root)
+            logging.debug('Nothing built for %s' % last)
             return
         self.path_object = PathObject(new_path)
         self.update_buttons()
@@ -233,7 +230,6 @@ class NavigationWidget(QtWidgets.QFrame):
 
     def format_new_path(self, path_object, split_after=None):
         new_path = '%s/%s' % (path_object.split_after(split_after), '*')
-        print new_path
         return new_path
 
 
@@ -247,7 +243,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             font_db.addApplicationFont(os.path.join(font_path(), 'ARCADECLASSIC.TTF'))
             font_db.addApplicationFont(os.path.join(font_path(), 'ka1.ttf'))
         except AttributeError:
-            print 'Skipping Loading Fonts - possible Pyside2 issue'
+            logging.debug('Skipping Loading Fonts - possible Pyside2 issue')
 
         # Environment Stuff
         self.show_import = show_import
@@ -286,9 +282,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 pass
         else:
             self.path_object = PathObject(self.root)
-
-        print self.path_object.path_root
-        print '------------------------'
         self.project = '*'
         self.scope = 'assets'
         self.shot = '*'
@@ -409,7 +402,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.layout.addWidget(self.path_widget)
 
     def add_task(self, path_object):
-        print 'Adding Task'
         from apps.lumbermill.elements import asset_creator
         task_mode = True
         dialog = asset_creator.AssetCreator(self, path_dict=path_object.data, task_mode=task_mode)
@@ -429,9 +421,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def open_clicked(self):
         if '####' in self.path_widget.path_line_edit.text():
-            print 'Nothing set for sequences yet'
+            logging.info('Nothing set for sequences yet')
         else:
-            print 'Opening %s' % self.path_widget.path_line_edit.text()
+            logging.info('Opening %s' % self.path_widget.path_line_edit.text())
             start(self.path_widget.path_line_edit.text())
 
     @staticmethod
