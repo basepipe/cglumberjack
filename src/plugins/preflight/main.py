@@ -8,7 +8,7 @@ from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
 from cglcore.path import icon_path, image_path, get_cgl_config
 from cglui.widgets.containers.table import LJTableWidget
-from cglui.progress_gif import ProgressDialog
+from cglui.widgets.progress_gif import ProgressDialog
 from cglui.startup import do_gui_init
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.widgets import GifWidget

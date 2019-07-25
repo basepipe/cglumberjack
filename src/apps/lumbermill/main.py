@@ -8,7 +8,7 @@ from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, image_path, split_sequence_frange
-from cglui.progress_gif import ProgressDialog
+from cglui.widgets.progress_gif import ProgressDialog
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
 import apps.lumbermill.elements.IOPanel as IOP

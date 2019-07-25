@@ -3,18 +3,16 @@ import shutil
 import pandas as pd
 import logging
 import glob
-import datetime
 import threading
 import time
-# noinspection PyUnresolvedReferences
 from Qt import QtCore, QtGui, QtWidgets
-from cglui.progress_gif import ProgressDialog
+from cglui.widgets.progress_gif import ProgressGif
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.containers.tree import LJTreeWidget
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
-from cglcore.path import PathObject, CreateProductionData, icon_path, lj_list_dir, split_sequence_frange, get_file_type, split_sequence, image_path
+from cglcore.path import PathObject, CreateProductionData, icon_path, lj_list_dir, split_sequence_frange, get_file_type, image_path
 from plugins.preflight.main import Preflight
 
 FILEPATH = 0
@@ -179,21 +177,20 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
         self.empty_state.hide()
 
-        self.message = QtWidgets.QLabel('Working....')
-        self.movie_screen = QtWidgets.QLabel()
-
-        self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
-        self.movie.start()
-        self.movie_screen.setMovie(self.movie)
-        self.movie_screen.hide()
-
-
+        # self.message = QtWidgets.QLabel('Working....')
+        self.progress_bar = ProgressGif()
+        self.progress_bar.hide()
+        # self.progress_bar = QtWidgets.QLabel()
+        # self.progress_bar.setAlignment(QtCore.Qt.AlignCenter)
+        #
+        # self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
+        # self.progress_bar.hide()
 
         h_layout.addWidget(self.source_widget)
         h_layout.addWidget(self.ingest_widget)
         self.panel.addLayout(h_layout)
         self.panel.addWidget(self.empty_state)
-        self.panel.addWidget(self.movie_screen)
+        self.panel.addWidget(self.progress_bar)
         # self.panel.addWidget(self.progress_label)
         self.panel.addWidget(self.file_tree)
 
@@ -237,7 +234,9 @@ class IOPanel(QtWidgets.QWidget):
             print "I'm creating a new source for you"
 
     def file_interaction(self, files, path, to_folder):
-        time.sleep(5)
+        #self.progress_bar.show()
+        #self.movie.start()
+        #self.progress_bar.setMovie(self.movie)
         if path == '*':
             print 'Please Select An Ingest Source Before Dragging Files'
             return
@@ -253,26 +252,17 @@ class IOPanel(QtWidgets.QWidget):
             else:
                 logging.info('Copying Folder From %s to %s' % (f, to_file))
                 shutil.copy(f, to_file)
-        """self.load_import_events()
+        self.progress_bar.hide()
+        self.load_import_events()
         num = self.ingest_widget.list.count()
         item = self.ingest_widget.list.item(num - 1)
         item.setSelected(True)
-        logging.info('i log you log we all log')
-        #self.on_ingest_selected()"""
-        logging.info('done')
-        self.hide_gif()
-
-    def hide_gif(self):
-        self.movie_screen.hide()
+        self.on_ingest_selected()
 
     def new_files_dragged(self, files):
         path = self.path_object.ingest_source
         to_folder = self.path_object_next.path_root
-
-        self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
-        self.movie.start()
-        self.movie_screen.setMovie(self.movie)
-        self.movie_screen.show()
+        self.progress_bar.show()
         QtWidgets.qApp.processEvents()
         file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
         QtWidgets.qApp.processEvents()
