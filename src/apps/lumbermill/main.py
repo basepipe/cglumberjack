@@ -477,6 +477,7 @@ class CGLumberjack(LJMainWindow):
         self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
         open_globals = QtWidgets.QAction('Edit Globals', self)
+        open_user_globals = QtWidgets.QAction('Edit User Globals', self)
         settings.setShortcut('Ctrl+,')
         menu_designer = QtWidgets.QAction('Menu Designer', self)
         shelf_designer = QtWidgets.QAction('Shelf Designer', self)
@@ -485,12 +486,14 @@ class CGLumberjack(LJMainWindow):
         # add actions to the file menu
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
+        tools_menu.addAction(open_user_globals)
         tools_menu.addAction(menu_designer)
         tools_menu.addAction(shelf_designer)
         tools_menu.addAction(preflight_designer)
         tools_menu.addAction(ingest_dialog)
         # connect signals and slots
         open_globals.triggered.connect(self.open_company_globals)
+        open_user_globals.triggered.connect(self.open_user_globals)
         settings.triggered.connect(self.on_settings_clicked)
         menu_designer.triggered.connect(self.on_menu_designer_clicked)
         preflight_designer.triggered.connect(self.on_preflight_designer_clicked)
@@ -501,11 +504,12 @@ class CGLumberjack(LJMainWindow):
         return False
 
     def open_company_globals(self):
-        # Need a gui for choosing these bad boys
-        print app_config()['account_info']['user_directory']
-        print self.centralWidget().path_object.company_config
-        print self.centralWidget().path_object.project_config
-        start(self.centralWidget().path_object.company_config)
+        logging.info(os.path.dirname(app_config()['paths']['globals']))
+        start(os.path.dirname(app_config()['paths']['globals']))
+
+    def open_user_globals(self):
+        logging.info(os.path.dirname(app_config()['paths']['user_globals']))
+        start(os.path.dirname(app_config()['paths']['user_globals']))
 
     def load_user_config(self):
         user_config = UserConfig()
