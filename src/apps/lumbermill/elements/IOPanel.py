@@ -4,7 +4,6 @@ import pandas as pd
 import logging
 import glob
 import threading
-import time
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.progress_gif import ProgressGif
 from cglui.widgets.dialog import InputDialog
@@ -12,7 +11,7 @@ from cglui.widgets.containers.tree import LJTreeWidget
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
-from cglcore.path import PathObject, CreateProductionData, icon_path, lj_list_dir, split_sequence_frange, get_file_type, image_path
+from cglcore.path import PathObject, icon_path, lj_list_dir, split_sequence_frange, get_file_type
 from plugins.preflight.main import Preflight
 
 FILEPATH = 0
@@ -53,7 +52,6 @@ class EmptyStateWidgetIO(EmptyStateWidget):
             e.ignore()
 
 
-# noinspection PyPep8Naming,PyPep8Naming
 class PandasModel(QtCore.QAbstractTableModel):
     def __init__(self, data, parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
@@ -85,7 +83,6 @@ class IOPanel(QtWidgets.QWidget):
         self.project_management = app_config()['account_info']['project_management']
         self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
         self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
-        #self.tasks_dict = self.schema_dict['long_to_short'][self.scope_combo.currentText()]
         self.path_object_next = None
         self.panel = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout()
@@ -177,21 +174,14 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
         self.empty_state.hide()
 
-        # self.message = QtWidgets.QLabel('Working....')
         self.progress_bar = ProgressGif()
         self.progress_bar.hide()
-        # self.progress_bar = QtWidgets.QLabel()
-        # self.progress_bar.setAlignment(QtCore.Qt.AlignCenter)
-        #
-        # self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
-        # self.progress_bar.hide()
 
         h_layout.addWidget(self.source_widget)
         h_layout.addWidget(self.ingest_widget)
         self.panel.addLayout(h_layout)
         self.panel.addWidget(self.empty_state)
         self.panel.addWidget(self.progress_bar)
-        # self.panel.addWidget(self.progress_label)
         self.panel.addWidget(self.file_tree)
 
         self.panel.addLayout(self.tags_title_row)
@@ -234,13 +224,9 @@ class IOPanel(QtWidgets.QWidget):
             print "I'm creating a new source for you"
 
     def file_interaction(self, files, path, to_folder):
-        #self.progress_bar.show()
-        #self.movie.start()
-        #self.progress_bar.setMovie(self.movie)
         if path == '*':
             print 'Please Select An Ingest Source Before Dragging Files'
             return
-        # to_folder = self.path_object_next.path_root
         if not os.path.exists(to_folder):
             os.makedirs(to_folder)
         for f in files:
@@ -267,7 +253,6 @@ class IOPanel(QtWidgets.QWidget):
         file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
         QtWidgets.qApp.processEvents()
         file_process.start()
-
 
     def load_companies(self):
         self.source_widget.list.clear()
