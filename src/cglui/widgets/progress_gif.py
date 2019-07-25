@@ -1,8 +1,6 @@
-import sys
 from Qt import QtCore, QtWidgets, QtGui
 import logging
 from cglcore.path import image_path
-import threading
 
 
 class ProgressGif(QtWidgets.QWidget):
