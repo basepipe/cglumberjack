@@ -177,8 +177,9 @@ class Preflight(QtWidgets.QDialog):
         for each in checks:
             if self.previous_checks_passed(each):
                 class_ = self.function_d[each['Check']]
-                run_thread = threading.Thread(target=class_.run())
-                run_thread.start()
+                # run_thread = threading.Thread(target=class_.run())
+                # run_thread.start()
+                class_.run()
                 if self.function_d[each['Check']].status:
                     each['Status'] = 'Passed'
                 else:

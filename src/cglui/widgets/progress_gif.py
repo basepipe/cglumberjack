@@ -30,7 +30,6 @@ class ProgressGif(QtWidgets.QWidget):
         self.progress_bar.show()
 
 
-
 class ProgressDialog(QtWidgets.QDialog):
 
     def __init__(self, message, gif_name):
