@@ -4,6 +4,7 @@ import pandas as pd
 import logging
 import glob
 import threading
+import time
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.progress_gif import ProgressGif
 from cglui.widgets.dialog import InputDialog
@@ -238,6 +239,7 @@ class IOPanel(QtWidgets.QWidget):
             else:
                 logging.info('Copying Folder From %s to %s' % (f, to_file))
                 shutil.copy(f, to_file)
+
         self.progress_bar.hide()
         self.load_import_events()
         num = self.ingest_widget.list.count()
