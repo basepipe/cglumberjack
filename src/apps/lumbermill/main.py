@@ -311,7 +311,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(self.path_object)
 
     def update_location(self, data):
-        print
         try:
             if self.sender().force_clear:
                 if self.panel:
