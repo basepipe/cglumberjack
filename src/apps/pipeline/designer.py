@@ -5,6 +5,8 @@ from cglui.widgets.dialog import InputDialog
 from cglui.widgets.base import LJDialog
 from cglcore.path import load_style_sheet, get_cgl_tools
 from utils import CGLMenu, PreflightStep
+from cglcore.config import app_config
+
 
 
 class Designer(LJDialog):
@@ -15,6 +17,12 @@ class Designer(LJDialog):
 
         self.menu_path = menu_path
         self.software = ''
+        self.setWindowTitle('%s Designer' % type_.title())
+        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
+        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        self.long_to_short = schema['long_to_short'][self.scope.lower()]
+        tasks = 'test'
+
 
         # create layouts
         layout = QtWidgets.QVBoxLayout(self)
@@ -95,8 +103,9 @@ class Designer(LJDialog):
         self.load_menus()
 
     def on_add_menu_clicked(self):
+
         dialog = InputDialog(title='Add %s' % self.type, message='Enter a Name for your %s' % self.type, line_edit=True,
-                             regex='[a-zA-Z0-0]{3,}', name_example='Only letters & Numbers Allowed in Button Names')
+                             regex='[a-zA-Z0-0]{3,}', combo_box_items=tasks, name_example='Only letters & Numbers Allowed in Button Names')
         dialog.exec_()
         if dialog.button == 'Ok':
             menu_name = dialog.line_edit.text()

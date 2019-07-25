@@ -130,7 +130,6 @@ class PreflightStep(QtWidgets.QWidget):
     def load_attrs(self):
         for attr in self.attrs:
             if attr in self.attrs_dict:
-                print 'setting attr %s' % attr
                 self.attrs_dict[attr].setText(str(self.attrs[attr]))
         # load the python file into the text edit
         code_text = self.load_code_text()
@@ -144,8 +143,6 @@ class PreflightStep(QtWidgets.QWidget):
     def load_code_text(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
                                  '%s.py' % self.name)
-        print code_path, 'importing'
-
         if os.path.exists(code_path):
             try:
                 return open(code_path).read()
@@ -169,8 +166,6 @@ class PreflightStep(QtWidgets.QWidget):
         return preflight
 
     def on_delete_clicked(self):
-        print self.parent
-        print '-00000000000000'
         self.parent.removeTab(self.parent.currentIndex())
 
 
@@ -332,11 +327,15 @@ class CGLMenu(QtWidgets.QWidget):
         elif self.type == 'shelves':
             self.title = QtWidgets.QLabel('%s Shelf Buttons: (Drag to Reorder)' % self.menu_name)
         self.title.setProperty('class', 'title')
+        self.delete_parent_button = QtWidgets.QPushButton('Delete')
         if self.type == 'shelves':
             self.add_button = QtWidgets.QPushButton('add shelf button')
+        elif self.type == 'preflights':
+            self.add_button = QtWidgets.QPushButton('add preflight step')
         else:
             self.add_button = QtWidgets.QPushButton('add %s button' % self.type)
         self.add_button.setProperty('class', 'add_button')
+        self.delete_parent_button.setProperty('class', 'add_button')
 
         # set parameters
         self.buttons.setMovable(True)
@@ -344,14 +343,18 @@ class CGLMenu(QtWidgets.QWidget):
         # layout the widget
         title_layout.addWidget(self.title)
         title_layout.addWidget(self.add_button)
+        title_layout.addWidget(self.delete_parent_button)
         title_layout.addStretch(1)
         layout.addLayout(title_layout)
         layout.addWidget(self.buttons)
 
         # connect SIGNALS and SLOTS
         self.add_button.clicked.connect(self.on_add_menu_button)
-
+        self.delete_parent_button.clicked.connect(self.on_delete_parent_clicked)
         self.load_buttons()
+
+    def on_delete_parent_clicked(self):
+        print 'Delete Clicked'
 
     def on_add_menu_button(self):
         print self.menu_path, 'is path'
