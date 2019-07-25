@@ -75,9 +75,6 @@ class FilesPanel(QtWidgets.QWidget):
                                      title=title,
                                      path_object=current, show_import=self.show_import)
             task_widget.task = self.task
-            # task_widget.showall()
-            # task_widget.hide_button.hide()
-            # task_widget.show_button.show()
             task_widget.files_area.export_files_table.hide()
             self.task_widgets_dict[self.task] = task_widget
 
@@ -161,7 +158,6 @@ class FilesPanel(QtWidgets.QWidget):
 
                 to_object.set_attr(context='render')
                 to_folder = to_object.path_root
-                print 'Render folder: %s' % to_folder
 
         for f in files:
             file_ = os.path.split(f)[-1]
@@ -233,7 +229,6 @@ class FilesPanel(QtWidgets.QWidget):
     @staticmethod
     def populate_versions_combo(task_widget, path_object, task):
         version = path_object.version
-        print version, 'populate_versions_combo'
         task_widget.versions.show()
         task_widget.versions.clear()
         object_ = path_object.copy(user=task_widget.users.currentText(), task=task, version='*')
@@ -246,19 +241,20 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.versions.setCurrentIndex(index_)
         else:
             task_widget.versions.setCurrentIndex(0)
-        print 'current text is %s' % task_widget.versions.currentText()
         return task_widget.versions.currentText()
 
     @staticmethod
     def populate_resolutions_combo(task_widget, path_object, task):
-
         object_ = path_object.copy(user=task_widget.users.currentText(), task=task,
                                    version=task_widget.versions.currentText(),
                                    resolution='*')
         items = object_.glob_project_element('resolution')
         for each in items:
             task_widget.resolutions.addItem(each)
-        index_ = task_widget.resolutions.findText('high')
+        if path_object.resolution:
+            index_ = task_widget.resolutions.findText(path_object.resolution)
+        else:
+            index_ = task_widget.resolutions.findText('high')
         if index_:
             task_widget.resolutions.setCurrentIndex(index_)
         return task_widget.resolutions.currentText()
@@ -338,8 +334,6 @@ class FilesPanel(QtWidgets.QWidget):
         current = PathObject(self.current_location)
         # current location needs to have the version in it.
         next_minor = current.new_minor_version_object()
-        print current.path_root
-        print next_minor.path_root
         shutil.copytree(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
         CreateProductionData(next_minor)
         # reselect the original asset.
@@ -357,12 +351,13 @@ class FilesPanel(QtWidgets.QWidget):
         :return:
         """
         files_widget = self.sender().parent().parent()
-        version = self.sender().currentText()
+        version = self.sender().parent().versions.currentText()
         resolution = self.sender().parent().resolutions.currentText()
         user = self.sender().parent().users.currentText()
         self.path_object.set_attr(version=version)
         self.path_object.set_attr(user=user)
         self.path_object.set_attr(resolution=resolution)
+        self.current_location = self.path_object.data
         files_widget.on_task_selected(self.path_object.data)
 
     def on_assign_button_clicked(self, data):
@@ -505,7 +500,7 @@ class FilesPanel(QtWidgets.QWidget):
                                    filename='*')
             files_ = glob.glob(renders.path_root)
             if files_:
-                print 'Published Files for %s' % current.path_root
+                logging.debug('Published Files for %s' % current.path_root)
                 widget.setup(render_table, ListItemModel(self.prep_list_for_table(files_, basename=True),
                                                          ['Ready to Review/Publish']))
                 render_table.show()
@@ -520,7 +515,7 @@ class FilesPanel(QtWidgets.QWidget):
             else:
                 widget.export_label.hide()
                 render_table.hide()
-                print 'No Render Files for %s' % current.path_root
+                logging.debug('No Render Files for %s' % current.path_root)
 
     def clear_layout(self, layout=None):
         if not layout:

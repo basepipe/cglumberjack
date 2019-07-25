@@ -541,8 +541,12 @@ class CGLumberjack(LJMainWindow):
         dialog.exec_()
 
     def on_preflight_designer_clicked(self):
+        pm = app_config()['account_info']['project_management']
+        print pm
+        def_schema = app_config()['project_management'][pm]['api']['default_schema']
+        schema = app_config()['project_management'][pm]['tasks'][def_schema]
         from apps.pipeline.preflight_designer import PreflightDesigner
-        dialog = PreflightDesigner(self)
+        dialog = PreflightDesigner(self, pm_tasks=schema)
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)
         dialog.exec_()

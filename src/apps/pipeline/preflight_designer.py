@@ -3,8 +3,8 @@ from apps.pipeline.designer import Designer
 
 class PreflightDesigner(Designer):
 
-    def __init__(self, parent=None, type_='preflights'):
-        Designer.__init__(self, parent, type_=type_)
+    def __init__(self, parent=None, type_='preflights', pm_tasks=None):
+        Designer.__init__(self, parent, type_=type_, pm_tasks=pm_tasks)
 
 
 if __name__ == "__main__":

@@ -5,12 +5,9 @@ from cglui.widgets.dialog import InputDialog
 from cglui.widgets.base import LJDialog
 from cglcore.path import load_style_sheet, get_cgl_tools
 from utils import CGLMenu, PreflightStep
-from cglcore.config import app_config
-
-
 
 class Designer(LJDialog):
-    def __init__(self, parent=None, type_=None, menu_path=None):
+    def __init__(self, parent=None, type_=None, menu_path=None, pm_tasks=None):
         LJDialog.__init__(self, parent)
         self.type = type_
         self.cgl_tools = get_cgl_tools()
@@ -18,11 +15,16 @@ class Designer(LJDialog):
         self.menu_path = menu_path
         self.software = ''
         self.setWindowTitle('%s Designer' % type_.title())
-        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
-        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
-        self.long_to_short = schema['long_to_short'][self.scope.lower()]
-        tasks = 'test'
-
+        self.schema = pm_tasks
+        self.task_list = []
+        for each in self.schema['long_to_short']['assets']:
+            if each not in self.task_list:
+                self.task_list.append(each)
+        for each in self.schema['long_to_short']['shots']:
+            if each not in self.task_list:
+                self.task_list.append(each)
+        self.task_list.sort()
+        self.task_list.insert(0, '')
 
         # create layouts
         layout = QtWidgets.QVBoxLayout(self)
@@ -74,7 +76,6 @@ class Designer(LJDialog):
         layout.addWidget(self.menus)
 
         # SIGNALS AND SLOTS
-
         self.add_menu_button.clicked.connect(self.on_add_menu_clicked)
         self.new_software_button.clicked.connect(self.on_new_software_clicked)
 
@@ -103,12 +104,34 @@ class Designer(LJDialog):
         self.load_menus()
 
     def on_add_menu_clicked(self):
-
-        dialog = InputDialog(title='Add %s' % self.type, message='Enter a Name for your %s' % self.type, line_edit=True,
-                             regex='[a-zA-Z0-0]{3,}', combo_box_items=tasks, name_example='Only letters & Numbers Allowed in Button Names')
+        dialog = InputDialog(title='Add %s' % self.type, message='Choose Task to Create a Preflight For',
+                             line_edit=False, regex='[a-zA-Z0-0]{3,}', combo_box_items=self.task_list,
+                             name_example='Only letters & Numbers Allowed in Button Names')
         dialog.exec_()
         if dialog.button == 'Ok':
-            menu_name = dialog.line_edit.text()
+            long_name = dialog.combo_box.currentText()
+            if long_name in self.schema['long_to_short']['assets']:
+                menu_name = self.schema['long_to_short']['assets'][long_name]
+            elif long_name in self.schema['long_to_short']['shots']:
+                menu_name = self.schema['long_to_short']['shots'][long_name]
+            cgl_file = self.menu_path
+            new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
+                               menu_path=cgl_file, menu_type=self.type)
+            index = self.menus.addTab(new_menu, menu_name)
+            self.menus.setCurrentIndex(index)
+
+    def on_add_preflight_clicked(self):
+        dialog = InputDialog(title='Add %s' % self.type, message='Create A Preflight \n(task names will automatically '
+                                                                 'be connected to task publishes)', line_edit=False,
+                             regex='[a-zA-Z0-0]{3,}', combo_box_items=self.task_list,
+                             name_example='Only letters & Numbers Allowed in Button Names')
+        dialog.exec_()
+        if dialog.button == 'Ok':
+            long_name = dialog.combo_box.currentText()
+            if long_name in self.schema['long_to_short']['assets']:
+                menu_name = self.schema['long_to_short']['assets'][long_name]
+            elif long_name in self.schema['long_to_short']['shots']:
+                menu_name = self.schema['long_to_short']['shots'][long_name]
             cgl_file = self.menu_path
             new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
                                menu_path=cgl_file, menu_type=self.type)

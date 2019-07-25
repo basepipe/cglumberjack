@@ -327,13 +327,16 @@ class CGLMenu(QtWidgets.QWidget):
         elif self.type == 'shelves':
             self.title = QtWidgets.QLabel('%s Shelf Buttons: (Drag to Reorder)' % self.menu_name)
         self.title.setProperty('class', 'title')
-        self.delete_parent_button = QtWidgets.QPushButton('Delete')
+
         if self.type == 'shelves':
             self.add_button = QtWidgets.QPushButton('add shelf button')
+            self.delete_parent_button = QtWidgets.QPushButton('Delete Shelf')
         elif self.type == 'preflights':
             self.add_button = QtWidgets.QPushButton('add preflight step')
+            self.delete_parent_button = QtWidgets.QPushButton('Delete Preflight')
         else:
             self.add_button = QtWidgets.QPushButton('add %s button' % self.type)
+            self.delete_parent_button = QtWidgets.QPushButton('Delete Menu')
         self.add_button.setProperty('class', 'add_button')
         self.delete_parent_button.setProperty('class', 'add_button')
 
@@ -354,7 +357,13 @@ class CGLMenu(QtWidgets.QWidget):
         self.load_buttons()
 
     def on_delete_parent_clicked(self):
-        print 'Delete Clicked'
+        print self.menu_name
+        dialog = InputDialog(title='Delete %s?' % self.menu_name, message='Are you sure you want to delete %s' % self.menu_name)
+        dialog.exec_()
+        if dialog.button == 'Ok':
+            print 'Deleting %s' % self.menu_name
+            menus = self.buttons.parent().parent().parent()
+            menus.removeTab(menus.currentIndex())
 
     def on_add_menu_button(self):
         print self.menu_path, 'is path'
