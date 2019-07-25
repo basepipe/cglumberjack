@@ -8,7 +8,7 @@ from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange
 from cglui.widgets.progress_gif import ProgressDialog
-from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel
+from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
 import apps.lumbermill.elements.IOPanel as IOP
 
@@ -44,7 +44,7 @@ class PathWidget(QtWidgets.QFrame):
                         filename = split_sequence_frange(path_object.filename)[0]
                         path_object.set_attr(filename=filename)
                     except TypeError:
-                        print 'passing'
+                        logging.error('passing update_path due to exeption')
             self.text = path_object.path_root
             self.path_line_edit.setText(path_object.path_root)
 
@@ -243,7 +243,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             font_db.addApplicationFont(os.path.join(font_path(), 'ARCADECLASSIC.TTF'))
             font_db.addApplicationFont(os.path.join(font_path(), 'ka1.ttf'))
         except AttributeError:
-            logging.debug('Skipping Loading Fonts - possible Pyside2 issue')
+            logging.error('Skipping Loading Fonts - possible Pyside2 issue')
 
         # Environment Stuff
         self.show_import = show_import
@@ -278,7 +278,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                     self.path_object.set_attr(user='')
                     self.path_object.set_attr(task='*')
             except IndexError:
-                print 'Path is not set'
+                logging.error('Path is not set')
                 pass
         else:
             self.path_object = PathObject(self.root)
@@ -372,7 +372,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
             else:
-                self.panel = VButtonPanel(path_object=path_object, element='task')
+                self.panel = TaskPanel(path_object=path_object, element='task')
                 self.panel.add_button.connect(self.add_task)
         elif last in seq_attrs:
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
@@ -381,7 +381,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.panel = IOP.IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
-                self.panel = VButtonPanel(path_object=path_object, element='task')
+                self.panel = TaskPanel(path_object=path_object, element='task')
                 self.panel.add_button.connect(self.add_task)
             else:
                 self.load_files_panel(path_object)
@@ -421,7 +421,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def open_clicked(self):
         if '####' in self.path_widget.path_line_edit.text():
-            logging.info('Nothing set for sequences yet')
+            logging.error('Nothing set for sequences yet')
         else:
             logging.info('Opening %s' % self.path_widget.path_line_edit.text())
             start(self.path_widget.path_line_edit.text())
