@@ -5,7 +5,7 @@ from cglcore.path import image_path
 
 class ProgressGif(QtWidgets.QWidget):
 
-    def __init__(self, title='CG Lumberjacking...', height=175):
+    def __init__(self, title='CG Lumberjacking...', height=150):
         QtWidgets.QWidget.__init__(self)
         layout = QtWidgets.QVBoxLayout(self)
         self.gif_height = QtCore.QSize(height, height)
