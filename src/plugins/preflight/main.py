@@ -1,11 +1,14 @@
 import os
 import json
+import threading
+import time
 import sys
 import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
 from cglcore.path import icon_path, image_path, get_cgl_config
 from cglui.widgets.containers.table import LJTableWidget
+from cglui.widgets.progress_gif import ProgressDialog
 from cglui.startup import do_gui_init
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.widgets import GifWidget
@@ -166,11 +169,16 @@ class Preflight(QtWidgets.QDialog):
 
     def run_selected_clicked(self, checks=None):
         # TODO - probably need to figure out how to multithread this so i can run gifs at the same time ;)
+        prog_dialog = ProgressDialog('Working....', 'chopping_wood.gif')
+        prog_dialog.show()
+        QtWidgets.qApp.processEvents()
         if not checks:
             checks = self.selected_checks
         for each in checks:
             if self.previous_checks_passed(each):
                 class_ = self.function_d[each['Check']]
+                # run_thread = threading.Thread(target=class_.run())
+                # run_thread.start()
                 class_.run()
                 if self.function_d[each['Check']].status:
                     each['Status'] = 'Passed'
@@ -218,6 +226,7 @@ class Preflight(QtWidgets.QDialog):
         self.preflights.hideColumn(3)
 
     def run_all_clicked(self):
+        # To Do: load waiting gif while function operates
         self.image_plane.start()
         model = self.preflights.model()
         all_rows = []

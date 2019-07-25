@@ -3,15 +3,15 @@ import shutil
 import pandas as pd
 import logging
 import glob
-import datetime
-# noinspection PyUnresolvedReferences
+import threading
 from Qt import QtCore, QtGui, QtWidgets
+from cglui.widgets.progress_gif import ProgressGif
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.containers.tree import LJTreeWidget
 from cglui.widgets.combo import AdvComboBox
 from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
-from cglcore.path import PathObject, CreateProductionData, icon_path, lj_list_dir, split_sequence_frange, get_file_type, split_sequence
+from cglcore.path import PathObject, icon_path, lj_list_dir, split_sequence_frange, get_file_type
 from plugins.preflight.main import Preflight
 
 FILEPATH = 0
@@ -52,7 +52,6 @@ class EmptyStateWidgetIO(EmptyStateWidget):
             e.ignore()
 
 
-# noinspection PyPep8Naming,PyPep8Naming
 class PandasModel(QtCore.QAbstractTableModel):
     def __init__(self, data, parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
@@ -80,10 +79,10 @@ class IOPanel(QtWidgets.QWidget):
         else:
             print 'No Path Object found, exiting'
             return
+
         self.project_management = app_config()['account_info']['project_management']
         self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
         self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
-        #self.tasks_dict = self.schema_dict['long_to_short'][self.scope_combo.currentText()]
         self.path_object_next = None
         self.panel = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout()
@@ -175,10 +174,14 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
         self.empty_state.hide()
 
+        self.progress_bar = ProgressGif()
+        self.progress_bar.hide()
+
         h_layout.addWidget(self.source_widget)
         h_layout.addWidget(self.ingest_widget)
         self.panel.addLayout(h_layout)
         self.panel.addWidget(self.empty_state)
+        self.panel.addWidget(self.progress_bar)
         self.panel.addWidget(self.file_tree)
 
         self.panel.addLayout(self.tags_title_row)
@@ -208,6 +211,7 @@ class IOPanel(QtWidgets.QWidget):
         self.ingest_widget.add_button.clicked.connect(self.on_add_ingest_event)
         self.publish_button.clicked.connect(self.publish_tagged_assets)
         self.empty_state.files_added.connect(self.new_files_dragged)
+        logging.info('Testing the popup')
         self.on_scope_changed()
 
     @staticmethod
@@ -219,11 +223,10 @@ class IOPanel(QtWidgets.QWidget):
         if dialog.button == 'Add Source':
             print "I'm creating a new source for you"
 
-    def new_files_dragged(self, files):
-        if self.path_object.ingest_source == '*':
+    def file_interaction(self, files, path, to_folder):
+        if path == '*':
             print 'Please Select An Ingest Source Before Dragging Files'
             return
-        to_folder = self.path_object_next.path_root
         if not os.path.exists(to_folder):
             os.makedirs(to_folder)
         for f in files:
@@ -235,11 +238,21 @@ class IOPanel(QtWidgets.QWidget):
             else:
                 logging.info('Copying Folder From %s to %s' % (f, to_file))
                 shutil.copy(f, to_file)
+        self.progress_bar.hide()
         self.load_import_events()
         num = self.ingest_widget.list.count()
         item = self.ingest_widget.list.item(num - 1)
         item.setSelected(True)
         self.on_ingest_selected()
+
+    def new_files_dragged(self, files):
+        path = self.path_object.ingest_source
+        to_folder = self.path_object_next.path_root
+        self.progress_bar.show()
+        QtWidgets.qApp.processEvents()
+        file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
+        QtWidgets.qApp.processEvents()
+        file_process.start()
 
     def load_companies(self):
         self.source_widget.list.clear()

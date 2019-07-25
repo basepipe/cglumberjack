@@ -1,15 +1,16 @@
 import os
+import time
 import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog
-from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, image_path, split_sequence_frange
+from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange
+from cglui.widgets.progress_gif import ProgressDialog
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
 import apps.lumbermill.elements.IOPanel as IOP
-
 
 ICON_WIDTH = 24
 
@@ -421,6 +422,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         if '####' in self.path_widget.path_line_edit.text():
             logging.error('Nothing set for sequences yet')
         else:
+            logging.info('Opening %s' % self.path_widget.path_line_edit.text())
             start(self.path_widget.path_line_edit.text())
 
     @staticmethod
@@ -441,6 +443,7 @@ class CGLumberjack(LJMainWindow):
         # What is the default project management?
         # if not lumbermill do i have my proj_management settings?
         # what do i do if i'm not connect to the internet and i am using a project management service?
+
         self.user_name = ''
         self.user_email = ''
         self.company = ''
@@ -499,6 +502,9 @@ class CGLumberjack(LJMainWindow):
 
     def open_company_globals(self):
         # Need a gui for choosing these bad boys
+        print app_config()['account_info']['user_directory']
+        print self.centralWidget().path_object.company_config
+        print self.centralWidget().path_object.project_config
         start(self.centralWidget().path_object.company_config)
 
     def load_user_config(self):
@@ -564,18 +570,34 @@ class CGLumberjack(LJMainWindow):
     # check the config file to see if it has a default company and a default location
 
 
+def sleeper():
+    time.sleep(5)
+
+
 if __name__ == "__main__":
     from cglui.startup import do_gui_init
     app = do_gui_init()
-    splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
-    splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
-    splash.setMask(splash_pix.mask())
-    splash.show()
+    # splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
+    splash_dialog = ProgressDialog('Loading...', 'night_rider.gif')
+    splash_dialog.show()
+    QtWidgets.qApp.processEvents()
+
+    # splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+    # splash.setMask(splash_pix.mask())
+    # splash.show()
+
     td = CGLumberjack()
+
     td.show()
     td.raise_()
-    # setup stylesheet
+    # # setup stylesheet
     style_sheet = load_style_sheet()
     app.setStyleSheet(style_sheet)
-    splash.finish(td)
+
+    logging.info('after sleep')
+    #splash.finish(td)
+    splash_dialog.hide()
     app.exec_()
+
+# if the gif doesn't work 1 solution is to move any other ui references into a run function for background
+# only the gif will exist in the __main__ function
