@@ -1,9 +1,7 @@
 import os
 import sys
-import yaml
 import json
 import shutil
-from Qt import QtWidgets, QtCore, QtGui
 
 
 class Configuration(object):
@@ -170,8 +168,9 @@ class UserConfig(object):
             self.d['user_name'] = self.user_name
 
     def update_company(self):
-        if self.company:
-            self.d['company'] = self.company
+        print 'Skipping company for now'
+        # if self.company:
+        #     self.d['company'] = self.company
 
     def _write_json(self, data):
         with open(self.user_config_path, 'w') as outfile:

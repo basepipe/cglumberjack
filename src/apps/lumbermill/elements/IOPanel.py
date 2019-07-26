@@ -162,6 +162,7 @@ class IOPanel(QtWidgets.QWidget):
         self.tags_row.addWidget(self.tags_line_edit)
         # create buttons row
         self.buttons_row = QtWidgets.QHBoxLayout()
+
         self.publish_button = QtWidgets.QPushButton('Publish')
         self.refresh_button = QtWidgets.QPushButton('Refresh')
         self.refresh_button.hide()
@@ -506,7 +507,7 @@ class IOPanel(QtWidgets.QWidget):
         self.task_combo.show()
         self.tags_label.show()
         self.tags_line_edit.show()
-        self.publish_button.show()
+        # self.publish_button.show()
 
     def populate_tasks(self):
         self.task_combo.clear()

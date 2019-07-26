@@ -302,7 +302,7 @@ class PathObject(object):
             try:
                 regex = app_config()['rules']['path_variables'][attr]['regex']
             except KeyError:
-                logging.info('Could not find regex for %s in config, skipping' % attr)
+                logging.info('Could not find regex for %s: %s in config, skipping' % (attr, value))
             if value == '*':
                 self.__dict__[attr] = value
                 self.data[attr] = value
@@ -492,17 +492,11 @@ class PathObject(object):
         return new_obj
 
     def next_minor_version_number(self):
-        if self.version:
-            major, minor = self.version.split('.')
-            self.major_version = major
-            self.minor_version = minor
-        if not self.minor_version:
-            next_minor = '001'
-        else:
-            next_minor = '%03d' % (int(self.minor_version)+1)
-        if not self.major_version:
-            self.set_attr(major_version='000')
-        return '%s.%s' % (self.major_version, next_minor)
+        latest_version = self.latest_version()
+        major = latest_version.major_version
+        minor = latest_version.minor_version
+        next_minor = '%03d' % (int(minor) + 1)
+        return '%s.%s' % (major, next_minor)
 
     def next_major_version_number(self):
         """

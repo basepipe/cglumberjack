@@ -65,12 +65,12 @@ class NavigationWidget(QtWidgets.QFrame):
         self.projects_button.setToolTip('Go to Projects')
         self.companies_button = QtWidgets.QPushButton()
         self.companies_button.setToolTip('Go to Companies')
-        self.production_button = QtWidgets.QPushButton()
-        self.production_button.setToolTip('Go to Shots')
+        self.shots_button = QtWidgets.QPushButton()
+        self.shots_button.setToolTip('Go to Shots')
         self.back_button.setStyleSheet("background: transparent;")
         self.projects_button.setStyleSheet("background: transparent;")
         self.companies_button.setStyleSheet("background: transparent;")
-        self.production_button.setStyleSheet("background: transparent;")
+        self.shots_button.setStyleSheet("background: transparent;")
         back_icon = os.path.join(icon_path(), 'back24px.png')
         home_icon = os.path.join(icon_path(), 'project24px.png')
         company_icon = os.path.join(icon_path(), 'company24px.png')
@@ -82,8 +82,8 @@ class NavigationWidget(QtWidgets.QFrame):
         self.companies_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
         self.projects_button.setIcon(QtGui.QIcon(home_icon))
         self.projects_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
-        self.production_button.setIcon(QtGui.QIcon(self.shots_icon))
-        self.production_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
+        self.shots_button.setIcon(QtGui.QIcon(self.shots_icon))
+        self.shots_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
         self.current_location_line_edit = QtWidgets.QLineEdit()
         self.current_location_line_edit.setReadOnly(True)
         self.current_location_line_edit.setMinimumHeight(ICON_WIDTH*1.28)
@@ -97,7 +97,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.cl_row.addWidget(self.back_button)
         self.cl_row.addWidget(self.companies_button)
         self.cl_row.addWidget(self.projects_button)
-        self.cl_row.addWidget(self.production_button)
+        self.cl_row.addWidget(self.shots_button)
         self.cl_row.addWidget(self.search_box)
         self.cl_row.addStretch(1)
 
@@ -107,6 +107,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.back_button.clicked.connect(self.back_button_pressed)
         self.companies_button.clicked.connect(self.buttons_pressed)
         self.projects_button.clicked.connect(self.buttons_pressed)
+        self.shots_button.clicked.connect(self.buttons_pressed)
         self.set_text(self.path_object.path_root)
 
     def text(self):
@@ -118,28 +119,28 @@ class NavigationWidget(QtWidgets.QFrame):
             self.path_object = PathObject(self.current_location_line_edit.text())
             
     def show_company(self):
-        self.production_button.hide()
+        self.shots_button.hide()
         self.companies_button.show()
         self.projects_button.hide()
         
     def show_projects(self):
-        self.production_button.hide()
+        self.shots_button.hide()
         self.companies_button.show()
         self.projects_button.show()
         
     def show_production(self):
-        self.production_button.show()
+        self.shots_button.show()
         self.companies_button.show()
         self.projects_button.show()
         if self.path_object.scope == 'assets':
-            self.production_button.setIcon(QtGui.QIcon(self.assets_icon))
-            self.production_button.setToolTip('Go to Assets')
+            self.shots_button.setIcon(QtGui.QIcon(self.assets_icon))
+            self.shots_button.setToolTip('Go to Assets')
         elif self.path_object.scope == 'shots':
-            self.production_button.setIcon(QtGui.QIcon(self.shots_icon))
-            self.production_button.setToolTip('Go to Shots')
+            self.shots_button.setIcon(QtGui.QIcon(self.shots_icon))
+            self.shots_button.setToolTip('Go to Shots')
 
     def show_none(self):
-        self.production_button.hide()
+        self.shots_button.hide()
         self.companies_button.hide()
         self.projects_button.hide()
             
@@ -171,8 +172,9 @@ class NavigationWidget(QtWidgets.QFrame):
             path = '%s/%s/source/*' % (self.path_object.root, self.path_object.company)
         elif self.sender() == self.companies_button:
             path = '%s/%s' % (self.path_object.root, '*')
-        elif self.sender() == self.production_button:
-            pass
+        elif self.sender() == self.shots_button:
+            path = '%s/%s/source/%s/%s/*' % (self.path_object.root, self.path_object.company, self.path_object.project,
+                                             self.path_object.scope)
         new_obj = PathObject(path)
         self.location_changed.emit(new_obj)
 
@@ -276,7 +278,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                     self.path_object.set_attr(resolution=None)
                     self.path_object.set_attr(version=None)
                     self.path_object.set_attr(user='')
-                    self.path_object.set_attr(task='*')
+                    if not self.path_object.task:
+                        self.path_object.set_attr(task='*')
+                    self.path_object.set_attr(filename='')
+                    self.path_object.set_attr(ext='')
             except IndexError:
                 logging.error('Path is not set')
                 pass
@@ -435,7 +440,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
 
 class CGLumberjack(LJMainWindow):
-    def __init__(self, show_import=False, ):
+    def __init__(self, show_import=False):
         LJMainWindow.__init__(self)
         #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         # Check Globals first off:
@@ -444,12 +449,13 @@ class CGLumberjack(LJMainWindow):
         # if not lumbermill do i have my proj_management settings?
         # what do i do if i'm not connect to the internet and i am using a project management service?
 
-        self.user_name = ''
-        self.user_email = ''
+        user_config = UserConfig().d
+        self.user_name = user_config['user_name']
+        self.user_email = user_config['user_email']
         self.company = ''
-        self.previous_path = ''
+        self.previous_path = user_config['previous_path']
         self.filter = 'Everything'
-        self.previous_paths = {}
+        self.previous_paths = user_config['previous_paths']
         self.setCentralWidget(CGLumberjackWidget(self, user_email=self.user_email,
                                                  user_name=self.user_name,
                                                  company=self.company,
@@ -566,14 +572,11 @@ class CGLumberjack(LJMainWindow):
         dialog.exec_()
 
     def closeEvent(self, event):
-        try:
-            # set the current path so that it works on the load better.
-            user_config = UserConfig(user_email=self.centralWidget().user_email,
-                                     user_name=self.centralWidget().user_name,
-                                     current_path=self.centralWidget().path_widget.text)
-            user_config.update_all()
-        except AttributeError:
-            pass
+        # set the current path so that it works on the load better.
+        user_config = UserConfig(user_email=self.centralWidget().user_email,
+                                 user_name=self.centralWidget().user_name,
+                                 current_path=self.centralWidget().path_widget.text)
+        user_config.update_all()
 
     # check the config file to see if it has a default company and a default location
 
@@ -594,7 +597,7 @@ if __name__ == "__main__":
     # splash.setMask(splash_pix.mask())
     # splash.show()
 
-    td = CGLumberjack()
+    td = CGLumberjack(show_import=False)
 
     td.show()
     td.raise_()
