@@ -459,12 +459,25 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 else:
                     print 'Have not built anything for reviews of type: %s' % selection.file_type
             elif self.project_management == 'shotgun':
-                print 'Shotgun Reviews not conntect yet'
+                print 'Shotgun Reviews not connected yet'
         else:
-            print 'Dont have anything defined for reviewing working files yet'
+            print 'If someone tries to review a working file, we should copy it to the review files first'
 
     def publish_clicked(self):
-        print 'publish clicked'
+        from plugins.preflight.main import Preflight
+        selection = PathObject(self.path_widget.path_line_edit.text())
+        task = selection.task
+        print 'Publishing for %s' % task
+        # TODO - have to make this work outside the pandas scenario.
+        try:
+            this = Preflight(self, software='lumbermill', preflight=task, data_frame=self.data_frame,
+                             file_tree=self.file_tree, pandas_path=self.pandas_path,
+                             ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
+        except KeyError:
+            this = Preflight(self, software='lumbermill', preflight='ingest_default', data_frame=self.data_frame,
+                             file_tree=self.file_tree, pandas_path=self.pandas_path,
+                             ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
+        this.exec_()
 
 
 class CGLumberjack(LJMainWindow):
