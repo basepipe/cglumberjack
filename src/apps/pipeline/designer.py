@@ -114,6 +114,8 @@ class Designer(LJDialog):
                 menu_name = self.schema['long_to_short']['assets'][long_name]
             elif long_name in self.schema['long_to_short']['shots']:
                 menu_name = self.schema['long_to_short']['shots'][long_name]
+            else:
+                menu_name = long_name
             cgl_file = self.menu_path
             new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
                                menu_path=cgl_file, menu_type=self.type)

@@ -30,7 +30,6 @@ class FilesPanel(QtWidgets.QWidget):
         self.show_import = show_import
         self.path_object = path_object
         self.project_management = app_config()['account_info']['project_management']
-        print self.project_management
         self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
         schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
         self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]

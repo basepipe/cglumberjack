@@ -1,11 +1,12 @@
 import os
 import time
 import logging
+import shutil
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
-from cglui.widgets.dialog import LoginDialog
+from cglui.widgets.dialog import LoginDialog, InputDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange
 from cglui.widgets.progress_gif import ProgressDialog
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
@@ -439,10 +440,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def import_clicked():
         print 'import clicked'
 
-    def review_clicked(self):
+    def review_clicked(self, filepath=None):
         from cglcore.convert import create_hd_proxy, create_mov
-        selection = PathObject(self.path_widget.path_line_edit.text())
-        if selection.scope == 'render':
+        if not filepath:
+            selection = PathObject(self.path_widget.path_line_edit.text())
+        else:
+            selection = PathObject(filepath)
+        if selection.context == 'render':
             lin_images = ['exr', 'dpx']
             # LUMBERMILL REVIEWS
             if self.project_management == 'lumbermill':
@@ -450,21 +454,32 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 print 'Lumbermill Not connectect to review features'
             # FTRACK REVIEWS
             elif self.project_management == 'ftrack':
+                print selection.file_type
                 if selection.file_type == 'sequence':
                     if selection.ext in lin_images:
                         hd_proxy = create_hd_proxy(selection.path_root, start_frame=self.frange.split('-')[0])
                     else:
                         hd_proxy = selection.path_root
                     create_mov(hd_proxy)
+                elif selection.file_type == 'movie':
+                    print 'Need to build in support for transcoding movies'
+                elif selection.file_type == 'image':
+                    print 'Need to build in support for ftrack image reviews'
                 else:
                     print 'Have not built anything for reviews of type: %s' % selection.file_type
             elif self.project_management == 'shotgun':
-                print 'Shotgun Reviews not conntect yet'
+                print 'Shotgun Reviews not connected yet'
         else:
-            print 'Dont have anything defined for reviewing working files yet'
+            to_object = PathObject.copy(selection, context='render')
+            print 'Copying %s to %s' % (selection.path_root, to_object.path_root)
+            shutil.copyfile(selection.path_root, to_object.path_root)
+            self.review_clicked(filepath=to_object.path_root)
 
     def publish_clicked(self):
-        print 'publish clicked'
+        from plugins.preflight.launch import launch_
+        selection = PathObject(self.path_widget.path_line_edit.text())
+        task = selection.task
+        launch_(self, task, selection)
 
 
 class CGLumberjack(LJMainWindow):

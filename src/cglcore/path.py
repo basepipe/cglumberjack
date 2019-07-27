@@ -477,13 +477,15 @@ class PathObject(object):
         else:
             return new_obj
 
-    def latest_version(self):
+    def latest_version(self, publish=False):
         """
         Returns a path to the latest version.
         :return:
         """
         new_obj = copy.deepcopy(self)
         if new_obj.user:
+            if publish:
+                new_obj.set_attr(user='publish')
             latest_version = new_obj.glob_project_element('version')
             if latest_version:
                 new_obj.set_attr(version=latest_version[-1])
@@ -503,9 +505,17 @@ class PathObject(object):
         """
         Returns a string of the next major Version Number ex. 001.000.   If you need more flexibility use
         next_major_version which will return a PathObject.
+
+        This also takes into account Publish Versions and will return the greater of the Publish Version and
+        User Version
         :return:
         """
         major = self.latest_version().major_version
+        print 'major', major
+        pub_major = self.latest_version(publish=True).major_version
+        print 'pub_major', pub_major
+        if int(major) < int(pub_major):
+            major = pub_major
         next_major = '%03d' % (int(major)+1)
         return '%s.%s' % (next_major, '000')
 
@@ -1054,6 +1064,7 @@ def get_cgl_config():
         cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
     return cg_lumberjack_dir
 
+
 def get_cgl_tools():
     return app_config()['paths']['cgl_tools']
 
@@ -1123,7 +1134,48 @@ def prep_seq_delimiter(sequence, replace_with='*', ext=None):
         return '%s.%s' % (split_sequence(sequence), ext)
 
 
+def publish(path_obj):
+    """
+    Requires a path with render folder with existing data.
+    Creates the next major version of the "USER" dircectory and copies all source & render files to it.
+    Creates the Next Major Version of the "PUBLISH" directory and copies all source & render files to it.
+    As a first step these will be the same as whatever is the highest directory.
+    :param path_obj: this can be a path object, a string, or a dictionary
+    :return: boolean depending on whether publish is successful or not.
+    """
+    path_object = PathObject(path_obj)
+    # remove filename and ext to make sure we're dealing with a folder
+    path_object = path_object.copy(filename='', ext='', resolution='')
+    user = path_object.user
+    if user != 'publish':
+        if path_object.context == 'source':
+            source_object = path_object
+            render_object = PathObject.copy(path_object, context='render')
+        else:
+            source_object = PathObject.copy(path_object, context='source')
+            render_object = path_object
+        # Get the Right Version Number
+        source_next = source_object.next_major_version()
+        render_next = render_object.copy(version=source_next.version)
+        source_pub = source_next.copy(user='publish')
+        render_pub = render_next.copy(user='publish')
 
+        for each in os.listdir(source_object.path_root):
+            logging.info('Copying Source Resolution %s from %s to %s' % (each, source_object.path_root, source_next.path_root))
+            logging.info('Copying Source Resolution %s from %s to %s' % (each, source_object.path_root, source_pub.path_root))
+            shutil.copytree(os.path.join(source_object.path_root, each), os.path.join(source_next.path_root, each))
+            shutil.copytree(os.path.join(source_object.path_root, each), os.path.join(source_pub.path_root, each))
+
+        for each in os.listdir(render_object.path_root):
+            logging.info('Copying Render Resolution %s from %s to %s' % (each, render_object.path_root, render_next.path_root))
+            logging.info('Copying Render Resolution %s from %s to %s' % (each, render_object.path_root, render_pub.path_root))
+            shutil.copytree(os.path.join(render_object.path_root, each), os.path.join(render_next.path_root, each))
+            shutil.copytree(os.path.join(render_object.path_root, each), os.path.join(render_pub.path_root, each))
+        # Register with Production Management etc...
+        CreateProductionData(source_next)
+        CreateProductionData(source_pub)
+        return True
+    return False
 
 
 
