@@ -43,6 +43,7 @@ class PathObject(object):
         self.type = None
         self.asset = None
         self.variant = None
+        self.frange = None
         self.user = None
         self.version = None
         self.major_version = None
@@ -532,6 +533,11 @@ class PathObject(object):
         this is just a convenience attr when working with pathObjects
         :return:
         """
+        # first see if it's a sequence
+        result = split_sequence_frange(self.path)
+        if result:
+            self.path = result[0]
+            self.frange = result[1]
         _, file_ext = os.path.splitext(self.path)
         try:
             _type = EXT_MAP[file_ext]

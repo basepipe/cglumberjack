@@ -266,6 +266,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.source_selection = []
         self.setMinimumWidth(700)
         self.setMinimumHeight(600)
+        self.frange = None
 
         self.layout = QtWidgets.QVBoxLayout(self)
         self.setContentsMargins(0, 0, 0, 0)
@@ -328,6 +329,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             path_object = PathObject(data)
         elif type(data) == PathObject:
             path_object = PathObject(data)
+        if path_object.frange:
+            self.frange = path_object.frange
         self.nav_widget.set_text(path_object.path_root)
         self.nav_widget.update_buttons(path_object=path_object)
         last = path_object.get_last_attr()
@@ -417,7 +420,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                                 user_name=self.user_name, show_import=self.show_import)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
-        self.panel.new_version_signal.connect(self.new_version_clicked)
+        #self.panel.new_version_signal.connect(self.new_version_clicked)
+        self.panel.review_signal.connect(self.review_clicked)
+        self.panel.publish_signal.connect(self.publish_clicked)
         self.panel.source_selection_changed.connect(self.set_source_selection)
 
     def set_source_selection(self, data):
@@ -434,9 +439,32 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def import_clicked():
         print 'import clicked'
 
-    @staticmethod
-    def new_version_clicked():
-        print 'New Version Clicked'
+    def review_clicked(self):
+        from cglcore.convert import create_hd_proxy, create_mov
+        selection = PathObject(self.path_widget.path_line_edit.text())
+        if selection.scope == 'render':
+            lin_images = ['exr', 'dpx']
+            # LUMBERMILL REVIEWS
+            if self.project_management == 'lumbermill':
+                # do this for movies
+                print 'Lumbermill Not connectect to review features'
+            # FTRACK REVIEWS
+            elif self.project_management == 'ftrack':
+                if selection.file_type == 'sequence':
+                    if selection.ext in lin_images:
+                        hd_proxy = create_hd_proxy(selection.path_root, start_frame=self.frange.split('-')[0])
+                    else:
+                        hd_proxy = selection.path_root
+                    create_mov(hd_proxy)
+                else:
+                    print 'Have not built anything for reviews of type: %s' % selection.file_type
+            elif self.project_management == 'shotgun':
+                print 'Shotgun Reviews not conntect yet'
+        else:
+            print 'Dont have anything defined for reviewing working files yet'
+
+    def publish_clicked(self):
+        print 'publish clicked'
 
 
 class CGLumberjack(LJMainWindow):

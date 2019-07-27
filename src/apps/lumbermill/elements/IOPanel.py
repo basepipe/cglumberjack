@@ -507,7 +507,7 @@ class IOPanel(QtWidgets.QWidget):
         self.task_combo.show()
         self.tags_label.show()
         self.tags_line_edit.show()
-        # self.publish_button.show()
+        self.publish_button.show()
 
     def populate_tasks(self):
         self.task_combo.clear()

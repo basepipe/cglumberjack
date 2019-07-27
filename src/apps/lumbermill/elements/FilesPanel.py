@@ -19,6 +19,8 @@ class FilesPanel(QtWidgets.QWidget):
     open_signal = QtCore.Signal()
     import_signal = QtCore.Signal()
     new_version_signal = QtCore.Signal()
+    review_signal = QtCore.Signal()
+    publish_signal = QtCore.Signal()
 
     def __init__(self, parent=None, path_object=None, user_email='', user_name='', show_import=False, pixmap=False):
         QtWidgets.QWidget.__init__(self, parent)
@@ -28,6 +30,7 @@ class FilesPanel(QtWidgets.QWidget):
         self.show_import = show_import
         self.path_object = path_object
         self.project_management = app_config()['account_info']['project_management']
+        print self.project_management
         self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
         schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
         self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
@@ -103,6 +106,8 @@ class FilesPanel(QtWidgets.QWidget):
             self.load_render_files(task_widget)
 
             task_widget.create_empty_version.connect(self.new_empty_version_clicked)
+            task_widget.files_area.review_button_clicked.connect(self.on_review_clicked)
+            task_widget.files_area.publish_button_clicked.connect(self.on_publish_clicked)
             task_widget.copy_latest_version.connect(self.new_version_from_latest)
             task_widget.copy_selected_version.connect(self.version_up_selected_clicked)
             task_widget.files_area.work_files_table.selected.connect(self.on_source_selected)
@@ -360,6 +365,12 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_import_clicked(self):
         self.import_signal.emit()
+
+    def on_review_clicked(self):
+        self.review_signal.emit()
+
+    def on_publish_clicked(self):
+        self.publish_signal.emit()
 
     def on_task_info_changed(self):
         """

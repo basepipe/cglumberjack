@@ -165,6 +165,8 @@ class FilesWidget(QtWidgets.QFrame):
     open_button_clicked = QtCore.Signal()
     import_button_clicked = QtCore.Signal()
     new_version_clicked = QtCore.Signal()
+    review_button_clicked = QtCore.Signal()
+    publish_button_clicked = QtCore.Signal()
     create_empty_version = QtCore.Signal()
     copy_latest_version = QtCore.Signal()
     copy_selected_version = QtCore.Signal()
@@ -223,6 +225,8 @@ class FilesWidget(QtWidgets.QFrame):
 
         self.open_button.clicked.connect(self.on_open_button_clicked)
         self.new_version_button.clicked.connect(self.on_new_version_clicked)
+        self.review_button.clicked.connect(self.on_review_button_clicked)
+        self.publish_button.clicked.connect(self.on_publish_button_clicked)
         self.import_button.clicked.connect(self.on_import_clicked)
         if self.show_import:
             self.import_button.show()
@@ -259,6 +263,12 @@ class FilesWidget(QtWidgets.QFrame):
     def on_new_version_clicked(self):
         self.new_version_clicked.emit()
 
+    def on_review_button_clicked(self):
+        self.review_button_clicked.emit()
+
+    def on_publish_button_clicked(self):
+        self.publish_button_clicked.emit()
+
     def on_import_clicked(self):
         self.import_button_clicked.emit()
 
@@ -288,6 +298,8 @@ class TaskWidget(QtWidgets.QWidget):
     open_button_clicked = QtCore.Signal()
     import_button_clicked = QtCore.Signal()
     new_version_clicked = QtCore.Signal()
+    publish_button_clicked = QtCore.Signal()
+    review_button_clicked = QtCore.Signal()
     create_empty_version = QtCore.Signal()
     copy_latest_version = QtCore.Signal()
     copy_selected_version = QtCore.Signal()
