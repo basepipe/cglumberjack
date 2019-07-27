@@ -1,11 +1,17 @@
 {
     "lumbermill": {
         "default": {
-            "order": 2, 
-            "testStep": {
-                "label": "testStep", 
-                "module": "cgl_tools.lumbermill.preflights.default.testStep", 
+            "check_publish_files": {
+                "label": "Check Publish Files", 
+                "module": "cgl_tools.lumbermill.preflights.default.check_publish_files", 
                 "order": 1, 
+                "required": "True"
+            }, 
+            "order": 2, 
+            "publish_files": {
+                "label": "Publish Files", 
+                "module": "cgl_tools.lumbermill.preflights.default.publish_files", 
+                "order": 2, 
                 "required": "True"
             }
         }, 
@@ -50,15 +56,6 @@
                 "required": "True"
             }, 
             "order": 1
-        }, 
-        "test": {
-            "order": 4, 
-            "test": {
-                "label": "test", 
-                "module": "cgl_tools.lumbermill.preflights.test.test", 
-                "order": 1, 
-                "required": "True"
-            }
         }
     }
 }
