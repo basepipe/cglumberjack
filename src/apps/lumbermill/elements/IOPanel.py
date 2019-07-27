@@ -162,6 +162,7 @@ class IOPanel(QtWidgets.QWidget):
         self.tags_row.addWidget(self.tags_line_edit)
         # create buttons row
         self.buttons_row = QtWidgets.QHBoxLayout()
+
         self.publish_button = QtWidgets.QPushButton('Publish')
         self.refresh_button = QtWidgets.QPushButton('Refresh')
         self.refresh_button.hide()

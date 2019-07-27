@@ -20,15 +20,15 @@ class VersionButton(LJButton):
         LJButton.__init__(self, parent)
         self.menu = QtWidgets.QMenu()
         self.setText(self.tr("Version Up"))
-        self.empty_act = self.menu.addAction(self.tr("Empty"))
+        self.empty_act = self.menu.addAction(self.tr("New Empty Version"))
         self.empty_act.setToolTip(self.tr("Create a new empty version"))
         self.empty_act.triggered.connect(lambda: self.parent().create_empty_version.emit())
-        self.selected_act = self.menu.addAction(self.tr("Copy Current Version"))
+        self.selected_act = self.menu.addAction(self.tr("New Version From Selected"))
         self.selected_act.triggered.connect(lambda: self.parent().copy_selected_version.emit())
         self.selected_act.setToolTip(self.tr("Create a new version copying from current version"))
-        self.latest_act = self.menu.addAction(self.tr("Copy Latest Version"))
-        self.latest_act.triggered.connect(lambda: self.parent().copy_latest_version.emit())
-        self.latest_act.setToolTip(self.tr("Create a new version copying from the latest version"))
+        # self.latest_act = self.menu.addAction(self.tr("Copy Latest Version"))
+        # self.latest_act.triggered.connect(lambda: self.parent().copy_latest_version.emit())
+        # self.latest_act.setToolTip(self.tr("Create a new version copying from the latest version"))
         self.setMenu(self.menu)
 
     def set_new_version(self):
@@ -165,6 +165,8 @@ class FilesWidget(QtWidgets.QFrame):
     open_button_clicked = QtCore.Signal()
     import_button_clicked = QtCore.Signal()
     new_version_clicked = QtCore.Signal()
+    review_button_clicked = QtCore.Signal()
+    publish_button_clicked = QtCore.Signal()
     create_empty_version = QtCore.Signal()
     copy_latest_version = QtCore.Signal()
     copy_selected_version = QtCore.Signal()
@@ -189,6 +191,7 @@ class FilesWidget(QtWidgets.QFrame):
         self.work_files_table.title = 'work_files'
         self.work_files_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.export_files_table = FileTableWidget(self, hide_header=False)
+        self.export_files_table.horizontalHeader().setProperty('class', 'output')
         self.export_files_table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
         self.export_files_table.set_draggable(True)
         self.export_files_table.title = 'outputs'
@@ -222,6 +225,8 @@ class FilesWidget(QtWidgets.QFrame):
 
         self.open_button.clicked.connect(self.on_open_button_clicked)
         self.new_version_button.clicked.connect(self.on_new_version_clicked)
+        self.review_button.clicked.connect(self.on_review_button_clicked)
+        self.publish_button.clicked.connect(self.on_publish_button_clicked)
         self.import_button.clicked.connect(self.on_import_clicked)
         if self.show_import:
             self.import_button.show()
@@ -246,15 +251,23 @@ class FilesWidget(QtWidgets.QFrame):
         self.publish_button.hide()
         self.review_button.hide()
 
-    def show_tool_buttons(self):
+    def show_tool_buttons(self, user):
         self.open_button.show()
-        self.import_button.show()
-        self.new_version_button.show()
-        self.publish_button.show()
+        if self.show_import:
+            self.import_button.show()
+        if user != 'publish':
+            self.new_version_button.show()
+            # self.publish_button.show()
         self.review_button.show()
 
     def on_new_version_clicked(self):
         self.new_version_clicked.emit()
+
+    def on_review_button_clicked(self):
+        self.review_button_clicked.emit()
+
+    def on_publish_button_clicked(self):
+        self.publish_button_clicked.emit()
 
     def on_import_clicked(self):
         self.import_button_clicked.emit()
@@ -285,6 +298,8 @@ class TaskWidget(QtWidgets.QWidget):
     open_button_clicked = QtCore.Signal()
     import_button_clicked = QtCore.Signal()
     new_version_clicked = QtCore.Signal()
+    publish_button_clicked = QtCore.Signal()
+    review_button_clicked = QtCore.Signal()
     create_empty_version = QtCore.Signal()
     copy_latest_version = QtCore.Signal()
     copy_selected_version = QtCore.Signal()
@@ -357,7 +372,7 @@ class TaskWidget(QtWidgets.QWidget):
         self.start_task_button.hide()
         # self.show_button.clicked.connect(self.on_show_button_clicked)
         # self.hide_button.clicked.connect(self.on_hide_button_clicked)
-        self.start_task_button.clicked.connect(self.on_start_task_clicked)
+        self.create_assignment.clicked.connect(self.on_start_task_clicked)
         self.files_area.copy_latest_version.connect(self.copy_latest)
         self.files_area.copy_selected_version.connect(self.copy_selected)
         self.files_area.create_empty_version.connect(self.create_empty)
@@ -437,16 +452,6 @@ class TaskWidget(QtWidgets.QWidget):
 
     def on_add_button_clicked(self):
         self.add_clicked.emit()
-
-    # def on_show_button_clicked(self):
-    #     self.show_combos()
-    #     self.hide_button.show()
-    #     self.show_button.hide()
-    #
-    # def on_hide_button_clicked(self):
-    #     self.hide_combos()
-    #     self.hide_button.hide()
-    #     self.show_button.show()
 
     def on_start_task_clicked(self):
         self.start_task_clicked.emit(self.path_object)
@@ -682,10 +687,13 @@ class FileTableWidget(LJTableWidget):
 
     def on_row_selected(self, data):
         dict_ = {'.nk': 'nuke'}
-        file_name = data[-1][0]
-        file_name, ext = os.path.splitext(file_name)
-        if ext in dict_:
-            self.add_custom_menu(self.item_right_click_menu, dict_[ext])
+        if data:
+            file_name = data[-1][0]
+            file_name, ext = os.path.splitext(file_name)
+            if ext in dict_:
+                self.add_custom_menu(self.item_right_click_menu, dict_[ext])
+        else:
+            print 'No data in table'
 
     def item_right_click(self, position):
         self.item_right_click_menu.exec_(self.mapToGlobal(position))

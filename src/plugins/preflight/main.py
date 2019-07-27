@@ -82,6 +82,7 @@ class Preflight(QtWidgets.QDialog):
         self.selected_checks = []
         self.function_d = {}
         self.table_data = []
+        self.setWindowTitle('%s Preflights' % self.preflight)
 
         # for publishing single model from layout
         PreflightCheck.shared_data['preflight_dialog'] = self
@@ -169,9 +170,9 @@ class Preflight(QtWidgets.QDialog):
 
     def run_selected_clicked(self, checks=None):
         # TODO - probably need to figure out how to multithread this so i can run gifs at the same time ;)
-        prog_dialog = ProgressDialog('Working....', 'chopping_wood.gif')
-        prog_dialog.show()
-        QtWidgets.qApp.processEvents()
+        # prog_dialog = ProgressDialog('Working....', 'chopping_wood.gif')
+        # prog_dialog.show()
+        # QtWidgets.qApp.processEvents()
         if not checks:
             checks = self.selected_checks
         for each in checks:
