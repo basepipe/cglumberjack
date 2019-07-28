@@ -693,7 +693,7 @@ class FileTableWidget(LJTableWidget):
             if ext in dict_:
                 self.add_custom_menu(self.item_right_click_menu, dict_[ext])
         else:
-            print 'No data in table'
+            print ' No data in table'
 
     def item_right_click(self, position):
         self.item_right_click_menu.exec_(self.mapToGlobal(position))
@@ -800,7 +800,6 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.api_key_line_edit = QtWidgets.QLineEdit()
         self.api_user_line_edit = QtWidgets.QLineEdit()
 
-
         self.cancel_button = QtWidgets.QPushButton('Cancel')
         self.ok_button = QtWidgets.QPushButton('Ok')
         self.button = ''
@@ -842,9 +841,10 @@ class CreateProjectDialog(QtWidgets.QDialog):
         # TODO: Kyle
         pass
 
-    def set_project_management(self):
+    def set_project_management(self, proj_man=None):
         from cglcore.config import app_config
-        proj_man = app_config()['account_info']['project_management']
+        if not proj_man:
+            proj_man = app_config()['account_info']['project_management']
         index = self.proj_management_combo.findText(proj_man)
         self.proj_management_combo.setCurrentIndex(index)
 

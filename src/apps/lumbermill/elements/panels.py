@@ -3,6 +3,7 @@ import os
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.widgets import LJListWidget, LJButton
+from cglui.widgets.dialog import InputDialog
 from cglui.widgets.containers.model import ListItemModel
 from cglcore.path import PathObject, CreateProductionData, icon_path
 from cglcore.path import create_project_config
@@ -39,15 +40,13 @@ class CompanyPanel(QtWidgets.QWidget):
         self.update_location()
 
     def on_create_company(self):
-        dialog = CreateProjectDialog(parent=None, variable='company')
+        dialog = InputDialog(title='Create Company', message='Enter the name for the company:', line_edit=True)
         dialog.exec_()
 
         if dialog.button == 'Ok':
-            company = dialog.proj_line_edit.text()
-            proj_man = dialog.proj_management_combo.currentText()
+            company = dialog.line_edit.text()
             self.path_object.set_attr(company=company)
-            self.create_company_globals(company, dialog.proj_management_combo.currentText())
-            CreateProductionData(self.path_object, project_management=dialog.proj_management_combo.currentText())
+            CreateProductionData(self.path_object, project_management='lumbermill')
             self.load_companies()
 
     def create_company_globals(self, company, proj_management):

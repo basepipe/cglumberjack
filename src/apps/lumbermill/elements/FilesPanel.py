@@ -8,6 +8,7 @@ from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
+from cglcore.util import current_user
 from cglcore.path import PathObject, CreateProductionData
 from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file, get_frange_from_seq
 from cglui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
@@ -25,6 +26,9 @@ class FilesPanel(QtWidgets.QWidget):
     def __init__(self, parent=None, path_object=None, user_email='', user_name='', show_import=False, pixmap=False):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
+        self.work_files = []
+        self.render_files = []
+        self.version_obj = None
         self.task = path_object.task
         self.task_widgets_dict = {}
         self.show_import = show_import
@@ -41,9 +45,10 @@ class FilesPanel(QtWidgets.QWidget):
         self.in_file_tree = None
         self.user_changed_versions = False
         self.user_email = user_email
-        self.user = user_name
-        self.user_default = self.user
-        self.default_user = user_name
+        if user_name:
+            self.user = user_name
+        else:
+            self.user = current_user()
         self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
         self.on_task_selected(self.path_object.data)
         self.panel.addLayout(self.tasks)
@@ -88,7 +93,7 @@ class FilesPanel(QtWidgets.QWidget):
             self.panel.addWidget(task_widget)
             self.panel.tasks.append(self.task)
             self.version_obj = current.copy(task=self.task, user=user, version=version,
-                                       resolution=resolution, filename='*')
+                                            resolution=resolution, context='source', filename='*')
             task_widget.files_area.work_files_table.task = self.version_obj.task
             task_widget.files_area.work_files_table.user = self.version_obj.user
             task_widget.files_area.work_files_table.version = self.version_obj.version
@@ -100,10 +105,10 @@ class FilesPanel(QtWidgets.QWidget):
                 my_files_label = 'My Work Files'
             else:
                 my_files_label = 'Published Work Files'
+            logging.debug('Work Files: %s' % self.work_files)
             task_widget.setup(task_widget.files_area.work_files_table,
                               FileTableModel(self.prep_list_for_table(files_, basename=True), [my_files_label]))
             self.load_render_files(task_widget)
-
             task_widget.create_empty_version.connect(self.new_empty_version_clicked)
             task_widget.files_area.review_button_clicked.connect(self.on_review_clicked)
             task_widget.files_area.publish_button_clicked.connect(self.on_publish_clicked)
@@ -138,8 +143,6 @@ class FilesPanel(QtWidgets.QWidget):
                 task_widget.versions.hide()
                 task_widget.resolutions_label.hide()
                 task_widget.resolutions.hide()
-                # task_widget.show_button.hide()
-                # task_widget.start_task_button.show()
                 task_widget.empty_state.hide()
 
     def add_stretch_to_source(self):
@@ -148,43 +151,18 @@ class FilesPanel(QtWidgets.QWidget):
     def new_files_dragged(self, files):
         data = {}
         to_object = PathObject(self.sender().to_object)
-        print to_object.task
         to_folder = to_object.path_root
-        print to_folder
-        # if to_object.task in self.auto_publish_tasks:
-        #     print
-        #     dialog = InputDialog(title='Auto-Export files?',
-        #                          message='Would you like me to prepare these files\n'
-        #                                  'for review/publish?' % to_object.task,
-        #                          buttons=['Skip', 'Publish'])
-        #     dialog.exec_()
-        #     if dialog.button == 'Publish':
-        #         d = datetime.datetime.today()
-        #         current_date = d.strftime('%d-%m-%Y %H:%M:%S')
-        #         data[current_date] = {'files added': files,
-        #                               'to folder': to_folder}
-        #         path_ = os.path.join(to_object.path_root, 'ingest_record.cgl')
-        #         if os.path.exists(path_):
-        #             with open(path_) as json_file:
-        #                 data = json.load(json_file)
-        #         data[current_date] = {'files added': files,
-        #                               'to folder': to_folder}
-        #         with open(path_, 'w') as path_:
-        #             json.dump(data, path_)
-        #
-        #         to_object.set_attr(context='render')
-        #         to_folder = to_object.path_root
 
         for f in files:
             file_ = os.path.split(f)[-1]
             to_file = os.path.join(to_folder, file_)
             if '.' in file_:
-                print 'Copying %s to %s' % (f, to_file)
+                logging.info('Copying %s to %s' % (f, to_file))
                 shutil.copy2(f, to_file)
                 CreateProductionData(path_object=to_object)
                 self.on_task_selected(self.version_obj)
             else:
-                print 'Copying directory %s to %s' % (f, to_file)
+                logging.info('Copying directory %s to %s' % (f, to_file))
                 shutil.copytree(f, to_file)
                 CreateProductionData(path_object=to_object)
                 self.on_task_selected(self.version_obj)
@@ -219,9 +197,7 @@ class FilesPanel(QtWidgets.QWidget):
             dialog.exec_()
 
     def populate_users_combo(self, widget, path_object, task):
-        if not path_object.user:
-            self.user = self.user_default
-        else:
+        if path_object.user:
             self.user = path_object.user
         object_ = path_object.copy(user='*', task=task)
         users = object_.glob_project_element('user')
@@ -347,7 +323,7 @@ class FilesPanel(QtWidgets.QWidget):
         """
         current = PathObject(self.version_obj)
         next_minor = current.new_minor_version_object()
-        CreateProductionData(next_minor)
+        CreateProductionData(next_minor, create_default_file=True)
         self.on_task_selected(next_minor)
 
     def version_up_selected_clicked(self):
@@ -389,7 +365,7 @@ class FilesPanel(QtWidgets.QWidget):
     def on_assign_button_clicked(self, data):
         task = self.sender().task
         dialog = InputDialog(title="%s Task Ownership" % task,
-                             combo_box_items=[self.default_user],
+                             combo_box_items=[self.user],
                              message='Who are you assigning this Task?',
                              buttons=['Cancel', 'Start'])
         dialog.exec_()
@@ -440,6 +416,7 @@ class FilesPanel(QtWidgets.QWidget):
 
     # LOAD FUNCTIONS
     def on_file_dragged_to_render(self, data):
+        logging.debug('Files Dragged to Render %s' % data)
         object_ = PathObject.copy(self.version_obj, context='render')
         self.on_file_dragged(object_, data)
 
@@ -447,21 +424,21 @@ class FilesPanel(QtWidgets.QWidget):
         object_ = PathObject.copy(self.version_obj, context='source')
         self.on_file_dragged(object_, data)
 
-    def on_file_dragged(self, object_, data):
+    def on_file_dragged(self, path_object, data):
         # Only do this if it's dragged into a thing that hasn't been selected
-
-        if object_.task in self.auto_publish_tasks:
+        logging.debug('Path: %s has files added to it' % path_object.path_root)
+        if path_object.task in self.auto_publish_tasks:
             dialog = InputDialog(title='Auto-publish files?',
                                  message='Would you like me to publish this %s \n'
-                                         'to make it available to other tasks?' % object_.task,
+                                         'to make it available to other tasks?' % path_object.task,
                                  buttons=['Skip', 'Publish'])
             dialog.exec_()
             if dialog.button == 'Publish':
                 print 'Auto Publishing Files'
 
-        self.update_location(object_)
-        self.clear_task_selection_except(object_.task)
-        to_path = object_.path_root
+        self.update_location(path_object)
+        self.clear_task_selection_except(path_object.task)
+        to_path = path_object.path_root
         if os.path.isfile(to_path):
             to_path = os.path.dirname(to_path)
         elif to_path.endswith('*'):
@@ -474,9 +451,9 @@ class FilesPanel(QtWidgets.QWidget):
                 shutil.copy2(d, os.path.join(to_path, filename_))
             elif os.path.isdir(d):
                 logging.info('Copying Folder From %s to %s' % (d, os.path.join(to_path, filename_)))
-                shutil.copytree(d, os.path.join(object_.path_root, filename_))
+                shutil.copytree(d, os.path.join(path_object.path_root, filename_))
 
-        self.on_task_selected(object_.data)
+        self.on_task_selected(path_object.data)
 
     def reload_task_widget(self, widget, path_object=None, populate_versions=True):
         if path_object:
@@ -519,6 +496,7 @@ class FilesPanel(QtWidgets.QWidget):
         return
 
     def load_render_files(self, widget):
+        logging.debug('loading render files')
         render_table = widget.files_area.export_files_table
         current = PathObject(self.version_obj)
         if self.work_files:
@@ -542,12 +520,13 @@ class FilesPanel(QtWidgets.QWidget):
                     widget.files_area.review_button.hide()
                     widget.files_area.publish_button.hide()
                 logging.debug('Published Files for %s' % current.path_root)
-
                 widget.setup(render_table, ListItemModel(self.prep_list_for_table(files_, basename=True),
                                                          [render_files_label]))
                 render_table.show()
                 widget.files_area.open_button.show()
                 widget.empty_state.hide()
+        else:
+            logging.debug('No Work Files Defined')
 
     def clear_layout(self, layout=None):
         if not layout:
