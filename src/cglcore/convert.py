@@ -260,28 +260,27 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
 
 def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_frame_rate=None,
                res=settings['resolution']['video_review'], project_management=PROJ_MANAGEMENT):
-
-    start_frame, middle_frame, end_frame = get_first_frame(sequence)
-    input_file = prep_seq_delimiter(sequence, replace_with='%')
-    if not output:
-        path_object = PathObject(sequence).copy(resolution='webMov')
-        output_file = path_object.path_root
-        output_file = output_file.split('#')[0]
-        if output_file.endswith('.'):
-            output_file = '%smp4' % output_file
-        else:
-            output_file = '%s.mp4' % output_file
-        filename = os.path.basename(output_file)
-        path_object.set_attr(filename=filename)
-    else:
-        if output.endswith('.mp4'):
-            output_file = output
-        else:
-            logging.info('Output does not end with .mp4, aborting conversion')
+    start_frame = 1001
+    end_frame = 1002
+    path_object = PathObject(sequence)
+    input_file = sequence
+    web_path_object = PathObject(sequence).copy(resolution='webMov')
+    CreateProductionData(web_path_object, project_management='lumbermill')
+    output_file = web_path_object.path_root
+    if path_object.file_type == 'sequence':
+        start_frame, middle_frame, end_frame = get_first_frame(sequence)
+        input_file = prep_seq_delimiter(sequence, replace_with='%')
+        if not output:
+            output_file = output_file.split('#')[0]
+            if output_file.endswith('.'):
+                output_file = '%smp4' % output_file
+            else:
+                output_file = '%s.mp4' % output_file
+            filename = os.path.basename(output_file)
+            web_path_object.set_attr(filename=filename)
 
     if not os.path.exists(os.path.dirname(output_file)):
-        print 'making directories: %s' % os.path.dirname(output_file)
-        os.makedirs(os.path.dirname(output_file))
+        CreateProductionData(os.path.dirname(output_file), project_management='lumbermill')
     if os.path.splitext(input_file)[-1] == '.exr' or os.path.splitext(input_file)[-1] == '.dpx':
         logging.info('applying gamma 2.2 to linear sequence')
         gamma = 2.2
@@ -302,11 +301,19 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
                  r' pad=$width:$height:($width-iw*min($width/iw\,$height/ih))/2:' \
                  r'($height-ih*min($width/iw\,$height/ih))/2" '.replace('$width', width).replace('$height',
                                                                                                  height)
-    ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
-                 r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'],
-                                                        start_frame, framerate, gamma, input_file, res, encoder,
-                                                        profile, constant_rate_factor, pixel_format,
-                                                        output_frame_rate, filter_arg, output_file)
+
+    if path_object.file_type == 'sequence':
+        ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
+                     r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'],
+                                                            start_frame, framerate, gamma, input_file, res, encoder,
+                                                            profile, constant_rate_factor, pixel_format,
+                                                            output_frame_rate, filter_arg, output_file)
+    elif path_object.file_type == 'movie':
+        ffmpeg_cmd = r'%s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
+                     r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'], gamma, input_file, res,
+                                                            encoder, profile, constant_rate_factor, pixel_format,
+                                                            output_frame_rate, filter_arg, output_file)
+
     p = subprocess.Popen(ffmpeg_cmd, shell=True)
     p.wait()
     make_movie_thumb(sequence)
@@ -317,8 +324,8 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
                     'frameOut': end_frame,
                     'frameRate': frame_rate
                     }
-        logging.info('Uploading %s to ftrack' % path_object.path_root)
-        ProjectManagementData(path_object=path_object).create_project_management_data(review=True, metadata=metadata)
+        logging.info('Uploading %s to ftrack' % web_path_object.path_root)
+        ProjectManagementData(path_object=web_path_object).create_project_management_data(review=True, metadata=metadata)
 
     return output_file
 
@@ -329,7 +336,7 @@ def make_movie_thumb(input_file, output_file=None, frame='middle', thumb=True):
     if os.path.exists(output_file):
         os.remove(output_file)
     if not os.path.exists(os.path.dirname(output_file)):
-        os.makedirs(os.path.dirname(output_file))
+        CreateProductionData(os.path.dirname(output_file), project_management='lumbermill')
     if get_file_type(input_file) == 'movie':
         if thumb:
             res = get_thumb_res(input_file)
@@ -444,7 +451,6 @@ def make_web_mov(input_file, output_file=None, framerate=frame_rate, output_fram
                  res=settings['resolution']['video_review']):
     print input_file
     if get_file_type(input_file) is 'sequence':
-        # This section may have to be augmented or replaced to work with something that is licensed to deal with .h264
         if os.path.splitext(input_file)[-1] == '.exr':
             logging.info('applying gamma 2.2 to linear .exr sequence')
             gamma = 2.2

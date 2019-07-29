@@ -454,15 +454,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 print 'Lumbermill Not connectect to review features'
             # FTRACK REVIEWS
             elif self.project_management == 'ftrack':
-                print selection.file_type
+                hd_proxy = selection.path_root
                 if selection.file_type == 'sequence':
                     if selection.ext in lin_images:
                         hd_proxy = create_hd_proxy(selection.path_root, start_frame=self.frange.split('-')[0])
-                    else:
-                        hd_proxy = selection.path_root
                     create_mov(hd_proxy)
                 elif selection.file_type == 'movie':
-                    print 'Need to build in support for transcoding movies'
+                    create_mov(hd_proxy)
                 elif selection.file_type == 'image':
                     print 'Need to build in support for ftrack image reviews'
                 else:
