@@ -27,6 +27,7 @@ class FilesPanel(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
         self.work_files = []
+        self.high_files = []
         self.render_files = []
         self.version_obj = None
         self.task = path_object.task
@@ -98,8 +99,10 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.files_area.work_files_table.user = self.version_obj.user
             task_widget.files_area.work_files_table.version = self.version_obj.version
             task_widget.files_area.work_files_table.resolution = self.version_obj.resolution
-            files_ = self.version_obj.glob_project_element('filename', full_path=True)
-            self.work_files = files_
+
+            self.work_files = self.version_obj.glob_project_element('filename', full_path=True)
+            # check to see if there are work files for the 'high' version
+            self.high_files = self.version_obj.copy(resolution='high').glob_project_element('filename', full_path=True)
             self.render_files = []
             if user != 'publish':
                 my_files_label = 'My Work Files'
@@ -107,7 +110,7 @@ class FilesPanel(QtWidgets.QWidget):
                 my_files_label = 'Published Work Files'
             logging.debug('Work Files: %s' % self.work_files)
             task_widget.setup(task_widget.files_area.work_files_table,
-                              FileTableModel(self.prep_list_for_table(files_, basename=True), [my_files_label]))
+                              FileTableModel(self.prep_list_for_table(self.work_files, basename=True), [my_files_label]))
             self.load_render_files(task_widget)
             task_widget.create_empty_version.connect(self.new_empty_version_clicked)
             task_widget.files_area.review_button_clicked.connect(self.on_review_clicked)
@@ -499,7 +502,11 @@ class FilesPanel(QtWidgets.QWidget):
         logging.debug('loading render files')
         render_table = widget.files_area.export_files_table
         current = PathObject(self.version_obj)
-        if self.work_files:
+        files_ = self.work_files
+        if not self.work_files:
+            if self.high_files:
+                files_ = self.high_files
+        if files_:
             if widget.files_area.work_files_table.user:
                 renders = current.copy(context='render', task=widget.task, user=widget.files_area.work_files_table.user,
                                        version=widget.files_area.work_files_table.version,
@@ -525,8 +532,8 @@ class FilesPanel(QtWidgets.QWidget):
                 render_table.show()
                 widget.files_area.open_button.show()
                 widget.empty_state.hide()
-        else:
-            logging.debug('No Work Files Defined')
+            else:
+                logging.debug('No Work Files Defined')
 
     def clear_layout(self, layout=None):
         if not layout:
