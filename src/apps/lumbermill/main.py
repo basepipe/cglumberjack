@@ -6,12 +6,16 @@ from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
-from cglui.widgets.dialog import LoginDialog, InputDialog
+from cglui.widgets.dialog import LoginDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange, start_url
 from cglui.widgets.progress_gif import ProgressDialog
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
-import apps.lumbermill.elements.IOPanel as IOP
+try:
+    import apps.lumbermill.elements.IOPanel as IOP
+    DO_IOP = True
+except ImportError:
+    DO_IOP = False
 
 ICON_WIDTH = 24
 
@@ -338,17 +342,18 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         seq_attrs = ['seq', 'type']
         shot_attrs = ['shot', 'asset']
 
-        if path_object.scope == 'IO':
-            if path_object.version:
-                if not self.panel:
-                    self.panel = IOP.IOPanel(parent=self, path_object=path_object)
-                    self.setMinimumWidth(1100)
-                    self.setMinimumHeight(700)
-                    self.panel.location_changed.connect(self.update_location)
-                    self.panel.location_changed.connect(self.path_widget.update_path)
-                    self.layout.addWidget(self.panel)
-                    self.layout.addWidget(self.path_widget)
-                return
+        if DO_IOP:
+            if path_object.scope == 'IO':
+                if path_object.version:
+                    if not self.panel:
+                        self.panel = IOP.IOPanel(parent=self, path_object=path_object)
+                        self.setMinimumWidth(1100)
+                        self.setMinimumHeight(700)
+                        self.panel.location_changed.connect(self.update_location)
+                        self.panel.location_changed.connect(self.path_widget.update_path)
+                        self.layout.addWidget(self.panel)
+                        self.layout.addWidget(self.path_widget)
+                    return
 
         if last == 'filename':
             if self.panel:
@@ -373,7 +378,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.scope == '*':
                 self.panel = ScopePanel(path_object=path_object)
             elif path_object.scope == 'IO':
-                self.panel = IOP.IOPanel(path_object=path_object)
+                if DO_IOP:
+                    self.panel = IOP.IOPanel(path_object=path_object)
             else:
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last in shot_attrs:
@@ -386,7 +392,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last == 'ingest_source':
-            self.panel = IOP.IOPanel(path_object=path_object)
+            if DO_IOP:
+                self.panel = IOP.IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
                 self.panel = TaskPanel(path_object=path_object, element='task')
