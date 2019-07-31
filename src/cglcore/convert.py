@@ -3,7 +3,7 @@ import subprocess
 import glob
 import logging
 from cglcore.config import app_config
-from cglcore.path import PathObject, CreateProductionData, split_sequence, hash_to_number, prep_seq_delimiter, lj_list_dir
+from cglcore.path import PathObject, CreateProductionData, split_sequence, hash_to_number, prep_seq_delimiter, lj_list_dir, get_start_frame
 
 config = app_config()['paths']
 settings = app_config()['default']
@@ -145,7 +145,7 @@ def _execute(command):
             pass
 
 
-def create_proxy(sequence, ext='jpg', start_frame='1001', project_management=PROJ_MANAGEMENT):
+def create_proxy(sequence, ext='jpg', project_management=PROJ_MANAGEMENT):
     """
     Creates a Jpeg proxy resolution based off the resolution of the given path.
     :param sequence:
@@ -153,6 +153,7 @@ def create_proxy(sequence, ext='jpg', start_frame='1001', project_management=PRO
     :return:
     """
     path_object = PathObject(sequence)
+    start_frame = get_start_frame(sequence)
     new_res = '%s%s' % (path_object.resolution, 'Proxy')
     path_object_output = path_object.copy(resolution=new_res)
     output_dir = os.path.dirname(path_object_output.path_root)
@@ -169,15 +170,13 @@ def create_proxy(sequence, ext='jpg', start_frame='1001', project_management=PRO
             from plugins.project_management.ftrack.main import ProjectManagementData
             path_object = PathObject(out_seq)
             ProjectManagementData(path_object).create_project_management_data()
-        return out_seq.replace(number, hashes)
-    else:
-        print 'No # in sequence'
-        sequence = ''
-        fileout = ''
+    print path_object_output.path_root
+    return path_object_output.path_root
 
 
 def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height=False, start_frame='1001',
-                    project_management=PROJ_MANAGEMENT):
+                    project_management=PROJ_MANAGEMENT, review=False):
+    print sequence, '11111111111111'
     if do_height:
         res = height
     else:
@@ -188,28 +187,32 @@ def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height
     output_dir = os.path.dirname(path_object_output.path_root)
     if not os.path.exists(output_dir):
         CreateProductionData(path_object=output_dir, project_management=False)
-    if '####' in sequence:
+    print 3, path_object.file_type
+    if path_object.file_type == 'sequence':
         # replace ### with "*"
         hashes, number = hash_to_number(sequence)
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
         command = '%s %s -scene %s -resize %s %s' % (config['magick'], in_seq, start_frame, res, out_seq)
-    else:
-        command = 'not a sequence?'
-        sequence = ''
-        fileout = ''
-
+    elif path_object.file_type == 'image':
+        sequence = sequence
+        path_object_output.set_attr(ext='jpg')
+        fileout = path_object_output.path_root
+        command = '%s %s -resize %s %s' % (config['magick'], sequence, res, fileout)
     _execute(command)
     print 'Project Management is %s' % project_management
     if project_management == 'ftrack':
         print 'Creating HD Proxy', path_object_output.path_root
         from plugins.project_management.ftrack.main import ProjectManagementData
-        ProjectManagementData(path_object_output).create_project_management_data()
+        ProjectManagementData(path_object_output).create_project_management_data(review=review)
     elif project_management == 'lumbermill':
         print 'No Lumbermill Functionality For create_hd_proxy'
     elif project_management == 'shotgun':
         print 'No Lumbermill Functionality for Shotgun'
-    return out_seq.replace(number, hashes)
+    if path_object.file_type == 'sequence':
+        return out_seq.replace(number, hashes)
+    else:
+        return fileout
 
 
 def create_gif_proxy(sequence, ext='gif', width='480', height='x100', do_height=False):

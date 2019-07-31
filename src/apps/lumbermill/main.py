@@ -6,7 +6,7 @@ from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
-from cglui.widgets.dialog import LoginDialog
+from cglui.widgets.dialog import LoginDialog, InputDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange, start_url
 from cglui.widgets.progress_gif import ProgressDialog
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
@@ -469,16 +469,49 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 elif selection.file_type == 'movie':
                     create_mov(hd_proxy)
                 elif selection.file_type == 'image':
-                    print 'Need to build in support for ftrack image reviews'
+                    hd_proxy = create_hd_proxy(selection.path_root, review=True)
                 else:
                     print 'Have not built anything for reviews of type: %s' % selection.file_type
             elif self.project_management == 'shotgun':
                 print 'Shotgun Reviews not connected yet'
+            selection.set_attr(filename='')
+            selection.set_attr(ext='')
+            print 'updating_location %s %s' % (selection.path_root, selection.data)
+            self.update_location(data=selection.data)
         else:
-            to_object = PathObject.copy(selection, context='render')
-            print 'Copying %s to %s' % (selection.path_root, to_object.path_root)
-            shutil.copyfile(selection.path_root, to_object.path_root)
-            self.review_clicked(filepath=to_object.path_root)
+            dialog = InputDialog(title="Prep for Review", message="Move or copy files to review area?",
+                                 buttons=['Move', 'Copy'])
+            dialog.exec_()
+            move = False
+            if dialog.button == 'Move':
+                move = True
+            if selection.file_type == 'sequence':
+                sequence_name = selection.filename
+                from_path = os.path.dirname(selection.path_root)
+                to_object = PathObject(from_path)
+                to_object.set_attr(context='render')
+                for each in os.listdir(from_path):
+                    from_file = os.path.join(from_path, each)
+                    to_file = os.path.join(to_object.path_root, each)
+                    if move:
+                        shutil.move(from_file, to_file)
+                    else:
+                        shutil.copyfile(from_file, to_file)
+                selection.set_attr(filename='')
+                selection.set_attr(ext='')
+                print 'updating_location %s %s' % (selection.path_root, selection.data)
+                self.update_location(data=selection.data)
+            else:
+                to_object = PathObject.copy(selection, context='render')
+                print 'Copying %s to %s' % (selection.path_root, to_object.path_root)
+                if move:
+                    shutil.move(selection.path_root, to_object.path_root)
+                else:
+                    shutil.copyfile(selection.path_root, to_object.path_root)
+                selection.set_attr(filename='')
+                selection.set_attr(ext='')
+                self.update_location(data=selection.data)
+
 
     def publish_clicked(self):
         from plugins.preflight.launch import launch_
@@ -662,11 +695,7 @@ if __name__ == "__main__":
     # # setup stylesheet
     style_sheet = load_style_sheet()
     app.setStyleSheet(style_sheet)
-
-    logging.info('after sleep')
     #splash.finish(td)
     splash_dialog.hide()
     app.exec_()
 
-# if the gif doesn't work 1 solution is to move any other ui references into a run function for background
-# only the gif will exist in the __main__ function
