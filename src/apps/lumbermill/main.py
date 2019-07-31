@@ -6,12 +6,16 @@ from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
-from cglui.widgets.dialog import LoginDialog, InputDialog
-from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange
+from cglui.widgets.dialog import LoginDialog
+from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange, start_url
 from cglui.widgets.progress_gif import ProgressDialog
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
-import apps.lumbermill.elements.IOPanel as IOP
+try:
+    import apps.lumbermill.elements.IOPanel as IOP
+    DO_IOP = True
+except ImportError:
+    DO_IOP = False
 
 ICON_WIDTH = 24
 
@@ -238,7 +242,7 @@ class NavigationWidget(QtWidgets.QFrame):
 
 class CGLumberjackWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None,
+    def __init__(self, parent=None, project_management=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None,
                  show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
         try:
@@ -256,7 +260,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.user_name = user_name
         self.company = company
         self.user_default = self.user
-        self.project_management = app_config(company=self.company)['account_info']['project_management']
+        self.project_management = project_management
         self.root = app_config()['paths']['root']  # Company Specific
         self.user_root = app_config()['cg_lumberjack_dir']
         self.user = None
@@ -338,17 +342,18 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         seq_attrs = ['seq', 'type']
         shot_attrs = ['shot', 'asset']
 
-        if path_object.scope == 'IO':
-            if path_object.version:
-                if not self.panel:
-                    self.panel = IOP.IOPanel(parent=self, path_object=path_object)
-                    self.setMinimumWidth(1100)
-                    self.setMinimumHeight(700)
-                    self.panel.location_changed.connect(self.update_location)
-                    self.panel.location_changed.connect(self.path_widget.update_path)
-                    self.layout.addWidget(self.panel)
-                    self.layout.addWidget(self.path_widget)
-                return
+        if DO_IOP:
+            if path_object.scope == 'IO':
+                if path_object.version:
+                    if not self.panel:
+                        self.panel = IOP.IOPanel(parent=self, path_object=path_object)
+                        self.setMinimumWidth(1100)
+                        self.setMinimumHeight(700)
+                        self.panel.location_changed.connect(self.update_location)
+                        self.panel.location_changed.connect(self.path_widget.update_path)
+                        self.layout.addWidget(self.panel)
+                        self.layout.addWidget(self.path_widget)
+                    return
 
         if last == 'filename':
             if self.panel:
@@ -373,7 +378,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.scope == '*':
                 self.panel = ScopePanel(path_object=path_object)
             elif path_object.scope == 'IO':
-                self.panel = IOP.IOPanel(path_object=path_object)
+                if DO_IOP:
+                    self.panel = IOP.IOPanel(path_object=path_object)
             else:
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last in shot_attrs:
@@ -386,7 +392,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last == 'ingest_source':
-            self.panel = IOP.IOPanel(path_object=path_object)
+            if DO_IOP:
+                self.panel = IOP.IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
                 self.panel = TaskPanel(path_object=path_object, element='task')
@@ -454,15 +461,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 print 'Lumbermill Not connectect to review features'
             # FTRACK REVIEWS
             elif self.project_management == 'ftrack':
-                print selection.file_type
+                hd_proxy = selection.path_root
                 if selection.file_type == 'sequence':
                     if selection.ext in lin_images:
                         hd_proxy = create_hd_proxy(selection.path_root, start_frame=self.frange.split('-')[0])
-                    else:
-                        hd_proxy = selection.path_root
                     create_mov(hd_proxy)
                 elif selection.file_type == 'movie':
-                    print 'Need to build in support for transcoding movies'
+                    create_mov(hd_proxy)
                 elif selection.file_type == 'image':
                     print 'Need to build in support for ftrack image reviews'
                 else:
@@ -493,20 +498,22 @@ class CGLumberjack(LJMainWindow):
         # what do i do if i'm not connect to the internet and i am using a project management service?
 
         user_config = UserConfig().d
-        self.user_name = user_config['user_name']
-        self.user_email = user_config['user_email']
+        self.proj_man_user_name = user_config['proj_man_user_name']
+        self.proj_man_user_email = user_config['proj_man_user_email']
         self.company = ''
         self.previous_path = user_config['previous_path']
         self.filter = 'Everything'
         self.previous_paths = user_config['previous_paths']
-        self.setCentralWidget(CGLumberjackWidget(self, user_email=self.user_email,
-                                                 user_name=self.user_name,
+        self.project_management = app_config(company=self.company)['account_info']['project_management']
+        self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
+                                                 user_email=self.proj_man_user_email,
+                                                 user_name=self.proj_man_user_name,
                                                  company=self.company,
                                                  path=self.previous_path,
                                                  radio_filter=self.filter,
                                                  show_import=show_import))
-        if self.user_name:
-            self.setWindowTitle('Lumbermill - Logged in as %s' % self.user_name)
+        if self.proj_man_user_email:
+            self.setWindowTitle('Lumbermill - Logged in as %s' % self.proj_man_user_email)
         else:
             self.setWindowTitle("Lumbermill - Log In")
         self.status_bar = QtWidgets.QStatusBar()
@@ -522,11 +529,14 @@ class CGLumberjack(LJMainWindow):
         icon = QtGui.QPixmap(":/images/lumberjack.24px.png").scaled(24, 24)
         self.setWindowIcon(icon)
         login = QtWidgets.QAction('Login', self)
+        proj_man = QtWidgets.QAction('%s' % self.project_management, self)
         tools_menu = menu_bar.addMenu('&Tools')
+        if self.project_management != 'lumbermill':
+            self.proj_man_link = two_bar.addAction(proj_man)
         self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
-        open_globals = QtWidgets.QAction('Edit Globals', self)
-        open_user_globals = QtWidgets.QAction('Edit User Globals', self)
+        open_globals = QtWidgets.QAction('Go to Company Globals', self)
+        open_user_globals = QtWidgets.QAction('Go to User Globals', self)
         settings.setShortcut('Ctrl+,')
         menu_designer = QtWidgets.QAction('Menu Designer', self)
         shelf_designer = QtWidgets.QAction('Shelf Designer', self)
@@ -548,6 +558,11 @@ class CGLumberjack(LJMainWindow):
         preflight_designer.triggered.connect(self.on_preflight_designer_clicked)
         shelf_designer.triggered.connect(self.on_shelf_designer_clicked)
         login.triggered.connect(self.on_login_clicked)
+        proj_man.triggered.connect(self.on_proj_man_menu_clicked)
+
+    def on_proj_man_menu_clicked(self):
+        link = app_config()['project_management'][self.project_management]['api']['server_url']
+        start_url(link)
 
     def check_configs(self):
         return False

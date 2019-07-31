@@ -641,7 +641,7 @@ class CreateProductionData(object):
     def __init__(self, path_object=None, file_system=True,
                  project_management=PROJ_MANAGEMENT,
                  proj_management_user=None,
-                 do_scope=False, test=False, json=False):
+                 do_scope=False, test=False, json=False, create_default_file=False):
         self.proj_management_user = proj_management_user
         self.test = test
         self.path_object = PathObject(path_object)
@@ -654,6 +654,9 @@ class CreateProductionData(object):
         if self.path_object.resolution:
             if self.path_object.version == '000.000':
                 self.create_default_file()
+            if create_default_file:
+                if self.path_object.version:
+                    self.create_default_file()
         if json:
             self.update_json()
 
@@ -791,7 +794,8 @@ class CreateProductionData(object):
         if project_management != 'lumbermill':
             module = "plugins.project_management.%s.main" % project_management
             loaded_module = __import__(module, globals(), locals(), 'main', -1)
-            loaded_module.ProjectManagementData(path_object, user_email=self.proj_management_user).create_project_management_data()
+            loaded_module.ProjectManagementData(path_object,
+                                                user_email=self.proj_management_user).create_project_management_data()
         else:
             logging.debug('Using Lumbermill built in proj management')
 
@@ -868,6 +872,11 @@ def start(filepath):
     command = (cmd + filepath)
 
     subprocess.Popen(command, shell=True)
+
+
+def start_url(url):
+    import webbrowser
+    webbrowser.open(url)
 
 
 def replace_illegal_filename_characters(filename):

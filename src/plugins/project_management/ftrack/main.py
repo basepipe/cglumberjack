@@ -57,7 +57,10 @@ class ProjectManagementData(object):
     ftrack_asset_type = 'Upload'
     type = None
     thumb_path_full = None
-    task_asset=None
+    task_asset = None
+    server_url = app_config()['project_management']['ftrack']['api']['server_url']
+    api_key = app_config()['project_management']['ftrack']['api']['api_key']
+    api_user = app_config()['project_management']['ftrack']['api']['api_user']
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
@@ -72,6 +75,8 @@ class ProjectManagementData(object):
             if not self.user_email:
                 logging.debug('No User Email Defined, cant create Ftrack Production Data')
                 return
+        else:
+            print 'User email pre-set %s' % self.user_email
 
         if not self.project:
             logging.debug('No Project Defined')
@@ -93,10 +98,7 @@ class ProjectManagementData(object):
         if self.task == '*':
             self.task = None
 
-        self.ftrack = ftrack_api.Session(server_url=app_config()['project_management']['ftrack']['api']['server_url'],
-                                         api_key=app_config()['project_management']['ftrack']['api']['api_key'],
-                                         api_user=app_config()['project_management']['ftrack']['api']['api_user'])
-
+        self.ftrack = ftrack_api.Session(server_url=self.server_url, api_key=self.api_key, api_user=self.api_user)
         self.project_schema = self.ftrack.query('ProjectSchema where name is %s' % self.schema).first()
         # Retrieve default types.
         self.default_shot_status = self.project_schema.get_statuses('Shot')[0]
@@ -297,13 +299,18 @@ class ProjectManagementData(object):
         from cglcore.path import lj_list_dir, prep_seq_delimiter
 
         # format to ftrack specs: {head}{padding}{tail} [{ranges}] eg: /path/to/file.%04d.ext [1-5, 7, 8, 10-20]
-        seq = os.path.dirname(self.path_root)
-        sequence = lj_list_dir(seq, return_sequences=True)
-        seq2, frange = sequence[0].split()
-        path = os.path.join(seq, seq2)
-        ftrack_seq = '%s [%s]' % (prep_seq_delimiter(path, '%'), frange)
-        logging.info('Creating FTRACK Component for %s' % ftrack_seq)
-        self.version_data.create_component(path=ftrack_seq, data={'name': self.resolution})
+        if self.path_object.filename != '*.':
+            if self.path_object.file_type:
+                if self.path_object.file_type == 'sequence':
+                    seq = os.path.dirname(self.path_root)
+                    sequence = lj_list_dir(seq, return_sequences=True)
+                    seq2, frange = sequence[0].split()
+                    path = os.path.join(seq, seq2)
+                    ftrack_path = '%s [%s]' % (prep_seq_delimiter(path, '%'), frange)
+                    logging.info('Creating FTRACK Component for %s' % ftrack_path)
+                    self.version_data.create_component(path=ftrack_path, data={'name': self.resolution})
+                else:
+                    print 'FTRACK components not prepared for %s' % self.path_object.file_type
 
     def upload_media(self, add_to_dailies=True):
         # TODO - need a way of knowing if a component already exists.
@@ -366,7 +373,7 @@ class ProjectManagementData(object):
 
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
-        self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).first()
+        self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).one()
         new_membership = self.ftrack.ensure('Membership', {"group_id": self.user_group['id'],
                                                            "user_id": self.user_data['id']})
         project_has_group = self.ftrack.query(
@@ -384,7 +391,7 @@ class ProjectManagementData(object):
             })
         else:
             logging.debug('Group {} already in assigned to project {}'.format(self.user_group['name'],
-                                                                             self.project_data['name']))
+                                                                              self.project_data['name']))
 
     def find_task_asset(self):
         task_asset = self.ftrack.query('Asset where name is "{0}" and '

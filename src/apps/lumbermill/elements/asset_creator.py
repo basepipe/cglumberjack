@@ -75,7 +75,6 @@ class AssetCreator(LJDialog):
         # Environment Stuff
         self.root = app_config()['paths']['root']
         self.project_management = app_config()['account_info']['project_management']
-        # TODO - this eventually needs to be able to be done on a project basis.
         self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
         if self.scope == 'assets':
             self.asset_string_example = app_config()['rules']['path_variables']['asset']['example']
@@ -99,6 +98,8 @@ class AssetCreator(LJDialog):
         self.radio_layout.addWidget(self.defaults_radio)
         self.radio_layout.addWidget(self.none_radio)
         self.defaults_radio.setChecked(True)
+        self.defaults_radio.hide()
+        self.none_radio.hide()
 
         if self.task_mode:
             self.create_button = QtWidgets.QPushButton('Create %s' % 'Task(s)')
