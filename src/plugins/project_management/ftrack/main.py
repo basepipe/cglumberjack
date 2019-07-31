@@ -300,7 +300,9 @@ class ProjectManagementData(object):
             if self.path_object.file_type:
                 if self.path_object.file_type == 'sequence':
                     seq = os.path.dirname(self.path_root)
+                    print seq
                     sequence = lj_list_dir(seq, return_sequences=True)
+                    print sequence
                     seq2, frange = sequence[0].split()
                     path = os.path.join(seq, seq2)
                     ftrack_path = '%s [%s]' % (prep_seq_delimiter(path, '%'), frange)

@@ -3,7 +3,7 @@ import subprocess
 import glob
 import logging
 from cglcore.config import app_config
-from cglcore.path import PathObject, CreateProductionData, split_sequence, hash_to_number, prep_seq_delimiter, lj_list_dir, get_start_frame
+from cglcore.path import PathObject, CreateProductionData, split_sequence, number_to_hash, hash_to_number, prep_seq_delimiter, lj_list_dir, get_start_frame
 
 config = app_config()['paths']
 settings = app_config()['default']
@@ -155,7 +155,7 @@ def create_proxy(sequence, ext='jpg', project_management=PROJ_MANAGEMENT):
     path_object = PathObject(sequence)
     start_frame = get_start_frame(sequence)
     new_res = '%s%s' % (path_object.resolution, 'Proxy')
-    path_object_output = path_object.copy(resolution=new_res)
+    path_object_output = path_object.copy(resolution=new_res, ext='jpg')
     output_dir = os.path.dirname(path_object_output.path_root)
     if not os.path.exists(output_dir):
         CreateProductionData(path_object=output_dir, project_management=False)
@@ -170,8 +170,8 @@ def create_proxy(sequence, ext='jpg', project_management=PROJ_MANAGEMENT):
             from plugins.project_management.ftrack.main import ProjectManagementData
             path_object = PathObject(out_seq)
             ProjectManagementData(path_object).create_project_management_data()
-    print path_object_output.path_root
-    return path_object_output.path_root
+    print out_seq
+    return out_seq
 
 
 def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height=False, start_frame='1001',
@@ -187,10 +187,12 @@ def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height
     output_dir = os.path.dirname(path_object_output.path_root)
     if not os.path.exists(output_dir):
         CreateProductionData(path_object=output_dir, project_management=False)
-    print 3, path_object.file_type
     if path_object.file_type == 'sequence':
         # replace ### with "*"
-        hashes, number = hash_to_number(sequence)
+        if '##' in sequence:
+            hashes, number = hash_to_number(sequence)
+        elif '%0' in sequence:
+            hashes, number = number_to_hash(sequence)
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
         command = '%s %s -scene %s -resize %s %s' % (config['magick'], in_seq, start_frame, res, out_seq)
@@ -304,7 +306,8 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
                  r' pad=$width:$height:($width-iw*min($width/iw\,$height/ih))/2:' \
                  r'($height-ih*min($width/iw\,$height/ih))/2" '.replace('$width', width).replace('$height',
                                                                                                  height)
-
+    print '222222222', path_object.file_type
+    print path_object.path_root
     if path_object.file_type == 'sequence':
         ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
                      r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'],

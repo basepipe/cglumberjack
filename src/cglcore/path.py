@@ -556,7 +556,7 @@ class PathObject(object):
                     self.__dict__['file_type'] = 'movie'
                     self.data['file_type'] = 'movie'
                 elif _type == 'image':
-                    if '%04d' in self.path:
+                    if '%0' in self.path:
                         self.__dict__['file_type'] = 'sequence'
                         self.data['file_type'] = 'sequence'
                     elif '####' in self.path:
@@ -1089,14 +1089,14 @@ def hash_to_number(sequence):
     return frange.group(0), num
 
 
-def number_to_hash(sequence, full=True):
+def number_to_hash(sequence, full=False):
     frange = re.search(SEQ2_SPLIT, sequence)
     number = frange.group(0)
     count = frange.group(0).replace('%', '').replace('d', '')
     if full:
         return sequence.replace(number, '%'+count+'d')
     else:
-        return '#'*int(count)
+        return '#'*int(count), '%'+count+'d'
 
 
 def get_start_frame(sequence):

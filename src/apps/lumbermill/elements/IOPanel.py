@@ -595,11 +595,11 @@ class IOPanel(QtWidgets.QWidget):
         task = self.schema_dict['long_to_short'][self.scope_combo.currentText()][self.task_combo.currentText()]
         #task = app_config()['pipeline_steps'][scope][self.task_combo.currentText()]
         try:
-            this = Preflight(self, software='lumbermill', preflight=task, data_frame=self.data_frame,
+            this = Preflight(self, software='ingest', preflight=task, data_frame=self.data_frame,
                              file_tree=self.file_tree, pandas_path=self.pandas_path,
                              ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
         except KeyError:
-            this = Preflight(self, software='lumbermill', preflight='ingest_default', data_frame=self.data_frame,
+            this = Preflight(self, software='ingest', preflight='default', data_frame=self.data_frame,
                              file_tree=self.file_tree, pandas_path=self.pandas_path,
                              ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
         this.exec_()
