@@ -170,7 +170,6 @@ class Designer(LJDialog):
             self.software_combo.setCurrentIndex(num)
 
     def save_menus(self):
-        print 'Saving Menus here: %s' % self.menu_path
         menu_dict = {}
         for mi in range(self.menus.count()):
             menu_name = self.menus.tabText(mi)
@@ -181,7 +180,6 @@ class Designer(LJDialog):
                 button_name = menu.buttons.tabText(bi)
                 button_widget = menu.buttons.widget(bi)
                 if self.type == 'preflights':
-                    print 'Preflight Step'
                     menu_dict[menu_name][button_name] = {
                         'module': button_widget.command_line_edit.text(),
                         'label': button_widget.label_line_edit.text(),
@@ -189,7 +187,6 @@ class Designer(LJDialog):
                         'required': button_widget.required_line_edit.text()
                     }
                 else:
-                    print 'Menu Step'
                     menu_dict[menu_name][button_name] = {
                                                          'module': button_widget.command_line_edit.text(),
                                                          'label': button_widget.label_line_edit.text(),
@@ -215,10 +212,8 @@ class Designer(LJDialog):
             button_widget.do_save = False
 
     def make_init_for_folders_in_path(self, folder):
-        print 'folder: %s' % folder
         config = self.cgl_tools.replace('\\', '/')
 
-        print 'config: %s' % config
         folder = folder.replace('\\', '/')
         folder = folder.replace(config, '')
         parts = folder.split('/')
@@ -227,7 +222,6 @@ class Designer(LJDialog):
         string = config
         for p in parts:
             if not ':' in p:
-                print p
                 if '.' not in p:
                     string = '%s/%s' % (string, p)
                     init = '%s/__init__.py' % string
@@ -236,7 +230,6 @@ class Designer(LJDialog):
 
     def make_init(self, folder):
         if '*' not in folder:
-            print 'creating init for %s' % folder
             with open(os.path.join(folder, '__init__.py'), 'w+') as i:
                 i.write("")
 

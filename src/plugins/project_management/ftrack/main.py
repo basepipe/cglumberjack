@@ -1,17 +1,14 @@
 import logging
+import webbrowser
+import datetime
 import os
 import json
-from cglcore.config import app_config
 import ftrack_api
-import datetime
+from cglcore.config import app_config
 
-# 2019-07-17 11:50:42,368  ERROR Server reported error: IntegrityError((_mysql_exceptions.IntegrityError)
-# (1062, "Duplicate entry '3e99caa3-0861-48df-a2fc-d8093982b823-010_0000_plate' for key 'context_parent_id_key'")
-# [SQL: u'INSERT INTO context (context_type, name, parent_id, id) VALUES (%s, %s, %s, %s)']
-# [parameters: (('task', '010', u'76f9d076-cb6c-4576-a714-5d19b3b94bcb', u'a1403595-67bc-4cb4-9aee-fe613c079e5e'),
-# ('task', '010_0000_plate', u'3e99caa3-0861-48df-a2fc-d8093982b823', u'69e978d7-ef3e-45ce-bf25-6877cecc3ebd'))]
-# (Background on this error at: http://sqlalche.me/e/gkpj))
-# "C:\Users\tmiko\AppData\Roaming\Python\Python27\site-packages\ftrack_api\session.py:1636"
+#https://lone-coconut.ftrackapp.com/widget/#view=freview_webplayer_v1&itemId=freview&entityType=tempdata&entityId=80f756c6-0ccf-4b49-b1d3-01a9745959cc&controller=widget
+#https://lone-coconut.ftrackapp.com/widget/#view=freview_webplayer_v1&itemId=freview&entityType=list&entityId=80f756c6-0ccf-4b49-b1d3-01a9745959cc&controller=widget
+#https://lone-coconut.ftrackapp.com/#slideEntityId=80f756c6-0ccf-4b49-b1d3-01a9745959cc&slideEntityType=list&view=lists&itemId=projects&entityId=c133589d-0f52-4a20-92e8-cb1103f85070&entityType=show
 
 
 class ProjectManagementData(object):
@@ -303,7 +300,9 @@ class ProjectManagementData(object):
             if self.path_object.file_type:
                 if self.path_object.file_type == 'sequence':
                     seq = os.path.dirname(self.path_root)
+                    print seq
                     sequence = lj_list_dir(seq, return_sequences=True)
+                    print sequence
                     seq2, frange = sequence[0].split()
                     path = os.path.join(seq, seq2)
                     ftrack_path = '%s [%s]' % (prep_seq_delimiter(path, '%'), frange)
@@ -314,7 +313,6 @@ class ProjectManagementData(object):
 
     def upload_media(self, add_to_dailies=True):
         # TODO - need a way of knowing if a component already exists.
-        # Alternatively it'd be a good idea to somehow track if something has been pushed to proj_man already within lumbermill
         server_location = self.ftrack.query('Location where name is "ftrack.server"').first()
         if self.file_type == 'movie':
             component = self.version_data.create_component(
@@ -325,7 +323,6 @@ class ProjectManagementData(object):
                 location=server_location
             )
             self.version_data.encode_media(component)
-            self.add_to_dailies()
             # component.session.commit()
 
         elif self.file_type == 'image':
@@ -341,6 +338,7 @@ class ProjectManagementData(object):
             })
             logging.info('Committing Media')
             component.session.commit()
+        self.add_to_dailies()
 
     def create_review_session(self):
         review_session = self.ftrack.create('ReviewSession', {
@@ -370,6 +368,8 @@ class ProjectManagementData(object):
             logging.info('Adding FTRACK version %s to %s' % (self.version_data['id'], list_name))
             if self.version_data not in version_list['items']:
                 version_list['items'].append(self.version_data)
+
+        self.go_to_dailies(playlist=version_list['id'])
 
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
@@ -530,6 +530,17 @@ class ProjectManagementData(object):
 
     def get_version_url(self, show_qt=True):
         pass
+
+    def go_to_dailies(self, playlist=None):
+        if not playlist:
+            list_name = 'Dailies: %s' % datetime.date.today()
+            version_list = self.ftrack.query('AssetVersionList where name is "%s" and project.id is "%s"'
+                                             % (list_name, self.project_data['id'])).first()
+            playlist = version_list['id']
+        url_string = r'%s/widget/#view=freview_webplayer_v1&itemId=freview&entityType=list&entityId=' \
+                     r'%s&controller=widget' % (self.server_url, playlist)
+        webbrowser.open(url_string)
+        print url_string
 
 
 if __name__ == "__main__":

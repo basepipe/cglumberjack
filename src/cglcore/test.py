@@ -1,6 +1,5 @@
-from cglcore.convert import create_mov
+from cglcore.path import PathObject
 
-mov = r'D:/VFX/FRIDAY_ROOT/sundayTest3/render/cgl_sunOne/assets/prop/bucket/mdl/tmiko/000.007/high/' \
-      r'CGLUMBERJACK_OutlinesNES2.mp4'
+mov = r'D:/VFX/FRIDAY_ROOT/sundayTest3/render/cgl_monOne/shots/000/0101/plate/publish/000.000/hdProxy/03_2a_%05d.jpg'
 
-create_mov(mov)
+print PathObject(mov).file_type

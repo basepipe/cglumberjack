@@ -106,6 +106,8 @@ class FilesPanel(QtWidgets.QWidget):
             self.render_files = []
             if user != 'publish':
                 my_files_label = 'My Work Files'
+                if not self.work_files:
+                    my_files_label = 'Drag/Drop Work Files'
             else:
                 my_files_label = 'Published Work Files'
             logging.debug('Work Files: %s' % self.work_files)
@@ -500,40 +502,34 @@ class FilesPanel(QtWidgets.QWidget):
 
     def load_render_files(self, widget):
         logging.debug('loading render files')
+        widget.files_area.work_files_table.show()
         render_table = widget.files_area.export_files_table
         current = PathObject(self.version_obj)
-        files_ = self.work_files
-        if not self.work_files:
-            if self.high_files:
-                files_ = self.high_files
-        if files_:
-            if widget.files_area.work_files_table.user:
-                renders = current.copy(context='render', task=widget.task, user=widget.files_area.work_files_table.user,
-                                       version=widget.files_area.work_files_table.version,
-                                       resolution=widget.files_area.work_files_table.resolution,
-                                       filename='*')
-                files_ = glob.glob(renders.path_root)
-                if current.user == 'publish':
-                    render_files_label = 'Published Files'
-                    widget.files_area.publish_button.hide()
-                    widget.files_area.new_version_button.hide()
-                else:
-                    widget.files_area.new_version_button.show()
-                    widget.files_area.review_button.show()
-                    widget.files_area.publish_button.show()
-                    render_files_label = 'Ready to Review/Publish'
-                if not files_:
-                    render_files_label = 'Drag/Drop Files for Review or Publish'
-                    widget.files_area.review_button.hide()
-                    widget.files_area.publish_button.hide()
-                logging.debug('Published Files for %s' % current.path_root)
-                widget.setup(render_table, ListItemModel(self.prep_list_for_table(files_, basename=True),
-                                                         [render_files_label]))
-                render_table.show()
-                widget.files_area.open_button.show()
-                widget.empty_state.hide()
+        if widget.files_area.work_files_table.user:
+            renders = current.copy(context='render', task=widget.task, user=widget.files_area.work_files_table.user,
+                                   version=widget.files_area.work_files_table.version,
+                                   resolution=widget.files_area.work_files_table.resolution,
+                                   filename='*')
+            files_ = glob.glob(renders.path_root)
+            if current.user == 'publish':
+                render_files_label = 'Published Files'
+                widget.files_area.publish_button.hide()
+                widget.files_area.new_version_button.hide()
             else:
-                logging.debug('No Work Files Defined')
+                widget.files_area.new_version_button.show()
+                widget.files_area.review_button.show()
+                widget.files_area.publish_button.show()
+                render_files_label = 'Ready to Review/Publish'
+            if not files_:
+                render_files_label = 'Drag/Drop Files for Review or Publish'
+                widget.files_area.review_button.hide()
+                widget.files_area.publish_button.hide()
+            logging.debug('Published Files for %s' % current.path_root)
+            widget.setup(render_table, ListItemModel(self.prep_list_for_table(files_, basename=True),
+                                                     [render_files_label]))
+            render_table.show()
+            widget.files_area.open_button.show()
+            widget.empty_state.hide()
 
     def clear_layout(self, layout=None):
         if not layout:
@@ -558,6 +554,7 @@ class FilesPanel(QtWidgets.QWidget):
         if not list_:
             return
         list_.sort()
+        file_count = len(list_)
         output_ = []
         dirname = os.path.dirname(list_[0])
         for each in list_:
@@ -566,8 +563,11 @@ class FilesPanel(QtWidgets.QWidget):
                 output_.append([filtered])
             else:
                 if basename:
+
                     seq_string = str(seq_from_file(os.path.basename(each)))
-                    if seq_string:
+                    if file_count == 1:
+                        output_.append([os.path.basename(each)])
+                    elif seq_string:
                         if [seq_string] not in output_:
                             output_.append([seq_string])
                     else:

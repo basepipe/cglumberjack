@@ -303,7 +303,7 @@ class PathObject(object):
             try:
                 regex = app_config()['rules']['path_variables'][attr]['regex']
             except KeyError:
-                logging.info('Could not find regex for %s: %s in config, skipping' % (attr, value))
+                logging.debug('Could not find regex for %s: %s in config, skipping' % (attr, value))
             if value == '*':
                 self.__dict__[attr] = value
                 self.data[attr] = value
@@ -556,7 +556,7 @@ class PathObject(object):
                     self.__dict__['file_type'] = 'movie'
                     self.data['file_type'] = 'movie'
                 elif _type == 'image':
-                    if '%04d' in self.path:
+                    if '%0' in self.path:
                         self.__dict__['file_type'] = 'sequence'
                         self.data['file_type'] = 'sequence'
                     elif '####' in self.path:
@@ -1022,6 +1022,7 @@ def split_sequence(sequence):
     :param sequence:
     :return:
     """
+    frange = None
     if '#' in sequence:
         frange = re.search(SEQ_SPLIT, sequence)
         group = frange.group(0)
@@ -1088,22 +1089,23 @@ def hash_to_number(sequence):
     return frange.group(0), num
 
 
-def number_to_hash(sequence, full=True):
+def number_to_hash(sequence, full=False):
     frange = re.search(SEQ2_SPLIT, sequence)
     number = frange.group(0)
     count = frange.group(0).replace('%', '').replace('d', '')
     if full:
         return sequence.replace(number, '%'+count+'d')
     else:
-        return '#'*int(count)
+        return '#'*int(count), '%'+count+'d'
 
 
 def get_start_frame(sequence):
-
-
     dir_, file_ = os.path.split(sequence)
+    print dir_, file_, 3
     seq_split = split_sequence(sequence)
+    print seq_split
     results = lj_list_dir(dir_)
+    print results
     hash_seq = ''
     for each in results:
         this = re.search(SEQ, each)
@@ -1153,6 +1155,9 @@ def publish(path_obj):
     :return: boolean depending on whether publish is successful or not.
     """
     path_object = PathObject(path_obj)
+    filename = path_object.filename
+    resolution = path_object.resolution
+    ext = path_object.ext
     # remove filename and ext to make sure we're dealing with a folder
     path_object = path_object.copy(filename='', ext='', resolution='')
     user = path_object.user
@@ -1183,7 +1188,8 @@ def publish(path_obj):
         # Register with Production Management etc...
         CreateProductionData(source_next)
         CreateProductionData(source_pub)
-        return True
+
+        return render_pub.copy(filename=filename, resolution=resolution, ext=ext)
     return False
 
 
