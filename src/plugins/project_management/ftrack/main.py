@@ -1,17 +1,14 @@
 import logging
+import webbrowser
+import datetime
 import os
 import json
-from cglcore.config import app_config
 import ftrack_api
-import datetime
+from cglcore.config import app_config
 
-# 2019-07-17 11:50:42,368  ERROR Server reported error: IntegrityError((_mysql_exceptions.IntegrityError)
-# (1062, "Duplicate entry '3e99caa3-0861-48df-a2fc-d8093982b823-010_0000_plate' for key 'context_parent_id_key'")
-# [SQL: u'INSERT INTO context (context_type, name, parent_id, id) VALUES (%s, %s, %s, %s)']
-# [parameters: (('task', '010', u'76f9d076-cb6c-4576-a714-5d19b3b94bcb', u'a1403595-67bc-4cb4-9aee-fe613c079e5e'),
-# ('task', '010_0000_plate', u'3e99caa3-0861-48df-a2fc-d8093982b823', u'69e978d7-ef3e-45ce-bf25-6877cecc3ebd'))]
-# (Background on this error at: http://sqlalche.me/e/gkpj))
-# "C:\Users\tmiko\AppData\Roaming\Python\Python27\site-packages\ftrack_api\session.py:1636"
+#https://lone-coconut.ftrackapp.com/widget/#view=freview_webplayer_v1&itemId=freview&entityType=tempdata&entityId=80f756c6-0ccf-4b49-b1d3-01a9745959cc&controller=widget
+#https://lone-coconut.ftrackapp.com/widget/#view=freview_webplayer_v1&itemId=freview&entityType=list&entityId=80f756c6-0ccf-4b49-b1d3-01a9745959cc&controller=widget
+#https://lone-coconut.ftrackapp.com/#slideEntityId=80f756c6-0ccf-4b49-b1d3-01a9745959cc&slideEntityType=list&view=lists&itemId=projects&entityId=c133589d-0f52-4a20-92e8-cb1103f85070&entityType=show
 
 
 class ProjectManagementData(object):
@@ -57,7 +54,10 @@ class ProjectManagementData(object):
     ftrack_asset_type = 'Upload'
     type = None
     thumb_path_full = None
-    task_asset=None
+    task_asset = None
+    server_url = app_config()['project_management']['ftrack']['api']['server_url']
+    api_key = app_config()['project_management']['ftrack']['api']['api_key']
+    api_user = app_config()['project_management']['ftrack']['api']['api_user']
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
@@ -72,6 +72,8 @@ class ProjectManagementData(object):
             if not self.user_email:
                 logging.debug('No User Email Defined, cant create Ftrack Production Data')
                 return
+        else:
+            print 'User email pre-set %s' % self.user_email
 
         if not self.project:
             logging.debug('No Project Defined')
@@ -93,10 +95,7 @@ class ProjectManagementData(object):
         if self.task == '*':
             self.task = None
 
-        self.ftrack = ftrack_api.Session(server_url=app_config()['project_management']['ftrack']['api']['server_url'],
-                                         api_key=app_config()['project_management']['ftrack']['api']['api_key'],
-                                         api_user=app_config()['project_management']['ftrack']['api']['api_user'])
-
+        self.ftrack = ftrack_api.Session(server_url=self.server_url, api_key=self.api_key, api_user=self.api_user)
         self.project_schema = self.ftrack.query('ProjectSchema where name is %s' % self.schema).first()
         # Retrieve default types.
         self.default_shot_status = self.project_schema.get_statuses('Shot')[0]
@@ -297,17 +296,23 @@ class ProjectManagementData(object):
         from cglcore.path import lj_list_dir, prep_seq_delimiter
 
         # format to ftrack specs: {head}{padding}{tail} [{ranges}] eg: /path/to/file.%04d.ext [1-5, 7, 8, 10-20]
-        seq = os.path.dirname(self.path_root)
-        sequence = lj_list_dir(seq, return_sequences=True)
-        seq2, frange = sequence[0].split()
-        path = os.path.join(seq, seq2)
-        ftrack_seq = '%s [%s]' % (prep_seq_delimiter(path, '%'), frange)
-        logging.info('Creating FTRACK Component for %s' % ftrack_seq)
-        self.version_data.create_component(path=ftrack_seq, data={'name': self.resolution})
+        if self.path_object.filename != '*.':
+            if self.path_object.file_type:
+                if self.path_object.file_type == 'sequence':
+                    seq = os.path.dirname(self.path_root)
+                    print seq
+                    sequence = lj_list_dir(seq, return_sequences=True)
+                    print sequence
+                    seq2, frange = sequence[0].split()
+                    path = os.path.join(seq, seq2)
+                    ftrack_path = '%s [%s]' % (prep_seq_delimiter(path, '%'), frange)
+                    logging.info('Creating FTRACK Component for %s' % ftrack_path)
+                    self.version_data.create_component(path=ftrack_path, data={'name': self.resolution})
+                else:
+                    print 'FTRACK components not prepared for %s' % self.path_object.file_type
 
     def upload_media(self, add_to_dailies=True):
         # TODO - need a way of knowing if a component already exists.
-        # Alternatively it'd be a good idea to somehow track if something has been pushed to proj_man already within lumbermill
         server_location = self.ftrack.query('Location where name is "ftrack.server"').first()
         if self.file_type == 'movie':
             component = self.version_data.create_component(
@@ -318,7 +323,6 @@ class ProjectManagementData(object):
                 location=server_location
             )
             self.version_data.encode_media(component)
-            self.add_to_dailies()
             # component.session.commit()
 
         elif self.file_type == 'image':
@@ -334,6 +338,7 @@ class ProjectManagementData(object):
             })
             logging.info('Committing Media')
             component.session.commit()
+        self.add_to_dailies()
 
     def create_review_session(self):
         review_session = self.ftrack.create('ReviewSession', {
@@ -364,9 +369,11 @@ class ProjectManagementData(object):
             if self.version_data not in version_list['items']:
                 version_list['items'].append(self.version_data)
 
+        self.go_to_dailies(playlist=version_list['id'])
+
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
-        self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).first()
+        self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).one()
         new_membership = self.ftrack.ensure('Membership', {"group_id": self.user_group['id'],
                                                            "user_id": self.user_data['id']})
         project_has_group = self.ftrack.query(
@@ -384,7 +391,7 @@ class ProjectManagementData(object):
             })
         else:
             logging.debug('Group {} already in assigned to project {}'.format(self.user_group['name'],
-                                                                             self.project_data['name']))
+                                                                              self.project_data['name']))
 
     def find_task_asset(self):
         task_asset = self.ftrack.query('Asset where name is "{0}" and '
@@ -523,6 +530,17 @@ class ProjectManagementData(object):
 
     def get_version_url(self, show_qt=True):
         pass
+
+    def go_to_dailies(self, playlist=None):
+        if not playlist:
+            list_name = 'Dailies: %s' % datetime.date.today()
+            version_list = self.ftrack.query('AssetVersionList where name is "%s" and project.id is "%s"'
+                                             % (list_name, self.project_data['id'])).first()
+            playlist = version_list['id']
+        url_string = r'%s/widget/#view=freview_webplayer_v1&itemId=freview&entityType=list&entityId=' \
+                     r'%s&controller=widget' % (self.server_url, playlist)
+        webbrowser.open(url_string)
+        print url_string
 
 
 if __name__ == "__main__":

@@ -112,15 +112,22 @@ def render_all_write_nodes():
 
 
 def launch():
-    scene = PathObject(cglnuke.get_file_name())
-    location = '%s/*' % scene.split_after('shot')
-    new_object = PathObject(location)
+    scene_name = cglnuke.get_file_name()
+    if scene_name == 'Root':
+        location = ''
+        print 'Lumbermill can not determine project, please launch files from the lumbermill browser'
+        return
+    else:
+        scene = PathObject(scene_name)
+        location = '%s/*' % scene.split_after('shot')
+        new_object = PathObject(location)
     gui = CGLNuke(parent=cglnuke.get_main_window(), path=location)
     app = startup.do_nuke_gui_init(gui)
     gui.setWindowFlags(QtCore.Qt.Window)
-    gui.setWindowTitle('CG LUmberjack')
-    gui.centralWidget().update_location(new_object)
+    gui.setWindowTitle('CG Lumberjack')
+    if scene_name != 'Root':
+        gui.centralWidget().update_location(new_object)
     gui.setAttribute(QtCore.Qt.WA_DeleteOnClose)
     gui.show()
     gui.raise_()
-    app.exec_()
+    app.exec_()  # this is required to work, yet i get this error: "NoneType" object has no attribute 'exec_',

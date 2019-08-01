@@ -43,6 +43,7 @@ class PathObject(object):
         self.type = None
         self.asset = None
         self.variant = None
+        self.frange = None
         self.user = None
         self.version = None
         self.major_version = None
@@ -302,7 +303,7 @@ class PathObject(object):
             try:
                 regex = app_config()['rules']['path_variables'][attr]['regex']
             except KeyError:
-                logging.info('Could not find regex for %s in config, skipping' % attr)
+                logging.debug('Could not find regex for %s: %s in config, skipping' % (attr, value))
             if value == '*':
                 self.__dict__[attr] = value
                 self.data[attr] = value
@@ -476,13 +477,15 @@ class PathObject(object):
         else:
             return new_obj
 
-    def latest_version(self):
+    def latest_version(self, publish=False):
         """
         Returns a path to the latest version.
         :return:
         """
         new_obj = copy.deepcopy(self)
         if new_obj.user:
+            if publish:
+                new_obj.set_attr(user='publish')
             latest_version = new_obj.glob_project_element('version')
             if latest_version:
                 new_obj.set_attr(version=latest_version[-1])
@@ -492,25 +495,27 @@ class PathObject(object):
         return new_obj
 
     def next_minor_version_number(self):
-        if self.version:
-            major, minor = self.version.split('.')
-            self.major_version = major
-            self.minor_version = minor
-        if not self.minor_version:
-            next_minor = '001'
-        else:
-            next_minor = '%03d' % (int(self.minor_version)+1)
-        if not self.major_version:
-            self.set_attr(major_version='000')
-        return '%s.%s' % (self.major_version, next_minor)
+        latest_version = self.latest_version()
+        major = latest_version.major_version
+        minor = latest_version.minor_version
+        next_minor = '%03d' % (int(minor) + 1)
+        return '%s.%s' % (major, next_minor)
 
     def next_major_version_number(self):
         """
         Returns a string of the next major Version Number ex. 001.000.   If you need more flexibility use
         next_major_version which will return a PathObject.
+
+        This also takes into account Publish Versions and will return the greater of the Publish Version and
+        User Version
         :return:
         """
         major = self.latest_version().major_version
+        print 'major', major
+        pub_major = self.latest_version(publish=True).major_version
+        print 'pub_major', pub_major
+        if int(major) < int(pub_major):
+            major = pub_major
         next_major = '%03d' % (int(major)+1)
         return '%s.%s' % (next_major, '000')
 
@@ -538,6 +543,11 @@ class PathObject(object):
         this is just a convenience attr when working with pathObjects
         :return:
         """
+        # first see if it's a sequence
+        result = split_sequence_frange(self.path)
+        if result:
+            self.path = result[0]
+            self.frange = result[1]
         _, file_ext = os.path.splitext(self.path)
         try:
             _type = EXT_MAP[file_ext]
@@ -546,7 +556,7 @@ class PathObject(object):
                     self.__dict__['file_type'] = 'movie'
                     self.data['file_type'] = 'movie'
                 elif _type == 'image':
-                    if '%04d' in self.path:
+                    if '%0' in self.path:
                         self.__dict__['file_type'] = 'sequence'
                         self.data['file_type'] = 'sequence'
                     elif '####' in self.path:
@@ -631,7 +641,7 @@ class CreateProductionData(object):
     def __init__(self, path_object=None, file_system=True,
                  project_management=PROJ_MANAGEMENT,
                  proj_management_user=None,
-                 do_scope=False, test=False, json=False):
+                 do_scope=False, test=False, json=False, create_default_file=False):
         self.proj_management_user = proj_management_user
         self.test = test
         self.path_object = PathObject(path_object)
@@ -644,6 +654,9 @@ class CreateProductionData(object):
         if self.path_object.resolution:
             if self.path_object.version == '000.000':
                 self.create_default_file()
+            if create_default_file:
+                if self.path_object.version:
+                    self.create_default_file()
         if json:
             self.update_json()
 
@@ -781,7 +794,8 @@ class CreateProductionData(object):
         if project_management != 'lumbermill':
             module = "plugins.project_management.%s.main" % project_management
             loaded_module = __import__(module, globals(), locals(), 'main', -1)
-            loaded_module.ProjectManagementData(path_object, user_email=self.proj_management_user).create_project_management_data()
+            loaded_module.ProjectManagementData(path_object,
+                                                user_email=self.proj_management_user).create_project_management_data()
         else:
             logging.debug('Using Lumbermill built in proj management')
 
@@ -858,6 +872,11 @@ def start(filepath):
     command = (cmd + filepath)
 
     subprocess.Popen(command, shell=True)
+
+
+def start_url(url):
+    import webbrowser
+    webbrowser.open(url)
 
 
 def replace_illegal_filename_characters(filename):
@@ -1003,6 +1022,7 @@ def split_sequence(sequence):
     :param sequence:
     :return:
     """
+    frange = None
     if '#' in sequence:
         frange = re.search(SEQ_SPLIT, sequence)
         group = frange.group(0)
@@ -1054,6 +1074,7 @@ def get_cgl_config():
         cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
     return cg_lumberjack_dir
 
+
 def get_cgl_tools():
     return app_config()['paths']['cgl_tools']
 
@@ -1068,22 +1089,23 @@ def hash_to_number(sequence):
     return frange.group(0), num
 
 
-def number_to_hash(sequence, full=True):
+def number_to_hash(sequence, full=False):
     frange = re.search(SEQ2_SPLIT, sequence)
     number = frange.group(0)
     count = frange.group(0).replace('%', '').replace('d', '')
     if full:
         return sequence.replace(number, '%'+count+'d')
     else:
-        return '#'*int(count)
+        return '#'*int(count), '%'+count+'d'
 
 
 def get_start_frame(sequence):
-
-
     dir_, file_ = os.path.split(sequence)
+    print dir_, file_, 3
     seq_split = split_sequence(sequence)
+    print seq_split
     results = lj_list_dir(dir_)
+    print results
     hash_seq = ''
     for each in results:
         this = re.search(SEQ, each)
@@ -1123,7 +1145,52 @@ def prep_seq_delimiter(sequence, replace_with='*', ext=None):
         return '%s.%s' % (split_sequence(sequence), ext)
 
 
+def publish(path_obj):
+    """
+    Requires a path with render folder with existing data.
+    Creates the next major version of the "USER" dircectory and copies all source & render files to it.
+    Creates the Next Major Version of the "PUBLISH" directory and copies all source & render files to it.
+    As a first step these will be the same as whatever is the highest directory.
+    :param path_obj: this can be a path object, a string, or a dictionary
+    :return: boolean depending on whether publish is successful or not.
+    """
+    path_object = PathObject(path_obj)
+    filename = path_object.filename
+    resolution = path_object.resolution
+    ext = path_object.ext
+    # remove filename and ext to make sure we're dealing with a folder
+    path_object = path_object.copy(filename='', ext='', resolution='')
+    user = path_object.user
+    if user != 'publish':
+        if path_object.context == 'source':
+            source_object = path_object
+            render_object = PathObject.copy(path_object, context='render')
+        else:
+            source_object = PathObject.copy(path_object, context='source')
+            render_object = path_object
+        # Get the Right Version Number
+        source_next = source_object.next_major_version()
+        render_next = render_object.copy(version=source_next.version)
+        source_pub = source_next.copy(user='publish')
+        render_pub = render_next.copy(user='publish')
 
+        for each in os.listdir(source_object.path_root):
+            logging.info('Copying Source Resolution %s from %s to %s' % (each, source_object.path_root, source_next.path_root))
+            logging.info('Copying Source Resolution %s from %s to %s' % (each, source_object.path_root, source_pub.path_root))
+            shutil.copytree(os.path.join(source_object.path_root, each), os.path.join(source_next.path_root, each))
+            shutil.copytree(os.path.join(source_object.path_root, each), os.path.join(source_pub.path_root, each))
+
+        for each in os.listdir(render_object.path_root):
+            logging.info('Copying Render Resolution %s from %s to %s' % (each, render_object.path_root, render_next.path_root))
+            logging.info('Copying Render Resolution %s from %s to %s' % (each, render_object.path_root, render_pub.path_root))
+            shutil.copytree(os.path.join(render_object.path_root, each), os.path.join(render_next.path_root, each))
+            shutil.copytree(os.path.join(render_object.path_root, each), os.path.join(render_pub.path_root, each))
+        # Register with Production Management etc...
+        CreateProductionData(source_next)
+        CreateProductionData(source_pub)
+
+        return render_pub.copy(filename=filename, resolution=resolution, ext=ext)
+    return False
 
 
 

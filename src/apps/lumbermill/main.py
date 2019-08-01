@@ -1,16 +1,21 @@
 import os
 import time
 import logging
+import shutil
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
-from cglui.widgets.dialog import LoginDialog
-from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange
+from cglui.widgets.dialog import LoginDialog, InputDialog
+from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange, start_url
 from cglui.widgets.progress_gif import ProgressDialog
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
-import apps.lumbermill.elements.IOPanel as IOP
+try:
+    import apps.lumbermill.elements.IOPanel as IOP
+    DO_IOP = True
+except ImportError:
+    DO_IOP = False
 
 ICON_WIDTH = 24
 
@@ -65,12 +70,12 @@ class NavigationWidget(QtWidgets.QFrame):
         self.projects_button.setToolTip('Go to Projects')
         self.companies_button = QtWidgets.QPushButton()
         self.companies_button.setToolTip('Go to Companies')
-        self.production_button = QtWidgets.QPushButton()
-        self.production_button.setToolTip('Go to Shots')
+        self.shots_button = QtWidgets.QPushButton()
+        self.shots_button.setToolTip('Go to Shots')
         self.back_button.setStyleSheet("background: transparent;")
         self.projects_button.setStyleSheet("background: transparent;")
         self.companies_button.setStyleSheet("background: transparent;")
-        self.production_button.setStyleSheet("background: transparent;")
+        self.shots_button.setStyleSheet("background: transparent;")
         back_icon = os.path.join(icon_path(), 'back24px.png')
         home_icon = os.path.join(icon_path(), 'project24px.png')
         company_icon = os.path.join(icon_path(), 'company24px.png')
@@ -82,8 +87,8 @@ class NavigationWidget(QtWidgets.QFrame):
         self.companies_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
         self.projects_button.setIcon(QtGui.QIcon(home_icon))
         self.projects_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
-        self.production_button.setIcon(QtGui.QIcon(self.shots_icon))
-        self.production_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
+        self.shots_button.setIcon(QtGui.QIcon(self.shots_icon))
+        self.shots_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
         self.current_location_line_edit = QtWidgets.QLineEdit()
         self.current_location_line_edit.setReadOnly(True)
         self.current_location_line_edit.setMinimumHeight(ICON_WIDTH*1.28)
@@ -97,7 +102,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.cl_row.addWidget(self.back_button)
         self.cl_row.addWidget(self.companies_button)
         self.cl_row.addWidget(self.projects_button)
-        self.cl_row.addWidget(self.production_button)
+        self.cl_row.addWidget(self.shots_button)
         self.cl_row.addWidget(self.search_box)
         self.cl_row.addStretch(1)
 
@@ -107,6 +112,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.back_button.clicked.connect(self.back_button_pressed)
         self.companies_button.clicked.connect(self.buttons_pressed)
         self.projects_button.clicked.connect(self.buttons_pressed)
+        self.shots_button.clicked.connect(self.buttons_pressed)
         self.set_text(self.path_object.path_root)
 
     def text(self):
@@ -118,28 +124,28 @@ class NavigationWidget(QtWidgets.QFrame):
             self.path_object = PathObject(self.current_location_line_edit.text())
             
     def show_company(self):
-        self.production_button.hide()
+        self.shots_button.hide()
         self.companies_button.show()
         self.projects_button.hide()
         
     def show_projects(self):
-        self.production_button.hide()
+        self.shots_button.hide()
         self.companies_button.show()
         self.projects_button.show()
         
     def show_production(self):
-        self.production_button.show()
+        self.shots_button.show()
         self.companies_button.show()
         self.projects_button.show()
         if self.path_object.scope == 'assets':
-            self.production_button.setIcon(QtGui.QIcon(self.assets_icon))
-            self.production_button.setToolTip('Go to Assets')
+            self.shots_button.setIcon(QtGui.QIcon(self.assets_icon))
+            self.shots_button.setToolTip('Go to Assets')
         elif self.path_object.scope == 'shots':
-            self.production_button.setIcon(QtGui.QIcon(self.shots_icon))
-            self.production_button.setToolTip('Go to Shots')
+            self.shots_button.setIcon(QtGui.QIcon(self.shots_icon))
+            self.shots_button.setToolTip('Go to Shots')
 
     def show_none(self):
-        self.production_button.hide()
+        self.shots_button.hide()
         self.companies_button.hide()
         self.projects_button.hide()
             
@@ -171,8 +177,9 @@ class NavigationWidget(QtWidgets.QFrame):
             path = '%s/%s/source/*' % (self.path_object.root, self.path_object.company)
         elif self.sender() == self.companies_button:
             path = '%s/%s' % (self.path_object.root, '*')
-        elif self.sender() == self.production_button:
-            pass
+        elif self.sender() == self.shots_button:
+            path = '%s/%s/source/%s/%s/*' % (self.path_object.root, self.path_object.company, self.path_object.project,
+                                             self.path_object.scope)
         new_obj = PathObject(path)
         self.location_changed.emit(new_obj)
 
@@ -235,7 +242,7 @@ class NavigationWidget(QtWidgets.QFrame):
 
 class CGLumberjackWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None,
+    def __init__(self, parent=None, project_management=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None,
                  show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
         try:
@@ -253,7 +260,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.user_name = user_name
         self.company = company
         self.user_default = self.user
-        self.project_management = app_config(company=self.company)['account_info']['project_management']
+        self.project_management = project_management
         self.root = app_config()['paths']['root']  # Company Specific
         self.user_root = app_config()['cg_lumberjack_dir']
         self.user = None
@@ -264,6 +271,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.source_selection = []
         self.setMinimumWidth(700)
         self.setMinimumHeight(600)
+        self.frange = None
 
         self.layout = QtWidgets.QVBoxLayout(self)
         self.setContentsMargins(0, 0, 0, 0)
@@ -276,7 +284,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                     self.path_object.set_attr(resolution=None)
                     self.path_object.set_attr(version=None)
                     self.path_object.set_attr(user='')
-                    self.path_object.set_attr(task='*')
+                    if not self.path_object.task:
+                        self.path_object.set_attr(task='*')
+                    self.path_object.set_attr(filename='')
+                    self.path_object.set_attr(ext='')
             except IndexError:
                 logging.error('Path is not set')
                 pass
@@ -323,23 +334,26 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             path_object = PathObject(data)
         elif type(data) == PathObject:
             path_object = PathObject(data)
+        if path_object.frange:
+            self.frange = path_object.frange
         self.nav_widget.set_text(path_object.path_root)
         self.nav_widget.update_buttons(path_object=path_object)
         last = path_object.get_last_attr()
         seq_attrs = ['seq', 'type']
         shot_attrs = ['shot', 'asset']
 
-        if path_object.scope == 'IO':
-            if path_object.version:
-                if not self.panel:
-                    self.panel = IOP.IOPanel(parent=self, path_object=path_object)
-                    self.setMinimumWidth(1100)
-                    self.setMinimumHeight(700)
-                    self.panel.location_changed.connect(self.update_location)
-                    self.panel.location_changed.connect(self.path_widget.update_path)
-                    self.layout.addWidget(self.panel)
-                    self.layout.addWidget(self.path_widget)
-                return
+        if DO_IOP:
+            if path_object.scope == 'IO':
+                if path_object.version:
+                    if not self.panel:
+                        self.panel = IOP.IOPanel(parent=self, path_object=path_object)
+                        self.setMinimumWidth(1100)
+                        self.setMinimumHeight(700)
+                        self.panel.location_changed.connect(self.update_location)
+                        self.panel.location_changed.connect(self.path_widget.update_path)
+                        self.layout.addWidget(self.panel)
+                        self.layout.addWidget(self.path_widget)
+                    return
 
         if last == 'filename':
             if self.panel:
@@ -364,7 +378,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.scope == '*':
                 self.panel = ScopePanel(path_object=path_object)
             elif path_object.scope == 'IO':
-                self.panel = IOP.IOPanel(path_object=path_object)
+                if DO_IOP:
+                    self.panel = IOP.IOPanel(path_object=path_object)
             else:
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last in shot_attrs:
@@ -377,7 +392,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last == 'ingest_source':
-            self.panel = IOP.IOPanel(path_object=path_object)
+            if DO_IOP:
+                self.panel = IOP.IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
                 self.panel = TaskPanel(path_object=path_object, element='task')
@@ -412,7 +428,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                                 user_name=self.user_name, show_import=self.show_import)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
-        self.panel.new_version_signal.connect(self.new_version_clicked)
+        #self.panel.new_version_signal.connect(self.new_version_clicked)
+        self.panel.review_signal.connect(self.review_clicked)
+        self.panel.publish_signal.connect(self.publish_clicked)
         self.panel.source_selection_changed.connect(self.set_source_selection)
 
     def set_source_selection(self, data):
@@ -429,13 +447,81 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def import_clicked():
         print 'import clicked'
 
-    @staticmethod
-    def new_version_clicked():
-        print 'New Version Clicked'
+    def review_clicked(self, filepath=None):
+        from cglcore.convert import create_hd_proxy, create_mov
+        if not filepath:
+            selection = PathObject(self.path_widget.path_line_edit.text())
+        else:
+            selection = PathObject(filepath)
+        if selection.context == 'render':
+            lin_images = ['exr', 'dpx']
+            # LUMBERMILL REVIEWS
+            if self.project_management == 'lumbermill':
+                # do this for movies
+                print 'Lumbermill Not connectect to review features'
+            # FTRACK REVIEWS
+            elif self.project_management == 'ftrack':
+                hd_proxy = selection.path_root
+                if selection.file_type == 'sequence':
+                    if selection.ext in lin_images:
+                        hd_proxy = create_hd_proxy(selection.path_root, start_frame=self.frange.split('-')[0])
+                    create_mov(hd_proxy)
+                elif selection.file_type == 'movie':
+                    create_mov(hd_proxy)
+                elif selection.file_type == 'image':
+                    hd_proxy = create_hd_proxy(selection.path_root, review=True)
+                else:
+                    print 'Have not built anything for reviews of type: %s' % selection.file_type
+            elif self.project_management == 'shotgun':
+                print 'Shotgun Reviews not connected yet'
+            selection.set_attr(filename='')
+            selection.set_attr(ext='')
+            print 'updating_location %s %s' % (selection.path_root, selection.data)
+            self.update_location(data=selection.data)
+        else:
+            dialog = InputDialog(title="Prep for Review", message="Move or copy files to review area?",
+                                 buttons=['Move', 'Copy'])
+            dialog.exec_()
+            move = False
+            if dialog.button == 'Move':
+                move = True
+            if selection.file_type == 'sequence':
+                sequence_name = selection.filename
+                from_path = os.path.dirname(selection.path_root)
+                to_object = PathObject(from_path)
+                to_object.set_attr(context='render')
+                for each in os.listdir(from_path):
+                    from_file = os.path.join(from_path, each)
+                    to_file = os.path.join(to_object.path_root, each)
+                    if move:
+                        shutil.move(from_file, to_file)
+                    else:
+                        shutil.copyfile(from_file, to_file)
+                selection.set_attr(filename='')
+                selection.set_attr(ext='')
+                print 'updating_location %s %s' % (selection.path_root, selection.data)
+                self.update_location(data=selection.data)
+            else:
+                to_object = PathObject.copy(selection, context='render')
+                print 'Copying %s to %s' % (selection.path_root, to_object.path_root)
+                if move:
+                    shutil.move(selection.path_root, to_object.path_root)
+                else:
+                    shutil.copyfile(selection.path_root, to_object.path_root)
+                selection.set_attr(filename='')
+                selection.set_attr(ext='')
+                self.update_location(data=selection.data)
+
+
+    def publish_clicked(self):
+        from plugins.preflight.launch import launch_
+        selection = PathObject(self.path_widget.path_line_edit.text())
+        task = selection.task
+        launch_(self, task, selection)
 
 
 class CGLumberjack(LJMainWindow):
-    def __init__(self, show_import=False, ):
+    def __init__(self, show_import=False):
         LJMainWindow.__init__(self)
         #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         # Check Globals first off:
@@ -444,20 +530,23 @@ class CGLumberjack(LJMainWindow):
         # if not lumbermill do i have my proj_management settings?
         # what do i do if i'm not connect to the internet and i am using a project management service?
 
-        self.user_name = ''
-        self.user_email = ''
+        user_config = UserConfig().d
+        self.proj_man_user_name = user_config['proj_man_user_name']
+        self.proj_man_user_email = user_config['proj_man_user_email']
         self.company = ''
-        self.previous_path = ''
+        self.previous_path = user_config['previous_path']
         self.filter = 'Everything'
-        self.previous_paths = {}
-        self.setCentralWidget(CGLumberjackWidget(self, user_email=self.user_email,
-                                                 user_name=self.user_name,
+        self.previous_paths = user_config['previous_paths']
+        self.project_management = app_config(company=self.company)['account_info']['project_management']
+        self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
+                                                 user_email=self.proj_man_user_email,
+                                                 user_name=self.proj_man_user_name,
                                                  company=self.company,
                                                  path=self.previous_path,
                                                  radio_filter=self.filter,
                                                  show_import=show_import))
-        if self.user_name:
-            self.setWindowTitle('Lumbermill - Logged in as %s' % self.user_name)
+        if self.proj_man_user_email:
+            self.setWindowTitle('Lumbermill - Logged in as %s' % self.proj_man_user_email)
         else:
             self.setWindowTitle("Lumbermill - Log In")
         self.status_bar = QtWidgets.QStatusBar()
@@ -473,10 +562,14 @@ class CGLumberjack(LJMainWindow):
         icon = QtGui.QPixmap(":/images/lumberjack.24px.png").scaled(24, 24)
         self.setWindowIcon(icon)
         login = QtWidgets.QAction('Login', self)
+        proj_man = QtWidgets.QAction('%s' % self.project_management, self)
         tools_menu = menu_bar.addMenu('&Tools')
+        if self.project_management != 'lumbermill':
+            self.proj_man_link = two_bar.addAction(proj_man)
         self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
-        open_globals = QtWidgets.QAction('Edit Globals', self)
+        open_globals = QtWidgets.QAction('Go to Company Globals', self)
+        open_user_globals = QtWidgets.QAction('Go to User Globals', self)
         settings.setShortcut('Ctrl+,')
         menu_designer = QtWidgets.QAction('Menu Designer', self)
         shelf_designer = QtWidgets.QAction('Shelf Designer', self)
@@ -485,27 +578,35 @@ class CGLumberjack(LJMainWindow):
         # add actions to the file menu
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
+        tools_menu.addAction(open_user_globals)
         tools_menu.addAction(menu_designer)
         tools_menu.addAction(shelf_designer)
         tools_menu.addAction(preflight_designer)
         tools_menu.addAction(ingest_dialog)
         # connect signals and slots
         open_globals.triggered.connect(self.open_company_globals)
+        open_user_globals.triggered.connect(self.open_user_globals)
         settings.triggered.connect(self.on_settings_clicked)
         menu_designer.triggered.connect(self.on_menu_designer_clicked)
         preflight_designer.triggered.connect(self.on_preflight_designer_clicked)
         shelf_designer.triggered.connect(self.on_shelf_designer_clicked)
         login.triggered.connect(self.on_login_clicked)
+        proj_man.triggered.connect(self.on_proj_man_menu_clicked)
+
+    def on_proj_man_menu_clicked(self):
+        link = app_config()['project_management'][self.project_management]['api']['server_url']
+        start_url(link)
 
     def check_configs(self):
         return False
 
     def open_company_globals(self):
-        # Need a gui for choosing these bad boys
-        print app_config()['account_info']['user_directory']
-        print self.centralWidget().path_object.company_config
-        print self.centralWidget().path_object.project_config
-        start(self.centralWidget().path_object.company_config)
+        logging.info(os.path.dirname(app_config()['paths']['globals']))
+        start(os.path.dirname(app_config()['paths']['globals']))
+
+    def open_user_globals(self):
+        logging.info(os.path.dirname(app_config()['paths']['user_globals']))
+        start(os.path.dirname(app_config()['paths']['user_globals']))
 
     def load_user_config(self):
         user_config = UserConfig()
@@ -537,8 +638,12 @@ class CGLumberjack(LJMainWindow):
         dialog.exec_()
 
     def on_preflight_designer_clicked(self):
+        pm = app_config()['account_info']['project_management']
+        print pm
+        def_schema = app_config()['project_management'][pm]['api']['default_schema']
+        schema = app_config()['project_management'][pm]['tasks'][def_schema]
         from apps.pipeline.preflight_designer import PreflightDesigner
-        dialog = PreflightDesigner(self)
+        dialog = PreflightDesigner(self, pm_tasks=schema)
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)
         dialog.exec_()
@@ -558,14 +663,11 @@ class CGLumberjack(LJMainWindow):
         dialog.exec_()
 
     def closeEvent(self, event):
-        try:
-            # set the current path so that it works on the load better.
-            user_config = UserConfig(user_email=self.centralWidget().user_email,
-                                     user_name=self.centralWidget().user_name,
-                                     current_path=self.centralWidget().path_widget.text)
-            user_config.update_all()
-        except AttributeError:
-            pass
+        # set the current path so that it works on the load better.
+        user_config = UserConfig(user_email=self.centralWidget().user_email,
+                                 user_name=self.centralWidget().user_name,
+                                 current_path=self.centralWidget().path_widget.text)
+        user_config.update_all()
 
     # check the config file to see if it has a default company and a default location
 
@@ -586,18 +688,14 @@ if __name__ == "__main__":
     # splash.setMask(splash_pix.mask())
     # splash.show()
 
-    td = CGLumberjack()
+    td = CGLumberjack(show_import=False)
 
     td.show()
     td.raise_()
     # # setup stylesheet
     style_sheet = load_style_sheet()
     app.setStyleSheet(style_sheet)
-
-    logging.info('after sleep')
     #splash.finish(td)
     splash_dialog.hide()
     app.exec_()
 
-# if the gif doesn't work 1 solution is to move any other ui references into a run function for background
-# only the gif will exist in the __main__ function

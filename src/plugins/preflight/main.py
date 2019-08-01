@@ -6,7 +6,7 @@ import sys
 import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
-from cglcore.path import icon_path, image_path, get_cgl_config
+from cglcore.path import icon_path, image_path, get_cgl_config, PathObject
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.progress_gif import ProgressDialog
 from cglui.startup import do_gui_init
@@ -69,7 +69,7 @@ class ItemTable(LJTableWidget):
 class Preflight(QtWidgets.QDialog):
     signal_one = QtCore.Signal(object)
 
-    def __init__(self, parent=None, software='lumbermill', preflight='', model=None, **kwargs):
+    def __init__(self, parent=None, software='lumbermill', preflight='', model=None, path_object=None, **kwargs):
         QtWidgets.QDialog.__init__(self, parent)
         self.software = software
         self.preflight = preflight
@@ -82,8 +82,9 @@ class Preflight(QtWidgets.QDialog):
         self.selected_checks = []
         self.function_d = {}
         self.table_data = []
+        self.setWindowTitle('%s Preflights' % self.preflight)
+        PreflightCheck.shared_data['path_object'] = PathObject(path_object)
 
-        # for publishing single model from layout
         PreflightCheck.shared_data['preflight_dialog'] = self
         for key, value in kwargs.iteritems():
             PreflightCheck.shared_data[key] = value
@@ -134,10 +135,15 @@ class Preflight(QtWidgets.QDialog):
         self.run_all.clicked.connect(self.run_all_clicked)
 
     def _load_json(self):
-        print self.json_file
-        print self.software, self.preflight
+        print(self.json_file)
+        print(self.software, self.preflight)
         with open(self.json_file, 'r') as stream:
-            self.modules = json.load(stream)[self.software][self.preflight]
+            d = json.load(stream)
+            try:
+                self.modules = d[self.software][self.preflight]
+            except KeyError:
+                print('No preflight for %s found in %s, using default' % (self.preflight, self.json_file))
+                self.modules = d[self.software]['default']
 
     def populate_table(self):
         import sys
@@ -169,9 +175,9 @@ class Preflight(QtWidgets.QDialog):
 
     def run_selected_clicked(self, checks=None):
         # TODO - probably need to figure out how to multithread this so i can run gifs at the same time ;)
-        prog_dialog = ProgressDialog('Working....', 'chopping_wood.gif')
-        prog_dialog.show()
-        QtWidgets.qApp.processEvents()
+        # prog_dialog = ProgressDialog('Working....', 'chopping_wood.gif')
+        # prog_dialog.show()
+        # QtWidgets.qApp.processEvents()
         if not checks:
             checks = self.selected_checks
         for each in checks:

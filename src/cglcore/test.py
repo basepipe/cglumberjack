@@ -1,7 +1,5 @@
-import path
-from cglcore.config import app_config, UserConfig
+from cglcore.path import PathObject
 
+mov = r'D:/VFX/FRIDAY_ROOT/sundayTest3/render/cgl_monOne/shots/000/0101/plate/publish/000.000/hdProxy/03_2a_%05d.jpg'
 
-this = app_config()
-that = UserConfig()
-print this['paths']['cgl_tools']
+print PathObject(mov).file_type
