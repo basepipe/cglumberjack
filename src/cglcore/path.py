@@ -646,10 +646,10 @@ class PathObject(object):
         from cglcore.convert import create_thumbnail, create_hd_proxy, create_movie_thumb
         if self.file_type == 'image':
             if self.thumb_path_full:
-                print self.thumb_path_full
+                print('Creating Thumbnail: %s' % self.thumb_path_full)
                 create_thumbnail(self.path_root, self.thumb_path_full)
             if self.preview_path_full:
-                print self.preview_path_full
+                print('Creating Preview: %s' % self.preview_path_full)
                 create_hd_proxy(self.path_root, self.preview_path_full, project_management='lumbermill')
         elif self.file_type == 'movie' or self.file_type == 'sequence':
             if self.thumb_path_full:

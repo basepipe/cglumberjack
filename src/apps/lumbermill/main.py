@@ -466,6 +466,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 print 'Lumbermill Not connectect to review features'
             # FTRACK REVIEWS
             elif self.project_management == 'ftrack':
+                if not os.path.exists(selection.preview_path_full):
+                    selection.create_previews()
                 from plugins.project_management.ftrack.main import ProjectManagementData
                 ProjectManagementData(selection).create_project_management_data(review=True)
             elif self.project_management == 'shotgun':
