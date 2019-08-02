@@ -1,5 +1,11 @@
 from cglcore.path import PathObject
 
-mov = r'D:/VFX/FRIDAY_ROOT/sundayTest3/render/cgl_monOne/shots/000/0101/plate/publish/000.000/hdProxy/03_2a_%05d.jpg'
+mov = r'D:/VFX/FRIDAY_ROOT/grindhouse/render/ninjaNunsII/assets/char/trex/ref/tmiko/000.000/high/81zuLQ622hL._SL1500_.jpg'
 
-print PathObject(mov).file_type
+path_object = PathObject(mov)
+print path_object.preview_path_full
+print path_object.thumb_path_full
+
+path_object.create_previews()
+
+

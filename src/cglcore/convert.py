@@ -98,7 +98,10 @@ def print_info(d):
 
 def get_resolution(input_file):
     d = get_info(input_file)
-    return '%sx%s' % (int(d['width']), int(d['height']))
+    if d:
+        return '%sx%s' % (int(d['width']), int(d['height']))
+    else:
+        return '200x200'
 
 
 def get_framerate(input_file):
@@ -174,17 +177,21 @@ def create_proxy(sequence, ext='jpg', project_management=PROJ_MANAGEMENT):
     return out_seq
 
 
-def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height=False, start_frame='1001',
+def create_hd_proxy(sequence, output=None, ext='jpg', width='1920', height='x1080', do_height=False, start_frame='1001',
                     project_management=PROJ_MANAGEMENT, review=False):
-    print sequence, '11111111111111'
     if do_height:
         res = height
     else:
         res = width
     path_object = PathObject(sequence)
-    new_res = 'hdProxy'
-    path_object_output = path_object.copy(resolution=new_res)
-    output_dir = os.path.dirname(path_object_output.path_root)
+    if not output:
+        path_object_output = path_object.copy(resolution='hdProxy')
+        output_dir = os.path.dirname(path_object_output.path_root)
+    else:
+        print 'Output is: %s' % output
+        path_object_output = None
+        output_dir = os.path.dirname(output)
+    print output_dir, '11111111111111111111'
     if not os.path.exists(output_dir):
         CreateProductionData(path_object=output_dir, project_management=False)
     if path_object.file_type == 'sequence':
@@ -198,8 +205,12 @@ def create_hd_proxy(sequence, ext='jpg', width='1920', height='x1080', do_height
         command = '%s %s -scene %s -resize %s %s' % (config['magick'], in_seq, start_frame, res, out_seq)
     elif path_object.file_type == 'image':
         sequence = sequence
-        path_object_output.set_attr(ext='jpg')
-        fileout = path_object_output.path_root
+        try:
+            path_object_output.set_attr(ext='jpg')
+            fileout = path_object_output.path_root
+        except AttributeError:
+            this_, ext_ = os.path.splitext(output)
+            fileout = this_+'.jpg'
         command = '%s %s -resize %s %s' % (config['magick'], sequence, res, fileout)
     _execute(command)
     print 'Project Management is %s' % project_management
@@ -322,7 +333,7 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
 
     p = subprocess.Popen(ffmpeg_cmd, shell=True)
     p.wait()
-    make_movie_thumb(sequence)
+    create_movie_thumb(sequence)
 
     if project_management == 'ftrack':
         from plugins.project_management.ftrack.main import ProjectManagementData
@@ -336,7 +347,7 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
     return output_file
 
 
-def make_movie_thumb(input_file, output_file=None, frame='middle', thumb=True):
+def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True):
     if not output_file:
         output_file = PathObject(path_object=input_file).copy(resolution='thumb').path_root
     if os.path.exists(output_file):
@@ -453,98 +464,10 @@ def get_thumb_res(input_file):
     return ntr
 
 
-def make_web_mov(input_file, output_file=None, framerate=frame_rate, output_frame_rate=None,
-                 res=settings['resolution']['video_review']):
-    print input_file
-    if get_file_type(input_file) is 'sequence':
-        if os.path.splitext(input_file)[-1] == '.exr':
-            logging.info('applying gamma 2.2 to linear .exr sequence')
-            gamma = 2.2
-        else:
-            gamma = 1
-
-        if not output_file:
-            # must be named correctly, in which case we'd need an error message.
-            output_file = os.path.splitext(input_file.replace("####.", ''))[0]+'.mov'
-            path, file_ = os.path.split(output_file)
-            output_file = os.path.join(path, '.preview', file_)
-        # code for converting image sequence to web movie
-        encoder = "libx264"
-        profile = 'high'
-        constant_rate_factor = "24"  # i need to test this with stuff that's not created at 24fps -
-        pixel_format = 'yuv420p'
-
-        input_file = input_file.replace("%04d", "*")
-        input_file = input_file.replace("####", "*")
-        if not framerate:
-            # i'll want to check the config to see what the frame rate of the show is.
-            pass
-        if not output_frame_rate:
-            output_frame_rate = framerate
-        try:
-            first_frame = sorted(glob.glob(input_file))[0]
-        except IndexError:
-            logging.info('can not find files like {0}'.format(input_file))
-            return None
-        start_number = int(first_frame.rsplit(".", 2)[1])
-
-        input_file = input_file.replace("*", "%04d")
-        res_list = res.split('x')
-        width = res_list[0]
-        height = res_list[1]
-        filter_arg = r' -filter:v "scale=iw*min($width/iw\,$height/ih):ih*min($width/iw\,$height/ih),' \
-                     r' pad=$width:$height:($width-iw*min($width/iw\,$height/ih))/2:' \
-                     r'($height-ih*min($width/iw\,$height/ih))/2" '.replace('$width', width).replace('$height',
-                                                                                                     height)
-        ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
-                     r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'],
-                                                            start_number, framerate, gamma, input_file, res, encoder,
-                                                            profile, constant_rate_factor, pixel_format,
-                                                            output_frame_rate, filter_arg, output_file)
-        print ffmpeg_cmd
-        return
-        if not os.path.isdir(os.path.dirname(output_file)):
-            os.makedirs(os.path.dirname(output_file))
-        p = subprocess.Popen(ffmpeg_cmd, shell=True)
-        p.wait()
-        return output_file
-
-    elif get_file_type(input_file) is 'movie':
-        if not output_file:
-            # output_file = PathParser.preview_path_from_frame_path(input_file)
-            output_file = PathObject(input_file).preview_path_full
-        # code for converting movie to web movie
-        inputfile = '"%s"' % input_file
-        if not os.path.isdir(os.path.dirname(output_file)):
-            os.makedirs(os.path.dirname(output_file))
-        if os.path.isfile(output_file):
-            os.remove(output_file)
-        output_file = '"%s"' % output_file
-        movie_quality = "high444"  # options are: baseline:iPhone, iPhone 3G, old low-end Android devices,
-        #                         other embedded players, main:iPhone 3GS, iPhone 4, iPad, low-end Android phones,
-        #                         high:Desktop browsers, iPhone 4S+, iPad 2+,
-        #                               Android 4.x+ tablets, Xbox 360, Playstation 3
-        movie_conversion_speed = 'slow'  # options are: ultrafast, superfast, veryfast, faster, fast, medium,
-        #                                slow, slower, veryslow
-
-        bitrate = OPTIONS['1080p'][0]
-        bufsize = OPTIONS['1080p'][1]
-        vfscale = OPTIONS['1080p'][2]
-        # TODO: apparently this is better for audio_options = "libfdk_aac -b:a 128k", but requires a new ffmpeg build
-        audio_options = "aac -b:a 128k"
-        command = '{0} -i {1} -codec:v libx264 -profile:v {2} -preset {3} -b:v {4} -maxrate {5} ' \
-                  '-bufsize {6} -vf scale={7} -threads 0 -codec:a {8} {9}'.format(config['ffmpeg'],
-                                                                                  inputfile, movie_quality,
-                                                                                  movie_conversion_speed,
-                                                                                  bitrate, bitrate, bufsize, vfscale,
-                                                                                  audio_options, output_file)
-
-        p = subprocess.Popen(command, shell=True)
-        p.wait()
-        return output_file
-
-    else:
-        pass
+def create_thumbnail(input_file, output_file):
+    res = get_thumb_res(input_file)
+    width, height = res.split('x')
+    create_hd_proxy(input_file, output_file, width=width, height=height, project_management='lumbermill')
 
 
 def make_animated_gif(input_file):

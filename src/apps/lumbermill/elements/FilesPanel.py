@@ -108,6 +108,7 @@ class FilesPanel(QtWidgets.QWidget):
                 my_files_label = 'My Work Files'
                 if not self.work_files:
                     my_files_label = 'Drag/Drop Work Files'
+                    task_widget.files_area.work_files_table.hide()
             else:
                 my_files_label = 'Published Work Files'
             logging.debug('Work Files: %s' % self.work_files)
@@ -139,7 +140,7 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.files_area.work_files_table.push_to_cloud.connect(self.push)
             task_widget.files_area.work_files_table.pull_from_cloud.connect(self.pull)
             task_widget.files_area.work_files_table.share_download_link.connect(self.share_download_link)
-            task_widget.empty_state.files_added.connect(self.new_files_dragged)
+            task_widget.empty_state.files_added.connect(self.on_file_dragged_to_source)
             if not user:
                 task_widget.users_label.hide()
                 task_widget.users.hide()
@@ -432,14 +433,14 @@ class FilesPanel(QtWidgets.QWidget):
     def on_file_dragged(self, path_object, data):
         # Only do this if it's dragged into a thing that hasn't been selected
         logging.debug('Path: %s has files added to it' % path_object.path_root)
-        if path_object.task in self.auto_publish_tasks:
-            dialog = InputDialog(title='Auto-publish files?',
-                                 message='Would you like me to publish this %s \n'
-                                         'to make it available to other tasks?' % path_object.task,
-                                 buttons=['Skip', 'Publish'])
-            dialog.exec_()
-            if dialog.button == 'Publish':
-                print 'Auto Publishing Files'
+        # if path_object.task in self.auto_publish_tasks:
+        #     dialog = InputDialog(title='Auto-publish files?',
+        #                          message='Would you like me to publish this %s \n'
+        #                                  'to make it available to other tasks?' % path_object.task,
+        #                          buttons=['Skip', 'Publish'])
+        #     dialog.exec_()
+        #     if dialog.button == 'Publish':
+        #         print 'Auto Publishing Files'
 
         self.update_location(path_object)
         self.clear_task_selection_except(path_object.task)
@@ -520,16 +521,23 @@ class FilesPanel(QtWidgets.QWidget):
                 widget.files_area.review_button.show()
                 widget.files_area.publish_button.show()
                 render_files_label = 'Ready to Review/Publish'
-            if not files_:
-                render_files_label = 'Drag/Drop Files for Review or Publish'
-                widget.files_area.review_button.hide()
-                widget.files_area.publish_button.hide()
             logging.debug('Published Files for %s' % current.path_root)
             widget.setup(render_table, ListItemModel(self.prep_list_for_table(files_, basename=True),
                                                      [render_files_label]))
             render_table.show()
             widget.files_area.open_button.show()
             widget.empty_state.hide()
+            if not files_:
+                render_files_label = 'Drag/Drop Files for Review or Publish'
+                widget.files_area.review_button.hide()
+                widget.files_area.publish_button.hide()
+                if not self.work_files:
+                    render_table.hide()
+                    widget.files_area.open_button.hide()
+                    widget.files_area.new_version_button.hide()
+                    widget.files_area.work_files_table.hide()
+                    widget.empty_state.show()
+
 
     def clear_layout(self, layout=None):
         if not layout:

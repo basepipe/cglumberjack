@@ -5,7 +5,7 @@
 from cglcore.path import PathObject, prep_seq_delimiter
 # from plugins.project_management.ftrack.main import ProjectManagementData
 # import datetime
-# from cglcore.convert import _execute, create_proxy, create_hd_proxy, create_mov, create_gif_proxy, make_movie_thumb
+# from cglcore.convert import _execute, create_proxy, create_hd_proxy, create_mov, create_gif_proxy, create_movie_thumb
 from cglcore.path import lj_list_dir
 import os
 
