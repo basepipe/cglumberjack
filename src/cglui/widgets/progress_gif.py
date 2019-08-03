@@ -5,16 +5,20 @@ from cglcore.path import image_path
 
 class ProgressGif(QtWidgets.QWidget):
 
-    def __init__(self, title='CG Lumberjacking...'):
+    def __init__(self, title='CG Lumberjacking...', height=150):
         QtWidgets.QWidget.__init__(self)
         layout = QtWidgets.QVBoxLayout(self)
+        self.gif_height = QtCore.QSize(height, height)
+
         self.message = QtWidgets.QLabel(title)
         self.message.setProperty('class', 'ultra_title')
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.progress_bar = QtWidgets.QLabel()
         self.progress_bar.setAlignment(QtCore.Qt.AlignCenter)
         self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
+        self.movie.setScaledSize(self.gif_height)
         self.progress_bar.setMovie(self.movie)
+
         layout.addWidget(self.message)
         layout.addWidget(self.progress_bar)
 
@@ -26,6 +30,7 @@ class ProgressGif(QtWidgets.QWidget):
         self.movie.start()
         self.message.show()
         self.progress_bar.show()
+        logging.info(self.movie.scaledSize())
 
 
 class ProgressDialog(QtWidgets.QDialog):

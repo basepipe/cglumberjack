@@ -6,10 +6,6 @@ import json
 import ftrack_api
 from cglcore.config import app_config
 
-#https://lone-coconut.ftrackapp.com/widget/#view=freview_webplayer_v1&itemId=freview&entityType=tempdata&entityId=80f756c6-0ccf-4b49-b1d3-01a9745959cc&controller=widget
-#https://lone-coconut.ftrackapp.com/widget/#view=freview_webplayer_v1&itemId=freview&entityType=list&entityId=80f756c6-0ccf-4b49-b1d3-01a9745959cc&controller=widget
-#https://lone-coconut.ftrackapp.com/#slideEntityId=80f756c6-0ccf-4b49-b1d3-01a9745959cc&slideEntityType=list&view=lists&itemId=projects&entityId=c133589d-0f52-4a20-92e8-cb1103f85070&entityType=show
-
 
 class ProjectManagementData(object):
     create = False
@@ -54,6 +50,7 @@ class ProjectManagementData(object):
     ftrack_asset_type = 'Upload'
     type = None
     thumb_path_full = None
+    preview_path_full = None
     task_asset = None
     server_url = app_config()['project_management']['ftrack']['api']['server_url']
     api_key = app_config()['project_management']['ftrack']['api']['api_key']
@@ -300,9 +297,7 @@ class ProjectManagementData(object):
             if self.path_object.file_type:
                 if self.path_object.file_type == 'sequence':
                     seq = os.path.dirname(self.path_root)
-                    print seq
                     sequence = lj_list_dir(seq, return_sequences=True)
-                    print sequence
                     seq2, frange = sequence[0].split()
                     path = os.path.join(seq, seq2)
                     ftrack_path = '%s [%s]' % (prep_seq_delimiter(path, '%'), frange)
@@ -327,7 +322,7 @@ class ProjectManagementData(object):
 
         elif self.file_type == 'image':
             component = self.version_data.create_component(
-                path=self.path_root,
+                path=self.path_object.preview_path_full,
                 data={
                     'name': 'ftrackreview-image'
                 },
@@ -336,8 +331,15 @@ class ProjectManagementData(object):
             component['metadata']['ftr_meta'] = json.dumps({
                 'format': 'image'
             })
+            thumb_component = self.version_data.create_component(
+                              path=self.path_object.thumb_path_full,
+                              data={'name': 'thumbnail'},
+                              location=server_location
+            )
+            self.version_data['thumbnail'] = thumb_component
             logging.info('Committing Media')
             component.session.commit()
+            thumb_component.session.commit()
         self.add_to_dailies()
 
     def create_review_session(self):

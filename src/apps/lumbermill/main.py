@@ -3,6 +3,7 @@ import time
 import logging
 import shutil
 from Qt import QtWidgets, QtCore, QtGui
+from cglui.widgets.progress_gif import ProgressGif
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
@@ -313,12 +314,15 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.in_file_tree = None
         self.nav_widget = NavigationWidget(path_object=self.path_object)
         self.path_widget = PathWidget(path_object=self.path_object)
+        self.progress_bar = ProgressGif()
+        self.progress_bar.hide()
         # self.nav_widget.update_buttons()
         self.path_widget.update_path(path_object=self.path_object)
 
         self.nav_widget.location_changed.connect(self.update_location)
         self.nav_widget.location_changed.connect(self.path_widget.update_path)
         self.layout.addWidget(self.nav_widget)
+
         self.update_location(self.path_object)
 
     def update_location(self, data):
@@ -414,6 +418,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                     to_delete.append(child)
             for each in to_delete:
                 each.widget().deleteLater()
+        self.layout.addWidget(self.progress_bar)
         self.layout.addWidget(self.path_widget)
 
     def add_task(self, path_object):
@@ -461,17 +466,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 print 'Lumbermill Not connectect to review features'
             # FTRACK REVIEWS
             elif self.project_management == 'ftrack':
-                hd_proxy = selection.path_root
-                if selection.file_type == 'sequence':
-                    if selection.ext in lin_images:
-                        hd_proxy = create_hd_proxy(selection.path_root, start_frame=self.frange.split('-')[0])
-                    create_mov(hd_proxy)
-                elif selection.file_type == 'movie':
-                    create_mov(hd_proxy)
-                elif selection.file_type == 'image':
-                    hd_proxy = create_hd_proxy(selection.path_root, review=True)
-                else:
-                    print 'Have not built anything for reviews of type: %s' % selection.file_type
+                if not os.path.exists(selection.preview_path_full):
+                    selection.create_previews()
+                from plugins.project_management.ftrack.main import ProjectManagementData
+                ProjectManagementData(selection).create_project_management_data(review=True)
             elif self.project_management == 'shotgun':
                 print 'Shotgun Reviews not connected yet'
             selection.set_attr(filename='')
@@ -503,7 +501,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.update_location(data=selection.data)
             else:
                 to_object = PathObject.copy(selection, context='render')
-                print 'Copying %s to %s' % (selection.path_root, to_object.path_root)
+                logging.info('Copying %s to %s' % (selection.path_root, to_object.path_root))
                 if move:
                     shutil.move(selection.path_root, to_object.path_root)
                 else:
@@ -566,7 +564,7 @@ class CGLumberjack(LJMainWindow):
         tools_menu = menu_bar.addMenu('&Tools')
         if self.project_management != 'lumbermill':
             self.proj_man_link = two_bar.addAction(proj_man)
-        self.login_menu = two_bar.addAction(login)
+        # self.login_menu = two_bar.addAction(login)
         settings = QtWidgets.QAction('Settings', self)
         open_globals = QtWidgets.QAction('Go to Company Globals', self)
         open_user_globals = QtWidgets.QAction('Go to User Globals', self)

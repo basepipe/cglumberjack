@@ -1,7 +1,7 @@
 import os
 import json
 from cglcore.path import PathObject, CreateProductionData, lj_list_dir
-from cglcore.convert import _execute, create_proxy, create_hd_proxy, create_mov, create_gif_proxy, make_movie_thumb
+from cglcore.convert import _execute, create_proxy, create_hd_proxy, create_mov, create_gif_proxy, create_movie_thumb
 from plugins.project_management.ftrack.main import ProjectManagementData
 
 

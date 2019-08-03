@@ -284,11 +284,13 @@ class PathObject(object):
         if self.filename:
             if self.filename != '*':
                 self.set_file_type()
-                self.set_preview_path()
-                if sys.platform == 'win32':
-                    self.thumb_path_full = '%s\\%s\\%s' % (path_, '.thumb', file_)
-                else:
-                    self.thumb_path_full = os.path.join(self.root, '.thumb', file_)
+                if not self.preview_path_full:
+                    self.set_preview_path()
+                if not self.thumb_path_full:
+                    if sys.platform == 'win32':
+                        self.thumb_path_full = '%s/%s/%s' % (path_, '.thumb', file_)
+                    else:
+                        self.thumb_path_full = os.path.join(self.root, '.thumb', file_)
         if root:
             return self.path_root
         else:
@@ -316,12 +318,12 @@ class PathObject(object):
                             self.data[attr] = value
                             self.set_path()
                         else:
-                            logging.error('Scope %s not found in globals: %s' % (value, self.scope_list))
+                            logging.debug('Scope %s not found in globals: %s' % (value, self.scope_list))
                             return
                 elif attr == 'context':
                     if value:
                         if value not in self.context_list:
-                            logging.error('Context %s not found in globals: %s' % (value, self.context_list))
+                            logging.debug('Context %s not found in globals: %s' % (value, self.context_list))
                             return
                         else:
                             self.__dict__[attr] = value
@@ -598,11 +600,15 @@ class PathObject(object):
                 ext.replace('.', '')
             name_ = '%s%s' % (name_, ext)
         else:
+            #print self.filename
             name_, o_ext = os.path.splitext(self.filename)
-            name_ = name_.replace(o_ext, ext)
+            if o_ext != ext:
+                name_ = name_.replace(o_ext, ext)
+            else:
+                name_ = self.filename
         path_, file_ = os.path.split(self.path_root)
         if sys.platform == 'win32':
-            self.preview_path_full = '%s\\%s\\%s' % (path_, '.preview', name_)
+            self.preview_path_full = '%s/%s/%s' % (path_, '.preview', name_)
         else:
             self.preview_path_full = os.path.join(self.root, '.preview', name_)
 
@@ -635,6 +641,23 @@ class PathObject(object):
         if self.project:
             proj_name = json_obj.data['project']
             self.project_json = os.path.join(json_obj.path_root.split(proj_name)[0], proj_name, '%s.json' % proj_name)
+
+    def create_previews(self):
+        from cglcore.convert import create_thumbnail, create_hd_proxy, create_movie_thumb
+        if self.file_type == 'image':
+            if self.thumb_path_full:
+                print('Creating Thumbnail: %s' % self.thumb_path_full)
+                create_thumbnail(self.path_root, self.thumb_path_full)
+            if self.preview_path_full:
+                print('Creating Preview: %s' % self.preview_path_full)
+                create_hd_proxy(self.path_root, self.preview_path_full, project_management='lumbermill')
+        elif self.file_type == 'movie' or self.file_type == 'sequence':
+            if self.thumb_path_full:
+                create_movie_thumb(self.path_root, self.thumb_path_full)
+            if self.preview_path_full:
+                print('No default functionality set for quicktime creation yet')
+        else:
+            print self.file_type, 'is not set up for preview creation'
 
 
 class CreateProductionData(object):
