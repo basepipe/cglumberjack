@@ -1,4 +1,5 @@
 import os
+import logging
 import sys
 import json
 import shutil
@@ -21,10 +22,10 @@ class Configuration(object):
     def __init__(self, company=None, proj_management=None):
         if not os.path.exists(self.user_config):
             dialog = 'tests'
-            print 'User Config Not Found: %s' % self.user_config
+            logging.info('User Config Not Found: %s' % self.user_config)
         self.globals = self._load_json(self.user_config)['globals']
         if not os.path.exists(self.globals):
-            print 'No Globals Found at %s' % self.globals
+            logging.info('No Globals Found at %s' % self.globals)
             return
         else:
             self.cg_lumberjack_dir = os.path.dirname(self.globals)
@@ -40,7 +41,7 @@ class Configuration(object):
             else:
                 self.company_global_dir = None
             global_cfg, app_cfg = self._find_config_file()
-            print 'Global Config:', global_cfg
+            logging.debug('Global Config:', global_cfg)
             cfg = {}
             cfg['cg_lumberjack_dir'] = os.path.dirname(self.globals)
             if os.path.isfile(global_cfg):

@@ -501,7 +501,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.update_location(data=selection.data)
             else:
                 to_object = PathObject.copy(selection, context='render')
-                print 'Copying %s to %s' % (selection.path_root, to_object.path_root)
+                logging.info('Copying %s to %s' % (selection.path_root, to_object.path_root))
                 if move:
                     shutil.move(selection.path_root, to_object.path_root)
                 else:

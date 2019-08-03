@@ -367,7 +367,6 @@ class ProductionPanel(QtWidgets.QWidget):
                 self.assets.data_table.hideColumn(0)
             self.assets.data_table.hideColumn(2)
         else:
-            print 'items is %s' % items
             self.assets.data_table.hide()
             self.assets.search_box.hide()
             self.assets.message.setText('No %s Found! \nClick + button to create %s' % (self.path_object.scope.title(),

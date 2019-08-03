@@ -318,12 +318,12 @@ class PathObject(object):
                             self.data[attr] = value
                             self.set_path()
                         else:
-                            logging.error('Scope %s not found in globals: %s' % (value, self.scope_list))
+                            logging.debug('Scope %s not found in globals: %s' % (value, self.scope_list))
                             return
                 elif attr == 'context':
                     if value:
                         if value not in self.context_list:
-                            logging.error('Context %s not found in globals: %s' % (value, self.context_list))
+                            logging.debug('Context %s not found in globals: %s' % (value, self.context_list))
                             return
                         else:
                             self.__dict__[attr] = value
