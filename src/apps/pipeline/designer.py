@@ -6,6 +6,7 @@ from cglui.widgets.base import LJDialog
 from cglcore.path import load_style_sheet, get_cgl_tools
 from utils import CGLMenu, PreflightStep
 
+
 class Designer(LJDialog):
     def __init__(self, parent=None, type_=None, menu_path=None, pm_tasks=None):
         LJDialog.__init__(self, parent)
@@ -101,44 +102,38 @@ class Designer(LJDialog):
     def update_menu_path(self):
         self.software = self.software_combo.currentText()
         self.menu_path = os.path.join(self.cgl_tools, self.software, '%s.cgl' % self.type)
+        print 'menu path:', self.menu_path
         self.load_menus()
 
     def on_add_menu_clicked(self):
-        dialog = InputDialog(title='Add %s' % self.type, message='Choose Task to Create a Preflight For',
-                             line_edit=False, regex='[a-zA-Z0-0]{3,}', combo_box_items=self.task_list,
-                             name_example='Only letters & Numbers Allowed in Button Names')
-        dialog.exec_()
-        if dialog.button == 'Ok':
-            long_name = dialog.combo_box.currentText()
-            if long_name in self.schema['long_to_short']['assets']:
-                menu_name = self.schema['long_to_short']['assets'][long_name]
-            elif long_name in self.schema['long_to_short']['shots']:
-                menu_name = self.schema['long_to_short']['shots'][long_name]
-            else:
-                menu_name = long_name
-            cgl_file = self.menu_path
-            new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
-                               menu_path=cgl_file, menu_type=self.type)
-            index = self.menus.addTab(new_menu, menu_name)
-            self.menus.setCurrentIndex(index)
-
-    def on_add_preflight_clicked(self):
-        dialog = InputDialog(title='Add %s' % self.type, message='Create A Preflight \n(task names will automatically '
-                                                                 'be connected to task publishes)', line_edit=False,
-                             regex='[a-zA-Z0-0]{3,}', combo_box_items=self.task_list,
-                             name_example='Only letters & Numbers Allowed in Button Names')
-        dialog.exec_()
-        if dialog.button == 'Ok':
-            long_name = dialog.combo_box.currentText()
-            if long_name in self.schema['long_to_short']['assets']:
-                menu_name = self.schema['long_to_short']['assets'][long_name]
-            elif long_name in self.schema['long_to_short']['shots']:
-                menu_name = self.schema['long_to_short']['shots'][long_name]
-            cgl_file = self.menu_path
-            new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
-                               menu_path=cgl_file, menu_type=self.type)
-            index = self.menus.addTab(new_menu, menu_name)
-            self.menus.setCurrentIndex(index)
+        if self.type == 'preflights':
+            dialog = InputDialog(title='Add %s' % self.type, message='Choose Task to Create a Preflight For',
+                                 line_edit=False, regex='[a-zA-Z0-0]{3,}', combo_box_items=self.task_list,
+                                 name_example='Only letters & Numbers Allowed in Button Names')
+            dialog.exec_()
+            if dialog.button == 'Ok':
+                long_name = dialog.combo_box.currentText()
+                if long_name in self.schema['long_to_short']['assets']:
+                    menu_name = self.schema['long_to_short']['assets'][long_name]
+                elif long_name in self.schema['long_to_short']['shots']:
+                    menu_name = self.schema['long_to_short']['shots'][long_name]
+                else:
+                    menu_name = long_name
+                cgl_file = self.menu_path
+                new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
+                                   menu_path=cgl_file, menu_type=self.type)
+                index = self.menus.addTab(new_menu, menu_name)
+                self.menus.setCurrentIndex(index)
+        elif self.type == 'menus':
+            dialog = InputDialog(title='Add Menu', message='Create a Custom Menu', line_edit=True)
+            dialog.exec_()
+            if dialog.button == 'Ok':
+                menu_name = dialog.line_edit.text()
+                cgl_file = self.menu_path
+                new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
+                                   menu_path=cgl_file, menu_type=self.type)
+                index = self.menus.addTab(new_menu, menu_name)
+                self.menus.setCurrentIndex(index)
 
     def load_menus(self):
         menu_dict = {}
@@ -146,9 +141,11 @@ class Designer(LJDialog):
         self.title_widget.show()
         self.title_label.setText('%s %s' % (self.software_combo.currentText(), self.type))
         self.software = self.software_combo.currentText()
+        print self.software, 'software!!!'
         if os.path.exists(self.menu_path):
             menu_dict = self.load_json(self.menu_path)
         if menu_dict:
+            print menu_dict
             for i in range(len(menu_dict[self.software])+1):
                 for menu in menu_dict[self.software]:
                     if i == menu_dict[self.software][menu]['order']:

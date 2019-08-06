@@ -635,30 +635,24 @@ class CGLumberjack(LJMainWindow):
         dialog = Configurator(self, self.company)
         dialog.exec_()
 
-    def on_preflight_designer_clicked(self):
+    def on_desgner_clicked(self, type_):
         pm = app_config()['account_info']['project_management']
-        print pm
         def_schema = app_config()['project_management'][pm]['api']['default_schema']
         schema = app_config()['project_management'][pm]['tasks'][def_schema]
-        from apps.pipeline.preflight_designer import PreflightDesigner
-        dialog = PreflightDesigner(self, pm_tasks=schema)
+        from apps.pipeline.designer import Designer
+        dialog = Designer(self, type_=type_, pm_tasks=schema)
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)
         dialog.exec_()
+
+    def on_preflight_designer_clicked(self):
+        self.on_desgner_clicked(type_='preflights')
 
     def on_shelf_designer_clicked(self):
-        from apps.pipeline.shelf_designer import ShelfDesigner
-        dialog = ShelfDesigner(self)
-        dialog.setMinimumWidth(1200)
-        dialog.setMinimumHeight(500)
-        dialog.exec_()
+        self.on_desgner_clicked(type_='shelves')
 
     def on_menu_designer_clicked(self):
-        from apps.pipeline.menu_designer import MenuDesigner
-        dialog = MenuDesigner(self)
-        dialog.setMinimumWidth(1200)
-        dialog.setMinimumHeight(500)
-        dialog.exec_()
+        self.on_desgner_clicked(type_='menus')
 
     def closeEvent(self, event):
         # set the current path so that it works on the load better.

@@ -4,7 +4,6 @@ import pandas as pd
 import logging
 import glob
 import threading
-import time
 from Qt import QtCore, QtGui, QtWidgets
 from cglui.widgets.progress_gif import ProgressGif
 from cglui.widgets.dialog import InputDialog
