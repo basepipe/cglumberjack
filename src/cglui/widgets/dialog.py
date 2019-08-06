@@ -6,7 +6,7 @@ import yaml
 import os
 import re
 import datetime
-from cglcore.cglutil import current_user, test_string_against_rules
+from cglcore.util import current_user, test_string_against_rules
 #from cglcore import lj_mail
 from cglcore.config import app_config, user_config
 #from cglcore import screen_grab
