@@ -2,6 +2,7 @@ from Qt import QtCore, QtWidgets
 import os
 import re
 import datetime
+from cglcore.util import current_user, test_string_against_rules
 from cglcore.config import app_config, user_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.widgets import AdvComboBox
