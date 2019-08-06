@@ -19,7 +19,6 @@ PUBLISH_DATE = 11
 STATUS = 12
 
 
-
 class ProductionComboDelegate(QtWidgets.QItemDelegate):
     index_changed = QtCore.Signal(object)
 

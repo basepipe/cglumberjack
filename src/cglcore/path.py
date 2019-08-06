@@ -85,13 +85,13 @@ class PathObject(object):
         self.priority = None
         self.ingest_source = '*'
 
-        if type(path_object) is unicode:
+        if isinstance(path_object, unicode):
             path_object = str(path_object)
-        if type(path_object) is dict:
+        if isinstance(path_object, dict):
             self.process_dict(path_object)
-        elif type(path_object) is str:
+        elif isinstance(path_object, str):
             self.process_string(path_object)
-        elif type(path_object) is PathObject:
+        elif isinstance(path_object, PathObject):
             self.process_dict(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
@@ -123,7 +123,8 @@ class PathObject(object):
         self.set_project_config()
         self.set_json()
 
-    def get_attrs_from_config(self):
+    @staticmethod
+    def get_attrs_from_config():
         attrs = []
         for key in app_config()['rules']['path_variables']:
             attrs.append(key)
@@ -263,7 +264,7 @@ class PathObject(object):
         self.get_template()
         keep_if = self.context_list + self.scope_list
         path_string = ''
-        for i, attr in enumerate(self.template):
+        for attr in self.template:
             if attr:
                 # build an array based off the template
                 if attr in keep_if:
@@ -297,7 +298,6 @@ class PathObject(object):
             return self.path        
 
     def set_attr(self, attr=None, value=None, **kwargs):
-        regex = ''
         if attr:
             kwargs[attr] = value
         for attr in kwargs:
@@ -417,45 +417,6 @@ class PathObject(object):
         """
         value = self.data[attr]
         return os.path.join(self.path_root.split(value)[0], value).replace('\\', '/')
-
-    def glob_multiple_project_elements(self, full_path=False, split_at=None, elements=[]):
-        """
-
-        :param self:
-        :param split_at:
-        :param args:
-        :return:
-        """
-        path_ = self.path_root
-        if split_at:
-            try:
-                index = self.template.index(split_at)
-            except ValueError:
-                if split_at == 'shot':
-                    index = self.template.index('asset')
-            split_entity = self.template[index+1]
-            path_ = path_.split(self.data[split_entity])[0]
-            if path_.endswith('\\'):
-                path_ = path_[:-1]
-        obj_ = PathObject(path_)
-        for attr in elements:
-            obj_.set_attr(attr, '*', regex=False)
-        glob_list = glob.glob(obj_.path_root)
-        return glob_list
-
-    def glob_multiple(self, *args):
-        glob_object = self.copy()
-        glob_object.eliminate_wild_cards()
-        d = {}
-        highest_index = None
-        for each in args:
-            glob_object.set_attr(attr=each, value='*')
-            index = self.template.index(each)
-            if index > highest_index:
-                highest_index = index
-            d[str(index)] = each
-        split_at = self.template[highest_index]
-        return glob_object.glob_project_element(attr=split_at)
 
     def eliminate_wild_cards(self):
         """
@@ -606,7 +567,7 @@ class PathObject(object):
                 name_ = name_.replace(o_ext, ext)
             else:
                 name_ = self.filename
-        path_, file_ = os.path.split(self.path_root)
+        path_ = os.path.split(self.path_root)[0]
         if sys.platform == 'win32':
             self.preview_path_full = '%s/%s/%s' % (path_, '.preview', name_)
         else:
@@ -993,7 +954,6 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
         return
     list_.sort()
     output_ = []
-    dirname = os.path.dirname(list_[0])
     for each in list_:
         if path_filter:
             filtered = PathObject(each).data[path_filter]
@@ -1123,13 +1083,8 @@ def number_to_hash(sequence, full=False):
 
 
 def get_start_frame(sequence):
-    dir_, file_ = os.path.split(sequence)
-    print dir_, file_, 3
-    seq_split = split_sequence(sequence)
-    print seq_split
+    dir_ = os.path.split(sequence)[0]
     results = lj_list_dir(dir_)
-    print results
-    hash_seq = ''
     for each in results:
         this = re.search(SEQ, each)
         if this:

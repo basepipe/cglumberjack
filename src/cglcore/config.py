@@ -90,25 +90,6 @@ class Configuration(object):
         # this doesn't seem to be used but it's a great idea
         app_cfg = os.path.join(template_folder, os.path.splitext(app_name)[0] + ".json")
         global_cfg = os.path.join(self.cg_lumberjack_dir, 'globals.json')
-        """
-        This is for when we want to start having globals for each company
-        if self.company_global_dir:
-            if os.path.exists(self.company_global_dir):
-                global_cfg = os.path.join(self.company_global_dir, 'globals.json')
-                if not os.path.exists(global_cfg):
-                    self.make_company_global_dir()
-            else:
-                self.make_company_global_dir()
-                global_cfg = os.path.join(self.company_global_dir, 'globals.json')
-        else:
-            if os.path.exists(self.cg_lumberjack_dir):
-                global_cfg = os.path.join(self.cg_lumberjack_dir, 'globals.json')
-            else:
-                self.make_cglumberjack_dir()
-                global_cfg = os.path.join(self.cg_lumberjack_dir, 'globals.json')
-
-        print 'Global Config Location: ', global_cfg
-        """
         return global_cfg, app_cfg
 
     @staticmethod
