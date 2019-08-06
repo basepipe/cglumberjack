@@ -171,7 +171,7 @@ class PreflightStep(QtWidgets.QWidget):
 
 class MenuButton(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, menu_name='', button_name='', attrs={}, menu_path='', icon=False,
+    def __init__(self, parent=None, menu_name='', button_name='', attrs=None, menu_path='', icon=False,
                  menu_type='menus'):
         QtWidgets.QWidget.__init__(self, parent)
         self.attrs = attrs

@@ -200,11 +200,12 @@ class BirdsEye(LJMainWindow):
         # read the json file
         # find all the assets
 
-    def check_publishes(self, dict):
+    @staticmethod
+    def check_publishes(dict_):
         done = True
-        for task in dict:
-            print task, dict[task]['status']
-            if dict[task]['status'] != 'published':
+        for task in dict_:
+            print task, dict_[task]['status']
+            if dict_[task]['status'] != 'published':
                 done = False
         return done
 

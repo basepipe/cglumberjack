@@ -158,7 +158,6 @@ class CustomMenu(object):
         self.delete_menus()
         tools_root = os.path.dirname(get_cgl_tools())
         for each in self.menus:
-            menu_folder = os.path.join(self.menus_folder, each)
             print '%s: adding %s to the PATH ' % (each, tools_root)
             if tools_root not in sys.path:
                 sys.path.insert(0, tools_root)
@@ -175,10 +174,8 @@ class CustomMenu(object):
             buttons = self.order_buttons(menu)
             self.add_menu_buttons(menu, buttons)
 
-    """
-    When Starting a new shelf, simply copy all of the functions below and fill them in with software specific functions
-    See Nuke and Maya examples: plugins/nuke/custom_menu.py & plugins/maya/custom_menu.py
-    """
+    # When Starting a new shelf, simply copy all of the functions below and fill them in with softwarespecific functions
+    # See Nuke and Maya examples: plugins/nuke/custom_menu.py & plugins/maya/custom_menu.py
 
     def get_scene_path(self):
         pass

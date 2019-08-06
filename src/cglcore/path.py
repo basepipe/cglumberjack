@@ -85,13 +85,13 @@ class PathObject(object):
         self.priority = None
         self.ingest_source = '*'
 
-        if type(path_object) is unicode:
+        if isinstance(path_object, unicode):
             path_object = str(path_object)
-        if type(path_object) is dict:
+        if isinstance(path_object, dict):
             self.process_dict(path_object)
-        elif type(path_object) is str:
+        elif isinstance(path_object, str):
             self.process_string(path_object)
-        elif type(path_object) is PathObject:
+        elif isinstance(path_object, PathObject):
             self.process_dict(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
@@ -606,7 +606,7 @@ class PathObject(object):
                 name_ = name_.replace(o_ext, ext)
             else:
                 name_ = self.filename
-        path_, file_ = os.path.split(self.path_root)
+        path_ = os.path.split(self.path_root)[0]
         if sys.platform == 'win32':
             self.preview_path_full = '%s/%s/%s' % (path_, '.preview', name_)
         else:
@@ -1124,12 +1124,7 @@ def number_to_hash(sequence, full=False):
 
 def get_start_frame(sequence):
     dir_, file_ = os.path.split(sequence)
-    print dir_, file_, 3
-    seq_split = split_sequence(sequence)
-    print seq_split
     results = lj_list_dir(dir_)
-    print results
-    hash_seq = ''
     for each in results:
         this = re.search(SEQ, each)
         if this:

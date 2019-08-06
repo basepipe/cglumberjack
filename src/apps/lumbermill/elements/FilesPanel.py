@@ -1,10 +1,8 @@
 import os
 import shutil
 import logging
-import json
-import datetime
 import glob
-from Qt import QtWidgets, QtCore, QtGui
+from Qt import QtWidgets, QtCore
 from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
@@ -393,8 +391,10 @@ class FilesPanel(QtWidgets.QWidget):
     def show_in_folder(self):
         show_in_folder(self.path_object.path_root)
 
-    def show_in_shotgun(self):
+    @staticmethod
+    def show_in_shotgun():
         print 'show in shotgun'
+        pass
 
     def copy_folder_path(self):
         clipboard = QtWidgets.QApplication.clipboard()
@@ -450,7 +450,7 @@ class FilesPanel(QtWidgets.QWidget):
         elif to_path.endswith('*'):
             to_path = os.path.dirname(to_path)
         for d in data:
-            path_, filename_ = os.path.split(d)
+            filename_ = os.path.split(d)[-1]
             if os.path.isfile(d):
                 filename_ = replace_illegal_filename_characters(filename_)
                 logging.info('Copying File From %s to %s' % (d, os.path.join(to_path, filename_)))

@@ -7,9 +7,7 @@ import os
 import re
 import datetime
 from cglcore.cglutil import current_user, test_string_against_rules
-#from cglcore import lj_mail
 from cglcore.config import app_config, user_config
-#from cglcore import screen_grab
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.widgets import AdvComboBox
 from cglui.widgets.containers.table import LJTableWidget
@@ -903,32 +901,11 @@ class LoginDialog(LJDialog):
         print 'Cancel Clicked'
 
     def load_user_defaults(self):
+        print('Adjust Load User Defaults to handle .json')
         if os.path.exists(self.user_config):
-            with open(self.user_config, 'r') as stream:
-                try:
-                    result = yaml.load(stream)
-                    self.uname_line_edit.setText(result['user_name'])
-                    self.email_line_edit.setText(result['user_email'])
-                    self.company_line_edit.setText(result['company'])
-                    self.user_email = result['user_email']
-                    self.user_name = result['user_name']
-                    self.company = result['company']
-                except yaml.YAMLError as exc:
-                    print(exc)
-                    sys.exit(99)
-        else:
-            pass
+            print self.user_config
 
     def save_user_defaults(self):
-        print 'Saving user config: %s' % self.user_config
-        self.user_name = self.uname_line_edit.text()
-        self.user_email = self.email_line_edit.text()
-        self.company = self.company_line_edit.text()
-        d = {'user_name': self.user_name,
-             'user_email': self.user_email,
-             'company': self.company
-             }
-        with open(self.user_config, 'w') as outfile:
-            yaml.dump(d, outfile, default_flow_style=False)
+        print('Adjust user defaults to save .json')
 
 
