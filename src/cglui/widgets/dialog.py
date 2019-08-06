@@ -1,8 +1,6 @@
 from Qt import QtCore
 from Qt import QtWidgets
 from Qt import QtGui
-import sys
-import yaml
 import os
 import re
 import datetime
@@ -905,7 +903,8 @@ class LoginDialog(LJDialog):
         if os.path.exists(self.user_config):
             print self.user_config
 
-    def save_user_defaults(self):
+    @staticmethod
+    def save_user_defaults():
         print('Adjust user defaults to save .json')
 
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from Qt import QtGui, QtXml
+from Qt import QtXml
 
 
 class Node(object):

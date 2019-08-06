@@ -394,7 +394,6 @@ class FilesPanel(QtWidgets.QWidget):
     @staticmethod
     def show_in_shotgun():
         print 'show in shotgun'
-        pass
 
     def copy_folder_path(self):
         clipboard = QtWidgets.QApplication.clipboard()

@@ -1123,7 +1123,7 @@ def number_to_hash(sequence, full=False):
 
 
 def get_start_frame(sequence):
-    dir_, file_ = os.path.split(sequence)
+    dir_ = os.path.split(sequence)[0]
     results = lj_list_dir(dir_)
     for each in results:
         this = re.search(SEQ, each)
