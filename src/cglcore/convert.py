@@ -54,7 +54,7 @@ def get_info(input_file):
                       % (config['ffprobe'], input_file)
         p = subprocess.Popen(ffprobe_cmd,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT)
+                             stderr=subprocess.STDOUT, shell=True)
         d = {}
         for each in p.stdout:
             print each
@@ -76,7 +76,7 @@ def get_image_info(input_file):
     command = "%s --info %s" % (config['oiiotool'], input_file)
     p = subprocess.Popen(command,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
+                         stderr=subprocess.STDOUT, shell=True)
     d = {}
     for each in p.stdout:
         res, channels, filetype = each.strip('\n').split(':')[-1].split(',')
@@ -137,10 +137,11 @@ def get_file_type(input_file):
 
 
 def _execute(command):
-    print 'executing command: %s' % command
+    logging.info('executing command: %s' % command)
     p = subprocess.Popen(command,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
+                         stderr=subprocess.STDOUT,
+                         shell=True)
     for each in p.stdout:
         each = each.strip()
         try:
@@ -168,7 +169,7 @@ def create_proxy(sequence, ext='jpg', project_management=PROJ_MANAGEMENT):
         CreateProductionData(path_object=output_dir, project_management=False)
     if '####' in sequence:
         # replace ### with "*"
-        hashes, number = hash_to_number(sequence)
+        number = hash_to_number(sequence)[-1]
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
         command = '%s %s -scene %s %s' % (config['magick'], in_seq, start_frame, out_seq)
@@ -218,7 +219,7 @@ def create_hd_proxy(sequence, output=None, ext='jpg', width='1920', height='x108
             path_object_output.set_attr(ext='jpg')
             fileout = path_object_output.path_root
         except AttributeError:
-            this_, ext_ = os.path.splitext(output)
+            this_ = os.path.splitext(output)[0]
             fileout = this_+'.jpg'
         command = '%s %s -resize %s %s' % (config['magick'], sequence, res, fileout)
     _execute(command)
@@ -377,16 +378,8 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True)
         # This command will just use ffmpeg's default thumbnail generator
         command = '%s -i %s -vf "thumbnail,scale=%s" ' \
                   '-frames:v 1 %s' % (config['ffmpeg'], input_file, res, output_file)
-        p = subprocess.Popen(command,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT)
-        for each in p.stdout:
-            each = each.strip()
-            try:
-                if "ERROR" in each:
-                    logging.error(each)
-            except TypeError:
-                pass
+        if command:
+            _execute(command)
         return output_file
 
     else:
@@ -418,18 +411,8 @@ def make_full_res_jpg(input_file, preview_path=None):
         if not os.path.isdir(os.path.split(preview_path)[0]):
             os.makedirs(os.path.split(preview_path)[0])
     command = r"%s %s --ch R,G,B -o %s" % (config['magick'], input_file, preview_path)
-    p = subprocess.Popen(command,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-    for each in p.stdout:
-        each = each.strip()
-        try:
-            if "ERROR" in each:
-                logging.debug(each)
-                logging.error(each)
-        except TypeError:
-            pass
-    logging.info(command)
+    if command:
+        _execute(command)
     return preview_path
 
 
@@ -444,18 +427,8 @@ def make_images_from_pdf(input_file, preview_path=None):
     output_file = name + '.%04d.jpg'
     command = r"%s -density 300 %s %s/%s" % (config['imagemagick'], input_file,
                                              os.path.split(input_file)[0], output_file)
-    p = subprocess.Popen(command,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-    for each in p.stdout:
-        each = each.strip()
-        try:
-            if "ERROR" in each:
-                logging.debug(each)
-                logging.error(each)
-        except TypeError:
-            pass
-    logging.info(command)
+    if command:
+        _execute(command)
     return True
 
 
@@ -505,7 +478,7 @@ def make_animated_gif(input_file):
     command = '%s -i %s -vf "%s,palettegen" -y %s' % (config['ffmpeg'], input_file, filters, palette)
     print command
     p = subprocess.Popen([config['ffmpeg'], '-i', input_file, '-vf', "%s,palettegen" % filters, '-y', palette],
-                         stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+                         stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     print p.stdout.readline(),  # read the first line
     for i in range(10):  # repeat several times to show that it works
         print >> p.stdin, i  # write input
@@ -519,7 +492,7 @@ def make_animated_gif(input_file):
     print 'command 2', command2
     p2 = subprocess.Popen([config['ffmpeg'], '-i', input_file, '-i', palette, '-lavfi',
                            "%s [x]; [x][1:v] paletteuse" % filters, '-y', output_file.replace('palette.', '')],
-                          stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+                          stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     print p2.stdout.readline(),  # read the first line
     for i in range(10):  # repeat several times to show that it works
         print >> p2.stdin, i  # write input
