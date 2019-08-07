@@ -48,6 +48,7 @@ def _load_resources():
     pass
 
 
+# noinspection SpellCheckingInspection
 def _load_ui_themes(gui=None):
     """
     load the ui theme from the css
@@ -121,12 +122,12 @@ def _load_lang():
     full_locale = locale.bcp47Name()
     if "LUMBERJACK_LOCALE" in os.environ:
         full_locale = os.environ["LUMBERJACK_LOCALE"]
-        logging.info("LOCALE OVERIDE %s" % full_locale)
+        logging.info("LOCAL OVERRIDE %s" % full_locale)
     if "-" in full_locale:
         lang, _ = full_locale.split("-")
     else:
         lang = full_locale
-    if lang == "en": # we write in english by default, maybe one day we will deal with British/US english
+    if lang == "en":  # we write in english by default, maybe one day we will deal with British/US english
         logging.info("English language")
         return
     region_lang = ":i18n/%s.qm" % full_locale

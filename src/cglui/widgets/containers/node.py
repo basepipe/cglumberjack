@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# noinspection PyUnresolvedReferences
 from Qt import QtXml
 
 
@@ -89,6 +90,7 @@ class Node(object):
     def name():
         def fget(self):
             return self._name
+
         def fset(self, value):
             self._name = value
         return locals()
@@ -97,6 +99,7 @@ class Node(object):
     def value():
         def fget(self):
             return self._value
+
         def fset(self, value):
             self._value = value
         return locals()

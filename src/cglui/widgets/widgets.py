@@ -1,5 +1,5 @@
 import os
-from Qt import QtWidgets, QtCore, QtGui
+from Qt import QtWidgets, QtGui, QtCore
 from cglcore import path
 from cglui.util import drop_handler, define_palettes
 from cglui.widgets.containers.table import LJTableWidget
@@ -752,7 +752,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout(self)
         self.proj_management_combo = QtWidgets.QComboBox()
         self.proj_management_combo.addItems(['lumbermill', 'ftrack', 'shotgun', 'google_docs'])
-        self.red_palette, self.green_palette, self.black_palette = define_palettes(widget=self)
+        self.red_palette, self.green_palette, self.black_palette = define_palettes()
 
         self.server_label = QtWidgets.QLabel('server url:')
         self.api_key_label = QtWidgets.QLabel('api key:')

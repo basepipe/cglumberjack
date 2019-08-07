@@ -10,7 +10,7 @@ from cglui.util import define_palettes
 class PathItemWidget(QtWidgets.QWidget):
     line_edit_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, paths_dict={}, hide_on_find=True):
+    def __init__(self, parent=None, paths_dict=None, hide_on_find=True):
         QtWidgets.QWidget.__init__(self, parent)
         self.layout = QtWidgets.QGridLayout(self)
         self.user_dir = os.path.expanduser("~")
@@ -111,7 +111,6 @@ class PathItemWidget(QtWidgets.QWidget):
             self.widget_dict['globals']['message'].setText('%s Path Found, Ready for Ass Kicking!' % 'globals')
             self.widget_dict['globals']['message'].setPalette(self.black_palette)
 
-
     @staticmethod
     def get_user_name():
         """
@@ -136,7 +135,7 @@ class PathItemWidget(QtWidgets.QWidget):
 
 class ConfigDialog(QtWidgets.QDialog):
 
-    def __init__(self, parent=None, company='', project_management='lumbermill', user_directory='', config_dict={}):
+    def __init__(self, parent=None, company='', config_dict=None):
         QtWidgets.QDialog.__init__(self, parent)
         self.app_config = config_dict
         self.proj_management_label = QtWidgets.QLabel('Project Management')
@@ -152,7 +151,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.api_server = ''
 
         layout = QtWidgets.QVBoxLayout(self)
-        self.poject_management_label = QtWidgets.QLabel('Project Management:')
+        self.project_management_label = QtWidgets.QLabel('Project Management:')
         self.proj_management_combo = QtWidgets.QComboBox()
         self.proj_management_combo.addItems(['', 'lumbermill', 'ftrack', 'shotgun'])
         self.red_palette, self.green_palette, self.black_palette = define_palettes()
@@ -245,7 +244,8 @@ class ConfigDialog(QtWidgets.QDialog):
         """
         return getpass.getuser()
 
-    def on_line_edits_changed(self, data):
+    @staticmethod
+    def on_line_edits_changed(data):
         print data
 
     def on_globals_changed(self):
@@ -266,10 +266,9 @@ class ConfigDialog(QtWidgets.QDialog):
         self.create_global_config()
         self.create_user_globals()
         if self.project_management == 'ftrack':
-            # eed a wayto inherit thte task di
             import plugins.project_management.ftrack.setup_tasks as setup_tasks
-            form = setup_tasks.TaskSetupGUI()
-            form.exec_()
+            form_ = setup_tasks.TaskSetupGUI()
+            form_.exec_()
         self.accept()
 
     def copy_cgl_tools(self):
@@ -284,22 +283,22 @@ class ConfigDialog(QtWidgets.QDialog):
             self.global_config['paths']['code_root'] = self.widget_dict['code_root']['line_edit'].text()
             self.global_config['account_info']['project_management'] = self.project_management
             self.global_config['account_info']['globals_path'] = self.widget_dict['globals']['line_edit'].text()
+            api = self.global_config['project_management'][self.project_management]['api']
             if self.project_management == 'ftrack':
-                self.global_config['project_management'][self.project_management]['api']['api_key'] = self.api_key_line_edit.text()
-                self.global_config['project_management'][self.project_management]['api']['server_url'] = self.server_line_edit.text()
-                self.global_config['project_management'][self.project_management]['api']['api_user'] = self.api_user_line_edit.text()
-                self.global_config['project_management'][self.project_management]['api']['default_schema'] = 'VFX'
+                api['api_key'] = self.api_key_line_edit.text()
+                api['server_url'] = self.server_line_edit.text()
+                api['api_user'] = self.api_user_line_edit.text()
+                api['default_schema'] = 'VFX'
             elif self.project_management == 'shotgun':
-                self.global_config['project_management'][self.project_management]['api']['api_key'] = self.api_key_line_edit.text()
-                self.global_config['project_management'][self.project_management]['api']['server_url'] = self.server_line_edit.text()
-                self.global_config['project_management'][self.project_management]['api']['api_user'] = self.api_user_line_edit.text()
-                self.global_config['project_management'][self.project_management]['api']['api_script'] = self.api_script_line_edit.text()
+                api['api_key'] = self.api_key_line_edit.text()
+                api['server_url'] = self.server_line_edit.text()
+                api['api_user'] = self.api_user_line_edit.text()
+                api['api_script'] = self.api_script_line_edit.text()
             if not os.path.exists(os.path.dirname(self.widget_dict['root']['line_edit'].text())):
                 os.makedirs(os.path.dirname(self.widget_dict['root']['line_edit'].text()))
             self._write_json(self.widget_dict['globals']['line_edit'].text(), self.global_config)
         else:
             print 'No Dictionary Loaded for Global Config'
-
 
     def check_user_config_exists(self):
         config = self.user_globals_line_edit.text()
@@ -400,11 +399,8 @@ class ConfigDialog(QtWidgets.QDialog):
         self.root = self.widget_dict['root']['line_edit'].text()
 
     def on_line_edit_changed(self):
-        # TODO make these dictionairies
         self.get_input()
-
-        print self.project_management
-
+        info = {}
         if self.project_management == 'ftrack':
             info = {'api_server': self.api_server,
                     'api_key': self.api_key,

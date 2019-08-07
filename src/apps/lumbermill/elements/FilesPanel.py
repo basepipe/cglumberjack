@@ -22,7 +22,7 @@ class FilesPanel(QtWidgets.QWidget):
     review_signal = QtCore.Signal()
     publish_signal = QtCore.Signal()
 
-    def __init__(self, parent=None, path_object=None, user_email='', user_name='', show_import=False, pixmap=False):
+    def __init__(self, parent=None, path_object=None, user_email='', user_name='', show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
         self.work_files = []
@@ -112,7 +112,8 @@ class FilesPanel(QtWidgets.QWidget):
                 my_files_label = 'Published Work Files'
             logging.debug('Work Files: %s' % self.work_files)
             task_widget.setup(task_widget.files_area.work_files_table,
-                              FileTableModel(self.prep_list_for_table(self.work_files, basename=True), [my_files_label]))
+                              FileTableModel(self.prep_list_for_table(self.work_files, basename=True),
+                                             [my_files_label]))
             self.load_render_files(task_widget)
             task_widget.create_empty_version.connect(self.new_empty_version_clicked)
             task_widget.files_area.review_button_clicked.connect(self.on_review_clicked)
@@ -154,7 +155,6 @@ class FilesPanel(QtWidgets.QWidget):
         self.panel.addStretch(1)
 
     def new_files_dragged(self, files):
-        data = {}
         to_object = PathObject(self.sender().to_object)
         to_folder = to_object.path_root
 
@@ -318,7 +318,8 @@ class FilesPanel(QtWidgets.QWidget):
         else:
             logging.debug('No render Files, Drag/Drop them to interface, or create them through software.')
 
-    def new_version_from_latest(self):
+    @staticmethod
+    def new_version_from_latest():
         print 'version up_latest'
 
     def new_empty_version_clicked(self):
@@ -480,8 +481,8 @@ class FilesPanel(QtWidgets.QWidget):
             list_.append(os.path.basename(each))
         # this is what's doing the loading of the files.
         widget.files_area.clear()
-        #widget.setup(widget.files_area.work_files_table, FileTableModel(self.prep_list_for_table(list_), ['Name']))
-        #self.on_task_selected(path_obj.data)
+        # widget.setup(widget.files_area.work_files_table, FileTableModel(self.prep_list_for_table(list_), ['Name']))
+        # self.on_task_selected(path_obj.data)
 
     def clear_task_selection_except(self, task=None):
         layout = self.panel
@@ -528,7 +529,6 @@ class FilesPanel(QtWidgets.QWidget):
             widget.files_area.open_button.show()
             widget.empty_state.hide()
             if not files_:
-                render_files_label = 'Drag/Drop Files for Review or Publish'
                 widget.files_area.review_button.hide()
                 widget.files_area.publish_button.hide()
                 if not self.work_files:

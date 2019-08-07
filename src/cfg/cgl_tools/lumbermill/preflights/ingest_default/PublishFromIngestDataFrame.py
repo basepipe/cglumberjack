@@ -40,7 +40,6 @@ class PublishFromIngestDataFrame(PreflightCheck):
         source_path = PathObject(to_path)
         source_path.set_attr(context='source')
         source_path.set_attr(filename='system_report.csv')
-        dir = os.path.dirname(source_path.path_root)
         # CreateProductionData(dir)
         data = []
         data.append((row["Filepath"], row["Filename"], row["Filetype"], row["Frame_Range"], row["Tags"],

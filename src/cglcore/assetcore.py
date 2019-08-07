@@ -5,8 +5,10 @@ logging.getLogger().setLevel(logging.INFO)
 
 
 class MetaObject(object):
+
     def __init__(self, jsonfile=None, _type=None, **kwargs):
         self._metaItems = []
+        self.uid = None
         self._type = _type
         # if 'name' not in kwargs:
         #     raise AttributeError('no name defined for MetaItem %s' % self)
@@ -22,21 +24,17 @@ class MetaObject(object):
                 self._metaItems.append(BaseItem(_type=_type, **kwargs))
 
     def add(self, _type, uid, **attr):
-        '''
+        """
         adds
-        :param context: Layout, project or asset
+        :param _type: Layout, project or asset
         :param uid: unique id that groups each asset
         :param attr: all attributes you wish to add to the meta
         :return:
-        '''
+        """
 
         self._type = _type
         self.uid = uid
 
-        #if not self._type:
-        #    raise AttributeError('no type given for MetaItem %s, type: %s' % (self, type(self)))
-        #if not 'uid' in attr:
-        #    raise AttributeError('no uid given for MetaItem %s, type: %s' % (self, type(self)))
         for item in self._metaItems:
             if item.uid == uid:
                 self._metaItems.remove(item)
@@ -44,12 +42,12 @@ class MetaObject(object):
         return BaseItem(_type=self._type, uid=uid, **attr)
 
     def find(self, value=False, **attributes):
-        '''
+        """
         finds all meta items that match attributes by default
-        :value: switches what find will return
+        :param value: switches what find will return
         :param attributes: which attributes and values to find
         :return: list of found MetaNodes, if Value will return dict of uid:value pairs
-        '''
+        """
         if value:
             data = {}
         else:
@@ -86,16 +84,16 @@ class MetaObject(object):
     def save(self, path):
         data = {}
         for metaitem in self._metaItems:
-            data[metaitem.uid] = self.itemtojson(metaitem.data.uid)
+            data[metaitem.uid] = self.item_to_json(metaitem.data.uid)
         writeJson(path, data)
 
-    def itemtojson(self, obj):
+    def item_to_json(self, obj):
         # excluded = ['structure', 'uidref']
         d = {}
         if isinstance(obj, MetaNode):
             for attr, val in obj.__dict__.iteritems():
                 if isinstance(val, MetaNode):
-                    d[attr] = self.itemtojson(val)
+                    d[attr] = self.item_to_json(val)
                 else:
                     d[attr] = val
         return d
@@ -115,8 +113,10 @@ class MetaObject(object):
 
 class BaseItem(object):
     EXCLUSIONS = ['context', 'kwargs', 'uid']
+    blueprint = None
+
     def __init__(self, _type=None, **kwargs):
-        '''
+        """
         :parm name:
             Required to initialize meta item
         :parm uid:
@@ -124,7 +124,7 @@ class BaseItem(object):
         :parm jsonfile:
             can read json file directly and convert to MetaItem
         :param kwargs:
-        '''
+        """
 
         # Declaration of Types NEW TYPES GO HERE
         if _type == 'asset':
@@ -162,7 +162,7 @@ class BaseItem(object):
                 logging.error('No uid set for object %s' % self)
 
             self.set_structure()
-            self.processdict(**kwargs)
+            self.process_dict(**kwargs)
         else:
             logging.info('Initialized Empty Base Item')
 
@@ -170,12 +170,12 @@ class BaseItem(object):
         pass
 
     def build_structure(self, dct, structure):
-        '''
+        """
         recursive function for building the class structure of the BaseItem
         :param dct:
         :param structure:
         :return:
-        '''
+        """
         for key, val in dct.iteritems():
             if isinstance(val, dict):
                 new_group = MetaNode()
@@ -185,12 +185,12 @@ class BaseItem(object):
                 structure.__setattr__(key, val)
         return
 
-    def processdict(self, **kwargs):
-        '''
-        how input structure is processed
-        :param dct:
+    def process_dict(self, **kwargs):
+        """
+        how stuff is processed
+        :param kwargs:
         :return:
-        '''
+        """
         for arg, val in kwargs.iteritems():
             self.set_attribute(self.data, arg, val)
 
@@ -211,12 +211,12 @@ class BaseItem(object):
                 if isinstance(v, MetaNode):
                     self.__get__(v)
 
-    def writejson(self, writedata):
+    def write_json(self, write_data):
         pass
 
     def add(self, **kwargs):
-        self.processdict(kwargs)
-
+        # probably need to iterate over **kwargs
+        self.process_dict(kwargs)
 
     @property
     def attributes(self):
@@ -226,17 +226,18 @@ class BaseItem(object):
 
 
 class LayoutItem(BaseItem):
-    '''
+    """
     writes out the layout json in the proper format
-    '''
+    """
     def __init__(self, **kwargs):
         super(LayoutItem, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
-        '''
+        """
         uid should always be the parent structure
         :return:
-        '''
+        """
 
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
@@ -257,17 +258,18 @@ class LayoutItem(BaseItem):
 
 
 class BundleItem(BaseItem):
-    '''
+    """
     writes out the layout json in the proper format
-    '''
+    """
     def __init__(self, **kwargs):
         super(BundleItem, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
-        '''
+        """
         uid should always be the parent structure
         :return:
-        '''
+        """
 
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
@@ -287,18 +289,19 @@ class BundleItem(BaseItem):
 
 
 class LinkItem(BaseItem):
-    '''
+    """
     Link Items are to be links to published version of json files.  Essentially
     they should be the only thing in a "layout".
-    '''
+    """
     def __init__(self, **kwargs):
         super(LinkItem, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
-        '''
+        """
         uid should always be the parent structure
         :return:
-        '''
+        """
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
                            'task': True,
@@ -314,17 +317,18 @@ class LinkItem(BaseItem):
 
 
 class AssetItem(BaseItem):
-    '''
+    """
     writes out the asset json in the proper format
-    '''
+    """
     def __init__(self, **kwargs):
         super(AssetItem, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
-        '''
+        """
         uid should always be the parent structure
         :return:
-        '''
+        """
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
                            'task': IVals.REQUIRED,
@@ -343,17 +347,18 @@ class AssetItem(BaseItem):
 
 
 class CameraItem(BaseItem):
-    '''
+    """
     writes out the asset json in the proper format
-    '''
+    """
     def __init__(self, **kwargs):
         super(CameraItem, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
-        '''
+        """
         uid should always be the parent structure
         :return:
-        '''
+        """
 
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
@@ -375,17 +380,18 @@ class CameraItem(BaseItem):
 
 
 class RigItem(BaseItem):
-    '''
+    """
     writes out the asset json in the proper format
-    '''
+    """
     def __init__(self, **kwargs):
         super(RigItem, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
-        '''
+        """
         uid should always be the parent structure
         :return:
-        '''
+        """
 
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
@@ -400,17 +406,18 @@ class RigItem(BaseItem):
 
 
 class AssetPackage(BaseItem):
-    '''
+    """
     writes out the asset json in the proper format
-    '''
+    """
     def __init__(self, **kwargs):
         super(AssetPackage, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
-        '''
+        """
         uid should always be the parent structure
         :return:
-        '''
+        """
 
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
@@ -428,17 +435,18 @@ class AssetPackage(BaseItem):
 
 
 class ModelItem(BaseItem):
-    '''
+    """
     writes out the asset json in the proper format
-    '''
+    """
     def __init__(self, **kwargs):
         super(ModelItem, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
-        '''
+        """
         uid should always be the parent structure
         :return:
-        '''
+        """
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
                            'task': IVals.REQUIRED,
@@ -455,18 +463,20 @@ class ModelItem(BaseItem):
         self.data = MetaNode()
         self.build_structure(self.structure, structure=self.data)
 
+
 class TextureItem(BaseItem):
-    '''
+    """
     writes out the asset json in the proper format
-    '''
+    """
     def __init__(self, **kwargs):
         super(TextureItem, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
-        '''
+        """
         uid should always be the parent structure
         :return:
-        '''
+        """
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
                            'task': 'tex',
@@ -483,17 +493,18 @@ class TextureItem(BaseItem):
 
 
 class ShaderItem(BaseItem):
-    '''
+    """
     writes out the asset json in the proper format
-    '''
+    """
     def __init__(self, **kwargs):
         super(ShaderItem, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
-        '''
+        """
         uid should always be the parent structure
         :return:
-        '''
+        """
 
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
@@ -516,12 +527,13 @@ class InitialItem(BaseItem):
     """
     def __init__(self, **kwargs):
         super(InitialItem, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
-        '''
+        """
         uid should always be the parent structure
         :return:
-        '''
+        """
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
                            'task': IVals.REQUIRED,
@@ -538,17 +550,18 @@ class InitialItem(BaseItem):
 
 
 class AnimItem(BaseItem):
-    '''
+    """
     writes out the asset json in the proper format
-    '''
+    """
     def __init__(self, **kwargs):
         super(AnimItem, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
-        '''
+        """
         uid should always be the parent structure
         :return:
-        '''
+        """
         self.structure = {'uid':
                           {'name': IVals.REQUIRED,
                            'task': IVals.REQUIRED,
@@ -569,11 +582,12 @@ class AnimItem(BaseItem):
 
 
 class ProjectItem(BaseItem):
-    '''
+    """
     writes out the project item in the proper format
-    '''
+    """
     def __init__(self, **kwargs):
         super(ProjectItem, self).__init__(**kwargs)
+        self.structure = {}
 
     def set_structure(self):
         self.structure = {'uid':
@@ -592,9 +606,9 @@ class ProjectItem(BaseItem):
 
 
 class MetaNode(object):
-    '''
+    """
     Nested attributes found in a Meta Object
-    '''
+    """
     def __init__(self, dct=None, **kwargs):
         if dct:
             self.add(dct=dct)
@@ -609,9 +623,8 @@ class MetaNode(object):
             for atr, val in attr.iteritems():
                 self.__setattr__(atr, val)
 
-    def search(self, **attr):
+    def search(self):
         for attr, data in self.__dict__.iteritems():
-
             if isinstance(data, MetaNode):
                 pass
 
@@ -623,9 +636,9 @@ class IVals(Enum):
     LIST_REQ = 3
 
 
-def writeJson(f, assetlist):
+def writeJson(f, asset_list):
     with open(f, 'w') as outfile:
-        json.dump(assetlist, outfile, indent=4, sort_keys=True)
+        json.dump(asset_list, outfile, indent=4, sort_keys=True)
 
 
 def readJson(f):

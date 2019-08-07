@@ -40,7 +40,6 @@ class CreatePublishFiles(PreflightCheck):
         source_path = PathObject(to_path)
         source_path.set_attr(context='source')
         source_path.set_attr(filename='system_report.csv')
-        dir = os.path.dirname(source_path.path_root)
         data = []
         data.append((row["Filepath"], row["Filename"], row["Filetype"], row["Frame_Range"], row["Tags"],
                      row["Keep_Client_Naming"], row["Scope"], row["Seq"], row["Shot"], row["Task"],

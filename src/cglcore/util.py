@@ -26,7 +26,7 @@ def pretty(obj):
 
 def app_name(str_=None, human=False):
     """
-    return the name of the application used in seettings files
+    return the name of the application used in settings files
     Args:
         str_: the name to map from defaults sys.argv[0]
         human: a human readable string
@@ -51,22 +51,22 @@ def app_name(str_=None, human=False):
 
 
 def folder_size(folder, size=0):
-    '''
+    """
     gets the memory size of a folder, can also take files
     :param folder:
     :param size:
     :return:
-    '''
+    """
 
     if os.path.isdir(folder):
         for d, subdir, files in os.walk(folder):
             for name in files:
-                size = size + os.path.getsize('%s\%s' % (d, name))
+                size = size + os.path.getsize('%s/%s' % (d, name))
             for subfolder in subdir:
-                folder_size('%s\%s' % (d, subfolder), size)
+                folder_size('%s/%s' % (d, subfolder), size)
         return '%s mb' % (size/1000000)
     else:
-        return '%s mb' %(os.path.getsize(folder)/1000000)
+        return '%s mb' % (os.path.getsize(folder)/1000000)
 
 
 def current_user():
@@ -119,21 +119,17 @@ def copy_file(src, dest):
 
 
 def split_all(path):
-    allparts = []
+    all_parts = []
     while 1:
         parts = os.path.split(path)
         if parts[0] == path:  # sentinel for absolute paths
-            allparts.insert(0, parts[0])
+            all_parts.insert(0, parts[0])
             break
-        elif parts[1] == path: # sentinel for relative paths
-            allparts.insert(0, parts[1])
+        elif parts[1] == path:
+            all_parts.insert(0, parts[1])
             break
         else:
             path = parts[0]
-            allparts.insert(0, parts[1])
-    return allparts
+            all_parts.insert(0, parts[1])
+    return all_parts
 
-
-if __name__ == '__main__':
-    test = r'F:\FSU\VFX\render\16BTH_2018_McBain\assets\Environment\bed'
-    print folder_size(test)

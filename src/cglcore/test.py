@@ -1,5 +1,6 @@
 from cglcore.path import PathObject
 
+# noinspection SpellCheckingInspection,PyPep8
 mov = r'D:/VFX/FRIDAY_ROOT/grindhouse/render/ninjaNunsII/assets/char/trex/ref/tmiko/000.000/high/81zuLQ622hL._SL1500_.jpg'
 
 path_object = PathObject(mov)

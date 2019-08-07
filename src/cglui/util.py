@@ -1,6 +1,5 @@
 import logging
 from Qt import QtGui, QtCore
-from Qt.QtCore import QSettings, QCoreApplication
 from cglcore.util import app_name
 
 
@@ -9,10 +8,10 @@ class UISettings(object):
 
     def __init__(self):
         if UISettings.SETTINGS is None:
-            QCoreApplication.setOrganizationName("cglumberjack")
-            QCoreApplication.setOrganizationDomain("cgjumberjack.com")
-            QCoreApplication.setApplicationName(app_name())
-            UISettings.SETTINGS = QSettings()
+            QtCore.QCoreApplication.setOrganizationName("cglumberjack")
+            QtCore.QCoreApplication.setOrganizationDomain("cglumberjack.com")
+            QtCore.QCoreApplication.setApplicationName(app_name())
+            UISettings.SETTINGS = QtCore.QSettings()
             logging.info("using settings file %s", UISettings.SETTINGS.fileName())
 
     @classmethod

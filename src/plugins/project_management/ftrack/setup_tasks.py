@@ -1,4 +1,4 @@
-from Qt import QtCore, QtWidgets, QtGui
+from Qt import QtWidgets, QtGui
 import json
 import os
 from cglcore.config import app_config
@@ -10,13 +10,6 @@ class TaskSetupGUI(QtWidgets.QDialog):
         QtWidgets.QDialog.__init__(self, parent)
         self.previous_selection = ''
         layout = QtWidgets.QVBoxLayout(self)
-        #combo box stuff
-        combo_layout = QtWidgets.QHBoxLayout()
-        # schemas_label = QtWidgets.QLabel("Schemas:")
-        # self.schemas_combo = QtWidgets.QComboBox()
-        # combo_layout.addWidget(schemas_label)
-        # combo_layout.addWidget(self.schemas_combo)
-
         self.task_table = QtWidgets.QTableWidget()
         self.task_table.setColumnCount(4)
         self.task_table.verticalHeader().hide()
@@ -61,7 +54,7 @@ class TaskSetupGUI(QtWidgets.QDialog):
             long_name = self.task_table.item(row, 0).text()
             short_name = self.task_table.item(row, 1).text()
             type_ = self.task_table.item(row, 2).text()
-            schema = self.task_table.item(row, 3).text()
+            # schema = self.task_table.item(row, 3).text()
             #self.schemas[long_name]['long_name'] = long_name
             self.schemas[long_name]['short_name'] = short_name
             self.schemas[long_name]['type'] = type_
@@ -96,7 +89,6 @@ class TaskSetupGUI(QtWidgets.QDialog):
             schemas = session.query('ProjectSchema').all()
             all_tasks = {}
             for s in schemas:
-                tasks = []
                 for task in s.get_types('Task'):
                     if not task['name'] in all_tasks:
                         all_tasks[task['name']] = {'long_name': task['name'],
@@ -172,6 +164,7 @@ class TaskSetupGUI(QtWidgets.QDialog):
         pass
 
     def closeEvent(self, event):
+        print event
         self.iterate_over_table()
         formatted_tasks = self.format_schemas()
         self.temp_globals['project_management']['ftrack']['tasks'] = formatted_tasks

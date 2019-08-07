@@ -1,6 +1,7 @@
 <component name="InspectionProjectProfileManager">
   <profile version="1.0">
     <option name="myName" value="Project Default" />
+    <inspection_tool class="DuplicatedCode" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
       <option name="ignoredErrors">
         <list>
@@ -14,6 +15,7 @@
           <option value="Qt.QtWidgets" />
           <option value="Qt.QtCore" />
           <option value="Qt.QtGui" />
+          <option value="plugins.project_management.template.main.ProjectManagementData.data_type" />
         </list>
       </option>
     </inspection_tool>

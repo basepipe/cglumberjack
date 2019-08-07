@@ -26,7 +26,7 @@ class ProductionComboDelegate(QtWidgets.QItemDelegate):
         QtWidgets.QItemDelegate.__init__(self, parent)
         self.items = items
 
-    def createEditor(self, parent, option, index):
+    def createEditor(self, parent):
         combo = AdvComboBox(parent)
         combo.addItems(self.items)
         combo.setEnabled(True)
@@ -50,8 +50,9 @@ class LJTreeWidget(QtWidgets.QTreeView):
     nothing_selected = QtCore.Signal()
     selected = QtCore.Signal(object)
     dropped = QtCore.Signal(object)
+    header_labels = []
 
-    def __init__(self, parent, parents=[]):
+    def __init__(self, parent, parents):
         QtWidgets.QTreeView.__init__(self, parent)
         StateSavers.remember_me(self)
 
@@ -157,8 +158,9 @@ class LJTreeWidget(QtWidgets.QTreeView):
 
     def on_closing(self):
         settings = UISettings.settings()
-        #hheading = self.horizontalHeader()
-        #settings.setValue(widget_name(self) + ":hheading", hheading.saveState())
+        print settings, 'Need to adjust this code'
+        # hheading = self.horizontalHeader()
+        # settings.setValue(widget_name(self) + ":hheading", hheading.saveState())
 
     def resizeEvent(self, event):
         # TODO - this doesn't work on mac, but does on windows
@@ -174,7 +176,7 @@ class LJTreeWidget(QtWidgets.QTreeView):
                 header.resizeSection(column, width)
                 total_width += width
             except AttributeError:
-                print 'PySide2 compatibilty issue: setResizeMode'
+                print 'PySide2 compatibility issue: setResizeMode'
         for row in range(self.row_count()):
             self.height_hint += 24
         self.width_hint = total_width

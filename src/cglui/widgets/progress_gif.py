@@ -37,7 +37,7 @@ class ProgressDialog(QtWidgets.QDialog):
 
     def __init__(self, message, gif_name):
         QtWidgets.QDialog.__init__(self)
-        self.setWindowTitle("Gif Testerino")
+        self.setWindowTitle("Gif Tester")
 
         self.message = QtWidgets.QLabel(message)
         self.movie_screen = QtWidgets.QLabel()
@@ -60,6 +60,6 @@ class ProgressDialog(QtWidgets.QDialog):
 
 if __name__ == '__main__':
     app = QtGui.QApplication([])
-    form = ProgressDialog()
+    form = ProgressDialog(message='test')
     form.show()
     app.exec_()

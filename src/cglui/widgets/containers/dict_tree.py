@@ -114,7 +114,7 @@ class DictionaryTreeModel(QtCore.QAbstractItemModel):
 
 
 def node_structure_from_dict(datadict, parent=None, root_node=None):
-    """returns a hierarchical node stucture required by the TreeModel"""
+    """returns a hierarchical node structure required by the TreeModel"""
     if not parent:
         root_node = Node('Root')
         parent = root_node
@@ -146,27 +146,32 @@ class DictionaryTreeWidget(QtGui.QTreeView):
         self.load_dictionary(dict_)
 
     def load_dictionary(self, dict_):
-        """load a dictionary into my tree applicatoin"""
+        """
+        load a dictionary into my tree application
+        """
         self._d = dict_
         self._nodes = node_structure_from_dict(dict_)
         self._model = DictionaryTreeModel(self._nodes)
         self.setModel(self._model)
 
     def to_dict(self):
-        """returns a dictionary from the tree-data"""
+        """
+        returns a dictionary from the tree-data
+        """
         return self._model.to_dict()
 
 
 class DictionaryTreeDialog(QtGui.QDialog):
-    """guidata motivated dialog for editin dictionaries
+    """
+    gui data motivated dialog for edit in dictionaries
     """
 
     def __init__(self, d):
         super(DictionaryTreeDialog, self).__init__()
-        treeWidget = DictionaryTreeWidget(d)
-        for c in range(treeWidget._model.columnCount(None)):
-            treeWidget.resizeColumnToContents(c)
-        self.treeWidget = treeWidget
+        tree_widget = DictionaryTreeWidget(d)
+        for c in range(tree_widget._model.columnCount(None)):
+            tree_widget.resizeColumnToContents(c)
+        self.treeWidget = tree_widget
 
         self.buttonOk = QtGui.QPushButton('Ok', self)
         self.buttonCancel = QtGui.QPushButton('Cancel', self)
@@ -196,17 +201,18 @@ class DictionaryTreeDialog(QtGui.QDialog):
         self.treeWidget.load_dictionary(d)
         self.reject()
 
-    def closeEvent(self, event):
+    def closeEvent(self):
         self.closeCancel()
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
 
     try:
         app = QtGui.QApplication(sys.argv)
     except:
         app = QtGui.qApp
 
+    # noinspection SpellCheckingInspection
     d = {'First name': 'Maximus',
          'Last name': 'Mustermann',
          'Nickname': 'Max',

@@ -1,7 +1,6 @@
 from Qt import QtCore
-
+# noinspection PyUnresolvedReferences
 from Qt.QtWidgets import QTableView, QHeaderView
-from cglcore.path import split_sequence_frange
 from cglui.util import UISettings, widget_name
 from cglui.widgets.base import StateSavers
 from cglui.util import drop_handler
@@ -17,7 +16,7 @@ class LJTableWidget(QTableView):
         QTableView.__init__(self, parent)
         self.verticalHeader().hide()
         self.horizontalHeader().setStretchLastSection(True)
-        #self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        # self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         # self.horizontalHeader().setMovable(True)
         self.search_wgt = None
         self.alphabet_header = None
@@ -55,10 +54,11 @@ class LJTableWidget(QTableView):
             hheading.restoreState(state)
 
         for header_name in self.alphabet_header:
-            self.header_right_click_menu.create_action(
-                header_name, lambda header_name=header_name: self.header_right_click_menu_trigger(header_name), checkable=True)
+            self.header_right_click_menu.create_action(header_name,
+                                                       lambda header_name=header_name: self.header_right_click_menu_trigger(header_name),
+                                                       checkable=True)
             if not self.isColumnHidden(mdl.headers.index(header_name)):
-                 self.header_right_click_menu.actions()[self.alphabet_header.index(header_name)].setChecked(True)
+                self.header_right_click_menu.actions()[self.alphabet_header.index(header_name)].setChecked(True)
 
     def set_search_box(self, wgt):
         self.search_wgt = wgt
@@ -160,7 +160,7 @@ class LJTableWidget(QTableView):
                 header.resizeSection(column, width)
                 total_width += width
             except AttributeError:
-                print 'PySide2 compatibilty issue: setResizeMode'
+                print 'PySide2 compatibility issue: setResizeMode'
         for row in range(v_header.count()):
             try:
                 self.verticalHeader().setResizeMode(row, QHeaderView.ResizeToContents)
@@ -169,7 +169,7 @@ class LJTableWidget(QTableView):
                 v_header.resizeSection(row, height)
                 total_height += height
             except AttributeError:
-                print 'PySide2 compatibilty issue: setResizeMode'
+                print 'PySide2 compatibility issue: setResizeMode'
         self.height_hint = total_height
         self.width_hint = total_width
         self.sizeHint()

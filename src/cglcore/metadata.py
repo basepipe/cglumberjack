@@ -1,7 +1,8 @@
 import exiftool
 import os
 
-#TODO I'm going to need to make a dictionary for my big list of stuff i care about and what's needed for every file type....
+# TODO I'm going to need to make a dictionary for my big list of stuff i care about and what's needed for
+#  every file type....
 
 RAF = ['EXIF:LensModel', 'MakerNotes:RawImageHeight', 'MakerNotes:RawImageWidth', 'EXIF:CreateDate', 'EXIF:ModifyDate',
        'EXIF:SerialNumber', 'Composite:Aperture', 'EXIF:FocalLength', 'EXIF:Make', 'EXIF:Model', 'EXIF:LensMake']
@@ -21,6 +22,7 @@ def get_meta_data(filein):
     :param filein:
     :return:
     """
+    files = []
     if filein.endswith('R3D'):
         return get_red_data(filein)
     # File types tested: RAF, JPG
@@ -52,18 +54,8 @@ def get_red_data(filein):
             try:
                 key_, value = line.split(':', 1)
                 if key_ != 'None':
-                   d[key_] = value
+                    d[key_] = value
             except ValueError:
                 pass
         return d
-
-
-if __name__ == "__main__":
-    image_test_file = r'/Volumes/lightroom/Photos/2018/2018-08-25/DSCF6126.RAF'
-    test_file = r'/Volumes/lightroom/RED_FOOTAGE/epicw5k-lowlight-ff-24fps/G004_C010_0314CF_001.R3D'
-    mov_file = r'/Volumes/lightroom/Photos/2018/2018-08-26/DSCF6364.MOV'
-    data_ = get_meta_data(test_file)
-    print data_
-    for key in data_:
-        print key, data_[key]
 

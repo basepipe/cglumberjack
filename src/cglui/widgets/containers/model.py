@@ -1,3 +1,4 @@
+# noinspection PyUnresolvedReferences
 from Qt.QtCore import QAbstractTableModel, Qt
 
 
@@ -17,7 +18,7 @@ class LJItemModel(QAbstractTableModel):
 
 
 class LGListDictionaryItemModel(LJItemModel):
-    def __init__(self, data, display_filter=None):
+    def __init__(self, data):
         LJItemModel.__init__(self)
         self.headers = []
         self.data_ = []
@@ -136,6 +137,7 @@ class TreeItemModel(LJItemModel):
                 return str(data)
             except KeyError:
                 return ''
+
 
 class FileTableModel(ListItemModel):
     def data(self, index, role):

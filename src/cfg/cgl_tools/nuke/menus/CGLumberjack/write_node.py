@@ -1,8 +1,10 @@
 from cglcore.path import PathObject
 import nuke
 
+
 def get_scene_name():
     return nuke.Root().name()
+
 
 def create_scene_write_node():
     """

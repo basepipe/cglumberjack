@@ -260,6 +260,7 @@ class MenuButton(QtWidgets.QWidget):
 
     def on_code_changed(self):
         code_path = os.path.join(os.path.dirname(self.menu_path), 'menus', self.menu_name, '%s.py' % self.name)
+        print 'Code Changed: %s' % code_path
         self.do_save = True
 
     def load_attrs(self):

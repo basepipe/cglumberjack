@@ -7,7 +7,7 @@ class Highlighter(QtGui.QSyntaxHighlighter):
 
         keywordFormat = QtGui.QTextCharFormat()
         keywordFormat.setForeground(QtGui.QColor('#CB772F'))
-        #keywordFormat.setFontWeight(QtGui.QFont.Bold)
+        # keywordFormat.setFontWeight(QtGui.QFont.Bold)
 
         keywordPatterns = ['\\bprint\\b', '\\bFalse\\b', '\\bNone\\b', '\\bTrue\\b', '\\band\\b', '\\bas\\b',
                            '\\bbreak\\b', '\\bclass\\b', '\\bcontinue\\b', '\\bdef\\b', '\\bdel\\b', '\\belif\\b',
@@ -26,13 +26,11 @@ class Highlighter(QtGui.QSyntaxHighlighter):
         classFormat = QtGui.QTextCharFormat()
         classFormat.setFontWeight(QtGui.QFont.Bold)
         classFormat.setForeground(QtCore.Qt.darkMagenta)
-        self.highlightingRules.append((QtCore.QRegExp("\\bQ[A-Za-z]+\\b"),
-                classFormat))
+        self.highlightingRules.append((QtCore.QRegExp("\\bQ[A-Za-z]+\\b"), classFormat))
 
         singleLineCommentFormat = QtGui.QTextCharFormat()
         singleLineCommentFormat.setForeground(QtCore.Qt.red)
-        self.highlightingRules.append((QtCore.QRegExp("//[^\n]*"),
-                singleLineCommentFormat))
+        self.highlightingRules.append((QtCore.QRegExp("//[^\n]*"), singleLineCommentFormat))
 
         self.multiLineCommentFormat = QtGui.QTextCharFormat()
         self.multiLineCommentFormat.setForeground(QtCore.Qt.red)
@@ -43,8 +41,8 @@ class Highlighter(QtGui.QSyntaxHighlighter):
 
         quotationFormat = QtGui.QTextCharFormat()
         quotationFormat.setForeground(QtGui.QColor('#A5C25C'))
-        self.highlightingRules.append((QtCore.QRegExp("\".*\""),quotationFormat))
-        self.highlightingRules.append((QtCore.QRegExp("\'.*\'"),quotationFormat))
+        self.highlightingRules.append((QtCore.QRegExp("\".*\""), quotationFormat))
+        self.highlightingRules.append((QtCore.QRegExp("\'.*\'"), quotationFormat))
 
         self_format = QtGui.QTextCharFormat()
         self_format.setForeground(QtGui.QColor('#9876AA'))
@@ -53,8 +51,7 @@ class Highlighter(QtGui.QSyntaxHighlighter):
         functionFormat = QtGui.QTextCharFormat()
         functionFormat.setFontItalic(True)
         functionFormat.setForeground(QtGui.QColor('#FFC66D'))
-        self.highlightingRules.append((QtCore.QRegExp("\\b[A-Za-z0-9_]+(?=\\()"),
-                functionFormat))
+        self.highlightingRules.append((QtCore.QRegExp("\\b[A-Za-z0-9_]+(?=\\()"), functionFormat))
 
         self.commentStartExpression = QtCore.QRegExp("/\\*")
         self.commentEndExpression = QtCore.QRegExp("\\*/")
@@ -70,20 +67,18 @@ class Highlighter(QtGui.QSyntaxHighlighter):
 
         self.setCurrentBlockState(0)
 
-        startIndex = 0
+        start_index = 0
         if self.previousBlockState() != 1:
-            startIndex = self.commentStartExpression.indexIn(text)
+            start_index = self.commentStartExpression.indexIn(text)
 
-        while startIndex >= 0:
-            endIndex = self.commentEndExpression.indexIn(text, startIndex)
-
-            if endIndex == -1:
+        while start_index >= 0:
+            end_index = self.commentEndExpression.indexIn(text, start_index)
+            if end_index == -1:
                 self.setCurrentBlockState(1)
-                commentLength = len(text) - startIndex
+                comment_length = len(text) - start_index
             else:
-                commentLength = endIndex - startIndex + self.commentEndExpression.matchedLength()
+                comment_length = end_index - start_index + self.commentEndExpression.matchedLength()
 
-            self.setFormat(startIndex, commentLength,
-                    self.multiLineCommentFormat)
-            startIndex = self.commentStartExpression.indexIn(text,
-                    startIndex + commentLength);
+            self.setFormat(start_index, comment_length, self.multiLineCommentFormat)
+            start_index = self.commentStartExpression.indexIn(text, start_index + comment_length)
+

@@ -114,6 +114,7 @@ class ProjectManagementData(object):
         return None
 
     def create_project_management_data(self, review=False, metadata={}):
+        print 'Currently not using metadata: %s' % metadata
         self.project_data = self.entity_exists('project')
         if not self.project_data:
             if self.project:
@@ -306,7 +307,7 @@ class ProjectManagementData(object):
                 else:
                     print 'FTRACK components not prepared for %s' % self.path_object.file_type
 
-    def upload_media(self, add_to_dailies=True):
+    def upload_media(self):
         # TODO - need a way of knowing if a component already exists.
         server_location = self.ftrack.query('Location where name is "ftrack.server"').first()
         if self.file_type == 'movie':
@@ -343,7 +344,7 @@ class ProjectManagementData(object):
         self.add_to_dailies()
 
     def create_review_session(self):
-        review_session = self.ftrack.create('ReviewSession', {
+        self.ftrack.create('ReviewSession', {
             'name': 'Dailies %s' % datetime.date.today(),
             'description': 'Review Session For Todays Data',
             'project': self.project_data
@@ -376,8 +377,7 @@ class ProjectManagementData(object):
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
         self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).one()
-        new_membership = self.ftrack.ensure('Membership', {"group_id": self.user_group['id'],
-                                                           "user_id": self.user_data['id']})
+        self.ftrack.ensure('Membership', {"group_id": self.user_group['id'], "user_id": self.user_data['id']})
         project_has_group = self.ftrack.query(
             'Appointment where context.id is "{}" and resource.id = "{}" and type="allocation"'.format(
                 self.project_data['id'], self.user_group['id']
