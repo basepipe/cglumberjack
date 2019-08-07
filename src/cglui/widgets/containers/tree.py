@@ -35,14 +35,16 @@ class ProductionComboDelegate(QtWidgets.QItemDelegate):
         combo.currentIndexChanged.connect(self.send_index_change)
         return combo
 
-    def setEditorData(self, editor, index):
+    @staticmethod
+    def setEditorData(editor, index):
         print editor, index
 
     def send_index_change(self):
         print self.__dict__
         self.index_changed.emit(self.sender().currentText())
 
-    def reload_items(self, items):
+    @staticmethod
+    def reload_items(items):
         print items
 
 
@@ -121,9 +123,9 @@ class LJTreeWidget(QtWidgets.QTreeView):
 
     def row_selected(self):
         items = []
+        row = []
         if self.selectionModel():
             for r in self.selectionModel().selectedRows():
-                row = []
                 for column in range(self.column_count()):
                     print column, self.model.item(r.row(), column).text()
                     item = self.model.item(r.row(), column).text()
@@ -142,6 +144,7 @@ class LJTreeWidget(QtWidgets.QTreeView):
         # search all the items in the table view and select the one that has 'text' in it.
         # .setSelection() is a massive part of figuring this out.
         row_count = self.model().rowCount()
+        data = []
         for row in range(0, row_count + 1):
             src_index = self.model().index(row, column)
             data = self.model().data(src_index, QtCore.Qt.DisplayRole)
@@ -156,7 +159,8 @@ class LJTreeWidget(QtWidgets.QTreeView):
         self.model = QtGui.QStandardItemModel()
         self.setModel(self.model)
 
-    def on_closing(self):
+    @staticmethod
+    def on_closing():
         settings = UISettings.settings()
         print settings, 'Need to adjust this code'
         # hheading = self.horizontalHeader()

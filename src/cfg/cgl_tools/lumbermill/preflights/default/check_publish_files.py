@@ -3,6 +3,7 @@ from plugins.preflight.preflight_check import PreflightCheck
 from cglcore.path import PathObject
 
 
+# noinspection PyPep8Naming
 class check_publish_files(PreflightCheck):
 
     def getName(self):

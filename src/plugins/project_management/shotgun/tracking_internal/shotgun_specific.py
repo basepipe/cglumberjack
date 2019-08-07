@@ -79,7 +79,7 @@ class ShotgunProcess(object):
     }
 
     def __init__(self, id_, queue):
-        ShotgunProcess.__init__(self)
+        ShotgunProcess.__init__(self, id_=id_, queue=queue)
         self.id_ = id_
         self.state = 0
         self.queue = queue

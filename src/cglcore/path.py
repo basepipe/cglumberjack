@@ -20,6 +20,7 @@ SPLIT_SEQ_REGEX = re.compile("\\ [0-9]{4,}-[0-9]{4,}$")
 SEQ_SPLIT = re.compile("\\#{4,}")
 SEQ2_SPLIT = re.compile("[%0-9]{2,}d")
 SEQ = re.compile('[0-9]{3,}-[0-9]{3,}')
+# noinspection PyPep8
 CGL_SEQ_TEST = re.compile('.+#+.+\s[0-9]+-[0-9]+$')
 
 
@@ -768,6 +769,7 @@ class CreateProductionData(object):
     def create_project_management_data(self, path_object, project_management):
         if project_management != 'lumbermill':
             module = "plugins.project_management.%s.main" % project_management
+            # noinspection PyTypeChecker
             loaded_module = __import__(module, globals(), locals(), 'main', -1)
             loaded_module.ProjectManagementData(path_object,
                                                 user_email=self.proj_management_user).create_project_management_data()

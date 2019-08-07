@@ -3,7 +3,6 @@ import glob
 import shutil
 import datetime
 import pandas as pd
-import time
 from plugins.preflight.preflight_check import PreflightCheck
 from cglcore.path import PathObject, CreateProductionData, split_sequence, split_sequence_frange
 
@@ -24,10 +23,12 @@ STATUS = 12
 
 class PublishFromIngestDataFrame(PreflightCheck):
     """
-    This Class is designed specifically to work with the lumbermill ingest tool.  It expects a lumbermill data frame in order to function.
+    This Class is designed specifically to work with the lumbermill ingest tool.
+    It expects a lumbermill data frame in order to function.
 
     """
 
+    # noinspection PyMissingConstructor
     def __init__(self):
         self.pandas_path = self.shared_data['pandas_path']
         self.data_frame = self.shared_data['data_frame'].copy(deep=True)
@@ -41,10 +42,9 @@ class PublishFromIngestDataFrame(PreflightCheck):
         source_path.set_attr(context='source')
         source_path.set_attr(filename='system_report.csv')
         # CreateProductionData(dir)
-        data = []
-        data.append((row["Filepath"], row["Filename"], row["Filetype"], row["Frame_Range"], row["Tags"],
-                     row["Keep_Client_Naming"], row["Scope"], row["Seq"], row["Shot"], row["Task"],
-                     row["Publish_Filepath"], row["Publish_Date"], row["Status"]))
+        data = [(row["Filepath"], row["Filename"], row["Filetype"], row["Frame_Range"], row["Tags"],
+                 row["Keep_Client_Naming"], row["Scope"], row["Seq"], row["Shot"], row["Task"],
+                 row["Publish_Filepath"], row["Publish_Date"], row["Status"])]
         df = pd.DataFrame(data, columns=self.shared_data['ingest_browser_header'])
         if not self.test:
             df.to_csv(source_path.path_root, index=False)
@@ -66,6 +66,7 @@ class PublishFromIngestDataFrame(PreflightCheck):
                         shutil.copytree(from_file, to_file)
                         CreateProductionData(to_file, json=True)
                     self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
+                    # noinspection PyUnresolvedReferences
                     self.signal_one.emit([index, STATUS, 'Published'])
                     self.data_frame.at[index, 'Status'] = 'Published'
                     self.data_frame.at[index, 'Publish_Date'] = current_date

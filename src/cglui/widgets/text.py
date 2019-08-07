@@ -1,6 +1,7 @@
 from Qt import QtGui, QtCore
 
 
+# noinspection PyPep8Naming
 class Highlighter(QtGui.QSyntaxHighlighter):
     def __init__(self, parent=None):
         super(Highlighter, self).__init__(parent)
@@ -57,12 +58,12 @@ class Highlighter(QtGui.QSyntaxHighlighter):
         self.commentEndExpression = QtCore.QRegExp("\\*/")
 
     def highlightBlock(self, text):
-        for pattern, format in self.highlightingRules:
+        for pattern, format_ in self.highlightingRules:
             expression = QtCore.QRegExp(pattern)
             index = expression.indexIn(text)
             while index >= 0:
                 length = expression.matchedLength()
-                self.setFormat(index, length, format)
+                self.setFormat(index, length, format_)
                 index = expression.indexIn(text, index + length)
 
         self.setCurrentBlockState(0)

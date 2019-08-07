@@ -55,6 +55,7 @@ class ProjectManagementData(object):
     server_url = app_config()['project_management']['ftrack']['api']['server_url']
     api_key = app_config()['project_management']['ftrack']['api']['api_key']
     api_user = app_config()['project_management']['ftrack']['api']['api_user']
+    resolution = 'high'
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
@@ -113,7 +114,7 @@ class ProjectManagementData(object):
         logging.debug('Could Not Find a Task of %s' % task['name'])
         return None
 
-    def create_project_management_data(self, review=False, metadata={}):
+    def create_project_management_data(self, review=False, metadata=None):
         print 'Currently not using metadata: %s' % metadata
         self.project_data = self.entity_exists('project')
         if not self.project_data:
@@ -289,6 +290,7 @@ class ProjectManagementData(object):
             logging.info('Creating FTRACK Version %s for: %s' % (self.version, self.task_name))
         else:
             logging.debug('Found %s, No Need to Create' % self.version)
+        return self.version_data
 
     def create_component(self):
         from cglcore.path import lj_list_dir, prep_seq_delimiter

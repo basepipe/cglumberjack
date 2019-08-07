@@ -1,5 +1,4 @@
-
-
+# noinspection PyUnusedLocal
 class ProjectManagementData(object):
     create = False
     edit = False
@@ -26,6 +25,7 @@ class ProjectManagementData(object):
     def delete_entity(self, **kwargs):
         print 'Deleting %s: %s' % (self.data_type, self.data.data[self.data_type])
 
-    def entity_exists(self, data_type, name):
+    @staticmethod
+    def entity_exists(data_type, name):
         return False
 

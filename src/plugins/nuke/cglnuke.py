@@ -55,7 +55,6 @@ def create_scene_write_node():
     """
     This function specifically assumes the current file is in the pipeline and that you want to make a write node for
     that.  We can get more complicated and build from here for sure.
-    :param filepath:
     :return:
     """
     path_object = PathObject(get_file_name())
@@ -89,3 +88,6 @@ def confirm_prompt(title='title', message='message', button=None):
 def deselected():
     nuke.selectAll()
     nuke.invertSelection()
+
+def render_local():
+    print 'Rendering locally'

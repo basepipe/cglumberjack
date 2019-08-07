@@ -2,6 +2,7 @@ from plugins.preflight.preflight_check import PreflightCheck
 from cglcore.path import publish
 
 
+# noinspection PyPep8Naming
 class publish_source_files(PreflightCheck):
 
     def getName(self):

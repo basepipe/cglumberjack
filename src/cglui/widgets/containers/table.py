@@ -38,6 +38,7 @@ class LJTableWidget(QTableView):
         super(LJTableWidget, self).mouseReleaseEvent(e)
         self.row_selected()
 
+    # noinspection PyShadowingNames,PyPep8
     def set_item_model(self, mdl, proxy=None):
         if proxy is None:
             proxy = LJTableSearchProxy()
@@ -110,6 +111,7 @@ class LJTableWidget(QTableView):
     def select_row_by_text(self, text, column=0):
         # search all the items in the table view and select the one that has 'text' in it.
         # .setSelection() is a massive part of figuring this out.
+        data = []
         row_count = self.model().rowCount()
         for row in range(0, row_count + 1):
             src_index = self.model().index(row, column)

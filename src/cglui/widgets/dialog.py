@@ -294,6 +294,7 @@ class InputDialog(LJDialog):
         self.input_text = self.line_edit.text()
 
     def on_text_changed_regex(self):
+        message = ''
         if self.sender() == self.line_edit:
             if self.line_edit.text():
                 if re.match(self.regex, self.line_edit.text()):

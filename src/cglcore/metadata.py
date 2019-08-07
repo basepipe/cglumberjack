@@ -1,3 +1,4 @@
+# noinspection PyUnresolvedReferences
 import exiftool
 import os
 

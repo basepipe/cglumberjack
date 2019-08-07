@@ -4,6 +4,7 @@ from enum import Enum
 logging.getLogger().setLevel(logging.INFO)
 
 
+# noinspection PyUnresolvedReferences
 class MetaObject(object):
 
     def __init__(self, jsonfile=None, _type=None, **kwargs):
@@ -41,6 +42,7 @@ class MetaObject(object):
         self._metaItems.append(BaseItem(_type=self._type, uid=uid, **attr))
         return BaseItem(_type=self._type, uid=uid, **attr)
 
+    # noinspection PyUnresolvedReferences,PyUnresolvedReferences
     def find(self, value=False, **attributes):
         """
         finds all meta items that match attributes by default

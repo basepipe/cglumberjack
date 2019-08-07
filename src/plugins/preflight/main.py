@@ -1,14 +1,9 @@
 import os
 import json
-import threading
-import time
-import sys
-import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore.config import app_config
-from cglcore.path import icon_path, image_path, get_cgl_config, PathObject
+from cglcore.path import icon_path, image_path, PathObject
 from cglui.widgets.containers.table import LJTableWidget
-from cglui.widgets.progress_gif import ProgressDialog
 from cglui.startup import do_gui_init
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.widgets import GifWidget

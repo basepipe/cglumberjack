@@ -2,6 +2,7 @@
 from Qt.QtCore import QAbstractTableModel, Qt
 
 
+# noinspection PyUnusedLocal
 class LJItemModel(QAbstractTableModel):
     def headerData(self, section, orientation, role):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:

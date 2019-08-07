@@ -53,7 +53,8 @@ class ProgressDialog(QtWidgets.QDialog):
         layout.addWidget(self.movie_screen)
         self.setLayout(layout)
 
-    def update_gif(self):
+    @staticmethod
+    def update_gif():
         for i in range(60):
             QtWidgets.qApp.processEvents()
 

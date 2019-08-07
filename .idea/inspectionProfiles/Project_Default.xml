@@ -16,6 +16,7 @@
           <option value="Qt.QtCore" />
           <option value="Qt.QtGui" />
           <option value="plugins.project_management.template.main.ProjectManagementData.data_type" />
+          <option value="nuke" />
         </list>
       </option>
     </inspection_tool>

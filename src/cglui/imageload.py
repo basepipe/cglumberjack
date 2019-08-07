@@ -40,8 +40,8 @@ class ImageLoadThread(QtCore.QThread):
     def addQueue(cls, image):
         cls.queue.put(image)
 
-    @classmethod
-    def return_id(self, path):
+    @staticmethod
+    def return_id(path):
         return str(path.split('/')[-1].split('.')[0])
 
     @classmethod

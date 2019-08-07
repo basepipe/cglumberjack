@@ -35,6 +35,7 @@ def _do_qt_init():
     return app
 
 
+# noinspection PyUnresolvedReferences
 def _load_resources():
     """
     load the resource file
