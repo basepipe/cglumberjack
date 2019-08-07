@@ -145,6 +145,11 @@ class ConfigDialog(QtWidgets.QDialog):
         self.global_config = {}
         self.root = ''
         self.user_name = self.get_user_name()
+        self.api_key = ''
+        self.api_script = ''
+        self.api_user = ''
+        self.project_management = ''
+        self.api_server = ''
 
         layout = QtWidgets.QVBoxLayout(self)
         self.poject_management_label = QtWidgets.QLabel('Project Management:')
@@ -174,12 +179,6 @@ class ConfigDialog(QtWidgets.QDialog):
         self.choose_root.setText('...')
         self.choose_code_root_button = QtWidgets.QToolButton()
         self.choose_code_root_button.setText('...')
-
-        self.api_key = self.api_key_line_edit.text()
-        self.api_script = self.api_script_line_edit.text()
-        self.api_user = self.api_user_line_edit.text()
-        self.project_management = self.proj_management_combo.currentText()
-        self.api_server = self.server_line_edit.text()
 
         self.proj_man_grid = QtWidgets.QGridLayout()
         self.proj_man_grid.addWidget(self.proj_management_label, 0, 0)
