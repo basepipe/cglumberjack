@@ -60,6 +60,6 @@ class ProgressDialog(QtWidgets.QDialog):
 
 if __name__ == '__main__':
     app = QtGui.QApplication([])
-    form = ProgressDialog(message='test')
+    form = ProgressDialog(message='test', gif_name='')
     form.show()
     app.exec_()

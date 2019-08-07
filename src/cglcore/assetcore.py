@@ -215,8 +215,7 @@ class BaseItem(object):
         pass
 
     def add(self, **kwargs):
-        # probably need to iterate over **kwargs
-        self.process_dict(kwargs)
+        self.process_dict(**kwargs)
 
     @property
     def attributes(self):
@@ -624,7 +623,7 @@ class MetaNode(object):
                 self.__setattr__(atr, val)
 
     def search(self):
-        for attr, data in self.__dict__.iteritems():
+        for data in self.__dict__.iteritems():
             if isinstance(data, MetaNode):
                 pass
 

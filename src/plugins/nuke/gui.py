@@ -27,8 +27,8 @@ class NukeBrowserWidget(CGLumberjackWidget):
 
 
 class CGLNuke(CGLumberjack):
-    def __init__(self, path=None):
-        super(CGLNuke, self).__init__()
+    def __init__(self, parent, path=None):
+        super(CGLNuke, self, parent).__init__()
         print 'CGLNuke path is %s' % path
         self.setCentralWidget(NukeBrowserWidget(self, show_import=True))
 
