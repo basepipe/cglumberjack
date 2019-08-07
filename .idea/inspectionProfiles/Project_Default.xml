@@ -8,5 +8,14 @@
         </list>
       </option>
     </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="Qt.QtWidgets" />
+          <option value="Qt.QtCore" />
+          <option value="Qt.QtGui" />
+        </list>
+      </option>
+    </inspection_tool>
   </profile>
 </component>

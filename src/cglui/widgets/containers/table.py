@@ -4,6 +4,7 @@ from Qt.QtWidgets import QTableView, QHeaderView
 from cglcore.path import split_sequence_frange
 from cglui.util import UISettings, widget_name
 from cglui.widgets.base import StateSavers
+from cglui.widgets.widgets import drop_handler
 from cglui.widgets.containers.proxy import LJTableSearchProxy
 from cglui.widgets.containers.menu import LJMenu
 
@@ -141,16 +142,7 @@ class LJTableWidget(QTableView):
     def dropEvent(self, e):
         # this is set up specifically to handle files as that's the only use case
         # we've encountered to date, i'm sure we can put options in as they arise.
-        if e.mimeData().hasUrls:
-            e.setDropAction(QtCore.Qt.CopyAction)
-            e.accept()
-            file_list = []
-            for url in e.mimeData().urls():
-                file_list.append(str(url.toLocalFile()))
-            self.dropped.emit(file_list)
-        else:
-            print 'invalid'
-            e.ignore()
+        drop_handler(self.droppped, e)
 
     def resizeEvent(self, event):
         # TODO - this doesn't work on mac, but does on windows

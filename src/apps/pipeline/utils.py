@@ -1,7 +1,6 @@
 import os
-from Qt import QtWidgets, QtCore, QtGui
+from Qt import QtWidgets, QtCore
 from cglui.widgets.dialog import InputDialog
-from cglui.widgets.text import Highlighter
 from cglcore.path import start
 
 
@@ -17,6 +16,7 @@ class CGLTabBar(QtWidgets.QTabBar):
         s.transpose()
         return s
 
+    # noinspection PyUnusedLocal
     def paintEvent(self, event):
         painter = QtWidgets.QStylePainter(self)
         opt = QtWidgets.QStyleOptionTab()
@@ -36,7 +36,7 @@ class CGLTabBar(QtWidgets.QTabBar):
             painter.translate(c)
             painter.rotate(90)
             painter.translate(-c)
-            painter.drawControl(QtWidgets.QStyle.CE_TabBarTabLabel, opt);
+            painter.drawControl(QtWidgets.QStyle.CE_TabBarTabLabel, opt)
             painter.restore()
 
 
@@ -49,7 +49,7 @@ class LJTabWidget(QtWidgets.QTabWidget):
 
 class PreflightStep(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs={}, preflight_path=''):
+    def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path=''):
         QtWidgets.QWidget.__init__(self, parent)
         self.attrs = attrs
         self.name = preflight_step_name
@@ -72,7 +72,7 @@ class PreflightStep(QtWidgets.QWidget):
         self.command_line_edit.setEnabled(False)
         self.required_line_edit = QtWidgets.QLineEdit()
         self.required_line_edit.setText('True')
-        #self.required_line_edit.setEnabled(False)
+        # self.required_line_edit.setEnabled(False)
         self.label_line_edit = QtWidgets.QLineEdit()
         self.attrs_dict = {'module': self.command_line_edit,
                            'required': self.required_line_edit,
@@ -88,7 +88,6 @@ class PreflightStep(QtWidgets.QWidget):
         self.code_text_edit = QtWidgets.QPlainTextEdit()
         metrics = QtWidgets.QFontMetrics(self.code_text_edit.font())
         self.code_text_edit.setTabStopWidth(4 * metrics.width(' '))
-        highlighter = Highlighter(self.code_text_edit.document())
 
         # Layout the Grid
         grid_layout.addWidget(required_label, 2, 0)
@@ -171,8 +170,7 @@ class PreflightStep(QtWidgets.QWidget):
 
 class MenuButton(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, menu_name='', button_name='', attrs=None, menu_path='', icon=False,
-                 menu_type='menus'):
+    def __init__(self, parent=None, menu_name='', button_name='', attrs=None, menu_path='', icon=False):
         QtWidgets.QWidget.__init__(self, parent)
         self.attrs = attrs
         self.name = button_name
@@ -191,7 +189,6 @@ class MenuButton(QtWidgets.QWidget):
         label_label = QtWidgets.QLabel('label')
         icon_label = QtWidgets.QLabel('icon')
 
-
         # line edits
         self.command_line_edit = QtWidgets.QLineEdit()
         self.command_line_edit.setEnabled(False)
@@ -209,8 +206,6 @@ class MenuButton(QtWidgets.QWidget):
                                'button name': self.button_name_line_edit,
                                'label': self.label_line_edit}
 
-
-
         # tool buttons
         find_icon_button = QtWidgets.QToolButton()
         find_icon_button.setText('...')
@@ -223,7 +218,6 @@ class MenuButton(QtWidgets.QWidget):
         self.code_text_edit = QtWidgets.QPlainTextEdit()
         metrics = QtWidgets.QFontMetrics(self.code_text_edit.font())
         self.code_text_edit.setTabStopWidth(4 * metrics.width(' '))
-        highlighter = Highlighter(self.code_text_edit.document())
 
         # Layout the Grid
         grid_layout.addWidget(button_name_label, 0, 0)
@@ -303,7 +297,7 @@ class MenuButton(QtWidgets.QWidget):
 
 class CGLMenu(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, software=None, menu_type='menu', menu_name='', menu={}, menu_path=''):
+    def __init__(self, parent=None, software=None, menu_type='menu', menu_name='', menu=None, menu_path=''):
         QtWidgets.QWidget.__init__(self, parent)
 
         # initialize variables
@@ -358,7 +352,8 @@ class CGLMenu(QtWidgets.QWidget):
 
     def on_delete_parent_clicked(self):
         print self.menu_name
-        dialog = InputDialog(title='Delete %s?' % self.menu_name, message='Are you sure you want to delete %s' % self.menu_name)
+        dialog = InputDialog(title='Delete %s?' % self.menu_name,
+                             message='Are you sure you want to delete %s' % self.menu_name)
         dialog.exec_()
         if dialog.button == 'Ok':
             print 'Deleting %s' % self.menu_name
@@ -410,13 +405,13 @@ class CGLMenu(QtWidgets.QWidget):
                          'command': command,
                          'icon': ''}
                 new_button_widget = MenuButton(menu_name=self.menu_name, button_name=button_name,
-                                               attrs=attrs, menu_path=self.menu_path, icon=True, menu_type='shelves')
+                                               attrs=attrs, menu_path=self.menu_path, icon=True)
                 index = self.buttons.addTab(new_button_widget, button_name)
                 self.buttons.setCurrentIndex(index)
 
     def get_command_text(self, button_name, menu_type):
         return 'import cgl_tools.%s.%s.%s.%s as %s; %s.run()' % (self.software, menu_type, self.menu_name, button_name,
-                                                                    button_name, button_name)
+                                                                 button_name, button_name)
 
     def default_preflight_text(self, preflight_name):
         return 'cgl_tools.%s.preflights.%s.%s' % (self.software, self.menu_name, preflight_name)
@@ -427,8 +422,11 @@ class CGLMenu(QtWidgets.QWidget):
                 if button != 'order':
                     if i == self.menu[button]['order']:
                         if self.type == 'menus':
-                            button_widget = MenuButton(parent=self.buttons, menu_name=self.menu_name, button_name=button,
-                                                       attrs=self.menu[button], menu_path=self.menu_path)
+                            button_widget = MenuButton(parent=self.buttons,
+                                                       menu_name=self.menu_name,
+                                                       button_name=button,
+                                                       attrs=self.menu[button],
+                                                       menu_path=self.menu_path)
                             self.buttons.addTab(button_widget, button)
                         elif self.type == 'preflights':
                             button_widget = PreflightStep(parent=self.buttons, preflight_name=self.menu_name,

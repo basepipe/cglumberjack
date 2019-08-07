@@ -10,6 +10,7 @@ from cglcore.util import current_user
 from cglcore.path import PathObject, CreateProductionData
 from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file, get_frange_from_seq
 from cglui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
+from panels import clear_layout
 
 
 class FilesPanel(QtWidgets.QWidget):
@@ -537,16 +538,8 @@ class FilesPanel(QtWidgets.QWidget):
                     widget.files_area.work_files_table.hide()
                     widget.empty_state.show()
 
-
     def clear_layout(self, layout=None):
-        if not layout:
-            layout = self.panel
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clear_layout(child.layout())
+        clear_layout(self, layout)
 
     @staticmethod
     def prep_list_for_table(list_, path_filter=None, basename=False):

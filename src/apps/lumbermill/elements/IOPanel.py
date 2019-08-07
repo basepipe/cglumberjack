@@ -13,6 +13,7 @@ from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
 from cglcore.path import PathObject, icon_path, lj_list_dir, split_sequence_frange, get_file_type
 from plugins.preflight.main import Preflight
+from panels import clear_layout
 
 FILEPATH = 0
 FILENAME = 1
@@ -622,14 +623,7 @@ class IOPanel(QtWidgets.QWidget):
         df.to_csv(source_path.path_root, index=False)
 
     def clear_layout(self, layout=None):
-        if not layout:
-            layout = self.panel
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clear_layout(child.layout())
+        clear_layout(self, layout)
 
     def sizeHint(self):
         return QtCore.QSize(self.height_hint, self.width_hint)
