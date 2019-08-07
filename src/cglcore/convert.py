@@ -54,7 +54,7 @@ def get_info(input_file):
                       % (config['ffprobe'], input_file)
         p = subprocess.Popen(ffprobe_cmd,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT, shell=True)
+                             stderr=subprocess.STDOUT)
         d = {}
         for each in p.stdout:
             print each
@@ -76,7 +76,7 @@ def get_image_info(input_file):
     command = "%s --info %s" % (config['oiiotool'], input_file)
     p = subprocess.Popen(command,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT, shell=True)
+                         stderr=subprocess.STDOUT)
     d = {}
     for each in p.stdout:
         res, channels, filetype = each.strip('\n').split(':')[-1].split(',')
@@ -140,8 +140,7 @@ def _execute(command):
     logging.info('executing command: %s' % command)
     p = subprocess.Popen(command,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT,
-                         shell=True)
+                         stderr=subprocess.STDOUT)
     for each in p.stdout:
         each = each.strip()
         try:
@@ -342,7 +341,7 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
                                                             encoder, profile, constant_rate_factor, pixel_format,
                                                             output_frame_rate, filter_arg, output_file)
     if ffmpeg_cmd:
-        p = subprocess.Popen(ffmpeg_cmd, shell=True)
+        p = subprocess.Popen(ffmpeg_cmd)
         p.wait()
         create_movie_thumb(sequence)
 
@@ -478,7 +477,7 @@ def make_animated_gif(input_file):
     command = '%s -i %s -vf "%s,palettegen" -y %s' % (config['ffmpeg'], input_file, filters, palette)
     print command
     p = subprocess.Popen([config['ffmpeg'], '-i', input_file, '-vf', "%s,palettegen" % filters, '-y', palette],
-                         stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                         stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
     print p.stdout.readline(),  # read the first line
     for i in range(10):  # repeat several times to show that it works
         print >> p.stdin, i  # write input
@@ -492,7 +491,7 @@ def make_animated_gif(input_file):
     print 'command 2', command2
     p2 = subprocess.Popen([config['ffmpeg'], '-i', input_file, '-i', palette, '-lavfi',
                            "%s [x]; [x][1:v] paletteuse" % filters, '-y', output_file.replace('palette.', '')],
-                          stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                          stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
     print p2.stdout.readline(),  # read the first line
     for i in range(10):  # repeat several times to show that it works
         print >> p2.stdin, i  # write input
