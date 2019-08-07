@@ -1,6 +1,7 @@
 import os
 from Qt import QtWidgets, QtCore, QtGui
 from cglcore import path
+from cglui.util import drop_handler, define_palettes
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
@@ -751,12 +752,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout(self)
         self.proj_management_combo = QtWidgets.QComboBox()
         self.proj_management_combo.addItems(['lumbermill', 'ftrack', 'shotgun', 'google_docs'])
-        self.red_palette = QtGui.QPalette()
-        self.red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
-        self.green_palette = QtGui.QPalette()
-        self.green_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 255, 0))
-        self.black_palette = QtGui.QPalette()
-        self.black_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 0, 0))
+        self.red_palette, self.green_palette, self.black_palette = define_palettes(widget=self)
 
         self.server_label = QtWidgets.QLabel('server url:')
         self.api_key_label = QtWidgets.QLabel('api key:')
@@ -967,15 +963,4 @@ class GifWidget(QtWidgets.QWidget):
         self.hide()
 
 
-def drop_handler(emitter, event):
-    if event.mimeData().hasUrls:
-        event.setDropAction(QtCore.Qt.CopyAction)
-        event.accept()
-        file_list = []
-        for url in event.mimeData().urls():
-            file_list.append(str(url.toLocalFile()))
-        emitter.emit(file_list)
-    else:
-        print 'invalid'
-        event.ignore()
 

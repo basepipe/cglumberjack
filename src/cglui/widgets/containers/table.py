@@ -4,7 +4,7 @@ from Qt.QtWidgets import QTableView, QHeaderView
 from cglcore.path import split_sequence_frange
 from cglui.util import UISettings, widget_name
 from cglui.widgets.base import StateSavers
-from cglui.widgets.widgets import drop_handler
+from cglui.util import drop_handler
 from cglui.widgets.containers.proxy import LJTableSearchProxy
 from cglui.widgets.containers.menu import LJMenu
 

@@ -1,9 +1,10 @@
-from Qt import QtCore, QtWidgets, QtGui
-from cglui.widgets.containers.dict_tree import DictionaryTreeWidget
 import getpass
 import os
 import json
 import shutil
+from Qt import QtCore, QtWidgets, QtGui
+from cglui.widgets.containers.dict_tree import DictionaryTreeWidget
+from cglui.util import define_palettes
 
 
 class PathItemWidget(QtWidgets.QWidget):
@@ -17,12 +18,7 @@ class PathItemWidget(QtWidgets.QWidget):
         self.cgl_dir = self.get_default_cgl_dir()
         self.user_globals_path = self.get_user_config(self.cgl_dir)
         i = -1
-        self.red_palette = QtGui.QPalette()
-        self.red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
-        self.green_palette = QtGui.QPalette()
-        self.green_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 255, 0))
-        self.black_palette = QtGui.QPalette()
-        self.black_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 0, 0))
+        self.red_palette, self.green_palette, self.black_palette = define_palettes()
         self.cgl_tools_folder = None
         self.widget_dict = {}
 
@@ -154,12 +150,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.poject_management_label = QtWidgets.QLabel('Project Management:')
         self.proj_management_combo = QtWidgets.QComboBox()
         self.proj_management_combo.addItems(['', 'lumbermill', 'ftrack', 'shotgun'])
-        self.red_palette = QtGui.QPalette()
-        self.red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
-        self.green_palette = QtGui.QPalette()
-        self.green_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 255, 0))
-        self.black_palette = QtGui.QPalette()
-        self.black_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 0, 0))
+        self.red_palette, self.green_palette, self.black_palette = define_palettes()
 
         self.user_email_label = QtWidgets.QLabel('User Email:')
         self.user_email_line_edit = QtWidgets.QLineEdit()
