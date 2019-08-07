@@ -136,11 +136,13 @@ def get_file_type(input_file):
 #####################################################################
 
 
-def _execute(command):
+def _execute(command, wait=False):
     logging.info('executing command: %s' % command)
     p = subprocess.Popen(command,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
+    if wait:
+        p.wait()
     for each in p.stdout:
         each = each.strip()
         try:
@@ -326,8 +328,6 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
                  r' pad=$width:$height:($width-iw*min($width/iw\,$height/ih))/2:' \
                  r'($height-ih*min($width/iw\,$height/ih))/2" '.replace('$width', width).replace('$height',
                                                                                                  height)
-    print '222222222', path_object.file_type
-    print path_object.path_root
     ffmpeg_cmd = ''
     if path_object.file_type == 'sequence':
         ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
@@ -341,8 +341,7 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
                                                             encoder, profile, constant_rate_factor, pixel_format,
                                                             output_frame_rate, filter_arg, output_file)
     if ffmpeg_cmd:
-        p = subprocess.Popen(ffmpeg_cmd)
-        p.wait()
+        _execute(ffmpeg_cmd, wait=True)
         create_movie_thumb(sequence)
 
     if project_management == 'ftrack':
