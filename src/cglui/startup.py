@@ -46,7 +46,6 @@ def _load_resources():
     # noinspection PyUnresolvedReferences
     if Qt.__binding__ in ["PySide", "PySide2"]:
         import cglui.PySide_rc
-    pass
 
 
 # noinspection SpellCheckingInspection

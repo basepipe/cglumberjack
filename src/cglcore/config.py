@@ -40,7 +40,7 @@ class Configuration(object):
             else:
                 self.company_global_dir = None
             global_cfg, app_cfg = self._find_config_file()
-            logging.debug('Global Config:', global_cfg)
+            logging.debug('Global Config: %s' % global_cfg)
             cfg = {'cg_lumberjack_dir': os.path.dirname(self.globals)}
             if os.path.isfile(global_cfg):
                 cfg.update(self._load_json(global_cfg))

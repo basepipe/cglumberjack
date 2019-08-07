@@ -374,7 +374,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if self.panel:
                 self.panel.clear_layout()
         if last == 'resolution':
-            pass
             self.load_files_panel(path_object)
         if last == 'project':
             if path_object.project == '*':

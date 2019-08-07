@@ -1084,8 +1084,7 @@ def get_start_frame(sequence):
         this = re.search(SEQ, each)
         if this:
             return this.group(0).split('-')[0]
-    else:
-        return None
+    return None
 
 
 def prep_seq_delimiter(sequence, replace_with='*', ext=None):
