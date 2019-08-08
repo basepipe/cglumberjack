@@ -59,15 +59,13 @@ class EmptyStateWidget(QtWidgets.QPushButton):
     def mouseReleaseEvent(self, e):
         super(EmptyStateWidget, self).mouseReleaseEvent(e)
 
-    @staticmethod
-    def dragEnterEvent(e):
+    def dragEnterEvent(self, e):
         if e.mimeData().hasUrls:
             e.accept()
         else:
             e.ignore()
 
-    @staticmethod
-    def dragMoveEvent(e):
+    def dragMoveEvent(self, e):
         if e.mimeData().hasUrls:
             e.setDropAction(QtCore.Qt.CopyAction)
             e.accept()
@@ -98,36 +96,6 @@ class FileTableModel(ListItemModel):
                 return QtWidgets.QIcon(icon_path)
         # if role == QtCore.Qt.ToolTipRole:
         #     return "hello tom"
-
-
-class FileTable(LJTableWidget):
-    files_added = QtCore.Signal(basestring)
-    file_selected = QtCore.Signal(object)
-
-    def __init__(self, parent):
-        LJTableWidget.__init__(self, parent)
-        self.setShowGrid(False)
-        self.setAcceptDrops(True)
-
-    def mouseReleaseEvent(self, e):
-        super(FileTable, self).mouseReleaseEvent(e)
-        self.row_selected()
-
-    def dragEnterEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.accept()
-        else:
-            e.ignore()
-
-    def dragMoveEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.setDropAction(QtCore.Qt.CopyAction)
-            e.accept()
-        else:
-            e.ignore()
-
-    def dropEvent(self, e):
-        drop_handler(self.files_added, e)
 
 
 class FilesWidget(QtWidgets.QFrame):
@@ -663,19 +631,6 @@ class FileTableWidget(LJTableWidget):
 
     def item_right_click(self, position):
         self.item_right_click_menu.exec_(self.mapToGlobal(position))
-
-    def dragEnterEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.accept()
-        else:
-            e.ignore()
-
-    def dragMoveEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.setDropAction(QtCore.Qt.CopyAction)
-            e.accept()
-        else:
-            e.ignore()
 
     def sizeHint(self):
         return QtCore.QSize(350, 150)

@@ -144,7 +144,8 @@ class LJTableWidget(QTableView):
     def dropEvent(self, e):
         # this is set up specifically to handle files as that's the only use case
         # we've encountered to date, i'm sure we can put options in as they arise.
-        drop_handler(self.droppped, e)
+        print 345
+        drop_handler(self.dropped, e)
 
     def resizeEvent(self, event):
         # TODO - this doesn't work on mac, but does on windows
