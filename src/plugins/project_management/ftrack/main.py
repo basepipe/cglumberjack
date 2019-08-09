@@ -287,7 +287,6 @@ class ProjectManagementData(object):
         return self.version_data
 
     def upload_media(self):
-        self.path_object.preview_path_full
         if not os.path.exists(self.path_object.preview_path_full):
             print self.path_object.preview_path_full, 'preview path'
             create_previews(path_object=self.path_root)
