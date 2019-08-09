@@ -290,8 +290,10 @@ class PathObject(object):
                     file_ = '%s.jpg' % file_
                     if sys.platform == 'win32':
                         self.thumb_path_full = '%s/%s/%s' % (path_, '.thumb', file_)
+                        self.data['thumb_path_full'] = self.thumb_path_full
                     else:
                         self.thumb_path_full = os.path.join(self.root, '.thumb', file_)
+                        self.data['thumb_path_full'] = self.thumb_path_full
         if root:
             return self.path_root
         else:
@@ -569,8 +571,10 @@ class PathObject(object):
         path_ = os.path.split(self.path_root)[0]
         if sys.platform == 'win32':
             self.preview_path_full = '%s/%s/%s' % (path_, '.preview', name_)
+            self.data['preview_path_full'] = self.preview_path_full
         else:
             self.preview_path_full = os.path.join(self.root, '.preview', name_)
+            self.data['preview_path_full'] = self.preview_path_full
 
     def set_proper_filename(self):
         # TODO - this needs to be basted off formulas like the path object.  Curses.
@@ -597,38 +601,6 @@ class PathObject(object):
         if self.project:
             proj_name = json_obj.data['project']
             self.project_json = os.path.join(json_obj.path_root.split(proj_name)[0], proj_name, '%s.json' % proj_name)
-
-    def create_previews(self):
-        # TODO - ideally this would be a preflight, it's complex enough to need various options and
-        # flexibility.
-        from cglcore.convert import create_thumbnail, create_hd_proxy, create_movie_thumb, create_mov
-        if self.file_type == 'image':
-            if self.thumb_path_full:
-                logging.info('Creating Thumbnail: %s' % self.thumb_path_full)
-                create_thumbnail(self.path_root, self.thumb_path_full)
-            if self.preview_path_full:
-                logging.info('Creating Preview: %s' % self.preview_path_full)
-                create_hd_proxy(self.path_root, self.preview_path_full)
-        elif self.file_type == 'sequence':
-            if self.thumb_path_full:
-                create_movie_thumb(self.path_root, self.thumb_path_full)
-            if self.preview_path_full:
-                if self.file_type == 'sequence':
-                    # create hdProxy for the exr sequence
-                    hd_proxy = create_hd_proxy(sequence=self.path_root)
-                    # time.sleep(2)  # if we don't sleep here the directory hasn't had time to refresh.
-                    create_mov(hd_proxy, output=self.preview_path_full)
-        elif self.file_type == 'movie':
-            if self.thumb_path_full:
-                create_movie_thumb(self.path_root, self.thumb_path_full)
-            if self.preview_path_full:
-                if self.path_root.endswith('mp4'):
-                    print('Copying %s to %s' % (self.path_root, self.preview_path_full))
-                    copy_file(self.path_root, self.preview_path_full)
-                else:
-                    create_mov(self.path_root, output=self.preview_path_full)
-        else:
-            print self.file_type, 'is not set up for preview creation'
 
 
 class CreateProductionData(object):
@@ -773,7 +745,6 @@ class CreateProductionData(object):
             path_ = path_object.path_root.split('*')[0]
         else:
             path_ = path_object.path_root
-        print path_, 1
         if path_object.filename:
             path_ = os.path.dirname(path_)
         # at this stage we're making path_
@@ -785,13 +756,17 @@ class CreateProductionData(object):
             logging.info('TEST MODE: No directories were created')
 
     def create_project_management_data(self, path_object, project_management):
+
         if project_management != 'lumbermill':
-            if path_object.project:
+            if path_object.filename:
                 module = "plugins.project_management.%s.main" % project_management
                 # noinspection PyTypeChecker
                 loaded_module = __import__(module, globals(), locals(), 'main', -1)
                 loaded_module.ProjectManagementData(path_object,
                                                     user_email=self.proj_management_user).create_project_management_data()
+            else:
+                print('Creating Paths on Disk, lumbermill will create %s '
+                      'versions when you add files' % project_management)
         else:
             logging.debug('Using Lumbermill built in proj management')
 
@@ -818,6 +793,45 @@ class CreateProductionData(object):
         default_file = "%ssrc/%s" % (this, r'plugins/%s/templates/default.%s' % (software, ext))
         logging.info('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
         shutil.copy2(default_file, self.path_object.path_root)
+
+
+def create_previews(path_object):
+    from cglcore.convert import create_thumbnail, create_hd_proxy, create_movie_thumb, create_mov
+    path_object = PathObject(path_object)
+    preview_dir = os.path.dirname(str(path_object.preview_path_full))
+    thumb_dir = os.path.dirname(str(path_object.thumb_path_full))
+    if not os.path.exists(preview_dir):
+        os.makedirs(preview_dir)
+    if not os.path.exists(thumb_dir):
+        os.makedirs(thumb_dir)
+
+    if path_object.file_type == 'image':
+        if path_object.thumb_path_full:
+            logging.info('Creating Thumbnail: %s' % path_object.thumb_path_full)
+            create_thumbnail(path_object.path_root, path_object.thumb_path_full)
+        if path_object.preview_path_full:
+            logging.info('Creating Preview: %s' % path_object.preview_path_full)
+            create_hd_proxy(path_object.path_root, path_object.preview_path_full)
+    elif path_object.file_type == 'sequence':
+        if path_object.thumb_path_full:
+            create_movie_thumb(path_object.path_root, path_object.thumb_path_full)
+        if path_object.preview_path_full:
+            if path_object.file_type == 'sequence':
+                # create hdProxy for the exr sequence
+                hd_proxy = create_hd_proxy(sequence=path_object.path_root)
+                # time.sleep(2)  # if we don't sleep here the directory hasn't had time to refresh.
+                create_mov(hd_proxy, output=path_object.preview_path_full)
+    elif path_object.file_type == 'movie':
+        if path_object.thumb_path_full:
+            create_movie_thumb(path_object.path_root, path_object.thumb_path_full)
+        if path_object.preview_path_full:
+            if path_object.path_root.endswith('mp4'):
+                print('Copying %s to %s' % (path_object.path_root, path_object.preview_path_full))
+                copy_file(path_object.path_root, path_object.preview_path_full)
+            else:
+                create_mov(path_object.path_root, output=path_object.preview_path_full)
+    else:
+        print path_object.file_type, 'is not set up for preview creation'
 
 
 def image_path(image=None):

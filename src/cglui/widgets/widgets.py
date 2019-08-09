@@ -644,7 +644,6 @@ class FileTableWidget(LJTableWidget):
         if software == 'nuke':
             print 0
             for each in menu.actions():
-                print each.text(), 1
                 if each.text() == 'Render Local' or each.text() == 'Render on Farm':
                     add = False
         if add:

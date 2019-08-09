@@ -9,6 +9,7 @@ from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog, InputDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange, start_url
+from cglcore.path import CreateProductionData
 from cglui.widgets.progress_gif import ProgressDialog
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
@@ -467,17 +468,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 print 'Lumbermill Not connected to review features'
             # FTRACK REVIEWS
             elif self.project_management == 'ftrack':
-                print 1
-                if selection.preview_path_full:
-                    print 2
-                    selection.create_previews()
-                    print selection.preview_path_full
-                    if os.path.exists(selection.preview_path_full):
-                        print 3
-                        from plugins.project_management.ftrack.main import ProjectManagementData
-                        ProjectManagementData(selection).create_project_management_data(review=True)
+                if selection.filename:
+                    CreateProductionData(selection)
                 else:
-                    print('NO Preview path defined.')
+                    print('Select file for Review')
 
             elif self.project_management == 'shotgun':
                 print 'Shotgun Reviews not connected yet'

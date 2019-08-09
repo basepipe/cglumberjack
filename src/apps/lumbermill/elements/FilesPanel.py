@@ -329,6 +329,8 @@ class FilesPanel(QtWidgets.QWidget):
         """
         current = PathObject(self.version_obj)
         next_minor = current.new_minor_version_object()
+        next_minor.set_attr(filename='')
+        next_minor.set_attr(ext='')
         CreateProductionData(next_minor, create_default_file=True)
         self.on_task_selected(next_minor)
 
@@ -336,10 +338,12 @@ class FilesPanel(QtWidgets.QWidget):
         current = PathObject(self.current_location)
         # current location needs to have the version in it.
         next_minor = current.new_minor_version_object()
+        next_minor.set_attr(filename='')
+        next_minor.set_attr(ext='')
         shutil.copytree(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
         CreateProductionData(next_minor)
         # reselect the original asset.
-        self.on_task_selected(current)
+        self.on_task_selected(next_minor)
 
     def on_open_clicked(self):
         self.open_signal.emit()
