@@ -38,15 +38,6 @@
                 "label": "Write Node", 
                 "order": 2
             }
-        }, 
-        "SuperSpecialTools": {
-            "make_magic": {
-                "button name": "make_magic", 
-                "command": "import cgl_tools.nuke.menus.SuperSpecialTools.make_magic as make_magic; make_magic.run()", 
-                "label": "Make Magic!", 
-                "order": 1
-            }, 
-            "order": 2
         }
     }
 }

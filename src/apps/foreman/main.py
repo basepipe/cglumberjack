@@ -57,7 +57,7 @@ class AssetWidget(QtWidgets.QWidget):
         if not done:
             layout.addLayout(bottom_row)
         self.setLayout(layout)
-        #self.setFixedWidth(230)
+        # self.setFixedWidth(230)
         self.setFixedHeight(90)
 
         self.priority.mousePressEvent = self.priority_press
@@ -69,31 +69,31 @@ class AssetWidget(QtWidgets.QWidget):
         self.date.mousePressEvent = self.date_press
         self.date.mouseReleaseEvent = self.date_release
 
-    def priority_press(self, event):
+    def priority_press(self):
         self.priority.setStyleSheet('color: blue')
 
-    def priority_release(self, event):
+    def priority_release(self):
         self.priority.setStyleSheet('color: black')
         self.priority_clicked.emit('priority')
 
-    def user_press(self, event):
+    def user_press(self):
         self.user.setStyleSheet('color: blue')
 
-    def user_release(self, event):
+    def user_release(self):
         self.user.setStyleSheet('color: black')
         self.user_clicked.emit('user')
 
-    def date_press(self, event):
+    def date_press(self):
         self.date.setStyleSheet('color: blue')
 
-    def date_release(self, event):
+    def date_release(self):
         self.date.setStyleSheet('color: black')
         self.date_clicked.emit('date')
 
-    def status_press(self, event):
+    def status_press(self):
         self.status.setStyleSheet('color: blue')
 
-    def status_release(self, event):
+    def status_release(self):
         self.status.setStyleSheet('color: black')
         self.status_clicked.emit('status')
 
@@ -232,8 +232,7 @@ class BirdsEye(LJMainWindow):
                              }
 
         root = app_config()['paths']['root']
-        root = r'F:/VFX'
-        json_with_root = '%s%s' % (root, json)
+        json_with_root = '%s/%s' % (root, json)
         asset_data = ac.readJson(json_with_root)
         self.check_publishes(asset_data)
         if self.check_publishes(asset_data):

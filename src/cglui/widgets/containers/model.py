@@ -1,6 +1,8 @@
+# noinspection PyUnresolvedReferences
 from Qt.QtCore import QAbstractTableModel, Qt
 
 
+# noinspection PyUnusedLocal
 class LJItemModel(QAbstractTableModel):
     def headerData(self, section, orientation, role):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
@@ -17,7 +19,7 @@ class LJItemModel(QAbstractTableModel):
 
 
 class LGListDictionaryItemModel(LJItemModel):
-    def __init__(self, data, display_filter=None):
+    def __init__(self, data):
         LJItemModel.__init__(self)
         self.headers = []
         self.data_ = []
@@ -136,6 +138,7 @@ class TreeItemModel(LJItemModel):
                 return str(data)
             except KeyError:
                 return ''
+
 
 class FileTableModel(ListItemModel):
     def data(self, index, role):

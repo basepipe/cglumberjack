@@ -1,5 +1,6 @@
 from Qt import QtWidgets
 from Qt import QtCore
+# noinspection PyUnresolvedReferences
 from Qt import QtTest
 
 

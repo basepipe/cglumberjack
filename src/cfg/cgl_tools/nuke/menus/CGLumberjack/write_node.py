@@ -1,14 +1,16 @@
 from cglcore.path import PathObject
+# noinspection PyPackageRequirements
 import nuke
+
 
 def get_scene_name():
     return nuke.Root().name()
+
 
 def create_scene_write_node():
     """
     This function specifically assumes the current file is in the pipeline and that you want to make a write node for
     that.  We can get more complicated and build from here for sure.
-    :param filepath:
     :return:
     """
     path_object = PathObject(get_scene_name())
@@ -19,4 +21,5 @@ def create_scene_write_node():
 
 
 def run():
-	create_scene_write_node()
+    create_scene_write_node()
+

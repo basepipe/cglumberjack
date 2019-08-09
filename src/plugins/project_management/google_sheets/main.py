@@ -31,6 +31,9 @@ class ProjectManagementData(object):
             if not self.entity_exists(entity_type, entity_name):
                 print 'Creating %s: %s' % (entity_type, entity_name)
 
-    def entity_exists(self, data_type, name):
+    @staticmethod
+    def entity_exists(data_type, name):
+        print data_type
+        print name
         return False
 

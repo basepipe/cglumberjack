@@ -1,7 +1,4 @@
-import glob
-import os
 from plugins.preflight.preflight_check import PreflightCheck
-from cglcore.path import PathObject, CreateProductionData
 from cglcore.convert import create_hd_proxy
 
 

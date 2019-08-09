@@ -26,7 +26,7 @@ class ProductionComboDelegate(QtWidgets.QItemDelegate):
         QtWidgets.QItemDelegate.__init__(self, parent)
         self.items = items
 
-    def createEditor(self, parent, option, index):
+    def createEditor(self, parent):
         combo = AdvComboBox(parent)
         combo.addItems(self.items)
         combo.setEnabled(True)
@@ -35,14 +35,16 @@ class ProductionComboDelegate(QtWidgets.QItemDelegate):
         combo.currentIndexChanged.connect(self.send_index_change)
         return combo
 
-    def setEditorData(self, editor, index):
+    @staticmethod
+    def setEditorData(editor, index):
         print editor, index
 
     def send_index_change(self):
         print self.__dict__
         self.index_changed.emit(self.sender().currentText())
 
-    def reload_items(self, items):
+    @staticmethod
+    def reload_items(items):
         print items
 
 
@@ -50,8 +52,9 @@ class LJTreeWidget(QtWidgets.QTreeView):
     nothing_selected = QtCore.Signal()
     selected = QtCore.Signal(object)
     dropped = QtCore.Signal(object)
+    header_labels = []
 
-    def __init__(self, parent, parents=[]):
+    def __init__(self, parent, parents):
         QtWidgets.QTreeView.__init__(self, parent)
         StateSavers.remember_me(self)
 
@@ -120,9 +123,9 @@ class LJTreeWidget(QtWidgets.QTreeView):
 
     def row_selected(self):
         items = []
+        row = []
         if self.selectionModel():
             for r in self.selectionModel().selectedRows():
-                row = []
                 for column in range(self.column_count()):
                     print column, self.model.item(r.row(), column).text()
                     item = self.model.item(r.row(), column).text()
@@ -141,6 +144,7 @@ class LJTreeWidget(QtWidgets.QTreeView):
         # search all the items in the table view and select the one that has 'text' in it.
         # .setSelection() is a massive part of figuring this out.
         row_count = self.model().rowCount()
+        data = []
         for row in range(0, row_count + 1):
             src_index = self.model().index(row, column)
             data = self.model().data(src_index, QtCore.Qt.DisplayRole)
@@ -155,10 +159,12 @@ class LJTreeWidget(QtWidgets.QTreeView):
         self.model = QtGui.QStandardItemModel()
         self.setModel(self.model)
 
-    def on_closing(self):
+    @staticmethod
+    def on_closing():
         settings = UISettings.settings()
-        #hheading = self.horizontalHeader()
-        #settings.setValue(widget_name(self) + ":hheading", hheading.saveState())
+        print settings, 'Need to adjust this code'
+        # hheading = self.horizontalHeader()
+        # settings.setValue(widget_name(self) + ":hheading", hheading.saveState())
 
     def resizeEvent(self, event):
         # TODO - this doesn't work on mac, but does on windows
@@ -174,7 +180,7 @@ class LJTreeWidget(QtWidgets.QTreeView):
                 header.resizeSection(column, width)
                 total_width += width
             except AttributeError:
-                print 'PySide2 compatibilty issue: setResizeMode'
+                print 'PySide2 compatibility issue: setResizeMode'
         for row in range(self.row_count()):
             self.height_hint += 24
         self.width_hint = total_width

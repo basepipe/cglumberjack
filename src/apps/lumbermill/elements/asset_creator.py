@@ -2,8 +2,8 @@ import re
 import os
 import glob
 from cglcore.path import CreateProductionData, PathObject
-from Qt import QtWidgets, QtCore, QtGui
-
+from Qt import QtWidgets, QtCore
+from cglui.util import define_palettes
 from cglcore.config import app_config
 from cglui.widgets.base import LJDialog
 from cglui.widgets.combo import AdvComboBox, LabelComboRow
@@ -49,12 +49,7 @@ class AssetCreator(LJDialog):
         LJDialog.__init__(self, parent)
         self.task_mode = task_mode
         self.resize(300, 60)
-        self.red_palette = QtGui.QPalette()
-        self.red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
-        self.green_palette = QtGui.QPalette()
-        self.green_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 255, 0))
-        self.black_palette = QtGui.QPalette()
-        self.black_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 0, 0))
+        self.red_palette, self.green_palette, self.black_palette = define_palettes()
         if not path_dict:
             return
         self.path_object = PathObject(path_dict)
@@ -125,6 +120,7 @@ class AssetCreator(LJDialog):
         self.v_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
                                                     QtWidgets.QSizePolicy.Expanding))
         self.asset_widget.message.hide()
+        # self.asset_widget.message.setPalette(self.red_palette)
         self.load_categories()
         self.asset_widget.category_row.combo.currentIndexChanged.connect(self.on_category_selected)
         self.asset_widget.name_row.combo.editTextChanged.connect(self.process_asset_string)
@@ -194,7 +190,7 @@ class AssetCreator(LJDialog):
         else:
             self.asset_message_string = '%s is not a valid sequence name\n%s' % (self.seq, example)
             self.asset_widget.message.setText(self.asset_message_string)
-            self.asset_widget.message.setPalette(self.red_palette)
+            # self.asset_widget.message.setPalette(self.red_palette)
             self.asset_widget.message.show()
 
     def load_categories(self):
@@ -221,7 +217,7 @@ class AssetCreator(LJDialog):
         self.regex = re.compile(r'%s' % asset_rules)
         if re.match(self.regex, asset_string):
             self.asset_message_string = '%s is a valid %s name' % (asset_string, self.scope)
-            self.asset_widget.message.setPalette(self.black_palette)
+            # self.asset_widget.message.setPalette(self.black_palette)
             self.asset_widget.message.setText(self.asset_message_string)
             self.asset_widget.message.hide()
             self.show_layout_items(self.task_layout)
@@ -229,7 +225,7 @@ class AssetCreator(LJDialog):
             if asset_string in self.asset_list:
                 self.asset_message_string = '%s already Exists!' % asset_string
                 self.asset_widget.message.setText(self.asset_message_string)
-                self.asset_widget.message.setPalette(self.red_palette)
+                # self.asset_widget.message.setPalette(self.red_palette)
                 self.asset_widget.message.show()
                 self.hide_layout_items(self.task_layout)
                 self.create_button.setEnabled(False)
@@ -237,7 +233,7 @@ class AssetCreator(LJDialog):
             self.asset_message_string = '%s is not a valid %s name\n%s' % (asset_string, self.scope,
                                                                            self.asset_string_example)
             self.asset_widget.message.setText(self.asset_message_string)
-            self.asset_widget.message.setPalette(self.red_palette)
+            # self.asset_widget.message.setPalette(self.red_palette)
             if asset_string == '':
                 self.asset_widget.message.hide()
             else:

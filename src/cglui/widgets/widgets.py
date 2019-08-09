@@ -1,7 +1,7 @@
 import os
-from Qt.QtCore import Qt
-from Qt import QtWidgets, QtCore, QtGui
+from Qt import QtWidgets, QtGui, QtCore
 from cglcore import path
+from cglui.util import drop_handler, define_palettes
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
@@ -41,7 +41,7 @@ class VersionButton(LJButton):
         self.latest_act.setVisible(True)
         self.setEnabled(True)
 
-# noinspection PyPep8Naming,PyPep8Naming,PyPep8Naming,PyPep8Naming
+
 class EmptyStateWidget(QtWidgets.QPushButton):
     files_added = QtCore.Signal(object)
 
@@ -79,16 +79,7 @@ class EmptyStateWidget(QtWidgets.QPushButton):
                                         ext=None, filename_base=None)
         self.to_path = new_obj.path_root
         self.to_object = new_obj
-        if e.mimeData().hasUrls:
-            e.setDropAction(QtCore.Qt.CopyAction)
-            e.accept()
-            file_list = []
-            for url in e.mimeData().urls():
-                file_list.append(str(url.toLocalFile()))
-            self.files_added.emit(file_list)
-        else:
-            print 'invalid'
-            e.ignore()
+        drop_handler(self.files_added, e)
 
 
 class FileTableModel(ListItemModel):
@@ -96,69 +87,15 @@ class FileTableModel(ListItemModel):
     def data(self, index, role):
         row = index.row()
         col = index.column()
-        if role == Qt.DisplayRole:
+        if role == QtCore.Qt.DisplayRole:
             return self.data_[row][col]
-        if role == Qt.DecorationRole:
+        if role == QtCore.Qt.DecorationRole:
             data = self.data_[row][col]
             if "." not in data:
                 icon_path = os.path.join(path.icon_path(), 'folder2.png')
                 return QtWidgets.QIcon(icon_path)
-        # if role == Qt.ToolTipRole:
+        # if role == QtCore.Qt.ToolTipRole:
         #     return "hello tom"
-
-
-class AddAssetModel(ListItemModel):
-    def data(self, index, role):
-        row = index.row()
-        col = index.column()
-        if role == Qt.DisplayRole:
-            return self.data_[row][col]
-        if role == Qt.DecorationRole:
-            data = self.data_[row][col]
-            if "." not in data:
-                icon_path = os.path.join(path.icon_path(), 'folder2.png')
-                return QtWidgets.QIcon(icon_path)
-        # if role == Qt.ToolTipRole:
-        #     return "hello tom"
-
-
-class FileTable(LJTableWidget):
-    files_added = QtCore.Signal(basestring)
-    file_selected = QtCore.Signal(object)
-
-    def __init__(self, parent):
-        LJTableWidget.__init__(self, parent)
-        self.setShowGrid(False)
-        self.setAcceptDrops(True)
-
-    def mouseReleaseEvent(self, e):
-        super(FileTable, self).mouseReleaseEvent(e)
-        self.row_selected()
-
-    def dragEnterEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.accept()
-        else:
-            e.ignore()
-
-    def dragMoveEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.setDropAction(QtCore.Qt.CopyAction)
-            e.accept()
-        else:
-            e.ignore()
-
-    def dropEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.setDropAction(QtCore.Qt.CopyAction)
-            e.accept()
-            file_list = []
-            for url in e.mimeData().urls():
-                file_list.append(str(url.toLocalFile()))
-            self.files_added.emit(file_list)
-        else:
-            print 'invalid'
-            e.ignore()
 
 
 class FilesWidget(QtWidgets.QFrame):
@@ -171,7 +108,7 @@ class FilesWidget(QtWidgets.QFrame):
     copy_latest_version = QtCore.Signal()
     copy_selected_version = QtCore.Signal()
 
-    def __init__(self, parent, show_import=False, font=None):
+    def __init__(self, parent, show_import=False):
         QtWidgets.QFrame.__init__(self, parent)
         self.show_import = show_import
         layout = QtWidgets.QVBoxLayout(self)
@@ -181,7 +118,6 @@ class FilesWidget(QtWidgets.QFrame):
 
         layout.addLayout(table_layout)
         layout.addLayout(tool_button_layout)
-        to_icon = os.path.join(path.icon_path(), 'arrow-right_12px.png')
 
         # The Files Area
         self.work_files_table = FileTableWidget(self, hide_header=False)
@@ -196,8 +132,6 @@ class FilesWidget(QtWidgets.QFrame):
         self.export_files_table.set_draggable(True)
         self.export_files_table.title = 'outputs'
         self.export_files_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        to_icon = os.path.join(path.icon_path(), 'arrow-right_12px.png')
-
         self.open_button = LJButton()
         self.open_button.setText('Open')
         self.import_button = LJButton()
@@ -339,7 +273,7 @@ class TaskWidget(QtWidgets.QWidget):
         self.info_layout.addWidget(self.resolutions_label)
         self.info_layout.addWidget(self.resolutions)
         self.info_layout.addWidget(self.start_task_button)
-        #self.info_layout.setContentsMargins(0, 0, 0, 0)
+        # self.info_layout.setContentsMargins(0, 0, 0, 0)
 
         self.export_label = QtWidgets.QLabel('   Ready to Review/Publish')
         self.export_label.setProperty('class', 'basic')
@@ -353,7 +287,6 @@ class TaskWidget(QtWidgets.QWidget):
         self.title_row.addWidget(self.title)
         self.title_row.addStretch(1)
         self.title_row.addWidget(self.create_assignment)
-
 
         self.empty_state = EmptyStateWidget(path_object=self.path_object)
         self.empty_state.hide()
@@ -586,7 +519,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.data_table.setMinimumWidth(min_width)
 
-        # build the filter optoins row
+        # build the filter options row
         self.assets_radio = QtWidgets.QRadioButton('Assets')
         self.shots_radio = QtWidgets.QRadioButton('Shots')
         self.radio_group_scope = QtWidgets.QButtonGroup(self)
@@ -660,7 +593,8 @@ class FileTableWidget(LJTableWidget):
 
     def __init__(self, parent, hide_header=True):
         LJTableWidget.__init__(self, parent)
-        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSortingEnabled(False)
         # Set The Right Click Menu
         if hide_header:
@@ -698,19 +632,6 @@ class FileTableWidget(LJTableWidget):
     def item_right_click(self, position):
         self.item_right_click_menu.exec_(self.mapToGlobal(position))
 
-    def dragEnterEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.accept()
-        else:
-            e.ignore()
-
-    def dragMoveEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.setDropAction(QtCore.Qt.CopyAction)
-            e.accept()
-        else:
-            e.ignore()
-
     def sizeHint(self):
         return QtCore.QSize(350, 150)
 
@@ -723,7 +644,6 @@ class FileTableWidget(LJTableWidget):
         if software == 'nuke':
             print 0
             for each in menu.actions():
-                print each.text(), 1
                 if each.text() == 'Render Local' or each.text() == 'Render on Farm':
                     add = False
         if add:
@@ -786,12 +706,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout(self)
         self.proj_management_combo = QtWidgets.QComboBox()
         self.proj_management_combo.addItems(['lumbermill', 'ftrack', 'shotgun', 'google_docs'])
-        self.red_palette = QtGui.QPalette()
-        self.red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
-        self.green_palette = QtGui.QPalette()
-        self.green_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 255, 0))
-        self.black_palette = QtGui.QPalette()
-        self.black_palette.setColor(self.foregroundRole(), QtGui.QColor(0, 0, 0))
+        self.red_palette, self.green_palette, self.black_palette = define_palettes()
 
         self.server_label = QtWidgets.QLabel('server url:')
         self.api_key_label = QtWidgets.QLabel('api key:')
@@ -836,11 +751,6 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.adjust_to_variable()
         self.set_project_management()
 
-    def set_existing_globls(self):
-        # read the gloabls and set all the line edits accordingly based on what project managment we're using
-        # TODO: Kyle
-        pass
-
     def set_project_management(self, proj_man=None):
         from cglcore.config import app_config
         if not proj_man:
@@ -852,8 +762,8 @@ class CreateProjectDialog(QtWidgets.QDialog):
         if self.variable == 'project':
             self.setWindowTitle('Create a Project')
             self.hide_api_info()
-            #self.proj_management_combo.hide()
-            #self.proj_management_label.hide()
+            # self.proj_management_combo.hide()
+            # self.proj_management_label.hide()
         elif self.variable == 'company':
             self.setWindowTitle('Create a Company')
             self.hide_api_info()
@@ -882,8 +792,6 @@ class CreateProjectDialog(QtWidgets.QDialog):
         else:
             self.show_api_info()
 
-            
-
     def on_project_text_changed(self):
         input_text = self.proj_line_edit.text()
         message = path.test_string_against_path_rules(self.variable, input_text)
@@ -904,41 +812,6 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.accept()
 
 
-class LabelComboRow(QtWidgets.QVBoxLayout):
-    def __init__(self, label, button=True, bold=True):
-        QtWidgets.QVBoxLayout.__init__(self)
-        if bold:
-            self.label = QtWidgets.QLabel("<b>%s</b>" % label)
-        else:
-            self.label = QtWidgets.QLabel("%s" % label)
-        self.combo = AdvComboBox()
-        self.h_layout = QtWidgets.QHBoxLayout()
-        self.h_layout.addWidget(self.label)
-        self.h_layout.addWidget(self.combo)
-        if button:
-            self.button = button
-            self.add_button = LJButton
-            self.add_button.setText('+')
-            self.h_layout.addWidget(self.add_button)
-            self.addLayout(self.h_layout)
-            #self.addWidget(self.combo)
-        else:
-            self.h_layout.addWidget(self.combo)
-            self.addLayout(self.h_layout)
-
-    def hide(self):
-        self.label.hide()
-        self.combo.hide()
-        if self.button:
-            self.add_button.hide()
-
-    def show(self):
-        self.label.show()
-        self.combo.show()
-        if self.button:
-            self.add_button.show()
-
-
 class AdvComboBoxLabeled(QtWidgets.QVBoxLayout):
     def __init__(self, label):
         QtWidgets.QVBoxLayout.__init__(self)
@@ -949,7 +822,7 @@ class AdvComboBox(QtWidgets.QComboBox):
     def __init__(self, parent=None):
         super(AdvComboBox, self).__init__(parent)
 
-        self.userselected = False
+        self.user_selected = False
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setEditable(True)
         self.SizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
@@ -996,17 +869,17 @@ class AdvComboBox(QtWidgets.QComboBox):
         self.clear()
         # load the shading/texture assets from the library
         # clear duplicates
-        objlist = []
+        obj_list = []
         for key in keys:
-            if str(key) not in objlist:
-                objlist.append(str(key))
-        for item in objlist:
+            if str(key) not in obj_list:
+                obj_list.append(str(key))
+        for item in obj_list:
             self.addItem(item)
 
 
 class GifWidget(QtWidgets.QWidget):
     def __init__(self, parent=None, gif_path=None, animated=True):
-        QtWidgets.QWidget.__init__(self)
+        QtWidgets.QWidget.__init__(self, parent=parent)
         self.setProperty('class', 'gif_widget')
         self.animated = animated
         layout = QtWidgets.QHBoxLayout()
@@ -1019,7 +892,6 @@ class GifWidget(QtWidgets.QWidget):
         self.label_2.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-
 
         # Create the Actual Gif Thingy
         if animated:
@@ -1046,107 +918,3 @@ class GifWidget(QtWidgets.QWidget):
 
 
 
-
-class LabelComboRow(QtWidgets.QVBoxLayout):
-    def __init__(self, label, button=True, bold=True):
-        QtWidgets.QVBoxLayout.__init__(self)
-        if bold:
-            self.label = QtWidgets.QLabel("<b>%s</b>" % label)
-        else:
-            self.label = QtWidgets.QLabel("%s" % label)
-        self.combo = AdvComboBox()
-        self.h_layout = QtWidgets.QHBoxLayout()
-        self.h_layout.addWidget(self.label)
-        self.h_layout.addWidget(self.combo)
-        if button:
-            self.button = button
-            self.add_button = LJButton()
-            self.add_button.setText('+')
-            self.h_layout.addWidget(self.add_button)
-            self.addLayout(self.h_layout)
-            #self.addWidget(self.combo)
-        else:
-            self.h_layout.addWidget(self.combo)
-            self.addLayout(self.h_layout)
-
-    def hide(self):
-        self.label.hide()
-        self.combo.hide()
-        if self.button:
-            self.add_button.hide()
-
-    def show(self):
-        self.label.show()
-        self.combo.show()
-        if self.button:
-            self.add_button.show()
-
-
-class AdvComboBoxLabeled(QtWidgets.QVBoxLayout):
-    def __init__(self, label):
-        QtWidgets.QVBoxLayout.__init__(self)
-        self.label = QtWidgets.QLabel("<b>%s</b>" % label)
-
-
-class AdvComboBox(QtWidgets.QComboBox):
-    def __init__(self, parent=None):
-        super(AdvComboBox, self).__init__(parent)
-
-        self.userselected = False
-        self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        self.setEditable(True)
-        self.setMinimumWidth(90)
-        self.SizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
-        # self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
-        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
-        # add a filter model to filter matching items
-        self.pFilterModel = QtCore.QSortFilterProxyModel(self)
-        self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self.pFilterModel.setSourceModel(self.model())
-
-        # add a completer
-        self.completer = QtWidgets.QCompleter(self)
-        # Set the model that the QCompleter uses
-        # - in PySide doing this as a separate step worked better
-        self.completer.setModel(self.pFilterModel)
-        # always show all (filtered) completions
-        self.completer.setCompletionMode(QtWidgets.QCompleter.UnfilteredPopupCompletion)
-
-        self.setCompleter(self.completer)
-
-        # connect signals
-
-        def filter_(text):
-            self.pFilterModel.setFilterFixedString(str(text))
-
-        self.lineEdit().textEdited[unicode].connect(filter_)
-        self.completer.activated.connect(self.on_completer_activated)
-
-    # on selection of an item from the completer, select the corresponding item from combobox
-    def on_completer_activated(self, text):
-        if text:
-            index = self.findText(str(text))
-            self.setCurrentIndex(index)
-
-    # on model change, update the models of the filter and completer as well
-    def setModel(self, model):
-        super(AdvComboBox, self).setModel(model)
-        self.pFilterModel.setSourceModel(model)
-        self.completer.setModel(self.pFilterModel)
-
-    # on model column change, update the model column of the filter and completer as well
-    def setModelColumn(self, column):
-        self.completer.setCompletionColumn(column)
-        self.pFilterModel.setFilterKeyColumn(column)
-        super(AdvComboBox, self).setModelColumn(column)
-
-    def populate_from_project(self, keys):
-        self.clear()
-        # load the shading/texture assets from the library
-        # clear duplicates
-        objlist = []
-        for key in keys:
-            if str(key) not in objlist:
-                objlist.append(str(key))
-        for item in objlist:
-            self.addItem(item)

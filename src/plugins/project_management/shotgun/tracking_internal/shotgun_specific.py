@@ -3,8 +3,8 @@ from Queue import Empty
 from plugins.project_management.shotgun import shotgun_api3 as sg_api
 from cglcore.config import app_config
 
-# TODO: This is a temporary fix until i can sort out the maya multithreading issues
-# TODO: This disables multithreading for the Shotgun Queries
+# TODO: This is a temporary fix until i can sort out the maya multi-threading issues
+# TODO: This disables multi-threading for the Shotgun Queries
 
 class ShotgunQueueEnd(object):
     pass
@@ -20,7 +20,7 @@ class ShotgunQuery(object):
 
 
     def __str__(self):
-        return """== Shotun Query ==
+        return """== Shotgun Query ==
 %s
 %s
 %s
@@ -79,14 +79,14 @@ class ShotgunProcess(object):
     }
 
     def __init__(self, id_, queue):
-        ShotgunProcess.__init__(self)
+        ShotgunProcess.__init__(self, id_=id_, queue=queue)
         self.id_ = id_
         self.state = 0
         self.queue = queue
         self.connection = None
 
     def __str__(self):
-        return "Shotgun proccessor(%s:%s) " % (self.id_, id(self.queue))
+        return "Shotgun processor(%s:%s) " % (self.id_, id(self.queue))
 
     def run(self):
         logging.debug("%s run" % self.__str__())

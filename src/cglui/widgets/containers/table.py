@@ -1,9 +1,9 @@
 from Qt import QtCore
-
+# noinspection PyUnresolvedReferences
 from Qt.QtWidgets import QTableView, QHeaderView
-from cglcore.path import split_sequence_frange
 from cglui.util import UISettings, widget_name
 from cglui.widgets.base import StateSavers
+from cglui.util import drop_handler
 from cglui.widgets.containers.proxy import LJTableSearchProxy
 from cglui.widgets.containers.menu import LJMenu
 
@@ -16,7 +16,7 @@ class LJTableWidget(QTableView):
         QTableView.__init__(self, parent)
         self.verticalHeader().hide()
         self.horizontalHeader().setStretchLastSection(True)
-        #self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        # self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         # self.horizontalHeader().setMovable(True)
         self.search_wgt = None
         self.alphabet_header = None
@@ -38,6 +38,7 @@ class LJTableWidget(QTableView):
         super(LJTableWidget, self).mouseReleaseEvent(e)
         self.row_selected()
 
+    # noinspection PyShadowingNames,PyPep8
     def set_item_model(self, mdl, proxy=None):
         if proxy is None:
             proxy = LJTableSearchProxy()
@@ -54,10 +55,11 @@ class LJTableWidget(QTableView):
             hheading.restoreState(state)
 
         for header_name in self.alphabet_header:
-            self.header_right_click_menu.create_action(
-                header_name, lambda header_name=header_name: self.header_right_click_menu_trigger(header_name), checkable=True)
+            self.header_right_click_menu.create_action(header_name,
+                                                       lambda header_name=header_name: self.header_right_click_menu_trigger(header_name),
+                                                       checkable=True)
             if not self.isColumnHidden(mdl.headers.index(header_name)):
-                 self.header_right_click_menu.actions()[self.alphabet_header.index(header_name)].setChecked(True)
+                self.header_right_click_menu.actions()[self.alphabet_header.index(header_name)].setChecked(True)
 
     def set_search_box(self, wgt):
         self.search_wgt = wgt
@@ -109,6 +111,7 @@ class LJTableWidget(QTableView):
     def select_row_by_text(self, text, column=0):
         # search all the items in the table view and select the one that has 'text' in it.
         # .setSelection() is a massive part of figuring this out.
+        data = []
         row_count = self.model().rowCount()
         for row in range(0, row_count + 1):
             src_index = self.model().index(row, column)
@@ -141,16 +144,8 @@ class LJTableWidget(QTableView):
     def dropEvent(self, e):
         # this is set up specifically to handle files as that's the only use case
         # we've encountered to date, i'm sure we can put options in as they arise.
-        if e.mimeData().hasUrls:
-            e.setDropAction(QtCore.Qt.CopyAction)
-            e.accept()
-            file_list = []
-            for url in e.mimeData().urls():
-                file_list.append(str(url.toLocalFile()))
-            self.dropped.emit(file_list)
-        else:
-            print 'invalid'
-            e.ignore()
+        print 345
+        drop_handler(self.dropped, e)
 
     def resizeEvent(self, event):
         # TODO - this doesn't work on mac, but does on windows
@@ -168,7 +163,7 @@ class LJTableWidget(QTableView):
                 header.resizeSection(column, width)
                 total_width += width
             except AttributeError:
-                print 'PySide2 compatibilty issue: setResizeMode'
+                print 'PySide2 compatibility issue: setResizeMode'
         for row in range(v_header.count()):
             try:
                 self.verticalHeader().setResizeMode(row, QHeaderView.ResizeToContents)
@@ -177,7 +172,7 @@ class LJTableWidget(QTableView):
                 v_header.resizeSection(row, height)
                 total_height += height
             except AttributeError:
-                print 'PySide2 compatibilty issue: setResizeMode'
+                print 'PySide2 compatibility issue: setResizeMode'
         self.height_hint = total_height
         self.width_hint = total_width
         self.sizeHint()

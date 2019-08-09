@@ -1,7 +1,6 @@
 from Qt import QtCore
 import plugins.nuke.cglnuke as cglnuke
 from plugins.nuke.gui import CGLNuke
-from cglui.startup import do_nuke_gui_init
 import plugins.preflight.main
 
 

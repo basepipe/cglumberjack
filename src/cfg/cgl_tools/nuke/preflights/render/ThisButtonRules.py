@@ -1,5 +1,6 @@
 from plugins.preflight.preflight_check import PreflightCheck
 
+
 class ThisButtonRules(PreflightCheck):
 
     def getName(self):

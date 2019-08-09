@@ -9,13 +9,15 @@ from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog, InputDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange, start_url
+from cglcore.path import CreateProductionData
 from cglui.widgets.progress_gif import ProgressDialog
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
 try:
-    import apps.lumbermill.elements.IOPanel as IOP
+    import apps.lumbermill.elements.IOPanel as IoP
     DO_IOP = True
 except ImportError:
+    IoP = None
     DO_IOP = False
 
 ICON_WIDTH = 24
@@ -39,7 +41,7 @@ class PathWidget(QtWidgets.QFrame):
         # add css
         self.setProperty('class', 'light_grey')
         self.path_line_edit.setProperty('class', 'medium_grey')
-        ##self.path_line_edit.setObjectName('display_path')
+        # self.path_line_edit.setObjectName('display_path')
 
     def update_path(self, path_object):
         if path_object:
@@ -50,7 +52,7 @@ class PathWidget(QtWidgets.QFrame):
                         filename = split_sequence_frange(path_object.filename)[0]
                         path_object.set_attr(filename=filename)
                     except TypeError:
-                        logging.error('passing update_path due to exeption')
+                        logging.error('passing update_path due to exception')
             self.text = path_object.path_root
             self.path_line_edit.setText(path_object.path_root)
 
@@ -95,7 +97,6 @@ class NavigationWidget(QtWidgets.QFrame):
         self.current_location_line_edit.setMinimumHeight(ICON_WIDTH*1.28)
         self.current_location_line_edit.hide()
         self.search_box = LJSearchEdit(self)
-
 
         layout = QtWidgets.QVBoxLayout(self)
         self.cl_row = QtWidgets.QHBoxLayout()
@@ -174,6 +175,7 @@ class NavigationWidget(QtWidgets.QFrame):
             self.show_production()
 
     def buttons_pressed(self):
+        path = None
         if self.sender() == self.projects_button:
             path = '%s/%s/source/*' % (self.path_object.root, self.path_object.company)
         elif self.sender() == self.companies_button:
@@ -236,14 +238,16 @@ class NavigationWidget(QtWidgets.QFrame):
         self.update_buttons()
         self.location_changed.emit(self.path_object)
 
-    def format_new_path(self, path_object, split_after=None):
+    @staticmethod
+    def format_new_path(path_object, split_after=None):
         new_path = '%s/%s' % (path_object.split_after(split_after), '*')
         return new_path
 
 
 class CGLumberjackWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, project_management=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None,
+    def __init__(self, parent=None, project_management=None, user_name=None, user_email=None, company=None,
+                 path=None, radio_filter=None,
                  show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
         try:
@@ -350,7 +354,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.scope == 'IO':
                 if path_object.version:
                     if not self.panel:
-                        self.panel = IOP.IOPanel(parent=self, path_object=path_object)
+                        self.panel = IoP.IOPanel(parent=self, path_object=path_object)
                         self.setMinimumWidth(1100)
                         self.setMinimumHeight(700)
                         self.panel.location_changed.connect(self.update_location)
@@ -371,7 +375,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if self.panel:
                 self.panel.clear_layout()
         if last == 'resolution':
-            pass
             self.load_files_panel(path_object)
         if last == 'project':
             if path_object.project == '*':
@@ -383,7 +386,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.panel = ScopePanel(path_object=path_object)
             elif path_object.scope == 'IO':
                 if DO_IOP:
-                    self.panel = IOP.IOPanel(path_object=path_object)
+                    self.panel = IoP.IOPanel(path_object=path_object)
             else:
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last in shot_attrs:
@@ -397,7 +400,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         elif last == 'ingest_source':
             if DO_IOP:
-                self.panel = IOP.IOPanel(path_object=path_object)
+                self.panel = IoP.IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
                 self.panel = TaskPanel(path_object=path_object, element='task')
@@ -433,7 +436,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                                 user_name=self.user_name, show_import=self.show_import)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
-        #self.panel.new_version_signal.connect(self.new_version_clicked)
+        # self.panel.new_version_signal.connect(self.new_version_clicked)
         self.panel.review_signal.connect(self.review_clicked)
         self.panel.publish_signal.connect(self.publish_clicked)
         self.panel.source_selection_changed.connect(self.set_source_selection)
@@ -453,23 +456,23 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         print 'import clicked'
 
     def review_clicked(self, filepath=None):
-        from cglcore.convert import create_hd_proxy, create_mov
         if not filepath:
             selection = PathObject(self.path_widget.path_line_edit.text())
         else:
             selection = PathObject(filepath)
         if selection.context == 'render':
-            lin_images = ['exr', 'dpx']
+            # lin_images = ['exr', 'dpx']
             # LUMBERMILL REVIEWS
             if self.project_management == 'lumbermill':
                 # do this for movies
-                print 'Lumbermill Not connectect to review features'
+                print 'Lumbermill Not connected to review features'
             # FTRACK REVIEWS
             elif self.project_management == 'ftrack':
-                if not os.path.exists(selection.preview_path_full):
-                    selection.create_previews()
-                from plugins.project_management.ftrack.main import ProjectManagementData
-                ProjectManagementData(selection).create_project_management_data(review=True)
+                if selection.filename:
+                    CreateProductionData(selection)
+                else:
+                    print('Select file for Review')
+
             elif self.project_management == 'shotgun':
                 print 'Shotgun Reviews not connected yet'
             selection.set_attr(filename='')
@@ -484,7 +487,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if dialog.button == 'Move':
                 move = True
             if selection.file_type == 'sequence':
-                sequence_name = selection.filename
+                # sequence_name = selection.filename
                 from_path = os.path.dirname(selection.path_root)
                 to_object = PathObject(from_path)
                 to_object.set_attr(context='render')
@@ -510,7 +513,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 selection.set_attr(ext='')
                 self.update_location(data=selection.data)
 
-
     def publish_clicked(self):
         from plugins.preflight.launch import launch_
         selection = PathObject(self.path_widget.path_line_edit.text())
@@ -521,16 +523,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 class CGLumberjack(LJMainWindow):
     def __init__(self, show_import=False):
         LJMainWindow.__init__(self)
-        #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
-        # Check Globals first off:
-        # Do i have a default company?
-        # What is the default project management?
-        # if not lumbermill do i have my proj_management settings?
-        # what do i do if i'm not connect to the internet and i am using a project management service?
-
         user_config = UserConfig().d
         self.proj_man_user_name = user_config['proj_man_user_name']
         self.proj_man_user_email = user_config['proj_man_user_email']
+        self.user_email = ''
+        self.user_name = ''
         self.company = ''
         self.previous_path = user_config['previous_path']
         self.filter = 'Everything'
@@ -595,14 +592,17 @@ class CGLumberjack(LJMainWindow):
         link = app_config()['project_management'][self.project_management]['api']['server_url']
         start_url(link)
 
-    def check_configs(self):
+    @staticmethod
+    def check_configs():
         return False
 
-    def open_company_globals(self):
+    @staticmethod
+    def open_company_globals():
         logging.info(os.path.dirname(app_config()['paths']['globals']))
         start(os.path.dirname(app_config()['paths']['globals']))
 
-    def open_user_globals(self):
+    @staticmethod
+    def open_user_globals():
         logging.info(os.path.dirname(app_config()['paths']['user_globals']))
         start(os.path.dirname(app_config()['paths']['user_globals']))
 
@@ -630,12 +630,11 @@ class CGLumberjack(LJMainWindow):
         self.user_name = dialog.user_name
         self.user_email = dialog.user_email
 
-    def on_settings_clicked(self):
-        from apps.configurator.main import Configurator
-        dialog = Configurator(self, self.company)
-        dialog.exec_()
+    @staticmethod
+    def on_settings_clicked():
+        print 'settings clicked'
 
-    def on_desgner_clicked(self, type_):
+    def on_designer_clicked(self, type_):
         pm = app_config()['account_info']['project_management']
         def_schema = app_config()['project_management'][pm]['api']['default_schema']
         schema = app_config()['project_management'][pm]['tasks'][def_schema]
@@ -646,13 +645,13 @@ class CGLumberjack(LJMainWindow):
         dialog.exec_()
 
     def on_preflight_designer_clicked(self):
-        self.on_desgner_clicked(type_='preflights')
+        self.on_designer_clicked(type_='preflights')
 
     def on_shelf_designer_clicked(self):
-        self.on_desgner_clicked(type_='shelves')
+        self.on_designer_clicked(type_='shelves')
 
     def on_menu_designer_clicked(self):
-        self.on_desgner_clicked(type_='menus')
+        self.on_designer_clicked(type_='menus')
 
     def closeEvent(self, event):
         # set the current path so that it works on the load better.
@@ -687,7 +686,7 @@ if __name__ == "__main__":
     # # setup stylesheet
     style_sheet = load_style_sheet()
     app.setStyleSheet(style_sheet)
-    #splash.finish(td)
+    # splash.finish(td)
     splash_dialog.hide()
     app.exec_()
 

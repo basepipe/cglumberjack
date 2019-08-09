@@ -1,8 +1,5 @@
 import Queue
-
 import os
-import glob
-
 from Qt import QtCore, QtGui
 
 
@@ -43,8 +40,8 @@ class ImageLoadThread(QtCore.QThread):
     def addQueue(cls, image):
         cls.queue.put(image)
 
-    @classmethod
-    def return_id(self, path):
+    @staticmethod
+    def return_id(path):
         return str(path.split('/')[-1].split('.')[0])
 
     @classmethod
@@ -55,7 +52,7 @@ class ImageLoadThread(QtCore.QThread):
 
     @classmethod
     def getImageFromCache(cls, path):
-        img_id =  cls.return_id(path)
+        img_id = cls.return_id(path)
         if img_id in cls.image_cache:
             return cls.image_cache[img_id]
         else:
@@ -68,8 +65,8 @@ class ImageLoadThread(QtCore.QThread):
         template.fill(0)
         painter = QtGui.QPainter(template)
         image = QtGui.QImage(path).scaled(template.size().width(),
-                                           template.size().height(),
-                                           QtCore.Qt.KeepAspectRatio)
+                                          template.size().height(),
+                                          QtCore.Qt.KeepAspectRatio)
         xstart = (template.size().width() - image.size().width()) / 2
         ystart = (template.size().height() - image.size().height()) / 2
         painter.drawImage(xstart, ystart, image)

@@ -1154,14 +1154,13 @@ class Shotgun(object):
         result = self._parse_records(record)[0]
 
         if upload_image:
-            image_id = self.upload_thumbnail(entity_type, result['id'],
-                                             upload_image)
+            self.upload_thumbnail(entity_type, result['id'], upload_image)
             image = self.find_one(entity_type, [['id', 'is', result.get('id')]],
                                   fields=['image'])
             result['image'] = image.get('image')
 
         if upload_filmstrip_image:
-            filmstrip_id = self.upload_filmstrip_thumbnail(entity_type, result['id'], upload_filmstrip_image)
+            self.upload_filmstrip_thumbnail(entity_type, result['id'], upload_filmstrip_image)
             filmstrip = self.find_one(entity_type,
                                      [['id', 'is', result.get('id')]],
                                      fields=['filmstrip_image'])
@@ -1232,14 +1231,13 @@ class Shotgun(object):
             result = {'id': entity_id, 'type': entity_type}
 
         if upload_image:
-            image_id = self.upload_thumbnail(entity_type, entity_id,
-                                             upload_image)
+            self.upload_thumbnail(entity_type, entity_id, upload_image)
             image = self.find_one(entity_type, [['id', 'is', result.get('id')]],
                                   fields=['image'])
             result['image'] = image.get('image')
 
         if upload_filmstrip_image:
-            filmstrip_id = self.upload_filmstrip_thumbnail(entity_type, result['id'], upload_filmstrip_image)
+            self.upload_filmstrip_thumbnail(entity_type, result['id'], upload_filmstrip_image)
             filmstrip = self.find_one(entity_type,
                                      [['id', 'is', result.get('id')]],
                                      fields=['filmstrip_image'])

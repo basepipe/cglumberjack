@@ -5,6 +5,7 @@ import os
 import json
 import ftrack_api
 from cglcore.config import app_config
+from cglcore.path import create_previews
 
 
 class ProjectManagementData(object):
@@ -49,12 +50,13 @@ class ProjectManagementData(object):
     ext = None
     ftrack_asset_type = 'Upload'
     type = None
-    thumb_path_full = None
     preview_path_full = None
+    thumb_path_full = None
     task_asset = None
     server_url = app_config()['project_management']['ftrack']['api']['server_url']
     api_key = app_config()['project_management']['ftrack']['api']['api_key']
     api_user = app_config()['project_management']['ftrack']['api']['api_user']
+    resolution = 'high'
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
@@ -113,7 +115,7 @@ class ProjectManagementData(object):
         logging.debug('Could Not Find a Task of %s' % task['name'])
         return None
 
-    def create_project_management_data(self, review=False, metadata={}):
+    def create_project_management_data(self, review=False):
         self.project_data = self.entity_exists('project')
         if not self.project_data:
             if self.project:
@@ -157,12 +159,9 @@ class ProjectManagementData(object):
                     if self.user_data:
                         if self.entity_data:
                             self.create_assignment()
-            if self.version:
+            if self.filename:
                 self.create_version()
-            if review:
-                self.upload_media()
-            elif self.filename:
-                self.create_component()
+
         self.ftrack.commit()
         self.ftrack.close()
 
@@ -264,61 +263,53 @@ class ProjectManagementData(object):
             return None
 
     def create_version(self):
-        try:
-            self.ftrack.event_hub.connect()
-        except:
-            pass
-        # first we'll create an AssetType - for now we're calling everything an "upload" lack of a better plan.
-        asset_type = self.ftrack.query('AssetType where name is "%s"' % self.ftrack_asset_type).first()
+        if self.filename:
+            # first we'll create an AssetType - for now we're calling everything an "upload" lack of a better plan.
+            asset_type = self.ftrack.query('AssetType where name is "%s"' % self.ftrack_asset_type).first()
 
-        self.task_asset = self.find_task_asset()
-        if not self.task_asset:
-            self.task_asset = self.ftrack.create('Asset', {
-                'name': self.version,
-                'type': asset_type,
-                'parent': self.entity_data
-            })
-
-        self.version_data = self.find_version()
-        if not self.version_data:
+            self.task_asset = self.find_task_asset()
+            if not self.task_asset:
+                self.task_asset = self.ftrack.create('Asset', {
+                    'name': self.task,
+                    'type': asset_type,
+                    'parent': self.entity_data
+                })
             self.version_data = self.ftrack.create('AssetVersion', {
                 'asset': self.task_asset,
                 'task': self.task_data,
             })
-            logging.info('Creating FTRACK Version %s for: %s' % (self.version, self.task_name))
+            self.upload_media()
+            #     logging.info('Creating FTRACK Version %s for: %s' % (self.version, self.task_name))
+            # else:
+            #     logging.debug('Found %s, No Need to Create' % self.version)
         else:
-            logging.debug('Found %s, No Need to Create' % self.version)
+            print('No File defined, skipping version creation')
+        return self.version_data
 
-    def create_component(self):
-        from cglcore.path import lj_list_dir, prep_seq_delimiter
-
-        # format to ftrack specs: {head}{padding}{tail} [{ranges}] eg: /path/to/file.%04d.ext [1-5, 7, 8, 10-20]
-        if self.path_object.filename != '*.':
-            if self.path_object.file_type:
-                if self.path_object.file_type == 'sequence':
-                    seq = os.path.dirname(self.path_root)
-                    sequence = lj_list_dir(seq, return_sequences=True)
-                    seq2, frange = sequence[0].split()
-                    path = os.path.join(seq, seq2)
-                    ftrack_path = '%s [%s]' % (prep_seq_delimiter(path, '%'), frange)
-                    logging.info('Creating FTRACK Component for %s' % ftrack_path)
-                    self.version_data.create_component(path=ftrack_path, data={'name': self.resolution})
-                else:
-                    print 'FTRACK components not prepared for %s' % self.path_object.file_type
-
-    def upload_media(self, add_to_dailies=True):
-        # TODO - need a way of knowing if a component already exists.
+    def upload_media(self):
+        if not os.path.exists(self.path_object.preview_path_full):
+            print self.path_object.preview_path_full, 'preview path'
+            create_previews(path_object=self.path_root)
         server_location = self.ftrack.query('Location where name is "ftrack.server"').first()
-        if self.file_type == 'movie':
+        if self.file_type == 'movie' or self.file_type == 'sequence':
             component = self.version_data.create_component(
-                path=self.path_root,
+                path=self.path_object.preview_path_full,
                 data={
-                    'name': self.resolution
+                    'name': 'ftrackreview-mp4'
                 },
                 location=server_location
             )
-            self.version_data.encode_media(component)
-            # component.session.commit()
+            # self.version_data.encode_media(component)
+            component['metadata']['ftr_meta'] = json.dumps({
+                'frameIn': 0,
+                'frameOut': 150,
+                'frameRate': 25
+            })
+            thumb_component = self.version_data.create_component(
+                path=self.path_object.thumb_path_full,
+                data={'name': 'thumbnail'},
+                location=server_location
+            )
 
         elif self.file_type == 'image':
             component = self.version_data.create_component(
@@ -336,14 +327,16 @@ class ProjectManagementData(object):
                               data={'name': 'thumbnail'},
                               location=server_location
             )
-            self.version_data['thumbnail'] = thumb_component
-            logging.info('Committing Media')
-            component.session.commit()
-            thumb_component.session.commit()
+        self.version_data['thumbnail'] = thumb_component
+        logging.info('Committing Media')
+        component.session.commit()
+        thumb_component.session.commit()
         self.add_to_dailies()
 
+
+
     def create_review_session(self):
-        review_session = self.ftrack.create('ReviewSession', {
+        self.ftrack.create('ReviewSession', {
             'name': 'Dailies %s' % datetime.date.today(),
             'description': 'Review Session For Todays Data',
             'project': self.project_data
@@ -376,8 +369,7 @@ class ProjectManagementData(object):
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
         self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).one()
-        new_membership = self.ftrack.ensure('Membership', {"group_id": self.user_group['id'],
-                                                           "user_id": self.user_data['id']})
+        self.ftrack.ensure('Membership', {"group_id": self.user_group['id'], "user_id": self.user_data['id']})
         project_has_group = self.ftrack.query(
             'Appointment where context.id is "{}" and resource.id = "{}" and type="allocation"'.format(
                 self.project_data['id'], self.user_group['id']
@@ -397,7 +389,7 @@ class ProjectManagementData(object):
 
     def find_task_asset(self):
         task_asset = self.ftrack.query('Asset where name is "{0}" and '
-                                       'parent.id is "{1}"'.format(self.version, self.entity_data['id']))
+                                       'parent.id is "{1}"'.format(self.task, self.entity_data['id']))
         if len(task_asset) > 0:
             return task_asset[0]
         else:

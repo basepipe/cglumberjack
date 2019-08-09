@@ -7,9 +7,8 @@ class MayaCustomMenu(CustomMenu):
     def __init__(self, software='maya', type_='shelves'):
         CustomMenu.__init__(self, software, type_)
 
-
-    @staticmethod
-    def get_scene_path():
+    def get_scene_path(self):
+        print self.path_object
         return pm.sceneName()
 
     def create_menu(self, name):

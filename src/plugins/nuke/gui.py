@@ -7,7 +7,7 @@ from cglcore.path import PathObject
 
 
 class NukeBrowserWidget(CGLumberjackWidget):
-    def __init__(self, parent=None, user_name=None, user_email=None, company=None, path=None, radio_filter=None,
+    def __init__(self, parent=None, path=None,
                  show_import=False):
         super(NukeBrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
         print 'Nuke Scene path: ', path
@@ -27,11 +27,10 @@ class NukeBrowserWidget(CGLumberjackWidget):
 
 
 class CGLNuke(CGLumberjack):
-    def __init__(self, parent=None, path=None):
-        super(CGLNuke, self).__init__()
+    def __init__(self, parent, path=None):
+        super(CGLNuke, self, parent).__init__()
         print 'CGLNuke path is %s' % path
-        self.setCentralWidget(NukeBrowserWidget(self, user_name=None, user_email=None, company=None, path=path,
-                                                radio_filter=None, show_import=True))
+        self.setCentralWidget(NukeBrowserWidget(self, show_import=True))
 
 
 class RenderDialog(QtWidgets.QDialog):
@@ -114,7 +113,6 @@ def render_all_write_nodes():
 def launch():
     scene_name = cglnuke.get_file_name()
     if scene_name == 'Root':
-        location = ''
         print 'Lumbermill can not determine project, please launch files from the lumbermill browser'
         return
     else:

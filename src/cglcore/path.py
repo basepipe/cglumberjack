@@ -7,7 +7,7 @@ import re
 import shutil
 import copy
 import subprocess
-from cglcore.util import split_all
+from cglcore.util import split_all, copy_file
 from cglcore import assetcore
 from cglcore.config import app_config, UserConfig
 
@@ -20,6 +20,7 @@ SPLIT_SEQ_REGEX = re.compile("\\ [0-9]{4,}-[0-9]{4,}$")
 SEQ_SPLIT = re.compile("\\#{4,}")
 SEQ2_SPLIT = re.compile("[%0-9]{2,}d")
 SEQ = re.compile('[0-9]{3,}-[0-9]{3,}')
+# noinspection PyPep8
 CGL_SEQ_TEST = re.compile('.+#+.+\s[0-9]+-[0-9]+$')
 
 
@@ -28,7 +29,7 @@ class PathObject(object):
     Representation of a path on disk
     """
 
-    def __init__(self, path_object=None, **kwargs):
+    def __init__(self, path_object=None):
         if not path_object:
             logging.error('No Path Object supplied')
             return
@@ -62,7 +63,7 @@ class PathObject(object):
         self.scope_list = app_config()['rules']['scope_list']
         self.context_list = app_config()['rules']['context_list']
         self.path = None  # string of the properly formatted path
-        self.path_root = None # this gives the full path with the root
+        self.path_root = None  # this gives the full path with the root
         self.thumb_path_full = None
         self.preview_path_full = None
         self.start_frame = None
@@ -203,10 +204,6 @@ class PathObject(object):
                 self.data[each] = self.__dict__[each]
 
     def get_company(self, path_string):
-        # TODO - we need to do something based off the order of the regex labels in the config here, this is VERY
-        # proned to error. We have to figure out how to make sure we have a valid, registered company somehow.  This
-        # can be something we do upon creatoin of a company through the interface, but needs to handle companies outside
-        # the interface as well.
         path_string = path_string.replace('\\', '/')
         try:
             temp_ = path_string.split(self.root)[-1]
@@ -288,10 +285,14 @@ class PathObject(object):
                 if not self.preview_path_full:
                     self.set_preview_path()
                 if not self.thumb_path_full:
+                    file_ = os.path.splitext(file_)[0]
+                    file_ = '%s.jpg' % file_
                     if sys.platform == 'win32':
                         self.thumb_path_full = '%s/%s/%s' % (path_, '.thumb', file_)
+                        self.data['thumb_path_full'] = self.thumb_path_full
                     else:
                         self.thumb_path_full = os.path.join(self.root, '.thumb', file_)
+                        self.data['thumb_path_full'] = self.thumb_path_full
         if root:
             return self.path_root
         else:
@@ -303,7 +304,7 @@ class PathObject(object):
         for attr in kwargs:
             value = kwargs[attr]
             try:
-                regex = app_config()['rules']['path_variables'][attr]['regex']
+                app_config()['rules']['path_variables'][attr]['regex']
             except KeyError:
                 logging.debug('Could not find regex for %s: %s in config, skipping' % (attr, value))
             if value == '*':
@@ -440,14 +441,14 @@ class PathObject(object):
         else:
             return new_obj
 
-    def latest_version(self, publish=False):
+    def latest_version(self, publish_=False):
         """
         Returns a path to the latest version.
         :return:
         """
         new_obj = copy.deepcopy(self)
         if new_obj.user:
-            if publish:
+            if publish_:
                 new_obj.set_attr(user='publish')
             latest_version = new_obj.glob_project_element('version')
             if latest_version:
@@ -475,7 +476,7 @@ class PathObject(object):
         """
         major = self.latest_version().major_version
         print 'major', major
-        pub_major = self.latest_version(publish=True).major_version
+        pub_major = self.latest_version(publish_=True).major_version
         print 'pub_major', pub_major
         if int(major) < int(pub_major):
             major = pub_major
@@ -513,7 +514,7 @@ class PathObject(object):
             self.frange = result[1]
         _, file_ext = os.path.splitext(self.path)
         try:
-            _type = EXT_MAP[file_ext]
+            _type = EXT_MAP[file_ext.lower()]
             if _type:
                 if _type == 'movie':
                     self.__dict__['file_type'] = 'movie'
@@ -561,17 +562,18 @@ class PathObject(object):
                 ext.replace('.', '')
             name_ = '%s%s' % (name_, ext)
         else:
-            #print self.filename
             name_, o_ext = os.path.splitext(self.filename)
             if o_ext != ext:
-                name_ = name_.replace(o_ext, ext)
+                name_ = self.filename.replace(o_ext, ext)
             else:
                 name_ = self.filename
         path_ = os.path.split(self.path_root)[0]
         if sys.platform == 'win32':
             self.preview_path_full = '%s/%s/%s' % (path_, '.preview', name_)
+            self.data['preview_path_full'] = self.preview_path_full
         else:
             self.preview_path_full = os.path.join(self.root, '.preview', name_)
+            self.data['preview_path_full'] = self.preview_path_full
 
     def set_proper_filename(self):
         # TODO - this needs to be basted off formulas like the path object.  Curses.
@@ -587,10 +589,6 @@ class PathObject(object):
     def set_project_config(self):
         self.company_config = os.path.join(app_config()['account_info']['globals_path'], 'globals.json')
         self.project_config = os.path.join(app_config()['account_info']['globals_path'], 'globals.json')
-        #if self.company:
-        #    self.company_config = os.path.join(cg_lumberjack_dir, self.company, 'globals.json')
-        #if self.project:
-        #    self.project_config = os.path.join(os.path.dirname(self.company_config), self.project, 'globals.json')
 
     def set_json(self):
         json_obj = self.copy(latest=True, context='render', ext='json', task='lay', set_proper_filename=True)
@@ -602,23 +600,6 @@ class PathObject(object):
         if self.project:
             proj_name = json_obj.data['project']
             self.project_json = os.path.join(json_obj.path_root.split(proj_name)[0], proj_name, '%s.json' % proj_name)
-
-    def create_previews(self):
-        from cglcore.convert import create_thumbnail, create_hd_proxy, create_movie_thumb
-        if self.file_type == 'image':
-            if self.thumb_path_full:
-                print('Creating Thumbnail: %s' % self.thumb_path_full)
-                create_thumbnail(self.path_root, self.thumb_path_full)
-            if self.preview_path_full:
-                print('Creating Preview: %s' % self.preview_path_full)
-                create_hd_proxy(self.path_root, self.preview_path_full, project_management='lumbermill')
-        elif self.file_type == 'movie' or self.file_type == 'sequence':
-            if self.thumb_path_full:
-                create_movie_thumb(self.path_root, self.thumb_path_full)
-            if self.preview_path_full:
-                print('No default functionality set for quicktime creation yet')
-        else:
-            print self.file_type, 'is not set up for preview creation'
 
 
 class CreateProductionData(object):
@@ -633,7 +614,8 @@ class CreateProductionData(object):
         if file_system:
             self.create_folders()
         if project_management:
-            logging.debug('Creating Production Management Data for %s: %s' % (project_management, self.path_object.data))
+            logging.debug('Creating Production Management Data for %s: %s' % (project_management,
+                                                                              self.path_object.data))
             self.create_project_management_data(self.path_object, project_management)
         if self.path_object.resolution:
             if self.path_object.version == '000.000':
@@ -651,14 +633,13 @@ class CreateProductionData(object):
         """
         if self.path_object.scope != 'IO':
             if self.path_object.task_json:
-                self.update_task_json(assigned=self.path_object.user, priority=self.path_object.priority,
-                                      status=self.path_object.status)
+                self.update_task_json()
             if self.path_object.asset_json:
                 self.update_asset_json()
             if self.path_object.project_json:
                 self.update_project_json()
 
-    def update_task_json(self, status=None, priority=None, due=None, assigned=None):
+    def update_task_json(self):
         """
         if task_json doesn't exist it creates one, if it does exist it edits it with the new information
         :return:
@@ -763,9 +744,8 @@ class CreateProductionData(object):
             path_ = path_object.path_root.split('*')[0]
         else:
             path_ = path_object.path_root
-        if path_object.ext:
-            if os.path.splitext(path_):
-                path_ = os.path.dirname(path_)
+        if path_object.filename:
+            path_ = os.path.dirname(path_)
         # at this stage we're making path_
         logging.info('Creating %s Directory: %s' % (path_object.context, path_))
         if not test:
@@ -775,11 +755,17 @@ class CreateProductionData(object):
             logging.info('TEST MODE: No directories were created')
 
     def create_project_management_data(self, path_object, project_management):
+
         if project_management != 'lumbermill':
-            module = "plugins.project_management.%s.main" % project_management
-            loaded_module = __import__(module, globals(), locals(), 'main', -1)
-            loaded_module.ProjectManagementData(path_object,
-                                                user_email=self.proj_management_user).create_project_management_data()
+            if path_object.filename:
+                module = "plugins.project_management.%s.main" % project_management
+                # noinspection PyTypeChecker
+                loaded_module = __import__(module, globals(), locals(), 'main', -1)
+                loaded_module.ProjectManagementData(path_object,
+                                                    user_email=self.proj_management_user).create_project_management_data()
+            else:
+                print('Creating Paths on Disk, lumbermill will create %s '
+                      'versions when you add files' % project_management)
         else:
             logging.debug('Using Lumbermill built in proj management')
 
@@ -806,6 +792,45 @@ class CreateProductionData(object):
         default_file = "%ssrc/%s" % (this, r'plugins/%s/templates/default.%s' % (software, ext))
         logging.info('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
         shutil.copy2(default_file, self.path_object.path_root)
+
+
+def create_previews(path_object):
+    from cglcore.convert import create_thumbnail, create_hd_proxy, create_movie_thumb, create_mov
+    path_object = PathObject(path_object)
+    preview_dir = os.path.dirname(str(path_object.preview_path_full))
+    thumb_dir = os.path.dirname(str(path_object.thumb_path_full))
+    if not os.path.exists(preview_dir):
+        os.makedirs(preview_dir)
+    if not os.path.exists(thumb_dir):
+        os.makedirs(thumb_dir)
+
+    if path_object.file_type == 'image':
+        if path_object.thumb_path_full:
+            logging.info('Creating Thumbnail: %s' % path_object.thumb_path_full)
+            create_thumbnail(path_object.path_root, path_object.thumb_path_full)
+        if path_object.preview_path_full:
+            logging.info('Creating Preview: %s' % path_object.preview_path_full)
+            create_hd_proxy(path_object.path_root, path_object.preview_path_full)
+    elif path_object.file_type == 'sequence':
+        if path_object.thumb_path_full:
+            create_movie_thumb(path_object.path_root, path_object.thumb_path_full)
+        if path_object.preview_path_full:
+            if path_object.file_type == 'sequence':
+                # create hdProxy for the exr sequence
+                hd_proxy = create_hd_proxy(sequence=path_object.path_root)
+                # time.sleep(2)  # if we don't sleep here the directory hasn't had time to refresh.
+                create_mov(hd_proxy, output=path_object.preview_path_full)
+    elif path_object.file_type == 'movie':
+        if path_object.thumb_path_full:
+            create_movie_thumb(path_object.path_root, path_object.thumb_path_full)
+        if path_object.preview_path_full:
+            if path_object.path_root.endswith('mp4'):
+                print('Copying %s to %s' % (path_object.path_root, path_object.preview_path_full))
+                copy_file(path_object.path_root, path_object.preview_path_full)
+            else:
+                create_mov(path_object.path_root, output=path_object.preview_path_full)
+    else:
+        print path_object.file_type, 'is not set up for preview creation'
 
 
 def image_path(image=None):
@@ -942,14 +967,18 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
     """
     Returns Files that are ready to be displayed in a LJWidget, essentially we run
     all output
-    :param list_: list to put into the table.
     :param path_filter: return a specific element from the path rather than the filename.  For instance if you
     wanted to pull out only the "shot" name you'd use 'shot' as a path filter.
     :param basename: if true we only return the os.path.basename() result of the string.
+    :param return_sequences:
+    :param directory:
     :return: list of prepared files/items.
     """
     ignore = ['publish_data.csv']
+    print 'Directory is:', directory
+    print os.listdir(directory)
     list_ = os.listdir(directory)
+    print list_
     if not list_:
         return
     list_.sort()
@@ -1006,6 +1035,7 @@ def split_sequence(sequence):
     :return:
     """
     frange = None
+    group = None
     if '#' in sequence:
         frange = re.search(SEQ_SPLIT, sequence)
         group = frange.group(0)
@@ -1089,16 +1119,17 @@ def get_start_frame(sequence):
         this = re.search(SEQ, each)
         if this:
             return this.group(0).split('-')[0]
-    else:
-        return None
+    return None
 
 
 def prep_seq_delimiter(sequence, replace_with='*', ext=None):
     """
     takes a sequence ('####', '%04d', '*') transforms it to another type.  This is used for instances where one
-    piece of software needs sequences delimited in a particlar way.
+    piece of software needs sequences delimited in a particular way.
     :param sequence: file sequence - sequence.*.dpx, sequence.%04d.dpx, sequence.####.dpx
-    :param replace_with: '*': for sequences like .*.dpx, '%': for %04d style sequence definition, '#': for '####' style sequence definition
+    :param replace_with: '*': for sequences like .*.dpx, '%': for %04d style sequence definition, '#': for '####'
+    :param ext: extension
+    style sequence definition
     :return:
     """
     path_object = PathObject(sequence)
@@ -1126,7 +1157,7 @@ def prep_seq_delimiter(sequence, replace_with='*', ext=None):
 def publish(path_obj):
     """
     Requires a path with render folder with existing data.
-    Creates the next major version of the "USER" dircectory and copies all source & render files to it.
+    Creates the next major version of the "USER" directory and copies all source & render files to it.
     Creates the Next Major Version of the "PUBLISH" directory and copies all source & render files to it.
     As a first step these will be the same as whatever is the highest directory.
     :param path_obj: this can be a path object, a string, or a dictionary
@@ -1153,14 +1184,18 @@ def publish(path_obj):
         render_pub = render_next.copy(user='publish')
 
         for each in os.listdir(source_object.path_root):
-            logging.info('Copying Source Resolution %s from %s to %s' % (each, source_object.path_root, source_next.path_root))
-            logging.info('Copying Source Resolution %s from %s to %s' % (each, source_object.path_root, source_pub.path_root))
+            logging.info('Copying Source Resolution %s from %s to %s' % (each, source_object.path_root,
+                                                                         source_next.path_root))
+            logging.info('Copying Source Resolution %s from %s to %s' % (each, source_object.path_root,
+                                                                         source_pub.path_root))
             shutil.copytree(os.path.join(source_object.path_root, each), os.path.join(source_next.path_root, each))
             shutil.copytree(os.path.join(source_object.path_root, each), os.path.join(source_pub.path_root, each))
 
         for each in os.listdir(render_object.path_root):
-            logging.info('Copying Render Resolution %s from %s to %s' % (each, render_object.path_root, render_next.path_root))
-            logging.info('Copying Render Resolution %s from %s to %s' % (each, render_object.path_root, render_pub.path_root))
+            logging.info('Copying Render Resolution %s from %s to %s' % (each, render_object.path_root,
+                                                                         render_next.path_root))
+            logging.info('Copying Render Resolution %s from %s to %s' % (each, render_object.path_root,
+                                                                         render_pub.path_root))
             shutil.copytree(os.path.join(render_object.path_root, each), os.path.join(render_next.path_root, each))
             shutil.copytree(os.path.join(render_object.path_root, each), os.path.join(render_pub.path_root, each))
         # Register with Production Management etc...

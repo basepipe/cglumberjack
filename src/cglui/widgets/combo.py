@@ -22,7 +22,7 @@ class LabelComboRow(QtWidgets.QVBoxLayout):
                 self.add_button.setText(text)
             self.h_layout.addWidget(self.add_button)
             self.addLayout(self.h_layout)
-            #self.addWidget(self.combo)
+            # self.addWidget(self.combo)
         else:
             self.h_layout.addWidget(self.combo)
             self.addLayout(self.h_layout)
@@ -50,7 +50,7 @@ class AdvComboBox(QtWidgets.QComboBox):
     def __init__(self, parent=None):
         super(AdvComboBox, self).__init__(parent)
 
-        self.userselected = False
+        self.user_selected = False
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setEditable(True)
         self.setMinimumWidth(90)
@@ -106,9 +106,9 @@ class AdvComboBox(QtWidgets.QComboBox):
         self.clear()
         # load the shading/texture assets from the library
         # clear duplicates
-        objlist = []
+        obj_list = []
         for key in keys:
-            if str(key) not in objlist:
-                objlist.append(str(key))
-        for item in objlist:
+            if str(key) not in obj_list:
+                obj_list.append(str(key))
+        for item in obj_list:
             self.addItem(item)

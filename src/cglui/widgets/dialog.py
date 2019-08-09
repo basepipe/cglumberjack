@@ -2,7 +2,6 @@ from Qt import QtCore, QtWidgets
 import os
 import re
 import datetime
-from cglcore.util import current_user, test_string_against_rules
 from cglcore.config import app_config, user_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.widgets import AdvComboBox
@@ -268,7 +267,8 @@ class InputDialog(LJDialog):
             self.btn1 = QtWidgets.QPushButton(buttons[0])
             self.btn2 = QtWidgets.QPushButton(buttons[1])
             self.btn3 = QtWidgets.QPushButton(buttons[2])
-            button_box.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+            button_box.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                     QtWidgets.QSizePolicy.Minimum))
 
             button_box.addWidget(self.btn1)
             if buttons[1]:
@@ -294,6 +294,7 @@ class InputDialog(LJDialog):
         self.input_text = self.line_edit.text()
 
     def on_text_changed_regex(self):
+        message = ''
         if self.sender() == self.line_edit:
             if self.line_edit.text():
                 if re.match(self.regex, self.line_edit.text()):

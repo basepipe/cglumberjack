@@ -1,4 +1,4 @@
-from Qt import QtWidgets, QtCore, QtGui
+from Qt import QtWidgets, QtCore
 from cglui.util import UISettings, widget_name
 from cglcore.util import app_name
 
@@ -43,22 +43,6 @@ class LJMainWindow(QtWidgets.QMainWindow):
         settings = UISettings.settings()
         settings.setValue(widget_name(self), geo)
         super(LJMainWindow, self).closeEvent(event)
-
-
-class LJSplitter(QtWidgets.QSplitter):
-    def __init__(self, parent):
-        QtWidgets.QSplitter.__init__(self, parent)
-
-    def restore(self):
-        settings = UISettings.settings()
-        state = settings.value(widget_name(self))
-        if state:
-            self.restoreState(state)
-        self.splitterMoved.connect(self.record_state)
-
-    def record_state(self, pos, index):
-        settings = UISettings.settings()
-        settings.setValue(widget_name(self), self.saveState())
 
 
 class LJDialog(QtWidgets.QDialog):

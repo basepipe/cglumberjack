@@ -8,7 +8,7 @@ import shutil
 class Configuration(object):
     """
 
-    This asssumes that proper config files are in place - at minimum a default globals script to read from.
+    This assumes that proper config files are in place - at minimum a default globals script to read from.
 
     """
     LOADED_CONFIG = {}
@@ -21,7 +21,6 @@ class Configuration(object):
 
     def __init__(self, company=None, proj_management=None):
         if not os.path.exists(self.user_config):
-            dialog = 'tests'
             logging.info('User Config Not Found: %s' % self.user_config)
         self.globals = self._load_json(self.user_config)['globals']
         if not os.path.exists(self.globals):
@@ -41,26 +40,17 @@ class Configuration(object):
             else:
                 self.company_global_dir = None
             global_cfg, app_cfg = self._find_config_file()
-            logging.debug('Global Config:', global_cfg)
-            cfg = {}
-            cfg['cg_lumberjack_dir'] = os.path.dirname(self.globals)
+            logging.debug('Global Config: %s' % global_cfg)
+            cfg = {'cg_lumberjack_dir': os.path.dirname(self.globals)}
             if os.path.isfile(global_cfg):
                 cfg.update(self._load_json(global_cfg))
             if os.path.isfile(app_cfg):
-                cfg.update(self._j(app_cfg))
+                cfg.update(self._load_json(app_cfg))
             Configuration.LOADED_CONFIG['app'] = cfg
 
     def make_cglumberjack_dir(self):
-        base = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cfg", "global_template.json")
-        to_path = os.path.join(self.cg_lumberjack_dir, 'globals.json')
-        if os.path.exists(self.cg_lumberjack_dir):
-            # make the "studio level" global.yaml
-            if 'globals.json' not in os.listdir(self.cg_lumberjack_dir):
-                # shutil.copy2(base, to_path
-                pass
-        else:
+        if not os.path.exists(self.cg_lumberjack_dir):
             os.makedirs(self.cg_lumberjack_dir)
-            # shutil.copy2(base, to_path)
 
     def make_company_global_dir(self):
         default_global = os.path.join(self.cg_lumberjack_dir, 'globals.json')
@@ -110,8 +100,6 @@ class UserConfig(object):
     def __init__(self, user_email=None, user_name=None, current_path=None):
         if os.path.exists(self.user_config_path):
             self.d = self._load_json(self.user_config_path)
-        else:
-            return None
         self.current_path = current_path
         if user_email:
             self.user_email = user_email
@@ -149,7 +137,8 @@ class UserConfig(object):
         if self.user_name:
             self.d['user_name'] = self.user_name
 
-    def update_company(self):
+    @staticmethod
+    def update_company():
         print 'Skipping company for now'
         # if self.company:
         #     self.d['company'] = self.company

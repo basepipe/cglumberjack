@@ -1,10 +1,10 @@
 import os
 import json
-from Qt import QtWidgets, QtCore, QtGui
+from Qt import QtWidgets
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.base import LJDialog
 from cglcore.path import load_style_sheet, get_cgl_tools
-from utils import CGLMenu, PreflightStep
+from utils import CGLMenu
 
 
 class Designer(LJDialog):
@@ -35,8 +35,6 @@ class Designer(LJDialog):
         self.title_widget.setLayout(title_widget_layout)
         grid_layout = QtWidgets.QGridLayout()
         menu_type_row = QtWidgets.QHBoxLayout()
-
-
         # create widgets
         self.software_label = QtWidgets.QLabel('Software:')
         self.software_label.setProperty('class', 'title')
@@ -57,8 +55,6 @@ class Designer(LJDialog):
         # self.save_menu_button = QtWidgets.QPushButton('save menu')
         # self.save_menu_button.setProperty('class', 'add_button')
         self.title_widget.hide()
-
-
         # layout the GUI
         title_widget_layout.addWidget(self.title_label)
         title_widget_layout.addWidget(self.add_menu_button)
@@ -67,8 +63,6 @@ class Designer(LJDialog):
         grid_layout.addWidget(self.software_label, 0, 0)
         grid_layout.addWidget(self.software_combo, 0, 1)
         grid_layout.addWidget(self.new_software_button, 0, 2)
-
-
         tool_bar.addLayout(grid_layout)
         tool_bar.addStretch(1)
         layout.addLayout(tool_bar)
@@ -218,14 +212,15 @@ class Designer(LJDialog):
             parts.remove('')
         string = config
         for p in parts:
-            if not ':' in p:
+            if ':' not in p:
                 if '.' not in p:
                     string = '%s/%s' % (string, p)
                     init = '%s/__init__.py' % string
                     if not os.path.exists(init):
                         self.make_init(os.path.dirname(init))
 
-    def make_init(self, folder):
+    @staticmethod
+    def make_init(folder):
         if '*' not in folder:
             with open(os.path.join(folder, '__init__.py'), 'w+') as i:
                 i.write("")
@@ -241,7 +236,7 @@ class Designer(LJDialog):
             data = json.load(jsonfile)
         return data
 
-    def closeEvent(self, event):
+    def closeEvent(self):
         self.save_menus()
 
 
@@ -249,7 +244,7 @@ if __name__ == "__main__":
     from cglui.startup import do_gui_init
     app = do_gui_init()
     mw = Designer(type_='preflights')
-    #mw = Designer(type_='menus')
+    # mw = Designer(type_='menus')
     mw.setWindowTitle('Preflight Designer')
     mw.setMinimumWidth(1200)
     mw.setMinimumHeight(500)

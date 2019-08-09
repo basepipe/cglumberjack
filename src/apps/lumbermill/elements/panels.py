@@ -8,7 +8,6 @@ from cglui.widgets.containers.model import ListItemModel
 from cglcore.path import PathObject, CreateProductionData, icon_path
 from cglcore.path import create_project_config
 from cglui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
-from cglui.widgets.palettes import set_color
 
 
 class CompanyPanel(QtWidgets.QWidget):
@@ -16,6 +15,7 @@ class CompanyPanel(QtWidgets.QWidget):
 
     def __init__(self, parent=None, path_object=None, search_box=None):
         QtWidgets.QWidget.__init__(self, parent)
+        self.search_box = search_box
         self.path_object = path_object
         self.panel = QtWidgets.QVBoxLayout(self)
         pixmap = QtGui.QPixmap(icon_path('company24px.png'))
@@ -56,7 +56,7 @@ class CompanyPanel(QtWidgets.QWidget):
             print '%s doesnt exist, making it' % dir_
             os.makedirs(dir_)
             app_config(company=company, proj_management=proj_management)
-            #set the config stuff according to what's up
+            # set the config stuff according to what's up
 
     def check_default_company_globals(self):
         """
@@ -83,18 +83,11 @@ class CompanyPanel(QtWidgets.QWidget):
                     self.company_widget.list.addItem(c)
 
     def clear_layout(self, layout=None):
-        if not layout:
-            layout = self.panel
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clear_layout(child.layout())
+        clear_layout(self, layout=layout)
 
     def update_location(self, path_object=None):
         if not path_object:
-          path_object = self.path_object
+            path_object = self.path_object
         path_object.set_attr(context='source')
         path_object.set_attr(project='*')
         self.location_changed.emit(path_object.data)
@@ -180,14 +173,7 @@ class ProjectPanel(QtWidgets.QWidget):
         self.update_location()
 
     def clear_layout(self, layout=None):
-        if not layout:
-            layout = self.panel
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clear_layout(child.layout())
+        clear_layout(self, layout=layout)
 
 
 class TaskPanel(QtWidgets.QWidget):
@@ -251,14 +237,7 @@ class TaskPanel(QtWidgets.QWidget):
             self.location_changed.emit(self.path_object)
 
     def clear_layout(self, layout=None):
-        if not layout:
-            layout = self.panel
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clear_layout(child.layout())
+        clear_layout(self, layout=layout)
 
 
 class ScopePanel(QtWidgets.QWidget):
@@ -298,14 +277,7 @@ class ScopePanel(QtWidgets.QWidget):
         self.location_changed.emit(self.path_object)
 
     def clear_layout(self, layout=None):
-        if not layout:
-            layout = self.panel
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clear_layout(child.layout())
+        clear_layout(self, layout=layout)
 
 
 class ProductionPanel(QtWidgets.QWidget):
@@ -344,6 +316,7 @@ class ProductionPanel(QtWidgets.QWidget):
         data = []
         temp_ = []
         self.assets.add_button.clicked.connect(self.on_create_asset)
+        d = None
         if items:
             self.assets.data_table.show()
             self.assets.search_box.show()
@@ -416,14 +389,7 @@ class ProductionPanel(QtWidgets.QWidget):
         self.update_location(self.path_object)
 
     def clear_layout(self, layout=None):
-        if not layout:
-            layout = self.panel
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clear_layout(child.layout())
+        clear_layout(self, layout=layout)
 
 
 def prep_list_for_table(list_, path_filter=None, split_for_file=False):
@@ -438,4 +404,15 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False):
                 each = os.path.basename(each)
             output_.append([each])
     return output_
+
+
+def clear_layout(to_clear, layout=None):
+    if not layout:
+        layout = to_clear.panel
+    while layout.count():
+        child = layout.takeAt(0)
+        if child.widget() is not None:
+            child.widget().deleteLater()
+        elif child.layout() is not None:
+            to_clear.clear_layout(child.layout())
 

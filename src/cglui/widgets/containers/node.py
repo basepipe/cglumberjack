@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+# noinspection PyUnresolvedReferences
 from Qt import QtXml
 
 
+# noinspection PyPropertyAccess,PyProtectedMember
 class Node(object):
 
     def __init__(self, name, parent=None):
@@ -12,7 +14,8 @@ class Node(object):
         if parent is not None:
             parent.addChild(self)
 
-    def typeInfo(self):
+    @staticmethod
+    def typeInfo():
         return 'NODE'
 
     def addChild(self, child):
@@ -31,9 +34,10 @@ class Node(object):
             return False
 
         self._children.pop(position)
-        child._parent = None
+        self.child._parent = None
         return True
 
+    # noinspection PyArgumentList
     def attrs(self):
         classes = self.__class__.__mro__
         keyvalued = {}
@@ -73,7 +77,7 @@ class Node(object):
             output += [self.name, self.value]
         return output
 
-    def to_dict(self, d={}):
+    def to_dict(self, d):
         for child in self._children:
             child._recurse_dict(d)
         return d
@@ -86,17 +90,21 @@ class Node(object):
         else:
             d[self.name] = self.value
 
+    # noinspection PyMethodParameters
     def name():
         def fget(self):
             return self._name
+
         def fset(self, value):
             self._name = value
         return locals()
     name = property(**name())
 
+    # noinspection PyMethodParameters
     def value():
         def fget(self):
             return self._value
+
         def fset(self, value):
             self._value = value
         return locals()
@@ -115,6 +123,7 @@ class Node(object):
         if self._parent is not None:
             return self._parent._children.index(self)
 
+    # noinspection PyPep8Naming
     def log(self, tabLevel=-1):
         output = ''
         tabLevel += 1
@@ -122,7 +131,7 @@ class Node(object):
         for i in range(tabLevel):
             output += '    '
 
-        output += ''.join(('|----', self._name,' = ', '\n'))
+        output += ''.join(('|----', self._name, ' = ', '\n'))
 
         for child in self._children:
             output += child.log(tabLevel)
@@ -146,5 +155,7 @@ class Node(object):
         if column is 1:
             self.value = value
 
-    def resource(self):
+    @staticmethod
+    def resource():
         return None
+

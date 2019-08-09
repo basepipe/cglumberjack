@@ -13,6 +13,7 @@ from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cglcore.config import app_config
 from cglcore.path import PathObject, icon_path, lj_list_dir, split_sequence_frange, get_file_type
 from plugins.preflight.main import Preflight
+from panels import clear_layout
 
 FILEPATH = 0
 FILENAME = 1
@@ -115,7 +116,7 @@ class IOPanel(QtWidgets.QWidget):
         self.source_widget = LJListWidget('Sources', pixmap=None)
         self.ingest_widget = LJListWidget('Ingests', pixmap=None, empty_state_text='Select Source',
                                           empty_state_icon=import_empty_icon)
-        #self.import_events.hide()f
+        # self.import_events.hide()f
 
         self.tags_title = QtWidgets.QLineEdit("<b>Select File(s) or Folder(s) to tag</b>")
         self.tags_title.setReadOnly(True)
@@ -331,7 +332,8 @@ class IOPanel(QtWidgets.QWidget):
                 type_ = get_file_type(filename)
                 if type_ == 'sequence':
                     file_, frange = split_sequence_frange(filename)
-                data.append((fullpath, file_, type_, frange, ' ', False, ' ', ' ', ' ', ' ', ' ', ' ', self.io_statuses[0]))
+                data.append((fullpath, file_, type_, frange, ' ', False, ' ', ' ', ' ', ' ', ' ', ' ',
+                             self.io_statuses[0]))
             self.data_frame = pd.DataFrame(data, columns=app_config()['definitions']['ingest_browser_header'])
         self.save_data_frame()
 
@@ -354,7 +356,8 @@ class IOPanel(QtWidgets.QWidget):
         proj_man_tasks = schema['long_to_short'][self.scope_combo.currentText()]
         if self.seq_combo.currentText():
             seq = str(self.seq_combo.currentText())
-            self.tags_title.setText('CGL:> Choose a %s Name or Type to Create a New One' % self.shot_label.text().title())
+            self.tags_title.setText('CGL:> Choose a %s Name or Type to Create a New One' %
+                                    self.shot_label.text().title())
             if self.shot_combo.currentText():
                 shot = str(self.shot_combo.currentText())
                 self.tags_title.setText('CGL:> Which Task will this be published to?')
@@ -369,6 +372,7 @@ class IOPanel(QtWidgets.QWidget):
                                                           version='000.000',
                                                           user='publish',
                                                           resolution='high')
+                        status = ''
                         for f in files:
                             row = self.data_frame.loc[self.data_frame['Filename'] == f[1]].index[0]
                             status = self.data_frame.at[row, 'Status']
@@ -399,9 +403,9 @@ class IOPanel(QtWidgets.QWidget):
         # UPDATE the tree with this info.
 
     def go_to_location(self, to_path):
-        path_object = PathObject(to_path).copy(context='source', user='', resolution='', filename='', ext='', filename_base='', version='')
+        path_object = PathObject(to_path).copy(context='source', user='', resolution='', filename='', ext='',
+                                               filename_base='', version='')
         self.location_changed.emit(path_object)
-
 
     def clear_all(self):
         self.scope_combo.setCurrentIndex(0)
@@ -489,14 +493,7 @@ class IOPanel(QtWidgets.QWidget):
         self.tags_line_edit.hide()
         self.publish_button.hide()
 
-    def show_tags_gui(self, files=None):
-        if not files:
-            files_text = 'files'
-        else:
-            if len(files) == 1:
-                files_text = files[0]
-            else:
-                files_text = '%s files' % len(files)
+    def show_tags_gui(self):
         self.tags_title.show()
         self.scope_combo.show()
         self.scope_label.show()
@@ -515,7 +512,7 @@ class IOPanel(QtWidgets.QWidget):
         ignore = ['default_steps', '']
         schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
         tasks = schema['long_to_short'][self.scope_combo.currentText()]
-        seqs = self.populate_seq()
+        self.populate_seq()
         task_names = ['']
         for each in tasks:
             if each not in ignore:
@@ -580,8 +577,8 @@ class IOPanel(QtWidgets.QWidget):
         self.task_combo.clear()
         self.tags_line_edit.clear()
         self.sender().parent().show_combo_info(data)
-        #self.sender().parent().show_tags_gui(files=files)
-        #self.sender().parent().show_tags_info(data)
+        # self.sender().parent().show_tags_gui(files=files)
+        # self.sender().parent().show_tags_info(data)
 
     def on_add_ingest_event(self):
         # deselect everything in the event
@@ -592,9 +589,8 @@ class IOPanel(QtWidgets.QWidget):
 
     def publish_tagged_assets(self):
         # figure out what task we're publishing this thing to
-        scope = self.scope_combo.currentText()
         task = self.schema_dict['long_to_short'][self.scope_combo.currentText()][self.task_combo.currentText()]
-        #task = app_config()['pipeline_steps'][scope][self.task_combo.currentText()]
+        # task = app_config()['pipeline_steps'][scope][self.task_combo.currentText()]
         try:
             this = Preflight(self, software='ingest', preflight=task, data_frame=self.data_frame,
                              file_tree=self.file_tree, pandas_path=self.pandas_path,
@@ -606,14 +602,15 @@ class IOPanel(QtWidgets.QWidget):
         this.exec_()
         return
 
+    # noinspection PyListCreation
     @staticmethod
     def make_source_file(to_path, row):
         source_path = PathObject(to_path)
         source_path.set_attr(context='source')
         source_path.set_attr(filename='system_report.csv')
-        dir = os.path.dirname(source_path.path_root)
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+        dir_ = os.path.dirname(source_path.path_root)
+        if not os.path.exists(dir_):
+            os.makedirs(dir_)
         data = []
         data.append((row["Filepath"], row["Filename"], row["Filetype"], row["Frame_Range"], row["Tags"],
                      row["Keep_Client_Naming"], row["Scope"], row["Seq"], row["Shot"], row["Task"],
@@ -622,14 +619,7 @@ class IOPanel(QtWidgets.QWidget):
         df.to_csv(source_path.path_root, index=False)
 
     def clear_layout(self, layout=None):
-        if not layout:
-            layout = self.panel
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clear_layout(child.layout())
+        clear_layout(self, layout)
 
     def sizeHint(self):
         return QtCore.QSize(self.height_hint, self.width_hint)

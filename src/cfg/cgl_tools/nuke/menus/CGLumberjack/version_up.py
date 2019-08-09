@@ -1,4 +1,7 @@
 from cglcore.path import PathObject, CreateProductionData
+# noinspection PyPackageRequirements
+import nuke
+
 
 def run():
 	path_object = PathObject(nuke.Root().name())
@@ -6,3 +9,4 @@ def run():
 	CreateProductionData(next_minor)
 	nuke.scriptSaveAs(next_minor)
 	print 'Version Up Successful! %s ' % next_minor
+
