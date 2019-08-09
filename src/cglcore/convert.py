@@ -138,8 +138,7 @@ def get_file_type(input_file):
 
 def _execute(command):
     logging.info('Executing Command: %s' % command)
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True,
-                         shell=True)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
     while True:
         output = p.stdout.readline()
         if output == '' and p.poll() is not None:
@@ -290,7 +289,7 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
         output_file = web_path_object.path_root
 
         if path_object.file_type == 'sequence':
-            start_frame, _, end_frame = get_first_frame(sequence)
+            start_frame = get_first_frame(sequence)[0]
             input_file = prep_seq_delimiter(sequence, replace_with='%')
             if not output:
                 output_file = output_file.split('#')[0]
