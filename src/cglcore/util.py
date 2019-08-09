@@ -107,9 +107,11 @@ def test_string_against_rules(test_string, rule, effected_label=None):
 
 
 def copy_file(src, dest):
+    if not os.path.isdir(dest):
+        dir = os.path.dirname(dest)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
     if os.path.isdir(src):
-        if not os.path.isdir(dest):
-            os.makedirs(dest)
         files = os.listdir(src)
         for f in files:
             copy_file(os.path.join(src, f), os.path.join(dest, f))

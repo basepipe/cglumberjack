@@ -114,8 +114,7 @@ class ProjectManagementData(object):
         logging.debug('Could Not Find a Task of %s' % task['name'])
         return None
 
-    def create_project_management_data(self, review=False, metadata=None):
-        print 'Currently not using metadata: %s' % metadata
+    def create_project_management_data(self, review=False):
         self.project_data = self.entity_exists('project')
         if not self.project_data:
             if self.project:
@@ -285,7 +284,7 @@ class ProjectManagementData(object):
         if not self.version_data:
             self.version_data = self.ftrack.create('AssetVersion', {
                 'asset': self.task_asset,
-                'task': self.task_data,
+                'task': self.task_data
             })
             logging.info('Creating FTRACK Version %s for: %s' % (self.version, self.task_name))
         else:
@@ -310,40 +309,51 @@ class ProjectManagementData(object):
                     print 'FTRACK components not prepared for %s' % self.path_object.file_type
 
     def upload_media(self):
-        # TODO - need a way of knowing if a component already exists.
-        server_location = self.ftrack.query('Location where name is "ftrack.server"').first()
-        if self.file_type == 'movie':
-            component = self.version_data.create_component(
-                path=self.path_root,
-                data={
-                    'name': self.resolution
-                },
-                location=server_location
-            )
-            self.version_data.encode_media(component)
-            # component.session.commit()
+        if os.path.exists(self.preview_path_full):
+            server_location = self.ftrack.query('Location where name is "ftrack.server"').first()
+            if self.file_type == 'movie' or self.file_type == 'sequence':
+                component = self.version_data.create_component(
+                    path=self.preview_path_full,
+                    data={
+                        'name': 'ftrackreview-mp4'
+                    },
+                    location=server_location
+                )
+                # self.version_data.encode_media(component)
+                component['metadata']['ftr_meta'] = json.dumps({
+                    'frameIn': 0,
+                    'frameOut': 150,
+                    'frameRate': 25
+                })
+                thumb_component = self.version_data.create_component(
+                    path=self.path_object.thumb_path_full,
+                    data={'name': 'thumbnail'},
+                    location=server_location
+                )
 
-        elif self.file_type == 'image':
-            component = self.version_data.create_component(
-                path=self.path_object.preview_path_full,
-                data={
-                    'name': 'ftrackreview-image'
-                },
-                location=server_location
-            )
-            component['metadata']['ftr_meta'] = json.dumps({
-                'format': 'image'
-            })
-            thumb_component = self.version_data.create_component(
-                              path=self.path_object.thumb_path_full,
-                              data={'name': 'thumbnail'},
-                              location=server_location
-            )
+            elif self.file_type == 'image':
+                component = self.version_data.create_component(
+                    path=self.path_object.preview_path_full,
+                    data={
+                        'name': 'ftrackreview-image'
+                    },
+                    location=server_location
+                )
+                component['metadata']['ftr_meta'] = json.dumps({
+                    'format': 'image'
+                })
+                thumb_component = self.version_data.create_component(
+                                  path=self.path_object.thumb_path_full,
+                                  data={'name': 'thumbnail'},
+                                  location=server_location
+                )
             self.version_data['thumbnail'] = thumb_component
             logging.info('Committing Media')
             component.session.commit()
             thumb_component.session.commit()
-        self.add_to_dailies()
+            self.add_to_dailies()
+        else:
+            logging.info('No Preview Image or Movie found to upload! %s' % self.preview_path_full)
 
     def create_review_session(self):
         self.ftrack.create('ReviewSession', {

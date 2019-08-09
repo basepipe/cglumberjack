@@ -1,12 +1,5 @@
-from cglcore.path import PathObject
-
+from cglcore.path import PathObject, prep_seq_delimiter
+import os
 # noinspection SpellCheckingInspection,PyPep8
-mov = r'D:/VFX/FRIDAY_ROOT/grindhouse/render/ninjaNunsII/assets/char/trex/ref/tmiko/000.000/high/81zuLQ622hL._SL1500_.jpg'
-
-path_object = PathObject(mov)
-print path_object.preview_path_full
-print path_object.thumb_path_full
-
-path_object.create_previews()
-
-
+mov = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testOne/shots/000/0500/elem/tmiko/000.006/hdProxy/03_2a_#####.jpg'
+print prep_seq_delimiter(mov, replace_with='%')

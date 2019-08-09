@@ -136,20 +136,17 @@ def get_file_type(input_file):
 #####################################################################
 
 
-def _execute(command, wait=False):
-    logging.info('executing command: %s' % command)
-    p = subprocess.Popen(command,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-    if wait:
-        p.wait()
-    for each in p.stdout:
-        each = each.strip()
-        try:
-            if "ERROR" in each:
-                logging.error(each)
-        except TypeError:
-            pass
+def _execute(command):
+    logging.info('Executing Command: %s' % command)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    while True:
+        output = p.stdout.readline()
+        if output == '' and p.poll() is not None:
+            break
+        if output:
+            print output.strip()
+    rc = p.poll()
+    return rc
 
 
 def create_proxy(sequence, ext='jpg', project_management=PROJ_MANAGEMENT):
@@ -183,8 +180,8 @@ def create_proxy(sequence, ext='jpg', project_management=PROJ_MANAGEMENT):
     return out_seq
 
 
-def create_hd_proxy(sequence, output=None, ext='jpg', width='1920', height='x1080', do_height=False, start_frame='1001',
-                    project_management=PROJ_MANAGEMENT, review=False):
+def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', height='x1080', do_height=False,
+                    start_frame='1001'):
     hashes = ''
     fileout = ''
     out_seq = ''
@@ -199,10 +196,8 @@ def create_hd_proxy(sequence, output=None, ext='jpg', width='1920', height='x108
         path_object_output = path_object.copy(resolution='hdProxy')
         output_dir = os.path.dirname(path_object_output.path_root)
     else:
-        print 'Output is: %s' % output
         path_object_output = None
         output_dir = os.path.dirname(output)
-    print output_dir, '11111111111111111111'
     if not os.path.exists(output_dir):
         CreateProductionData(path_object=output_dir, project_management=False)
     if path_object.file_type == 'sequence':
@@ -214,6 +209,7 @@ def create_hd_proxy(sequence, output=None, ext='jpg', width='1920', height='x108
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
         command = '%s %s -scene %s -resize %s %s' % (config['magick'], in_seq, start_frame, res, out_seq)
+        fileout = out_seq.replace(number, hashes)
     elif path_object.file_type == 'image':
         sequence = sequence
         try:
@@ -223,20 +219,11 @@ def create_hd_proxy(sequence, output=None, ext='jpg', width='1920', height='x108
             this_ = os.path.splitext(output)[0]
             fileout = this_+'.jpg'
         command = '%s %s -resize %s %s' % (config['magick'], sequence, res, fileout)
+    print 1
+    print command
     _execute(command)
-    print 'Project Management is %s' % project_management
-    if project_management == 'ftrack':
-        print 'Creating HD Proxy', path_object_output.path_root
-        from plugins.project_management.ftrack.main import ProjectManagementData
-        ProjectManagementData(path_object_output).create_project_management_data(review=review)
-    elif project_management == 'lumbermill':
-        print 'No Lumbermill Functionality For create_hd_proxy'
-    elif project_management == 'shotgun':
-        print 'No Lumbermill Functionality for Shotgun'
-    if path_object.file_type == 'sequence':
-        return out_seq.replace(number, hashes)
-    else:
-        return fileout
+    print 2
+    return fileout
 
 
 def create_gif_proxy(sequence, ext='gif', width='480', height='x100', do_height=False):
@@ -286,28 +273,38 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
 
 
 def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_frame_rate=None,
-               res=settings['resolution']['video_review'], project_management=PROJ_MANAGEMENT):
+               res=settings['resolution']['video_review']):
     start_frame = 1001
-    end_frame = 1002
     path_object = PathObject(sequence)
-    input_file = sequence
-    web_path_object = PathObject(sequence).copy(resolution='webMov')
-    CreateProductionData(web_path_object, project_management='lumbermill')
-    output_file = web_path_object.path_root
-    if path_object.file_type == 'sequence':
-        start_frame, _, end_frame = get_first_frame(sequence)
-        input_file = prep_seq_delimiter(sequence, replace_with='%')
-        if not output:
-            output_file = output_file.split('#')[0]
-            if output_file.endswith('.'):
-                output_file = '%smp4' % output_file
-            else:
-                output_file = '%s.mp4' % output_file
-            filename = os.path.basename(output_file)
-            web_path_object.set_attr(filename=filename)
 
-    if not os.path.exists(os.path.dirname(output_file)):
-        CreateProductionData(os.path.dirname(output_file), project_management='lumbermill')
+    if output:
+        if path_object.file_type == 'sequence':
+            print '1111111111111', sequence
+            start_frame, _, end_frame = get_first_frame(sequence)
+            input_file = prep_seq_delimiter(sequence, replace_with='%')
+            output_file = output
+            if not os.path.exists(os.path.dirname(output_file)):
+                os.makedirs(os.path.dirname(output_file))
+        else:
+            print('Nothing defined for %s' % path_object.file_type)
+    else:
+        print 'Making webMov'
+        web_path_object = PathObject(sequence).copy(resolution='webMov')
+        CreateProductionData(web_path_object, project_management='lumbermill')
+        output_file = web_path_object.path_root
+
+        if path_object.file_type == 'sequence':
+            start_frame, _, end_frame = get_first_frame(sequence)
+            input_file = prep_seq_delimiter(sequence, replace_with='%')
+            if not output:
+                output_file = output_file.split('#')[0]
+                if output_file.endswith('.'):
+                    output_file = '%smp4' % output_file
+                else:
+                    output_file = '%s.mp4' % output_file
+                filename = os.path.basename(output_file)
+                web_path_object.set_attr(filename=filename)
+
     if os.path.splitext(input_file)[-1] == '.exr' or os.path.splitext(input_file)[-1] == '.dpx':
         logging.info('applying gamma 2.2 to linear sequence')
         gamma = 2.2
@@ -341,25 +338,28 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
                                                             encoder, profile, constant_rate_factor, pixel_format,
                                                             output_frame_rate, filter_arg, output_file)
     if ffmpeg_cmd:
-        _execute(ffmpeg_cmd, wait=True)
+        _execute(ffmpeg_cmd)
         create_movie_thumb(sequence)
 
-    if project_management == 'ftrack':
-        from plugins.project_management.ftrack.main import ProjectManagementData
-        metadata = {'frameIn': start_frame,
-                    'frameOut': end_frame,
-                    'frameRate': frame_rate
-                    }
-        logging.info('Uploading %s to ftrack' % web_path_object.path_root)
-        ProjectManagementData(path_object=web_path_object).create_project_management_data(review=True,
-                                                                                          metadata=metadata)
+    # if project_management == 'ftrack':
+    #     from plugins.project_management.ftrack.main import ProjectManagementData
+    #     metadata = {'frameIn': start_frame,
+    #                 'frameOut': end_frame,
+    #                 'frameRate': frame_rate
+    #                 }
+    #     logging.info('Uploading %s to ftrack' % web_path_object.path_root)
+    #     ProjectManagementData(path_object=web_path_object).create_project_management_data(review=True,
+    #                                                                                       metadata=metadata)
 
     return output_file
 
 
 def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True):
     if not output_file:
-        output_file = PathObject(path_object=input_file).copy(resolution='thumb').path_root
+        output_file = PathObject(path_object=input_file).copy(resolution='thumb', ext='jpg').path_root
+    if not output_file.endswith('.jpg'):
+        file_ = os.path.splitext(output_file)[0]
+        output_file = '%s.%s' % (file_, 'jpg')
     if os.path.exists(output_file):
         os.remove(output_file)
     if not os.path.exists(os.path.dirname(output_file)):
@@ -449,7 +449,7 @@ def get_thumb_res(input_file):
 def create_thumbnail(input_file, output_file):
     res = get_thumb_res(input_file)
     width, height = res.split('x')
-    create_hd_proxy(input_file, output_file, width=width, height=height, project_management='lumbermill')
+    create_hd_proxy(input_file, output_file, width=width, height=height)
 
 
 def make_animated_gif(input_file):

@@ -5,9 +5,10 @@ import os
 import sys
 import re
 import shutil
+import time
 import copy
 import subprocess
-from cglcore.util import split_all
+from cglcore.util import split_all, copy_file
 from cglcore import assetcore
 from cglcore.config import app_config, UserConfig
 
@@ -285,6 +286,8 @@ class PathObject(object):
                 if not self.preview_path_full:
                     self.set_preview_path()
                 if not self.thumb_path_full:
+                    file_ = os.path.splitext(file_)[0]
+                    file_ = '%s.jpg' % file_
                     if sys.platform == 'win32':
                         self.thumb_path_full = '%s/%s/%s' % (path_, '.thumb', file_)
                     else:
@@ -510,7 +513,7 @@ class PathObject(object):
             self.frange = result[1]
         _, file_ext = os.path.splitext(self.path)
         try:
-            _type = EXT_MAP[file_ext]
+            _type = EXT_MAP[file_ext.lower()]
             if _type:
                 if _type == 'movie':
                     self.__dict__['file_type'] = 'movie'
@@ -560,7 +563,7 @@ class PathObject(object):
         else:
             name_, o_ext = os.path.splitext(self.filename)
             if o_ext != ext:
-                name_ = name_.replace(o_ext, ext)
+                name_ = self.filename.replace(o_ext, ext)
             else:
                 name_ = self.filename
         path_ = os.path.split(self.path_root)[0]
@@ -596,19 +599,34 @@ class PathObject(object):
             self.project_json = os.path.join(json_obj.path_root.split(proj_name)[0], proj_name, '%s.json' % proj_name)
 
     def create_previews(self):
-        from cglcore.convert import create_thumbnail, create_hd_proxy, create_movie_thumb
+        # TODO - ideally this would be a preflight, it's complex enough to need various options and
+        # flexibility.
+        from cglcore.convert import create_thumbnail, create_hd_proxy, create_movie_thumb, create_mov
         if self.file_type == 'image':
             if self.thumb_path_full:
-                print('Creating Thumbnail: %s' % self.thumb_path_full)
+                logging.info('Creating Thumbnail: %s' % self.thumb_path_full)
                 create_thumbnail(self.path_root, self.thumb_path_full)
             if self.preview_path_full:
-                print('Creating Preview: %s' % self.preview_path_full)
-                create_hd_proxy(self.path_root, self.preview_path_full, project_management='lumbermill')
-        elif self.file_type == 'movie' or self.file_type == 'sequence':
+                logging.info('Creating Preview: %s' % self.preview_path_full)
+                create_hd_proxy(self.path_root, self.preview_path_full)
+        elif self.file_type == 'sequence':
             if self.thumb_path_full:
                 create_movie_thumb(self.path_root, self.thumb_path_full)
             if self.preview_path_full:
-                print('No default functionality set for quicktime creation yet')
+                if self.file_type == 'sequence':
+                    # create hdProxy for the exr sequence
+                    hd_proxy = create_hd_proxy(sequence=self.path_root)
+                    # time.sleep(2)  # if we don't sleep here the directory hasn't had time to refresh.
+                    create_mov(hd_proxy, output=self.preview_path_full)
+        elif self.file_type == 'movie':
+            if self.thumb_path_full:
+                create_movie_thumb(self.path_root, self.thumb_path_full)
+            if self.preview_path_full:
+                if self.path_root.endswith('mp4'):
+                    print('Copying %s to %s' % (self.path_root, self.preview_path_full))
+                    copy_file(self.path_root, self.preview_path_full)
+                else:
+                    create_mov(self.path_root, output=self.preview_path_full)
         else:
             print self.file_type, 'is not set up for preview creation'
 
@@ -943,7 +961,10 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
     :return: list of prepared files/items.
     """
     ignore = ['publish_data.csv']
+    print 'Directory is:', directory
+    print os.listdir(directory)
     list_ = os.listdir(directory)
+    print list_
     if not list_:
         return
     list_.sort()
