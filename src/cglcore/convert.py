@@ -149,7 +149,7 @@ def _execute(command):
     return rc
 
 
-def create_proxy(sequence, ext='jpg', project_management=PROJ_MANAGEMENT):
+def create_proxy(sequence, ext='jpg'):
     """
     Creates a Jpeg proxy resolution based off the resolution of the given path.
     :param sequence:
@@ -172,10 +172,6 @@ def create_proxy(sequence, ext='jpg', project_management=PROJ_MANAGEMENT):
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
         command = '%s %s -scene %s %s' % (config['magick'], in_seq, start_frame, out_seq)
         _execute(command)
-        if project_management == 'ftrack':
-            from plugins.project_management.ftrack.main import ProjectManagementData
-            path_object = PathObject(out_seq)
-            ProjectManagementData(path_object).create_project_management_data()
     print out_seq
     return out_seq
 

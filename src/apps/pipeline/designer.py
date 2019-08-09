@@ -49,15 +49,19 @@ class Designer(LJDialog):
             self.add_menu_button = QtWidgets.QPushButton('add menu')
         elif self.type == 'preflights':
             self.add_menu_button = QtWidgets.QPushButton('add preflight')
+            self.delete_menu_button = QtWidgets.QPushButton('delete preflight')
         else:
             self.add_menu_button = QtWidgets.QPushButton('add %s' % self.type)
+            self.delete_menu_button = QtWidgets.QPushButton('delete %s' % self.type)
         self.add_menu_button.setProperty('class', 'add_button')
+        self.delete_menu_button.setProperty('class', 'add_button')
         # self.save_menu_button = QtWidgets.QPushButton('save menu')
         # self.save_menu_button.setProperty('class', 'add_button')
         self.title_widget.hide()
         # layout the GUI
         title_widget_layout.addWidget(self.title_label)
         title_widget_layout.addWidget(self.add_menu_button)
+        title_widget_layout.addWidget(self.delete_menu_button)
         title_widget_layout.addStretch(1)
         # title_widget_layout.addWidget(self.save_menu_button)
         grid_layout.addWidget(self.software_label, 0, 0)
@@ -116,6 +120,8 @@ class Designer(LJDialog):
                 cgl_file = self.menu_path
                 new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
                                    menu_path=cgl_file, menu_type=self.type)
+                print 34
+                new_menu.save_clicked.connect(self.on_save_clicked)
                 index = self.menus.addTab(new_menu, menu_name)
                 self.menus.setCurrentIndex(index)
         elif self.type == 'menus':
@@ -126,8 +132,13 @@ class Designer(LJDialog):
                 cgl_file = self.menu_path
                 new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
                                    menu_path=cgl_file, menu_type=self.type)
+                print 45
+                new_menu.save_clicked.connect(self.on_save_clicked)
                 index = self.menus.addTab(new_menu, menu_name)
                 self.menus.setCurrentIndex(index)
+
+    def on_save_clicked(self):
+        self.save_menus()
 
     def load_menus(self):
         menu_dict = {}
@@ -145,6 +156,8 @@ class Designer(LJDialog):
                     if i == menu_dict[self.software][menu]['order']:
                         buttons = CGLMenu(software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
                                           menu_path=self.menu_path, menu_type=self.type)
+                        print 453
+                        buttons.save_clicked.connect(self.on_save_clicked)
                         self.menus.addTab(buttons, menu)
 
     def on_new_software_clicked(self):
@@ -161,6 +174,7 @@ class Designer(LJDialog):
             self.software_combo.setCurrentIndex(num)
 
     def save_menus(self):
+        print 'test'
         menu_dict = {}
         for mi in range(self.menus.count()):
             menu_name = self.menus.tabText(mi)
@@ -189,6 +203,7 @@ class Designer(LJDialog):
         self.save_json(self.menu_path, json_object)
 
     def save_code(self, menu_name, button_widget):
+        print 'Saving Code now'
         button_name = button_widget.name
         code = button_widget.code_text_edit.document().toPlainText()
         button_file = os.path.join(self.cgl_tools, self.software, self.type, menu_name,
@@ -236,7 +251,7 @@ class Designer(LJDialog):
             data = json.load(jsonfile)
         return data
 
-    def closeEvent(self):
+    def closeEvent(self, event):
         self.save_menus()
 
 
