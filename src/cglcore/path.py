@@ -5,7 +5,6 @@ import os
 import sys
 import re
 import shutil
-import time
 import copy
 import subprocess
 from cglcore.util import split_all, copy_file
