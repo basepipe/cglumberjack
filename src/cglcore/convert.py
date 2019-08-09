@@ -199,7 +199,7 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
         path_object_output = None
         output_dir = os.path.dirname(output)
     if not os.path.exists(output_dir):
-        CreateProductionData(path_object=output_dir, project_management=False)
+        CreateProductionData(path_object=output_dir, project_management='lumbermill')
     if path_object.file_type == 'sequence':
         # replace ### with "*"
         if '##' in sequence:

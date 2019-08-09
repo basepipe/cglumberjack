@@ -773,9 +773,9 @@ class CreateProductionData(object):
             path_ = path_object.path_root.split('*')[0]
         else:
             path_ = path_object.path_root
-        if path_object.ext:
-            if os.path.splitext(path_):
-                path_ = os.path.dirname(path_)
+        print path_, 1
+        if path_object.filename:
+            path_ = os.path.dirname(path_)
         # at this stage we're making path_
         logging.info('Creating %s Directory: %s' % (path_object.context, path_))
         if not test:
@@ -786,11 +786,12 @@ class CreateProductionData(object):
 
     def create_project_management_data(self, path_object, project_management):
         if project_management != 'lumbermill':
-            module = "plugins.project_management.%s.main" % project_management
-            # noinspection PyTypeChecker
-            loaded_module = __import__(module, globals(), locals(), 'main', -1)
-            loaded_module.ProjectManagementData(path_object,
-                                                user_email=self.proj_management_user).create_project_management_data()
+            if path_object.project:
+                module = "plugins.project_management.%s.main" % project_management
+                # noinspection PyTypeChecker
+                loaded_module = __import__(module, globals(), locals(), 'main', -1)
+                loaded_module.ProjectManagementData(path_object,
+                                                    user_email=self.proj_management_user).create_project_management_data()
         else:
             logging.debug('Using Lumbermill built in proj management')
 

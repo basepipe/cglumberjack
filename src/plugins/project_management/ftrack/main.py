@@ -274,6 +274,8 @@ class ProjectManagementData(object):
 
         self.task_asset = self.find_task_asset()
         if not self.task_asset:
+            name = '%s_%s' % (self.task, self.version.split('.')[0])
+            print name
             self.task_asset = self.ftrack.create('Asset', {
                 'name': self.version,
                 'type': asset_type,
@@ -284,7 +286,7 @@ class ProjectManagementData(object):
         if not self.version_data:
             self.version_data = self.ftrack.create('AssetVersion', {
                 'asset': self.task_asset,
-                'task': self.task_data
+                'task': self.task_asset['parent'],
             })
             logging.info('Creating FTRACK Version %s for: %s' % (self.version, self.task_name))
         else:
@@ -293,7 +295,6 @@ class ProjectManagementData(object):
 
     def create_component(self):
         from cglcore.path import lj_list_dir, prep_seq_delimiter
-
         # format to ftrack specs: {head}{padding}{tail} [{ranges}] eg: /path/to/file.%04d.ext [1-5, 7, 8, 10-20]
         if self.path_object.filename != '*.':
             if self.path_object.file_type:
@@ -307,6 +308,7 @@ class ProjectManagementData(object):
                     self.version_data.create_component(path=ftrack_path, data={'name': self.resolution})
                 else:
                     print 'FTRACK components not prepared for %s' % self.path_object.file_type
+                self.upload_media()
 
     def upload_media(self):
         if os.path.exists(self.preview_path_full):
@@ -353,6 +355,7 @@ class ProjectManagementData(object):
             thumb_component.session.commit()
             self.add_to_dailies()
         else:
+            print 'potential to create previews here.'
             logging.info('No Preview Image or Movie found to upload! %s' % self.preview_path_full)
 
     def create_review_session(self):
@@ -409,7 +412,7 @@ class ProjectManagementData(object):
 
     def find_task_asset(self):
         task_asset = self.ftrack.query('Asset where name is "{0}" and '
-                                       'parent.id is "{1}"'.format(self.version, self.entity_data['id']))
+                                       'parent.id is "{1}"'.format(self.filename, self.entity_data['id']))
         if len(task_asset) > 0:
             return task_asset[0]
         else:
