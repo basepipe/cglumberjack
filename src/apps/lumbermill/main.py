@@ -9,7 +9,7 @@ from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog, InputDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange, start_url
-from cglcore.path import CreateProductionData
+from cglcore.path import CreateProductionData, image_path
 from cglui.widgets.progress_gif import ProgressDialog
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
@@ -670,14 +670,14 @@ def sleeper():
 if __name__ == "__main__":
     from cglui.startup import do_gui_init
     app = do_gui_init()
-    # splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
-    splash_dialog = ProgressDialog('Loading...', 'night_rider.gif')
-    splash_dialog.show()
+    splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
+    #splash_dialog = ProgressDialog('Loading...', 'night_rider.gif')
+    #splash_pix.show()
     QtWidgets.qApp.processEvents()
 
-    # splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
-    # splash.setMask(splash_pix.mask())
-    # splash.show()
+    splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+    splash.setMask(splash_pix.mask())
+    splash.show()
 
     td = CGLumberjack(show_import=False)
 
@@ -686,7 +686,7 @@ if __name__ == "__main__":
     # # setup stylesheet
     style_sheet = load_style_sheet()
     app.setStyleSheet(style_sheet)
-    # splash.finish(td)
-    splash_dialog.hide()
+    splash.finish(td)
+    # splash_dialog.hide()
     app.exec_()
 

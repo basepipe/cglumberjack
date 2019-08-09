@@ -1,0 +1,12 @@
+{
+    "ingest": {
+        "test_menu": {
+            "order": 1, 
+            "this_button": {
+                "label": "this_button", 
+                "module": "import cgl_tools.ingest.menus.test_menu.this_button as this_button; this_button.run()", 
+                "order": 1
+            }
+        }
+    }
+}

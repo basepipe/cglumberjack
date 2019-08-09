@@ -2,6 +2,7 @@ import os
 from Qt import QtWidgets, QtCore
 from cglui.widgets.dialog import InputDialog
 from cglcore.path import start
+from cglui.widgets.text import Highlighter
 
 
 GUI_DICT = {'shelves.yaml': ['button name', 'command', 'icon', 'order', 'annotation', 'label'],
@@ -48,6 +49,7 @@ class LJTabWidget(QtWidgets.QTabWidget):
 
 
 class PreflightStep(QtWidgets.QWidget):
+    save_clicked = QtCore.Signal()
 
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path=''):
         QtWidgets.QWidget.__init__(self, parent)
@@ -81,14 +83,16 @@ class PreflightStep(QtWidgets.QWidget):
         # tool buttons
         delete_button = QtWidgets.QPushButton('Delete')
         delete_button.setProperty('class', 'basic')
-        open_button = QtWidgets.QPushButton('Open')
+        open_button = QtWidgets.QPushButton('Open in Editor')
         open_button.setProperty('class', 'basic')
+        self.save_button = QtWidgets.QPushButton('Save Shelves')
+        self.save_button.setProperty('class', 'basic')
 
         # Text Edit
         self.code_text_edit = QtWidgets.QPlainTextEdit()
         metrics = QtWidgets.QFontMetrics(self.code_text_edit.font())
         self.code_text_edit.setTabStopWidth(4 * metrics.width(' '))
-
+        Highlighter(self.code_text_edit.document())
         # Layout the Grid
         grid_layout.addWidget(required_label, 2, 0)
         grid_layout.addWidget(self.required_line_edit, 2, 1)
@@ -101,6 +105,7 @@ class PreflightStep(QtWidgets.QWidget):
         tool_row.addStretch(1)
         tool_row.addWidget(open_button)
         tool_row.addWidget(delete_button)
+        tool_row.addWidget(self.save_button)
 
         # layout the widget
         layout.addLayout(grid_layout)
@@ -111,8 +116,13 @@ class PreflightStep(QtWidgets.QWidget):
         self.code_text_edit.textChanged.connect(self.on_code_changed)
         delete_button.clicked.connect(self.on_delete_clicked)
         open_button.clicked.connect(self.on_open_clicked)
+        self.save_button.clicked.connect(self.on_save_clicked)
         self.load_attrs()
         self.label_line_edit.textChanged.connect(self.on_code_changed)
+
+    def on_save_clicked(self):
+        print 1
+        self.save_clicked.emit()
 
     def on_open_clicked(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
@@ -297,6 +307,7 @@ class MenuButton(QtWidgets.QWidget):
 
 
 class CGLMenu(QtWidgets.QWidget):
+    save_clicked = QtCore.Signal()
 
     def __init__(self, parent=None, software=None, menu_type='menu', menu_name='', menu=None, menu_path=''):
         QtWidgets.QWidget.__init__(self, parent)
@@ -307,6 +318,7 @@ class CGLMenu(QtWidgets.QWidget):
         self.menu = menu
         self.menu_name = menu_name
         self.menu_path = menu_path
+        self.new_button_widget = None
 
         # create layouts
         layout = QtWidgets.QVBoxLayout(self)
@@ -373,9 +385,9 @@ class CGLMenu(QtWidgets.QWidget):
                 attrs = {'button name': button_name,
                          'label': button_name,
                          'command': command}
-                new_button_widget = MenuButton(menu_name=self.menu_name, button_name=button_name,
-                                               attrs=attrs, menu_path=self.menu_path)
-                index = self.buttons.addTab(new_button_widget, button_name)
+                self.new_button_widget = MenuButton(menu_name=self.menu_name, button_name=button_name,
+                                                    attrs=attrs, menu_path=self.menu_path)
+                index = self.buttons.addTab(self.new_button_widget, button_name)
                 self.buttons.setCurrentIndex(index)
         elif self.type == 'preflights':
             dialog = InputDialog(title='Add Preflight Step', message='Enter a Name for your Preflight Step',
@@ -388,10 +400,11 @@ class CGLMenu(QtWidgets.QWidget):
                 attrs = {'label': preflight_name,
                          'required': 'True',
                          'module': module}
-                new_button_widget = PreflightStep(parent=self.buttons, preflight_name=self.menu_name,
-                                                  preflight_step_name=dialog.line_edit.text(),
-                                                  attrs=attrs, preflight_path=self.menu_path)
-                index = self.buttons.addTab(new_button_widget, preflight_name)
+                self.new_button_widget = PreflightStep(parent=self.buttons, preflight_name=self.menu_name,
+                                                       preflight_step_name=dialog.line_edit.text(),
+                                                       attrs=attrs, preflight_path=self.menu_path)
+                self.new_button_widget.save_clicked.connect(self.on_save_clicked)
+                index = self.buttons.addTab(self.new_button_widget, preflight_name)
                 self.buttons.setCurrentIndex(index)
         elif self.type == 'shelves':
             dialog = InputDialog(title='Add Shelf Button', message='Enter a Name for your Button',
@@ -405,10 +418,15 @@ class CGLMenu(QtWidgets.QWidget):
                          'label': button_name,
                          'command': command,
                          'icon': ''}
-                new_button_widget = MenuButton(menu_name=self.menu_name, button_name=button_name,
-                                               attrs=attrs, menu_path=self.menu_path, icon=True)
-                index = self.buttons.addTab(new_button_widget, button_name)
+                self.new_button_widget = MenuButton(menu_name=self.menu_name, button_name=button_name,
+                                                    attrs=attrs, menu_path=self.menu_path, icon=True)
+                self.new_button_widget.save_clicked.connect(self.on_save_clicked)
+                index = self.buttons.addTab(self.new_button_widget, button_name)
                 self.buttons.setCurrentIndex(index)
+
+    def on_save_clicked(self):
+        print 2
+        self.save_clicked.emit()
 
     def get_command_text(self, button_name, menu_type):
         return 'import cgl_tools.%s.%s.%s.%s as %s; %s.run()' % (self.software, menu_type, self.menu_name, button_name,

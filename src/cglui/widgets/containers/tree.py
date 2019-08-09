@@ -54,7 +54,7 @@ class LJTreeWidget(QtWidgets.QTreeView):
     dropped = QtCore.Signal(object)
     header_labels = []
 
-    def __init__(self, parent, parents):
+    def __init__(self, parent=None, parents=None):
         QtWidgets.QTreeView.__init__(self, parent)
         StateSavers.remember_me(self)
 
