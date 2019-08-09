@@ -112,8 +112,3 @@ class AdvComboBox(QtWidgets.QComboBox):
                 obj_list.append(str(key))
         for item in obj_list:
             self.addItem(item)
-
-    @staticmethod
-    def findText(text):
-        print 'Find Text Not Defined!!! %s' % text
-        return text

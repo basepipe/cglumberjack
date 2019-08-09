@@ -219,10 +219,7 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
             this_ = os.path.splitext(output)[0]
             fileout = this_+'.jpg'
         command = '%s %s -resize %s %s' % (config['magick'], sequence, res, fileout)
-    print 1
-    print command
     _execute(command)
-    print 2
     return fileout
 
 
@@ -279,7 +276,6 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
 
     if output:
         if path_object.file_type == 'sequence':
-            print '1111111111111', sequence
             start_frame, _, end_frame = get_first_frame(sequence)
             input_file = prep_seq_delimiter(sequence, replace_with='%')
             output_file = output
@@ -288,7 +284,6 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
         else:
             print('Nothing defined for %s' % path_object.file_type)
     else:
-        print 'Making webMov'
         web_path_object = PathObject(sequence).copy(resolution='webMov')
         CreateProductionData(web_path_object, project_management='lumbermill')
         output_file = web_path_object.path_root
@@ -341,16 +336,6 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
         _execute(ffmpeg_cmd)
         create_movie_thumb(sequence)
 
-    # if project_management == 'ftrack':
-    #     from plugins.project_management.ftrack.main import ProjectManagementData
-    #     metadata = {'frameIn': start_frame,
-    #                 'frameOut': end_frame,
-    #                 'frameRate': frame_rate
-    #                 }
-    #     logging.info('Uploading %s to ftrack' % web_path_object.path_root)
-    #     ProjectManagementData(path_object=web_path_object).create_project_management_data(review=True,
-    #                                                                                       metadata=metadata)
-
     return output_file
 
 
@@ -382,7 +367,6 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True)
 
     else:
         if get_file_type(input_file) == 'sequence':
-            print 'input_file', input_file
             first_frame, middle_frame, end_frame = get_first_frame(input_file)
             if frame == 'middle':
                 input_file = middle_frame
@@ -477,7 +461,7 @@ def make_animated_gif(input_file):
     print command
     p = subprocess.Popen([config['ffmpeg'], '-i', input_file, '-vf', "%s,palettegen" % filters, '-y', palette],
                          stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
-    print p.stdout.readline(),  # read the first line
+    print p.stdout.readline()  # read the first line
     for i in range(10):  # repeat several times to show that it works
         print >> p.stdin, i  # write input
         p.stdin.flush()  # not necessary in this case
