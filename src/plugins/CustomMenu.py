@@ -1,5 +1,4 @@
 import os
-import sys
 import json
 from cglcore.path import PathObject, get_cgl_tools
 
