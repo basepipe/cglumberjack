@@ -127,13 +127,13 @@ class PreflightStep(QtWidgets.QWidget):
         self.save_clicked.emit()
 
     def on_open_clicked(self):
-        code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
+        code_path = os.path.join(os.path.dirname(self.preflight_path), self.menu_type, self.preflight_name,
                                  '%s.py' % self.name)
         print code_path
         start(code_path)
 
     def on_code_changed(self):
-        code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
+        code_path = os.path.join(os.path.dirname(self.preflight_path), self.menu_type, self.preflight_name,
                                  '%s.py' % self.name)
         print code_path
         self.do_save = True
@@ -152,7 +152,7 @@ class PreflightStep(QtWidgets.QWidget):
             self.code_text_edit.setPlainText(code_text)
 
     def load_code_text(self):
-        code_path = os.path.join(os.path.dirname(self.preflight_path), 'preflights', self.preflight_name,
+        code_path = os.path.join(os.path.dirname(self.preflight_path), self.menu_type, self.preflight_name,
                                  '%s.py' % self.name)
         if os.path.exists(code_path):
             try:
@@ -163,18 +163,21 @@ class PreflightStep(QtWidgets.QWidget):
             return None
 
     def load_default_text(self):
-        preflight = "from plugins.preflight.preflight_check import PreflightCheck\n" \
-                    "\n\n" \
-                    "class %s(PreflightCheck):\n" \
-                    "\n" \
-                    "    def getName(self):\n" \
-                    "        pass\n" \
-                    "\n" \
-                    "    def run(self):\n" \
-                    "        print '%s'\n" \
-                    "        # self.pass_check('Check Passed')\n" \
-                    "        # self.fail_check('Check Failed')\n\n" % (self.name, self.name)
-        return preflight
+        if self.menu_type == 'preflight':
+            preflight = "from plugins.preflight.preflight_check import PreflightCheck\n" \
+                        "\n\n" \
+                        "class %s(PreflightCheck):\n" \
+                        "\n" \
+                        "    def getName(self):\n" \
+                        "        pass\n" \
+                        "\n" \
+                        "    def run(self):\n" \
+                        "        print '%s'\n" \
+                        "        # self.pass_check('Check Passed')\n" \
+                        "        # self.fail_check('Check Failed')\n\n" % (self.name, self.name)
+            return preflight
+        else:
+            return "def run():\n    print(\"hello world: %s\")" % self.name
 
     def on_delete_clicked(self):
         self.parent.removeTab(self.parent.currentIndex())
@@ -188,6 +191,14 @@ class CGLMenu(QtWidgets.QWidget):
 
         # initialize variables
         self.menu_type = menu_type
+        if self.menu_type == 'shelves':
+            self.singular = 'shelf'
+        elif self.menu_type == 'menus':
+            self.singular = 'menu'
+        elif self.menu_type == 'preflights':
+            self.singular = 'preflight'
+        else:
+            self.singluar = 'not defined'
         self.software = software
         self.menu = menu
         self.menu_name = menu_name
@@ -216,7 +227,7 @@ class CGLMenu(QtWidgets.QWidget):
             self.add_button = QtWidgets.QPushButton('add preflight step')
             self.delete_parent_button = QtWidgets.QPushButton('Delete Preflight')
         else:
-            self.add_button = QtWidgets.QPushButton('add %s button' % self.menu_type)
+            self.add_button = QtWidgets.QPushButton('add %s button' % self.singular)
             self.delete_parent_button = QtWidgets.QPushButton('Delete Menu')
         self.add_button.setProperty('class', 'add_button')
         self.delete_parent_button.setProperty('class', 'add_button')
@@ -249,7 +260,16 @@ class CGLMenu(QtWidgets.QWidget):
 
     def on_add_menu_button(self):
         print self.menu_path, 'is path'
-        dialog = InputDialog(title='Add Preflight Step', message='Enter a Name for your Preflight Step',
+        if self.menu_type == 'preflights':
+            title_ = 'Add Preflight Step'
+            message = 'Enter a Name for your Preflight Step'
+        elif self.menu_type == 'menus':
+            title_ = 'Add Menu'
+            message = 'Enter a Name for your Menu Button'
+        elif self.menu_type == 'shelves':
+            title_ = 'Add Shelf'
+            message = 'Enter a Name for your shelf button'
+        dialog = InputDialog(title=title_, message=message,
                              line_edit=True, regex='[a-zA-Z]{3,}',
                              name_example='Ideally Preflights are CamelCase - ExamplePreflightName')
         dialog.exec_()
