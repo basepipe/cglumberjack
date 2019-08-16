@@ -1,4 +1,5 @@
 from plugins.CustomMenu import CustomMenu
+from cglcore.config import app_config
 import nuke
 
 
@@ -13,6 +14,11 @@ class NukeCustomMenu(CustomMenu):
         return nuke.root().name()
 
     def create_menu(self, name):
+        # import os
+        # import sys
+        # source_dir = os.path.join(app_config()['paths']['cgl_tools'])
+        # source_dir = os.path.dirname(source_dir)
+        # sys.path.insert(0, source_dir)
         return self.menu_parent.addMenu("%s" % name)
 
     def set_menu_parent(self):
