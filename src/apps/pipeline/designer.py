@@ -45,8 +45,10 @@ class Designer(LJDialog):
         self.menus.setMovable(True)
         self.title_label = QtWidgets.QLabel()
         self.title_label.setProperty('class', 'ultra_title')
+        print self.type, '98888888888'
         if self.type == 'menus':
             self.add_menu_button = QtWidgets.QPushButton('add menu')
+            self.delete_menu_button = QtWidgets.QPushButton('delete preflight')
         elif self.type == 'preflights':
             self.add_menu_button = QtWidgets.QPushButton('add preflight')
             self.delete_menu_button = QtWidgets.QPushButton('delete preflight')
@@ -54,14 +56,14 @@ class Designer(LJDialog):
             self.add_menu_button = QtWidgets.QPushButton('add %s' % self.type)
             self.delete_menu_button = QtWidgets.QPushButton('delete %s' % self.type)
         self.add_menu_button.setProperty('class', 'add_button')
-        self.delete_menu_button.setProperty('class', 'add_button')
+
         # self.save_menu_button = QtWidgets.QPushButton('save menu')
         # self.save_menu_button.setProperty('class', 'add_button')
         self.title_widget.hide()
         # layout the GUI
         title_widget_layout.addWidget(self.title_label)
         title_widget_layout.addWidget(self.add_menu_button)
-        title_widget_layout.addWidget(self.delete_menu_button)
+        # title_widget_layout.addWidget(self.delete_menu_button)
         title_widget_layout.addStretch(1)
         # title_widget_layout.addWidget(self.save_menu_button)
         grid_layout.addWidget(self.software_label, 0, 0)
@@ -174,7 +176,6 @@ class Designer(LJDialog):
             self.software_combo.setCurrentIndex(num)
 
     def save_menus(self):
-        print 'test'
         menu_dict = {}
         for mi in range(self.menus.count()):
             menu_name = self.menus.tabText(mi)

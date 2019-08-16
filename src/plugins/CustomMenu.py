@@ -140,27 +140,27 @@ class CustomMenu(object):
 
     def add_menu_buttons(self, menu, buttons):
         for button in buttons:
-            label = self.menus[menu][button]['button name']
+            label = self.menus[menu][button]['label']
             try:
                 icon_file = self.get_icon_path(menu, button)
                 if icon_file:
                     label = ''
-                self.add_button(menu, label=self.menus[menu][button]['button name'],
+                self.add_button(menu, label=self.menus[menu][button]['label'],
                                 annotation=self.menus[menu][button]['annotation'],
-                                command=self.menus[menu][button]['command'],
+                                command=self.menus[menu][button]['module'],
                                 icon=icon_file,
                                 image_overlay_label=label)
             except KeyError:
-                self.add_button(menu, label=self.menus[menu][button]['button name'],
-                                command=self.menus[menu][button]['command'])
+                self.add_button(menu, label=self.menus[menu][button]['label'],
+                                command=self.menus[menu][button]['module'])
 
     def load_menus(self):
         self.delete_menus()
-        tools_root = os.path.dirname(get_cgl_tools())
-        for each in self.menus:
-            print '%s: adding %s to the PATH ' % (each, tools_root)
-            if tools_root not in sys.path:
-                sys.path.insert(0, tools_root)
+        # tools_root = os.path.dirname(get_cgl_tools())
+        # for each in self.menus:
+        #     print '%s: adding %s to the PATH ' % (each, tools_root)
+        #     if tools_root not in sys.path:
+        #         sys.path.insert(0, tools_root)
         try:
             menus = self.remove_inactive_menus()
         except KeyError:
