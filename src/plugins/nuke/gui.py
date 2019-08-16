@@ -28,7 +28,7 @@ class NukeBrowserWidget(CGLumberjackWidget):
 
 class CGLNuke(CGLumberjack):
     def __init__(self, parent, path=None):
-        super(CGLNuke, self, parent).__init__()
+        CGLumberjack.__init__(self, parent)
         print 'CGLNuke path is %s' % path
         self.setCentralWidget(NukeBrowserWidget(self, show_import=True))
 
@@ -114,7 +114,7 @@ def launch():
     scene_name = cglnuke.get_file_name()
     if scene_name == 'Root':
         print 'Lumbermill can not determine project, please launch files from the lumbermill browser'
-        return
+        location = ''
     else:
         scene = PathObject(scene_name)
         location = '%s/*' % scene.split_after('shot')
