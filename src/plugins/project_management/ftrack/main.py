@@ -4,7 +4,7 @@ import datetime
 import os
 import json
 import ftrack_api
-from cglcore.config import app_config
+from cglcore.config import app_config, UserConfig
 from cglcore.path import create_previews
 
 
@@ -73,11 +73,9 @@ class ProjectManagementData(object):
                 return
         else:
             print 'User email pre-set %s' % self.user_email
-
-        if not self.project:
-            logging.debug('No Project Defined')
-            return
-
+        # if not self.project:
+        #     logging.debug('No Project Defined')
+        #     return
         if not self.project_short_name:
             self.project_short_name = self.project
 
@@ -93,7 +91,6 @@ class ProjectManagementData(object):
             self.user = None
         if self.task == '*':
             self.task = None
-
         self.ftrack = ftrack_api.Session(server_url=self.server_url, api_key=self.api_key, api_user=self.api_user)
         self.project_schema = self.ftrack.query('ProjectSchema where name is %s' % self.schema).first()
         # Retrieve default types.
@@ -333,8 +330,6 @@ class ProjectManagementData(object):
         thumb_component.session.commit()
         self.add_to_dailies()
 
-
-
     def create_review_session(self):
         self.ftrack.create('ReviewSession', {
             'name': 'Dailies %s' % datetime.date.today(),
@@ -461,9 +456,11 @@ class ProjectManagementData(object):
                     user = membership['user']
                     self.project_team.add(user)
 
-    def find_user(self):
+    def find_user(self, user):
+        if not user:
+            user = self.user_email
         if not self.user_data:
-            self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).first()
+            self.user_data = self.ftrack.query('User where username is "{}"'.format(user)).first()
         self.add_user_to_project()
         return self.user_data
 
@@ -535,6 +532,61 @@ class ProjectManagementData(object):
                      r'%s&controller=widget' % (self.server_url, playlist)
         webbrowser.open(url_string)
         print url_string
+
+
+def find_user_assignments(path_object, user_email, force=False):
+    from cglcore.path import PathObject
+    company = path_object.company
+    project = path_object.project
+    # load whatever is in the user globals:
+    my_tasks = UserConfig().d['my_tasks']
+    try:
+        return my_tasks[company][project]
+    except KeyError:
+        server_url = app_config()['project_management']['ftrack']['api']['server_url']
+        api_key = app_config()['project_management']['ftrack']['api']['api_key']
+        api_user = app_config()['project_management']['ftrack']['api']['api_user']
+        schema = app_config()['project_management']['ftrack']['api']['default_schema']
+        long_to_short = app_config()['project_management']['ftrack']['tasks'][schema]['long_to_short']
+        print long_to_short
+        session = ftrack_api.Session(server_url=server_url, api_key=api_key, api_user=api_user)
+        project_name = project
+        user = user_email
+        project_data = session.query('Project where status is active and name is %s' % project_name).first()
+        user_data = session.query('User where username is "{}"'.format(user)).first()
+        project_tasks = session.query(
+            'select name, type.name, parent.name, status.name, assignments.resource from Task where project.id is %s' % project_data['id'])
+        data = []
+        if not my_tasks:
+            my_tasks = {company: {project: {}}}
+        else:
+            my_tasks[company][project] = {}
+        for p in project_tasks:
+            seq = ''
+            shot_ = ''
+            for i, each in enumerate(p['assignments']):
+                if p['assignments'][i]['resource'] == user_data:
+                    if 'AssetBuild' in str(type(p['parent'])):
+                        scope = 'assets'
+                        seq = 'default'
+                    else:
+                        scope = 'shots'
+                    task_type = long_to_short[scope][p['type']['name']]
+                    if '_' in p['parent']['name']:
+                        seq, shot_ = p['parent']['name'].split('_')
+                    my_tasks[company][project][p['name']] = {}
+                    my_tasks[company][project][p['name']]['seq'] = seq
+                    my_tasks[company][project][p['name']]['shot_name'] = p['parent']['name']
+                    my_tasks[company][project][p['name']]['filepath'] = PathObject(path_object).copy(scope=scope,
+                                                                                                     seq=seq,
+                                                                                                     shot=shot_,
+                                                                                                     task=task_type).path_root
+                    my_tasks[company][project][p['name']]['task_type'] = task_type
+                    my_tasks[company][project][p['name']]['status'] = p['status']['name']
+                    my_tasks[company][project][p['name']]['due_date'] = ''
+        session.close()
+        UserConfig(my_tasks=my_tasks).update_all()
+        return my_tasks[company][project]
 
 
 if __name__ == "__main__":

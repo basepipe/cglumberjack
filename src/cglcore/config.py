@@ -97,10 +97,14 @@ class Configuration(object):
 class UserConfig(object):
     user_config_path = Configuration().user_config
 
-    def __init__(self, user_email=None, user_name=None, current_path=None):
+    def __init__(self, user_email=None, user_name=None, current_path=None, my_tasks=None):
         if os.path.exists(self.user_config_path):
             self.d = self._load_json(self.user_config_path)
         self.current_path = current_path
+        if my_tasks:
+            self.my_tasks = my_tasks
+        else:
+            self.my_tasks = self.d['my_tasks']
         if user_email:
             self.user_email = user_email
         else:
@@ -114,8 +118,14 @@ class UserConfig(object):
         self.update_path()
         self.update_user_email()
         self.update_user_name()
-        self.update_company()
+        self.update_my_tasks()
         self._write_json(self.d)
+
+    def update_my_tasks(self):
+        if self.my_tasks:
+            self.d['my_tasks'] = self.my_tasks
+        else:
+            self.d['my_tasks'] = {}
 
     def update_path(self):
         if self.current_path:

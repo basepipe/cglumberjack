@@ -59,6 +59,8 @@ class PathWidget(QtWidgets.QFrame):
 
 class NavigationWidget(QtWidgets.QFrame):
     location_changed = QtCore.Signal(object)
+    my_tasks_clicked = QtCore.Signal()
+    ingest_button_clicked = QtCore.Signal()
 
     def __init__(self, parent=None, path_object=None):
         QtWidgets.QFrame.__init__(self, parent)
@@ -67,6 +69,20 @@ class NavigationWidget(QtWidgets.QFrame):
         else:
             return
         self.setProperty('class', 'light_grey')
+        self.my_tasks_button = QtWidgets.QPushButton()
+        self.my_tasks_button.setToolTip('My Tasks')
+        tasks_icon = os.path.join(icon_path(), 'star-full.png')
+        self.my_tasks_button.setProperty('class', 'grey_border')
+        self.my_tasks_button.setIcon(QtGui.QIcon(tasks_icon))
+        self.my_tasks_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
+
+        self.ingest_button = QtWidgets.QPushButton()
+        self.ingest_button.setToolTip('My Tasks')
+        ingest_icon = os.path.join(icon_path(), 'ingest24px.png')
+        self.ingest_button.setProperty('class', 'grey_border')
+        self.ingest_button.setIcon(QtGui.QIcon(ingest_icon))
+        self.ingest_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
+
         self.back_button = QtWidgets.QPushButton()
         self.back_button.setToolTip('Go back')
         self.projects_button = QtWidgets.QPushButton()
@@ -75,15 +91,18 @@ class NavigationWidget(QtWidgets.QFrame):
         self.companies_button.setToolTip('Go to Companies')
         self.shots_button = QtWidgets.QPushButton()
         self.shots_button.setToolTip('Go to Shots')
+        self.my_tasks_button.setProperty('class', 'grey_border')
         self.back_button.setStyleSheet("background: transparent;")
         self.projects_button.setStyleSheet("background: transparent;")
         self.companies_button.setStyleSheet("background: transparent;")
         self.shots_button.setStyleSheet("background: transparent;")
+
         back_icon = os.path.join(icon_path(), 'back24px.png')
         home_icon = os.path.join(icon_path(), 'project24px.png')
         company_icon = os.path.join(icon_path(), 'company24px.png')
         self.shots_icon = os.path.join(icon_path(), 'shots24px.png')
         self.assets_icon = os.path.join(icon_path(), 'flower_40px.png')
+
         self.back_button.setIcon(QtGui.QIcon(back_icon))
         self.back_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
         self.companies_button.setIcon(QtGui.QIcon(company_icon))
@@ -100,17 +119,20 @@ class NavigationWidget(QtWidgets.QFrame):
 
         layout = QtWidgets.QVBoxLayout(self)
         self.cl_row = QtWidgets.QHBoxLayout()
-
         self.cl_row.addWidget(self.back_button)
         self.cl_row.addWidget(self.companies_button)
         self.cl_row.addWidget(self.projects_button)
         self.cl_row.addWidget(self.shots_button)
         self.cl_row.addWidget(self.search_box)
-        self.cl_row.addStretch(1)
+        self.cl_row.addWidget(self.my_tasks_button)
+        self.cl_row.addWidget(self.ingest_button)
+        #self.cl_row.addStretch(1)
 
         layout.addLayout(self.cl_row)
         layout.addWidget(self.current_location_line_edit)
 
+        self.my_tasks_button.clicked.connect(self.my_tasks_pressed)
+        self.ingest_button.clicked.connect(self.ingest_clicked)
         self.back_button.clicked.connect(self.back_button_pressed)
         self.companies_button.clicked.connect(self.buttons_pressed)
         self.projects_button.clicked.connect(self.buttons_pressed)
@@ -185,6 +207,17 @@ class NavigationWidget(QtWidgets.QFrame):
                                              self.path_object.scope)
         new_obj = PathObject(path)
         self.location_changed.emit(new_obj)
+
+    def my_tasks_pressed(self):
+        self.my_tasks_clicked.emit()
+
+    def ingest_clicked(self):
+        if self.path_object.project and self.path_object.company and self.path_object.project != '*':
+            self.path_object = self.path_object.copy(seq=None, shot=None, ingest_source=None, resolution='', version='',
+                                                     user=None, scope='IO')
+            self.location_changed.emit(self.path_object)
+        else:
+            print 'Please Choose a Company and a Project before pushing the ingest button'
 
     def back_button_pressed(self):
         path_object = PathObject(self.current_location_line_edit.text())
@@ -324,12 +357,20 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path_widget.update_path(path_object=self.path_object)
 
         self.nav_widget.location_changed.connect(self.update_location)
+        self.nav_widget.my_tasks_clicked.connect(self.show_my_tasks)
         self.nav_widget.location_changed.connect(self.path_widget.update_path)
         self.layout.addWidget(self.nav_widget)
 
         self.update_location(self.path_object)
 
+    def show_my_tasks(self):
+        self.path_object.set_attr(scope='shots', seq='*', shot=None, task=None)
+        self.path_object.data['my_tasks'] = True
+        self.path_widget.update_path(path_object=self.path_object)
+        self.update_location(self.path_object)
+
     def update_location(self, data):
+
         try:
             if self.sender().force_clear:
                 if self.panel:
@@ -362,7 +403,42 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         self.layout.addWidget(self.panel)
                         self.layout.addWidget(self.path_widget)
                     return
+        print 1
+        print path_object.path_root
+        if 'my_tasks' in path_object.data or last == 'scope':
 
+            go_ahead = False
+            if last == 'scope':
+                print 1.2
+                go_ahead = True
+            else:
+                print 1.3
+                if path_object.data['my_tasks']:
+                    print 1.4
+                    go_ahead = True
+            if go_ahead:
+                print 2
+                print 'Got "My Tasks"'
+                self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box,
+                                             my_tasks=True)
+                if self.panel:
+                    self.panel.location_changed.connect(self.update_location)
+                    self.panel.location_changed.connect(self.path_widget.update_path)
+                    self.layout.addWidget(self.panel)
+                    self.panel.assets.tasks_radio.setChecked(True)
+                    self.panel.load_tasks()
+                    to_delete = []
+                    for i in range(self.layout.count()):
+                        if i == 2:
+                            child = self.layout.takeAt(i - 1)
+                            to_delete.append(child)
+                    for each in to_delete:
+                        each.widget().deleteLater()
+                self.layout.addWidget(self.progress_bar)
+                self.layout.addWidget(self.path_widget)
+                self.path_object.data['my_tasks'] = False
+                return
+        print 3
         if last == 'filename':
             if self.panel:
                 # if we already have a panel, and we're getting a filename it means it's a currently selected file

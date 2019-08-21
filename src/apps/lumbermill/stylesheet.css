@@ -15,6 +15,12 @@ QLineEdit.medium_grey{
     height: 28px;
 }
 
+QPushButton.grey_border{
+    background-color: transparent;
+    border: 4px;
+    color: #383838;
+}
+
 QLineEdit.medium_grey_rounded{
     background-color: #A7A7A7;
     border: 0px;

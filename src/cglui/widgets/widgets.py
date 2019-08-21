@@ -522,18 +522,22 @@ class AssetWidget(QtWidgets.QWidget):
         # build the filter options row
         self.assets_radio = QtWidgets.QRadioButton('Assets')
         self.shots_radio = QtWidgets.QRadioButton('Shots')
+        self.tasks_radio = QtWidgets.QRadioButton('My Tasks')
         self.radio_group_scope = QtWidgets.QButtonGroup(self)
         self.radio_group_scope.addButton(self.shots_radio)
         self.radio_group_scope.addButton(self.assets_radio)
+        self.radio_group_scope.addButton(self.tasks_radio)
         self.shot_icon = QtWidgets.QLabel()
         self.shot_icon.setPixmap(self.shots_icon)
         self.asset_icon = QtWidgets.QLabel()
         self.asset_icon.setPixmap(self.assets_icon)
 
+        self.scope_layout.addWidget(self.tasks_radio)
         self.scope_layout.addWidget(self.shot_icon)
         self.scope_layout.addWidget(self.shots_radio)
         self.scope_layout.addWidget(self.asset_icon)
         self.scope_layout.addWidget(self.assets_radio)
+
         self.scope_layout.addStretch(1)
         self.scope_layout.addWidget(self.add_button)
 

@@ -163,7 +163,7 @@ class PreflightStep(QtWidgets.QWidget):
             return None
 
     def load_default_text(self):
-        if self.menu_type == 'preflight':
+        if self.menu_type == 'preflights':
             preflight = "from plugins.preflight.preflight_check import PreflightCheck\n" \
                         "\n\n" \
                         "class %s(PreflightCheck):\n" \

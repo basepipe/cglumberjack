@@ -60,6 +60,7 @@ class PathObject(object):
         self.task = None
         self.cam = None
         self.file_type = None
+        self.frame_padding = app_config()
         self.scope_list = app_config()['rules']['scope_list']
         self.context_list = app_config()['rules']['context_list']
         self.path = None  # string of the properly formatted path
@@ -70,6 +71,7 @@ class PathObject(object):
         self.end_frame = None
         self.frame_rate = None
         self.template = []
+        self.filename_template = []
         self.actual_resolution = None
         self.date_created = None
         self.date_modified = None
@@ -85,6 +87,7 @@ class PathObject(object):
         self.assigned = None
         self.priority = None
         self.ingest_source = '*'
+
 
         if isinstance(path_object, unicode):
             path_object = str(path_object)
