@@ -4,7 +4,7 @@ import datetime
 import os
 import json
 import ftrack_api
-from cglcore.config import app_config
+from cglcore.config import app_config, UserConfig
 from cglcore.path import create_previews
 
 
@@ -73,11 +73,9 @@ class ProjectManagementData(object):
                 return
         else:
             print 'User email pre-set %s' % self.user_email
-
-        if not self.project:
-            logging.debug('No Project Defined')
-            return
-
+        # if not self.project:
+        #     logging.debug('No Project Defined')
+        #     return
         if not self.project_short_name:
             self.project_short_name = self.project
 
@@ -93,7 +91,6 @@ class ProjectManagementData(object):
             self.user = None
         if self.task == '*':
             self.task = None
-
         self.ftrack = ftrack_api.Session(server_url=self.server_url, api_key=self.api_key, api_user=self.api_user)
         self.project_schema = self.ftrack.query('ProjectSchema where name is %s' % self.schema).first()
         # Retrieve default types.
@@ -112,10 +109,9 @@ class ProjectManagementData(object):
         for task in self.task_types:
             if task['name'] == full_name:
                 return task
-        logging.debug('Could Not Find a Task of %s' % task['name'])
         return None
 
-    def create_project_management_data(self, review=False):
+    def create_project_management_data(self):
         self.project_data = self.entity_exists('project')
         if not self.project_data:
             if self.project:
@@ -189,13 +185,7 @@ class ProjectManagementData(object):
                 data_ = data_[0]
         elif data_type == 'version':
             data_ = self.create_version()
-        try:
-            if data_:
-                logging.debug('Found %s: %s, No Need to Create' % (data_type, data_['name']))
-            return data_
-        except:
-            logging.debug('Did not find %s' % data_type)
-            return None
+        return data_
 
     def create_project(self):
         logging.info('Creating Ftrack Project %s' % self.project)
@@ -291,6 +281,8 @@ class ProjectManagementData(object):
             print self.path_object.preview_path_full, 'preview path'
             create_previews(path_object=self.path_root)
         server_location = self.ftrack.query('Location where name is "ftrack.server"').first()
+        thumb_component = ''
+        component = None
         if self.file_type == 'movie' or self.file_type == 'sequence':
             component = self.version_data.create_component(
                 path=self.path_object.preview_path_full,
@@ -333,12 +325,10 @@ class ProjectManagementData(object):
         thumb_component.session.commit()
         self.add_to_dailies()
 
-
-
     def create_review_session(self):
         self.ftrack.create('ReviewSession', {
             'name': 'Dailies %s' % datetime.date.today(),
-            'description': 'Review Session For Todays Data',
+            'description': "Review Session For Today's Data",
             'project': self.project_data
         })
 
@@ -421,7 +411,7 @@ class ProjectManagementData(object):
 
         else:
             logging.debug('User {} already in assigned to project {}'.format(self.user_data['username'],
-                                                                            self.project_data['name']))
+                                                                             self.project_data['name']))
 
     def find_project(self):
         self.project_data = self.ftrack.query('Project where status is active and name is %s' %
@@ -461,9 +451,11 @@ class ProjectManagementData(object):
                     user = membership['user']
                     self.project_team.add(user)
 
-    def find_user(self):
+    def find_user(self, user=None):
+        if not user:
+            user = self.user_email
         if not self.user_data:
-            self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).first()
+            self.user_data = self.ftrack.query('User where username is "{}"'.format(user)).first()
         self.add_user_to_project()
         return self.user_data
 
@@ -475,6 +467,20 @@ class ProjectManagementData(object):
     def find_version(self):
         self.version_data = self.ftrack.query('AssetVersion where asset_id is %s' % self.task_asset['id']).first()
         return self.version_data
+
+    def get_url(self):
+        print self.path_root
+        if self.task:
+            print 'task'
+            return self.get_task_url(self.project, self.seq, self.shot, self.task, view='shot')
+        if self.shot:
+            print 'shot'
+            return self.get_shot_url(self.project, self.seq, self.shot)
+        elif self.asset:
+            print 'asset not defined yet'
+        if self.project:
+            print 'project'
+            return self.get_proj_url(self.project)
 
     def get_proj_url(self, project):
         project = self.ftrack.query('Project where status is active and name is %s' % project).first()
@@ -497,7 +503,7 @@ class ProjectManagementData(object):
 
     def get_task_url(self, project, seq, shot, task, view):
         # TODO - change this to work with the local variables
-
+        task_string = None
         if view == 'seq':
             scope = self.ftrack.query('Sequence where name is %s and project.name is %s' % (seq, project)).first()
             scope_id = scope['id']
@@ -537,11 +543,67 @@ class ProjectManagementData(object):
         print url_string
 
 
+def find_user_assignments(path_object, user_email):
+    from cglcore.path import PathObject
+    company = path_object.company
+    project = path_object.project
+    # load whatever is in the user globals:
+    my_tasks = UserConfig().d['my_tasks']
+    try:
+        return my_tasks[company][project]
+    except KeyError:
+        server_url = app_config()['project_management']['ftrack']['api']['server_url']
+        api_key = app_config()['project_management']['ftrack']['api']['api_key']
+        api_user = app_config()['project_management']['ftrack']['api']['api_user']
+        schema = app_config()['project_management']['ftrack']['api']['default_schema']
+        long_to_short = app_config()['project_management']['ftrack']['tasks'][schema]['long_to_short']
+        session = ftrack_api.Session(server_url=server_url, api_key=api_key, api_user=api_user)
+        project_name = project
+        user = user_email
+        project_data = session.query('Project where status is active and name is %s' % project_name).first()
+        if project_data:
+            user_data = session.query('User where username is "{}"'.format(user)).first()
+            project_tasks = session.query('select name, type.name, parent.name, status.name, '
+                                          'assignments.resource from Task where project.id is %s' % project_data['id'])
+            if not my_tasks:
+                my_tasks = {company: {project: {}}}
+            else:
+                my_tasks[company][project] = {}
+            for p in project_tasks:
+                seq = ''
+                shot_ = ''
+                for i, _ in enumerate(p['assignments']):
+                    if p['assignments'][i]['resource'] == user_data:
+                        if 'AssetBuild' in str(type(p['parent'])):
+                            scope = 'assets'
+                            seq = 'prop'  # TODO This is not stable at the moment. Category for Assets isn't a thing
+                            shot_ = p['parent']['name']
+                        else:
+                            if '_' in p['parent']['name']:
+                                seq, shot_ = p['parent']['name'].split('_')
+                            scope = 'shots'
+                        task_type = long_to_short[scope][p['type']['name']]
+
+                        name_ = my_tasks[company][project][p['name']]
+
+                        my_tasks[company][project][p['name']] = {}
+                        name_['seq'] = seq
+                        name_['shot_name'] = p['parent']['name']
+                        name_['filepath'] = PathObject(path_object).copy(scope=scope, seq=seq, shot=shot_,
+                                                                         task=task_type).path_root
+                        my_tasks[company][project][p['name']]['task_type'] = task_type
+                        my_tasks[company][project][p['name']]['status'] = p['status']['name']
+                        my_tasks[company][project][p['name']]['due_date'] = ''
+            session.close()
+            UserConfig(my_tasks=my_tasks).update_all()
+            return my_tasks[company][project]
+        else:
+            return None
+
+
 if __name__ == "__main__":
     this = ProjectManagementData()
     this.create_project_management_data()
     this.ftrack.commit()
-    #this.upload_media()
-
 
 

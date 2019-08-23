@@ -2,7 +2,8 @@ from Qt import QtCore, QtWidgets
 import os
 import re
 import datetime
-from cglcore.config import app_config, user_config
+import getpass
+from cglcore.config import app_config, UserConfig
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.widgets import AdvComboBox
 from cglui.widgets.containers.table import LJTableWidget
@@ -22,7 +23,6 @@ class ItemTable(LJTableWidget):
     delete_item_signal = QtCore.Signal()
     rename_item_signal = QtCore.Signal()
     show_in_folder_signal = QtCore.Signal()
-    show_in_shotgun_signal = QtCore.Signal()
 
     def __init__(self, parent, title):
         LJTableWidget.__init__(self, parent)
@@ -31,8 +31,6 @@ class ItemTable(LJTableWidget):
         self.clicked.connect(self.row_selected)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.item_right_click_menu.create_action("Show in Folder", self.show_in_folder_signal)
-        self.item_right_click_menu.create_action("Show in Shotgun", self.show_in_shotgun_signal)
-        # self.item_right_click_menu.create_action("Delete", self.delete_item_signal)
         self.customContextMenuRequested.connect(self.item_right_click)
 
     def item_right_click(self, position):
@@ -100,7 +98,7 @@ class MagicList(LJDialog):
 
         self.data_table = LJTableWidget(self)
         self.data_table.set_item_model(FileTableModel([], [""]))
-        self.data_table.selected.connect(self.on_selected)
+        self.data_table.clicked.connect(self.on_selected)
 
         self.v_layout.addLayout(self.combo_row)
         self.v_layout.addWidget(self.data_table)
@@ -348,32 +346,33 @@ class LoginDialog(LJDialog):
 
     def __init__(self, parent=None):
         LJDialog.__init__(self, parent)
+        self.user_config = UserConfig().d
         self.user_name = ''
         self.user_email = ''
         self.company = ''
-        self.user_config = user_config()
         self.parent = parent
-        uname_layout = QtWidgets.QHBoxLayout()
-        email_layout = QtWidgets.QHBoxLayout()
-        company_layout = QtWidgets.QHBoxLayout()
-        self.uname_label = QtWidgets.QLabel('User Name:')
-        self.email_label = QtWidgets.QLabel('Email:')
-        self.company_label = QtWidgets.QLabel('Company:')
+        self.project_management = app_config()['account_info']['project_management']
+        grid_layout = QtWidgets.QGridLayout()
+        self.proj_management_label = QtWidgets.QLabel('Project Management:')
+        self.uname_label = QtWidgets.QLabel('%s User Name:' % self.project_management)
+        self.email_label = QtWidgets.QLabel('%s Email:' % self.project_management)
+        self.local_user_label = QtWidgets.QLabel('Local User:')
+
+        self.local_user_line_edit = QtWidgets.QLineEdit()
         self.uname_line_edit = QtWidgets.QLineEdit()
         self.email_line_edit = QtWidgets.QLineEdit()
         self.company_line_edit = QtWidgets.QLineEdit()
-        self.uname_line_edit.setMinimumWidth(160)
-        self.uname_line_edit.setMaximumWidth(160)
-        self.email_line_edit.setMaximumWidth(160)
-        self.email_line_edit.setMinimumWidth(160)
-        self.company_line_edit.setMaximumWidth(160)
-        self.company_line_edit.setMinimumWidth(160)
-        uname_layout.addWidget(self.uname_label)
-        uname_layout.addWidget(self.uname_line_edit)
-        email_layout.addWidget(self.email_label)
-        email_layout.addWidget(self.email_line_edit)
-        company_layout.addWidget(self.company_label)
-        company_layout.addWidget(self.company_line_edit)
+        self.proj_management_line_edit = QtWidgets.QLineEdit()
+
+        grid_layout.addWidget(self.proj_management_label, 0, 0)
+        grid_layout.addWidget(self.proj_management_line_edit, 0, 1)
+        grid_layout.addWidget(self.local_user_label, 1, 0)
+        grid_layout.addWidget(self.local_user_line_edit, 1, 1)
+        grid_layout.addWidget(self.uname_label, 2, 0)
+        grid_layout.addWidget(self.uname_line_edit, 2, 1)
+        grid_layout.addWidget(self.email_label, 3, 0)
+        grid_layout.addWidget(self.email_line_edit, 3, 1)
+
         buttons_layout = QtWidgets.QHBoxLayout()
         self.ok_button = QtWidgets.QPushButton('Ok')
         self.cancel_button = QtWidgets.QPushButton('Cancel')
@@ -384,25 +383,36 @@ class LoginDialog(LJDialog):
         self.ok_button.setEnabled(False)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(uname_layout)
-        layout.addLayout(email_layout)
-        layout.addLayout(company_layout)
+        layout.addLayout(grid_layout)
         layout.addLayout(buttons_layout)
         self.setLayout(layout)
-        self.setWindowTitle('Login')
+
+        self.setWindowTitle('Login Info')
         self.load_user_defaults()
 
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.ok_button.clicked.connect(self.on_ok_clicked)
         self.email_line_edit.textChanged.connect(self.on_text_changed)
         self.uname_line_edit.textChanged.connect(self.on_text_changed)
-        self.company_line_edit.textChanged.connect(self.on_text_changed)
+        self.load_user_config()
+        self.proj_management_line_edit.setEnabled(False)
+
+    def load_user_config(self):
+        self.email_line_edit.setText(self.user_config['proj_man_user_email'])
+        self.uname_line_edit.setText(self.user_config['proj_man_user_name'])
+        if not self.user_config['user_name']:
+            self.local_user_line_edit.setText(getpass.getuser())
+        else:
+            self.local_user_line_edit.setText(self.user_config['user_name'])
+        # TODO it'd be nice to have something here to denote if they're using the local user variable or not.
+        self.proj_management_line_edit.setText(self.project_management)
+        if self.project_management == 'ftrack':
+            self.uname_line_edit.hide()
+            self.uname_label.hide()
 
     def on_text_changed(self):
-        uname = self.uname_line_edit.text()
         email = self.email_line_edit.text()
-        company = self.company_line_edit.text()
-        if uname and email and company:
+        if email:
             self.ok_button.setEnabled(True)
         else:
             self.ok_button.setEnabled(False)
@@ -415,13 +425,19 @@ class LoginDialog(LJDialog):
         self.accept()
         print 'Cancel Clicked'
 
-    def load_user_defaults(self):
-        print('Adjust Load User Defaults to handle .json')
-        if os.path.exists(self.user_config):
-            print self.user_config
-
     @staticmethod
-    def save_user_defaults():
-        print('Adjust user defaults to save .json')
+    def load_user_defaults():
+        print('Adjust Load User Defaults to handle .json')
+        if os.path.exists(UserConfig().user_config_path):
+            print UserConfig().user_config_path
+
+    def save_user_defaults(self):
+        import json
+        path_ = UserConfig().user_config_path
+        self.user_config['proj_man_user_email'] = self.email_line_edit.text()
+        self.user_config['proj_man_user_name'] = self.uname_line_edit.text()
+        self.user_config['user_name'] = self.local_user_line_edit.text()
+        with open(path_, 'w') as outfile:
+            json.dump(self.user_config, outfile, indent=4, sort_keys=True)
 
 

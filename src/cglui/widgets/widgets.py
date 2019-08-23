@@ -5,6 +5,9 @@ from cglui.util import drop_handler, define_palettes
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
+from cglcore.config import app_config
+
+PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 
 
 class LJButton(QtWidgets.QPushButton):
@@ -486,6 +489,7 @@ class AssetWidget(QtWidgets.QWidget):
 
     def __init__(self, parent, title, filter_string=None, path_object=None, search_box=None):
         QtWidgets.QWidget.__init__(self, parent)
+        self.right_click = False
         self.shots_icon = QtGui.QPixmap(path.icon_path('shots24px.png'))
         self.assets_icon = QtGui.QPixmap(path.icon_path('assets24px.png'))
 
@@ -518,22 +522,28 @@ class AssetWidget(QtWidgets.QWidget):
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.data_table.setMinimumWidth(min_width)
+        # self.setProperty('class', 'basic')
+
 
         # build the filter options row
         self.assets_radio = QtWidgets.QRadioButton('Assets')
         self.shots_radio = QtWidgets.QRadioButton('Shots')
+        self.tasks_radio = QtWidgets.QRadioButton('My Tasks')
         self.radio_group_scope = QtWidgets.QButtonGroup(self)
         self.radio_group_scope.addButton(self.shots_radio)
         self.radio_group_scope.addButton(self.assets_radio)
+        self.radio_group_scope.addButton(self.tasks_radio)
         self.shot_icon = QtWidgets.QLabel()
         self.shot_icon.setPixmap(self.shots_icon)
         self.asset_icon = QtWidgets.QLabel()
         self.asset_icon.setPixmap(self.assets_icon)
 
+        self.scope_layout.addWidget(self.tasks_radio)
         self.scope_layout.addWidget(self.shot_icon)
         self.scope_layout.addWidget(self.shots_radio)
         self.scope_layout.addWidget(self.asset_icon)
         self.scope_layout.addWidget(self.assets_radio)
+
         self.scope_layout.addStretch(1)
         self.scope_layout.addWidget(self.add_button)
 
@@ -581,7 +591,6 @@ class AssetWidget(QtWidgets.QWidget):
 
 class FileTableWidget(LJTableWidget):
     show_in_folder = QtCore.Signal()
-    show_in_shotgun = QtCore.Signal()
     copy_folder_path = QtCore.Signal()
     copy_file_path = QtCore.Signal()
     import_version_from = QtCore.Signal()
@@ -602,7 +611,6 @@ class FileTableWidget(LJTableWidget):
         self.item_right_click_menu = LJMenu(self)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.item_right_click_menu.create_action("Show In Folder", self.show_in_folder)
-        self.item_right_click_menu.create_action("Show In ShotGun", self.show_in_shotgun)
         self.item_right_click_menu.addSeparator()
         self.item_right_click_menu.create_action("Copy Folder Path", self.copy_folder_path)
         self.item_right_click_menu.create_action("Copy File Path", self.copy_file_path)
@@ -752,7 +760,6 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.set_project_management()
 
     def set_project_management(self, proj_man=None):
-        from cglcore.config import app_config
         if not proj_man:
             proj_man = app_config()['account_info']['project_management']
         index = self.proj_management_combo.findText(proj_man)

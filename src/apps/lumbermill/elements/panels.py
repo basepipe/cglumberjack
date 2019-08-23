@@ -251,11 +251,13 @@ class ScopePanel(QtWidgets.QWidget):
         else:
             return
         self.panel = QtWidgets.QVBoxLayout(self)
-        for each in ['assets', 'shots', 'ingest']:
+        for each in ['assets', 'shots']:
             if each == 'assets':
                 image_name = 'flower_80px.png'
             elif each == 'shots':
                 image_name = 'shots96px.png'
+            elif each == 'my tasks':
+                image_name = 'star96px.png'
             else:
                 image_name = 'ingest96px.png'
             button = LJButton(str(each))
@@ -269,7 +271,8 @@ class ScopePanel(QtWidgets.QWidget):
     def on_button_clicked(self):
         if self.sender().text() == 'ingest':
             self.path_object.set_attr(scope='IO')
-            print 'set the scope'
+        elif self.sender().text() == 'my tasks':
+            self.path_object.set_attr(scope='my_tasks', seq='*')
         else:
             scope = self.sender().text()
             self.path_object.set_attr(scope=scope)
@@ -283,7 +286,7 @@ class ScopePanel(QtWidgets.QWidget):
 class ProductionPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None, search_box=None):
+    def __init__(self, parent=None, path_object=None, search_box=None, my_tasks=False):
         QtWidgets.QWidget.__init__(self, parent)
         # Create the Middle Panel
         if path_object:
@@ -291,7 +294,7 @@ class ProductionPanel(QtWidgets.QWidget):
                                                 user=None)
         else:
             return
-
+        self.my_tasks = my_tasks
         self.panel = QtWidgets.QVBoxLayout(self)
         self.assets = None
         self.assets_filter_default = filter
@@ -307,6 +310,42 @@ class ProductionPanel(QtWidgets.QWidget):
         self.assets.data_table.selected.connect(self.on_main_asset_selected)
         self.assets.shots_radio.clicked.connect(self.on_filter_radio_changed)
         self.assets.assets_radio.clicked.connect(self.on_filter_radio_changed)
+        self.assets.tasks_radio.clicked.connect(self.load_tasks)
+
+    def load_tasks(self):
+        red_palette = QtGui.QPalette()
+        red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
+        self.assets.data_table.clearSpans()
+        data = []
+        proj_man = app_config()['account_info']['project_management']
+        user = UserConfig().d['proj_man_user_email']
+        if proj_man == 'ftrack':
+            # ideally we load from a .csv file and run this in the background only to update the .csv file.
+            from plugins.project_management.ftrack.main import find_user_assignments
+            project_tasks = find_user_assignments(self.path_object, user)
+            if project_tasks:
+                for task in project_tasks:
+                    data.append([project_tasks[task]['seq'],
+                                 project_tasks[task]['shot_name'],
+                                 project_tasks[task]['filepath'],
+                                 project_tasks[task]['due_date'],
+                                 project_tasks[task]['status'],
+                                 project_tasks[task]['task_type']])
+                if data:
+                    self.assets.data_table.show()
+                    self.assets.search_box.show()
+                    self.assets.message.setText('')
+                    self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status', 'Task']))
+                    self.assets.data_table.hideColumn(0)
+                    self.assets.data_table.hideColumn(2)
+                    self.assets.data_table.hideColumn(3)
+                else:
+                    self.assets.data_table.hide()
+                    self.assets.message.setText('No Tasks for %s Found!' % user)
+                    self.assets.message.show()
+                return True
+            else:
+                return False
 
     def load_assets(self):
         red_palette = QtGui.QPalette()
@@ -329,19 +368,19 @@ class ProductionPanel(QtWidgets.QWidget):
                 if shot_name not in temp_:
                     temp_.append(shot_name)
                     if d['scope'] == 'assets':
-                        data.append([d['seq'], d['shot'], each, '', ''])
+                        data.append([d['seq'], d['shot'], each, '', '', ''])
                     elif d['scope'] == 'shots':
-                        data.append([d['seq'], shot_name, each, '', ''])
+                        data.append([d['seq'], shot_name, each, '', '', ''])
             if d['scope'] == 'assets':
-                self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status']))
-                self.assets.data_table.hideColumn(0)
+                self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status', 'Task']))
             elif d['scope'] == 'shots':
-                self.assets.setup(ListItemModel(data, ['Seq', 'Shot', 'Path', 'Due Date', 'Status']))
-                self.assets.data_table.hideColumn(0)
+                self.assets.setup(ListItemModel(data, ['Seq', 'Shot', 'Path', 'Due Date', 'Status', 'Task']))
+            self.assets.data_table.hideColumn(0)
             self.assets.data_table.hideColumn(2)
+            self.assets.data_table.hideColumn(3)
+            self.assets.data_table.hideColumn(5)
         else:
             self.assets.data_table.hide()
-            self.assets.search_box.hide()
             self.assets.message.setText('No %s Found! \nClick + button to create %s' % (self.path_object.scope.title(),
                                                                                         self.path_object.scope))
             self.assets.message.setPalette(red_palette)
@@ -350,7 +389,10 @@ class ProductionPanel(QtWidgets.QWidget):
     def on_main_asset_selected(self, data):
         if data:
             p_o = PathObject(data[0][2])
-            p_o.set_attr(task='*')
+            if not p_o.task:
+                p_o.set_attr(task='*')
+            else:
+                p_o.set_attr(user=None)
             self.update_location(p_o)
 
     def update_location(self, path_object=None):
@@ -383,9 +425,13 @@ class ProductionPanel(QtWidgets.QWidget):
         if self.sender().text() == 'Assets':
             self.path_object.set_attr(scope='assets')
             self.sender().parent().set_icon('assets')
+            self.path_object.data['my_tasks'] = False
         elif self.sender().text() == 'Shots':
             self.path_object.set_attr(scope='shots')
             self.sender().parent().set_icon('shots')
+            self.path_object.data['my_tasks'] = False
+        elif self.sender().text() == 'My Tasks':
+            self.path_object.data['my_tasks'] = True
         self.update_location(self.path_object)
 
     def clear_layout(self, layout=None):

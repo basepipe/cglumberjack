@@ -123,7 +123,6 @@ class PreflightStep(QtWidgets.QWidget):
         self.label_line_edit.textChanged.connect(self.on_code_changed)
 
     def on_save_clicked(self):
-        print 1
         self.save_clicked.emit()
 
     def on_open_clicked(self):
@@ -163,7 +162,7 @@ class PreflightStep(QtWidgets.QWidget):
             return None
 
     def load_default_text(self):
-        if self.menu_type == 'preflight':
+        if self.menu_type == 'preflights':
             preflight = "from plugins.preflight.preflight_check import PreflightCheck\n" \
                         "\n\n" \
                         "class %s(PreflightCheck):\n" \

@@ -60,6 +60,7 @@ class PathObject(object):
         self.task = None
         self.cam = None
         self.file_type = None
+        self.frame_padding = app_config()
         self.scope_list = app_config()['rules']['scope_list']
         self.context_list = app_config()['rules']['context_list']
         self.path = None  # string of the properly formatted path
@@ -70,6 +71,7 @@ class PathObject(object):
         self.end_frame = None
         self.frame_rate = None
         self.template = []
+        self.filename_template = []
         self.actual_resolution = None
         self.date_created = None
         self.date_modified = None
@@ -85,6 +87,7 @@ class PathObject(object):
         self.assigned = None
         self.priority = None
         self.ingest_source = '*'
+
 
         if isinstance(path_object, unicode):
             path_object = str(path_object)
@@ -905,6 +908,14 @@ def show_in_folder(path_string):
     command = (cmd + full_path)
     logging.info("running command: %s" % command)
     subprocess.Popen(command, shell=True)
+
+
+def show_in_project_management(path_object):
+    if PROJ_MANAGEMENT != 'lumbermill':
+        module = "plugins.project_management.%s.main" % PROJ_MANAGEMENT
+        # noinspection PyTypeChecker
+        loaded_module = __import__(module, globals(), locals(), 'main', -1)
+        start_url(loaded_module.ProjectManagementData(path_object).get_url())
 
 
 def create_project_config(company, project):
