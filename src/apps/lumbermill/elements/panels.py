@@ -251,13 +251,13 @@ class ScopePanel(QtWidgets.QWidget):
         else:
             return
         self.panel = QtWidgets.QVBoxLayout(self)
-        for each in ['my tasks', 'assets', 'shots', 'ingest']:
+        for each in ['assets', 'shots']:
             if each == 'assets':
                 image_name = 'flower_80px.png'
             elif each == 'shots':
                 image_name = 'shots96px.png'
             elif each == 'my tasks':
-                image_name = 'star-full.png'
+                image_name = 'star96px.png'
             else:
                 image_name = 'ingest96px.png'
             button = LJButton(str(each))
@@ -323,26 +323,31 @@ class ProductionPanel(QtWidgets.QWidget):
             # ideally we load from a .csv file and run this in the background only to update the .csv file.
             from plugins.project_management.ftrack.main import find_user_assignments
             project_tasks = find_user_assignments(self.path_object, user)
-            for task in project_tasks:
-                data.append([project_tasks[task]['seq'],
-                             project_tasks[task]['shot_name'],
-                             project_tasks[task]['filepath'],
-                             project_tasks[task]['due_date'],
-                             project_tasks[task]['status'],
-                             project_tasks[task]['task_type']])
-            if data:
-                self.assets.data_table.show()
-                self.assets.search_box.show()
-                self.assets.message.hide()
-                self.assets.message.setText('')
-                self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status', 'Task']))
-                #self.assets.data_table.hideColumn(0)
-                #self.assets.data_table.hideColumn(2)
+            if project_tasks:
+                for task in project_tasks:
+                    data.append([project_tasks[task]['seq'],
+                                 project_tasks[task]['shot_name'],
+                                 project_tasks[task]['filepath'],
+                                 project_tasks[task]['due_date'],
+                                 project_tasks[task]['status'],
+                                 project_tasks[task]['task_type']])
+                if data:
+                    self.assets.data_table.show()
+                    self.assets.search_box.show()
+                    self.assets.message.hide()
+                    self.assets.message.setText('')
+                    self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status', 'Task']))
+                    self.assets.data_table.hideColumn(0)
+                    self.assets.data_table.hideColumn(2)
+                    self.assets.data_table.hideColumn(3)
+                else:
+                    self.assets.data_table.hide()
+                    self.assets.search_box.hide()
+                    self.assets.message.setText('No Tasks for %s Found!' % user)
+                    self.assets.message.show()
+                return True
             else:
-                self.assets.data_table.hide()
-                self.assets.search_box.hide()
-                self.assets.message.setText('No Tasks for %s Found!' % user)
-                self.assets.message.show()
+                return False
 
     def load_assets(self):
         red_palette = QtGui.QPalette()
@@ -372,9 +377,10 @@ class ProductionPanel(QtWidgets.QWidget):
                 self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status', 'Task']))
             elif d['scope'] == 'shots':
                 self.assets.setup(ListItemModel(data, ['Seq', 'Shot', 'Path', 'Due Date', 'Status', 'Task']))
-            # self.assets.data_table.hideColumn(0)
-            # self.assets.data_table.hideColumn(2)
-            # self.assets.data_table.hideColumn(5)
+            self.assets.data_table.hideColumn(0)
+            self.assets.data_table.hideColumn(2)
+            self.assets.data_table.hideColumn(3)
+            self.assets.data_table.hideColumn(5)
         else:
             self.assets.data_table.hide()
             self.assets.search_box.hide()

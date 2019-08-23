@@ -910,6 +910,14 @@ def show_in_folder(path_string):
     subprocess.Popen(command, shell=True)
 
 
+def show_in_project_management(path_object):
+    if PROJ_MANAGEMENT != 'lumbermill':
+        module = "plugins.project_management.%s.main" % PROJ_MANAGEMENT
+        # noinspection PyTypeChecker
+        loaded_module = __import__(module, globals(), locals(), 'main', -1)
+        start_url(loaded_module.ProjectManagementData(path_object).get_url())
+
+
 def create_project_config(company, project):
     config_dir = os.path.dirname(UserConfig().user_config_path)
     company_config = os.path.join(config_dir, 'companies', company, 'global.yaml')

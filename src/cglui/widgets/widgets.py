@@ -5,6 +5,9 @@ from cglui.util import drop_handler, define_palettes
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
+from cglcore.config import app_config
+
+PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 
 
 class LJButton(QtWidgets.QPushButton):
@@ -486,6 +489,7 @@ class AssetWidget(QtWidgets.QWidget):
 
     def __init__(self, parent, title, filter_string=None, path_object=None, search_box=None):
         QtWidgets.QWidget.__init__(self, parent)
+        self.right_click = False
         self.shots_icon = QtGui.QPixmap(path.icon_path('shots24px.png'))
         self.assets_icon = QtGui.QPixmap(path.icon_path('assets24px.png'))
 
@@ -518,6 +522,8 @@ class AssetWidget(QtWidgets.QWidget):
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.data_table.setMinimumWidth(min_width)
+        # self.setProperty('class', 'basic')
+
 
         # build the filter options row
         self.assets_radio = QtWidgets.QRadioButton('Assets')
@@ -585,7 +591,6 @@ class AssetWidget(QtWidgets.QWidget):
 
 class FileTableWidget(LJTableWidget):
     show_in_folder = QtCore.Signal()
-    show_in_shotgun = QtCore.Signal()
     copy_folder_path = QtCore.Signal()
     copy_file_path = QtCore.Signal()
     import_version_from = QtCore.Signal()
@@ -606,7 +611,6 @@ class FileTableWidget(LJTableWidget):
         self.item_right_click_menu = LJMenu(self)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.item_right_click_menu.create_action("Show In Folder", self.show_in_folder)
-        self.item_right_click_menu.create_action("Show In ShotGun", self.show_in_shotgun)
         self.item_right_click_menu.addSeparator()
         self.item_right_click_menu.create_action("Copy Folder Path", self.copy_folder_path)
         self.item_right_click_menu.create_action("Copy File Path", self.copy_file_path)

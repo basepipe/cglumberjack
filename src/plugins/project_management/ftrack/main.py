@@ -473,6 +473,20 @@ class ProjectManagementData(object):
         self.version_data = self.ftrack.query('AssetVersion where asset_id is %s' % self.task_asset['id']).first()
         return self.version_data
 
+    def get_url(self):
+        print self.path_root
+        if self.task:
+            print 'task'
+            return self.get_task_url(self.project, self.seq, self.shot, self.task, view='shot')
+        if self.shot:
+            print 'shot'
+            return self.get_shot_url(self.project, self.seq, self.shot)
+        elif self.asset:
+            print 'asset not defined yet'
+        if self.project:
+            print 'project'
+            return self.get_proj_url(self.project)
+
     def get_proj_url(self, project):
         project = self.ftrack.query('Project where status is active and name is %s' % project).first()
         start_string = "https://lone-coconut.ftrackapp.com/#entityId=%s&entityType=" \
@@ -548,45 +562,49 @@ def find_user_assignments(path_object, user_email, force=False):
         api_user = app_config()['project_management']['ftrack']['api']['api_user']
         schema = app_config()['project_management']['ftrack']['api']['default_schema']
         long_to_short = app_config()['project_management']['ftrack']['tasks'][schema]['long_to_short']
-        print long_to_short
         session = ftrack_api.Session(server_url=server_url, api_key=api_key, api_user=api_user)
         project_name = project
         user = user_email
         project_data = session.query('Project where status is active and name is %s' % project_name).first()
-        user_data = session.query('User where username is "{}"'.format(user)).first()
-        project_tasks = session.query(
-            'select name, type.name, parent.name, status.name, assignments.resource from Task where project.id is %s' % project_data['id'])
-        data = []
-        if not my_tasks:
-            my_tasks = {company: {project: {}}}
+        if project_data:
+            user_data = session.query('User where username is "{}"'.format(user)).first()
+            project_tasks = session.query('select name, type.name, parent.name, status.name, '
+                                          'assignments.resource from Task where project.id is %s' % project_data['id'])
+            data = []
+            if not my_tasks:
+                my_tasks = {company: {project: {}}}
+            else:
+                my_tasks[company][project] = {}
+            for p in project_tasks:
+                seq = ''
+                shot_ = ''
+                for i, each in enumerate(p['assignments']):
+                    if p['assignments'][i]['resource'] == user_data:
+                        if 'AssetBuild' in str(type(p['parent'])):
+                            scope = 'assets'
+                            seq = 'prop'  # TODO This is not stable at the moment. Category for Assets isn't a thing in Ftrack
+                            shot_ = p['parent']['name']
+                        else:
+                            if '_' in p['parent']['name']:
+                                seq, shot_ = p['parent']['name'].split('_')
+                            scope = 'shots'
+                        task_type = long_to_short[scope][p['type']['name']]
+
+                        my_tasks[company][project][p['name']] = {}
+                        my_tasks[company][project][p['name']]['seq'] = seq
+                        my_tasks[company][project][p['name']]['shot_name'] = p['parent']['name']
+                        my_tasks[company][project][p['name']]['filepath'] = PathObject(path_object).copy(scope=scope,
+                                                                                                         seq=seq,
+                                                                                                         shot=shot_,
+                                                                                                         task=task_type).path_root
+                        my_tasks[company][project][p['name']]['task_type'] = task_type
+                        my_tasks[company][project][p['name']]['status'] = p['status']['name']
+                        my_tasks[company][project][p['name']]['due_date'] = ''
+            session.close()
+            UserConfig(my_tasks=my_tasks).update_all()
+            return my_tasks[company][project]
         else:
-            my_tasks[company][project] = {}
-        for p in project_tasks:
-            seq = ''
-            shot_ = ''
-            for i, each in enumerate(p['assignments']):
-                if p['assignments'][i]['resource'] == user_data:
-                    if 'AssetBuild' in str(type(p['parent'])):
-                        scope = 'assets'
-                        seq = 'default'
-                    else:
-                        scope = 'shots'
-                    task_type = long_to_short[scope][p['type']['name']]
-                    if '_' in p['parent']['name']:
-                        seq, shot_ = p['parent']['name'].split('_')
-                    my_tasks[company][project][p['name']] = {}
-                    my_tasks[company][project][p['name']]['seq'] = seq
-                    my_tasks[company][project][p['name']]['shot_name'] = p['parent']['name']
-                    my_tasks[company][project][p['name']]['filepath'] = PathObject(path_object).copy(scope=scope,
-                                                                                                     seq=seq,
-                                                                                                     shot=shot_,
-                                                                                                     task=task_type).path_root
-                    my_tasks[company][project][p['name']]['task_type'] = task_type
-                    my_tasks[company][project][p['name']]['status'] = p['status']['name']
-                    my_tasks[company][project][p['name']]['due_date'] = ''
-        session.close()
-        UserConfig(my_tasks=my_tasks).update_all()
-        return my_tasks[company][project]
+            return None
 
 
 if __name__ == "__main__":

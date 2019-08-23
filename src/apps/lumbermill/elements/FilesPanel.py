@@ -133,7 +133,6 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.files_area.work_files_table.dropped.connect(self.on_file_dragged_to_source)
             task_widget.files_area.export_files_table.dropped.connect(self.on_file_dragged_to_render)
             task_widget.files_area.work_files_table.show_in_folder.connect(self.show_in_folder)
-            task_widget.files_area.work_files_table.show_in_shotgun.connect(self.show_in_shotgun)
             task_widget.files_area.work_files_table.copy_folder_path.connect(self.copy_folder_path)
             task_widget.files_area.work_files_table.copy_file_path.connect(self.copy_file_path)
             task_widget.files_area.work_files_table.import_version_from.connect(self.import_versions_from)
@@ -396,10 +395,6 @@ class FilesPanel(QtWidgets.QWidget):
 
     def show_in_folder(self):
         show_in_folder(self.path_object.path_root)
-
-    @staticmethod
-    def show_in_shotgun():
-        print 'show in shotgun'
 
     def copy_folder_path(self):
         clipboard = QtWidgets.QApplication.clipboard()
