@@ -572,7 +572,7 @@ def find_user_assignments(path_object, user_email):
             for p in project_tasks:
                 seq = ''
                 shot_ = ''
-                for i, each in enumerate(p['assignments']):
+                for i, _ in enumerate(p['assignments']):
                     if p['assignments'][i]['resource'] == user_data:
                         if 'AssetBuild' in str(type(p['parent'])):
                             scope = 'assets'

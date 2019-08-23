@@ -334,7 +334,6 @@ class ProductionPanel(QtWidgets.QWidget):
                 if data:
                     self.assets.data_table.show()
                     self.assets.search_box.show()
-                    self.assets.message.hide()
                     self.assets.message.setText('')
                     self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status', 'Task']))
                     self.assets.data_table.hideColumn(0)
@@ -342,7 +341,6 @@ class ProductionPanel(QtWidgets.QWidget):
                     self.assets.data_table.hideColumn(3)
                 else:
                     self.assets.data_table.hide()
-                    self.assets.search_box.hide()
                     self.assets.message.setText('No Tasks for %s Found!' % user)
                     self.assets.message.show()
                 return True
@@ -383,7 +381,6 @@ class ProductionPanel(QtWidgets.QWidget):
             self.assets.data_table.hideColumn(5)
         else:
             self.assets.data_table.hide()
-            self.assets.search_box.hide()
             self.assets.message.setText('No %s Found! \nClick + button to create %s' % (self.path_object.scope.title(),
                                                                                         self.path_object.scope))
             self.assets.message.setPalette(red_palette)

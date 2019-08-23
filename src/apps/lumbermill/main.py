@@ -403,25 +403,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                                              my_tasks=True)
                 if self.panel:
                     if self.panel.load_tasks():
-                        self.panel.location_changed.connect(self.update_location)
-                        self.panel.location_changed.connect(self.path_widget.update_path)
-                        self.layout.addWidget(self.panel)
                         self.panel.assets.tasks_radio.setChecked(True)
-
-                        to_delete = []
-                        for i in range(self.layout.count()):
-                            if i == 2:
-                                child = self.layout.takeAt(i - 1)
-                                to_delete.append(child)
-                        for each in to_delete:
-                            each.widget().deleteLater()
+                        self.update_panel()
                         self.layout.addWidget(self.progress_bar)
                         self.layout.addWidget(self.path_widget)
                         self.path_object.data['my_tasks'] = False
                         return
                     else:
                         self.panel = None
-        print 2
         if last == 'filename':
             if self.panel:
                 # if we already have a panel, and we're getting a filename it means it's a currently selected file
@@ -469,19 +458,21 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         elif last == 'company':
             self.panel = CompanyPanel(path_object=path_object, search_box=self.nav_widget.search_box)
         if self.panel:
-            self.panel.location_changed.connect(self.update_location)
-            self.panel.location_changed.connect(self.path_widget.update_path)
-            self.layout.addWidget(self.panel)
-            to_delete = []
-            # Why do i have to do this?!?!?
-            for i in range(self.layout.count()):
-                if i == 2:
-                    child = self.layout.takeAt(i-1)
-                    to_delete.append(child)
-            for each in to_delete:
-                each.widget().deleteLater()
+            self.update_panel()
         self.layout.addWidget(self.progress_bar)
         self.layout.addWidget(self.path_widget)
+
+    def update_panel(self):
+        self.panel.location_changed.connect(self.update_location)
+        self.panel.location_changed.connect(self.path_widget.update_path)
+        self.layout.addWidget(self.panel)
+        to_delete = []
+        for i in range(self.layout.count()):
+            if i == 2:
+                child = self.layout.takeAt(i - 1)
+                to_delete.append(child)
+        for each in to_delete:
+            each.widget().deleteLater()
 
     def add_task(self, path_object):
         from apps.lumbermill.elements import asset_creator
