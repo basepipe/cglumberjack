@@ -10,7 +10,6 @@ from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog, InputDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange, start_url
 from cglcore.path import CreateProductionData, image_path
-from cglui.widgets.progress_gif import ProgressDialog
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
 try:
@@ -78,8 +77,8 @@ class NavigationWidget(QtWidgets.QFrame):
 
         self.ingest_button = QtWidgets.QPushButton()
         self.ingest_button.setToolTip('My Tasks')
-        ingest_icon = os.path.join(icon_path(), 'ingest24px.png')
         self.ingest_button.setProperty('class', 'grey_border')
+        ingest_icon = os.path.join(icon_path(), 'ingest24px.png')
         self.ingest_button.setIcon(QtGui.QIcon(ingest_icon))
         self.ingest_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
 
@@ -89,19 +88,14 @@ class NavigationWidget(QtWidgets.QFrame):
         self.projects_button.setToolTip('Go to Projects')
         self.companies_button = QtWidgets.QPushButton()
         self.companies_button.setToolTip('Go to Companies')
-        # self.shots_button = QtWidgets.QPushButton()
-        # self.shots_button.setToolTip('Go to Shots')
         self.my_tasks_button.setProperty('class', 'grey_border')
         self.back_button.setStyleSheet("background: transparent;")
         self.projects_button.setStyleSheet("background: transparent;")
         self.companies_button.setStyleSheet("background: transparent;")
-        # self.shots_button.setStyleSheet("background: transparent;")
 
         back_icon = os.path.join(icon_path(), 'back24px.png')
         home_icon = os.path.join(icon_path(), 'project24px.png')
         company_icon = os.path.join(icon_path(), 'company24px.png')
-        self.shots_icon = os.path.join(icon_path(), 'shots24px.png')
-        # self.assets_icon = os.path.join(icon_path(), 'flower_40px.png')
 
         self.back_button.setIcon(QtGui.QIcon(back_icon))
         self.back_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
@@ -109,8 +103,6 @@ class NavigationWidget(QtWidgets.QFrame):
         self.companies_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
         self.projects_button.setIcon(QtGui.QIcon(home_icon))
         self.projects_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
-        # self.shots_button.setIcon(QtGui.QIcon(self.shots_icon))
-        # self.shots_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
         self.current_location_line_edit = QtWidgets.QLineEdit()
         self.current_location_line_edit.setReadOnly(True)
         self.current_location_line_edit.setMinimumHeight(ICON_WIDTH*1.28)
@@ -123,11 +115,9 @@ class NavigationWidget(QtWidgets.QFrame):
         self.cl_row.addWidget(self.companies_button)
         self.cl_row.addWidget(self.projects_button)
         self.cl_row.addWidget(self.my_tasks_button)
-        # self.cl_row.addWidget(self.shots_button)
         self.cl_row.addWidget(self.search_box)
 
         self.cl_row.addWidget(self.ingest_button)
-        #self.cl_row.addStretch(1)
 
         layout.addLayout(self.cl_row)
         layout.addWidget(self.current_location_line_edit)
@@ -137,7 +127,6 @@ class NavigationWidget(QtWidgets.QFrame):
         self.back_button.clicked.connect(self.back_button_pressed)
         self.companies_button.clicked.connect(self.buttons_pressed)
         self.projects_button.clicked.connect(self.buttons_pressed)
-        # self.shots_button.clicked.connect(self.buttons_pressed)
         self.set_text(self.path_object.path_root)
 
     def text(self):
@@ -149,28 +138,23 @@ class NavigationWidget(QtWidgets.QFrame):
             self.path_object = PathObject(self.current_location_line_edit.text())
             
     def show_company(self):
-        # self.shots_button.hide()
         self.companies_button.show()
         self.projects_button.hide()
+        self.my_tasks_button.hide()
         
     def show_projects(self):
-        # self.shots_button.hide()
         self.companies_button.show()
         self.projects_button.show()
+        self.my_tasks_button.hide()
         
     def show_production(self):
-        # self.shots_button.show()
         self.companies_button.show()
         self.projects_button.show()
-        # if self.path_object.scope == 'assets':
-        #     self.shots_button.setIcon(QtGui.QIcon(self.assets_icon))
-        #     self.shots_button.setToolTip('Go to Assets')
-        # elif self.path_object.scope == 'shots':
-        #     self.shots_button.setIcon(QtGui.QIcon(self.shots_icon))
-        #     self.shots_button.setToolTip('Go to Shots')
+        self.my_tasks_button.show()
 
     def show_none(self):
         self.shots_button.hide()
+        self.my_tasks_button.hide()
         self.companies_button.hide()
         self.projects_button.hide()
             
@@ -187,9 +171,9 @@ class NavigationWidget(QtWidgets.QFrame):
         elif path_object.project == '*':
             self.show_projects()
         elif path_object.scope == 'IO':
-            self.show_projects()
+            self.show_production()
         elif path_object.scope == '*':
-            self.show_projects()
+            self.show_production()
         elif path_object.seq == '*':
             self.show_production()
         elif path_object.type == '*':
@@ -216,6 +200,7 @@ class NavigationWidget(QtWidgets.QFrame):
         if self.path_object.project and self.path_object.company and self.path_object.project != '*':
             self.path_object = self.path_object.copy(seq=None, shot=None, ingest_source=None, resolution='', version='',
                                                      user=None, scope='IO')
+            print self.path_object.path_root, 3
             self.location_changed.emit(self.path_object)
         else:
             print 'Please Choose a Company and a Project before pushing the ingest button'
@@ -405,10 +390,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         self.layout.addWidget(self.path_widget)
                     return
         if 'my_tasks' in path_object.data or last == 'scope':
-
             go_ahead = False
             if last == 'scope':
                 go_ahead = True
+                if path_object.scope == 'IO':
+                    go_ahead = False
             else:
                 if path_object.data['my_tasks']:
                     go_ahead = True
@@ -435,6 +421,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         return
                     else:
                         self.panel = None
+        print 2
         if last == 'filename':
             if self.panel:
                 # if we already have a panel, and we're getting a filename it means it's a currently selected file

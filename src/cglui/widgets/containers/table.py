@@ -40,7 +40,6 @@ class LJTableWidget(QTableView):
 
     def mouseReleaseEvent(self, e):
         super(LJTableWidget, self).mouseReleaseEvent(e)
-        buttons = QtGui.QApplication.mouseButtons()
         if e.button() == QtCore.Qt.LeftButton:
             self.viewClicked()
 

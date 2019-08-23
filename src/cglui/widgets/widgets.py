@@ -760,7 +760,6 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.set_project_management()
 
     def set_project_management(self, proj_man=None):
-        from cglcore.config import app_config
         if not proj_man:
             proj_man = app_config()['account_info']['project_management']
         index = self.proj_management_combo.findText(proj_man)

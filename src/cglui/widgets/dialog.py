@@ -28,11 +28,9 @@ class ItemTable(LJTableWidget):
         LJTableWidget.__init__(self, parent)
         self.item_right_click_menu = LJMenu(self)
         self.label = title
-        project_management = app_config()['account_info']['project_management']
         self.clicked.connect(self.row_selected)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.item_right_click_menu.create_action("Show in Folder", self.show_in_folder_signal)
-        # self.item_right_click_menu.create_action("Delete", self.delete_item_signal)
         self.customContextMenuRequested.connect(self.item_right_click)
 
     def item_right_click(self, position):
@@ -413,7 +411,6 @@ class LoginDialog(LJDialog):
             self.uname_label.hide()
 
     def on_text_changed(self):
-        uname = self.uname_line_edit.text()
         email = self.email_line_edit.text()
         if email:
             self.ok_button.setEnabled(True)
@@ -428,7 +425,8 @@ class LoginDialog(LJDialog):
         self.accept()
         print 'Cancel Clicked'
 
-    def load_user_defaults(self):
+    @staticmethod
+    def load_user_defaults():
         print('Adjust Load User Defaults to handle .json')
         if os.path.exists(UserConfig().user_config_path):
             print UserConfig().user_config_path

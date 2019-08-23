@@ -109,10 +109,9 @@ class ProjectManagementData(object):
         for task in self.task_types:
             if task['name'] == full_name:
                 return task
-        logging.debug('Could Not Find a Task of %s' % task['name'])
         return None
 
-    def create_project_management_data(self, review=False):
+    def create_project_management_data(self):
         self.project_data = self.entity_exists('project')
         if not self.project_data:
             if self.project:
@@ -186,13 +185,7 @@ class ProjectManagementData(object):
                 data_ = data_[0]
         elif data_type == 'version':
             data_ = self.create_version()
-        try:
-            if data_:
-                logging.debug('Found %s: %s, No Need to Create' % (data_type, data_['name']))
-            return data_
-        except:
-            logging.debug('Did not find %s' % data_type)
-            return None
+        return data_
 
     def create_project(self):
         logging.info('Creating Ftrack Project %s' % self.project)
@@ -288,6 +281,8 @@ class ProjectManagementData(object):
             print self.path_object.preview_path_full, 'preview path'
             create_previews(path_object=self.path_root)
         server_location = self.ftrack.query('Location where name is "ftrack.server"').first()
+        thumb_component = ''
+        component = None
         if self.file_type == 'movie' or self.file_type == 'sequence':
             component = self.version_data.create_component(
                 path=self.path_object.preview_path_full,
@@ -333,7 +328,7 @@ class ProjectManagementData(object):
     def create_review_session(self):
         self.ftrack.create('ReviewSession', {
             'name': 'Dailies %s' % datetime.date.today(),
-            'description': 'Review Session For Todays Data',
+            'description': "Review Session For Today's Data",
             'project': self.project_data
         })
 
@@ -416,7 +411,7 @@ class ProjectManagementData(object):
 
         else:
             logging.debug('User {} already in assigned to project {}'.format(self.user_data['username'],
-                                                                            self.project_data['name']))
+                                                                             self.project_data['name']))
 
     def find_project(self):
         self.project_data = self.ftrack.query('Project where status is active and name is %s' %
@@ -456,7 +451,7 @@ class ProjectManagementData(object):
                     user = membership['user']
                     self.project_team.add(user)
 
-    def find_user(self, user):
+    def find_user(self, user=None):
         if not user:
             user = self.user_email
         if not self.user_data:
@@ -508,7 +503,7 @@ class ProjectManagementData(object):
 
     def get_task_url(self, project, seq, shot, task, view):
         # TODO - change this to work with the local variables
-
+        task_string = None
         if view == 'seq':
             scope = self.ftrack.query('Sequence where name is %s and project.name is %s' % (seq, project)).first()
             scope_id = scope['id']
@@ -548,7 +543,7 @@ class ProjectManagementData(object):
         print url_string
 
 
-def find_user_assignments(path_object, user_email, force=False):
+def find_user_assignments(path_object, user_email):
     from cglcore.path import PathObject
     company = path_object.company
     project = path_object.project
@@ -570,7 +565,6 @@ def find_user_assignments(path_object, user_email, force=False):
             user_data = session.query('User where username is "{}"'.format(user)).first()
             project_tasks = session.query('select name, type.name, parent.name, status.name, '
                                           'assignments.resource from Task where project.id is %s' % project_data['id'])
-            data = []
             if not my_tasks:
                 my_tasks = {company: {project: {}}}
             else:
@@ -582,7 +576,7 @@ def find_user_assignments(path_object, user_email, force=False):
                     if p['assignments'][i]['resource'] == user_data:
                         if 'AssetBuild' in str(type(p['parent'])):
                             scope = 'assets'
-                            seq = 'prop'  # TODO This is not stable at the moment. Category for Assets isn't a thing in Ftrack
+                            seq = 'prop'  # TODO This is not stable at the moment. Category for Assets isn't a thing
                             shot_ = p['parent']['name']
                         else:
                             if '_' in p['parent']['name']:
@@ -590,13 +584,13 @@ def find_user_assignments(path_object, user_email, force=False):
                             scope = 'shots'
                         task_type = long_to_short[scope][p['type']['name']]
 
+                        name_ = my_tasks[company][project][p['name']]
+
                         my_tasks[company][project][p['name']] = {}
-                        my_tasks[company][project][p['name']]['seq'] = seq
-                        my_tasks[company][project][p['name']]['shot_name'] = p['parent']['name']
-                        my_tasks[company][project][p['name']]['filepath'] = PathObject(path_object).copy(scope=scope,
-                                                                                                         seq=seq,
-                                                                                                         shot=shot_,
-                                                                                                         task=task_type).path_root
+                        name_['seq'] = seq
+                        name_['shot_name'] = p['parent']['name']
+                        name_['filepath'] = PathObject(path_object).copy(scope=scope, seq=seq, shot=shot_,
+                                                                         task=task_type).path_root
                         my_tasks[company][project][p['name']]['task_type'] = task_type
                         my_tasks[company][project][p['name']]['status'] = p['status']['name']
                         my_tasks[company][project][p['name']]['due_date'] = ''
@@ -611,7 +605,5 @@ if __name__ == "__main__":
     this = ProjectManagementData()
     this.create_project_management_data()
     this.ftrack.commit()
-    #this.upload_media()
-
 
 

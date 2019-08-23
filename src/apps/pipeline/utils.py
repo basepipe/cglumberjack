@@ -123,7 +123,6 @@ class PreflightStep(QtWidgets.QWidget):
         self.label_line_edit.textChanged.connect(self.on_code_changed)
 
     def on_save_clicked(self):
-        print 1
         self.save_clicked.emit()
 
     def on_open_clicked(self):
