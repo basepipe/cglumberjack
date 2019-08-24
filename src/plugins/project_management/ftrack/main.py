@@ -585,10 +585,8 @@ def find_user_assignments(path_object, user_email):
                                     seq, shot_ = p['parent']['name'].split('_')
                                 scope = 'shots'
                             task_type = long_to_short[scope][p['type']['name']]
-
-                            name_ = my_tasks[company][project][p['name']]
-
                             my_tasks[company][project][p['name']] = {}
+                            name_ = my_tasks[company][project][p['name']]
                             name_['seq'] = seq
                             name_['shot_name'] = p['parent']['name']
                             name_['filepath'] = PathObject(path_object).copy(scope=scope, seq=seq, shot=shot_,
