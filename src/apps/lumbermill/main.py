@@ -350,7 +350,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(self.path_object)
 
     def show_my_tasks(self):
-        print self.path_object.path_root
         self.path_object.set_attr(scope='shots', seq='*', shot=None, task=None)
         self.path_object.data['my_tasks'] = True
         self.path_widget.update_path(path_object=self.path_object)

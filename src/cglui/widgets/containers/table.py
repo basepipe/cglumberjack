@@ -116,7 +116,7 @@ class LJTableWidget(QTableView):
     def contextMenuEvent(self, event):
         self.menu = LJMenu(self)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.menu.create_action('Show in test %s' % PROJ_MANAGEMENT, self.show_in_proj)
+        self.menu.create_action('Show in %s' % PROJ_MANAGEMENT, self.show_in_proj)
         self.menu.popup(QtGui.QCursor.pos())
 
     def show_in_proj(self):
