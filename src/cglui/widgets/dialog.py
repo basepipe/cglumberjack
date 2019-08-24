@@ -293,33 +293,23 @@ class InputDialog(LJDialog):
 
     def on_text_changed_regex(self):
         message = ''
+        text = ''
         if self.sender() == self.line_edit:
-            if self.line_edit.text():
-                if re.match(self.regex, self.line_edit.text()):
-                    message = '%s\n%s Passes!' % (self.original_message, self.line_edit.text())
-                    self.btn1.setEnabled(True)
-                    self.btn2.setEnabled(True)
-                    self.btn3.setEnabled(True)
-                else:
-                    bad_name = '%s\n%s does not pass' % (self.original_message, self.line_edit.text())
-                    message = '%s\n%s' % (bad_name, self.name_example)
-                    self.btn1.setEnabled(False)
-                    self.btn2.setEnabled(False)
-                    self.btn3.setEnabled(False)
-        if self.sender() == self.combo_box:
-            if self.combo_box.currentText:
-                if re.match(self.regex, self.combo_box.currentText()):
-                    message = '%s\n%s Passes!' % (self.original_message, self.combo_box.currentText())
-                    self.btn1.setEnabled(True)
-                    self.btn2.setEnabled(True)
-                    self.btn3.setEnabled(True)
-                else:
-                    bad_name = '%s\n%s does not pass' % (self.original_message, self.combo_box.currentText())
-                    message = '%s\n%s' % (bad_name, self.name_example)
-                    self.btn1.setEnabled(False)
-                    self.btn2.setEnabled(False)
-                    self.btn3.setEnabled(False)
-            self.message.setText(message)
+            text = self.line_edit.text()
+        elif self.sender() == self.combo_box:
+            text = self.combo_box.currentText()
+        if re.match(self.regex, text):
+            message = '%s\n%s Passes!' % (self.original_message, text)
+            self.btn1.setEnabled(True)
+            self.btn2.setEnabled(True)
+            self.btn3.setEnabled(True)
+        else:
+            bad_name = '%s\n%s does not pass' % (self.original_message, text)
+            message = '%s\n%s' % (bad_name, self.name_example)
+            self.btn1.setEnabled(False)
+            self.btn2.setEnabled(False)
+            self.btn3.setEnabled(False)
+        self.message.setText(message)
 
 
 class PlaylistDialog(InputDialog):

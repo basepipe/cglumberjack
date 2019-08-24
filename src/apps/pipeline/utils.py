@@ -87,7 +87,7 @@ class PreflightStep(QtWidgets.QWidget):
         delete_button.setProperty('class', 'basic')
         open_button = QtWidgets.QPushButton('Open in Editor')
         open_button.setProperty('class', 'basic')
-        self.save_button = QtWidgets.QPushButton('Save Shelves')
+        self.save_button = QtWidgets.QPushButton('Save All')
         self.save_button.setProperty('class', 'basic')
 
         # Text Edit
@@ -196,6 +196,8 @@ class CGLMenu(QtWidgets.QWidget):
             self.singular = 'menu'
         elif self.menu_type == 'preflights':
             self.singular = 'preflight'
+        elif self.menu_type == 'context-menus':
+            self.singular = 'context-menu'
         else:
             self.singluar = 'not defined'
         self.software = software
@@ -217,6 +219,8 @@ class CGLMenu(QtWidgets.QWidget):
             self.title = QtWidgets.QLabel('%s %s Steps: (Drag to Reorder)' % (self.menu_name, self.menu_type.title()))
         elif self.menu_type == 'shelves':
             self.title = QtWidgets.QLabel('%s Shelf Buttons: (Drag to Reorder)' % self.menu_name)
+        elif self.menu_type == 'context-menus':
+            self.title = QtWidgets.QLabel('Context Menu Buttons: (Drag to Reorder)')
         self.title.setProperty('class', 'title')
 
         if self.menu_type == 'shelves':
@@ -258,7 +262,6 @@ class CGLMenu(QtWidgets.QWidget):
             menus.removeTab(menus.currentIndex())
 
     def on_add_menu_button(self):
-        print self.menu_path, 'is path'
         if self.menu_type == 'preflights':
             title_ = 'Add Preflight Step'
             message = 'Enter a Name for your Preflight Step'
@@ -268,9 +271,13 @@ class CGLMenu(QtWidgets.QWidget):
         elif self.menu_type == 'shelves':
             title_ = 'Add Shelf'
             message = 'Enter a Name for your shelf button'
+        elif self.menu_type == 'context-menus':
+            title_ = 'Add Context Menu Item'
+            message = 'Enter a name for your Context Menu Item'
+
         dialog = InputDialog(title=title_, message=message,
-                             line_edit=True, regex='[a-zA-Z]{3,}',
-                             name_example='Ideally Preflights are CamelCase - ExamplePreflightName')
+                             line_edit=True, regex='^([A-Z][a-z]+)+$',
+                             name_example='class name must be CamelCase - ExamplePreflightName')
         dialog.exec_()
         if dialog.button == 'Ok':
             preflight_name = dialog.line_edit.text()
@@ -280,8 +287,7 @@ class CGLMenu(QtWidgets.QWidget):
                 attrs = {'label': preflight_name,
                          'required': 'True',
                          'module': module}
-            elif self.menu_type == 'menus':
-
+            elif self.menu_type == 'menus' or self.menu_type == 'context-menus':
                 attrs = {'label': preflight_name,
                          'module': command}
             elif self.menu_type == 'shelves':

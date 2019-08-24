@@ -6,6 +6,8 @@ from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
 from cglcore.config import app_config
+from cglcore.path import get_cgl_tools
+from cglcore.util import load_json
 
 PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 
@@ -594,8 +596,6 @@ class FileTableWidget(LJTableWidget):
     copy_folder_path = QtCore.Signal()
     copy_file_path = QtCore.Signal()
     import_version_from = QtCore.Signal()
-    push_to_cloud = QtCore.Signal()
-    pull_from_cloud = QtCore.Signal()
     share_download_link = QtCore.Signal()
     render_nuke_command_line = QtCore.Signal()
     render_nuke_farm = QtCore.Signal()
@@ -605,6 +605,7 @@ class FileTableWidget(LJTableWidget):
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                 QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSortingEnabled(False)
+        self.task = parent.parent().path_object.task
         # Set The Right Click Menu
         if hide_header:
             self.horizontalHeader().hide()
@@ -617,15 +618,28 @@ class FileTableWidget(LJTableWidget):
         self.item_right_click_menu.addSeparator()
         self.item_right_click_menu.create_action("Import Version From...", self.import_version_from)
         self.item_right_click_menu.addSeparator()
-        self.item_right_click_menu.create_action("Push", self.push_to_cloud)
-        self.item_right_click_menu.create_action("Pull", self.pull_from_cloud)
-        self.item_right_click_menu.create_action("Share Download Link", self.share_download_link)
+        self.add_custom_task_items()
         self.item_right_click_menu.addSeparator()
         # self.item_right_click_menu.create_action("Create Dailies Template", self.create_dailies_template_signal)
         # self.item_right_click_menu.addSeparator()
         self.customContextMenuRequested.connect(self.item_right_click)
         self.setAcceptDrops(True)
         self.selected.connect(self.on_row_selected)
+
+    def add_custom_task_items(self):
+        # get the current task
+        menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
+        if os.path.exists(menu_file):
+            menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())
+            if self.task in menu_items['lumbermill']:
+                for item in menu_items['lumbermill'][self.task]:
+                    if item != 'order':
+                        button_label = menu_items['lumbermill'][self.task][item]['label']
+                        button_command = menu_items['lumbermill'][self.task][item]['module']
+                        module = button_command.split()[1]
+                        loaded_module = __import__(module, globals(), locals(), item, -1)
+                        self.item_right_click_menu.create_action(button_label, loaded_module.run)
+        # see if there are custom menu items required for this task.
 
     def on_row_selected(self, data):
         dict_ = {'.nk': 'nuke'}

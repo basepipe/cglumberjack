@@ -136,9 +136,6 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.files_area.work_files_table.copy_folder_path.connect(self.copy_folder_path)
             task_widget.files_area.work_files_table.copy_file_path.connect(self.copy_file_path)
             task_widget.files_area.work_files_table.import_version_from.connect(self.import_versions_from)
-            task_widget.files_area.work_files_table.push_to_cloud.connect(self.push)
-            task_widget.files_area.work_files_table.pull_from_cloud.connect(self.pull)
-            task_widget.files_area.work_files_table.share_download_link.connect(self.share_download_link)
             task_widget.empty_state.files_added.connect(self.on_file_dragged_to_source)
             if not user:
                 task_widget.users_label.hide()
