@@ -548,57 +548,61 @@ def find_user_assignments(path_object, user_email):
     company = path_object.company
     project = path_object.project
     # load whatever is in the user globals:
-    my_tasks = UserConfig().d['my_tasks']
-    try:
-        return my_tasks[company][project]
-    except KeyError:
-        server_url = app_config()['project_management']['ftrack']['api']['server_url']
-        api_key = app_config()['project_management']['ftrack']['api']['api_key']
-        api_user = app_config()['project_management']['ftrack']['api']['api_user']
-        schema = app_config()['project_management']['ftrack']['api']['default_schema']
-        long_to_short = app_config()['project_management']['ftrack']['tasks'][schema]['long_to_short']
-        session = ftrack_api.Session(server_url=server_url, api_key=api_key, api_user=api_user)
-        project_name = project
-        user = user_email
-        project_data = session.query('Project where status is active and name is %s' % project_name).first()
-        if project_data:
-            user_data = session.query('User where username is "{}"'.format(user)).first()
-            project_tasks = session.query('select name, type.name, parent.name, status.name, '
-                                          'assignments.resource from Task where project.id is %s' % project_data['id'])
-            if not my_tasks:
-                my_tasks = {company: {project: {}}}
-            else:
-                my_tasks[company][project] = {}
-            for p in project_tasks:
-                seq = ''
-                shot_ = ''
-                for i, _ in enumerate(p['assignments']):
-                    if p['assignments'][i]['resource'] == user_data:
-                        if 'AssetBuild' in str(type(p['parent'])):
-                            scope = 'assets'
-                            seq = 'prop'  # TODO This is not stable at the moment. Category for Assets isn't a thing
-                            shot_ = p['parent']['name']
-                        else:
-                            if '_' in p['parent']['name']:
-                                seq, shot_ = p['parent']['name'].split('_')
-                            scope = 'shots'
-                        task_type = long_to_short[scope][p['type']['name']]
-
-                        name_ = my_tasks[company][project][p['name']]
-
-                        my_tasks[company][project][p['name']] = {}
-                        name_['seq'] = seq
-                        name_['shot_name'] = p['parent']['name']
-                        name_['filepath'] = PathObject(path_object).copy(scope=scope, seq=seq, shot=shot_,
-                                                                         task=task_type).path_root
-                        my_tasks[company][project][p['name']]['task_type'] = task_type
-                        my_tasks[company][project][p['name']]['status'] = p['status']['name']
-                        my_tasks[company][project][p['name']]['due_date'] = ''
-            session.close()
-            UserConfig(my_tasks=my_tasks).update_all()
+    if company and project and company != '*' and project != '*':
+        print company, project
+        my_tasks = UserConfig().d['my_tasks']
+        try:
             return my_tasks[company][project]
-        else:
-            return None
+        except KeyError:
+            server_url = app_config()['project_management']['ftrack']['api']['server_url']
+            api_key = app_config()['project_management']['ftrack']['api']['api_key']
+            api_user = app_config()['project_management']['ftrack']['api']['api_user']
+            schema = app_config()['project_management']['ftrack']['api']['default_schema']
+            long_to_short = app_config()['project_management']['ftrack']['tasks'][schema]['long_to_short']
+            session = ftrack_api.Session(server_url=server_url, api_key=api_key, api_user=api_user)
+            project_name = project
+            user = user_email
+            project_data = session.query('Project where status is active and name is %s' % project_name).first()
+            if project_data:
+                user_data = session.query('User where username is "{}"'.format(user)).first()
+                project_tasks = session.query('select name, type.name, parent.name, status.name, '
+                                              'assignments.resource from Task where project.id is %s' % project_data['id'])
+                if not my_tasks:
+                    my_tasks = {company: {project: {}}}
+                else:
+                    my_tasks[company][project] = {}
+                for p in project_tasks:
+                    seq = ''
+                    shot_ = ''
+                    for i, _ in enumerate(p['assignments']):
+                        if p['assignments'][i]['resource'] == user_data:
+                            if 'AssetBuild' in str(type(p['parent'])):
+                                scope = 'assets'
+                                seq = 'prop'  # TODO This is not stable at the moment. Category for Assets isn't a thing
+                                shot_ = p['parent']['name']
+                            else:
+                                if '_' in p['parent']['name']:
+                                    seq, shot_ = p['parent']['name'].split('_')
+                                scope = 'shots'
+                            task_type = long_to_short[scope][p['type']['name']]
+
+                            name_ = my_tasks[company][project][p['name']]
+
+                            my_tasks[company][project][p['name']] = {}
+                            name_['seq'] = seq
+                            name_['shot_name'] = p['parent']['name']
+                            name_['filepath'] = PathObject(path_object).copy(scope=scope, seq=seq, shot=shot_,
+                                                                             task=task_type).path_root
+                            my_tasks[company][project][p['name']]['task_type'] = task_type
+                            my_tasks[company][project][p['name']]['status'] = p['status']['name']
+                            my_tasks[company][project][p['name']]['due_date'] = ''
+                session.close()
+                UserConfig(my_tasks=my_tasks).update_all()
+                return my_tasks[company][project]
+            else:
+                return None
+    else:
+        print 'Invalid Input Value(s): Company = %s, Project = %s' % (company, project)
 
 
 if __name__ == "__main__":

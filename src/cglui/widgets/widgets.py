@@ -378,7 +378,7 @@ class TaskWidget(QtWidgets.QWidget):
         self.resolutions_label.hide()
 
     def setup(self, table, mdl):
-        if mdl:
+        if isinstance(mdl, FileTableModel):
             table.set_item_model(mdl)
             self.empty_state.hide()
             if not table.model().rowCount():

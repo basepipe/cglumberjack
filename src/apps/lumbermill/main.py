@@ -317,7 +317,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 pass
         else:
             self.path_object = PathObject(self.root)
-        self.project = '*'
+        # self.project = '*'
         self.scope = 'assets'
         self.shot = '*'
         self.seq = '*'
@@ -350,13 +350,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(self.path_object)
 
     def show_my_tasks(self):
+        print self.path_object.path_root
         self.path_object.set_attr(scope='shots', seq='*', shot=None, task=None)
         self.path_object.data['my_tasks'] = True
         self.path_widget.update_path(path_object=self.path_object)
         self.update_location(self.path_object)
 
     def update_location(self, data):
-
         try:
             if self.sender().force_clear:
                 if self.panel:
@@ -403,8 +403,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                                              my_tasks=True)
                 if self.panel:
                     if self.panel.load_tasks():
-                        self.panel.assets.tasks_radio.setChecked(True)
-                        self.update_panel()
+                        self.update_panel(set_tasks_radio=True)
                         self.layout.addWidget(self.progress_bar)
                         self.layout.addWidget(self.path_widget)
                         self.path_object.data['my_tasks'] = False
@@ -462,9 +461,12 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.layout.addWidget(self.progress_bar)
         self.layout.addWidget(self.path_widget)
 
-    def update_panel(self):
+    def update_panel(self, set_tasks_radio=False):
         self.panel.location_changed.connect(self.update_location)
+        if set_tasks_radio:
+            self.panel.assets.tasks_radio.setChecked(True)
         self.panel.location_changed.connect(self.path_widget.update_path)
+
         self.layout.addWidget(self.panel)
         to_delete = []
         for i in range(self.layout.count()):
