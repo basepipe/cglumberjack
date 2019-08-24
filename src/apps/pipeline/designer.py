@@ -45,7 +45,6 @@ class Designer(LJDialog):
         self.menus.setMovable(True)
         self.title_label = QtWidgets.QLabel()
         self.title_label.setProperty('class', 'ultra_title')
-        print self.type, '98888888888'
         if self.type == 'menus':
             self.add_menu_button = QtWidgets.QPushButton('add menu')
             self.delete_menu_button = QtWidgets.QPushButton('delete preflight')
@@ -108,7 +107,7 @@ class Designer(LJDialog):
     def on_add_menu_clicked(self):
         if self.type == 'preflights':
             dialog = InputDialog(title='Add %s' % self.type, message='Choose Task to Create a Preflight For',
-                                 line_edit=False, regex='[a-zA-Z0-0]{3,}', combo_box_items=self.task_list,
+                                 line_edit=False, combo_box_items=self.task_list, regex='[a-zA-Z]',
                                  name_example='Only letters & Numbers Allowed in Button Names')
             dialog.exec_()
             if dialog.button == 'Ok':
@@ -122,7 +121,6 @@ class Designer(LJDialog):
                 cgl_file = self.menu_path
                 new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
                                    menu_path=cgl_file, menu_type=self.type)
-                print 34
                 new_menu.save_clicked.connect(self.on_save_clicked)
                 index = self.menus.addTab(new_menu, menu_name)
                 self.menus.setCurrentIndex(index)
@@ -134,7 +132,25 @@ class Designer(LJDialog):
                 cgl_file = self.menu_path
                 new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
                                    menu_path=cgl_file, menu_type=self.type)
-                print 45
+                new_menu.save_clicked.connect(self.on_save_clicked)
+                index = self.menus.addTab(new_menu, menu_name)
+                self.menus.setCurrentIndex(index)
+        elif self.type == 'context-menus':
+            dialog = InputDialog(title='Add Context Menu', message='Choose Task to Create a Context Menu For',
+                                 line_edit=False, regex='[a-zA-Z0-0]{3,}', combo_box_items=self.task_list,
+                                 name_example='Only letters & Numbers Allowed in Task Names')
+            dialog.exec_()
+            if dialog.button == 'Ok':
+                long_name = dialog.combo_box.currentText()
+                if long_name in self.schema['long_to_short']['assets']:
+                    menu_name = self.schema['long_to_short']['assets'][long_name]
+                elif long_name in self.schema['long_to_short']['shots']:
+                    menu_name = self.schema['long_to_short']['shots'][long_name]
+                else:
+                    menu_name = long_name
+                cgl_file = self.menu_path
+                new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
+                                   menu_path=cgl_file, menu_type=self.type)
                 new_menu.save_clicked.connect(self.on_save_clicked)
                 index = self.menus.addTab(new_menu, menu_name)
                 self.menus.setCurrentIndex(index)

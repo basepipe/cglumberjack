@@ -1,5 +1,6 @@
 import pprint
 import os
+import json
 import sys
 import shutil
 import getpass
@@ -134,4 +135,15 @@ def split_all(path):
             path = parts[0]
             all_parts.insert(0, parts[1])
     return all_parts
+
+
+def save_json(filepath, data):
+    with open(filepath, 'w') as outfile:
+        json.dump(data, outfile, indent=4, sort_keys=True)
+
+
+def load_json(filepath):
+    with open(filepath) as jsonfile:
+        data = json.load(jsonfile)
+    return data
 
