@@ -617,28 +617,20 @@ class CGLumberjack(LJMainWindow):
         open_globals = QtWidgets.QAction('Go to Company Globals', self)
         open_user_globals = QtWidgets.QAction('Go to User Globals', self)
         settings.setShortcut('Ctrl+,')
-        menu_designer = QtWidgets.QAction('Menu Designer', self)
-        context_designer = QtWidgets.QAction('Right Click Menu Designer', self)
-        shelf_designer = QtWidgets.QAction('Shelf Designer', self)
-        preflight_designer = QtWidgets.QAction('Preflight Designer', self)
+        pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
+
         ingest_dialog = QtWidgets.QAction('Ingest Tool', self)
         # add actions to the file menu
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
         tools_menu.addAction(open_user_globals)
-        tools_menu.addAction(menu_designer)
-        tools_menu.addAction(context_designer)
-        tools_menu.addAction(shelf_designer)
-        tools_menu.addAction(preflight_designer)
+        tools_menu.addAction(pipeline_designer)
         tools_menu.addAction(ingest_dialog)
         # connect signals and slots
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
         settings.triggered.connect(self.on_settings_clicked)
-        menu_designer.triggered.connect(self.on_menu_designer_clicked)
-        context_designer.triggered.connect(self.on_context_designer_clicked)
-        preflight_designer.triggered.connect(self.on_preflight_designer_clicked)
-        shelf_designer.triggered.connect(self.on_shelf_designer_clicked)
+        pipeline_designer.triggered.connect(self.on_menu_designer_clicked)
         login.triggered.connect(self.on_login_clicked)
         proj_man.triggered.connect(self.on_proj_man_menu_clicked)
 
@@ -688,27 +680,18 @@ class CGLumberjack(LJMainWindow):
     def on_settings_clicked():
         print 'settings clicked'
 
-    def on_designer_clicked(self, type_):
+    def on_designer_clicked(self):
         pm = app_config()['account_info']['project_management']
         def_schema = app_config()['project_management'][pm]['api']['default_schema']
         schema = app_config()['project_management'][pm]['tasks'][def_schema]
         from apps.pipeline.designer import Designer
-        dialog = Designer(self, type_=type_, pm_tasks=schema)
+        dialog = Designer(self, pm_tasks=schema)
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)
         dialog.exec_()
 
-    def on_context_designer_clicked(self):
-        self.on_designer_clicked(type_='context-menus')
-
-    def on_preflight_designer_clicked(self):
-        self.on_designer_clicked(type_='preflights')
-
-    def on_shelf_designer_clicked(self):
-        self.on_designer_clicked(type_='shelves')
-
     def on_menu_designer_clicked(self):
-        self.on_designer_clicked(type_='menus')
+        self.on_designer_clicked()
 
     def closeEvent(self, event):
         # set the current path so that it works on the load better.

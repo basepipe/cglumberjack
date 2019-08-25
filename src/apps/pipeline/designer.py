@@ -10,12 +10,12 @@ from utils import CGLMenu
 class Designer(LJDialog):
     def __init__(self, parent=None, type_=None, menu_path=None, pm_tasks=None):
         LJDialog.__init__(self, parent)
-        self.type = type_
+        self.type = None
         self.cgl_tools = get_cgl_tools()
 
         self.menu_path = menu_path
         self.software = ''
-        self.setWindowTitle('%s Designer' % type_.title())
+        self.setWindowTitle('Pipeline Designer')
         self.schema = pm_tasks
         self.task_list = []
         for each in self.schema['long_to_short']['assets']:
@@ -39,21 +39,19 @@ class Designer(LJDialog):
         self.software_label = QtWidgets.QLabel('Software:')
         self.software_label.setProperty('class', 'title')
         self.software_combo = QtWidgets.QComboBox()
+        self.menu_type_label = QtWidgets.QLabel('Menu Type:')
+        self.menu_type_label.setProperty('class', 'title')
+        self.menu_type_combo = QtWidgets.QComboBox()
+        self.menu_type_combo.addItems(['', 'menus', 'context-menus', 'shelves', 'preflights'])
+
         self.new_software_button = QtWidgets.QPushButton('Add Software')
         self.new_software_button.setProperty('class', 'add_button')
         self.menus = QtWidgets.QTabWidget()
         self.menus.setMovable(True)
         self.title_label = QtWidgets.QLabel()
         self.title_label.setProperty('class', 'ultra_title')
-        if self.type == 'menus':
-            self.add_menu_button = QtWidgets.QPushButton('add menu')
-            self.delete_menu_button = QtWidgets.QPushButton('delete preflight')
-        elif self.type == 'preflights':
-            self.add_menu_button = QtWidgets.QPushButton('add preflight')
-            self.delete_menu_button = QtWidgets.QPushButton('delete preflight')
-        else:
-            self.add_menu_button = QtWidgets.QPushButton('add %s' % self.type)
-            self.delete_menu_button = QtWidgets.QPushButton('delete %s' % self.type)
+        self.add_menu_button = QtWidgets.QPushButton('add %s' % self.type)
+        self.delete_menu_button = QtWidgets.QPushButton('delete %s' % self.type)
         self.add_menu_button.setProperty('class', 'add_button')
 
         # self.save_menu_button = QtWidgets.QPushButton('save menu')
@@ -68,6 +66,8 @@ class Designer(LJDialog):
         grid_layout.addWidget(self.software_label, 0, 0)
         grid_layout.addWidget(self.software_combo, 0, 1)
         grid_layout.addWidget(self.new_software_button, 0, 2)
+        grid_layout.addWidget(self.menu_type_label, 1, 0)
+        grid_layout.addWidget(self.menu_type_combo, 1, 1)
         tool_bar.addLayout(grid_layout)
         tool_bar.addStretch(1)
         layout.addLayout(tool_bar)
@@ -82,6 +82,7 @@ class Designer(LJDialog):
         # Load the Menu Designer
         self.load_software()
         self.software_combo.currentIndexChanged.connect(self.update_menu_path)
+        self.menu_type_combo.currentIndexChanged.connect(self.update_menu_path)
 
     def load_software(self):
         self.software_label.show()
@@ -100,9 +101,11 @@ class Designer(LJDialog):
 
     def update_menu_path(self):
         self.software = self.software_combo.currentText()
-        self.menu_path = os.path.join(self.cgl_tools, self.software, '%s.cgl' % self.type)
-        print 'menu path:', self.menu_path
-        self.load_menus()
+        self.type = self.menu_type_combo.currentText()
+        if self.type:
+            self.menu_path = os.path.join(self.cgl_tools, self.software, '%s.cgl' % self.type)
+            if os.path.exists(self.menu_path):
+                self.load_menus()
 
     def on_add_menu_clicked(self):
         if self.type == 'preflights':
@@ -164,19 +167,24 @@ class Designer(LJDialog):
         self.title_widget.show()
         self.title_label.setText('%s %s' % (self.software_combo.currentText(), self.type))
         self.software = self.software_combo.currentText()
-        print self.software, 'software!!!'
+        print 010
         if os.path.exists(self.menu_path):
             menu_dict = self.load_json(self.menu_path)
+        print 20
         if menu_dict:
-            print menu_dict
-            for i in range(len(menu_dict[self.software])+1):
-                for menu in menu_dict[self.software]:
-                    if i == menu_dict[self.software][menu]['order']:
-                        buttons = CGLMenu(software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
-                                          menu_path=self.menu_path, menu_type=self.type)
-                        print 453
-                        buttons.save_clicked.connect(self.on_save_clicked)
-                        self.menus.addTab(buttons, menu)
+            print 0
+            if self.software in menu_dict:
+                print 1, self.software
+                for i in range(len(menu_dict[self.software])+1):
+                    print 2, menu_dict[self.software]
+                    for menu in menu_dict[self.software]:
+                        if i == menu_dict[self.software][menu]['order']:
+                            buttons = CGLMenu(software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
+                                              menu_path=self.menu_path, menu_type=self.type)
+                            buttons.save_clicked.connect(self.on_save_clicked)
+                            self.menus.addTab(buttons, menu)
+            else:
+                print '%s not found in %s' % (self.softwre, self.menu_path)
 
     def on_new_software_clicked(self):
         dialog = InputDialog(title='Add Software', message='Enter or Choose Software',
