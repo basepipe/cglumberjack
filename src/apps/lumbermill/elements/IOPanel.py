@@ -53,23 +53,6 @@ class EmptyStateWidgetIO(EmptyStateWidget):
             e.ignore()
 
 
-class PandasModel(QtCore.QAbstractTableModel):
-    def __init__(self, data, parent=None):
-        QtCore.QAbstractTableModel.__init__(self, parent)
-        self._data = data
-
-    def rowCount(self):
-        return len(self._data.values)
-
-    def columnCount(self):
-        return self._data.columns.size
-
-    def data(self, index, role=QtCore.Qt.DisplayRole):
-        if index.isValid():
-            if role == QtCore.Qt.DisplayRole:
-                return str(self._data.values[index.row()][index.column()])
-
-
 class IOPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 

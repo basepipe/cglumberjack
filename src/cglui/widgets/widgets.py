@@ -50,13 +50,14 @@ class VersionButton(LJButton):
 class EmptyStateWidget(QtWidgets.QPushButton):
     files_added = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None):
+    def __init__(self, parent=None, path_object=None, text='Drag/Drop to Add Files', files=False):
         QtWidgets.QPushButton.__init__(self, parent)
+        self.files = files
         self.path_object = path_object
         self.setAcceptDrops(True)
         self.setMinimumWidth(300)
         self.setMinimumHeight(100)
-        self.setText('Drag/Drop to Add Files')
+        self.setText(text)
         self.setProperty('class', 'empty_state')
         self.to_path = ''
         self.to_object = None
@@ -78,13 +79,16 @@ class EmptyStateWidget(QtWidgets.QPushButton):
             e.ignore()
 
     def dropEvent(self, e):
-        new_obj = self.path_object.copy(task=self.parent().task, version=self.parent().versions.currentText(),
-                                        user=self.parent().users.currentText(),
-                                        resolution=self.parent().resolutions.currentText(), filename=None,
-                                        ext=None, filename_base=None)
-        self.to_path = new_obj.path_root
-        self.to_object = new_obj
-        drop_handler(self.files_added, e)
+        if not self.files:
+            new_obj = self.path_object.copy(task=self.parent().task, version=self.parent().versions.currentText(),
+                                            user=self.parent().users.currentText(),
+                                            resolution=self.parent().resolutions.currentText(), filename=None,
+                                            ext=None, filename_base=None)
+            self.to_path = new_obj.path_root
+            self.to_object = new_obj
+            drop_handler(self.files_added, e)
+        else:
+            drop_handler(self.files_added, e)
 
 
 class FileTableModel(ListItemModel):

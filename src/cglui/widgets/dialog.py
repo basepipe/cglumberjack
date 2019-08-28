@@ -5,7 +5,7 @@ import datetime
 import getpass
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.containers.model import ListItemModel
-from cglui.widgets.widgets import AdvComboBox
+from cglui.widgets.widgets import AdvComboBox, EmptyStateWidget
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.base import LJDialog
@@ -429,5 +429,83 @@ class LoginDialog(LJDialog):
         self.user_config['user_name'] = self.local_user_line_edit.text()
         with open(path_, 'w') as outfile:
             json.dump(self.user_config, outfile, indent=4, sort_keys=True)
+
+
+class ProjectCreator(LJDialog):
+    def __init__(self, parent=None):
+        LJDialog.__init__(self, parent)
+        self.setMinimumWidth(1000)
+        # How do i prompt users about what headers are available?
+        # how do i store default headers for project creation?
+        # how do i start a spreadsheet from scratch?
+        self.headers = ['shot code', 'shot description', 'effects description', 'notes/assumptions', 'plates/elements',
+                        'task considerations', 'task template', 'tasks']
+        layout = QtWidgets.QVBoxLayout(self)
+        self.data_frame = None
+        self.setWindowTitle('Create Project from .csv')
+        self.empty_state = EmptyStateWidget(text='Drag .csv to \nCreate Project', files=True)
+        self.headers_label = QtWidgets.QLabel('Headers:')
+        self.headers_line_edit = QtWidgets.QLineEdit()
+        self.choose_headers_button = QtWidgets.QPushButton('Choose Headers')
+        self.project_label = QtWidgets.QLabel('Project Name')
+        self.project_line_edit = QtWidgets.QLineEdit()
+        self.grid = QtWidgets.QGridLayout()
+        self.grid.addWidget(self.project_label, 0, 0)
+        self.grid.addWidget(self.project_line_edit, 0, 1)
+        self.grid.addWidget(self.headers_label, 1, 0)
+        self.grid.addWidget(self.headers_line_edit, 1, 1)
+        self.grid.addWidget(self.choose_headers_button, 1, 2)
+        self.table = LJTableWidget(self)
+        self.table.hide()
+        self.create_project_button = QtWidgets.QPushButton('Create Project')
+        self.create_row = QtWidgets.QHBoxLayout()
+        self.create_row.addStretch(1)
+        self.create_row.addWidget(self.create_project_button)
+
+        layout.addLayout(self.grid)
+        layout.addWidget(self.empty_state)
+        layout.addWidget(self.table)
+        layout.addLayout(self.create_row)
+        self.empty_state.files_added.connect(self.on_csv_dragged)
+
+        self.set_headers_text()
+
+    def set_headers_text(self):
+        text = ''
+        last = self.headers[-1]
+        for each in self.headers:
+            if each != last:
+                text += each + ', '
+            else:
+                text += each
+        self.headers_line_edit.setText(text)
+
+    def on_csv_dragged(self, data):
+        if len(data) > 0:
+            print 'I can only handle one file at a time'
+        if data[0].endswith('.csv'):
+            print 'Reading .csv file: %s' % data[0]
+            self.read_file(data[0])
+            self.empty_state.hide()
+            self.table.show()
+        else:
+            print 'Only .csv files supported'
+
+    def read_file(self, filepath):
+        import pandas as pd
+        from cglui.widgets.containers.model import PandasModel
+        df = pd.read_csv(filepath)
+        drop_these = []
+        for c in df.columns:
+            if c.lower() not in self.headers:
+                print c.lower()
+                drop_these.append(c)
+        df = df[df.columns.drop(list(drop_these))]
+        # if doesn't match one of the headers remove the column of the data frame
+        model = PandasModel(df)
+        self.table.setModel(model)
+
+
+
 
 
