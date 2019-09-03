@@ -441,10 +441,12 @@ class ProjectCreator(LJDialog):
         self.default_task_type = self.project_management['api']['default_schema']
         self.project_name_regex = app_config()['rules']['path_variables']['project']['regex']
         self.project_name_example = app_config()['rules']['path_variables']['project']['example']
+        self.daily_hours = float(self.project_management['api']['daily_hours'])
         layout = QtWidgets.QVBoxLayout(self)
         self.model = None
         self.data_frame = None
         self.setWindowTitle('Create Project from .csv')
+        self.scope = 'shots'
         self.shots_radio = QtWidgets.QRadioButton('Shots')
         self.shots_radio.setChecked(True)
         self.assets_radio = QtWidgets.QRadioButton('Assets')
@@ -464,18 +466,22 @@ class ProjectCreator(LJDialog):
         self.headers_line_edit = QtWidgets.QLineEdit()
         self.project_label = QtWidgets.QLabel('Project Name')
         self.project_line_edit = QtWidgets.QLineEdit()
+        self.company_label = QtWidgets.QLabel('Company Name')
+        self.company_combo = AdvComboBox()
         self.grid = QtWidgets.QGridLayout()
-        self.grid.addWidget(self.project_label, 0, 0)
-        self.grid.addWidget(self.project_line_edit, 0, 1)
-        self.grid.addWidget(self.message, 1, 1)
-        self.grid.addWidget(self.headers_label, 2, 0)
-        self.grid.addWidget(self.headers_line_edit, 2, 1)
-        self.grid.addWidget(self.task_template_label, 3, 0)
-        self.grid.addWidget(self.task_template_combo, 3, 1)
-        self.grid.addWidget(self.shot_task_label, 4, 0)
-        self.grid.addWidget(self.shot_task_line_edit, 4, 1)
-        self.grid.addWidget(self.asset_task_label, 5, 0)
-        self.grid.addWidget(self.asset_task_line_edit, 5, 1)
+        self.grid.addWidget(self.company_label, 0, 0)
+        self.grid.addWidget(self.company_combo, 0, 1)
+        self.grid.addWidget(self.project_label, 1, 0)
+        self.grid.addWidget(self.project_line_edit, 1, 1)
+        self.grid.addWidget(self.message, 2, 1)
+        self.grid.addWidget(self.headers_label, 3, 0)
+        self.grid.addWidget(self.headers_line_edit, 3, 1)
+        self.grid.addWidget(self.task_template_label, 4, 0)
+        self.grid.addWidget(self.task_template_combo, 4, 1)
+        self.grid.addWidget(self.shot_task_label, 5, 0)
+        self.grid.addWidget(self.shot_task_line_edit, 5, 1)
+        self.grid.addWidget(self.asset_task_label, 6, 0)
+        self.grid.addWidget(self.asset_task_line_edit, 6, 1)
         self.table = LJTableWidget(self)
         self.table.hide()
         self.create_project_button = QtWidgets.QPushButton('Create Project')
@@ -503,6 +509,7 @@ class ProjectCreator(LJDialog):
         self.assets_radio.clicked.connect(self.assets_radio_clicked)
         self.project_line_edit.textChanged.connect(self.on_project_name_changed)
         self.set_headers_text()
+        self.load_companies()
         self.load_task_types()
         self.load_tasks('shots', self.shot_task_line_edit)
         self.load_tasks('assets', self.asset_task_line_edit)
@@ -512,6 +519,10 @@ class ProjectCreator(LJDialog):
         self.shot_task_label.hide()
         self.shot_task_line_edit.hide()
 
+    def load_companies(self):
+        from cglcore.path import get_companies
+        self.company_combo.addItems(get_companies())
+
     def shots_radio_clicked(self):
         self.set_empty_state_label()
 
@@ -520,18 +531,18 @@ class ProjectCreator(LJDialog):
 
     def set_empty_state_label(self):
         if self.shots_radio.isChecked():
-            scope = 'shots'
+            self.scope = 'shots'
             self.asset_task_line_edit.hide()
             self.asset_task_label.hide()
             self.shot_task_line_edit.show()
             self.shot_task_label.show()
         else:
-            scope = 'assets'
+            self.scope = 'assets'
             self.shot_task_line_edit.hide()
             self.shot_task_label.hide()
             self.asset_task_line_edit.show()
             self.asset_task_label.show()
-        text = 'Drag .csv to \nCreate %s for %s' % (scope, self.project_line_edit.text())
+        text = 'Drag .csv to \nCreate %s for %s' % (self.scope, self.project_line_edit.text())
         self.empty_state.setText(text)
 
     def on_project_name_changed(self):
@@ -657,7 +668,7 @@ class ProjectCreator(LJDialog):
                 # For each row in the column:
                 for index, row in df.iterrows():
                     if row[c] and str(row[c]) != 'nan':
-                        df = df.append({'shot': row['shot'], 'ftrack_task': c, 'duration': row[c],
+                        df = df.append({'shot': row['shot'], 'ftrack_task': c, 'bid days': row[c],
                                         'description': row['description']}, ignore_index=True)
         # for r in rows_to_drop:
         #     df.drop(r)
@@ -668,20 +679,41 @@ class ProjectCreator(LJDialog):
         for index, row in df.iterrows():
             if str(row['ftrack_task']).lower() == 'nan':
                 df.at[index, 'ftrack_task'] = ''
-            if str(row['duration']).lower() == 'nan':
-                df.at[index, 'duration'] = 0
+            if str(row['bid days']).lower() == 'nan':
+                df.at[index, 'bid days'] = 0
 
     def on_create_project_clicked(self):
+        from cglcore.path import PathObject, CreateProductionData
+        import datetime
         for irow in xrange(self.model.rowCount()):
+            row_dict = {}
+            row_dict['project'] = self.project_line_edit.text()
+            row_dict['company'] = self.company_combo.currentText()
+            row_dict['scope'] = self.scope
+            row_dict['context'] = 'source'
             row = []
             for icol in xrange(self.model.columnCount()):
                 cell = self.model.data(self.model.createIndex(irow, icol))
-                row.append(cell)
-            i = -1
-            for h in self.headers:
-                print '%s: %s'
-                row_string = '%s, %s' % (row_string, h)
-            print row_string
+                row_dict[self.model._df.columns[icol]] = cell
+                if self.model._df.columns[icol] == 'bid days':
+                    # ftrack wants bids in seconds.
+                    total_hours = self.daily_hours*float(cell)
+                    # ftrack wants this in seconds.
+                    row_dict['bid'] = total_hours*60*60
+                if self.model._df.columns[icol] == 'ftrack_task':
+                    if cell:
+                        d_ = self.project_management['tasks'][self.task_template_combo.currentText()]['long_to_short']
+                        sn = d_[self.scope][cell.title()]
+                        row_dict['task'] = sn
+                if self.model._df.columns[icol] == 'shot':
+                    if '_' in cell:
+                        seq, shot = cell.split('_')
+                        row_dict['seq'] = seq
+                        row_dict['shot'] = shot
+            path_object = PathObject(row_dict)
+            CreateProductionData(path_object=path_object, force_pm_creation=True)
+        self.accept()
+
 
 
 

@@ -609,7 +609,11 @@ class CreateProductionData(object):
     def __init__(self, path_object=None, file_system=True,
                  project_management=PROJ_MANAGEMENT,
                  proj_management_user=None,
-                 do_scope=False, test=False, json=False, create_default_file=False):
+                 do_scope=False, test=False, json=False, create_default_file=False,
+                 force_pm_creation=False,
+                 session=None):
+        self.session = session
+        self.force_pm_creation = force_pm_creation
         self.proj_management_user = proj_management_user
         self.test = test
         self.path_object = PathObject(path_object)
@@ -760,11 +764,14 @@ class CreateProductionData(object):
     def create_project_management_data(self, path_object, project_management):
 
         if project_management != 'lumbermill':
-            if path_object.filename:
+            if path_object.filename or self.force_pm_creation:
+                session = None
+                if self.session:
+                    session = self.session
                 module = "plugins.project_management.%s.main" % project_management
                 # noinspection PyTypeChecker
                 loaded_module = __import__(module, globals(), locals(), 'main', -1)
-                loaded_module.ProjectManagementData(path_object,
+                loaded_module.ProjectManagementData(path_object, session=session,
                                                     user_email=self.proj_management_user).create_project_management_data()
             else:
                 print('Creating Paths on Disk, lumbermill will create %s '
@@ -868,7 +875,10 @@ def get_companies():
          'company': '*'
          }
     path_object = PathObject(d)
-    return path_object.glob_project_element('company')
+    companies = path_object.glob_project_element('company')
+    if '_config' in companies:
+        companies.remove('_config')
+    return companies
 
 
 def start(filepath):
