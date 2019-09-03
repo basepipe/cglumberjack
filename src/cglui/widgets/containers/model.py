@@ -41,60 +41,24 @@ class PandasModel(QAbstractTableModel):
         QAbstractTableModel.__init__(self, parent=parent)
         self._df = df.copy()
 
-    def toDataFrame(self):
-        return self._df.copy()
-
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role != Qt.DisplayRole:
-            return None
-
-        if orientation == Qt.Horizontal:
-            try:
-                return self._df.columns.tolist()[section]
-            except (IndexError, ):
-                return None
-        elif orientation == Qt.Vertical:
-            try:
-                # return self.df.index.tolist()
-                return self._df.index.tolist()[section]
-            except (IndexError, ):
-                return None
+    def headerData(self, rowcol, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self._df.columns[rowcol]
+        if orientation == Qt.Vertical and role == Qt.DisplayRole:
+            return self._df.index[rowcol]
+        return None
 
     def data(self, index, role=Qt.DisplayRole):
-        if role != Qt.DisplayRole:
-            return None
+        if index.isValid():
+            if role == Qt.DisplayRole:
+                return str(self._df.values[index.row()][index.column()])
+        return None
 
-        if not index.isValid():
-            return None
-
-        return self._df.ix[index.row(), index.column()]
-
-    def setData(self, index, value, role):
-        row = self._df.index[index.row()]
-        col = self._df.columns[index.column()]
-        if hasattr(value, 'toPyObject'):
-            # PyQt4 gets a QVariant
-            value = value.toPyObject()
-        else:
-            # PySide gets an unicode
-            dtype = self._df[col].dtype
-            if dtype != object:
-                value = None if value == '' else dtype.type(value)
-        self._df.set_value(row, col, value)
-        return True
-
-    def rowCount(self, parent=QModelIndex()):
+    def rowCount(self, parent=None):
         return len(self._df.index)
 
-    def columnCount(self, parent=QModelIndex()):
+    def columnCount(self, parent=None):
         return len(self._df.columns)
-
-    def sort(self, column, order):
-        colname = self._df.columns.tolist()[column]
-        self.layoutAboutToBeChanged.emit()
-        self._df.sort_values(colname, ascending= order == Qt.AscendingOrder, inplace=True)
-        self._df.reset_index(inplace=True, drop=True)
-        self.layoutChanged.emit()
 
 
 class LGShotgunListDictionaryItemModel(LGListDictionaryItemModel):

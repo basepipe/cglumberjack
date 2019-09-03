@@ -1,4 +1,4 @@
-from Qt import QtCore, QtWidgets
+from Qt import QtCore, QtWidgets, QtGui
 import os
 import re
 import datetime
@@ -435,26 +435,47 @@ class ProjectCreator(LJDialog):
     def __init__(self, parent=None):
         LJDialog.__init__(self, parent)
         self.setMinimumWidth(1000)
-        # How do i prompt users about what headers are available?
-        # how do i store default headers for project creation?
-        # how do i start a spreadsheet from scratch?
-        self.headers = ['shot code', 'shot description', 'effects description', 'notes/assumptions', 'plates/elements',
-                        'task considerations', 'task template', 'tasks']
+        proj_man = app_config()['account_info']['project_management']
+        self.project_management = app_config()['project_management'][proj_man]
+        self.headers = self.project_management['api']['project_creation_headers']
+        self.default_task_type = self.project_management['api']['default_schema']
+        self.project_name_regex = app_config()['rules']['path_variables']['project']['regex']
+        self.project_name_example = app_config()['rules']['path_variables']['project']['example']
         layout = QtWidgets.QVBoxLayout(self)
+        self.model = None
         self.data_frame = None
         self.setWindowTitle('Create Project from .csv')
+        self.shots_radio = QtWidgets.QRadioButton('Shots')
+        self.shots_radio.setChecked(True)
+        self.assets_radio = QtWidgets.QRadioButton('Assets')
+        radio_row = QtWidgets.QHBoxLayout()
+        radio_row.addWidget(self.shots_radio)
+        radio_row.addWidget(self.assets_radio)
+        radio_row.addStretch(1)
         self.empty_state = EmptyStateWidget(text='Drag .csv to \nCreate Project', files=True)
+        self.task_template_label = QtWidgets.QLabel('Task Template')
+        self.task_template_combo = AdvComboBox()
+        self.shot_task_label = QtWidgets.QLabel("Valid Shot Tasks:")
+        self.shot_task_line_edit = QtWidgets.QLineEdit()
+        self.asset_task_label = QtWidgets.QLabel("Valid Asset Tasks:")
+        self.asset_task_line_edit = QtWidgets.QLineEdit()
+        self.message = QtWidgets.QLabel()
         self.headers_label = QtWidgets.QLabel('Headers:')
         self.headers_line_edit = QtWidgets.QLineEdit()
-        self.choose_headers_button = QtWidgets.QPushButton('Choose Headers')
         self.project_label = QtWidgets.QLabel('Project Name')
         self.project_line_edit = QtWidgets.QLineEdit()
         self.grid = QtWidgets.QGridLayout()
         self.grid.addWidget(self.project_label, 0, 0)
         self.grid.addWidget(self.project_line_edit, 0, 1)
-        self.grid.addWidget(self.headers_label, 1, 0)
-        self.grid.addWidget(self.headers_line_edit, 1, 1)
-        self.grid.addWidget(self.choose_headers_button, 1, 2)
+        self.grid.addWidget(self.message, 1, 1)
+        self.grid.addWidget(self.headers_label, 2, 0)
+        self.grid.addWidget(self.headers_line_edit, 2, 1)
+        self.grid.addWidget(self.task_template_label, 3, 0)
+        self.grid.addWidget(self.task_template_combo, 3, 1)
+        self.grid.addWidget(self.shot_task_label, 4, 0)
+        self.grid.addWidget(self.shot_task_line_edit, 4, 1)
+        self.grid.addWidget(self.asset_task_label, 5, 0)
+        self.grid.addWidget(self.asset_task_line_edit, 5, 1)
         self.table = LJTableWidget(self)
         self.table.hide()
         self.create_project_button = QtWidgets.QPushButton('Create Project')
@@ -463,12 +484,117 @@ class ProjectCreator(LJDialog):
         self.create_row.addWidget(self.create_project_button)
 
         layout.addLayout(self.grid)
+        layout.addLayout(radio_row)
         layout.addWidget(self.empty_state)
         layout.addWidget(self.table)
         layout.addLayout(self.create_row)
-        self.empty_state.files_added.connect(self.on_csv_dragged)
+        # layout.addStretch(1)
+        self.asset_task_line_edit.setEnabled(False)
+        self.shot_task_line_edit.setEnabled(False)
+        self.headers_line_edit.setEnabled(False)
 
+        self.empty_state.files_added.connect(self.on_csv_dragged)
+        self.create_project_button.clicked.connect(self.on_create_project_clicked)
+        self.task_template_combo.currentIndexChanged.connect(lambda: self.load_tasks('shots',
+                                                                                     self.shot_task_line_edit))
+        self.task_template_combo.currentIndexChanged.connect(lambda: self.load_tasks('assets',
+                                                                                     self.asset_task_line_edit))
+        self.shots_radio.clicked.connect(self.shots_radio_clicked)
+        self.assets_radio.clicked.connect(self.assets_radio_clicked)
+        self.project_line_edit.textChanged.connect(self.on_project_name_changed)
         self.set_headers_text()
+        self.load_task_types()
+        self.load_tasks('shots', self.shot_task_line_edit)
+        self.load_tasks('assets', self.asset_task_line_edit)
+        self.hide_radios()
+        self.hide_all()
+        self.shots_radio_clicked()
+        self.shot_task_label.hide()
+        self.shot_task_line_edit.hide()
+
+    def shots_radio_clicked(self):
+        self.set_empty_state_label()
+
+    def assets_radio_clicked(self):
+        self.set_empty_state_label()
+
+    def set_empty_state_label(self):
+        if self.shots_radio.isChecked():
+            scope = 'shots'
+            self.asset_task_line_edit.hide()
+            self.asset_task_label.hide()
+            self.shot_task_line_edit.show()
+            self.shot_task_label.show()
+        else:
+            scope = 'assets'
+            self.shot_task_line_edit.hide()
+            self.shot_task_label.hide()
+            self.asset_task_line_edit.show()
+            self.asset_task_label.show()
+        text = 'Drag .csv to \nCreate %s for %s' % (scope, self.project_line_edit.text())
+        self.empty_state.setText(text)
+
+    def on_project_name_changed(self):
+        message = ''
+        text = self.project_line_edit.text()
+        if re.match(self.project_name_regex, text):
+            self.set_empty_state_label()
+            self.message.hide()
+            self.show_all()
+            self.empty_state.show()
+            self.show_radios()
+        else:
+            self.message.show()
+            message = '%s Does not Pass Naming Convention\n%s' % (text, self.project_name_example)
+            self.hide_all()
+            self.hide_radios()
+        self.message.setText(message)
+        # Check to see if it follows naming convention
+        # if it does, show the rest of the stuff.
+
+    def show_radios(self):
+        self.shots_radio.show()
+        self.assets_radio.show()
+
+    def hide_radios(self):
+        self.shots_radio.hide()
+        self.assets_radio.hide()
+
+    def hide_all(self):
+        #self.project_management_line_edit.hide()
+        self.task_template_label.hide()
+        self.task_template_combo.hide()
+
+        self.headers_label.hide()
+        self.headers_line_edit.hide()
+        self.empty_state.hide()
+        self.create_project_button.hide()
+
+    def show_all(self):
+        #self.project_management_line_edit.show()
+        self.task_template_label.show()
+        self.task_template_combo.show()
+        self.headers_label.show()
+        self.headers_line_edit.show()
+        self.empty_state.show()
+        self.create_project_button.show()
+
+    def load_task_types(self):
+        for key in self.project_management['tasks']:
+            self.task_template_combo.addItem(str(key))
+        index = self.task_template_combo.findText(str(self.default_task_type))
+        self.task_template_combo.setCurrentIndex(index)
+
+    def load_tasks(self, scope, line_edit):
+        tasks_string = ''
+        schema = self.project_management['tasks'][self.task_template_combo.currentText()]
+        if scope in schema['long_to_short']:
+            for key in schema['long_to_short'][scope]:
+                if tasks_string == '':
+                    tasks_string = key.lower
+                else:
+                    tasks_string = '%s, %s' % (tasks_string, key.lower())
+        line_edit.setText(tasks_string)
 
     def set_headers_text(self):
         text = ''
@@ -495,15 +621,67 @@ class ProjectCreator(LJDialog):
         import pandas as pd
         from cglui.widgets.containers.model import PandasModel
         df = pd.read_csv(filepath)
+        df.columns = [x.lower() for x in df.columns]
+        df = self.parse_tasks(df)
         drop_these = []
         for c in df.columns:
-            if c.lower() not in self.headers:
-                print c.lower()
+            if c.lower() not in self.headers and c.lower() != '':
                 drop_these.append(c)
         df = df[df.columns.drop(list(drop_these))]
+        self.clean_nan(df)
+        df = df.sort_values(by=['shot', 'ftrack_task'])
         # if doesn't match one of the headers remove the column of the data frame
-        model = PandasModel(df)
-        self.table.setModel(model)
+        self.model = PandasModel(df)
+        self.table.setModel(self.model)
+        print self.set_shots_as_bold()
+        # self.table.setSortingEnabled(True)
+        # self.table.sortByColumn(0, QtCore.Qt.AscendingOrder)
+
+    def set_shots_as_bold(self):
+        row = self.model.rowCount()
+        for c in xrange(0, self.model.columnCount()):
+            index_ = self.model.index(c, 3)
+            if not self.model.data(index_):
+                # TODO - i'm actually getting to the right place here, just have no idea how to change the text.
+                # C is the row i want though - now i just need to "bold" the text on all these items.
+                ni = self.model.index(c, 0)
+                self.model.setData(ni, QtGui.QBrush(QtCore.Qt.red), QtCore.Qt.BackgroundRole)
+
+    def parse_tasks(self, df):
+        rows_to_drop = []
+        tasks = self.shot_task_line_edit.text().split(', ')
+        for c in df.columns:
+            if c.lower() not in tasks:
+                pass
+            else:
+                # For each row in the column:
+                for index, row in df.iterrows():
+                    if row[c] and str(row[c]) != 'nan':
+                        df = df.append({'shot': row['shot'], 'ftrack_task': c, 'duration': row[c],
+                                        'description': row['description']}, ignore_index=True)
+        # for r in rows_to_drop:
+        #     df.drop(r)
+        return df
+
+    @staticmethod
+    def clean_nan(df):
+        for index, row in df.iterrows():
+            if str(row['ftrack_task']).lower() == 'nan':
+                df.at[index, 'ftrack_task'] = ''
+            if str(row['duration']).lower() == 'nan':
+                df.at[index, 'duration'] = 0
+
+    def on_create_project_clicked(self):
+        for irow in xrange(self.model.rowCount()):
+            row = []
+            for icol in xrange(self.model.columnCount()):
+                cell = self.model.data(self.model.createIndex(irow, icol))
+                row.append(cell)
+            i = -1
+            for h in self.headers:
+                print '%s: %s'
+                row_string = '%s, %s' % (row_string, h)
+            print row_string
 
 
 

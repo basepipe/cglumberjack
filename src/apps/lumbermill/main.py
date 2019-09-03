@@ -583,7 +583,7 @@ class CGLumberjack(LJMainWindow):
         self.previous_path = self.user_config['previous_path']
         self.filter = 'Everything'
         self.previous_paths = self.user_config['previous_paths']
-        self.project_management = app_config(company=self.company)['account_info']['project_management']
+        self.project_management = app_config()['account_info']['project_management']
         self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
                                                  user_email=self.proj_man_user_email,
                                                  user_name=self.proj_man_user_name,
