@@ -637,7 +637,8 @@ class CGLumberjack(LJMainWindow):
         login.triggered.connect(self.on_login_clicked)
         proj_man.triggered.connect(self.on_proj_man_menu_clicked)
 
-    def open_create_project_dialog(self):
+    @staticmethod
+    def open_create_project_dialog():
         dialog = ProjectCreator()
         dialog.exec_()
 

@@ -644,12 +644,10 @@ class ProjectCreator(LJDialog):
         # if doesn't match one of the headers remove the column of the data frame
         self.model = PandasModel(df)
         self.table.setModel(self.model)
-        print self.set_shots_as_bold()
         # self.table.setSortingEnabled(True)
         # self.table.sortByColumn(0, QtCore.Qt.AscendingOrder)
 
     def set_shots_as_bold(self):
-        row = self.model.rowCount()
         for c in xrange(0, self.model.columnCount()):
             index_ = self.model.index(c, 3)
             if not self.model.data(index_):
@@ -659,19 +657,15 @@ class ProjectCreator(LJDialog):
                 self.model.setData(ni, QtGui.QBrush(QtCore.Qt.red), QtCore.Qt.BackgroundRole)
 
     def parse_tasks(self, df):
-        rows_to_drop = []
         tasks = self.shot_task_line_edit.text().split(', ')
         for c in df.columns:
             if c.lower() not in tasks:
                 pass
             else:
-                # For each row in the column:
-                for index, row in df.iterrows():
+                for _, row in df.iterrows():
                     if row[c] and str(row[c]) != 'nan':
                         df = df.append({'shot': row['shot'], 'ftrack_task': c, 'bid days': row[c],
                                         'description': row['description']}, ignore_index=True)
-        # for r in rows_to_drop:
-        #     df.drop(r)
         return df
 
     @staticmethod
@@ -684,14 +678,12 @@ class ProjectCreator(LJDialog):
 
     def on_create_project_clicked(self):
         from cglcore.path import PathObject, CreateProductionData
-        import datetime
         for irow in xrange(self.model.rowCount()):
             row_dict = {}
             row_dict['project'] = self.project_line_edit.text()
             row_dict['company'] = self.company_combo.currentText()
             row_dict['scope'] = self.scope
             row_dict['context'] = 'source'
-            row = []
             for icol in xrange(self.model.columnCount()):
                 cell = self.model.data(self.model.createIndex(irow, icol))
                 row_dict[self.model._df.columns[icol]] = cell
