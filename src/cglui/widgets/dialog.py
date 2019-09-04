@@ -1,11 +1,11 @@
-from Qt import QtCore, QtWidgets
+from Qt import QtCore, QtWidgets, QtGui
 import os
 import re
 import datetime
 import getpass
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.containers.model import ListItemModel
-from cglui.widgets.widgets import AdvComboBox
+from cglui.widgets.widgets import AdvComboBox, EmptyStateWidget
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.base import LJDialog
@@ -429,5 +429,285 @@ class LoginDialog(LJDialog):
         self.user_config['user_name'] = self.local_user_line_edit.text()
         with open(path_, 'w') as outfile:
             json.dump(self.user_config, outfile, indent=4, sort_keys=True)
+
+
+class ProjectCreator(LJDialog):
+    def __init__(self, parent=None):
+        LJDialog.__init__(self, parent)
+        self.setMinimumWidth(1000)
+        proj_man = app_config()['account_info']['project_management']
+        self.project_management = app_config()['project_management'][proj_man]
+        self.headers = self.project_management['api']['project_creation_headers']
+        self.default_task_type = self.project_management['api']['default_schema']
+        self.project_name_regex = app_config()['rules']['path_variables']['project']['regex']
+        self.project_name_example = app_config()['rules']['path_variables']['project']['example']
+        self.daily_hours = float(self.project_management['api']['daily_hours'])
+        layout = QtWidgets.QVBoxLayout(self)
+        self.model = None
+        self.data_frame = None
+        self.setWindowTitle('Create Project from .csv')
+        self.scope = 'shots'
+        self.shots_radio = QtWidgets.QRadioButton('Shots')
+        self.shots_radio.setChecked(True)
+        self.assets_radio = QtWidgets.QRadioButton('Assets')
+        radio_row = QtWidgets.QHBoxLayout()
+        radio_row.addWidget(self.shots_radio)
+        radio_row.addWidget(self.assets_radio)
+        radio_row.addStretch(1)
+        self.empty_state = EmptyStateWidget(text='Drag .csv to \nCreate Project', files=True)
+        self.task_template_label = QtWidgets.QLabel('Task Template')
+        self.task_template_combo = AdvComboBox()
+        self.shot_task_label = QtWidgets.QLabel("Valid Shot Tasks:")
+        self.shot_task_line_edit = QtWidgets.QLineEdit()
+        self.asset_task_label = QtWidgets.QLabel("Valid Asset Tasks:")
+        self.asset_task_line_edit = QtWidgets.QLineEdit()
+        self.message = QtWidgets.QLabel()
+        self.headers_label = QtWidgets.QLabel('Headers:')
+        self.headers_line_edit = QtWidgets.QLineEdit()
+        self.project_label = QtWidgets.QLabel('Project Name')
+        self.project_line_edit = QtWidgets.QLineEdit()
+        self.company_label = QtWidgets.QLabel('Company Name')
+        self.company_combo = AdvComboBox()
+        self.grid = QtWidgets.QGridLayout()
+        self.grid.addWidget(self.company_label, 0, 0)
+        self.grid.addWidget(self.company_combo, 0, 1)
+        self.grid.addWidget(self.project_label, 1, 0)
+        self.grid.addWidget(self.project_line_edit, 1, 1)
+        self.grid.addWidget(self.message, 2, 1)
+        self.grid.addWidget(self.headers_label, 3, 0)
+        self.grid.addWidget(self.headers_line_edit, 3, 1)
+        self.grid.addWidget(self.task_template_label, 4, 0)
+        self.grid.addWidget(self.task_template_combo, 4, 1)
+        self.grid.addWidget(self.shot_task_label, 5, 0)
+        self.grid.addWidget(self.shot_task_line_edit, 5, 1)
+        self.grid.addWidget(self.asset_task_label, 6, 0)
+        self.grid.addWidget(self.asset_task_line_edit, 6, 1)
+        self.table = LJTableWidget(self)
+        self.table.hide()
+        self.create_project_button = QtWidgets.QPushButton('Create Project')
+        self.create_row = QtWidgets.QHBoxLayout()
+        self.create_row.addStretch(1)
+        self.create_row.addWidget(self.create_project_button)
+
+        layout.addLayout(self.grid)
+        layout.addLayout(radio_row)
+        layout.addWidget(self.empty_state)
+        layout.addWidget(self.table)
+        layout.addLayout(self.create_row)
+        # layout.addStretch(1)
+        self.asset_task_line_edit.setEnabled(False)
+        self.shot_task_line_edit.setEnabled(False)
+        self.headers_line_edit.setEnabled(False)
+
+        self.empty_state.files_added.connect(self.on_csv_dragged)
+        self.create_project_button.clicked.connect(self.on_create_project_clicked)
+        self.task_template_combo.currentIndexChanged.connect(lambda: self.load_tasks('shots',
+                                                                                     self.shot_task_line_edit))
+        self.task_template_combo.currentIndexChanged.connect(lambda: self.load_tasks('assets',
+                                                                                     self.asset_task_line_edit))
+        self.shots_radio.clicked.connect(self.shots_radio_clicked)
+        self.assets_radio.clicked.connect(self.assets_radio_clicked)
+        self.project_line_edit.textChanged.connect(self.on_project_name_changed)
+        self.set_headers_text()
+        self.load_companies()
+        self.load_task_types()
+        self.load_tasks('shots', self.shot_task_line_edit)
+        self.load_tasks('assets', self.asset_task_line_edit)
+        self.hide_radios()
+        self.hide_all()
+        self.shots_radio_clicked()
+        self.shot_task_label.hide()
+        self.shot_task_line_edit.hide()
+
+    def load_companies(self):
+        from cglcore.path import get_companies
+        self.company_combo.addItems(get_companies())
+
+    def shots_radio_clicked(self):
+        self.set_empty_state_label()
+
+    def assets_radio_clicked(self):
+        self.set_empty_state_label()
+
+    def set_empty_state_label(self):
+        if self.shots_radio.isChecked():
+            self.scope = 'shots'
+            self.asset_task_line_edit.hide()
+            self.asset_task_label.hide()
+            self.shot_task_line_edit.show()
+            self.shot_task_label.show()
+        else:
+            self.scope = 'assets'
+            self.shot_task_line_edit.hide()
+            self.shot_task_label.hide()
+            self.asset_task_line_edit.show()
+            self.asset_task_label.show()
+        text = 'Drag .csv to \nCreate %s for %s' % (self.scope, self.project_line_edit.text())
+        self.empty_state.setText(text)
+
+    def on_project_name_changed(self):
+        message = ''
+        text = self.project_line_edit.text()
+        if re.match(self.project_name_regex, text):
+            self.set_empty_state_label()
+            self.message.hide()
+            self.show_all()
+            self.empty_state.show()
+            self.show_radios()
+        else:
+            self.message.show()
+            message = '%s Does not Pass Naming Convention\n%s' % (text, self.project_name_example)
+            self.hide_all()
+            self.hide_radios()
+        self.message.setText(message)
+        # Check to see if it follows naming convention
+        # if it does, show the rest of the stuff.
+
+    def show_radios(self):
+        self.shots_radio.show()
+        self.assets_radio.show()
+
+    def hide_radios(self):
+        self.shots_radio.hide()
+        self.assets_radio.hide()
+
+    def hide_all(self):
+        #self.project_management_line_edit.hide()
+        self.task_template_label.hide()
+        self.task_template_combo.hide()
+
+        self.headers_label.hide()
+        self.headers_line_edit.hide()
+        self.empty_state.hide()
+        self.create_project_button.hide()
+
+    def show_all(self):
+        #self.project_management_line_edit.show()
+        self.task_template_label.show()
+        self.task_template_combo.show()
+        self.headers_label.show()
+        self.headers_line_edit.show()
+        self.empty_state.show()
+        self.create_project_button.show()
+
+    def load_task_types(self):
+        for key in self.project_management['tasks']:
+            self.task_template_combo.addItem(str(key))
+        index = self.task_template_combo.findText(str(self.default_task_type))
+        self.task_template_combo.setCurrentIndex(index)
+
+    def load_tasks(self, scope, line_edit):
+        tasks_string = ''
+        schema = self.project_management['tasks'][self.task_template_combo.currentText()]
+        if scope in schema['long_to_short']:
+            for key in schema['long_to_short'][scope]:
+                if tasks_string == '':
+                    tasks_string = key.lower
+                else:
+                    tasks_string = '%s, %s' % (tasks_string, key.lower())
+        line_edit.setText(tasks_string)
+
+    def set_headers_text(self):
+        text = ''
+        last = self.headers[-1]
+        for each in self.headers:
+            if each != last:
+                text += each + ', '
+            else:
+                text += each
+        self.headers_line_edit.setText(text)
+
+    def on_csv_dragged(self, data):
+        if len(data) > 0:
+            print 'I can only handle one file at a time'
+        if data[0].endswith('.csv'):
+            print 'Reading .csv file: %s' % data[0]
+            self.read_file(data[0])
+            self.empty_state.hide()
+            self.table.show()
+        else:
+            print 'Only .csv files supported'
+
+    def read_file(self, filepath):
+        import pandas as pd
+        from cglui.widgets.containers.model import PandasModel
+        df = pd.read_csv(filepath)
+        df.columns = [x.lower() for x in df.columns]
+        df = self.parse_tasks(df)
+        drop_these = []
+        for c in df.columns:
+            if c.lower() not in self.headers and c.lower() != '':
+                drop_these.append(c)
+        df = df[df.columns.drop(list(drop_these))]
+        self.clean_nan(df)
+        df = df.sort_values(by=['shot', 'ftrack_task'])
+        # if doesn't match one of the headers remove the column of the data frame
+        self.model = PandasModel(df)
+        self.table.setModel(self.model)
+        # self.table.setSortingEnabled(True)
+        # self.table.sortByColumn(0, QtCore.Qt.AscendingOrder)
+
+    def set_shots_as_bold(self):
+        for c in xrange(0, self.model.columnCount()):
+            index_ = self.model.index(c, 3)
+            if not self.model.data(index_):
+                # TODO - i'm actually getting to the right place here, just have no idea how to change the text.
+                # C is the row i want though - now i just need to "bold" the text on all these items.
+                ni = self.model.index(c, 0)
+                self.model.setData(ni, QtGui.QBrush(QtCore.Qt.red), QtCore.Qt.BackgroundRole)
+
+    def parse_tasks(self, df):
+        tasks = self.shot_task_line_edit.text().split(', ')
+        for c in df.columns:
+            if c.lower() not in tasks:
+                pass
+            else:
+                for _, row in df.iterrows():
+                    if row[c] and str(row[c]) != 'nan':
+                        df = df.append({'shot': row['shot'], 'ftrack_task': c, 'bid days': row[c],
+                                        'description': row['description']}, ignore_index=True)
+        return df
+
+    @staticmethod
+    def clean_nan(df):
+        for index, row in df.iterrows():
+            if str(row['ftrack_task']).lower() == 'nan':
+                df.at[index, 'ftrack_task'] = ''
+            if str(row['bid days']).lower() == 'nan':
+                df.at[index, 'bid days'] = 0
+
+    def on_create_project_clicked(self):
+        from cglcore.path import PathObject, CreateProductionData
+        for irow in xrange(self.model.rowCount()):
+            row_dict = {}
+            row_dict['project'] = self.project_line_edit.text()
+            row_dict['company'] = self.company_combo.currentText()
+            row_dict['scope'] = self.scope
+            row_dict['context'] = 'source'
+            for icol in xrange(self.model.columnCount()):
+                cell = self.model.data(self.model.createIndex(irow, icol))
+                row_dict[self.model._df.columns[icol]] = cell
+                if self.model._df.columns[icol] == 'bid days':
+                    # ftrack wants bids in seconds.
+                    total_hours = self.daily_hours*float(cell)
+                    # ftrack wants this in seconds.
+                    row_dict['bid'] = total_hours*60*60
+                if self.model._df.columns[icol] == 'ftrack_task':
+                    if cell:
+                        d_ = self.project_management['tasks'][self.task_template_combo.currentText()]['long_to_short']
+                        sn = d_[self.scope][cell.title()]
+                        row_dict['task'] = sn
+                if self.model._df.columns[icol] == 'shot':
+                    if '_' in cell:
+                        seq, shot = cell.split('_')
+                        row_dict['seq'] = seq
+                        row_dict['shot'] = shot
+            path_object = PathObject(row_dict)
+            CreateProductionData(path_object=path_object, force_pm_creation=True)
+        self.accept()
+
+
+
+
 
 

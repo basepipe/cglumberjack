@@ -49,6 +49,8 @@ class ProjectManagementData(object):
     filename = None
     ext = None
     ftrack_asset_type = 'Upload'
+    description = ''
+    bid = 0
     type = None
     preview_path_full = None
     thumb_path_full = None
@@ -57,8 +59,9 @@ class ProjectManagementData(object):
     api_key = app_config()['project_management']['ftrack']['api']['api_key']
     api_user = app_config()['project_management']['ftrack']['api']['api_user']
     resolution = 'high'
+    auto_close = True
 
-    def __init__(self, path_object=None, **kwargs):
+    def __init__(self, path_object=None, session=None, **kwargs):
         if path_object:
             self.path_object = path_object
             for key in path_object.__dict__:
@@ -91,7 +94,11 @@ class ProjectManagementData(object):
             self.user = None
         if self.task == '*':
             self.task = None
-        self.ftrack = ftrack_api.Session(server_url=self.server_url, api_key=self.api_key, api_user=self.api_user)
+        if not session:
+            self.ftrack = ftrack_api.Session(server_url=self.server_url, api_key=self.api_key, api_user=self.api_user)
+        else:
+            self.ftrack = session
+            self.auto_close = False
         self.project_schema = self.ftrack.query('ProjectSchema where name is %s' % self.schema).first()
         # Retrieve default types.
         self.default_shot_status = self.project_schema.get_statuses('Shot')[0]
@@ -158,8 +165,10 @@ class ProjectManagementData(object):
             if self.filename:
                 self.create_version()
 
-        self.ftrack.commit()
-        self.ftrack.close()
+        if self.auto_close:
+            print 'committing and closing'
+            self.ftrack.commit()
+            self.ftrack.close()
 
     def entity_exists(self, data_type):
         """
@@ -218,7 +227,8 @@ class ProjectManagementData(object):
         self.shot_data = self.ftrack.create('Shot', {
             'name': self.shot_name,
             'parent': self.seq_data,
-            'status': self.default_shot_status
+            'status': self.default_shot_status,
+            'description': self.description
         })
         return self.shot_data
 
@@ -228,7 +238,9 @@ class ProjectManagementData(object):
             'name': self.task_name,
             'parent': self.entity_data,
             'status': self.default_task_status,
-            'type': self.task_type
+            'type': self.task_type,
+            'description': self.description,
+            'bid': self.bid
         })
         if self.thumb_path_full:
             if os.path.exists(self.thumb_path_full):

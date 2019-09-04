@@ -7,7 +7,7 @@ from cglui.widgets.progress_gif import ProgressGif
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
-from cglui.widgets.dialog import LoginDialog, InputDialog
+from cglui.widgets.dialog import LoginDialog, InputDialog, ProjectCreator
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange, start_url
 from cglcore.path import CreateProductionData, image_path
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
@@ -583,7 +583,7 @@ class CGLumberjack(LJMainWindow):
         self.previous_path = self.user_config['previous_path']
         self.filter = 'Everything'
         self.previous_paths = self.user_config['previous_paths']
-        self.project_management = app_config(company=self.company)['account_info']['project_management']
+        self.project_management = app_config()['account_info']['project_management']
         self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
                                                  user_email=self.proj_man_user_email,
                                                  user_name=self.proj_man_user_name,
@@ -616,12 +616,14 @@ class CGLumberjack(LJMainWindow):
         settings = QtWidgets.QAction('Settings', self)
         open_globals = QtWidgets.QAction('Go to Company Globals', self)
         open_user_globals = QtWidgets.QAction('Go to User Globals', self)
+        create_project = QtWidgets.QAction('Create Project', self)
         settings.setShortcut('Ctrl+,')
         pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
 
         ingest_dialog = QtWidgets.QAction('Ingest Tool', self)
         # add actions to the file menu
         tools_menu.addAction(settings)
+        tools_menu.addAction(create_project)
         tools_menu.addAction(open_globals)
         tools_menu.addAction(open_user_globals)
         tools_menu.addAction(pipeline_designer)
@@ -629,10 +631,16 @@ class CGLumberjack(LJMainWindow):
         # connect signals and slots
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
+        create_project.triggered.connect(self.open_create_project_dialog)
         settings.triggered.connect(self.on_settings_clicked)
         pipeline_designer.triggered.connect(self.on_menu_designer_clicked)
         login.triggered.connect(self.on_login_clicked)
         proj_man.triggered.connect(self.on_proj_man_menu_clicked)
+
+    @staticmethod
+    def open_create_project_dialog():
+        dialog = ProjectCreator()
+        dialog.exec_()
 
     def on_proj_man_menu_clicked(self):
         link = app_config()['project_management'][self.project_management]['api']['server_url']
