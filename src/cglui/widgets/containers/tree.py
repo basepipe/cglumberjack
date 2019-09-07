@@ -48,10 +48,22 @@ class ProductionComboDelegate(QtWidgets.QItemDelegate):
         print items
 
 
+class LJTreeModel(QtGui.QStandardItemModel):
+    def __init__(self, parent=None):
+        QtGui.QStandardItemModel.__init__(self)
+
+    def supportedDropActions(self):
+        return QtCore.Qt.CopyAction | QtCore.Qt.MoveAction
+
+    def dropMimeData(self, data, action, row, column, parent):
+        print data, action, row, column, parent
+        return True
+
+
 class LJTreeWidget(QtWidgets.QTreeView):
     nothing_selected = QtCore.Signal()
     selected = QtCore.Signal(object)
-    dropped = QtCore.Signal(object)
+    files_added = QtCore.Signal(object)
     header_labels = []
 
     def __init__(self, parent=None, parents=None):
@@ -59,7 +71,11 @@ class LJTreeWidget(QtWidgets.QTreeView):
         StateSavers.remember_me(self)
 
         self.items_ = []
-        self.model = QtGui.QStandardItemModel()
+
+        self.model = LJTreeModel()
+        self.setModel(self.model)
+        self.setAcceptDrops(True)
+        self.setDropIndicatorShown(True)
         self.setUniformRowHeights(True)
         # connect items
         if parents:
@@ -68,7 +84,7 @@ class LJTreeWidget(QtWidgets.QTreeView):
         self.activated.connect(self.row_selected)
         self.horizontalScrollBar().setEnabled(False)
         self.height_hint = 150
-        self.width_hint = 0
+        self.width_hint = 200
         self.path_object = None
 
     def populate_from_data_frame(self, path_object, data_frame, header):
@@ -127,7 +143,7 @@ class LJTreeWidget(QtWidgets.QTreeView):
         if self.selectionModel():
             for r in self.selectionModel().selectedRows():
                 for column in range(self.column_count()):
-                    print column, self.model.item(r.row(), column).text()
+                    # print column, self.model.item(r.row(), column).text()
                     item = self.model.item(r.row(), column).text()
                     row.append(item)
             items.append(row)
@@ -156,8 +172,9 @@ class LJTreeWidget(QtWidgets.QTreeView):
         """
         :return:
         """
-        self.model = QtGui.QStandardItemModel()
+        self.model = LJTreeModel()
         self.setModel(self.model)
+        self.setAcceptDrops(True)
 
     @staticmethod
     def on_closing():
@@ -188,5 +205,19 @@ class LJTreeWidget(QtWidgets.QTreeView):
 
     def sizeHint(self):
         return QtCore.QSize(self.height_hint, self.width_hint)
+
+    def dropEvent(self, event):
+        print 'dropping like its hot'
+        print self.height_hint
+        print event.mimeData()
+        # if e.mimeData().hasUrls:
+        #     e.setDropAction(QtCore.Qt.CopyAction)
+        #     e.accept()
+        #     file_list = []
+        #     for url in e.mimeData().urls():
+        #         file_list.append(str(url.toLocalFile()))
+        #     self.files_added.emit(file_list)
+        # else:
+        #     e.ignore()
 
 

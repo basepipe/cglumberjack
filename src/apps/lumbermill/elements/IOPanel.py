@@ -35,13 +35,10 @@ class EmptyStateWidgetIO(EmptyStateWidget):
 
     def __init__(self, parent=None, path_object=None):
         EmptyStateWidget.__init__(self, parent)
-        self.path_object = path_object
         self.setText('Drag/Drop to Create a \nNew Import Version')
         self.setProperty('class', 'empty_state')
 
     def dropEvent(self, e):
-        new_obj = self.path_object.copy()
-        self.to_path = new_obj.path_root
         if e.mimeData().hasUrls:
             e.setDropAction(QtCore.Qt.CopyAction)
             e.accept()
@@ -63,7 +60,6 @@ class IOPanel(QtWidgets.QWidget):
         else:
             print 'No Path Object found, exiting'
             return
-
         self.project_management = app_config()['account_info']['project_management']
         self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
         self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
@@ -81,7 +77,7 @@ class IOPanel(QtWidgets.QWidget):
         self.project = None
         self.data_frame = None
         self.width_hint = 1300
-        self.height_hint = 600
+        self.height_hint = 1200
         self.current_selection = None
 
         self.path_object.set_attr(scope='IO')
@@ -91,7 +87,7 @@ class IOPanel(QtWidgets.QWidget):
         self.io_statuses = ['Imported', 'Tagged', 'Published']
 
         self.file_tree = LJTreeWidget(self)
-        self.width_hint = self.file_tree.width_hint
+        #self.width_hint = self.file_tree.width_hint
 
         pixmap = QtGui.QPixmap(icon_path('back24px.png'))
         import_empty_icon = QtGui.QIcon(pixmap)
@@ -147,7 +143,9 @@ class IOPanel(QtWidgets.QWidget):
         # create buttons row
         self.buttons_row = QtWidgets.QHBoxLayout()
 
-        self.publish_button = QtWidgets.QPushButton('Publish')
+        self.publish_button = QtWidgets.QPushButton('Publish Selected')
+        self.publish_tagged_button = QtWidgets.QPushButton('Publish All Tagged')
+        self.publish_tagged_button.hide()
         self.refresh_button = QtWidgets.QPushButton('Refresh')
         self.refresh_button.hide()
         self.publish_button.setProperty('class', 'basic')
@@ -157,7 +155,6 @@ class IOPanel(QtWidgets.QWidget):
         self.buttons_row.addWidget(self.publish_button)
         self.empty_state = EmptyStateWidgetIO(path_object=self.path_object)
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
-        self.empty_state.hide()
 
         self.progress_bar = ProgressGif()
         self.progress_bar.hide()
@@ -165,11 +162,10 @@ class IOPanel(QtWidgets.QWidget):
         h_layout.addWidget(self.source_widget)
         h_layout.addWidget(self.ingest_widget)
         self.panel.addLayout(h_layout)
-        self.panel.addWidget(self.empty_state)
-        self.panel.addWidget(self.progress_bar)
         self.panel.addWidget(self.file_tree)
-
+        self.panel.addWidget(self.empty_state)
         self.panel.addLayout(self.tags_title_row)
+        self.panel.addWidget(self.progress_bar)
         self.panel.addLayout(self.seq_row)
         self.panel.addLayout(self.tags_row)
         self.panel.addLayout(self.buttons_row)
@@ -194,7 +190,7 @@ class IOPanel(QtWidgets.QWidget):
         self.source_widget.list.clicked.connect(self.on_source_selected)
         self.ingest_widget.list.clicked.connect(self.on_ingest_selected)
         self.ingest_widget.add_button.clicked.connect(self.on_add_ingest_event)
-        self.publish_button.clicked.connect(self.publish_tagged_assets)
+        self.publish_button.clicked.connect(self.publish_selected_asset)
         self.empty_state.files_added.connect(self.new_files_dragged)
         logging.info('Testing the popup')
         self.on_scope_changed()
@@ -222,7 +218,7 @@ class IOPanel(QtWidgets.QWidget):
                 shutil.copy2(f, to_file)
             else:
                 logging.info('Copying Folder From %s to %s' % (f, to_file))
-                shutil.copy(f, to_file)
+                shutil.copytree(f, to_file)
 
         self.progress_bar.hide()
         self.load_import_events()
@@ -232,8 +228,15 @@ class IOPanel(QtWidgets.QWidget):
         self.on_ingest_selected()
 
     def new_files_dragged(self, files):
+        if self.version == self.path_object.version:
+            to_folder = self.path_object.path_root
+        else:
+            to_folder = self.path_object_next.path_root
+        if os.path.exists(os.path.join(to_folder, 'publish_data.old.csv')):
+            os.remove(os.path.join(to_folder, 'publish_data.old.csv'))
+        if os.path.exists(os.path.join(to_folder, 'publish_data.csv')):
+            os.rename(os.path.join(to_folder, 'publish_data.csv'), os.path.join(to_folder, 'publish_data.old.csv'))
         path = self.path_object.ingest_source
-        to_folder = self.path_object_next.path_root
         self.progress_bar.show()
         QtWidgets.qApp.processEvents()
         file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
@@ -274,7 +277,7 @@ class IOPanel(QtWidgets.QWidget):
             self.ingest_widget.set_icon(icon)
         self.path_object.set_attr(version=latest)
         self.path_object_next = self.path_object.next_major_version()
-        self.empty_state.setText('Drag Media Here to Create Ingest %s' % self.path_object_next.version)
+        self.empty_state.setText('Drag Files Here to Create Ingest %s' % self.path_object_next.version)
 
     def on_ingest_selected(self):
         self.ingest_widget.empty_state.hide()
@@ -289,7 +292,9 @@ class IOPanel(QtWidgets.QWidget):
     def populate_tree(self):
         self.file_tree.clear()
         if os.listdir(self.path_object.path_root):
-            self.empty_state.hide()
+            # self.empty_state.hide()
+            self.version = self.path_object.version
+            self.empty_state.setText('Drag Files To Ingest %s' % self.version)
             self.file_tree.show()
             self.file_tree.directory = self.path_object.path_root
             self.file_tree.populate_from_data_frame(self.path_object, self.data_frame,
@@ -335,13 +340,18 @@ class IOPanel(QtWidgets.QWidget):
 
     def edit_data_frame(self):
         files = self.current_selection
-        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
-        proj_man_tasks = schema['long_to_short'][self.scope_combo.currentText()]
+        if self.current_selection[0][STATUS] == 'Published':
+            return
         if self.seq_combo.currentText():
             seq = str(self.seq_combo.currentText())
             self.tags_title.setText('CGL:> Choose a %s Name or Type to Create a New One' %
                                     self.shot_label.text().title())
             if self.shot_combo.currentText():
+                schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+                if self.scope_combo.currentText():
+                    proj_man_tasks = schema['long_to_short'][self.scope_combo.currentText()]
+                else:
+                    return
                 shot = str(self.shot_combo.currentText())
                 self.tags_title.setText('CGL:> Which Task will this be published to?')
                 if self.task_combo.currentText():
@@ -369,6 +379,7 @@ class IOPanel(QtWidgets.QWidget):
                                 # self.publish_button.hide()
                             else:
                                 self.tags_title.setText('CGL:>  Tagged & Ready For Publish!')
+                                self.publish_button.setEnabled(True)
                             self.data_frame.at[row, 'Scope'] = self.scope_combo.currentText()
                             self.data_frame.at[row, 'Seq'] = seq
                             self.data_frame.at[row, 'Shot'] = shot
@@ -532,8 +543,6 @@ class IOPanel(QtWidgets.QWidget):
                                     (self.seq_label.text()))
             self.populate_seq()
             self.populate_tasks()
-        else:
-            print 'no scope chosen'
 
     def on_seq_changed(self):
         shots = None
@@ -555,35 +564,43 @@ class IOPanel(QtWidgets.QWidget):
         self.show_tags_gui()
         self.current_selection = data
         self.scope_combo.setCurrentIndex(0)
+
         self.seq_combo.clear()
         self.shot_combo.clear()
         self.task_combo.clear()
         self.tags_line_edit.clear()
         self.sender().parent().show_combo_info(data)
+        if not self.task_combo.currentText():
+            self.publish_button.setEnabled(False)
+        else:
+            self.publish_button.setEnabled(True)
         # self.sender().parent().show_tags_gui(files=files)
         # self.sender().parent().show_tags_info(data)
 
     def on_add_ingest_event(self):
         # deselect everything in the event
         # change the file path to reflect no selection
+        self.version = self.path_object_next.version
+        self.empty_state.setText('Drag Media Here to Create Ingest %s' % self.version)
         self.hide_tags()
         self.file_tree.hide()
         self.empty_state.show()
 
-    def publish_tagged_assets(self):
+    def publish_selected_asset(self):
         # figure out what task we're publishing this thing to
         task = self.schema_dict['long_to_short'][self.scope_combo.currentText()][self.task_combo.currentText()]
         # task = app_config()['pipeline_steps'][scope][self.task_combo.currentText()]
         try:
-            this = Preflight(self, software='ingest', preflight=task, data_frame=self.data_frame,
-                             file_tree=self.file_tree, pandas_path=self.pandas_path,
-                             ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
+            dialog = Preflight(self, software='ingest', preflight=task, data_frame=self.data_frame,
+                               file_tree=self.file_tree, pandas_path=self.pandas_path,
+                               current_selection=self.current_selection,
+                               ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
         except KeyError:
-            this = Preflight(self, software='ingest', preflight='default', data_frame=self.data_frame,
-                             file_tree=self.file_tree, pandas_path=self.pandas_path,
-                             ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
-        this.exec_()
-        return
+            dialog = Preflight(self, software='ingest', preflight='default', data_frame=self.data_frame,
+                               file_tree=self.file_tree, pandas_path=self.pandas_path,
+                               current_selection=self.current_selection,
+                               ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
+        dialog.show()
 
     # noinspection PyListCreation
     @staticmethod

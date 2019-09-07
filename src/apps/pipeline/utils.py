@@ -70,12 +70,14 @@ class PreflightStep(QtWidgets.QWidget):
         module_label = QtWidgets.QLabel('module')
         required_label = QtWidgets.QLabel('required')
         label_label = QtWidgets.QLabel('label')
+        self.icon_label = QtWidgets.QLabel('icon')
 
         # line edits
         self.command_line_edit = QtWidgets.QLineEdit()
         self.command_line_edit.setEnabled(False)
         self.required_line_edit = QtWidgets.QLineEdit()
         self.required_line_edit.setText('True')
+        self.icon_path_line_edit = QtWidgets.QLineEdit()
         # self.required_line_edit.setEnabled(False)
         self.label_line_edit = QtWidgets.QLineEdit()
         self.attrs_dict = {'module': self.command_line_edit,
@@ -96,12 +98,17 @@ class PreflightStep(QtWidgets.QWidget):
         self.code_text_edit.setTabStopWidth(4 * metrics.width(' '))
         Highlighter(self.code_text_edit.document())
         # Layout the Grid
-        grid_layout.addWidget(required_label, 2, 0)
-        grid_layout.addWidget(self.required_line_edit, 2, 1)
+
         grid_layout.addWidget(label_label, 0, 0)
         grid_layout.addWidget(self.label_line_edit, 0, 1)
         grid_layout.addWidget(module_label, 1, 0)
         grid_layout.addWidget(self.command_line_edit, 1, 1)
+        grid_layout.addWidget(required_label, 2, 0)
+        grid_layout.addWidget(self.required_line_edit, 2, 1)
+        grid_layout.addWidget(self.icon_label, 3, 0)
+        grid_layout.addWidget(self.icon_path_line_edit, 3, 1)
+        self.icon_label.hide()
+        self.icon_path_line_edit.hide()
 
         # Layout the tool row
         tool_row.addStretch(1)

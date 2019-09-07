@@ -188,6 +188,7 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
     else:
         res = width
     path_object = PathObject(sequence)
+    path_object.set_file_type()
     if not output:
         path_object_output = path_object.copy(resolution='hdProxy')
         output_dir = os.path.dirname(path_object_output.path_root)
@@ -215,6 +216,7 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
             this_ = os.path.splitext(output)[0]
             fileout = this_+'.jpg'
         command = '%s %s -resize %s %s' % (config['magick'], sequence, res, fileout)
+    print 'Command is:', command
     _execute(command)
     return fileout
 

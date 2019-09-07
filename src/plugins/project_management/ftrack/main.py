@@ -166,7 +166,6 @@ class ProjectManagementData(object):
                 self.create_version()
 
         if self.auto_close:
-            print 'committing and closing'
             self.ftrack.commit()
             self.ftrack.close()
 
@@ -289,6 +288,11 @@ class ProjectManagementData(object):
         return self.version_data
 
     def upload_media(self):
+        print self.file_type
+        if not self.file_type:
+            print 'Cannot Determine File Type - skipping Ftrack Upload'
+            return
+
         if not os.path.exists(self.path_object.preview_path_full):
             print self.path_object.preview_path_full, 'preview path'
             create_previews(path_object=self.path_root)
@@ -331,6 +335,7 @@ class ProjectManagementData(object):
                               data={'name': 'thumbnail'},
                               location=server_location
             )
+
         self.version_data['thumbnail'] = thumb_component
         logging.info('Committing Media')
         component.session.commit()
