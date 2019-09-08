@@ -43,7 +43,7 @@ class CreatePublishFiles(PreflightCheck):
         source_path.set_attr(filename='system_report.csv')
         data = [(row["Filepath"], row["Filename"], row["Filetype"], row["Frame_Range"], row["Tags"],
                  row["Keep_Client_Naming"], row["Scope"], row["Seq"], row["Shot"], row["Task"],
-                 row["Publish_Filepath"], row["Publish_Date"], row["Status"])]
+                 row["Publish_Filepath"], row["Publish_Date"], row["Status"], row["Parent"])]
         df = pd.DataFrame(data, columns=self.shared_data['ingest_browser_header'])
         if not self.test:
             df.to_csv(source_path.path_root, index=False)
@@ -58,66 +58,65 @@ class CreatePublishFiles(PreflightCheck):
         # This is publishing EVERYTHING, what about the scenario when we don't want that?
         # can i get the selected row only?
         for index, row in self.data_frame.iterrows():
-            print index, row
-            if row['Status'] == 'Tagged':
-                from_file = row['Filepath']
-                to_file = row['Publish_Filepath']
+            if row['Filename'] == self.current_selection[0][0]:
+                if row['Status'] == 'Tagged':
+                    from_file = row['Filepath']
+                    to_file = row['Publish_Filepath']
 
-                # What to do if it's a Folder
-                if row['Filetype'] == 'folder':
-                    print 'Copying %s to %s' % (from_file, to_file)
-                    # Send this to the Preflights - No matter what basically
-                    if not self.test:
-                        shutil.copytree(from_file, to_file)
-                        CreateProductionData(to_file, json=True)
-                    self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
-                    # noinspection PyUnresolvedReferences
-                    self.signal_one.emit([index, STATUS, 'Published'])
-                    self.data_frame.at[index, 'Status'] = 'Published'
-                    self.data_frame.at[index, 'Publish_Date'] = current_date
-                    row['Publish_Date'] = current_date
-                    row['Status'] = 'Published'
-                    self.make_source_file(to_file, row)
-
-                # What to do with Sequences:
-                else:
-                    to_dir = os.path.dirname(to_file)
-                    if row['Filetype'] == 'sequence':
-                        print '2, Sequence'
+                    # What to do if it's a Folder
+                    if row['Filetype'] == 'folder':
+                        print 'Copying %s to %s' % (from_file, to_file)
+                        # Send this to the Preflights - No matter what basically
                         if not self.test:
-                            print 'Creating Directory: %s' % to_dir
-                            CreateProductionData(to_dir)
-                        file_sequence, self.shared_data['frange'] = split_sequence_frange(from_file)
-                        from_query = split_sequence(from_file)
-                        from_filename = os.path.split(file_sequence)[-1]
-                        self.shared_data['published_seq'] = os.path.join(to_dir, from_filename)
+                            shutil.copytree(from_file, to_file)
+                            CreateProductionData(to_file, json=True)
+                        self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
+                        # noinspection PyUnresolvedReferences
+                        # self.data_frame.at[index, 'Status'] = 'Published'
+                        # self.data_frame.at[index, 'Publish_Date'] = current_date
+                        row['Publish_Date'] = current_date
+                        row['Status'] = 'Published'
+                        self.make_source_file(to_file, row)
 
-                        for f in glob.glob('%s*' % from_query):
-                            to_file = os.path.join(to_dir, os.path.basename(f))
-                            print 'Copying %s to %s' % (f, to_file)
+                    # What to do with Sequences:
+                    else:
+                        to_dir = os.path.dirname(to_file)
+                        if row['Filetype'] == 'sequence':
+                            print '2, Sequence'
                             if not self.test:
-                                shutil.copy2(f, to_file)
-                            self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
+                                print 'Creating Directory: %s' % to_dir
+                                CreateProductionData(to_dir)
+                            file_sequence, self.shared_data['frange'] = split_sequence_frange(from_file)
+                            from_query = split_sequence(from_file)
+                            from_filename = os.path.split(file_sequence)[-1]
+                            self.shared_data['published_seq'] = os.path.join(to_dir, from_filename)
+
+                            for f in glob.glob('%s*' % from_query):
+                                to_file = os.path.join(to_dir, os.path.basename(f))
+                                print 'Copying %s to %s' % (f, to_file)
+                                if not self.test:
+                                    shutil.copy2(f, to_file)
+                                # self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
+                                self.data_frame.at[index, 'Status'] = 'Published'
+                                self.data_frame.at[index, 'Publish_Date'] = current_date
+                                row['Publish_Date'] = current_date
+                                row['Status'] = 'Published'
+                                self.make_source_file(to_dir, row)
+                        else:
+                            print '4 File'
+                            print 'Copying %s to %s' % (from_file, to_file)
+                            if not self.test:
+                                print 'Creating File: %s' % to_file
+                                CreateProductionData(to_file, json=True)
+                                shutil.copy2(from_file, to_file)
+                            # self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
                             self.data_frame.at[index, 'Status'] = 'Published'
                             self.data_frame.at[index, 'Publish_Date'] = current_date
                             row['Publish_Date'] = current_date
                             row['Status'] = 'Published'
-                            self.make_source_file(to_dir, row)
-                    else:
-                        print '4 File'
-                        print 'Copying %s to %s' % (from_file, to_file)
-                        if not self.test:
-                            print 'Creating File: %s' % to_file
-                            CreateProductionData(to_file, json=True)
-                            shutil.copy2(from_file, to_file)
-                        self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
-                        self.data_frame.at[index, 'Status'] = 'Published'
-                        self.data_frame.at[index, 'Publish_Date'] = current_date
-                        row['Publish_Date'] = current_date
-                        row['Status'] = 'Published'
-                        self.make_source_file(to_file, row)
-                self.save_data_frame()
-                self.pass_check('Check Passed')
-            else:
-                print 'Skipping Untagged assets'
+                            self.make_source_file(to_file, row)
+                    self.save_data_frame()
+                    self.pass_check('Check Passed')
+                else:
+                    print 'Skipping Untagged assets'
 

@@ -15,8 +15,8 @@ from cglcore.path import PathObject, icon_path, lj_list_dir, split_sequence_fran
 from plugins.preflight.main import Preflight
 from panels import clear_layout
 
-FILEPATH = 0
-FILENAME = 1
+FILEPATH = 1
+FILENAME = 0
 FILETYPE = 2
 FRANGE = 3
 TAGS = 4
@@ -28,6 +28,7 @@ TASK = 9
 PUBLISH_FILEPATH = 10
 PUBLISH_DATE = 11
 STATUS = 12
+PARENT = 13
 
 
 class EmptyStateWidgetIO(EmptyStateWidget):
@@ -35,13 +36,10 @@ class EmptyStateWidgetIO(EmptyStateWidget):
 
     def __init__(self, parent=None, path_object=None):
         EmptyStateWidget.__init__(self, parent)
-        self.path_object = path_object
         self.setText('Drag/Drop to Create a \nNew Import Version')
         self.setProperty('class', 'empty_state')
 
     def dropEvent(self, e):
-        new_obj = self.path_object.copy()
-        self.to_path = new_obj.path_root
         if e.mimeData().hasUrls:
             e.setDropAction(QtCore.Qt.CopyAction)
             e.accept()
@@ -63,7 +61,6 @@ class IOPanel(QtWidgets.QWidget):
         else:
             print 'No Path Object found, exiting'
             return
-
         self.project_management = app_config()['account_info']['project_management']
         self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
         self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
@@ -81,7 +78,7 @@ class IOPanel(QtWidgets.QWidget):
         self.project = None
         self.data_frame = None
         self.width_hint = 1300
-        self.height_hint = 600
+        self.height_hint = 1200
         self.current_selection = None
 
         self.path_object.set_attr(scope='IO')
@@ -91,7 +88,7 @@ class IOPanel(QtWidgets.QWidget):
         self.io_statuses = ['Imported', 'Tagged', 'Published']
 
         self.file_tree = LJTreeWidget(self)
-        self.width_hint = self.file_tree.width_hint
+        #self.width_hint = self.file_tree.width_hint
 
         pixmap = QtGui.QPixmap(icon_path('back24px.png'))
         import_empty_icon = QtGui.QIcon(pixmap)
@@ -147,29 +144,32 @@ class IOPanel(QtWidgets.QWidget):
         # create buttons row
         self.buttons_row = QtWidgets.QHBoxLayout()
 
-        self.publish_button = QtWidgets.QPushButton('Publish')
+        self.publish_button = QtWidgets.QPushButton('Publish Selected')
+        self.view_in_lumbermill = QtWidgets.QPushButton('View in Lumbermill')
+        self.view_in_lumbermill.setMinimumWidth(220)
         self.refresh_button = QtWidgets.QPushButton('Refresh')
         self.refresh_button.hide()
         self.publish_button.setProperty('class', 'basic')
+        self.view_in_lumbermill.setProperty('class', 'basic')
         self.refresh_button.setProperty('class', 'basic')
         self.buttons_row.addStretch(1)
         self.buttons_row.addWidget(self.refresh_button)
+        self.buttons_row.addWidget(self.view_in_lumbermill)
         self.buttons_row.addWidget(self.publish_button)
         self.empty_state = EmptyStateWidgetIO(path_object=self.path_object)
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
-        self.empty_state.hide()
 
         self.progress_bar = ProgressGif()
         self.progress_bar.hide()
+        self.view_in_lumbermill.hide()
 
         h_layout.addWidget(self.source_widget)
         h_layout.addWidget(self.ingest_widget)
         self.panel.addLayout(h_layout)
-        self.panel.addWidget(self.empty_state)
-        self.panel.addWidget(self.progress_bar)
         self.panel.addWidget(self.file_tree)
-
+        self.panel.addWidget(self.empty_state)
         self.panel.addLayout(self.tags_title_row)
+        self.panel.addWidget(self.progress_bar)
         self.panel.addLayout(self.seq_row)
         self.panel.addLayout(self.tags_row)
         self.panel.addLayout(self.buttons_row)
@@ -182,6 +182,7 @@ class IOPanel(QtWidgets.QWidget):
         self.hide_tags()
         self.file_tree.hide()
 
+        self.view_in_lumbermill.clicked.connect(self.on_view_in_lumbermill_clicked)
         self.refresh_button.clicked.connect(self.on_ingest_selected)
         self.scope_combo.currentIndexChanged.connect(self.on_scope_changed)
         self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
@@ -194,7 +195,7 @@ class IOPanel(QtWidgets.QWidget):
         self.source_widget.list.clicked.connect(self.on_source_selected)
         self.ingest_widget.list.clicked.connect(self.on_ingest_selected)
         self.ingest_widget.add_button.clicked.connect(self.on_add_ingest_event)
-        self.publish_button.clicked.connect(self.publish_tagged_assets)
+        self.publish_button.clicked.connect(self.publish_selected_asset)
         self.empty_state.files_added.connect(self.new_files_dragged)
         logging.info('Testing the popup')
         self.on_scope_changed()
@@ -222,7 +223,7 @@ class IOPanel(QtWidgets.QWidget):
                 shutil.copy2(f, to_file)
             else:
                 logging.info('Copying Folder From %s to %s' % (f, to_file))
-                shutil.copy(f, to_file)
+                shutil.copytree(f, to_file)
 
         self.progress_bar.hide()
         self.load_import_events()
@@ -232,8 +233,15 @@ class IOPanel(QtWidgets.QWidget):
         self.on_ingest_selected()
 
     def new_files_dragged(self, files):
+        if self.version == self.path_object.version:
+            to_folder = self.path_object.path_root
+        else:
+            to_folder = self.path_object_next.path_root
+        if os.path.exists(os.path.join(to_folder, 'publish_data.old.csv')):
+            os.remove(os.path.join(to_folder, 'publish_data.old.csv'))
+        if os.path.exists(os.path.join(to_folder, 'publish_data.csv')):
+            os.rename(os.path.join(to_folder, 'publish_data.csv'), os.path.join(to_folder, 'publish_data.old.csv'))
         path = self.path_object.ingest_source
-        to_folder = self.path_object_next.path_root
         self.progress_bar.show()
         QtWidgets.qApp.processEvents()
         file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
@@ -274,7 +282,7 @@ class IOPanel(QtWidgets.QWidget):
             self.ingest_widget.set_icon(icon)
         self.path_object.set_attr(version=latest)
         self.path_object_next = self.path_object.next_major_version()
-        self.empty_state.setText('Drag Media Here to Create Ingest %s' % self.path_object_next.version)
+        self.empty_state.setText('Drag Files Here to Create Ingest %s' % self.path_object_next.version)
 
     def on_ingest_selected(self):
         self.ingest_widget.empty_state.hide()
@@ -289,7 +297,9 @@ class IOPanel(QtWidgets.QWidget):
     def populate_tree(self):
         self.file_tree.clear()
         if os.listdir(self.path_object.path_root):
-            self.empty_state.hide()
+            # self.empty_state.hide()
+            self.version = self.path_object.version
+            self.empty_state.setText('Drag Files To Add To Ingest %s' % self.version)
             self.file_tree.show()
             self.file_tree.directory = self.path_object.path_root
             self.file_tree.populate_from_data_frame(self.path_object, self.data_frame,
@@ -308,17 +318,23 @@ class IOPanel(QtWidgets.QWidget):
             self.data_frame = pd.read_csv(self.pandas_path)
         else:
             data = []
-            for filename in lj_list_dir(dir_, basename=True):
-                file_ = filename
-                frange = ' '
-                fullpath = os.path.join(os.path.abspath(dir_), filename)
-                type_ = get_file_type(filename)
-                if type_ == 'sequence':
-                    file_, frange = split_sequence_frange(filename)
-                data.append((fullpath, file_, type_, frange, ' ', False, ' ', ' ', ' ', ' ', ' ', ' ',
-                             self.io_statuses[0]))
+            data = self.append_data_children(data, dir_)
             self.data_frame = pd.DataFrame(data, columns=app_config()['definitions']['ingest_browser_header'])
         self.save_data_frame()
+
+    def append_data_children(self, data, directory, parent='self'):
+        for filename in lj_list_dir(directory, basename=True):
+            file_ = filename
+            frange = ' '
+            fullpath = os.path.join(os.path.abspath(directory), filename)
+            type_ = get_file_type(filename)
+            if type_ == 'sequence':
+                file_, frange = split_sequence_frange(filename)
+            data.append((file_, fullpath, type_, frange, ' ', False, ' ', ' ', ' ', ' ', ' ', ' ',
+                         self.io_statuses[0], parent))
+            if type_ == 'folder':
+                self.append_data_children(data, fullpath, file_)
+        return data
 
     def save_data_frame(self):
         self.data_frame.to_csv(self.pandas_path, index=False)
@@ -329,19 +345,23 @@ class IOPanel(QtWidgets.QWidget):
         tags = self.tags_line_edit.text()
         if tags:
             for f in files:
-                row = self.data_frame.loc[self.data_frame['Filename'] == f[1]].index[0]
+                row = self.data_frame.loc[self.data_frame['Filename'] == f[FILENAME]].index[0]
                 self.data_frame.at[row, 'Tags'] = tags
             self.save_data_frame()
 
     def edit_data_frame(self):
-        files = self.current_selection
-        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
-        proj_man_tasks = schema['long_to_short'][self.scope_combo.currentText()]
+        if self.current_selection[0][STATUS] == 'Published':
+            return
         if self.seq_combo.currentText():
             seq = str(self.seq_combo.currentText())
             self.tags_title.setText('CGL:> Choose a %s Name or Type to Create a New One' %
                                     self.shot_label.text().title())
             if self.shot_combo.currentText():
+                schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+                if self.scope_combo.currentText():
+                    proj_man_tasks = schema['long_to_short'][self.scope_combo.currentText()]
+                else:
+                    return
                 shot = str(self.shot_combo.currentText())
                 self.tags_title.setText('CGL:> Which Task will this be published to?')
                 if self.task_combo.currentText():
@@ -356,19 +376,21 @@ class IOPanel(QtWidgets.QWidget):
                                                           user='publish',
                                                           resolution='high')
                         status = ''
-                        for f in files:
-                            row = self.data_frame.loc[self.data_frame['Filename'] == f[1]].index[0]
+                        for f in self.current_selection:
+                            row = self.data_frame.loc[(self.data_frame['Filename'] == f[FILENAME]) &
+                                                      (self.data_frame['Parent'] == f[PARENT])].index[0]
                             status = self.data_frame.at[row, 'Status']
                             if status == 'Imported':
                                 status = 'Tagged'
-                            to_path = os.path.join(to_object.path_root, f[1])
+                            to_path = os.path.join(to_object.path_root, f[FILENAME])
                             if status == 'Published':
                                 self.tags_title.setText('CGL:>  Published!')
-                                self.tags_button.clicked.connect(lambda: self.go_to_location(to_path))
-                                self.tags_button.show()
+                                # self.tags_button.clicked.connect(lambda: self.go_to_location(to_path))
+                                # self.tags_button.show()
                                 # self.publish_button.hide()
                             else:
                                 self.tags_title.setText('CGL:>  Tagged & Ready For Publish!')
+                                self.publish_button.setEnabled(True)
                             self.data_frame.at[row, 'Scope'] = self.scope_combo.currentText()
                             self.data_frame.at[row, 'Seq'] = seq
                             self.data_frame.at[row, 'Shot'] = shot
@@ -376,14 +398,35 @@ class IOPanel(QtWidgets.QWidget):
                             self.data_frame.at[row, 'Publish_Filepath'] = to_path
                             self.data_frame.at[row, 'Status'] = status
                         for each in self.file_tree.selectionModel().selectedRows():
-                            self.file_tree.model.item(each.row(), STATUS).setText(status)
+                            # TODO - i'd like this tidier, but works for now.
+                            parent = None
+                            if each.parent().row() != -1:
+                                parent = each.parent()
+                            if parent:
+                                mdl = self.file_tree.model
+                                mdl.itemFromIndex(parent.child(each.row(), PUBLISH_FILEPATH)).setText(to_path)
+                                mdl.itemFromIndex(parent.child(each.row(), STATUS)).setText(status)
+                                mdl.itemFromIndex(parent.child(each.row(), PUBLISH_FILEPATH)).setText(to_path)
+                                mdl.itemFromIndex(parent.child(each.row(),
+                                                               SCOPE)).setText(self.scope_combo.currentText())
+                                mdl.itemFromIndex(parent.child(each.row(), SEQ)).setText(seq)
+                                mdl.itemFromIndex(parent.child(each.row(), SHOT)).setText(shot)
+                                mdl.itemFromIndex(parent.child(each.row(), TASK)).setText(task)
+                            else:
+                                self.file_tree.model.item(each.row(), STATUS).setText(status)
+                                self.file_tree.model.item(each.row(), PUBLISH_FILEPATH).setText(to_path)
+                                self.file_tree.model.item(each.row(), SCOPE).setText(self.scope_combo.currentText())
+                                self.file_tree.model.item(each.row(), SEQ).setText(seq)
+                                self.file_tree.model.item(each.row(), SHOT).setText(shot)
+                                self.file_tree.model.item(each.row(), TASK).setText(task)
+
                         self.save_data_frame()
+                        # how do i edit the text only on the selected item?
                     except KeyError:
                         print 'Error with something:'
                         print 'scope', self.scope_combo.currentText()
                         print 'seq', seq
                         print 'shot', shot
-        # UPDATE the tree with this info.
 
     def go_to_location(self, to_path):
         path_object = PathObject(to_path).copy(context='source', user='', resolution='', filename='', ext='',
@@ -426,7 +469,8 @@ class IOPanel(QtWidgets.QWidget):
         if data:
             f = data[0]
             try:
-                row = self.data_frame.loc[self.data_frame['Filename'] == f[1]].index[0]
+                row = self.data_frame.loc[(self.data_frame['Filename'] == f[FILENAME]) &
+                                          (self.data_frame['Parent'] == f[PARENT])].index[0]
             except IndexError:
                 self.hide_tags()
                 return
@@ -532,8 +576,6 @@ class IOPanel(QtWidgets.QWidget):
                                     (self.seq_label.text()))
             self.populate_seq()
             self.populate_tasks()
-        else:
-            print 'no scope chosen'
 
     def on_seq_changed(self):
         shots = None
@@ -551,39 +593,66 @@ class IOPanel(QtWidgets.QWidget):
                 self.shot_combo.addItems(shots)
 
     def on_file_selected(self, data):
+        print data
         self.tags_title.setText("<b>CGL:></b>  Choose 'Assets' or 'Shots' for your scope")
         self.show_tags_gui()
         self.current_selection = data
         self.scope_combo.setCurrentIndex(0)
+
         self.seq_combo.clear()
         self.shot_combo.clear()
         self.task_combo.clear()
         self.tags_line_edit.clear()
         self.sender().parent().show_combo_info(data)
+        if not self.task_combo.currentText():
+            self.publish_button.setEnabled(False)
+        else:
+            self.publish_button.setEnabled(True)
+        if self.current_selection[0][STATUS] == "Published":
+            self.view_in_lumbermill.show()
+            self.hide_tags()
+            self.publish_button.setEnabled(False)
+        else:
+            self.view_in_lumbermill.hide()
+            self.show_tags_gui()
+            self.publish_button.setEnabled(True)
         # self.sender().parent().show_tags_gui(files=files)
         # self.sender().parent().show_tags_info(data)
+
+    def on_view_in_lumbermill_clicked(self):
+        path_object = PathObject(self.current_selection[0][PUBLISH_FILEPATH]).copy(context='source',
+                                                                                   user='',
+                                                                                   resolution='',
+                                                                                   filename='',
+                                                                                   ext='',
+                                                                                   filename_base='',
+                                                                                   version='')
+        self.location_changed.emit(path_object)
 
     def on_add_ingest_event(self):
         # deselect everything in the event
         # change the file path to reflect no selection
+        self.version = self.path_object_next.version
+        self.empty_state.setText('Drag Media Here to Create Ingest %s' % self.version)
         self.hide_tags()
         self.file_tree.hide()
         self.empty_state.show()
 
-    def publish_tagged_assets(self):
+    def publish_selected_asset(self):
         # figure out what task we're publishing this thing to
         task = self.schema_dict['long_to_short'][self.scope_combo.currentText()][self.task_combo.currentText()]
         # task = app_config()['pipeline_steps'][scope][self.task_combo.currentText()]
         try:
-            this = Preflight(self, software='ingest', preflight=task, data_frame=self.data_frame,
-                             file_tree=self.file_tree, pandas_path=self.pandas_path,
-                             ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
+            dialog = Preflight(self, software='ingest', preflight=task, data_frame=self.data_frame,
+                               file_tree=self.file_tree, pandas_path=self.pandas_path,
+                               current_selection=self.current_selection,
+                               ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
         except KeyError:
-            this = Preflight(self, software='ingest', preflight='default', data_frame=self.data_frame,
-                             file_tree=self.file_tree, pandas_path=self.pandas_path,
-                             ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
-        this.exec_()
-        return
+            dialog = Preflight(self, software='ingest', preflight='default', data_frame=self.data_frame,
+                               file_tree=self.file_tree, pandas_path=self.pandas_path,
+                               current_selection=self.current_selection,
+                               ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
+        dialog.show()
 
     # noinspection PyListCreation
     @staticmethod

@@ -384,13 +384,15 @@ class TaskWidget(QtWidgets.QWidget):
         self.resolutions_label.hide()
 
     def setup(self, table, mdl):
-        if isinstance(mdl, FileTableModel):
+        if isinstance(mdl, FileTableModel) or isinstance(mdl, ListItemModel):
             table.set_item_model(mdl)
             self.empty_state.hide()
             if not table.model().rowCount():
                 table.hide()
                 if not self.start_task_button.isVisible():
                     self.empty_state.show()
+        else:
+            print 'Found unexpected model: %s' % mdl
 
     def on_add_button_clicked(self):
         self.add_clicked.emit()
@@ -606,16 +608,15 @@ class FileTableWidget(LJTableWidget):
 
     def __init__(self, parent, hide_header=True):
         LJTableWidget.__init__(self, parent)
+        self.path_object = parent.parent().path_object
+        self.task = self.path_object.task
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                 QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSortingEnabled(False)
-        self.task = parent.parent().path_object.task
-        # Set The Right Click Menu
-        if hide_header:
-            self.horizontalHeader().hide()
-        self.item_right_click_menu = LJMenu(self)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.item_right_click_menu = LJMenu(self)
         self.item_right_click_menu.create_action("Show In Folder", self.show_in_folder)
+        self.item_right_click_menu.create_action('Show in %s' % PROJECT_MANAGEMENT, self.show_in_proj)
         self.item_right_click_menu.addSeparator()
         self.item_right_click_menu.create_action("Copy Folder Path", self.copy_folder_path)
         self.item_right_click_menu.create_action("Copy File Path", self.copy_file_path)
@@ -624,25 +625,35 @@ class FileTableWidget(LJTableWidget):
         self.item_right_click_menu.addSeparator()
         self.add_custom_task_items()
         self.item_right_click_menu.addSeparator()
+        self.customContextMenuRequested.connect(self.item_right_click)
+
+        # Set The Right Click Menu
+        if hide_header:
+            self.horizontalHeader().hide()
+
         # self.item_right_click_menu.create_action("Create Dailies Template", self.create_dailies_template_signal)
         # self.item_right_click_menu.addSeparator()
-        self.customContextMenuRequested.connect(self.item_right_click)
         self.setAcceptDrops(True)
         self.selected.connect(self.on_row_selected)
 
+    def show_in_proj(self):
+        from cglcore.path import show_in_project_management
+        show_in_project_management(self.path_object)
+
     def add_custom_task_items(self):
         # get the current task
-        menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
-        if os.path.exists(menu_file):
-            menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())
-            if self.task in menu_items['lumbermill']:
-                for item in menu_items['lumbermill'][self.task]:
-                    if item != 'order':
-                        button_label = menu_items['lumbermill'][self.task][item]['label']
-                        button_command = menu_items['lumbermill'][self.task][item]['module']
-                        module = button_command.split()[1]
-                        loaded_module = __import__(module, globals(), locals(), item, -1)
-                        self.item_right_click_menu.create_action(button_label, loaded_module.run)
+        if self.task:
+            menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
+            if os.path.exists(menu_file):
+                menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())
+                if self.task in menu_items['lumbermill']:
+                    for item in menu_items['lumbermill'][self.task]:
+                        if item != 'order':
+                            button_label = menu_items['lumbermill'][self.task][item]['label']
+                            button_command = menu_items['lumbermill'][self.task][item]['module']
+                            module = button_command.split()[1]
+                            loaded_module = __import__(module, globals(), locals(), item, -1)
+                            self.item_right_click_menu.create_action(button_label, loaded_module.run)
         # see if there are custom menu items required for this task.
 
     def on_row_selected(self, data):
@@ -779,7 +790,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
 
     def set_project_management(self, proj_man=None):
         if not proj_man:
-            proj_man = app_config()['account_info']['project_management']
+            proj_man = PROJECT_MANAGEMENT
         index = self.proj_management_combo.findText(proj_man)
         self.proj_management_combo.setCurrentIndex(index)
 

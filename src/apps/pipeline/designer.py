@@ -10,7 +10,7 @@ from utils import CGLMenu
 class Designer(LJDialog):
     def __init__(self, parent=None, type_=None, menu_path=None, pm_tasks=None):
         LJDialog.__init__(self, parent)
-        self.type = None
+        self.type = type_
         self.cgl_tools = get_cgl_tools()
 
         self.menu_path = menu_path
@@ -104,14 +104,22 @@ class Designer(LJDialog):
         self.type = self.menu_type_combo.currentText()
         if self.type:
             self.menu_path = os.path.join(self.cgl_tools, self.software, '%s.cgl' % self.type)
+            self.add_menu_button.setText('add %s' % self.type)
             if os.path.exists(self.menu_path):
                 self.load_menus()
 
     def on_add_menu_clicked(self):
-        if self.type == 'preflights':
-            dialog = InputDialog(title='Add %s' % self.type, message='Choose Task to Create a Preflight For',
+        if self.type == 'preflights' or self.type == 'context-menus':
+            if self.type == 'preflights':
+                singular = 'preflight'
+            elif self.type == 'context-menus':
+                singular = 'Context Menu'
+            elif self.type == 'shelves':
+                singular = 'Shelf'
+            dialog = InputDialog(title='Add %s' % singular,
+                                 message='Choose Task to Create a %s For\n Or Type to Create Your Own' % singular,
                                  line_edit=False, combo_box_items=self.task_list, regex='[a-zA-Z]',
-                                 name_example='Only letters & Numbers Allowed in Button Names')
+                                 name_example='Only letters & Numbers Allowed in %s Names' % singular)
             dialog.exec_()
             if dialog.button == 'Ok':
                 long_name = dialog.combo_box.currentText()
@@ -138,25 +146,6 @@ class Designer(LJDialog):
                 new_menu.save_clicked.connect(self.on_save_clicked)
                 index = self.menus.addTab(new_menu, menu_name)
                 self.menus.setCurrentIndex(index)
-        elif self.type == 'context-menus':
-            dialog = InputDialog(title='Add Context Menu', message='Choose Task to Create a Context Menu For',
-                                 line_edit=False, regex='[a-zA-Z0-0]{3,}', combo_box_items=self.task_list,
-                                 name_example='Only letters & Numbers Allowed in Task Names')
-            dialog.exec_()
-            if dialog.button == 'Ok':
-                long_name = dialog.combo_box.currentText()
-                if long_name in self.schema['long_to_short']['assets']:
-                    menu_name = self.schema['long_to_short']['assets'][long_name]
-                elif long_name in self.schema['long_to_short']['shots']:
-                    menu_name = self.schema['long_to_short']['shots'][long_name]
-                else:
-                    menu_name = long_name
-                cgl_file = self.menu_path
-                new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
-                                   menu_path=cgl_file, menu_type=self.type)
-                new_menu.save_clicked.connect(self.on_save_clicked)
-                index = self.menus.addTab(new_menu, menu_name)
-                self.menus.setCurrentIndex(index)
 
     def on_save_clicked(self):
         self.save_menus()
@@ -167,16 +156,11 @@ class Designer(LJDialog):
         self.title_widget.show()
         self.title_label.setText('%s %s' % (self.software_combo.currentText(), self.type))
         self.software = self.software_combo.currentText()
-        print 010
         if os.path.exists(self.menu_path):
             menu_dict = self.load_json(self.menu_path)
-        print 20
         if menu_dict:
-            print 0
             if self.software in menu_dict:
-                print 1, self.software
                 for i in range(len(menu_dict[self.software])+1):
-                    print 2, menu_dict[self.software]
                     for menu in menu_dict[self.software]:
                         if i == menu_dict[self.software][menu]['order']:
                             buttons = CGLMenu(software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
@@ -215,6 +199,13 @@ class Designer(LJDialog):
                         'label': button_widget.label_line_edit.text(),
                         'order': bi + 1,
                         'required': button_widget.required_line_edit.text()
+                    }
+                elif self.type == 'shelves':
+                    menu_dict[menu_name][button_name] = {
+                        'module': button_widget.command_line_edit.text(),
+                        'label': button_widget.label_line_edit.text(),
+                        'order': bi + 1,
+                        'icon': button_widget.required_line_edit.text()
                     }
                 else:
                     menu_dict[menu_name][button_name] = {

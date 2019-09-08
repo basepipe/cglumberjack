@@ -67,6 +67,18 @@ QPushButton.basic{
     padding-right: 15px;
 }
 
+QPushButton.basic:disabled{
+    background-color: white;
+    border: 1px solid #BFBFBF;
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #BFBFBF;
+    height: 24px;
+    width: 160px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
 QToolButton.add_button{
     background-color: #B5E9E9;
     border: 3px solid #707070;

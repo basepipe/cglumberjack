@@ -64,7 +64,8 @@ class ItemTable(LJTableWidget):
 class Preflight(QtWidgets.QDialog):
     signal_one = QtCore.Signal(object)
 
-    def __init__(self, parent=None, software='lumbermill', preflight='', model=None, path_object=None, **kwargs):
+    def __init__(self, parent=None, software='lumbermill', preflight='', model=None, path_object=None,
+                 current_selection=None, **kwargs):
         QtWidgets.QDialog.__init__(self, parent)
         self.software = software
         self.preflight = preflight
@@ -79,7 +80,7 @@ class Preflight(QtWidgets.QDialog):
         self.table_data = []
         self.setWindowTitle('%s Preflights' % self.preflight)
         PreflightCheck.shared_data['path_object'] = PathObject(path_object)
-
+        PreflightCheck.shared_data['current_selection'] = current_selection
         PreflightCheck.shared_data['preflight_dialog'] = self
         for key, value in kwargs.iteritems():
             PreflightCheck.shared_data[key] = value
@@ -164,6 +165,7 @@ class Preflight(QtWidgets.QDialog):
         self.preflights.sortByColumn(3, QtCore.Qt.SortOrder(0))
         self.preflights.hideColumn(2)
         self.preflights.hideColumn(3)
+        self.preflights.setSortingEnabled(False)
 
     def update_selection(self, data):
         self.selected_checks = data
@@ -241,6 +243,7 @@ class Preflight(QtWidgets.QDialog):
 
         self.run_selected_clicked(checks=all_rows)
         self.image_plane.stop()
+        self.accept()
 
 
 def main():
