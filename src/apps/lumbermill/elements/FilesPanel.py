@@ -3,7 +3,7 @@ import shutil
 import logging
 import glob
 from Qt import QtWidgets, QtCore
-from cglcore.config import app_config
+from cglcore.config import app_config, UserConfig
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
 from cglcore.util import current_user
@@ -146,6 +146,9 @@ class FilesPanel(QtWidgets.QWidget):
                 task_widget.resolutions_label.hide()
                 task_widget.resolutions.hide()
                 task_widget.empty_state.hide()
+                task_widget.status_button.hide()
+            else:
+                task_widget.refresh_task_info()
 
     def add_stretch_to_source(self):
         self.panel.addStretch(1)
@@ -386,9 +389,13 @@ class FilesPanel(QtWidgets.QWidget):
             self.path_object.set_attr(ext=None)
             self.path_object.set_attr(filename_base=None)
             self.update_location(self.path_object)
-
-            CreateProductionData(path_object=self.current_location, project_management=self.project_management)
+            if dialog.combo_box.currentText() == UserConfig().d['proj_man_user_email']:
+                print 'Im going to add this thing to the local files'
+            CreateProductionData(path_object=self.current_location,
+                                 project_management=self.project_management,
+                                 force_pm_creation=True)
         self.update_location(path_object=self.path_object)
+        # update the user task dictionary
 
     def show_in_folder(self):
         show_in_folder(self.path_object.path_root)

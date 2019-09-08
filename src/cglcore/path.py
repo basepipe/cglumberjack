@@ -928,6 +928,35 @@ def show_in_project_management(path_object):
         start_url(loaded_module.ProjectManagementData(path_object).get_url())
 
 
+def get_task_info(path_object, force=False):
+    task_info = None
+    all_tasks = UserConfig().d['my_tasks'][path_object.company][path_object.project]
+    if path_object.task:
+        if path_object.scope == 'assets':
+            path_object.task_name = '%s_%s_%s' % (path_object.category, path_object.asset, path_object.task)
+        elif path_object.scope == 'shots':
+            path_object.task_name = '%s_%s_%s' % (path_object.seq, path_object.shot, path_object.task)
+        if path_object.task_name:
+            if force:
+                task_info = pull_task_info(path_object)
+                return task_info
+            else:
+                if path_object.task_name in all_tasks:
+                    task_info = all_tasks[path_object.task_name]
+                else:
+                    task_info = pull_task_info(path_object)
+                return task_info
+
+
+def pull_task_info(path_object):
+    if PROJ_MANAGEMENT == 'ftrack':
+        from plugins.project_management.ftrack.main import find_user_assignments
+        user = UserConfig().d['proj_man_user_email']
+        project_tasks = find_user_assignments(path_object, user, force=True)
+        task_info = project_tasks[path_object.task_name]
+        return task_info
+
+
 def create_project_config(company, project):
     config_dir = os.path.dirname(UserConfig().user_config_path)
     company_config = os.path.join(config_dir, 'companies', company, 'global.yaml')

@@ -6,7 +6,7 @@ from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.containers.menu import LJMenu
 from cglcore.config import app_config
-from cglcore.path import get_cgl_tools
+from cglcore.path import get_cgl_tools, get_task_info
 from cglcore.util import load_json
 
 PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
@@ -260,6 +260,8 @@ class TaskWidget(QtWidgets.QWidget):
         self.label = title
         self.title = QtWidgets.QLabel("<b>%s</b>" % title.title())
         self.title.setProperty('class', 'title_text')
+        self.status_button = QtWidgets.QPushButton('Get Status')
+        self.status_button.setProperty('class', 'status_button')
 
         self.task = None
         self.user = None
@@ -294,6 +296,7 @@ class TaskWidget(QtWidgets.QWidget):
         self.create_assignment = QtWidgets.QPushButton("Create Assignment")
         self.create_assignment.setProperty('class', 'add_button')
         self.title_row.addWidget(self.title)
+        self.title_row.addWidget(self.status_button)
         self.title_row.addStretch(1)
         self.title_row.addWidget(self.create_assignment)
 
@@ -314,11 +317,32 @@ class TaskWidget(QtWidgets.QWidget):
         self.start_task_button.hide()
         # self.show_button.clicked.connect(self.on_show_button_clicked)
         # self.hide_button.clicked.connect(self.on_hide_button_clicked)
+        self.status_button.clicked.connect(self.force_refresh_task_info)
         self.create_assignment.clicked.connect(self.on_start_task_clicked)
         self.files_area.copy_latest_version.connect(self.copy_latest)
         self.files_area.copy_selected_version.connect(self.copy_selected)
         self.files_area.create_empty_version.connect(self.create_empty)
         self.files_area.hide_tool_buttons()
+        # self.refresh_task_info()
+
+    def refresh_task_info(self, force=False):
+        color_dict = {"pending review": "#EFB940",
+                      "not started": "#E54A25",
+                      "in progress": "#61BBF6",
+                      "needs attention": "#EFB940",
+                      "approved": "#4BA42F",
+                      "client approved": "#4BA42F",
+                      "on hold": "#927DF0",
+                      "ommitted": "#808080",
+                      "completed": "#4BA42F"}
+        task_info = get_task_info(self.path_object, force=force)
+        status = task_info['status']
+        self.status_button.setText(status)
+        status_color = color_dict[status.lower()]
+        self.status_button.setStyleSheet("QPushButton.status_button { background-color: %s }" % status_color)
+
+    def force_refresh_task_info(self):
+        self.refresh_task_info(force=False)
 
     def create_empty(self):
         self.create_empty_version.emit()

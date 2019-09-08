@@ -507,6 +507,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         print 'import clicked'
 
     def review_clicked(self, filepath=None):
+        print 'review clicked'
         if not filepath:
             selection = PathObject(self.path_widget.path_line_edit.text())
         else:
@@ -616,7 +617,7 @@ class CGLumberjack(LJMainWindow):
         settings = QtWidgets.QAction('Settings', self)
         open_globals = QtWidgets.QAction('Go to Company Globals', self)
         open_user_globals = QtWidgets.QAction('Go to User Globals', self)
-        create_project = QtWidgets.QAction('Create Project', self)
+        create_project = QtWidgets.QAction('Import .csv', self)
         settings.setShortcut('Ctrl+,')
         pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
 

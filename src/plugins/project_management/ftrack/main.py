@@ -94,6 +94,11 @@ class ProjectManagementData(object):
             self.user = None
         if self.task == '*':
             self.task = None
+        if self.task:
+            if self.scope == 'assets':
+                self.task_name = '%s_%s' % (self.asset, self.task)
+            elif self.scope == 'shots':
+                self.task_name = '%s_%s' % (self.shot_name, self.task)
         if not session:
             self.ftrack = ftrack_api.Session(server_url=self.server_url, api_key=self.api_key, api_user=self.api_user)
         else:
@@ -105,9 +110,12 @@ class ProjectManagementData(object):
         self.shot_statuses = self.project_schema.get_statuses('Shot')
         # get the types of tasks for shots.
         if self.task:
+            self.task_status_dict = {}
             self.task_types = self.project_schema.get_types('Task')
             self.task_type = self.get_current_task_type()
             self.task_statuses = self.project_schema.get_statuses('Task', self.task_type['id'])
+            for i, task in enumerate(self.task_statuses):
+                self.task_status_dict[task['name']] = self.task_statuses[i]
             self.default_task_status = self.project_schema.get_statuses('Task', self.task_type['id'])[0]
 
     def get_current_task_type(self):
@@ -259,9 +267,23 @@ class ProjectManagementData(object):
                 'resource': self.user_data,
                 'type': 'assignment'
             })
+            self.update_user_globals_task()
             return self.assignment_data
         else:
             return None
+
+    def update_user_globals_task(self, status='Not started'):
+        # if self.user_email == UserConfig().d['proj_man_user_email']:
+        task_info = {'seq': self.seq,
+                     'shot_name': self.shot_name,
+                     'bid': self.bid,
+                     'due_date': '',
+                     'filepath': '',
+                     'task_type': self.task_name,
+                     'status': status}
+        my_tasks = UserConfig().d['my_tasks']
+        my_tasks[self.path_object.company][self.path_object.project][self.task_name] = task_info
+        UserConfig(my_tasks=my_tasks).update_all()
 
     def create_version(self):
         if self.filename:
@@ -288,7 +310,7 @@ class ProjectManagementData(object):
         return self.version_data
 
     def upload_media(self):
-        print self.file_type
+        # set the status name to 'Needs Review'
         if not self.file_type:
             print 'Cannot Determine File Type - skipping Ftrack Upload'
             return
@@ -337,6 +359,8 @@ class ProjectManagementData(object):
             )
 
         self.version_data['thumbnail'] = thumb_component
+        # we may need a qualifier for this to make sure it works.
+        self.task_data['status'] = self.task_status_dict['Pending Review']
         logging.info('Committing Media')
         component.session.commit()
         thumb_component.session.commit()
@@ -485,6 +509,17 @@ class ProjectManagementData(object):
         self.version_data = self.ftrack.query('AssetVersion where asset_id is %s' % self.task_asset['id']).first()
         return self.version_data
 
+    def get_status(self):
+        self.project_data = self.entity_exists('project')
+        self.find_task()
+        if self.task_data:
+            data = self.task_data.first()
+            return data['status']['name']
+            #return self.task_data['status']['name']
+        else:
+            print 'No Task Data found!'
+            return None
+
     def get_url(self):
         print self.path_root
         if self.task:
@@ -560,17 +595,24 @@ class ProjectManagementData(object):
         print url_string
 
 
-def find_user_assignments(path_object, user_email):
+def find_user_assignments(path_object, user_email, force=False):
     from cglcore.path import PathObject
+    continue_parse = False
     company = path_object.company
     project = path_object.project
     # load whatever is in the user globals:
     if company and project and company != '*' and project != '*':
         print company, project
         my_tasks = UserConfig().d['my_tasks']
-        try:
-            return my_tasks[company][project]
-        except KeyError:
+        if not force:
+            try:
+                return my_tasks[company][project]
+            except KeyError:
+                continue_parse = True
+        else:
+            continue_parse = True
+        if continue_parse:
+            print 'GATHERING TASK DATA FROM FTRACK'
             server_url = app_config()['project_management']['ftrack']['api']['server_url']
             api_key = app_config()['project_management']['ftrack']['api']['api_key']
             api_user = app_config()['project_management']['ftrack']['api']['api_user']

@@ -445,7 +445,7 @@ class ProjectCreator(LJDialog):
         layout = QtWidgets.QVBoxLayout(self)
         self.model = None
         self.data_frame = None
-        self.setWindowTitle('Create Project from .csv')
+        self.setWindowTitle('Import .csv')
         self.scope = 'shots'
         self.shots_radio = QtWidgets.QRadioButton('Shots')
         self.shots_radio.setChecked(True)
@@ -677,7 +677,7 @@ class ProjectCreator(LJDialog):
                 df.at[index, 'bid days'] = 0
 
     def on_create_project_clicked(self):
-        from cglcore.path import PathObject, CreateProductionData
+        from cglcore.path import PathObject, CreateProductionData, show_in_project_management
         for irow in xrange(self.model.rowCount()):
             row_dict = {}
             row_dict['project'] = self.project_line_edit.text()
@@ -704,6 +704,11 @@ class ProjectCreator(LJDialog):
                         row_dict['shot'] = shot
             path_object = PathObject(row_dict)
             CreateProductionData(path_object=path_object, force_pm_creation=True)
+        # open up Ftrack to the project page
+        d = {'company': self.company_combo.currentText(),
+             'project': self.project_line_edit.text()}
+        path_object = PathObject(d)
+        show_in_project_management(path_object)
         self.accept()
 
 
