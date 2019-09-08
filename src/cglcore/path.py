@@ -956,10 +956,13 @@ def get_frange_from_seq(filepath):
     glob_string = filepath.split('#')[0]
     frames = glob.glob('%s*%s' % (glob_string, ext))
     if frames:
-        sframe = re.search(SEQ_REGEX, frames[0]).group(0).replace('.', '')
-        eframe = re.search(SEQ_REGEX, frames[-1]).group(0).replace('.', '')
-        if sframe and eframe:
-            return '%s-%s' % (sframe, eframe)
+        try:
+            sframe = re.search(SEQ_REGEX, frames[0]).group(0).replace('.', '')
+            eframe = re.search(SEQ_REGEX, frames[-1]).group(0).replace('.', '')
+            if sframe and eframe:
+                return '%s-%s' % (sframe, eframe)
+        except AttributeError:
+            print 'problem with filepath: %s and frames: %s in get_frange_from_seq, skipping.' % (filepath, frames)
     else:
         return None
 
@@ -996,10 +999,7 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
     :return: list of prepared files/items.
     """
     ignore = ['publish_data.csv']
-    print 'Directory is:', directory
-    print os.listdir(directory)
     list_ = os.listdir(directory)
-    print list_
     if not list_:
         return
     list_.sort()
