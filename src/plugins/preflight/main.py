@@ -165,6 +165,7 @@ class Preflight(QtWidgets.QDialog):
         self.preflights.sortByColumn(3, QtCore.Qt.SortOrder(0))
         self.preflights.hideColumn(2)
         self.preflights.hideColumn(3)
+        self.preflights.setSortingEnabled(False)
 
     def update_selection(self, data):
         self.selected_checks = data

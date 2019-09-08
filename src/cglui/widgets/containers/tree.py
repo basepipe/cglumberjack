@@ -53,13 +53,6 @@ class LJTreeModel(QtGui.QStandardItemModel):
     def __init__(self, parent=None):
         QtGui.QStandardItemModel.__init__(self)
 
-    def supportedDropActions(self):
-        return QtCore.Qt.CopyAction | QtCore.Qt.MoveAction
-
-    def dropMimeData(self, data, action, row, column, parent):
-        print data, action, row, column, parent
-        return True
-
 
 class LJTreeWidget(QtWidgets.QTreeView):
     nothing_selected = QtCore.Signal()
@@ -93,47 +86,31 @@ class LJTreeWidget(QtWidgets.QTreeView):
     def populate_from_data_frame(self, path_object, data_frame, header):
         self.height_hint = 150
         self.path_object = path_object
-        dict = {}
         for row in data_frame.itertuples():
             filename_item = QtWidgets.QStandardItem(row.Filename)
             filename_item.setIcon(QtGui.QIcon(get_file_icon(row.Filename)))
             if 'Parent' in data_frame:
+                row_list = [filename_item,
+                            QtWidgets.QStandardItem(row.Filepath),
+                            QtWidgets.QStandardItem(row.Filetype),
+                            QtWidgets.QStandardItem(row.Frame_Range),
+                            QtWidgets.QStandardItem(row.Tags),
+                            QtWidgets.QStandardItem(row.Keep_Client_Naming),
+                            QtWidgets.QStandardItem(row.Scope),
+                            QtWidgets.QStandardItem(row.Seq),
+                            QtWidgets.QStandardItem(row.Shot),
+                            QtWidgets.QStandardItem(row.Task),
+                            QtWidgets.QStandardItem(row.Publish_Filepath),
+                            QtWidgets.QStandardItem(row.Publish_Date),
+                            QtWidgets.QStandardItem(row.Status),
+                            QtWidgets.QStandardItem(row.Parent)]
                 if row.Parent == 'self':
-                    parent = [filename_item,
-                              QtWidgets.QStandardItem(row.Filepath),
-                              QtWidgets.QStandardItem(row.Filetype),
-                              QtWidgets.QStandardItem(row.Frame_Range),
-                              QtWidgets.QStandardItem(row.Tags),
-                              QtWidgets.QStandardItem(row.Keep_Client_Naming),
-                              QtWidgets.QStandardItem(row.Scope),
-                              QtWidgets.QStandardItem(row.Seq),
-                              QtWidgets.QStandardItem(row.Shot),
-                              QtWidgets.QStandardItem(row.Task),
-                              QtWidgets.QStandardItem(row.Publish_Filepath),
-                              QtWidgets.QStandardItem(row.Publish_Date),
-                              QtWidgets.QStandardItem(row.Status),
-                              QtWidgets.QStandardItem(row.Parent)]
-                    dict[row.Filepath] = parent
-                    self.model.appendRow(parent)
+                    self.model.appendRow(row_list)
                 else:
                     # parent = find the row where filename matches 'parent'
                     items = self.model.findItems(str(row.Parent), column=FILENAME)
                     parent = items[-1]
-                    child = [filename_item,
-                             QtWidgets.QStandardItem(row.Filepath),
-                             QtWidgets.QStandardItem(row.Filetype),
-                             QtWidgets.QStandardItem(row.Frame_Range),
-                             QtWidgets.QStandardItem(row.Tags),
-                             QtWidgets.QStandardItem(row.Keep_Client_Naming),
-                             QtWidgets.QStandardItem(row.Scope),
-                             QtWidgets.QStandardItem(row.Seq),
-                             QtWidgets.QStandardItem(row.Shot),
-                             QtWidgets.QStandardItem(row.Task),
-                             QtWidgets.QStandardItem(row.Publish_Filepath),
-                             QtWidgets.QStandardItem(row.Publish_Date),
-                             QtWidgets.QStandardItem(row.Status),
-                             QtWidgets.QStandardItem(row.Parent)]
-                    parent.appendRow(child)
+                    parent.appendRow(row_list)
         self.model.setHorizontalHeaderLabels(header)
         self.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.header().setMinimumSectionSize(140)

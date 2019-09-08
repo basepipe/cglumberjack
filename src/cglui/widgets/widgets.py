@@ -637,7 +637,7 @@ class FileTableWidget(LJTableWidget):
         self.selected.connect(self.on_row_selected)
 
     def show_in_proj(self):
-        from cglcore.path import PathObject, show_in_project_management
+        from cglcore.path import show_in_project_management
         show_in_project_management(self.path_object)
 
     def add_custom_task_items(self):
