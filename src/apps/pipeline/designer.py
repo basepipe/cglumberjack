@@ -109,10 +109,15 @@ class Designer(LJDialog):
                 self.load_menus()
 
     def on_add_menu_clicked(self):
-        if self.type == 'preflights':
-            dialog = InputDialog(title='Add %s' % self.type, message='Choose Task to Create a Preflight For',
+        if self.type == 'preflights' or self.type == 'context-menus':
+            if self.type == 'preflights':
+                singular = 'preflight'
+            elif self.type == 'context-menus':
+                singular = 'Context Menu'
+
+            dialog = InputDialog(title='Add %s' % singular, message='Choose Task to Create a %s For' % singular,
                                  line_edit=False, combo_box_items=self.task_list, regex='[a-zA-Z]',
-                                 name_example='Only letters & Numbers Allowed in Button Names')
+                                 name_example='Only letters & Numbers Allowed in %s Names' % singular)
             dialog.exec_()
             if dialog.button == 'Ok':
                 long_name = dialog.combo_box.currentText()
@@ -133,25 +138,6 @@ class Designer(LJDialog):
             dialog.exec_()
             if dialog.button == 'Ok':
                 menu_name = dialog.line_edit.text()
-                cgl_file = self.menu_path
-                new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
-                                   menu_path=cgl_file, menu_type=self.type)
-                new_menu.save_clicked.connect(self.on_save_clicked)
-                index = self.menus.addTab(new_menu, menu_name)
-                self.menus.setCurrentIndex(index)
-        elif self.type == 'context-menus':
-            dialog = InputDialog(title='Add Context Menu', message='Choose Task to Create a Context Menu For',
-                                 line_edit=False, regex='[a-zA-Z0-0]{3,}', combo_box_items=self.task_list,
-                                 name_example='Only letters & Numbers Allowed in Task Names')
-            dialog.exec_()
-            if dialog.button == 'Ok':
-                long_name = dialog.combo_box.currentText()
-                if long_name in self.schema['long_to_short']['assets']:
-                    menu_name = self.schema['long_to_short']['assets'][long_name]
-                elif long_name in self.schema['long_to_short']['shots']:
-                    menu_name = self.schema['long_to_short']['shots'][long_name]
-                else:
-                    menu_name = long_name
                 cgl_file = self.menu_path
                 new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
                                    menu_path=cgl_file, menu_type=self.type)
