@@ -630,9 +630,9 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.show()
 
     def publish_selected_asset(self):
-        # figure out what task we're publishing this thing to
         task = self.schema_dict['long_to_short'][self.scope_combo.currentText()][self.task_combo.currentText()]
-        # task = app_config()['pipeline_steps'][scope][self.task_combo.currentText()]
+        # TODO - would be nice to figure out a more elegant way of doing this.  Perhaps handle the exception
+        # within the Preflight itself?
         try:
             dialog = Preflight(self, software='ingest', preflight=task, data_frame=self.data_frame,
                                file_tree=self.file_tree, pandas_path=self.pandas_path,

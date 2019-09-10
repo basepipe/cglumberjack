@@ -151,7 +151,6 @@ class LJTreeWidget(QtWidgets.QTreeView):
             self.model.itemFromIndex(parent.child(row.row(), column_number)).setText(new_text)
         else:
             self.model.item(row.row(), column_number).setText(new_text)
-        pass
 
     def row_selected(self):
         items = []
