@@ -805,6 +805,7 @@ class CreateProductionData(object):
 
 
 def create_previews(path_object):
+    import time
     from cglcore.convert import create_thumbnail, create_hd_proxy, create_movie_thumb, create_mov
     path_object = PathObject(path_object)
     preview_dir = os.path.dirname(str(path_object.preview_path_full))
@@ -822,14 +823,15 @@ def create_previews(path_object):
             logging.info('Creating Preview: %s' % path_object.preview_path_full)
             create_hd_proxy(path_object.path_root, path_object.preview_path_full)
     elif path_object.file_type == 'sequence':
-        if path_object.thumb_path_full:
-            create_movie_thumb(path_object.path_root, path_object.thumb_path_full)
         if path_object.preview_path_full:
             if path_object.file_type == 'sequence':
+                print 1
                 # create hdProxy for the exr sequence
                 hd_proxy = create_hd_proxy(sequence=path_object.path_root)
-                # time.sleep(2)  # if we don't sleep here the directory hasn't had time to refresh.
+                time.sleep(2)  # if we don't sleep here the directory hasn't had time to refresh.
                 create_mov(hd_proxy, output=path_object.preview_path_full)
+        if path_object.thumb_path_full:
+            create_movie_thumb(hd_proxy, path_object.thumb_path_full)
     elif path_object.file_type == 'movie':
         if path_object.thumb_path_full:
             create_movie_thumb(path_object.path_root, path_object.thumb_path_full)
