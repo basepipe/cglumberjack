@@ -1,4 +1,5 @@
-from cglcore.convert import create_hd_proxy
+from cglcore.path import PathObject, CreateProductionData
 
-this = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjA/shots/SJM/020/plate/publish/000.000/highProxy/03_2a_%05d.jpg'
-create_hd_proxy(this)
+path_ = r'D:/VFX/FRIDAY_ROOT/cglumberjack/source/cgl_testProjectC/shots/SJM/0020/comp/tmikota'
+path_object = PathObject(path_)
+CreateProductionData(path_object=path_object, project_management='ftrack', force_pm_creation=True)

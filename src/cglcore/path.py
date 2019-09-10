@@ -608,13 +608,13 @@ class PathObject(object):
 class CreateProductionData(object):
     def __init__(self, path_object=None, file_system=True,
                  project_management=PROJ_MANAGEMENT,
-                 proj_management_user=None,
+                 user_login=None,
                  do_scope=False, test=False, json=False, create_default_file=False,
                  force_pm_creation=False,
                  session=None):
         self.session = session
         self.force_pm_creation = force_pm_creation
-        self.proj_management_user = proj_management_user
+        self.user_login = user_login
         self.test = test
         self.path_object = PathObject(path_object)
         self.do_scope = do_scope
@@ -623,7 +623,7 @@ class CreateProductionData(object):
         if project_management:
             logging.debug('Creating Production Management Data for %s: %s' % (project_management,
                                                                               self.path_object.data))
-            self.create_project_management_data(self.path_object, project_management)
+            self.create_project_management_data(self.path_object, project_management, self.user_login)
         if self.path_object.resolution:
             if self.path_object.version == '000.000':
                 self.create_default_file()
@@ -761,7 +761,7 @@ class CreateProductionData(object):
         else:
             logging.info('TEST MODE: No directories were created')
 
-    def create_project_management_data(self, path_object, project_management):
+    def create_project_management_data(self, path_object, project_management, user_login=None):
 
         if project_management != 'lumbermill':
             if path_object.filename or self.force_pm_creation:
@@ -772,7 +772,7 @@ class CreateProductionData(object):
                 # noinspection PyTypeChecker
                 loaded_module = __import__(module, globals(), locals(), 'main', -1)
                 loaded_module.ProjectManagementData(path_object, session=session,
-                                                    user_email=self.proj_management_user).create_project_management_data()
+                                                    user_email=user_login).create_project_management_data()
             else:
                 print('Creating Paths on Disk, lumbermill will create %s '
                       'versions when you add files' % project_management)
@@ -926,6 +926,37 @@ def show_in_project_management(path_object):
         # noinspection PyTypeChecker
         loaded_module = __import__(module, globals(), locals(), 'main', -1)
         start_url(loaded_module.ProjectManagementData(path_object).get_url())
+
+
+def get_task_info(path_object, force=False):
+    task_info = None
+    all_tasks = UserConfig().d['my_tasks'][path_object.company][path_object.project]
+    if path_object.task:
+        if path_object.scope == 'assets':
+            path_object.task_name = '%s_%s_%s' % (path_object.category, path_object.asset, path_object.task)
+        elif path_object.scope == 'shots':
+            path_object.task_name = '%s_%s_%s' % (path_object.seq, path_object.shot, path_object.task)
+        if path_object.task_name:
+            if force:
+                task_info = pull_task_info(path_object)
+                return task_info
+            else:
+                if path_object.task_name in all_tasks:
+                    task_info = all_tasks[path_object.task_name]
+                else:
+                    task_info = pull_task_info(path_object)
+                return task_info
+
+
+def pull_task_info(path_object):
+    print path_object.path_root
+    from cglcore.util import current_user
+    if PROJ_MANAGEMENT == 'ftrack':
+        from plugins.project_management.ftrack.main import find_user_assignments
+        login = app_config()['project_management']['ftrack']['users'][current_user()]
+        project_tasks = find_user_assignments(path_object, login, force=True)
+        task_info = project_tasks[path_object.task_name]
+        return task_info
 
 
 def create_project_config(company, project):

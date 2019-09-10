@@ -1,13 +1,14 @@
 import glob
 import os
 from Qt import QtWidgets, QtCore, QtGui
-from cglcore.config import app_config, UserConfig
+from cglcore.config import app_config
 from cglui.widgets.widgets import LJListWidget, LJButton
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.containers.model import ListItemModel
 from cglcore.path import PathObject, CreateProductionData, icon_path
 from cglcore.path import create_project_config
 from cglui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
+from cglcore.util import current_user
 
 
 class CompanyPanel(QtWidgets.QWidget):
@@ -98,10 +99,9 @@ class ProjectPanel(QtWidgets.QWidget):
 
     def __init__(self, parent=None, path_object=None, search_box=None):
         QtWidgets.QWidget.__init__(self, parent)
-
-        self.user_email = UserConfig().user_email
         self.path_object = path_object
-        self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
+        self.project_management = app_config()['account_info']['project_management']
+        self.user_email = app_config()['project_management'][self.project_management]['users'][current_user()]
         self.root = app_config()['paths']['root']  # Company Specific
         self.user_root = app_config()['cg_lumberjack_dir']
         self.left_column_visibility = True
@@ -164,8 +164,7 @@ class ProjectPanel(QtWidgets.QWidget):
         if dialog.button == 'Ok':
             project_name = dialog.proj_line_edit.text()
             self.path_object.set_attr(project=project_name)
-            CreateProductionData(self.path_object, proj_management_user=self.user_email,
-                                 project_management=self.project_management)
+            CreateProductionData(self.path_object, project_management=self.project_management)
             production_management = dialog.proj_management_combo.currentText()
             print 'setting project management to %s' % production_management
             create_project_config(self.path_object.company, self.path_object.project)
@@ -318,11 +317,11 @@ class ProductionPanel(QtWidgets.QWidget):
         self.assets.data_table.clearSpans()
         data = []
         proj_man = app_config()['account_info']['project_management']
-        user = UserConfig().d['proj_man_user_email']
+        login = app_config()['project_management'][proj_man]['users'][current_user()]['login']
         if proj_man == 'ftrack':
             # ideally we load from a .csv file and run this in the background only to update the .csv file.
             from plugins.project_management.ftrack.main import find_user_assignments
-            project_tasks = find_user_assignments(self.path_object, user)
+            project_tasks = find_user_assignments(self.path_object, login)
             if project_tasks:
                 for task in project_tasks:
                     data.append([project_tasks[task]['seq'],
@@ -341,7 +340,7 @@ class ProductionPanel(QtWidgets.QWidget):
                     self.assets.data_table.hideColumn(3)
                 else:
                     self.assets.data_table.hide()
-                    self.assets.message.setText('No Tasks for %s Found!' % user)
+                    self.assets.message.setText('No Tasks for %s Found!' % login)
                     self.assets.message.show()
                 return True
             else:
@@ -387,13 +386,15 @@ class ProductionPanel(QtWidgets.QWidget):
             self.assets.message.show()
 
     def on_main_asset_selected(self, data):
+        print 'selecting'
         if data:
-            p_o = PathObject(data[0][2])
-            if not p_o.task:
-                p_o.set_attr(task='*')
+            print data[0][2]
+            path_object = PathObject(data[0][2])
+            if not path_object.task:
+                path_object.set_attr(task='*')
             else:
-                p_o.set_attr(user=None)
-            self.update_location(p_o)
+                path_object.set_attr(user=None)
+            self.update_location(path_object)
 
     def update_location(self, path_object=None):
         if path_object:

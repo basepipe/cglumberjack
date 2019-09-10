@@ -322,6 +322,19 @@ QPushButton.add_button{
     padding-right: 5px;
 }
 
+QPushButton.status_button{
+    background-color: #D8D8D8;
+    border-radius: 4px;
+    font-family: "Courier New";
+    font-weight: bold;
+    font-size: 8pt;
+    color: white;
+    height: 14px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 2px;
+}
+
 QMainWindow{
     background-color: white;
 }
