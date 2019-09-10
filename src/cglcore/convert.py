@@ -34,10 +34,19 @@ def get_first_frame(sequence, return_type='string'):
     try:
         # td - this will not pass some instances, we'll have to use REGEX eventually
         for each in lj_list_dir(os.path.dirname(sequence)):
+            file_name = each.split()[0]
+            hashes = file_name.count('#')
             if ' ' in each:
                 first_frame, last_frame = each.split(' ')[-1].split('-')
                 middle_frame = (int(last_frame) - int(first_frame)) / 2 + int(first_frame)
-        middle_string = '%05d' % middle_frame
+            if hashes == 6:
+                middle_string = '%06d' % middle_frame
+            if hashes == 4:
+                middle_string = '%04d' % middle_frame
+            if hashes == 5:
+                middle_string = '%05d' % middle_frame
+            if hashes == 3:
+                middle_string = '%03d' % middle_frame
         middle_frame = sequence.replace('*', middle_string)
         if return_type == 'string':
             return first_frame, middle_frame, last_frame
@@ -338,6 +347,7 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
 
 
 def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True):
+    print 'creating movie thumbnail'
     if not output_file:
         output_file = PathObject(path_object=input_file).copy(resolution='thumb', ext='jpg').path_root
     if not output_file.endswith('.jpg'):

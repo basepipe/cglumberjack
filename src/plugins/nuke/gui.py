@@ -4,6 +4,8 @@ import nuke
 import cglnuke
 import cglui.startup as startup
 from cglcore.path import PathObject
+from cglcore.config import app_config
+from cglcore.util import current_user
 
 
 class NukeBrowserWidget(CGLumberjackWidget):
@@ -27,8 +29,8 @@ class NukeBrowserWidget(CGLumberjackWidget):
 
 
 class CGLNuke(CGLumberjack):
-    def __init__(self, parent, path=None):
-        CGLumberjack.__init__(self, parent)
+    def __init__(self, parent, path=None, user_info=None):
+        CGLumberjack.__init__(self, parent, user_info=user_info)
         print 'CGLNuke path is %s' % path
         self.setCentralWidget(NukeBrowserWidget(self, show_import=True))
 
@@ -119,13 +121,20 @@ def launch():
         scene = PathObject(scene_name)
         location = '%s/*' % scene.split_after('shot')
         new_object = PathObject(location)
-    gui = CGLNuke(parent=cglnuke.get_main_window(), path=location)
-    app = startup.do_nuke_gui_init(gui)
-    gui.setWindowFlags(QtCore.Qt.Window)
-    gui.setWindowTitle('CG Lumberjack')
-    if scene_name != 'Root':
-        gui.centralWidget().update_location(new_object)
-    gui.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-    gui.show()
-    gui.raise_()
-    app.exec_()  # this is required to work, yet i get this error: "NoneType" object has no attribute 'exec_',
+    project_management = app_config()['account_info']['project_management']
+    users = app_config()['project_management'][project_management]['users']
+    if current_user() in users:
+        user_info = users[current_user()]
+        if user_info:
+            gui = CGLNuke(parent=cglnuke.get_main_window(), path=location, user_info=user_info)
+            app = startup.do_nuke_gui_init(gui)
+            gui.setWindowFlags(QtCore.Qt.Window)
+            gui.setWindowTitle('CG Lumberjack')
+            if scene_name != 'Root':
+                gui.centralWidget().update_location(new_object)
+            gui.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+            gui.show()
+            gui.raise_()
+            app.exec_()  # this is required to work, yet i get this error: "NoneType" object has no attribute 'exec_',
+        else:
+            print 'Cant find user info in lumbermill for %s' % current_user()

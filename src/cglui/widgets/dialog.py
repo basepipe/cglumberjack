@@ -630,7 +630,7 @@ class ProjectCreator(LJDialog):
 
     def read_file(self, filepath):
         import pandas as pd
-        from cglui.widgets.containers.model import PandasModel
+        from cglui.widgets.containers.pandas_model import PandasModel
         df = pd.read_csv(filepath)
         df.columns = [x.lower() for x in df.columns]
         df = self.parse_tasks(df)

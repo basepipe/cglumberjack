@@ -6,7 +6,7 @@ from Qt import QtWidgets, QtCore, QtGui
 from cglui.widgets.progress_gif import ProgressGif
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
-from cglui.widgets.dialog import LoginDialog, InputDialog, ProjectCreator
+from cglui.widgets.dialog import LoginDialog, InputDialog
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange, start_url
 from cglcore.path import CreateProductionData, image_path
 from cglcore.util import current_user
@@ -633,6 +633,7 @@ class CGLumberjack(LJMainWindow):
         proj_man.triggered.connect(self.on_proj_man_menu_clicked)
 
     def open_create_project_dialog(self):
+        from cglui.widgets.dialog import ProjectCreator
         dialog = ProjectCreator(self)
         dialog.exec_()
 
