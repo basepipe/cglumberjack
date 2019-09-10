@@ -367,6 +367,7 @@ class IOPanel(QtWidgets.QWidget):
                 if self.task_combo.currentText():
                     try:
                         task = proj_man_tasks[str(self.task_combo.currentText())]
+                        print seq, 'is sequence before it goes into the path object'
                         to_object = self.path_object.copy(scope=self.scope_combo.currentText(),
                                                           seq=seq,
                                                           shot=shot,
@@ -375,6 +376,7 @@ class IOPanel(QtWidgets.QWidget):
                                                           version='000.000',
                                                           user='publish',
                                                           resolution='high')
+                        print to_object.seq, 'is sequence after the path object.'
                         status = ''
                         for f in self.current_selection:
                             row = self.data_frame.loc[(self.data_frame['Filename'] == f[FILENAME]) &
@@ -398,35 +400,21 @@ class IOPanel(QtWidgets.QWidget):
                             self.data_frame.at[row, 'Publish_Filepath'] = to_path
                             self.data_frame.at[row, 'Status'] = status
                         for each in self.file_tree.selectionModel().selectedRows():
-                            # TODO - i'd like this tidier, but works for now.
-                            parent = None
-                            if each.parent().row() != -1:
-                                parent = each.parent()
-                            if parent:
-                                mdl = self.file_tree.model
-                                mdl.itemFromIndex(parent.child(each.row(), PUBLISH_FILEPATH)).setText(to_path)
-                                mdl.itemFromIndex(parent.child(each.row(), STATUS)).setText(status)
-                                mdl.itemFromIndex(parent.child(each.row(), PUBLISH_FILEPATH)).setText(to_path)
-                                mdl.itemFromIndex(parent.child(each.row(),
-                                                               SCOPE)).setText(self.scope_combo.currentText())
-                                mdl.itemFromIndex(parent.child(each.row(), SEQ)).setText(seq)
-                                mdl.itemFromIndex(parent.child(each.row(), SHOT)).setText(shot)
-                                mdl.itemFromIndex(parent.child(each.row(), TASK)).setText(task)
-                            else:
-                                self.file_tree.model.item(each.row(), STATUS).setText(status)
-                                self.file_tree.model.item(each.row(), PUBLISH_FILEPATH).setText(to_path)
-                                self.file_tree.model.item(each.row(), SCOPE).setText(self.scope_combo.currentText())
-                                self.file_tree.model.item(each.row(), SEQ).setText(seq)
-                                self.file_tree.model.item(each.row(), SHOT).setText(shot)
-                                self.file_tree.model.item(each.row(), TASK).setText(task)
-
+                            self.file_tree.set_text(each, PUBLISH_FILEPATH, to_path)
+                            self.file_tree.set_text(each, STATUS, status)
+                            self.file_tree.set_text(each, SCOPE, self.scope_combo.currentText())
+                            self.file_tree.set_text(each, SEQ, seq)
+                            self.file_tree.set_text(each, SHOT, shot)
+                            self.file_tree.set_text(each, TASK, task)
                         self.save_data_frame()
+
                         # how do i edit the text only on the selected item?
                     except KeyError:
                         print 'Error with something:'
                         print 'scope', self.scope_combo.currentText()
                         print 'seq', seq
                         print 'shot', shot
+
 
     def go_to_location(self, to_path):
         path_object = PathObject(to_path).copy(context='source', user='', resolution='', filename='', ext='',
@@ -494,7 +482,11 @@ class IOPanel(QtWidgets.QWidget):
                 if shot:
                     if shot != ' ':
                         try:
-                            shot = '%04d' % int(shot)
+                            length = app_config()['rules']['path_variables']['shot']['length']
+                            if length == 3:
+                                shot = '%03d' % int(shot)
+                            elif length == 4:
+                                shot = '%04d' % int(shot)
                             self.set_combo_to_text(self.shot_combo, shot)
                         except ValueError:
                             self.set_combo_to_text(self.shot_combo, shot)
@@ -593,7 +585,6 @@ class IOPanel(QtWidgets.QWidget):
                 self.shot_combo.addItems(shots)
 
     def on_file_selected(self, data):
-        print data
         self.tags_title.setText("<b>CGL:></b>  Choose 'Assets' or 'Shots' for your scope")
         self.show_tags_gui()
         self.current_selection = data
@@ -639,18 +630,20 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.show()
 
     def publish_selected_asset(self):
-        # figure out what task we're publishing this thing to
         task = self.schema_dict['long_to_short'][self.scope_combo.currentText()][self.task_combo.currentText()]
-        # task = app_config()['pipeline_steps'][scope][self.task_combo.currentText()]
+        # TODO - would be nice to figure out a more elegant way of doing this.  Perhaps handle the exception
+        # within the Preflight itself?
         try:
             dialog = Preflight(self, software='ingest', preflight=task, data_frame=self.data_frame,
                                file_tree=self.file_tree, pandas_path=self.pandas_path,
                                current_selection=self.current_selection,
+                               selected_rows=self.file_tree.selectionModel().selectedRows(),
                                ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
         except KeyError:
             dialog = Preflight(self, software='ingest', preflight='default', data_frame=self.data_frame,
                                file_tree=self.file_tree, pandas_path=self.pandas_path,
                                current_selection=self.current_selection,
+                               selected_rows=self.file_tree.selectionModel().selectedRows(),
                                ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
         dialog.show()
 

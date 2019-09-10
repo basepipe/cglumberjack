@@ -268,6 +268,8 @@ class ProjectManagementData(object):
     def update_user_globals_task(self, status='Not started'):
         if self.user_info[current_user()]['login'] == self.user_email:
             my_tasks = UserConfig().d['my_tasks']
+            if self.path_object.company not in my_tasks:
+                my_tasks[self.path_object.company] = {}
             if self.path_object.project not in my_tasks[self.path_object.company]:
                 print 'didnt find %s' % self.path_object.project
                 my_tasks[self.path_object.company][self.path_object.project] = {}
