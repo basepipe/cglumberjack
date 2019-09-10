@@ -1,7 +1,7 @@
 import glob
 import os
 from Qt import QtWidgets, QtCore, QtGui
-from cglcore.config import app_config, UserConfig
+from cglcore.config import app_config
 from cglui.widgets.widgets import LJListWidget, LJButton
 from cglui.widgets.dialog import InputDialog
 from cglui.widgets.containers.model import ListItemModel

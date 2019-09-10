@@ -3,7 +3,7 @@ import shutil
 import logging
 import glob
 from Qt import QtWidgets, QtCore
-from cglcore.config import app_config, UserConfig
+from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
 from cglcore.util import current_user

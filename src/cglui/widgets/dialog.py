@@ -1,8 +1,6 @@
 from Qt import QtCore, QtWidgets, QtGui
-import os
 import re
 import datetime
-import getpass
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.widgets import AdvComboBox, EmptyStateWidget
@@ -714,8 +712,6 @@ class ProjectCreator(LJDialog):
              'seq': '*'}
         path_object = PathObject(d)
         show_in_project_management(path_object)
-        print path_object.path_root, '  Trying to set to this path on lumbermill'
-        # no idea why this is printing without project.
         self.accept()
         self.parent().centralWidget().update_location(path_object)
 
