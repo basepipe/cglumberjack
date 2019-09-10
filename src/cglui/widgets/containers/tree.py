@@ -143,11 +143,14 @@ class LJTreeWidget(QtWidgets.QTreeView):
     def column_count(self):
         return self.model.columnCount()
 
-    def edit_text(self, index, column):
-        # figure out what row i'm working with from the index.
-        # figure out if this is a parent or a child
-        # get the true index of the item
-        # edit the item
+    def set_text(self, row, column_number, new_text):
+        parent = None
+        if row.parent().row() != -1:
+            parent = row.parent()
+        if parent:
+            self.model.itemFromIndex(parent.child(row.row(), column_number)).setText(new_text)
+        else:
+            self.model.item(row.row(), column_number).setText(new_text)
         pass
 
     def row_selected(self):

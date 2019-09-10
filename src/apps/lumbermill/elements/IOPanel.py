@@ -400,35 +400,21 @@ class IOPanel(QtWidgets.QWidget):
                             self.data_frame.at[row, 'Publish_Filepath'] = to_path
                             self.data_frame.at[row, 'Status'] = status
                         for each in self.file_tree.selectionModel().selectedRows():
-                            # TODO - i'd like this tidier, but works for now.
-                            parent = None
-                            if each.parent().row() != -1:
-                                parent = each.parent()
-                            if parent:
-                                mdl = self.file_tree.model
-                                mdl.itemFromIndex(parent.child(each.row(), PUBLISH_FILEPATH)).setText(to_path)
-                                mdl.itemFromIndex(parent.child(each.row(), STATUS)).setText(status)
-                                mdl.itemFromIndex(parent.child(each.row(), PUBLISH_FILEPATH)).setText(to_path)
-                                mdl.itemFromIndex(parent.child(each.row(),
-                                                               SCOPE)).setText(self.scope_combo.currentText())
-                                mdl.itemFromIndex(parent.child(each.row(), SEQ)).setText(seq)
-                                mdl.itemFromIndex(parent.child(each.row(), SHOT)).setText(shot)
-                                mdl.itemFromIndex(parent.child(each.row(), TASK)).setText(task)
-                            else:
-                                self.file_tree.model.item(each.row(), STATUS).setText(status)
-                                self.file_tree.model.item(each.row(), PUBLISH_FILEPATH).setText(to_path)
-                                self.file_tree.model.item(each.row(), SCOPE).setText(self.scope_combo.currentText())
-                                self.file_tree.model.item(each.row(), SEQ).setText(seq)
-                                self.file_tree.model.item(each.row(), SHOT).setText(shot)
-                                self.file_tree.model.item(each.row(), TASK).setText(task)
-
+                            self.file_tree.set_text(each, PUBLISH_FILEPATH, to_path)
+                            self.file_tree.set_text(each, STATUS, status)
+                            self.file_tree.set_text(each, SCOPE, self.scope_combo.currentText())
+                            self.file_tree.set_text(each, SEQ, seq)
+                            self.file_tree.set_text(each, SHOT, shot)
+                            self.file_tree.set_text(each, TASK, task)
                         self.save_data_frame()
+
                         # how do i edit the text only on the selected item?
                     except KeyError:
                         print 'Error with something:'
                         print 'scope', self.scope_combo.currentText()
                         print 'seq', seq
                         print 'shot', shot
+
 
     def go_to_location(self, to_path):
         path_object = PathObject(to_path).copy(context='source', user='', resolution='', filename='', ext='',
@@ -651,11 +637,13 @@ class IOPanel(QtWidgets.QWidget):
             dialog = Preflight(self, software='ingest', preflight=task, data_frame=self.data_frame,
                                file_tree=self.file_tree, pandas_path=self.pandas_path,
                                current_selection=self.current_selection,
+                               selected_rows=self.file_tree.selectionModel().selectedRows(),
                                ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
         except KeyError:
             dialog = Preflight(self, software='ingest', preflight='default', data_frame=self.data_frame,
                                file_tree=self.file_tree, pandas_path=self.pandas_path,
                                current_selection=self.current_selection,
+                               selected_rows=self.file_tree.selectionModel().selectedRows(),
                                ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
         dialog.show()
 
