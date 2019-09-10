@@ -105,19 +105,9 @@ class UserConfig(object):
             self.my_tasks = my_tasks
         else:
             self.my_tasks = self.d['my_tasks']
-        if user_email:
-            self.user_email = user_email
-        else:
-            self.user_email = self.d['proj_man_user_email']
-        if user_name:
-            self.user_name = user_name
-        else:
-            self.user_name = self.d['proj_man_user_name']
 
     def update_all(self):
         self.update_path()
-        self.update_user_email()
-        self.update_user_name()
         self.update_my_tasks()
         self._write_json(self.d)
 
@@ -138,14 +128,6 @@ class UserConfig(object):
                 self.d['previous_paths'][self.current_path] = number
             except KeyError:
                 self.d['previous_paths'] = {self.current_path: number}
-
-    def update_user_email(self):
-        if self.user_email:
-            self.d['user_email'] = self.user_email
-
-    def update_user_name(self):
-        if self.user_name:
-            self.d['user_name'] = self.user_name
 
     @staticmethod
     def update_company():

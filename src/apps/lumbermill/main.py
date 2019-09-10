@@ -4,12 +4,13 @@ import logging
 import shutil
 from Qt import QtWidgets, QtCore, QtGui
 from cglui.widgets.progress_gif import ProgressGif
-from cglcore.config import app_config, UserConfig
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog, InputDialog, ProjectCreator
 from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange, start_url
 from cglcore.path import CreateProductionData, image_path
+from cglcore.util import current_user
+from cglcore.config import app_config, UserConfig
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
 try:
@@ -200,7 +201,6 @@ class NavigationWidget(QtWidgets.QFrame):
         if self.path_object.project and self.path_object.company and self.path_object.project != '*':
             self.path_object = self.path_object.copy(seq=None, shot=None, ingest_source=None, resolution='', version='',
                                                      user=None, scope='IO')
-            print self.path_object.path_root, 3
             self.location_changed.emit(self.path_object)
         else:
             print 'Please Choose a Company and a Project before pushing the ingest button'
@@ -265,7 +265,7 @@ class NavigationWidget(QtWidgets.QFrame):
 
 class CGLumberjackWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, project_management=None, user_name=None, user_email=None, company=None,
+    def __init__(self, parent=None, project_management=None, machine_user=None, user_email=None, company=None,
                  path=None, radio_filter=None,
                  show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
@@ -278,16 +278,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
         # Environment Stuff
         self.show_import = show_import
-        self.user = user_name
-        self.default_user = user_name
         self.user_email = user_email
-        self.user_name = user_name
         self.company = company
-        self.user_default = self.user
         self.project_management = project_management
         self.root = app_config()['paths']['root']  # Company Specific
         self.user_root = app_config()['cg_lumberjack_dir']
-        self.user = None
         self.context = 'source'
         self.path_object = None
         self.panel = None
@@ -350,6 +345,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(self.path_object)
 
     def show_my_tasks(self):
+        self.path_object = PathObject(self.path_widget.path_line_edit.text())
+        self.path_object.set_attr(user=current_user(), resolution='', filename='', ext='')
         self.path_object.set_attr(scope='shots', seq='*', shot=None, task=None)
         self.path_object.data['my_tasks'] = True
         self.path_widget.update_path(path_object=self.path_object)
@@ -484,7 +481,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def load_files_panel(self, path_object):
         self.panel = FilesPanel(path_object=path_object, user_email=self.user_email,
-                                user_name=self.user_name, show_import=self.show_import)
+                                show_import=self.show_import)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
         # self.panel.new_version_signal.connect(self.new_version_clicked)
@@ -507,7 +504,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         print 'import clicked'
 
     def review_clicked(self, filepath=None):
-        print 'review clicked'
         if not filepath:
             selection = PathObject(self.path_widget.path_line_edit.text())
         else:
@@ -573,29 +569,27 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
 
 class CGLumberjack(LJMainWindow):
-    def __init__(self, show_import=False):
+    def __init__(self, show_import=False, user_info=None):
         LJMainWindow.__init__(self)
         self.user_config = UserConfig().d
-        self.proj_man_user_name = self.user_config['proj_man_user_name']
-        self.proj_man_user_email = self.user_config['proj_man_user_email']
-        self.user_email = ''
-        self.user_name = ''
-        self.company = ''
         self.previous_path = self.user_config['previous_path']
         self.filter = 'Everything'
         self.previous_paths = self.user_config['previous_paths']
         self.project_management = app_config()['account_info']['project_management']
+        self.user_info = ''
+        self.user_email = ''
+        self.user_name = ''
+        self.company = ''
         self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
-                                                 user_email=self.proj_man_user_email,
-                                                 user_name=self.proj_man_user_name,
+                                                 user_email=user_info['login'],
                                                  company=self.company,
                                                  path=self.previous_path,
                                                  radio_filter=self.filter,
                                                  show_import=show_import))
-        if self.proj_man_user_email:
-            self.setWindowTitle('Lumbermill - Logged in as %s' % self.proj_man_user_email)
+        if user_info['first']:
+            self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['first'])
         else:
-            self.setWindowTitle("Lumbermill - Log In")
+            self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['login'])
         self.status_bar = QtWidgets.QStatusBar()
         self.setStatusBar(self.status_bar)
 
@@ -638,9 +632,8 @@ class CGLumberjack(LJMainWindow):
         login.triggered.connect(self.on_login_clicked)
         proj_man.triggered.connect(self.on_proj_man_menu_clicked)
 
-    @staticmethod
-    def open_create_project_dialog():
-        dialog = ProjectCreator()
+    def open_create_project_dialog(self):
+        dialog = ProjectCreator(self)
         dialog.exec_()
 
     def on_proj_man_menu_clicked(self):
@@ -665,8 +658,8 @@ class CGLumberjack(LJMainWindow):
         user_config = UserConfig()
         if 'd' in user_config.__dict__:
             config = user_config.d
-            self.user_name = str(config['user_name'])
-            self.user_email = str(config['user_email'])
+            self.user_name = str(config['user_info']['local'])
+            self.user_email = str(config['user_info'][self.project_management]['login'])
             self.company = str(config['company'])
             try:
                 self.previous_path = str(config['previous_path'])
@@ -682,8 +675,6 @@ class CGLumberjack(LJMainWindow):
     def on_login_clicked(self):
         dialog = LoginDialog(parent=self)
         dialog.exec_()
-        self.user_name = dialog.user_name
-        self.user_email = dialog.user_email
 
     @staticmethod
     def on_settings_clicked():
@@ -704,9 +695,7 @@ class CGLumberjack(LJMainWindow):
 
     def closeEvent(self, event):
         # set the current path so that it works on the load better.
-        user_config = UserConfig(user_email=self.centralWidget().user_email,
-                                 user_name=self.centralWidget().user_name,
-                                 current_path=self.centralWidget().path_widget.text)
+        user_config = UserConfig(current_path=self.centralWidget().path_widget.text)
         user_config.update_all()
 
     # check the config file to see if it has a default company and a default location
@@ -718,24 +707,39 @@ def sleeper():
 
 if __name__ == "__main__":
     from cglui.startup import do_gui_init
-    app = do_gui_init()
-    splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
-    #splash_dialog = ProgressDialog('Loading...', 'night_rider.gif')
-    #splash_pix.show()
-    QtWidgets.qApp.processEvents()
+    project_management = app_config()['account_info']['project_management']
+    users = app_config()['project_management'][project_management]['users']
+    if current_user() in users:
+        user_info = users[current_user()]
+        if user_info:
+            app = do_gui_init()
+            splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
+            #splash_dialog = ProgressDialog('Loading...', 'night_rider.gif')
+            #splash_pix.show()
+            QtWidgets.qApp.processEvents()
 
-    splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
-    splash.setMask(splash_pix.mask())
-    splash.show()
-
-    td = CGLumberjack(show_import=False)
-
-    td.show()
-    td.raise_()
-    # # setup stylesheet
-    style_sheet = load_style_sheet()
-    app.setStyleSheet(style_sheet)
-    splash.finish(td)
-    # splash_dialog.hide()
-    app.exec_()
+            splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+            splash.setMask(splash_pix.mask())
+            splash.show()
+            gui = CGLumberjack(show_import=False, user_info=user_info)
+            gui.show()
+            gui.raise_()
+            # # setup stylesheet
+            style_sheet = load_style_sheet()
+            app.setStyleSheet(style_sheet)
+            splash.finish(gui)
+            # splash_dialog.hide()
+            app.exec_()
+    else:
+        app = do_gui_init()
+        mw = LoginDialog()
+        # mw = Designer(type_='menus')
+        mw.setWindowTitle('New User Login')
+        mw.setMinimumWidth(300)
+        mw.setMinimumHeight(300)
+        mw.show()
+        mw.raise_()
+        style_sheet = load_style_sheet()
+        app.setStyleSheet(style_sheet)
+        app.exec_()
 

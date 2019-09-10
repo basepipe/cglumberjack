@@ -22,7 +22,7 @@ class FilesPanel(QtWidgets.QWidget):
     review_signal = QtCore.Signal()
     publish_signal = QtCore.Signal()
 
-    def __init__(self, parent=None, path_object=None, user_email='', user_name='', show_import=False):
+    def __init__(self, parent=None, path_object=None, user_email='', machine_user=None, show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
         self.work_files = []
@@ -36,6 +36,7 @@ class FilesPanel(QtWidgets.QWidget):
         self.project_management = app_config()['account_info']['project_management']
         self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
         schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        self.user_info = app_config()['project_management'][self.project_management]['users'][current_user()]
         self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
         self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
 
@@ -45,11 +46,11 @@ class FilesPanel(QtWidgets.QWidget):
         self.in_file_tree = None
         self.user_changed_versions = False
         self.user_email = user_email
-        if user_name:
-            self.user = user_name
+        if machine_user:
+            self.user = machine_user
         else:
             self.user = current_user()
-        self.project_management = app_config(company=self.path_object.company)['account_info']['project_management']
+        self.project_management = app_config()['account_info']['project_management']
         self.on_task_selected(self.path_object.data)
         self.panel.addLayout(self.tasks)
         self.panel.addStretch(1)
@@ -69,7 +70,7 @@ class FilesPanel(QtWidgets.QWidget):
             if not current.task:
                 current.set_attr(task='*')
             current.set_attr(root=self.path_object.root)
-            current.set_attr(user_email=self.user_email)
+            # current.set_attr(user_email=self.user_email)
             self.panel.seq = current.seq
             self.panel.shot = current.shot
             self.update_location(path_object=current)
@@ -148,7 +149,10 @@ class FilesPanel(QtWidgets.QWidget):
                 task_widget.empty_state.hide()
                 task_widget.status_button.hide()
             else:
-                task_widget.refresh_task_info()
+                if task_widget.users.currentText() == current_user():
+                    task_widget.refresh_task_info()
+                else:
+                    task_widget.status_button.hide()
 
     def add_stretch_to_source(self):
         self.panel.addStretch(1)
@@ -373,14 +377,22 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_assign_button_clicked(self, data):
         task = self.sender().task
+        users_dict = app_config()['project_management'][self.project_management]['users']
+        all_users = []
+        for each in users_dict.keys():
+            all_users.append(each.lower())
         dialog = InputDialog(title="%s Task Ownership" % task,
-                             combo_box_items=[self.user],
+                             combo_box_items=users_dict.keys(),
                              message='Who are you assigning this Task?',
                              buttons=['Cancel', 'Start'])
+        index = dialog.combo_box.findText(current_user().lower())
+        if index != -1:
+            dialog.combo_box.setCurrentIndex(index)
         dialog.exec_()
         if dialog.button == 'Start':
+            local_user = dialog.combo_box.currentText()  # this denotes the OS login name of the user
             self.path_object.set_attr(task=task)
-            self.path_object.set_attr(user=dialog.combo_box.currentText())
+            self.path_object.set_attr(user=local_user)
             self.path_object.set_attr(version='000.000')
             self.path_object.set_attr(resolution='high')
             self.path_object.set_attr(shot=data.shot)
@@ -388,14 +400,12 @@ class FilesPanel(QtWidgets.QWidget):
             self.path_object.set_attr(filename=None)
             self.path_object.set_attr(ext=None)
             self.path_object.set_attr(filename_base=None)
-            self.update_location(self.path_object)
-            if dialog.combo_box.currentText() == UserConfig().d['proj_man_user_email']:
-                print 'Im going to add this thing to the local files'
-            CreateProductionData(path_object=self.current_location,
+            # self.update_location(self.path_object)
+            CreateProductionData(path_object=self.path_object,
                                  project_management=self.project_management,
+                                 user_login=self.user_info['login'],
                                  force_pm_creation=True)
         self.update_location(path_object=self.path_object)
-        # update the user task dictionary
 
     def show_in_folder(self):
         show_in_folder(self.path_object.path_root)
@@ -435,17 +445,7 @@ class FilesPanel(QtWidgets.QWidget):
         self.on_file_dragged(object_, data)
 
     def on_file_dragged(self, path_object, data):
-        # Only do this if it's dragged into a thing that hasn't been selected
         logging.debug('Path: %s has files added to it' % path_object.path_root)
-        # if path_object.task in self.auto_publish_tasks:
-        #     dialog = InputDialog(title='Auto-publish files?',
-        #                          message='Would you like me to publish this %s \n'
-        #                                  'to make it available to other tasks?' % path_object.task,
-        #                          buttons=['Skip', 'Publish'])
-        #     dialog.exec_()
-        #     if dialog.button == 'Publish':
-        #         print 'Auto Publishing Files'
-
         self.update_location(path_object)
         self.clear_task_selection_except(path_object.task)
         to_path = path_object.path_root

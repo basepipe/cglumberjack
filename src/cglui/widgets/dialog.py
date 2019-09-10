@@ -9,6 +9,7 @@ from cglui.widgets.widgets import AdvComboBox, EmptyStateWidget
 from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.base import LJDialog
+from cglcore.util import current_user
 
 
 class FileTableModel(ListItemModel):
@@ -336,32 +337,29 @@ class LoginDialog(LJDialog):
 
     def __init__(self, parent=None):
         LJDialog.__init__(self, parent)
-        self.user_config = UserConfig().d
-        self.user_name = ''
-        self.user_email = ''
-        self.company = ''
         self.parent = parent
+        self.user_info = {}
+        self.line_edit_dict = {}
+        self.login_line_edit = None
         self.project_management = app_config()['account_info']['project_management']
-        grid_layout = QtWidgets.QGridLayout()
+        self.user_details = app_config()['project_management'][self.project_management]['user_details']
+        self.grid_layout = QtWidgets.QGridLayout()
         self.proj_management_label = QtWidgets.QLabel('Project Management:')
         self.uname_label = QtWidgets.QLabel('%s User Name:' % self.project_management)
         self.email_label = QtWidgets.QLabel('%s Email:' % self.project_management)
         self.local_user_label = QtWidgets.QLabel('Local User:')
 
         self.local_user_line_edit = QtWidgets.QLineEdit()
-        self.uname_line_edit = QtWidgets.QLineEdit()
-        self.email_line_edit = QtWidgets.QLineEdit()
-        self.company_line_edit = QtWidgets.QLineEdit()
+        self.local_user_line_edit.setText(current_user())
+        self.local_user_line_edit.setEnabled(False)
         self.proj_management_line_edit = QtWidgets.QLineEdit()
+        self.proj_management_line_edit.setText(self.project_management)
+        self.proj_management_line_edit.setEnabled(False)
 
-        grid_layout.addWidget(self.proj_management_label, 0, 0)
-        grid_layout.addWidget(self.proj_management_line_edit, 0, 1)
-        grid_layout.addWidget(self.local_user_label, 1, 0)
-        grid_layout.addWidget(self.local_user_line_edit, 1, 1)
-        grid_layout.addWidget(self.uname_label, 2, 0)
-        grid_layout.addWidget(self.uname_line_edit, 2, 1)
-        grid_layout.addWidget(self.email_label, 3, 0)
-        grid_layout.addWidget(self.email_line_edit, 3, 1)
+        self.grid_layout.addWidget(self.proj_management_label, 0, 0)
+        self.grid_layout.addWidget(self.proj_management_line_edit, 0, 1)
+        self.grid_layout.addWidget(self.local_user_label, 1, 0)
+        self.grid_layout.addWidget(self.local_user_line_edit, 1, 1)
 
         buttons_layout = QtWidgets.QHBoxLayout()
         self.ok_button = QtWidgets.QPushButton('Ok')
@@ -373,37 +371,40 @@ class LoginDialog(LJDialog):
         self.ok_button.setEnabled(False)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(grid_layout)
+        layout.addLayout(self.grid_layout)
         layout.addLayout(buttons_layout)
         self.setLayout(layout)
 
         self.setWindowTitle('Login Info')
-        self.load_user_defaults()
 
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.ok_button.clicked.connect(self.on_ok_clicked)
-        self.email_line_edit.textChanged.connect(self.on_text_changed)
-        self.uname_line_edit.textChanged.connect(self.on_text_changed)
-        self.load_user_config()
-        self.proj_management_line_edit.setEnabled(False)
+        if current_user() in app_config()['project_management'][self.project_management]['users']:
+            self.user_info = app_config()['project_management'][self.project_management]['users'][current_user()]
+        self.load_user_details()
 
-    def load_user_config(self):
-        self.email_line_edit.setText(self.user_config['proj_man_user_email'])
-        self.uname_line_edit.setText(self.user_config['proj_man_user_name'])
-        if not self.user_config['user_name']:
-            self.local_user_line_edit.setText(getpass.getuser())
-        else:
-            self.local_user_line_edit.setText(self.user_config['user_name'])
-        # TODO it'd be nice to have something here to denote if they're using the local user variable or not.
-        self.proj_management_line_edit.setText(self.project_management)
-        if self.project_management == 'ftrack':
-            self.uname_line_edit.hide()
-            self.uname_label.hide()
+    def load_user_details(self):
+        row_number = 2
+        for key in self.user_details:
+            label = QtWidgets.QLabel(key.title())
+            line_edit = QtWidgets.QLineEdit()
+            self.line_edit_dict[key] = line_edit
+            self.grid_layout.addWidget(label, row_number, 0)
+            self.grid_layout.addWidget(line_edit, row_number, 1)
+            if key == 'login':
+                line_edit.setPlaceholderText('required')
+                line_edit.textEdited.connect(self.on_text_changed)
+                self.login_line_edit = line_edit
+            if self.user_info:
+                line_edit.setText(self.user_info[key])
+            row_number += 1
 
     def on_text_changed(self):
-        email = self.email_line_edit.text()
+        # I'll want to be updating some kind of dictionary here that i can use for saving info later.
+        email = self.login_line_edit.text()
         if email:
-            self.ok_button.setEnabled(True)
+            if '@' in email:
+                self.ok_button.setEnabled(True)
         else:
             self.ok_button.setEnabled(False)
 
@@ -413,22 +414,23 @@ class LoginDialog(LJDialog):
 
     def on_cancel_clicked(self):
         self.accept()
-        print 'Cancel Clicked'
 
-    @staticmethod
-    def load_user_defaults():
-        print('Adjust Load User Defaults to handle .json')
-        if os.path.exists(UserConfig().user_config_path):
-            print UserConfig().user_config_path
+    def create_user_info_dict(self):
+        d = {}
+        for key in self.line_edit_dict:
+            d[key] = self.line_edit_dict[key].text()
+        return d
 
     def save_user_defaults(self):
+        print 'Need to Create a method for saving new users to the company globals'
+        globals_location = UserConfig().d['globals']
         import json
-        path_ = UserConfig().user_config_path
-        self.user_config['proj_man_user_email'] = self.email_line_edit.text()
-        self.user_config['proj_man_user_name'] = self.uname_line_edit.text()
-        self.user_config['user_name'] = self.local_user_line_edit.text()
-        with open(path_, 'w') as outfile:
-            json.dump(self.user_config, outfile, indent=4, sort_keys=True)
+        user_info = self.create_user_info_dict()
+        app_config_dict = app_config()
+        app_config_dict['project_management'][self.project_management]['users'][current_user()] = user_info
+        with open(globals_location, 'w') as fileout:
+            json.dump(app_config_dict, fileout, indent=4, sort_keys=True)
+        self.accept()
 
 
 class ProjectCreator(LJDialog):
@@ -706,10 +708,16 @@ class ProjectCreator(LJDialog):
             CreateProductionData(path_object=path_object, force_pm_creation=True)
         # open up Ftrack to the project page
         d = {'company': self.company_combo.currentText(),
-             'project': self.project_line_edit.text()}
+             'project': self.project_line_edit.text(),
+             'context': 'source',
+             'scope': self.scope,
+             'seq': '*'}
         path_object = PathObject(d)
         show_in_project_management(path_object)
+        print path_object.path_root, '  Trying to set to this path on lumbermill'
+        # no idea why this is printing without project.
         self.accept()
+        self.parent().centralWidget().update_location(path_object)
 
 
 

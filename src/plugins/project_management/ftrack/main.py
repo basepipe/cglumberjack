@@ -5,6 +5,7 @@ import os
 import json
 import ftrack_api
 from cglcore.config import app_config, UserConfig
+from cglcore.util import current_user
 from cglcore.path import create_previews
 
 
@@ -55,6 +56,7 @@ class ProjectManagementData(object):
     preview_path_full = None
     thumb_path_full = None
     task_asset = None
+    user_info = app_config()['project_management']['ftrack']['users']
     server_url = app_config()['project_management']['ftrack']['api']['server_url']
     api_key = app_config()['project_management']['ftrack']['api']['api_key']
     api_user = app_config()['project_management']['ftrack']['api']['api_user']
@@ -69,16 +71,7 @@ class ProjectManagementData(object):
         for key in kwargs:
             self.__dict__[key] = kwargs[key]
         self.shot_name = '%s_%s' % (self.seq, self.shot)
-        if not self.user_email:
-            self.user_email = app_config()['project_management']['ftrack']['api']['api_user']
-            if not self.user_email:
-                logging.debug('No User Email Defined, cant create Ftrack Production Data')
-                return
-        else:
-            print 'User email pre-set %s' % self.user_email
-        # if not self.project:
-        #     logging.debug('No Project Defined')
-        #     return
+
         if not self.project_short_name:
             self.project_short_name = self.project
 
@@ -273,17 +266,24 @@ class ProjectManagementData(object):
             return None
 
     def update_user_globals_task(self, status='Not started'):
-        # if self.user_email == UserConfig().d['proj_man_user_email']:
-        task_info = {'seq': self.seq,
-                     'shot_name': self.shot_name,
-                     'bid': self.bid,
-                     'due_date': '',
-                     'filepath': '',
-                     'task_type': self.task_name,
-                     'status': status}
-        my_tasks = UserConfig().d['my_tasks']
-        my_tasks[self.path_object.company][self.path_object.project][self.task_name] = task_info
-        UserConfig(my_tasks=my_tasks).update_all()
+        if self.user_info[current_user()]['login'] == self.user_email:
+            my_tasks = UserConfig().d['my_tasks']
+            if self.path_object.project not in my_tasks[self.path_object.company]:
+                print 'didnt find %s' % self.path_object.project
+                my_tasks[self.path_object.company][self.path_object.project] = {}
+            else:
+                print my_tasks[self.path_object.company][self.path_object.project]
+            new_path = self.path_root.split(self.user)[0]
+            my_tasks[self.path_object.company][self.path_object.project][self.task_name] = {}
+            task_info = my_tasks[self.path_object.company][self.path_object.project][self.task_name]
+            task_info['seq'] = self.seq
+            task_info['shot_name'] = self.shot_name
+            task_info['bid'] = self.bid
+            task_info['due_date'] = ''
+            task_info['filepath'] = new_path
+            task_info['task_type'] = self.task
+            task_info['status'] = status
+            UserConfig(my_tasks=my_tasks).update_all()
 
     def create_version(self):
         if self.filename:
@@ -394,13 +394,14 @@ class ProjectManagementData(object):
             logging.info('Adding FTRACK version %s to %s' % (self.version_data['id'], list_name))
             if self.version_data not in version_list['items']:
                 version_list['items'].append(self.version_data)
-
         self.go_to_dailies(playlist=version_list['id'])
 
     def add_group_to_project(self):
         self.user_group = self.ftrack.query('Group where name is %s' % self.user_group_name)[0]
-        self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).one()
-        self.ftrack.ensure('Membership', {"group_id": self.user_group['id'], "user_id": self.user_data['id']})
+        if self.user_email:
+            self.user_data = self.ftrack.query('User where username is "{}"'.format(self.user_email)).one()
+            self.ftrack.ensure('Membership', {"group_id": self.user_group['id'], "user_id": self.user_data['id']})
+
         project_has_group = self.ftrack.query(
             'Appointment where context.id is "{}" and resource.id = "{}" and type="allocation"'.format(
                 self.project_data['id'], self.user_group['id']
@@ -602,7 +603,6 @@ def find_user_assignments(path_object, user_email, force=False):
     project = path_object.project
     # load whatever is in the user globals:
     if company and project and company != '*' and project != '*':
-        print company, project
         my_tasks = UserConfig().d['my_tasks']
         if not force:
             try:
