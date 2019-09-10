@@ -120,8 +120,8 @@ class LJTreeWidget(QtWidgets.QTreeView):
         self.hideColumn(FILEPATH)
         self.hideColumn(FILETYPE)
         self.hideColumn(KEEP_CLIENT_NAMING)
-        self.hideColumn(SEQ)
-        self.hideColumn(SHOT)
+        # self.hideColumn(SEQ)
+        # self.hideColumn(SHOT)
         self.hideColumn(SCOPE)
         self.hideColumn(TASK)
         self.hideColumn(TAGS)
@@ -142,6 +142,13 @@ class LJTreeWidget(QtWidgets.QTreeView):
 
     def column_count(self):
         return self.model.columnCount()
+
+    def edit_text(self, index, column):
+        # figure out what row i'm working with from the index.
+        # figure out if this is a parent or a child
+        # get the true index of the item
+        # edit the item
+        pass
 
     def row_selected(self):
         items = []

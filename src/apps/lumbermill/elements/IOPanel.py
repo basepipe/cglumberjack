@@ -367,6 +367,7 @@ class IOPanel(QtWidgets.QWidget):
                 if self.task_combo.currentText():
                     try:
                         task = proj_man_tasks[str(self.task_combo.currentText())]
+                        print seq, 'is sequence before it goes into the path object'
                         to_object = self.path_object.copy(scope=self.scope_combo.currentText(),
                                                           seq=seq,
                                                           shot=shot,
@@ -375,6 +376,7 @@ class IOPanel(QtWidgets.QWidget):
                                                           version='000.000',
                                                           user='publish',
                                                           resolution='high')
+                        print to_object.seq, 'is sequence after the path object.'
                         status = ''
                         for f in self.current_selection:
                             row = self.data_frame.loc[(self.data_frame['Filename'] == f[FILENAME]) &
@@ -494,7 +496,11 @@ class IOPanel(QtWidgets.QWidget):
                 if shot:
                     if shot != ' ':
                         try:
-                            shot = '%04d' % int(shot)
+                            length = app_config()['rules']['path_variables']['shot']['length']
+                            if length == 3:
+                                shot = '%03d' % int(shot)
+                            elif length == 4:
+                                shot = '%04d' % int(shot)
                             self.set_combo_to_text(self.shot_combo, shot)
                         except ValueError:
                             self.set_combo_to_text(self.shot_combo, shot)
@@ -593,7 +599,6 @@ class IOPanel(QtWidgets.QWidget):
                 self.shot_combo.addItems(shots)
 
     def on_file_selected(self, data):
-        print data
         self.tags_title.setText("<b>CGL:></b>  Choose 'Assets' or 'Shots' for your scope")
         self.show_tags_gui()
         self.current_selection = data
