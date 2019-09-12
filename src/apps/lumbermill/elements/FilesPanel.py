@@ -460,8 +460,10 @@ class FilesPanel(QtWidgets.QWidget):
                 logging.info('Copying File From %s to %s' % (d, os.path.join(to_path, filename_)))
                 shutil.copy2(d, os.path.join(to_path, filename_))
             elif os.path.isdir(d):
-                logging.info('Copying Folder From %s to %s' % (d, os.path.join(to_path, filename_)))
-                shutil.copytree(d, os.path.join(path_object.path_root, filename_))
+                print d
+                print to_path
+                logging.info('Copying Folder From %s to %s' % (d, to_path))
+                shutil.copytree(d, os.path.join(to_path, filename_))
 
         self.on_task_selected(path_object.data)
 

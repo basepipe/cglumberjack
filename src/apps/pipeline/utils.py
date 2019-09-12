@@ -232,41 +232,52 @@ class CGLMenu(QtWidgets.QWidget):
 
         if self.menu_type == 'shelves':
             self.add_button = QtWidgets.QPushButton('add shelf button')
-            self.delete_parent_button = QtWidgets.QPushButton('Delete Shelf')
+            self.import_menu_button = QtWidgets.QPushButton('import shelf button')
         elif self.menu_type == 'preflights':
             self.add_button = QtWidgets.QPushButton('add preflight step')
-            self.delete_parent_button = QtWidgets.QPushButton('Delete Preflight')
+            self.import_menu_button = QtWidgets.QPushButton('import preflight step')
         else:
             self.add_button = QtWidgets.QPushButton('add %s button' % self.singular)
-            self.delete_parent_button = QtWidgets.QPushButton('Delete Menu')
+            self.import_menu_button = QtWidgets.QPushButton('import %s button' % self.singular)
+        print self.parent()
+        self.add_submenu_button = QtWidgets.QPushButton('add submenu')
         self.add_button.setProperty('class', 'add_button')
-        self.delete_parent_button.setProperty('class', 'add_button')
+        self.add_submenu_button.setProperty('class', 'add_button')
+        self.import_menu_button.setProperty('class', 'add_button')
 
         # set parameters
         self.buttons.setMovable(True)
 
         # layout the widget
         title_layout.addWidget(self.title)
+        title_layout.addWidget(self.add_submenu_button)
+        title_layout.addWidget(self.import_menu_button)
         title_layout.addWidget(self.add_button)
-        title_layout.addWidget(self.delete_parent_button)
         title_layout.addStretch(1)
         layout.addLayout(title_layout)
         layout.addWidget(self.buttons)
 
         # connect SIGNALS and SLOTS
         self.add_button.clicked.connect(self.on_add_menu_button)
-        self.delete_parent_button.clicked.connect(self.on_delete_parent_clicked)
+        self.add_submenu_button.clicked.connect(self.on_submenu_button_clicked)
+        self.import_menu_button.clicked.connect(self.on_import_menu_button_clicked)
         self.load_buttons()
 
-    def on_delete_parent_clicked(self):
-        print self.menu_name
-        dialog = InputDialog(title='Delete %s?' % self.menu_name,
-                             message='Are you sure you want to delete %s' % self.menu_name)
+    @staticmethod
+    def on_import_menu_button_clicked():
+        dialog = InputDialog(title="Feature In Progress",
+                             message="This button will allow you to import buttons/preflights from other menus")
         dialog.exec_()
-        if dialog.button == 'Ok':
-            print 'Deleting %s' % self.menu_name
-            menus = self.buttons.parent().parent().parent()
-            menus.removeTab(menus.currentIndex())
+        if dialog.button == 'Ok' or dialog.button == 'Cancel':
+            dialog.accept()
+
+    @staticmethod
+    def on_submenu_button_clicked():
+        dialog = InputDialog(title="Feature In Progress",
+                             message="This button will allow you to create a submenu!")
+        dialog.exec_()
+        if dialog.button == 'Ok' or dialog.button == 'Cancel':
+            dialog.accept()
 
     def on_add_menu_button(self):
         if self.menu_type == 'preflights':
