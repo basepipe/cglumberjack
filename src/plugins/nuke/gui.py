@@ -90,11 +90,11 @@ class RenderDialog(QtWidgets.QDialog):
         self.frange_line_edit.setText('%s-%s' % (self.sframe, self.eframe))
 
     def on_render_clicked(self):
+        self.accept()
         print 'Rendering %s-%s by %s' % (self.sframe, self.eframe, self.byframe)
         nuke.execute(self.write_node, start=int(self.sframe), end=int(self.eframe), incr=int(self.byframe))
         n = nuke.toNode(self.write_node)
         self.render_path = n['file'].value()
-        self.accept()
         return self.render_path
 
     def on_text_changed(self):
@@ -109,6 +109,16 @@ def render_all_write_nodes():
         dialog = RenderDialog(write_node=n.name())
         dialog.exec_()
         render_paths.append(dialog.render_path)
+    return render_paths
+
+
+def render_selected_write_nodes():
+    render_paths = []
+    for s in nuke.selectedNodes():
+        if s.Class() == 'Write':
+            dialog = RenderDialog(write_node=s.name())
+            dialog.exec_()
+            render_paths.append(dialog.render_path)
     return render_paths
 
 

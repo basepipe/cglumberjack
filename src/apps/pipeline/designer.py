@@ -10,8 +10,10 @@ from utils import CGLMenu
 class Designer(LJDialog):
     def __init__(self, parent=None, type_=None, menu_path=None, pm_tasks=None):
         LJDialog.__init__(self, parent)
+        print type_
         self.type = type_
         self.cgl_tools = get_cgl_tools()
+        self.singular = ''
 
         self.menu_path = menu_path
         self.software = ''
@@ -50,9 +52,10 @@ class Designer(LJDialog):
         self.menus.setMovable(True)
         self.title_label = QtWidgets.QLabel()
         self.title_label.setProperty('class', 'ultra_title')
-        self.add_menu_button = QtWidgets.QPushButton('add %s' % self.type)
-        self.delete_menu_button = QtWidgets.QPushButton('delete %s' % self.type)
+        self.add_menu_button = QtWidgets.QPushButton('add')
+        self.delete_menu_button = QtWidgets.QPushButton('delete')
         self.add_menu_button.setProperty('class', 'add_button')
+        self.delete_menu_button.setProperty('class', 'add_button')
 
         # self.save_menu_button = QtWidgets.QPushButton('save menu')
         # self.save_menu_button.setProperty('class', 'add_button')
@@ -60,7 +63,7 @@ class Designer(LJDialog):
         # layout the GUI
         title_widget_layout.addWidget(self.title_label)
         title_widget_layout.addWidget(self.add_menu_button)
-        # title_widget_layout.addWidget(self.delete_menu_button)
+        title_widget_layout.addWidget(self.delete_menu_button)
         title_widget_layout.addStretch(1)
         # title_widget_layout.addWidget(self.save_menu_button)
         grid_layout.addWidget(self.software_label, 0, 0)
@@ -77,12 +80,23 @@ class Designer(LJDialog):
 
         # SIGNALS AND SLOTS
         self.add_menu_button.clicked.connect(self.on_add_menu_clicked)
+        self.delete_menu_button.clicked.connect(self.on_delete_menu_clicked)
         self.new_software_button.clicked.connect(self.on_new_software_clicked)
 
         # Load the Menu Designer
         self.load_software()
         self.software_combo.currentIndexChanged.connect(self.update_menu_path)
         self.menu_type_combo.currentIndexChanged.connect(self.update_menu_path)
+
+    def on_delete_menu_clicked(self):
+        index = self.menus.currentIndex()
+        menu_name = self.menus.tabText(index)
+        dialog = InputDialog(title='Delete %s?' % menu_name,
+                             message='Are you sure you want to delete %s' % menu_name)
+        dialog.exec_()
+        if dialog.button == 'Ok':
+            print 'Deleting %s' % menu_name
+            self.menus.removeTab(index)
 
     def load_software(self):
         self.software_label.show()
@@ -102,11 +116,25 @@ class Designer(LJDialog):
     def update_menu_path(self):
         self.software = self.software_combo.currentText()
         self.type = self.menu_type_combo.currentText()
+        self.get_singular(self.type)
         if self.type:
             self.menu_path = os.path.join(self.cgl_tools, self.software, '%s.cgl' % self.type)
-            self.add_menu_button.setText('add %s' % self.type)
+            self.add_menu_button.setText('add %s' % self.singular)
+            self.delete_menu_button.setText('delete %s' % self.singular)
             if os.path.exists(self.menu_path):
                 self.load_menus()
+
+    def get_singular(self, type_):
+        if self.type == 'shelves':
+            self.singular = 'shelf'
+        elif self.type == 'menus':
+            self.singular = 'menu'
+        elif self.type == 'preflights':
+            self.singular = 'preflight'
+        elif self.type == 'context-menus':
+            self.singular = 'context-menu'
+        else:
+            self.singular = 'not defined'
 
     def on_add_menu_clicked(self):
         if self.type == 'preflights' or self.type == 'context-menus':

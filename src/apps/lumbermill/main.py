@@ -506,6 +506,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def review_clicked(self, filepath=None):
         if not filepath:
             selection = PathObject(self.path_widget.path_line_edit.text())
+            selection.set_file_type()
         else:
             selection = PathObject(filepath)
         if selection.context == 'render':
@@ -517,7 +518,16 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             # FTRACK REVIEWS
             elif self.project_management == 'ftrack':
                 if selection.filename:
-                    CreateProductionData(selection)
+                    if selection.file_type == 'folder' or not selection.file_type:
+                        dialog = InputDialog(title='Error: unsupported folder or file_type',
+                                             message="%s is a folder or undefined file_type\nunsure how to proceed" %
+                                             selection.filename)
+                        dialog.exec_()
+                        if dialog.button == 'Ok' or dialog.button == 'Cancel':
+                            dialog.accept()
+                            return
+                    else:
+                        CreateProductionData(selection)
                 else:
                     print('Select file for Review')
 
