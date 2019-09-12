@@ -548,8 +548,8 @@ class AssetWidget(QtWidgets.QWidget):
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.search_box = search_box
         self.add_button = QtWidgets.QToolButton()
-        self.add_button.setProperty('class', 'add_button')
         self.add_button.setText("add")
+        self.add_button.setProperty('class', 'add_button')
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
