@@ -8,7 +8,6 @@ import shutil
 import copy
 import subprocess
 from cglcore.util import split_all, copy_file
-from cglcore import assetcore
 from cglcore.config import app_config, UserConfig
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
@@ -647,10 +646,13 @@ class CreateProductionData(object):
                 self.update_project_json()
 
     def update_task_json(self):
+
         """
         if task_json doesn't exist it creates one, if it does exist it edits it with the new information
         :return:
         """
+        from cglcore import assetcore
+
         self.path_object.set_status()
         if os.path.exists(self.path_object.task_json):
             asset_meta = assetcore.MetaObject(jsonfile=self.path_object.task_json)
@@ -674,6 +676,8 @@ class CreateProductionData(object):
         asset_meta.save(self.path_object.task_json)
 
     def update_asset_json(self):
+        from cglcore import assetcore
+
         obj = self.path_object
         if os.path.exists(obj.asset_json):
             asset_meta = assetcore.MetaObject(jsonfile=obj.asset_json)
@@ -695,6 +699,8 @@ class CreateProductionData(object):
         asset_meta.save(obj.asset_json)
 
     def update_project_json(self):
+        from cglcore import assetcore
+
         if os.path.exists(self.path_object.project_json):
             project_meta = assetcore.MetaObject(jsonfile=self.path_object.project_json)
         else:
