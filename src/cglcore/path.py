@@ -1037,34 +1037,33 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
     :param directory:
     :return: list of prepared files/items.
     """
-    ignore = ['publish_data.csv']
+    ignore = ['publish_data.csv', '.preview', '.thumb']
     list_ = os.listdir(directory)
     if not list_:
         return
     list_.sort()
     output_ = []
     for each in list_:
-        if path_filter:
-            filtered = PathObject(each).data[path_filter]
-            output_.append([filtered])
-        else:
-            if basename:
-                seq_string = str(seq_from_file(os.path.basename(each)))
-                if seq_string:
-                    if seq_string not in output_:
-                        output_.append(seq_string)
+        if each not in ignore:
+            if path_filter:
+                filtered = PathObject(each).data[path_filter]
+                output_.append([filtered])
+            else:
+                if basename:
+                    seq_string = str(seq_from_file(os.path.basename(each)))
+                    if seq_string:
+                        if seq_string not in output_:
+                            output_.append(seq_string)
+                    else:
+                        output_.append(each)
                 else:
                     output_.append(each)
-            else:
-                output_.append(each)
     for each in output_:
         if '#' in each:
             frange = get_frange_from_seq(os.path.join(directory, each))
             if frange:
                 index = output_.index(each)
                 output_[index] = '%s %s' % (each, frange)
-        if each in ignore:
-            output_.remove(each)
     if return_sequences:
         seq_only = []
         for each in output_:

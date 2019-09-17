@@ -575,9 +575,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def publish_clicked(self):
         from plugins.preflight.launch import launch_
+        from cglui.widgets.publish_dialog import PublishDialog
         selection = PathObject(self.path_widget.path_line_edit.text())
         task = selection.task
-        launch_(self, task, selection)
+        dialog = PublishDialog(path_object=selection)
+        dialog.do_publish.connect(lambda: launch_(self, task, selection))
+        dialog.exec_()
+        # launch_(self, task, selection)
 
 
 class CGLumberjack(LJMainWindow):
