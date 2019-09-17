@@ -2,11 +2,13 @@ import os
 import shutil
 import logging
 import glob
+import threading
 from Qt import QtWidgets, QtCore
 from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
 from cglcore.util import current_user
+from cglui.widgets.progress_gif import process_method
 from cglcore.path import PathObject, CreateProductionData
 from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file, get_frange_from_seq
 from cglui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
@@ -99,7 +101,6 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.files_area.work_files_table.user = self.version_obj.user
             task_widget.files_area.work_files_table.version = self.version_obj.version
             task_widget.files_area.work_files_table.resolution = self.version_obj.resolution
-
             self.work_files = self.version_obj.glob_project_element('filename', full_path=True)
             # check to see if there are work files for the 'high' version
             self.high_files = self.version_obj.copy(resolution='high').glob_project_element('filename', full_path=True)
@@ -158,6 +159,7 @@ class FilesPanel(QtWidgets.QWidget):
         self.panel.addStretch(1)
 
     def new_files_dragged(self, files):
+        print '1'
         to_object = PathObject(self.sender().to_object)
         to_folder = to_object.path_root
 
@@ -436,13 +438,17 @@ class FilesPanel(QtWidgets.QWidget):
 
     # LOAD FUNCTIONS
     def on_file_dragged_to_render(self, data):
-        logging.debug('Files Dragged to Render %s' % data)
         object_ = PathObject.copy(self.version_obj, context='render')
-        self.on_file_dragged(object_, data)
+        process_method(self.parent().progress_bar, self.on_file_dragged, args=(object_, data),
+                       text='Lumberjacking Files')
+        self.on_task_selected(object_)
+        # logging.debug('Files Dragged to Render %s' % data)
 
     def on_file_dragged_to_source(self, data):
         object_ = PathObject.copy(self.version_obj, context='source')
-        self.on_file_dragged(object_, data)
+        process_method(self.parent().progress_bar, self.on_file_dragged, args=(object_, data),
+                       text='Lumberjacking Files')
+        self.on_task_selected(object_)
 
     def on_file_dragged(self, path_object, data):
         logging.debug('Path: %s has files added to it' % path_object.path_root)
@@ -460,12 +466,9 @@ class FilesPanel(QtWidgets.QWidget):
                 logging.info('Copying File From %s to %s' % (d, os.path.join(to_path, filename_)))
                 shutil.copy2(d, os.path.join(to_path, filename_))
             elif os.path.isdir(d):
-                print d
-                print to_path
                 logging.info('Copying Folder From %s to %s' % (d, to_path))
                 shutil.copytree(d, os.path.join(to_path, filename_))
-
-        self.on_task_selected(path_object.data)
+        self.parent().progress_bar.hide()
 
     def reload_task_widget(self, widget, path_object=None, populate_versions=True):
         if path_object:
