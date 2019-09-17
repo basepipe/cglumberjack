@@ -1,4 +1,4 @@
-from Qt import QtCore, QtWidgets, QtGui
+from Qt import QtCore, QtWidgets
 from cglui.widgets.base import LJDialog
 from cglcore.path import PathObject, lj_list_dir
 

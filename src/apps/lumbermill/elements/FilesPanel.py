@@ -2,7 +2,6 @@ import os
 import shutil
 import logging
 import glob
-import threading
 from Qt import QtWidgets, QtCore
 from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
