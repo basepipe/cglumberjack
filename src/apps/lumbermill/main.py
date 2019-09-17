@@ -3,7 +3,7 @@ import time
 import logging
 import shutil
 from Qt import QtWidgets, QtCore, QtGui
-from cglui.widgets.progress_gif import ProgressGif
+from cglui.widgets.progress_gif import ProgressGif, process_method
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog, InputDialog
@@ -341,7 +341,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.nav_widget.my_tasks_clicked.connect(self.show_my_tasks)
         self.nav_widget.location_changed.connect(self.path_widget.update_path)
         self.layout.addWidget(self.nav_widget)
-
         self.update_location(self.path_object)
 
     def show_my_tasks(self):
@@ -503,7 +502,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def import_clicked():
         print 'import clicked'
 
-    def review_clicked(self, filepath=None):
+    def review_clicked(self):
+        selection = PathObject(self.path_widget.path_line_edit.text())
+        selection.set_file_type()
+        process_method(self.progress_bar, self.do_review, text='Submitting Review')
+        print 'updating_location %s %s' % (selection.path_root, selection.data)
+        self.update_location(data=selection.data)
+
+    def do_review(self, filepath=None):
         if not filepath:
             selection = PathObject(self.path_widget.path_line_edit.text())
             selection.set_file_type()
@@ -535,8 +541,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 print 'Shotgun Reviews not connected yet'
             selection.set_attr(filename='')
             selection.set_attr(ext='')
-            print 'updating_location %s %s' % (selection.path_root, selection.data)
-            self.update_location(data=selection.data)
         else:
             dialog = InputDialog(title="Prep for Review", message="Move or copy files to review area?",
                                  buttons=['Move', 'Copy'])
@@ -558,8 +562,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         shutil.copyfile(from_file, to_file)
                 selection.set_attr(filename='')
                 selection.set_attr(ext='')
-                print 'updating_location %s %s' % (selection.path_root, selection.data)
-                self.update_location(data=selection.data)
             else:
                 to_object = PathObject.copy(selection, context='render')
                 logging.info('Copying %s to %s' % (selection.path_root, to_object.path_root))
@@ -569,13 +571,17 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                     shutil.copyfile(selection.path_root, to_object.path_root)
                 selection.set_attr(filename='')
                 selection.set_attr(ext='')
-                self.update_location(data=selection.data)
+        self.progress_bar.hide()
 
     def publish_clicked(self):
         from plugins.preflight.launch import launch_
+        from cglui.widgets.publish_dialog import PublishDialog
         selection = PathObject(self.path_widget.path_line_edit.text())
         task = selection.task
-        launch_(self, task, selection)
+        dialog = PublishDialog(path_object=selection)
+        dialog.do_publish.connect(lambda: launch_(self, task, selection))
+        dialog.exec_()
+        # launch_(self, task, selection)
 
 
 class CGLumberjack(LJMainWindow):

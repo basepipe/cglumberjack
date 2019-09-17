@@ -312,6 +312,7 @@ class ProductionPanel(QtWidgets.QWidget):
         self.assets.tasks_radio.clicked.connect(self.load_tasks)
 
     def load_tasks(self):
+        self.assets.add_button.setEnabled(False)
         red_palette = QtGui.QPalette()
         red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
         self.assets.data_table.clearSpans()
@@ -424,10 +425,12 @@ class ProductionPanel(QtWidgets.QWidget):
 
     def on_filter_radio_changed(self):
         if self.sender().text() == 'Assets':
+            self.assets.add_button.setEnabled(True)
             self.path_object.set_attr(scope='assets')
             self.sender().parent().set_icon('assets')
             self.path_object.data['my_tasks'] = False
         elif self.sender().text() == 'Shots':
+            self.assets.add_button.setEnabled(True)
             self.path_object.set_attr(scope='shots')
             self.sender().parent().set_icon('shots')
             self.path_object.data['my_tasks'] = False

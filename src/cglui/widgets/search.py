@@ -1,8 +1,6 @@
 from Qt import QtWidgets
 from Qt import QtCore
 # noinspection PyUnresolvedReferences
-from Qt import QtTest
-
 
 class LJSearchEdit(QtWidgets.QLineEdit):
     def __init__(self, parent, button=False):
@@ -22,5 +20,6 @@ class LJSearchEdit(QtWidgets.QLineEdit):
         self.setMinimumWidth(250)
 
     def cancel_clicked(self):
+        from Qt import QtTest
         QtWidgets.QLineEdit.setText(self, "")
         QtTest.QTest.keyClick(self, QtCore.Qt.Key_Return)

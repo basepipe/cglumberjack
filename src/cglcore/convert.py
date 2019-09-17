@@ -47,6 +47,8 @@ def get_first_frame(sequence, return_type='string'):
                 middle_string = '%05d' % middle_frame
             if hashes == 3:
                 middle_string = '%03d' % middle_frame
+            if hashes == 7:
+                middle_string = '%03d' % middle_frame
         middle_frame = sequence.replace('*', middle_string)
         if return_type == 'string':
             return first_frame, middle_frame, last_frame
