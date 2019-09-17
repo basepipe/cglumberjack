@@ -440,14 +440,14 @@ class FilesPanel(QtWidgets.QWidget):
     def on_file_dragged_to_render(self, data):
         object_ = PathObject.copy(self.version_obj, context='render')
         process_method(self.parent().progress_bar, self.on_file_dragged, args=(object_, data),
-                       text='Lumberjacking Files')
+                       text='Lumber-hacking Files')
         self.on_task_selected(object_)
         # logging.debug('Files Dragged to Render %s' % data)
 
     def on_file_dragged_to_source(self, data):
         object_ = PathObject.copy(self.version_obj, context='source')
         process_method(self.parent().progress_bar, self.on_file_dragged, args=(object_, data),
-                       text='Lumberjacking Files')
+                       text='Lumber-hacking Files')
         self.on_task_selected(object_)
 
     def on_file_dragged(self, path_object, data):
