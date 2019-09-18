@@ -1265,6 +1265,71 @@ def publish(path_obj):
     return False
 
 
+def do_review(progress_bar=None, path_object=None):
+    from cglui.widgets.dialog import InputDialog
+    if not path_object:
+        return None
+    else:
+        selection = path_object
+    if selection.context == 'render':
+        # lin_images = ['exr', 'dpx']
+        # LUMBERMILL REVIEWS
+        if PROJ_MANAGEMENT == 'lumbermill':
+            # do this for movies
+            print 'Lumbermill Not connected to review features'
+        # FTRACK REVIEWS
+        elif PROJ_MANAGEMENT == 'ftrack':
+            if selection.filename:
+                if selection.file_type == 'folder' or not selection.file_type:
+                    dialog = InputDialog(title='Error: unsupported folder or file_type',
+                                         message="%s is a folder or undefined file_type\nunsure how to proceed" %
+                                         selection.filename)
+                    dialog.exec_()
+                    if dialog.button == 'Ok' or dialog.button == 'Cancel':
+                        dialog.accept()
+                        return
+                else:
+                    CreateProductionData(selection)
+            else:
+                print('Select file for Review')
+
+        elif PROJ_MANAGEMENT == 'shotgun':
+            print 'Shotgun Reviews not connected yet'
+        selection.set_attr(filename='')
+        selection.set_attr(ext='')
+    else:
+        dialog = InputDialog(title="Prep for Review", message="Move or copy files to review area?",
+                             buttons=['Move', 'Copy'])
+        dialog.exec_()
+        move = False
+        if dialog.button == 'Move':
+            move = True
+        if selection.file_type == 'sequence':
+            # sequence_name = selection.filename
+            from_path = os.path.dirname(selection.path_root)
+            to_object = PathObject(from_path)
+            to_object.set_attr(context='render')
+            for each in os.listdir(from_path):
+                from_file = os.path.join(from_path, each)
+                to_file = os.path.join(to_object.path_root, each)
+                if move:
+                    shutil.move(from_file, to_file)
+                else:
+                    shutil.copyfile(from_file, to_file)
+            selection.set_attr(filename='')
+            selection.set_attr(ext='')
+        else:
+            to_object = PathObject.copy(selection, context='render')
+            logging.info('Copying %s to %s' % (selection.path_root, to_object.path_root))
+            if move:
+                shutil.move(selection.path_root, to_object.path_root)
+            else:
+                shutil.copyfile(selection.path_root, to_object.path_root)
+            selection.set_attr(filename='')
+            selection.set_attr(ext='')
+    if progress_bar:
+        progress_bar.hide()
+    return True
 
 
 

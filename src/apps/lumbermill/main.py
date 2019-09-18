@@ -7,8 +7,7 @@ from cglui.widgets.progress_gif import ProgressGif, process_method
 from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog, InputDialog
-from cglcore.path import PathObject, start, icon_path, font_path, load_style_sheet, split_sequence_frange, start_url
-from cglcore.path import CreateProductionData, image_path
+import cglcore.path as cglpath
 from cglcore.util import current_user
 from cglcore.config import app_config, UserConfig
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
@@ -28,7 +27,7 @@ class PathWidget(QtWidgets.QFrame):
     def __init__(self, parent=None, path_object=None):
         QtWidgets.QFrame.__init__(self, parent)
         if path_object:
-            self.path_object = PathObject(path_object)
+            self.path_object = cglpath.PathObject(path_object)
             self.path_root = self.path_object.path_root
         else:
             return
@@ -45,11 +44,11 @@ class PathWidget(QtWidgets.QFrame):
 
     def update_path(self, path_object):
         if path_object:
-            path_object = PathObject(path_object)
+            path_object = cglpath.PathObject(path_object)
             if path_object.filename:
                 if '###' in path_object.filename:
                     try:
-                        filename = split_sequence_frange(path_object.filename)[0]
+                        filename = cglpath.split_sequence_frange(path_object.filename)[0]
                         path_object.set_attr(filename=filename)
                     except TypeError:
                         logging.error('passing update_path due to exception')
@@ -71,7 +70,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.setProperty('class', 'light_grey')
         self.my_tasks_button = QtWidgets.QPushButton()
         self.my_tasks_button.setToolTip('My Tasks')
-        tasks_icon = os.path.join(icon_path(), 'star24px.png')
+        tasks_icon = os.path.join(cglpath.icon_path(), 'star24px.png')
         self.my_tasks_button.setProperty('class', 'grey_border')
         self.my_tasks_button.setIcon(QtGui.QIcon(tasks_icon))
         self.my_tasks_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
@@ -79,7 +78,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.ingest_button = QtWidgets.QPushButton()
         self.ingest_button.setToolTip('My Tasks')
         self.ingest_button.setProperty('class', 'grey_border')
-        ingest_icon = os.path.join(icon_path(), 'ingest24px.png')
+        ingest_icon = os.path.join(cglpath.icon_path(), 'ingest24px.png')
         self.ingest_button.setIcon(QtGui.QIcon(ingest_icon))
         self.ingest_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
 
@@ -94,9 +93,9 @@ class NavigationWidget(QtWidgets.QFrame):
         self.projects_button.setStyleSheet("background: transparent;")
         self.companies_button.setStyleSheet("background: transparent;")
 
-        back_icon = os.path.join(icon_path(), 'back24px.png')
-        home_icon = os.path.join(icon_path(), 'project24px.png')
-        company_icon = os.path.join(icon_path(), 'company24px.png')
+        back_icon = os.path.join(cglpath.icon_path(), 'back24px.png')
+        home_icon = os.path.join(cglpath.icon_path(), 'project24px.png')
+        company_icon = os.path.join(cglpath.icon_path(), 'company24px.png')
 
         self.back_button.setIcon(QtGui.QIcon(back_icon))
         self.back_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
@@ -136,7 +135,7 @@ class NavigationWidget(QtWidgets.QFrame):
     def set_text(self, text):
         self.current_location_line_edit.setText(text.replace('\\', '/'))
         if self.current_location_line_edit.text():
-            self.path_object = PathObject(self.current_location_line_edit.text())
+            self.path_object = cglpath.PathObject(self.current_location_line_edit.text())
             
     def show_company(self):
         self.companies_button.show()
@@ -191,7 +190,7 @@ class NavigationWidget(QtWidgets.QFrame):
         elif self.sender() == self.shots_button:
             path = '%s/%s/source/%s/%s/*' % (self.path_object.root, self.path_object.company, self.path_object.project,
                                              self.path_object.scope)
-        new_obj = PathObject(path)
+        new_obj = cglpath.PathObject(path)
         self.location_changed.emit(new_obj)
 
     def my_tasks_pressed(self):
@@ -206,7 +205,7 @@ class NavigationWidget(QtWidgets.QFrame):
             print 'Please Choose a Company and a Project before pushing the ingest button'
 
     def back_button_pressed(self):
-        path_object = PathObject(self.current_location_line_edit.text())
+        path_object = cglpath.PathObject(self.current_location_line_edit.text())
         path_object.set_attr(context='source')
         # if i'm a task, show me all the assets or shots
         last = path_object.get_last_attr()
@@ -253,7 +252,7 @@ class NavigationWidget(QtWidgets.QFrame):
             logging.debug(path_object.path_root)
             logging.debug('Nothing built for %s' % last)
             return
-        self.path_object = PathObject(new_path)
+        self.path_object = cglpath.PathObject(new_path)
         self.update_buttons()
         self.location_changed.emit(self.path_object)
 
@@ -271,8 +270,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         try:
             font_db = QtWidgets.QFontDatabase()
-            font_db.addApplicationFont(os.path.join(font_path(), 'ARCADECLASSIC.TTF'))
-            font_db.addApplicationFont(os.path.join(font_path(), 'ka1.ttf'))
+            font_db.addApplicationFont(os.path.join(cglpath.font_path(), 'ARCADECLASSIC.TTF'))
+            font_db.addApplicationFont(os.path.join(cglpath.font_path(), 'ka1.ttf'))
         except AttributeError:
             logging.error('Skipping Loading Fonts - possible Pyside2 issue')
 
@@ -297,7 +296,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         if path:
             try:
-                self.path_object = PathObject(path)
+                self.path_object = cglpath.PathObject(path)
                 if self.path_object.context == 'render':
                     self.path_object.set_attr(context='source')
                     self.path_object.set_attr(resolution=None)
@@ -311,7 +310,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 logging.error('Path is not set')
                 pass
         else:
-            self.path_object = PathObject(self.root)
+            self.path_object = cglpath.PathObject(self.root)
         # self.project = '*'
         self.scope = 'assets'
         self.shot = '*'
@@ -344,7 +343,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(self.path_object)
 
     def show_my_tasks(self):
-        self.path_object = PathObject(self.path_widget.path_line_edit.text())
+        self.path_object = cglpath.PathObject(self.path_widget.path_line_edit.text())
         self.path_object.set_attr(user=current_user(), resolution='', filename='', ext='')
         self.path_object.set_attr(scope='shots', seq='*', shot=None, task=None)
         self.path_object.data['my_tasks'] = True
@@ -361,9 +360,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             pass
         path_object = None
         if type(data) == dict:
-            path_object = PathObject(data)
-        elif type(data) == PathObject:
-            path_object = PathObject(data)
+            path_object = cglpath.PathObject(data)
+        elif type(data) == cglpath.PathObject:
+            path_object = cglpath.PathObject(data)
         if path_object.frange:
             self.frange = path_object.frange
         self.nav_widget.set_text(path_object.path_root)
@@ -496,92 +495,37 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             logging.error('Nothing set for sequences yet')
         else:
             logging.info('Opening %s' % self.path_widget.path_line_edit.text())
-            start(self.path_widget.path_line_edit.text())
+            cglpath.start(self.path_widget.path_line_edit.text())
 
     @staticmethod
     def import_clicked():
         print 'import clicked'
 
     def review_clicked(self):
-        selection = PathObject(self.path_widget.path_line_edit.text())
+        selection = cglpath.PathObject(self.path_widget.path_line_edit.text())
         selection.set_file_type()
-        process_method(self.progress_bar, self.do_review, text='Submitting Review')
+        process_method(self.progress_bar, self.do_review, args=(self.progress_bar, selection), text='Submitting Review')
         print 'updating_location %s %s' % (selection.path_root, selection.data)
         self.update_location(data=selection.data)
 
-    def do_review(self, filepath=None):
-        if not filepath:
-            selection = PathObject(self.path_widget.path_line_edit.text())
-            selection.set_file_type()
-        else:
-            selection = PathObject(filepath)
-        if selection.context == 'render':
-            # lin_images = ['exr', 'dpx']
-            # LUMBERMILL REVIEWS
-            if self.project_management == 'lumbermill':
-                # do this for movies
-                print 'Lumbermill Not connected to review features'
-            # FTRACK REVIEWS
-            elif self.project_management == 'ftrack':
-                if selection.filename:
-                    if selection.file_type == 'folder' or not selection.file_type:
-                        dialog = InputDialog(title='Error: unsupported folder or file_type',
-                                             message="%s is a folder or undefined file_type\nunsure how to proceed" %
-                                             selection.filename)
-                        dialog.exec_()
-                        if dialog.button == 'Ok' or dialog.button == 'Cancel':
-                            dialog.accept()
-                            return
-                    else:
-                        CreateProductionData(selection)
-                else:
-                    print('Select file for Review')
-
-            elif self.project_management == 'shotgun':
-                print 'Shotgun Reviews not connected yet'
-            selection.set_attr(filename='')
-            selection.set_attr(ext='')
-        else:
-            dialog = InputDialog(title="Prep for Review", message="Move or copy files to review area?",
-                                 buttons=['Move', 'Copy'])
-            dialog.exec_()
-            move = False
-            if dialog.button == 'Move':
-                move = True
-            if selection.file_type == 'sequence':
-                # sequence_name = selection.filename
-                from_path = os.path.dirname(selection.path_root)
-                to_object = PathObject(from_path)
-                to_object.set_attr(context='render')
-                for each in os.listdir(from_path):
-                    from_file = os.path.join(from_path, each)
-                    to_file = os.path.join(to_object.path_root, each)
-                    if move:
-                        shutil.move(from_file, to_file)
-                    else:
-                        shutil.copyfile(from_file, to_file)
-                selection.set_attr(filename='')
-                selection.set_attr(ext='')
-            else:
-                to_object = PathObject.copy(selection, context='render')
-                logging.info('Copying %s to %s' % (selection.path_root, to_object.path_root))
-                if move:
-                    shutil.move(selection.path_root, to_object.path_root)
-                else:
-                    shutil.copyfile(selection.path_root, to_object.path_root)
-                selection.set_attr(filename='')
-                selection.set_attr(ext='')
-        self.progress_bar.hide()
+    @staticmethod
+    def do_review(progress_bar, path_object):
+        cglpath.do_review(progress_bar, path_object)
 
     def publish_clicked(self):
         from plugins.preflight.launch import launch_
         from cglui.widgets.publish_dialog import PublishDialog
-        selection = PathObject(self.path_widget.path_line_edit.text())
-        task = selection.task
-        dialog = PublishDialog(path_object=selection)
-        dialog.do_publish.connect(lambda: launch_(self, task, selection))
-        dialog.exec_()
-        # launch_(self, task, selection)
+        selection = cglpath.PathObject(self.path_widget.path_line_edit.text())
+        if not selection.filename or selection.context == 'source':
+            dialog = InputDialog(title='Invalid Selection', message='Please select a valid file or sequence\nfrom '
+                                                                    'the "Ready to Review/Publish" Section')
+            dialog.exec_()
+        else:
+            task = selection.task
+            dialog = PublishDialog(path_object=selection)
+            dialog.do_publish.connect(lambda: launch_(self, task, selection, do_review=dialog.do_review))
+            dialog.exec_()
+            # launch_(self, task, selection)
 
 
 class CGLumberjack(LJMainWindow):
@@ -655,7 +599,7 @@ class CGLumberjack(LJMainWindow):
 
     def on_proj_man_menu_clicked(self):
         link = app_config()['project_management'][self.project_management]['api']['server_url']
-        start_url(link)
+        cglpath.start_url(link)
 
     @staticmethod
     def check_configs():
@@ -664,12 +608,12 @@ class CGLumberjack(LJMainWindow):
     @staticmethod
     def open_company_globals():
         logging.info(os.path.dirname(app_config()['paths']['globals']))
-        start(os.path.dirname(app_config()['paths']['globals']))
+        cglpath.start(os.path.dirname(app_config()['paths']['globals']))
 
     @staticmethod
     def open_user_globals():
         logging.info(os.path.dirname(app_config()['paths']['user_globals']))
-        start(os.path.dirname(app_config()['paths']['user_globals']))
+        cglpath.start(os.path.dirname(app_config()['paths']['user_globals']))
 
     def load_user_config(self):
         user_config = UserConfig()
@@ -730,7 +674,7 @@ if __name__ == "__main__":
         user_info = users[current_user()]
         if user_info:
             app = do_gui_init()
-            splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
+            splash_pix = QtGui.QPixmap(cglpath.image_path('lumbermill.jpg'))
             #splash_dialog = ProgressDialog('Loading...', 'night_rider.gif')
             #splash_pix.show()
             QtWidgets.qApp.processEvents()
@@ -742,7 +686,7 @@ if __name__ == "__main__":
             gui.show()
             gui.raise_()
             # # setup stylesheet
-            style_sheet = load_style_sheet()
+            style_sheet = cglpath.load_style_sheet()
             app.setStyleSheet(style_sheet)
             splash.finish(gui)
             # splash_dialog.hide()
@@ -756,7 +700,7 @@ if __name__ == "__main__":
         mw.setMinimumHeight(300)
         mw.show()
         mw.raise_()
-        style_sheet = load_style_sheet()
+        style_sheet = cglpath.load_style_sheet()
         app.setStyleSheet(style_sheet)
         app.exec_()
 

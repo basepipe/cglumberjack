@@ -16,11 +16,13 @@ class ListWidget(QtWidgets.QListWidget):
 class PublishDialog(LJDialog):
     do_publish = QtCore.Signal()
 
-    def __init__(self, parent=None, path_object=None):
+    def __init__(self, parent=None, path_object=None, verbose=False):
         LJDialog.__init__(self, parent)
         if not path_object:
             return
+        self.do_review = True
         self.setMinimumWidth(300)
+        self.setWindowTitle('Publish %s -->> %s' % (path_object.version, path_object.next_major_version().version))
         layout = QtWidgets.QVBoxLayout()
         if path_object.context == 'render':
             render_files = lj_list_dir(path_object.split_after('resolution'))
@@ -32,11 +34,12 @@ class PublishDialog(LJDialog):
             render_files = lj_list_dir(path_object.split_after('resolution'))
         current_user_label = QtWidgets.QLabel('Current User: <b>%s</b>' % path_object.user)
         current_version_label = QtWidgets.QLabel('Current Version: <b>%s</b>' % path_object.version)
-        publish_version_label = QtWidgets.QLabel('<b>Publish to Version: %s?</b>' % path_object.next_major_version().version)
+        publish_version_label = QtWidgets.QLabel('<b>Publish to Version: %s?</b>' %
+                                                 path_object.next_major_version().version)
         publish_version_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
-        source_label = QtWidgets.QLabel('My Files')
-        output_label = QtWidgets.QLabel('Publish Files')
+        self.source_label = QtWidgets.QLabel('My Files')
+        self.render_label = QtWidgets.QLabel('Publish Files')
         self.source_files_widget = ListWidget()
         self.source_files_widget.setEnabled(False)
         self.render_files_widget = ListWidget()
@@ -46,7 +49,7 @@ class PublishDialog(LJDialog):
         cancel_button.setText('Cancel')
         self.publish_button = QtWidgets.QPushButton()
         self.publish_button.setText('Publish')
-        self.submit_review_checkbox = QtWidgets.QCheckBox('Submit Selected For Review')
+        self.submit_review_checkbox = QtWidgets.QCheckBox('Submit Review with Publish')
         if render_files:
             self.render_files_widget.setCurrentItem(self.render_files_widget.item(0))
             self.submit_review_checkbox.setChecked(True)
@@ -58,16 +61,26 @@ class PublishDialog(LJDialog):
 
         layout.addWidget(current_user_label)
         layout.addWidget(current_version_label)
-        layout.addWidget(source_label)
+        layout.addWidget(self.source_label)
         layout.addWidget(self.source_files_widget)
-        layout.addWidget(output_label)
+        layout.addWidget(self.render_label)
         layout.addWidget(self.render_files_widget)
         layout.addWidget(self.submit_review_checkbox)
         layout.addWidget(publish_version_label)
         layout.addLayout(button_row)
         self.setLayout(layout)
         self.publish_button.clicked.connect(self.on_publish_clicked)
+        self.submit_review_checkbox.clicked.connect(self.on_check_box_clicked)
         cancel_button.clicked.connect(self.accept)
+
+        if not verbose:
+            self.hide_details()
+
+    def hide_details(self):
+        self.source_files_widget.hide()
+        self.source_label.hide()
+        self.render_files_widget.hide()
+        self.render_label.hide()
 
     def on_render_selected(self):
         self.submit_review_checkbox.setChecked(True)
@@ -75,6 +88,12 @@ class PublishDialog(LJDialog):
     def on_publish_clicked(self):
         self.do_publish.emit()
         self.accept()
+
+    def on_check_box_clicked(self):
+        if self.submit_review_checkbox.checkState() == QtCore.Qt.Checked:
+            self.do_review = True
+        else:
+            self.do_review = False
 
 
 if __name__ == "__main__":
