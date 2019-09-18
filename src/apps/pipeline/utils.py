@@ -241,6 +241,8 @@ class CGLMenu(QtWidgets.QWidget):
             self.import_menu_button = QtWidgets.QPushButton('import %s button' % self.singular)
         print self.parent()
         self.add_submenu_button = QtWidgets.QPushButton('add submenu')
+        self.add_submenu_button.hide()
+        self.import_menu_button.hide()
         self.add_button.setProperty('class', 'add_button')
         self.add_submenu_button.setProperty('class', 'add_button')
         self.import_menu_button.setProperty('class', 'add_button')
@@ -341,6 +343,9 @@ class CGLMenu(QtWidgets.QWidget):
                                                       attrs=self.menu[button], preflight_path=self.menu_path,
                                                       menu_type=self.menu_type)
                         self.buttons.addTab(button_widget, button)
+
+
+
 
 
 

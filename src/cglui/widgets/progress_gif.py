@@ -63,14 +63,13 @@ class ProgressDialog(QtWidgets.QDialog):
 def process_method(progress_bar, target, args=(), text=None):
     orig_text = progress_bar.message.text()
     if text:
+        print 'setting text'
         progress_bar.message.setText(text)
     progress_bar.show()
     QtWidgets.qApp.processEvents()
     file_process = threading.Thread(target=target, args=args)
     QtWidgets.qApp.processEvents()
     file_process.start()
-    if text:
-        progress_bar.message.setText(orig_text)
 
 
 if __name__ == '__main__':
