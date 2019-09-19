@@ -287,13 +287,9 @@ class PathObject(object):
                 if not self.preview_path_full:
                     self.set_preview_path()
                 if not self.thumb_path_full:
-                    file_ = os.path.splitext(file_)[0]
-                    file_ = '%s.jpg' % file_
                     if sys.platform == 'win32':
-                        self.thumb_path_full = '%s/%s/%s' % (path_, '.thumb', file_)
-                        self.data['thumb_path_full'] = self.thumb_path_full
-                    else:
-                        self.thumb_path_full = os.path.join(self.root, '.thumb', file_)
+                        p_path, ext = os.path.splitext(self.preview_path_full)
+                        self.thumb_path_full = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
                         self.data['thumb_path_full'] = self.thumb_path_full
         if root:
             return self.path_root
@@ -542,33 +538,44 @@ class PathObject(object):
 
     def set_preview_path(self):
         if self.file_type == 'movie':
+            print 1
             ext = '.mp4'
         elif self.file_type == 'sequence':
+            print 2
             ext = '.mp4'
         elif self.file_type == 'image':
+            print 3
             ext = '.jpg'
         elif self.file_type == 'ppt':
+            print 4
             ext = '.jpg'
         elif self.file_type == 'pdf':
+            print 5
             ext = '.jpg'
         else:
+            print 6
             ext = '.jpg'
         if '#' in self.filename:
+            print 7
             name_ = self.filename.split('#')[0]
             if name_.endswith('.'):
-                ext.replace('.', '')
+                name_ = name_[:-1]
+                # ext.replace('.', '')
             name_ = '%s%s' % (name_, ext)
         elif '%' in self.filename:
+            print 8
             name_ = self.filename.split('%')[0]
             if name_.endswith('.'):
                 ext.replace('.', '')
             name_ = '%s%s' % (name_, ext)
         else:
+            print 9
             name_, o_ext = os.path.splitext(self.filename)
             if o_ext != ext:
                 name_ = self.filename.replace(o_ext, ext)
             else:
                 name_ = self.filename
+        print name_, '------------------'
         path_ = os.path.split(self.path_root)[0]
         if sys.platform == 'win32':
             self.preview_path_full = '%s/%s/%s' % (path_, '.preview', name_)
