@@ -177,7 +177,7 @@ def check_for_latest_master(return_output=True, print_output=False):
     output = _execute(command, return_output=return_output, print_output=print_output)
 
     for line in output:
-        if 'master pushes to master' in line:
+        if 'pushes to master' in line:
             if 'up to date' in line:
                 print 'cglumberjack code base up to date'
                 return True
