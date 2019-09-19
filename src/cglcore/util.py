@@ -8,7 +8,6 @@ import datetime
 from os.path import expanduser
 import logging
 import re
-import subprocess
 from cglcore.config import app_config
 
 
@@ -150,6 +149,7 @@ def load_json(filepath):
 
 
 def _execute(command, return_output=False, print_output=True):
+    import subprocess
     logging.info('Executing Command: %s' % command)
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
     output_values = []
