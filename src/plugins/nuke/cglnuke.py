@@ -57,11 +57,22 @@ def create_scene_write_node():
     that.  We can get more complicated and build from here for sure.
     :return:
     """
+    padding = '#'*get_biggest_read_padding()
     path_object = PathObject(get_file_name())
     path_object.set_attr(context='render')
-    path_object.set_attr(ext='####.dpx')
+    path_object.set_attr(ext='%s.dpx' % padding)
     write_node = nuke.createNode('Write')
     write_node.knob('file').fromUserText(path_object.path_root)
+
+
+def get_biggest_read_padding():
+    biggest_padding = 0
+    for n in nuke.allNodes('Read'):
+        temp = os.path.splitext(n['file'].value())[0]
+        padding = int(temp.split('%')[1].replace('d', ''))
+        if padding > biggest_padding:
+            biggest_padding = padding
+    return biggest_padding
 
 
 def import_script(filepath):
