@@ -150,12 +150,14 @@ def get_file_type(input_file):
 def _execute(command):
     logging.info('Executing Command: %s' % command)
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+
     while True:
         output = p.stdout.readline()
         if output == '' and p.poll() is not None:
             break
         if output:
             print output.strip()
+
     rc = p.poll()
     return rc
 

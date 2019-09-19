@@ -8,7 +8,7 @@ from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog, InputDialog
 import cglcore.path as cglpath
-from cglcore.util import current_user
+from cglcore.util import current_user, check_for_latest_master, update_master
 from cglcore.config import app_config, UserConfig
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
@@ -393,7 +393,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if path_object.data['my_tasks']:
                     go_ahead = True
             if go_ahead:
-                self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box,
+                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box,
                                              my_tasks=True)
                 if self.panel:
                     if self.panel.load_tasks():
@@ -421,7 +421,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.project == '*':
                 self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box)
             else:
-                self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box)
         if last == 'scope':
             if path_object.scope == '*':
                 self.panel = ScopePanel(path_object=path_object)
@@ -429,16 +429,16 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if DO_IOP:
                     self.panel = IoP.IOPanel(path_object=path_object)
             else:
-                self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box)
         elif last in shot_attrs:
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
-                self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box)
             else:
                 self.panel = TaskPanel(path_object=path_object, element='task')
                 self.panel.add_button.connect(self.add_task)
         elif last in seq_attrs:
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
-                self.panel = ProductionPanel(path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box)
         elif last == 'ingest_source':
             if DO_IOP:
                 self.panel = IoP.IOPanel(path_object=path_object)
@@ -564,6 +564,8 @@ class CGLumberjack(LJMainWindow):
         self.setWindowIcon(icon)
         login = QtWidgets.QAction('login', self)
         proj_man = QtWidgets.QAction('%s' % self.project_management, self)
+        update_button = QtWidgets.QAction('Check For Updates', self)
+        report_bug_button = QtWidgets.QAction('Report Bug/Feature', self)
         tools_menu = menu_bar.addMenu('&Tools')
         if self.project_management != 'lumbermill':
             self.proj_man_link = two_bar.addAction(proj_man)
@@ -575,14 +577,16 @@ class CGLumberjack(LJMainWindow):
         settings.setShortcut('Ctrl+,')
         pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
 
-        ingest_dialog = QtWidgets.QAction('Ingest Tool', self)
         # add actions to the file menu
         tools_menu.addAction(settings)
-        tools_menu.addAction(create_project)
         tools_menu.addAction(open_globals)
         tools_menu.addAction(open_user_globals)
+        tools_menu.addSeparator()
+        tools_menu.addAction(create_project)
         tools_menu.addAction(pipeline_designer)
-        tools_menu.addAction(ingest_dialog)
+        tools_menu.addSeparator()
+        tools_menu.addAction(update_button)
+        tools_menu.addAction(report_bug_button)
         # connect signals and slots
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
@@ -591,6 +595,36 @@ class CGLumberjack(LJMainWindow):
         pipeline_designer.triggered.connect(self.on_menu_designer_clicked)
         login.triggered.connect(self.on_login_clicked)
         proj_man.triggered.connect(self.on_proj_man_menu_clicked)
+        update_button.triggered.connect(self.update_lumbermill_clicked)
+        report_bug_button.triggered.connect(self.report_bug_clicked)
+
+    def update_lumbermill_clicked(self):
+        process_method(self.centralWidget().progress_bar, self.do_update_check,
+                       args=(self, self.centralWidget().progress_bar, True, True), text='Checking For Updates')
+
+    @staticmethod
+    def do_update_check(widget, progress_bar, show_confirmation=False, print_output=True):
+        if not check_for_latest_master(print_output=print_output):
+            progress_bar.hide()
+            dialog = InputDialog(title='Update Lumbermill',
+                                 message='There is a new version of Lumbermill Available, would you like to update?',
+                                 buttons=['Cancel', 'Update'])
+            dialog.exec_()
+            if dialog.button == 'Update':
+                update_master()
+                widget.close()
+        else:
+            progress_bar.hide()
+            if show_confirmation:
+                dialog = InputDialog(title='Up to date', message='Lumbermill is up to date!')
+                dialog.exec_()
+                if dialog.button == 'Ok' or dialog.button == 'Cancel':
+                    dialog.accept()
+
+
+    @staticmethod
+    def report_bug_clicked():
+        print 'Placeholder for launching the Bug Reporting Tool'
 
     def open_create_project_dialog(self):
         from cglui.widgets.dialog import ProjectCreator

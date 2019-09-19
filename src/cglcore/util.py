@@ -8,6 +8,7 @@ import datetime
 from os.path import expanduser
 import logging
 import re
+import subprocess
 from cglcore.config import app_config
 
 
@@ -146,4 +147,48 @@ def load_json(filepath):
     with open(filepath) as jsonfile:
         data = json.load(jsonfile)
     return data
+
+
+def _execute(command, return_output=False, print_output=True):
+    logging.info('Executing Command: %s' % command)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    output_values = []
+    if return_output or print_output:
+        while True:
+            output = p.stdout.readline()
+            if output == '' and p.poll() is not None:
+                break
+            if output:
+                if print_output:
+                    print output.strip()
+                output_values.append(output.strip())
+    rc = p.poll()
+    if return_output:
+        return output_values
+    else:
+        return rc
+
+
+def check_for_latest_master(return_output=True, print_output=False):
+    # TODO - probably need something in place to check if git is installed.
+    code_root = app_config()['paths']['code_root']
+    command = 'git remote show origin'
+    os.chdir(code_root)
+    output = _execute(command, return_output=return_output, print_output=print_output)
+
+    for line in output:
+        if 'master pushes to master' in line:
+            if 'up to date' in line:
+                print 'cglumberjack code base up to date'
+                return True
+            else:
+                print 'cglumberjack code base needs updated'
+    return False
+
+
+def update_master():
+    code_root = app_config()['paths']['code_root']
+    command = 'git pull'
+    os.chdir(code_root)
+    _execute(command)
 
