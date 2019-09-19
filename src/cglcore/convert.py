@@ -4,6 +4,7 @@ import logging
 from cglcore.config import app_config
 from cglcore.path import PathObject, CreateProductionData, split_sequence, number_to_hash, hash_to_number
 from cglcore.path import prep_seq_delimiter, lj_list_dir, get_start_frame
+from cglcore.util import _execute
 
 config = app_config()['paths']
 settings = app_config()['default']
@@ -145,19 +146,6 @@ def get_file_type(input_file):
 #               CREATION
 #
 #####################################################################
-
-
-def _execute(command):
-    logging.info('Executing Command: %s' % command)
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-    while True:
-        output = p.stdout.readline()
-        if output == '' and p.poll() is not None:
-            break
-        if output:
-            print output.strip()
-    rc = p.poll()
-    return rc
 
 
 def create_proxy(sequence, ext='jpg'):

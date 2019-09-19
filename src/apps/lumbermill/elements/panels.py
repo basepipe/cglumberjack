@@ -9,6 +9,7 @@ from cglcore.path import PathObject, CreateProductionData, icon_path
 from cglcore.path import create_project_config
 from cglui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
 from cglcore.util import current_user
+from cglui.widgets.progress_gif import process_method
 
 
 class CompanyPanel(QtWidgets.QWidget):
@@ -158,18 +159,29 @@ class ProjectPanel(QtWidgets.QWidget):
         self.location_changed.emit(path_object.data)
 
     def on_create_project(self):
+
+        progress_bar = self.parent().progress_bar
         dialog = CreateProjectDialog(parent=None, variable='project')
         dialog.exec_()
-
         if dialog.button == 'Ok':
             project_name = dialog.proj_line_edit.text()
             self.path_object.set_attr(project=project_name)
-            CreateProductionData(self.path_object, project_management=self.project_management)
             production_management = dialog.proj_management_combo.currentText()
-            print 'setting project management to %s' % production_management
-            create_project_config(self.path_object.company, self.path_object.project)
-        self.path_object.set_attr(project='*')
-        self.update_location()
+            print self.path_object.path_root
+            print production_management
+            process_method(progress_bar,
+                           self.do_create_project,
+                           args=(progress_bar, self.path_object, production_management),
+                           text='Creating Project')
+            self.path_object.set_attr(project='*')
+            self.update_location()
+
+    @staticmethod
+    def do_create_project(progress_bar, path_object, production_management):
+        CreateProductionData(path_object=path_object.path_root, file_system=True, project_management=production_management)
+        print 'setting project management to %s' % production_management
+        create_project_config(path_object.company, path_object.project)
+        progress_bar.hide()
 
     def clear_layout(self, layout=None):
         clear_layout(self, layout=layout)
@@ -312,9 +324,9 @@ class ProductionPanel(QtWidgets.QWidget):
         self.assets.tasks_radio.clicked.connect(self.load_tasks)
 
     def load_tasks(self):
+        from cglcore.config import UserConfig
+        # TODO - figure out how to add the progress bar to this.
         self.assets.add_button.setEnabled(False)
-        red_palette = QtGui.QPalette()
-        red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
         self.assets.data_table.clearSpans()
         data = []
         proj_man = app_config()['account_info']['project_management']
@@ -322,29 +334,40 @@ class ProductionPanel(QtWidgets.QWidget):
         if proj_man == 'ftrack':
             # ideally we load from a .csv file and run this in the background only to update the .csv file.
             from plugins.project_management.ftrack.main import find_user_assignments
-            project_tasks = find_user_assignments(self.path_object, login)
-            if project_tasks:
-                for task in project_tasks:
-                    data.append([project_tasks[task]['seq'],
-                                 project_tasks[task]['shot_name'],
-                                 project_tasks[task]['filepath'],
-                                 project_tasks[task]['due_date'],
-                                 project_tasks[task]['status'],
-                                 project_tasks[task]['task_type']])
-                if data:
-                    self.assets.data_table.show()
-                    self.assets.search_box.show()
-                    self.assets.message.setText('')
-                    self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status', 'Task']))
-                    self.assets.data_table.hideColumn(0)
-                    self.assets.data_table.hideColumn(2)
-                    self.assets.data_table.hideColumn(3)
+            process_method(self.parent().progress_bar, find_user_assignments, args=(self.path_object, login),
+                           text='Finding Your Tasks')
+            company_json = UserConfig().d['my_tasks'][self.path_object.company]
+            if self.path_object.project in company_json:
+                project_tasks = company_json[self.path_object.project]
+                if project_tasks:
+                    print 1
+                    for task in project_tasks:
+                        data.append([project_tasks[task]['seq'],
+                                     project_tasks[task]['shot_name'],
+                                     project_tasks[task]['filepath'],
+                                     project_tasks[task]['due_date'],
+                                     project_tasks[task]['status'],
+                                     project_tasks[task]['task_type']])
+                    if data:
+                        self.assets.data_table.show()
+                        self.assets.search_box.show()
+                        self.assets.message.setText('')
+                        self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status', 'Task']))
+                        self.assets.data_table.hideColumn(0)
+                        self.assets.data_table.hideColumn(2)
+                        self.assets.data_table.hideColumn(3)
+                    else:
+                        self.assets.data_table.hide()
+                        self.assets.message.setText('No Tasks for %s Found!' % login)
+                        self.assets.message.show()
+                    self.parent().progress_bar.hide()
+                    return True
                 else:
-                    self.assets.data_table.hide()
-                    self.assets.message.setText('No Tasks for %s Found!' % login)
-                    self.assets.message.show()
-                return True
+                    print 'No Tasks Assigned for %s' % self.path_object.project
+                    self.parent().progress_bar.hide()
+                    return False
             else:
+                self.parent().progress_bar.hide()
                 return False
 
     def load_assets(self):
