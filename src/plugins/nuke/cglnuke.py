@@ -75,6 +75,29 @@ def get_biggest_read_padding():
     return biggest_padding
 
 
+def check_write_padding():
+    """
+    Checks all read nodes in the scene to find the largest num padding.  then checks all write nodes to ensure they
+    comply.
+    :return:
+    """
+    edited_nodes = []
+    scene_padding = get_biggest_read_padding()
+    for n in nuke.allNodes('Write'):
+        temp, ext = os.path.splitext(n['file'].value())
+        base_file = temp.split('%')[0]
+        padding = int(temp.split('%')[1].replace('d', ''))
+        if padding < scene_padding:
+            if scene_padding < 10:
+                numformat = '%0'+str(scene_padding)+'d'
+            elif scene_padding < 100 and scene_padding > 9:
+                numformat = '%'+str(scene_padding)+'d'
+            new_file_name = '%s%s%s' % (base_file, numformat, ext)
+            edited_nodes.append(new_file_name)
+            n.knob('file').fromUserText(new_file_name)
+    return edited_nodes
+
+
 def import_script(filepath):
     return nuke.nodePaste(filepath)
 

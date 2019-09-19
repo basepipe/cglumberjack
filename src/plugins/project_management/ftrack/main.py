@@ -319,13 +319,17 @@ class ProjectManagementData(object):
 
         if not os.path.exists(self.path_object.preview_path_full):
             print self.path_object.preview_path_full, 'preview path'
-            create_previews(path_object=self.path_root)
+            preview, thumb = create_previews(path_object=self.path_root)
+            print preview, thumb
+        else:
+            preview = self.path_object.preview_path_full
+            thumb = self.path_object.thumb_path_full
         server_location = self.ftrack.query('Location where name is "ftrack.server"').first()
         thumb_component = ''
         component = None
         if self.file_type == 'movie' or self.file_type == 'sequence':
             component = self.version_data.create_component(
-                path=self.path_object.preview_path_full,
+                path=preview,
                 data={
                     'name': 'ftrackreview-mp4'
                 },
@@ -338,7 +342,7 @@ class ProjectManagementData(object):
                 'frameRate': 25
             })
             thumb_component = self.version_data.create_component(
-                path=self.path_object.thumb_path_full,
+                path=thumb,
                 data={'name': 'thumbnail'},
                 location=server_location
             )

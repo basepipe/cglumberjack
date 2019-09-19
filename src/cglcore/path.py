@@ -731,7 +731,7 @@ class CreateProductionData(object):
             return
         if not self.path_object.context:
             self.path_object.set_attr(context='source')
-        print self.path_object.path_root, 'creating these apparently'
+        print self.path_object.path_root, 'creating these directories'
         self.safe_makedirs(self.path_object, test=self.test)
         self.create_other_context(self.path_object)
         if self.do_scope:
@@ -754,12 +754,17 @@ class CreateProductionData(object):
 
     @staticmethod
     def safe_makedirs(path_object, test=False):
+
         if '*' in path_object.path_root:
             path_ = path_object.path_root.split('*')[0]
         else:
             path_ = path_object.path_root
         if path_object.filename:
-            path_ = os.path.dirname(path_)
+            # does it have a 3-4 digit extension?
+            if path_object.ext:
+                path_ = os.path.dirname(path_)
+            if path_.endswith('.'):
+                path_ = path_[:-1]
         # at this stage we're making path_
         logging.info('Creating %s Directory: %s' % (path_object.context, path_))
         if not test:
@@ -850,6 +855,7 @@ def create_previews(path_object):
                 create_mov(path_object.path_root, output=path_object.preview_path_full)
     else:
         print path_object.file_type, 'is not set up for preview creation'
+    return (path_object.preview_path_full, path_object.thumb_path_full)
 
 
 def image_path(image=None):

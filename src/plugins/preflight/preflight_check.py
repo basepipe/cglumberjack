@@ -11,8 +11,10 @@ class PreflightCheck(object):
         self.items = []
 
     def fail_check(self, feedback):
-        print(feedback)
         self.status = False
+        dialog = InputDialog(title='Check Failed', message=feedback)
+        dialog.exec_()
+
 
     def pass_check(self, feedback):
         print(feedback)

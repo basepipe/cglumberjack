@@ -40,16 +40,22 @@ def get_first_frame(sequence, return_type='string'):
             if ' ' in each:
                 first_frame, last_frame = each.split(' ')[-1].split('-')
                 middle_frame = (int(last_frame) - int(first_frame)) / 2 + int(first_frame)
-            if hashes == 6:
+            if hashes == 9:
+                middle_string = '%09d' % middle_frame
+            elif hashes == 8:
+                middle_string = '%08d' % middle_frame
+            elif hashes == 7:
+                middle_string = '%07d' % middle_frame
+            elif hashes == 6:
                 middle_string = '%06d' % middle_frame
-            if hashes == 4:
-                middle_string = '%04d' % middle_frame
-            if hashes == 5:
+            elif hashes == 5:
                 middle_string = '%05d' % middle_frame
-            if hashes == 3:
+            elif hashes == 4:
+                middle_string = '%04d' % middle_frame
+            elif hashes == 3:
                 middle_string = '%03d' % middle_frame
-            if hashes == 7:
-                middle_string = '%03d' % middle_frame
+            elif hashes == 2:
+                middle_string = '%02d' % middle_frame
         middle_frame = sequence.replace('*', middle_string)
         if return_type == 'string':
             return first_frame, middle_frame, last_frame
@@ -266,7 +272,7 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
         return out_seq
 
 
-def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_frame_rate=None,
+def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame_rate'], output_frame_rate=None,
                res=settings['resolution']['video_review']):
     start_frame = 1001
     path_object = PathObject(sequence)
@@ -296,6 +302,9 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
                     output_file = '%s.mp4' % output_file
                 filename = os.path.basename(output_file)
                 web_path_object.set_attr(filename=filename)
+
+    if os.path.exists(output_file):
+        os.remove(output_file)
 
     if os.path.splitext(input_file)[-1] == '.exr' or os.path.splitext(input_file)[-1] == '.dpx':
         logging.info('applying gamma 2.2 to linear sequence')
@@ -331,21 +340,25 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
                                                             output_frame_rate, filter_arg, output_file)
     if ffmpeg_cmd:
         _execute(ffmpeg_cmd)
-        create_movie_thumb(sequence)
+        create_movie_thumb(sequence, output_file=thumb_path)
 
     return output_file
 
 
 def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True):
-    print 'creating movie thumbnail'
     if not output_file:
-        output_file = PathObject(path_object=input_file).copy(resolution='thumb', ext='jpg').path_root
+        if '.preview' in input_file:
+            output_file.replace('.preview', '.thumb')
+        else:
+            output_file = PathObject(path_object=input_file).copy(resolution='thumb', ext='jpg').path_root
+    print output_file
     if not output_file.endswith('.jpg'):
         file_ = os.path.splitext(output_file)[0]
         output_file = '%s.%s' % (file_, 'jpg')
     if os.path.exists(output_file):
         os.remove(output_file)
     if not os.path.exists(os.path.dirname(output_file)):
+
         CreateProductionData(os.path.dirname(output_file), project_management='lumbermill')
     if get_file_type(input_file) == 'movie':
         if thumb:
