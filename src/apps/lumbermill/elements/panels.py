@@ -336,7 +336,12 @@ class ProductionPanel(QtWidgets.QWidget):
             from plugins.project_management.ftrack.main import find_user_assignments
             process_method(self.parent().progress_bar, find_user_assignments, args=(self.path_object, login),
                            text='Finding Your Tasks')
-            company_json = UserConfig().d['my_tasks'][self.path_object.company]
+            try:
+                company_json = UserConfig().d['my_tasks'][self.path_object.company]
+            except KeyError:
+                print 'Couldnt find company %s in company_json tasks file.' % self.path_object.company
+                self.parent().progress_bar.hide()
+                return
             if self.path_object.project in company_json:
                 project_tasks = company_json[self.path_object.project]
                 if project_tasks:
