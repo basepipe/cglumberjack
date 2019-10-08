@@ -12,6 +12,7 @@ from cglcore.util import current_user, check_for_latest_master, update_master
 from cglcore.config import app_config, UserConfig
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
+from cglui.widgets.help import ReportBugDialog
 try:
     import apps.lumbermill.elements.IOPanel as IoP
     DO_IOP = True
@@ -565,7 +566,7 @@ class CGLumberjack(LJMainWindow):
         login = QtWidgets.QAction('login', self)
         proj_man = QtWidgets.QAction('%s' % self.project_management, self)
         update_button = QtWidgets.QAction('Check For Updates', self)
-        report_bug_button = QtWidgets.QAction('Report Bug/Feature', self)
+        report_bug_button = QtWidgets.QAction('Report Bug', self)
         tools_menu = menu_bar.addMenu('&Tools')
         if self.project_management != 'lumbermill':
             self.proj_man_link = two_bar.addAction(proj_man)
@@ -621,10 +622,9 @@ class CGLumberjack(LJMainWindow):
                 if dialog.button == 'Ok' or dialog.button == 'Cancel':
                     dialog.accept()
 
-
-    @staticmethod
-    def report_bug_clicked():
-        print 'Placeholder for launching the Bug Reporting Tool'
+    def report_bug_clicked(self):
+        dialog = ReportBugDialog(self)
+        dialog.exec_()
 
     def open_create_project_dialog(self):
         from cglui.widgets.dialog import ProjectCreator
