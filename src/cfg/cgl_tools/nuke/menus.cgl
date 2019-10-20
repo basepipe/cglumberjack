@@ -1,0 +1,43 @@
+{
+    "nuke": {
+        "CGLumberjack": {
+            "open": {
+                "button name": "open", 
+                "command": "import cgl_tools.nuke.menus.CGLumberjack.open as open; open.run()", 
+                "label": "open", 
+                "order": 1
+            }, 
+            "order": 1, 
+            "render_local": {
+                "button name": "render_local", 
+                "command": "import cgl_tools.nuke.menus.CGLumberjack.render_local as render_local; render_local.run()", 
+                "label": "Render Local", 
+                "order": 4
+            }, 
+            "render_to_farm": {
+                "button name": "render_to_farm", 
+                "command": "import cgl_tools.nuke.menus.CGLumberjack.render_to_farm as render_to_farm; render_to_farm.run()", 
+                "label": "Render To Farm", 
+                "order": 5
+            }, 
+            "request_review": {
+                "button name": "request_review", 
+                "command": "import cgl_tools.nuke.menus.CGLumberjack.request_review as request_review; request_review.run()", 
+                "label": "Request Review", 
+                "order": 6
+            }, 
+            "version_up": {
+                "button name": "version_up", 
+                "command": "import cgl_tools.nuke.menus.CGLumberjack.version_up as version_up; version_up.run()", 
+                "label": "Version Up", 
+                "order": 3
+            }, 
+            "write_node": {
+                "button name": "write_node", 
+                "command": "import cgl_tools.nuke.menus.CGLumberjack.write_node as write_node; write_node.run()", 
+                "label": "Write Node", 
+                "order": 2
+            }
+        }
+    }
+}

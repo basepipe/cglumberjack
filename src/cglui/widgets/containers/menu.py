@@ -1,5 +1,6 @@
 from Qt import QtWidgets
 
+
 class LJMenu(QtWidgets.QMenu):
     def __init__(self, parent):
         QtWidgets.QMenu.__init__(self, parent)

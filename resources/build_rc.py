@@ -27,7 +27,7 @@ def main():
     qrc = """<!DOCTYPE RCC><RCC version="1.0">
     <qresource>
     """
-    for dirpath, dirname, filenames in os.walk("."):
+    for dirpath, _, filenames in os.walk("."):
         dirpath = dirpath[2:]
         for filename in filenames:
             if not filename.endswith(".py") or filename.endswith(".qrc"):

@@ -1,23 +1,28 @@
-from Qt import QtCore
-
+from Qt import QtCore, QtGui
+# noinspection PyUnresolvedReferences
 from Qt.QtWidgets import QTableView, QHeaderView
-
 from cglui.util import UISettings, widget_name
 from cglui.widgets.base import StateSavers
+from cglui.util import drop_handler
 from cglui.widgets.containers.proxy import LJTableSearchProxy
 from cglui.widgets.containers.menu import LJMenu
+from cglcore.config import app_config
+
+PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 
 
 class LJTableWidget(QTableView):
     selected = QtCore.Signal(object)
+    right_clicked = QtCore.Signal(object)
     dropped = QtCore.Signal(object)
 
     def __init__(self, parent):
         QTableView.__init__(self, parent)
         self.verticalHeader().hide()
         self.horizontalHeader().setStretchLastSection(True)
-        #self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        # self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         # self.horizontalHeader().setMovable(True)
+        self.menu = None
         self.search_wgt = None
         self.alphabet_header = None
         self.header_right_click_menu = LJMenu(self)
@@ -25,15 +30,20 @@ class LJTableWidget(QTableView):
         self.horizontalHeader().setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         StateSavers.remember_me(self)
         self.items_ = []
-        self.clicked.connect(self.row_selected)
-        self.activated.connect(self.row_selected)
+        # self.clicked.connect(self.row_selected)
+        # self.activated.connect(self.row_selected)
         self.height_hint = 0
         self.width_hint = 0
 
+    def row_count(self):
+        return self.model().rowCount()
+
     def mouseReleaseEvent(self, e):
         super(LJTableWidget, self).mouseReleaseEvent(e)
-        self.row_selected()
+        if e.button() == QtCore.Qt.LeftButton:
+            self.viewClicked()
 
+    # noinspection PyShadowingNames,PyPep8
     def set_item_model(self, mdl, proxy=None):
         if proxy is None:
             proxy = LJTableSearchProxy()
@@ -50,10 +60,11 @@ class LJTableWidget(QTableView):
             hheading.restoreState(state)
 
         for header_name in self.alphabet_header:
-            self.header_right_click_menu.create_action(
-                header_name, lambda header_name=header_name: self.header_right_click_menu_trigger(header_name), checkable=True)
+            self.header_right_click_menu.create_action(header_name,
+                                                       lambda header_name=header_name: self.header_right_click_menu_trigger(header_name),
+                                                       checkable=True)
             if not self.isColumnHidden(mdl.headers.index(header_name)):
-                 self.header_right_click_menu.actions()[self.alphabet_header.index(header_name)].setChecked(True)
+                self.header_right_click_menu.actions()[self.alphabet_header.index(header_name)].setChecked(True)
 
     def set_search_box(self, wgt):
         self.search_wgt = wgt
@@ -84,7 +95,7 @@ class LJTableWidget(QTableView):
             else:
                 self.header_right_click_menu.actions()[self.alphabet_header.index(header)].setChecked(True)
 
-    def row_selected(self):
+    def viewClicked(self):
         items = []
         if self.selectionModel():
             for each in self.selectionModel().selectedRows():
@@ -102,9 +113,25 @@ class LJTableWidget(QTableView):
             print 'nothing selected'
             self.nothing_selected.emit()
 
+    def contextMenuEvent(self, event):
+        self.menu = LJMenu(self)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.menu.create_action('Show in %s' % PROJ_MANAGEMENT, self.show_in_proj)
+        self.menu.popup(QtGui.QCursor.pos())
+
+    def show_in_proj(self):
+        from cglcore.path import PathObject, show_in_project_management
+        mdl_index = self.model().mapToSource(self.selectionModel().selectedRows()[0])
+        mdl = self.model().sourceModel()
+        row = mdl_index.row()
+        sel = mdl.data_[row]
+        path_object = PathObject(sel[2])
+        show_in_project_management(path_object)
+
     def select_row_by_text(self, text, column=0):
         # search all the items in the table view and select the one that has 'text' in it.
         # .setSelection() is a massive part of figuring this out.
+        data = []
         row_count = self.model().rowCount()
         for row in range(0, row_count + 1):
             src_index = self.model().index(row, column)
@@ -137,16 +164,7 @@ class LJTableWidget(QTableView):
     def dropEvent(self, e):
         # this is set up specifically to handle files as that's the only use case
         # we've encountered to date, i'm sure we can put options in as they arise.
-        if e.mimeData().hasUrls:
-            e.setDropAction(QtCore.Qt.CopyAction)
-            e.accept()
-            file_list = []
-            for url in e.mimeData().urls():
-                file_list.append(str(url.toLocalFile()))
-            self.dropped.emit(file_list)
-        else:
-            print 'invalid'
-            e.ignore()
+        drop_handler(self.dropped, e)
 
     def resizeEvent(self, event):
         # TODO - this doesn't work on mac, but does on windows
@@ -157,23 +175,33 @@ class LJTableWidget(QTableView):
         total_height = 0
         total_width = 0
         for column in range(header.count()):
-            self.horizontalHeader().setResizeMode(column, QHeaderView.ResizeToContents)
-            width = header.sectionSize(column)
-            header.setResizeMode(column, QHeaderView.Interactive)
-            header.resizeSection(column, width)
-            total_width += width
+            try:
+                self.horizontalHeader().setResizeMode(column, QHeaderView.ResizeToContents)
+                width = header.sectionSize(column)
+                header.setResizeMode(column, QHeaderView.Interactive)
+                header.resizeSection(column, width)
+                total_width += width
+            except AttributeError:
+                print 'PySide2 compatibility issue: setResizeMode'
         for row in range(v_header.count()):
-            self.verticalHeader().setResizeMode(row, QHeaderView.ResizeToContents)
-            height = v_header.sectionSize(row)
-            v_header.setResizeMode(row, QHeaderView.Interactive)
-            v_header.resizeSection(row, height)
-            total_height += height
+            try:
+                self.verticalHeader().setResizeMode(row, QHeaderView.ResizeToContents)
+                height = v_header.sectionSize(row)
+                v_header.setResizeMode(row, QHeaderView.Interactive)
+                v_header.resizeSection(row, height)
+                total_height += height
+            except AttributeError:
+                print 'PySide2 compatibility issue: setResizeMode'
         self.height_hint = total_height
         self.width_hint = total_width
         self.sizeHint()
 
     def sizeHint(self):
         return QtCore.QSize(self.height_hint, self.width_hint)
+
+    def clear(self):
+        self.clear()
+        print 'I should be clearing this'
 
 
 class LJKeyPairTableWidget(LJTableWidget):

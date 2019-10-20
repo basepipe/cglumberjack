@@ -1,7 +1,6 @@
 import os
-import sys
-import yaml
-from cglcore.path import PathObject
+import json
+from cglcore.path import PathObject, get_cgl_tools
 
 
 class CustomMenu(object):
@@ -23,44 +22,54 @@ class CustomMenu(object):
     """
 
     def __init__(self, software, type_):
+        self.path_object = None
         self.software = software
         self.type = type_
         self.scene_path = self.get_scene_path()
         self.menu_parent = self.set_menu_parent()
+        self.set_path_object()
         if self.scene_path:
             self.path_object = PathObject(str(self.scene_path))
         else:
             print 'No Valid Scene Path'
             return
-        self.company_config = os.path.dirname(self.path_object.company_config.replace('/', '\\'))
+        self.company_config = os.path.dirname(self.path_object.company_config)
+        print 'Company Config is: %s' % self.company_config
         if not os.path.exists(self.company_config):
             print 'Company Config %s: does no exist' % self.company_config
             return
-        self.menus_yaml = os.path.join(self.company_config, 'cgl_tools', software, '%s.yaml' % type_)
-        self.menus = self.load_yaml()
-        self.menus_folder = os.path.join(os.path.dirname(self.menus_yaml), type_)
+
+        self.menus_file = os.path.join(get_cgl_tools(), software, '%s.cgl' % self.type)
+        print self.menus_file
+        self.menus = self.load_cgl()
+        self.menus_folder = os.path.join(os.path.dirname(self.menus_file), type_)
         self.menu_dict = {}
 
-    def load_yaml(self):
+    def set_path_object(self):
+        if self.scene_path:
+            print 'Setting PathObject with %s' % self.scene_path
+            print self.scene_path
+            self.path_object = PathObject(str(self.scene_path))
+
+    def load_cgl(self):
         """
-        returns all the shelves, menus, or preflights from the yaml file
+        returns all the shelves, menus, or preflights from the json file
         :return:
         """
-        with open(self.menus_yaml, 'r') as stream:
-            try:
-                result = yaml.load(stream)
-                if result:
-                    return result[self.software]
-                else:
-                    return {}
-            except yaml.YAMLError as exc:
-                print(exc)
-                sys.exit(99)
+        if os.path.exists(self.menus_file):
+            with open(self.menus_file, 'r') as stream:
+                    result = json.load(stream)
+                    if result:
+                        return result[self.software]
+                    else:
+                        return
+        else:
+            print 'No menu file found!'
 
     @staticmethod
     def order_menus(menus):
         """
-        Orders the Menus from the Yaml file correctly.  This is necessary for the menus to show up in the correct
+        Orders the Menus from the json file correctly.  This is necessary for the menus to show up in the correct
         order within the interface.
         :return:
         """
@@ -130,23 +139,27 @@ class CustomMenu(object):
 
     def add_menu_buttons(self, menu, buttons):
         for button in buttons:
-            label = self.menus[menu][button]['button name']
-            icon_file = self.get_icon_path(menu, button)
-            if icon_file:
-                label = ''
-            self.add_button(menu, label=self.menus[menu][button]['button name'],
-                            annotation=self.menus[menu][button]['annotation'],
-                            command=self.menus[menu][button]['command'],
-                            icon=icon_file,
-                            image_overlay_label=label)
+            label = self.menus[menu][button]['label']
+            try:
+                icon_file = self.get_icon_path(menu, button)
+                if icon_file:
+                    label = ''
+                self.add_button(menu, label=self.menus[menu][button]['label'],
+                                annotation=self.menus[menu][button]['annotation'],
+                                command=self.menus[menu][button]['module'],
+                                icon=icon_file,
+                                image_overlay_label=label)
+            except KeyError:
+                self.add_button(menu, label=self.menus[menu][button]['label'],
+                                command=self.menus[menu][button]['module'])
 
     def load_menus(self):
         self.delete_menus()
-        for each in self.menus:
-            menu_folder = os.path.join(self.menus_folder, each)
-            print '%s: adding %s to the PATH ' % (each, self.company_config)
-            if self.company_config not in sys.path:
-                sys.path.insert(0, self.company_config)
+        # tools_root = os.path.dirname(get_cgl_tools())
+        # for each in self.menus:
+        #     print '%s: adding %s to the PATH ' % (each, tools_root)
+        #     if tools_root not in sys.path:
+        #         sys.path.insert(0, tools_root)
         try:
             menus = self.remove_inactive_menus()
         except KeyError:
@@ -160,10 +173,8 @@ class CustomMenu(object):
             buttons = self.order_buttons(menu)
             self.add_menu_buttons(menu, buttons)
 
-    """
-    When Starting a new shelf, simply copy all of the functions below and fill them in with software specific functions
-    See Nuke and Maya examples: plugins/nuke/custom_menu.py & plugins/maya/custom_menu.py
-    """
+    # When Starting a new shelf, simply copy all of the functions below and fill them in with softwarespecific functions
+    # See Nuke and Maya examples: plugins/nuke/custom_menu.py & plugins/maya/custom_menu.py
 
     def get_scene_path(self):
         pass

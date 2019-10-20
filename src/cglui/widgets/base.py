@@ -1,6 +1,4 @@
-import os
-import shutil
-from Qt import QtWidgets, QtCore, QtGui
+from Qt import QtWidgets, QtCore
 from cglui.util import UISettings, widget_name
 from cglcore.util import app_name
 
@@ -20,6 +18,7 @@ class StateSavers(QtCore.QObject):
     def notify_savers(cls):
         for x in cls().SAVERS:
             x.on_closing()
+
 
 def _restore_size(self, default_size):
     if default_size is None:
@@ -44,22 +43,6 @@ class LJMainWindow(QtWidgets.QMainWindow):
         settings = UISettings.settings()
         settings.setValue(widget_name(self), geo)
         super(LJMainWindow, self).closeEvent(event)
-
-
-class LJSplitter(QtWidgets.QSplitter):
-    def __init__(self, parent):
-        QtWidgets.QSplitter.__init__(self, parent)
-
-    def restore(self):
-        settings = UISettings.settings()
-        state = settings.value(widget_name(self))
-        if state:
-            self.restoreState(state)
-        self.splitterMoved.connect(self.record_state)
-
-    def record_state(self, pos, index):
-        settings = UISettings.settings()
-        settings.setValue(widget_name(self), self.saveState())
 
 
 class LJDialog(QtWidgets.QDialog):
@@ -93,115 +76,5 @@ class LJWidgetWrapper(LJDialog):
         self.setLayout(self.layout)
 
 
-class LJFileBrowser(QtWidgets.QTreeView):
-    dropped_files = QtCore.Signal(object)
-    selected = QtCore.Signal(object)
-    initialized = QtCore.Signal()
 
-    def __init__(self, parent=None, directory=None):
-        QtWidgets.QTreeView.__init__(self, parent)
-        self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-        # self.clicked.connect(self.object_selected)
-        self.directory = directory
-        self.model = None
-        self.selected_items = []
-        if self.directory:
-            self.populate(self.directory)
-        else:
-            return
-
-    def populate(self, directory):
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
-        self.customContextMenuRequested.connect(self.right_click_menu)
-        self.model = LJFileSystemModel()
-        self.directory = directory
-        self.model.setRootPath((QtCore.QDir.rootPath()))
-        self.model.find_status()
-        self.setModel(self.model)
-        self.setRootIndex(self.model.index(directory))
-        self.setSortingEnabled(True)
-        self.setColumnHidden(1, True)
-        self.setColumnHidden(2, True)
-        self.setDragDropMode(QtGui.QAbstractItemView.DropOnly)
-        self.initialized.emit()
-
-    def mouseReleaseEvent(self, e):
-        super(LJFileBrowser, self).mouseReleaseEvent(e)
-        self.object_selected()
-
-    def right_click_menu(self):
-        menu = QtGui.QMenu()
-        view_in_explorer = menu.addAction('Show in Explorer')
-        view_in_explorer.triggered.connect(self.view_in_explorer)
-
-        cursor = QtGui.QCursor()
-        menu.exec_(cursor.pos())
-
-    def view_in_explorer(self):
-        index = self.currentIndex()
-        file_path = self.model.filePath(index)
-        print 'viewing %s' % file_path
-
-    def object_selected(self):
-        files = []
-        for index in self.selectedIndexes():
-            file_path = self.model.filePath(index)
-            if file_path not in files:
-                files.append(file_path)
-        self.selected_items = files
-        self.selected.emit(files)
-
-    def dragEnterEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.accept()
-        else:
-            e.ignore()
-
-    def dragMoveEvent(self, e):
-        if e.mimeData().hasUrls:
-            e.setDropAction(QtCore.Qt.CopyAction)
-            e.accept()
-        else:
-            e.ignore()
-
-    def dropEvent(self, e):
-
-        index = self.currentIndex()
-        to_path = self.model.filePath(index)
-        if not to_path:
-            to_path = self.directory
-        if not os.path.isdir(to_path):
-            to_path, filename = os.path.split(to_path)
-        if e.mimeData().hasUrls:
-            e.setDropAction(QtCore.Qt.CopyAction)
-            e.accept()
-            file_list = []
-            for url in e.mimeData().urls():
-                file_list.append(str(url.toLocalFile()))
-                dir_, file_ = os.path.split(str(url.toLocalFile()))
-                to_file = os.path.join(to_path, file_)
-                print 'Copying %s to %s' % (str(url.toLocalFile()), to_file)
-                shutil.copy2(str(url.toLocalFile()), to_file)
-        else:
-            print 'invalid'
-            e.ignore()
-
-
-class LJFileSystemModel(QtWidgets.QFileSystemModel):
-
-    def columnCount(self, parent = QtCore.QModelIndex()):
-        return super(LJFileSystemModel, self).columnCount()+1
-
-    def find_status(self):
-        print 'root path', self.rootDirectory()
-
-    def data(self, index, role):
-        if index.column() == self.columnCount() - 1:
-            if role == QtCore.Qt.DisplayRole:
-                return "Status"
-            if role == QtCore.Qt.TextAlignmentRole:
-                return QtCore.Qt.AlignHCenter
-
-        return super(LJFileSystemModel, self).data(index, role)
 

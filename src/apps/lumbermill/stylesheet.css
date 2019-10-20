@@ -1,0 +1,363 @@
+/*
+    background = white
+    borders =
+    line_edit =
+
+ */
+
+QLineEdit.medium_grey{
+    background-color: #A7A7A7;
+    border: 0px;
+    color: white;
+    font-family: "Courier New";
+    font-size: 12pt;
+    padding-left: 5px;
+    height: 28px;
+}
+
+QPushButton.grey_border{
+    background-color: transparent;
+    border: 4px;
+    color: #383838;
+}
+
+QLineEdit.medium_grey_rounded{
+    background-color: #A7A7A7;
+    border: 0px;
+    border-radius: 8px;
+    padding: 2px;
+    color: white;
+    font-family: "Courier New";
+    font-size: 12pt;
+    padding-left: 5px;
+    height: 28px;
+}
+
+QLineEdit.dark_grey{
+    background-color: #707070;
+    border: 0px;
+    color: white;
+}
+
+
+QFrame.light_grey{
+    background-color: #BFBFBF;
+    border: 0px;
+}
+
+QFrame.medium_grey{
+    background-color: #A7A7A7;
+    border: 0px;
+}
+
+QFrame.dark_grey{
+    background-color: #707070;
+    border: 0px;
+}
+
+QPushButton.basic{
+    background-color: white;
+    border: 1px solid #707070;
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    height: 24px;
+    width: 160px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+QPushButton.basic:disabled{
+    background-color: white;
+    border: 1px solid #BFBFBF;
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #BFBFBF;
+    height: 24px;
+    width: 160px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+QToolButton.add_button{
+    background-color: #B5E9E9;
+    border: 3px solid #707070;
+    font-family: "ArcadeClassic";
+    font-size: 12pt;
+    color: #707070;
+    height: 20px;
+    width: 170px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+QToolButton.add_button:disabled{
+    background-color: #B5E9E9;
+    border: 3px solid #BFBFBF;
+    font-family: "ArcadeClassic";
+    font-size: 12pt;
+    color: #BFBFBF;
+    height: 20px;
+    width: 170px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+QPushButton.empty_state{
+    background-color: white;
+    border: 3px dashed #707070;
+    font-family: "Courier New";
+    font-size: 14pt;
+    color: #707070;
+}
+
+QPushButton.empty_state2{
+    background-color: #F5F5F5;
+    border: 3px solid #707070;
+    font-family: "Courier New";
+    font-size: 14pt;
+    color: #707070;
+}
+
+QPushButton.ultra_button{
+    background-color: #F5F5F5;
+    border: 5px solid #707070;
+    font-family: "Karmatic Arcade";
+    font-size: 18pt;
+    color: #707070;
+    height: 100px;
+    border-radius: 8px;
+    padding: 2px;
+}
+
+QLabel.title_text{
+    font-family: "ArcadeClassic";
+    font-size: 18pt;
+    color: #707070;
+}
+
+QLabel.ultra_title{
+    font-family: "Karmatic Arcade";
+    font-size: 16pt;
+    color: #707070;
+}
+
+QLabel{
+    font-family: "Courier New";
+    font-size: 10pt;
+    color: #707070;
+}
+
+QLabel.warning{
+    font-family: "Courier New";
+    font-size: 10pt;
+    color: #E24545;
+}
+
+QLabel.feedback{
+    background-color: #383838;
+    border: 1px solid #A7A7A7;
+    font-family: ArcadeClassic;
+    font-size: 18pt;
+    padding-left: 6px;
+    height: 80px;
+    color: #E24545;
+}
+
+QLineEdit.feedback{
+    background-color: #383838;
+    border: 1px solid #A7A7A7;
+    font-family: "Courier New";
+    font-size: 12pt;
+    padding-left: 6px;
+    height: 24px;
+    color: #E24545;
+}
+
+QListWidget{
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    border: 2px solid #707070;
+}
+
+
+QTreeView{
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    border: 2px solid #707070;
+}
+
+QTreeView::item{
+    height: 24px;
+    padding-left: 12px;
+    color: #707070;
+}
+
+QTableView{
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    border: 2px solid #707070;
+}
+
+QTableView::item{
+    height: 24px;
+    padding-left: 12px;
+    color: #707070;
+}
+
+QComboBox{
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    height: 20px;
+    width: 180px;
+}
+
+QHeaderView::section{
+    background-color: whitesmoke;
+    height: 24px;
+    padding-left: 5px;
+    padding-top: 5px;
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    border: 0px;
+}
+
+QHeaderView::section.output{
+    background-color: #B5E9E9;
+    height: 24px;
+    padding-left: 5px;
+    padding-top: 5px;
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    border: 0px;
+}
+
+QRadioButton{
+    font-family: "Courier New";
+    font-size: 14pt;
+    color: #707070;
+}
+
+QMenu{
+    background-color: #F5F5F5;
+    color: #707070;
+    font-family: "Courier New";
+}
+
+QMenuBar{
+    background-color: #383838;
+    border: 0px;
+    font-family: "ArcadeClassic";
+    font-size: 18px;
+}
+
+QMenuBar::item{
+    background-color: #383838;
+    color: #F5F5F5;
+    padding: 5px;
+}
+
+QMenuBar::item::selected{
+    background-color: #A7A7A7;
+    color: #F5F5F5;
+}
+
+
+QTabBar.vertical{
+    background-color: white;
+    color: #707070;
+    font-family: 'Courier New';
+    font-size: 15px;
+
+}
+
+QTabBar::tab::selected.vertical{
+    background-color: #A7A7A7;
+    font-family: 'Courier New';
+    font-size: 15px;
+    color: #F5F5F5;
+    height: 200px;
+}
+
+QTabBar::tab.vertical{
+    background-color: #F5F5F5;
+}
+
+QTabWidget::pane.vertical{ /* The Buttons info widget  */
+    border-left: 10px solid white;
+    background-color: #A7A7A7;
+    color: #F5F5F5;
+}
+
+/* The Menu Tabs */
+QTabBar.add_button{
+    color: red;
+    font-family: 'Courier New';
+    font-size: 15px;
+}
+
+QTabBar{/* Unselected Tabs On the Menu Bar*/
+    color: #707070;
+    font-family: 'Courier New';
+    font-size: 15px;
+}
+
+QTabBar::tab::selected{/* Selected Tabs On the Menu Bar*/
+    background-color: #A7A7A7;
+    font-family: 'Courier New';
+    font-size: 15px;
+    color: #F5F5F5;
+}
+
+QPlainTextEdit{
+    background-color: #383838;
+}
+
+QDialog{/* The Main Dialog */
+    background-color: white;
+}
+
+QPushButton.add_button{
+    background-color: #B5E9E9;
+    border: 3px solid #707070;
+    font-family: "ArcadeClassic";
+    font-size: 12pt;
+    color: #707070;
+    height: 20px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+QPushButton.status_button{
+    background-color: #D8D8D8;
+    border-radius: 4px;
+    font-family: "Courier New";
+    font-weight: bold;
+    font-size: 8pt;
+    color: white;
+    height: 14px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 2px;
+}
+
+QPushButton.delete_button{
+    background-color: #E54A25;
+    border: 3px solid #707070;
+    font-family: "ArcadeClassic";
+    font-size: 14pt;
+    color: #707070;
+    height: 18px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+QMainWindow{
+    background-color: white;
+}

@@ -1,0 +1,612 @@
+{
+    "account_info": {
+        "default_company": "",
+        "project_management": "",
+        "globals_path": ""
+    },
+    "asset_categories": {
+        "Character": "char", 
+        "Environment": "env", 
+        "Library": "lib", 
+        "Production": "prod", 
+        "Prop": "prop", 
+        "Vehicle": "veh"
+    }, 
+    "asset_category_long_list": [
+        "Prop", 
+        "Environment", 
+        "Vehicle", 
+        "Character", 
+        "Production", 
+        "Library"
+    ], 
+    "default": {
+        "frame_rate": 24, 
+        "linear_gamma": 2.2, 
+        "output_colorspace": "rec709", 
+        "padding": 4, 
+        "resolution": {
+            "full": "1920x1080", 
+            "half": "960x540", 
+            "image_review": "1920x1080", 
+            "maya_icon": "24x24", 
+            "quarter": "480x270", 
+            "retina_icon": "48x48", 
+            "third": "640x360", 
+            "thumb": "200x200", 
+            "thumb_cine": "200x112", 
+            "video_review": "1920x1080"
+        }, 
+        "reviews": "t5h0j5z4q3q2b9h5@fsu-cmpa.slack.com", 
+        "working_colorspace": "linear"
+    }, 
+    "definitions": {
+        "ingest_browser_header": [
+            "Filepath", 
+            "Filename", 
+            "Filetype", 
+            "Frame_Range", 
+            "Tags", 
+            "Keep_Client_Naming", 
+            "Scope", 
+            "Seq", 
+            "Shot", 
+            "Task", 
+            "Publish_Filepath", 
+            "Publish_Date", 
+            "Status"
+        ]
+    }, 
+    "dvp": {
+        "frame_rate": 24
+    }, 
+    "email": {
+        "bcc": "tom@cglumberjack.com", 
+        "bugs": "c5r2y1k1t5h5o4l9@fsu-cmpa.slack.com", 
+        "from": "tom@cglumberjack.com", 
+        "lj_domain": "https://api.mailgun.net/v3/cglumberjack.com/messages", 
+        "mailgun_key": "key-3714d0480ab5669b65dc08b8a59c49f7", 
+        "reviews": "t5h0j5z4q3q2b9h5@fsu-cmpa.slack.com"
+    }, 
+    "ext_map": {
+        ".ai": "image", 
+        ".avi": "movie", 
+        ".bmp": "image", 
+        ".dpx": "image", 
+        ".exr": "image", 
+        ".gif": "image", 
+        ".hdr": "image", 
+        ".ico": "image", 
+        ".jpeg": "image", 
+        ".jpg": "image", 
+        ".mlv": "movie", 
+        ".mov": "movie", 
+        ".mp4": "movie", 
+        ".mpg": "movie", 
+        ".pdf": "pdf", 
+        ".png": "image", 
+        ".pnm": "image", 
+        ".ppt": "ppt", 
+        ".pptx": "ppt", 
+        ".psd": "image", 
+        ".qt": "movie", 
+        ".tex": "image", 
+        ".tif": "image", 
+        ".tiff": "image", 
+        ".tx": "image", 
+        ".xbm": "image"
+    },
+    "helpdesk": {
+        "help_menu": ""
+    }, 
+    "logging": {
+        "debug": {
+            "format": "%(asctime)-15s  %(levelname)s %(message)s \"%(pathname)s:%(lineno)d\""
+        }, 
+        "format": "%(asctime)-15s  %(levelname)s %(message)s \"%(pathname)s:%(lineno)d\"", 
+        "level": "info"
+    }, 
+    "lumberjack_sync": {
+        "AWS_ACCESS_KEY_ID": "AKIAJ4HU6QEBIGKH7DRQ", 
+        "AWS_SECRET_ACCESS_KEY": "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"
+    }, 
+    "paths": {
+        "code_root": "",
+        "dev_pkg": "C:\\Python27\\Lib\\site-packages", 
+        "ffmpeg": "C:\\ProgramData\\chocolatey\\lib\\ffmpeg\\tools\\ffmpeg\\bin\\ffmpeg.exe", 
+        "ffplay": "C:\\ProgramData\\chocolatey\\lib\\ffmpeg\\tools\\ffmpeg\\bin\\ffplay.exe", 
+        "ffprobe": "C:\\ProgramData\\chocolatey\\lib\\ffmpeg\\tools\\ffmpeg\\bin\\ffprobe.exe", 
+        "magick": "C:\\PROGRA~1\\ImageMagick-7.0.8-Q16\\magick.exe", 
+        "maketx": "C:\\OpenImageIO-1.5.0-OCIO\\bin\\maketx.exe", 
+        "mayapy": "C:\\PROGRA~1\\Autodesk\\Maya2018\\bin\\mayapy.exe", 
+        "nuke": "C:\\PROGRA~1\\Nuke11.3v4\\Nuke11.3.exe", 
+        "oiiotool": "C:\\OpenImageIO-1.5.0-OCIO\\bin\\oiiotool.exe",
+        "wget": "C:\\ProgramData\\chocolatey\\lib\\Wget\\tools\\wget.exe",
+        "root": "",
+        "cgl_tools": "",
+        "user_globals": "",
+        "globals": ""
+    }, 
+    "project_management": {
+        "lumbermill":{
+            "api": {"default_schema": "DEFAULT"},
+            "tasks": {
+                "DEFAULT": {
+                    "long_to_short": {
+                        "assets": {
+                            "Modeling": "mdl",
+                            "Reference": "ref",
+                            "Rigging": "rig",
+                            "Shading": "shd",
+                            "Textures": "tex",
+                            "Fur": "fur",
+                            "Cloth": "cloth"
+                        },
+                        "shots": {
+                            "Animation": "anim",
+                            "Bundle": "bndl",
+                            "Camera": "cam",
+                            "Color": "color",
+                            "Compositing": "comp",
+                            "Editing": "edit",
+                            "Element": "elem",
+                            "FX": "fx",
+                            "Lighting": "light",
+                            "Matte Painting": "matte",
+                            "Previs": "prev",
+                            "Production": "prod",
+                            "Reference": "ref",
+                            "Storyboard": "story",
+                            "Tracking": "track",
+                            "Plate": "plate"
+                        }
+                    },
+                    "short_to_long": {
+                        "assets": {
+                            "mdl": "Modeling",
+                            "ref": "Reference",
+                            "rig": "Rigging",
+                            "shd": "Shading",
+                            "tex": "Textures",
+                            "fur": "Fur",
+                            "cloth": "Cloth"
+                        },
+                        "shots": {
+                            "anim": "Animation",
+                            "bndl": "Bundle",
+                            "cam": "Camera",
+                            "color": "Color",
+                            "comp": "Compositing",
+                            "edit": "Editing",
+                            "elem": "Element",
+                            "fx": "FX",
+                            "light": "Lighting",
+                            "matte": "Matte Painting",
+                            "prev": "Previs",
+                            "prod": "Production",
+                            "ref": "Reference",
+                            "story": "Storyboard",
+                            "track": "Tracking",
+                            "plate": "Plate"
+                        }
+                    }
+                }
+            }
+        },
+        "ftrack":{
+            "api": {
+                "api_key": "",
+                "api_user": "",
+                "server_url": "",
+                "default_schema": ""
+            },
+            "tasks": {
+                "ANIMATION": {
+                    "long_to_short": {
+                        "shots": {
+                            "Animation": "anim",
+                            "Background 2d": "bg",
+                            "Bundle": "bndl",
+                            "Camera": "cam",
+                            "Character Design": "design",
+                            "Cleanup 2d": "cleanup",
+                            "Color": "color",
+                            "Color 2d": "color2d",
+                            "Compositing": "comp",
+                            "Concept Art": "cncpt",
+                            "Environment": "env",
+                            "Export": "export",
+                            "FX": "fx",
+                            "Layout": "lay",
+                            "Lighting": "light",
+                            "Lookdev": "ldev",
+                            "Modeling": "mdl",
+                            "Paint and Cleanup": "paint",
+                            "Presentacion": "pres",
+                            "Previz": "prev",
+                            "Prop Design": "design",
+                            "Reference": "ref",
+                            "Rigging": "rig",
+                            "Rough Anim": "ranim",
+                            "SHADING": "shd",
+                            "Storyboard": "story",
+                            "TEXTURING": "tex"
+                        }
+                    },
+                    "short_to_long": {
+                        "shots": {
+                            "anim": "Animation",
+                            "bg": "Background 2d",
+                            "bndl": "Bundle",
+                            "cam": "Camera",
+                            "cleanup": "Cleanup 2d",
+                            "cncpt": "Concept Art",
+                            "color": "Color",
+                            "color2d": "Color 2d",
+                            "comp": "Compositing",
+                            "design": "Character Design",
+                            "env": "Environment",
+                            "export": "Export",
+                            "fx": "FX",
+                            "lay": "Layout",
+                            "ldev": "Lookdev",
+                            "light": "Lighting",
+                            "mdl": "Modeling",
+                            "paint": "Paint and Cleanup",
+                            "pres": "Presentacion",
+                            "prev": "Previz",
+                            "ranim": "Rough Anim",
+                            "ref": "Reference",
+                            "rig": "Rigging",
+                            "shd": "SHADING",
+                            "story": "Storyboard",
+                            "tex": "TEXTURING"
+                        }
+                    }
+                },
+                "Development": {
+                    "long_to_short": {
+                        "shots": {
+                            "Bug": "bug",
+                            "Documentation": "docu",
+                            "Feature": "feat",
+                            "Improvement": "imp",
+                            "Refactor": "refact",
+                            "Research": "resrch",
+                            "Test": "tst"
+                        }
+                    },
+                    "short_to_long": {
+                        "shots": {
+                            "bug": "Bug",
+                            "docu": "Documentation",
+                            "feat": "Feature",
+                            "imp": "Improvement",
+                            "refact": "Refactor",
+                            "resrch": "Research",
+                            "tst": "Test"
+                        }
+                    }
+                },
+                "Generic": {
+                    "long_to_short": {
+                        "shots": {
+                            "Deliverable": "deliv",
+                            "Digital Debree": "debris",
+                            "Generic": "gen",
+                            "Remove Crew": "remc",
+                            "Rig Removal": "remr",
+                            "Set Extension": "setext",
+                            "Wire Removal": "remw"
+                        }
+                    },
+                    "short_to_long": {
+                        "shots": {
+                            "debris": "Digital Debree",
+                            "deliv": "Deliverable",
+                            "gen": "Generic",
+                            "remc": "Remove Crew",
+                            "remr": "Rig Removal",
+                            "remw": "Wire Removal",
+                            "setext": "Set Extension"
+                        }
+                    }
+                },
+                "PRODUCCION": {
+                    "long_to_short": {
+                        "shots": {
+                            "Deliverable": "deliv",
+                            "Documentation": "docu",
+                            "Editing": "edit",
+                            "Export": "export",
+                            "Improvement": "imp",
+                            "Lookdev": "ldev",
+                            "Presentacion": "pres",
+                            "Production": "prod",
+                            "Research": "resrch",
+                            "Storyboard": "story",
+                            "Test": "tst"
+                        }
+                    },
+                    "short_to_long": {
+                        "shots": {
+                            "deliv": "Deliverable",
+                            "docu": "Documentation",
+                            "edit": "Editing",
+                            "export": "Export",
+                            "imp": "Improvement",
+                            "ldev": "Lookdev",
+                            "pres": "Presentacion",
+                            "prod": "Production",
+                            "resrch": "Research",
+                            "story": "Storyboard",
+                            "tst": "Test"
+                        }
+                    }
+                },
+                "VFX": {
+                    "long_to_short": {
+                        "shots": {
+                            "Animation": "anim",
+                            "Bundle": "bndl",
+                            "Camera": "cam",
+                            "Color": "color",
+                            "Compositing": "comp",
+                            "Deliverable": "deliv",
+                            "Digital Debree": "debris",
+                            "Digital Element": "elem",
+                            "Editing": "edit",
+                            "Export": "export",
+                            "FX": "fx",
+                            "Generic": "gen",
+                            "Image Sequence": "images",
+                            "Key": "key",
+                            "Lighting": "light",
+                            "Lookdev": "ldev",
+                            "Matte Painting": "matte",
+                            "Modeling": "mdl",
+                            "Previz": "prev",
+                            "Production": "prod",
+                            "Reference": "ref",
+                            "Remove Crew": "remc",
+                            "Rig Removal": "remr",
+                            "Rigging": "rig",
+                            "Rotoscoping": "roto",
+                            "SHADING": "shd",
+                            "Set Extension": "setext",
+                            "Storyboard": "story",
+                            "TEXTURING": "tex",
+                            "Tracking": "track",
+                            "Wire Removal": "remw"
+                        }
+                    },
+                    "short_to_long": {
+                        "shots": {
+                            "anim": "Animation",
+                            "bndl": "Bundle",
+                            "cam": "Camera",
+                            "color": "Color",
+                            "comp": "Compositing",
+                            "debris": "Digital Debree",
+                            "deliv": "Deliverable",
+                            "edit": "Editing",
+                            "elem": "Digital Element",
+                            "export": "Export",
+                            "fx": "FX",
+                            "gen": "Generic",
+                            "images": "Image Sequence",
+                            "key": "Key",
+                            "ldev": "Lookdev",
+                            "light": "Lighting",
+                            "matte": "Matte Painting",
+                            "mdl": "Modeling",
+                            "prev": "Previz",
+                            "prod": "Production",
+                            "ref": "Reference",
+                            "remc": "Remove Crew",
+                            "remr": "Rig Removal",
+                            "remw": "Wire Removal",
+                            "rig": "Rigging",
+                            "roto": "Rotoscoping",
+                            "setext": "Set Extension",
+                            "shd": "SHADING",
+                            "story": "Storyboard",
+                            "tex": "TEXTURING",
+                            "track": "Tracking"
+                        }
+                    }
+                }
+            }
+        },
+        "shotgun":{
+            "api": {
+                "api_key": "bc29cd2fd4ce9fe3c2598c4d559b09f88eaa95b05edfd12a834a23aea0797e2f",
+                "api_script": "core_tools",
+                "api_user": "tmikota",
+                "concurrent": 4,
+                "concurrent_low": 0,
+                "notes": "ensure short codes exist for all pipeline steps in shotgun, might want a wizard for this.",
+                "project_short_name": "sg_code",
+                "server_url": "https://fsuada.shotgunstudio.com"
+            },
+            "tasks": {}
+        }
+    },
+    "rules": {
+        "context_list": [
+            "render", 
+            "source", 
+            "unity", 
+            "unreal"
+        ], 
+        "general": {
+            "file_sequence": {
+                "regex": "\\.[0-9]+\\."
+            }, 
+            "model_geo": {
+                "example": "Example Geo Names: wood, wood2, wood22, wood222, wood2222, wood22222", 
+                "regex": "^[a-zA-Z]{3,}[0-9]{0,5}$"
+            }, 
+            "model_material": {
+                "example": "Example Mat names: wood_mtl", 
+                "regex": "^[a-zA-Z]{3,}[A-Z]?_mtl$"
+            }, 
+            "shot_cam": {
+                "example": "Example Shot Cam: cam010_0200", 
+                "regex": "^cam[0-9]{3}_[0-9]{4}$"
+            }, 
+            "taskname": {
+                "example": "eg: animation, anim", 
+                "regex": "[a-z]{3,9}$"
+            }, 
+            "texture_channel": {
+                "example": "Example Texture Channel: diffuse", 
+                "regex": "^[A-Za-z]+$"
+            }, 
+            "valid_chars": {
+                "regex": "[^a-zA-Z0-9._#]"
+            }, 
+            "valid_sequence": {
+                "regex": "[aA-zZ]+(\\.|\\_|\\-)[0-9]{2,4}\\."
+            }
+        }, 
+        "path_variables": {
+            "aov": {
+                "regex": "[A-Za-z0-9]+"
+            }, 
+            "asset": {
+                "example": "examples:\n\tkingkong - [creates single asset 'kingkong' in 'default' category]\n\tkingkong, trex [creates 2 assets in 'default' category]\n\tProp:kingkong [creates kingkong in 'Prop' category]\n\tProp:kingkong, trex [creates multiple assets in 'Prop' category]", 
+                "regex": "[a-zA-Z]{3,}$"
+            }, 
+            "assetname": {
+                "example": "", 
+                "regex": "[a-zA-Z_]+$"
+            }, 
+            "cam": {
+                "regex": "[A-Za-z0-9]+"
+            }, 
+            "company": {
+                "example": "Company name rules:\n    Underscores are ok ('_')\n    Letters of the alphabet (a-z, A-Z)\n    Must Contain 3 or more characters", 
+                "regex": "[A-Za-z_]{3,}$"
+            }, 
+            "context": {
+                "example": "examples: source, render", 
+                "regex": "[a-z]+"
+            }, 
+            "date": {
+                "regex": "[0-9_]+"
+            }, 
+            "ext": {
+                "regex": "[a-z]{2,5}"
+            }, 
+            "filename": {
+                "regex": "\\w+"
+            }, 
+            "filename_base": {
+                "regex": "\\w+"
+            }, 
+            "frame": {
+                "regex": "[0-9]{4}"
+            }, 
+            "ingest_source": {
+                "regex": "[A-Za-z0-9_]+"
+            }, 
+            "major_version": {
+                "regex": "[0-9]{3}"
+            }, 
+            "minor_version": {
+                "regex": "[0-9]{3}"
+            }, 
+            "project": {
+                "example": "Project name rules:\n    Underscores are ok ('_')\n    Letters of the alphabet (a-z, A-Z)\n    Must Contain 3 or more characters", 
+                "regex": "[A-Za-z_]{3,}$"
+            }, 
+            "render_pass": {
+                "regex": "[A-Za-z0-9]+"
+            }, 
+            "resolution": {
+                "regex": "[A-Za-z0-9]+"
+            }, 
+            "root": {
+                "regex": "[A-Za-z0-9_\\:]+"
+            }, 
+            "scope": {
+                "example": "examples: assets, shots", 
+                "regex": "[a-z]+"
+            }, 
+            "seq": {
+                "example": "examples: 000, 010, 020", 
+                "regex": "^[0-9]{3}$|^[A-Z]{3}$"
+            }, 
+            "shot": {
+                "regex": "^[0-9]{4}$"
+            }, 
+            "shotname": {
+                "example": "eg: 050_0100, THC_0500 (SEQ_SHOT)", 
+                "regex": "[A-Z0-9]{3}\\_[0-9]{4}$"
+            }, 
+            "task": {
+                "regex": "[a-z]+"
+            }, 
+            "type": {
+                "regex": "[a-zA-Z]+"
+            }, 
+            "user": {
+                "regex": "[a-z]+"
+            }, 
+            "user_email": {
+                "regex": "[A-Za-z0-9]+"
+            }, 
+            "version": {
+                "regex": "[0-9]{3,5}"
+            }
+        }, 
+        "scope_list": [
+            "assets", 
+            "shots", 
+            "IO"
+        ]
+    },
+    "templates": {
+        "IO": {
+            "render": {
+                "path": "{company}/render/{project}/IO/{ingest_source}", 
+                "version": "{version}"
+            }, 
+            "source": {
+                "path": "{company}/source/{project}/IO/{ingest_source}", 
+                "version": "{version}"
+            }
+        }, 
+        "assets": {
+            "render": {
+                "file": "{cam}/{render_pass}/{aov}/{filename}.{ext}", 
+                "path": "{company}/render/{project}/assets/{type}/{asset}/{task}/{user}", 
+                "version": "{version}/{resolution}/{filename}.{ext}"
+            }, 
+            "source": {
+                "path": "{company}/source/{project}/assets/{type}/{asset}/{task}/{user}", 
+                "version": "{version}/{resolution}/{filename}.{ext}"
+            }, 
+            "unity": {
+                "path": "{company}/unity/{project}/Assets/{seq}/{shot}/{task}/", 
+                "version": "{filename}.{ext}"
+            }
+        }, 
+        "shots": {
+            "render": {
+                "file": "{cam}/{render_pass}/{aov}/{filename}.{ext}", 
+                "path": "{company}/render/{project}/shots/{seq}/{shot}/{task}/{user}", 
+                "version": "{version}/{resolution}/{filename}.{ext}"
+            }, 
+            "source": {
+                "path": "{company}/source/{project}/shots/{seq}/{shot}/{task}/{user}", 
+                "version": "{version}/{resolution}/{filename}.{ext}"
+            }, 
+            "unity": {
+                "path": "{company}/unity/{project}/Assets/{seq}/{shot}/{task}", 
+                "version": "{filename}.{ext}"
+            }
+        }
+    }
+}

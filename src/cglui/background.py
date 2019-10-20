@@ -18,7 +18,7 @@ class BackgroundThread(QtCore.QThread):
         self.process = p
         self.args = args
         self.kwargs = kwargs
-        BACKGROUND_THREADS.append(self) # protect against the GC
+        BACKGROUND_THREADS.append(self)  # protect against the GC
         self.finished.connect(self.cleanup)
 
     def cleanup(self):

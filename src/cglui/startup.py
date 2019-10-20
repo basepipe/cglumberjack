@@ -2,13 +2,9 @@ import logging
 import os
 import time
 import signal
-
 from os.path import dirname, join
-
 from Qt import QtWidgets, QtCore
-
 import Qt
-
 from cglcore.startup import do_app_init
 from cglui.util import UISettings
 
@@ -39,6 +35,7 @@ def _do_qt_init():
     return app
 
 
+# noinspection PyUnresolvedReferences
 def _load_resources():
     """
     load the resource file
@@ -49,9 +46,9 @@ def _load_resources():
     # noinspection PyUnresolvedReferences
     if Qt.__binding__ in ["PySide", "PySide2"]:
         import cglui.PySide_rc
-    pass
 
 
+# noinspection SpellCheckingInspection
 def _load_ui_themes(gui=None):
     """
     load the ui theme from the css
@@ -66,7 +63,6 @@ def _load_ui_themes(gui=None):
     if theme_env in os.environ and os.environ[theme_env] == "1":
         logging.debug("THEME DEV MODE")
         rsc_dir = join(dirname(dirname(dirname(__file__))), "resources")
-        print rsc_dir
         if os.path.isdir(rsc_dir):
             theme = join(rsc_dir, "theme.css")
             app = QtWidgets.QApplication.instance()
@@ -126,12 +122,12 @@ def _load_lang():
     full_locale = locale.bcp47Name()
     if "LUMBERJACK_LOCALE" in os.environ:
         full_locale = os.environ["LUMBERJACK_LOCALE"]
-        logging.info("LOCALE OVERIDE %s" % full_locale)
+        logging.info("LOCAL OVERRIDE %s" % full_locale)
     if "-" in full_locale:
         lang, _ = full_locale.split("-")
     else:
         lang = full_locale
-    if lang == "en": # we write in english by default, maybe one day we will deal with British/US english
+    if lang == "en":  # we write in english by default, maybe one day we will deal with British/US english
         logging.info("English language")
         return
     region_lang = ":i18n/%s.qm" % full_locale
@@ -167,5 +163,10 @@ def do_gui_init():
 
 
 def do_maya_gui_init(gui):
+    _load_ui_themes(gui)
+    _load_ui_settings()
+
+
+def do_nuke_gui_init(gui):
     _load_ui_themes(gui)
     _load_ui_settings()

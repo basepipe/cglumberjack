@@ -1,20 +1,25 @@
+# noinspection PyUnresolvedReferences
 from Qt.QtCore import QAbstractTableModel, Qt
 
 
+# noinspection PyUnusedLocal
 class LJItemModel(QAbstractTableModel):
     def headerData(self, section, orientation, role):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.headers[section]
 
     def rowCount(self, index):
-        return len(self.data_)
+        if self.data_:
+            return len(self.data_)
+        else:
+            return None
 
     def columnCount(self, index):
         return len(self.headers)
 
 
 class LGListDictionaryItemModel(LJItemModel):
-    def __init__(self, data, display_filter=None):
+    def __init__(self, data):
         LJItemModel.__init__(self)
         self.headers = []
         self.data_ = []
@@ -41,8 +46,6 @@ class LGShotgunListDictionaryItemModel(LGListDictionaryItemModel):
             self.data_filter = True
             if display_filter:
                 for key in display_filter:
-                    print 'key', key
-                    print 'display+filter', display_filter.keys()
                     self.keys = display_filter.keys()
                     self.headers.append(display_filter[key])
             else:
@@ -90,6 +93,31 @@ class DictionaryItemModel(LJItemModel):
 class ListItemModel(LJItemModel):
     def __init__(self, data_list, header_titles=None, data_filter=False):
         LJItemModel.__init__(self)
+        # self.setHeaderData(Qt.Horizontal, Qt.AlignLeft, Qt.TextAlignmentRole)
+        self.data_ = data_list
+        self.headers = header_titles
+        self.data_filter = data_filter
+
+    def data(self, index, role):
+        row = index.row()
+        col = index.column()
+        if role == Qt.DisplayRole:
+            try:
+                data = self.data_[row][col]
+                if data is None:
+                    return ""
+                if isinstance(data, dict):
+                    if 'name' in data:
+                        return data['name']
+                    elif 'code' in data:
+                        return data['code']
+                return str(data)
+            except KeyError:
+                return ''
+
+
+class TreeItemModel(LJItemModel):
+    def __init__(self, data_list, header_titles=None, data_filter=False):
         self.data_ = data_list
         self.headers = header_titles
         self.data_filter = data_filter

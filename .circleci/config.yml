@@ -1,0 +1,41 @@
+# .circleci/config.yml
+version: 2.1
+jobs:
+  build:
+    macos:
+      #Xcode 7.0 is 10.11
+      xcode: "9.1.0"
+    working_directory: ~/repo
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+
+      - run:
+          name: Pre-Python Installs
+          command: |
+            virtualenv venv
+            . venv/bin/activate
+            make pre-python-installs
+      - run:
+          name: install python packages
+          command: |
+            . venv/bin/activate
+            make install
+
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+
+      # run tests!
+      - run:
+          name: run tests
+          command: |
+            #. venv/bin/activate
+            echo "nothing for now"
