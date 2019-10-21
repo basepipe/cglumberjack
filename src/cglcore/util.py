@@ -148,25 +148,33 @@ def load_json(filepath):
     return data
 
 
-def _execute(command, return_output=False, print_output=True):
-    import subprocess
-    logging.info('Executing Command: %s' % command)
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-    output_values = []
-    if return_output or print_output:
-        while True:
-            output = p.stdout.readline()
-            if output == '' and p.poll() is not None:
-                break
-            if output:
-                if print_output:
-                    print output.strip()
-                output_values.append(output.strip())
-    rc = p.poll()
-    if return_output:
-        return output_values
-    else:
-        return rc
+def _execute(command, return_output=False, print_output=True, methodology='local'):
+    # TODO - we need to make sure this command is used everywhere we're passing commands if at all possible.
+    if methodology == 'local':
+        import subprocess
+        logging.info('Executing Command: %s' % command)
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        output_values = []
+        if return_output or print_output:
+            while True:
+                output = p.stdout.readline()
+                if output == '' and p.poll() is not None:
+                    break
+                if output:
+                    if print_output:
+                        print output.strip()
+                    output_values.append(output.strip())
+        rc = p.poll()
+        if return_output:
+            return output_values
+        else:
+            return rc
+    elif methodology == 'deadline':
+        # TODO - add deadline integration
+        print 'deadline not yet supported'
+    elif methodology == 'smedge':
+        # TODO - add smedge integration
+        print 'smedge not yet supported'
 
 
 def check_for_latest_master(return_output=True, print_output=False):

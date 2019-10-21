@@ -12,7 +12,7 @@ from cglcore.util import current_user, check_for_latest_master, update_master
 from cglcore.config import app_config, UserConfig
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
-from cglui.widgets.help import ReportBugDialog
+from cglui.widgets.help import ReportBugDialog, RequestFeatureDialog
 try:
     import apps.lumbermill.elements.IOPanel as IoP
     DO_IOP = True
@@ -564,13 +564,16 @@ class CGLumberjack(LJMainWindow):
         icon = QtGui.QPixmap(":/images/lumberjack.24px.png").scaled(24, 24)
         self.setWindowIcon(icon)
         login = QtWidgets.QAction('login', self)
+        time_tracking = QtWidgets.QAction('time', self)
         proj_man = QtWidgets.QAction('%s' % self.project_management, self)
         update_button = QtWidgets.QAction('Check For Updates', self)
         report_bug_button = QtWidgets.QAction('Report Bug', self)
+        request_feature_button = QtWidgets.QAction('Request Feature', self)
         tools_menu = menu_bar.addMenu('&Tools')
         if self.project_management != 'lumbermill':
             self.proj_man_link = two_bar.addAction(proj_man)
         self.login_menu = two_bar.addAction(login)
+        two_bar.addAction(time_tracking)
         settings = QtWidgets.QAction('Settings', self)
         open_globals = QtWidgets.QAction('Go to Company Globals', self)
         open_user_globals = QtWidgets.QAction('Go to User Globals', self)
@@ -588,6 +591,7 @@ class CGLumberjack(LJMainWindow):
         tools_menu.addSeparator()
         tools_menu.addAction(update_button)
         tools_menu.addAction(report_bug_button)
+        tools_menu.addAction(request_feature_button)
         # connect signals and slots
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
@@ -598,6 +602,14 @@ class CGLumberjack(LJMainWindow):
         proj_man.triggered.connect(self.on_proj_man_menu_clicked)
         update_button.triggered.connect(self.update_lumbermill_clicked)
         report_bug_button.triggered.connect(self.report_bug_clicked)
+        request_feature_button.triggered.connect(self.feature_request_clicked)
+        time_tracking.triggered.connect(self.time_tracking_clicked)
+
+    def time_tracking_clicked(self):
+        from cglui.widgets.dialog import TimeTracker
+        dialog = TimeTracker()
+        dialog.exec_()
+        print 'time tracking clicked'
 
     def update_lumbermill_clicked(self):
         process_method(self.centralWidget().progress_bar, self.do_update_check,
@@ -624,6 +636,10 @@ class CGLumberjack(LJMainWindow):
 
     def report_bug_clicked(self):
         dialog = ReportBugDialog(self)
+        dialog.exec_()
+
+    def feature_request_clicked(self):
+        dialog = RequestFeatureDialog(self)
         dialog.exec_()
 
     def open_create_project_dialog(self):
