@@ -8,6 +8,7 @@ from cglui.widgets.base import LJDialog
 from cglcore.util import current_user
 from cglcore import screen_grab
 from cglui.widgets.widgets import AdvComboBox
+from plugins.project_management.asana.basic import AsanaJack
 
 PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 
@@ -15,12 +16,18 @@ PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 class RequestFeatureDialog(LJDialog):
     def __init__(self, parent=None, title='Request Feature'):
         LJDialog.__init__(self, parent)
-        software_list = ['', 'Smedge', 'Deadline', 'Maya', 'Nuke', 'Unreal Engine', 'Unity', 'Adobe Premiere',
-                         'Lumbermill', 'Github', 'Slack', 'S3', 'EC2', 'asana']
-        language_list = ['', 'Python2.7', 'C++', 'C#', '.bat', 'wordpress', 'CMD', 'bash script', 'python3.0']
-        deliverable_list = ['', 'CMD command', 'batch script', '.bat script', 'new function', 'updated function',
-                            'gui', 'class', 'file', 'tutorial']
-        delivery_method_list = ['', 'Send to Slack Channel', 'Github Pull Request']
+        self.rtf_task_text = ''
+        self.requirements_list = []
+        self.results_list = []
+        software_list = sorted(['Smedge', 'Deadline', 'Maya', 'Nuke', 'Unreal Engine', 'Unity', 'Adobe Premiere',
+                                'Lumbermill', 'Github', 'Slack', 'S3', 'EC2', 'Asana'])
+        software_list.insert(0, '')
+        language_list = sorted(['Python2.7', 'C++', 'C#', '.bat', 'wordpress', 'CMD', 'Bash script'])
+        language_list.insert(0, '')
+        deliverable_list = sorted(['CMD shell command', 'Batch script', '.bat script', 'Function (new)',
+                                   'Function (existing)', 'Gui', 'Class', 'File (new)', 'File (existing)', 'Tutorial'])
+        deliverable_list.insert(0, '')
+        delivery_method_list = ['Github Pull Request', 'Send to Slack Channel']
         reference_dict = {'smedge': {'documentation': {'user manual': 'https://www.uberware.net/User_Manual.pdf',
                                                        'admin manual': 'https://www.uberware.net/Administrator_Manual.pdf',
                                                        'command line reference': 'http://dev.uberware.net/smedge2/manual/cli.shtml'},
@@ -123,6 +130,7 @@ class RequestFeatureDialog(LJDialog):
                           }
         layout = QtWidgets.QVBoxLayout()
         grid = QtWidgets.QGridLayout()
+        grid2 = QtWidgets.QGridLayout()
         self.setMinimumWidth(800)
 
         # all the labels
@@ -130,7 +138,7 @@ class RequestFeatureDialog(LJDialog):
         label_details.setProperty('class', 'ultra_title')
         label_task_info = QtWidgets.QLabel('Task Info:')
         label_task_info.setProperty('class', 'ultra_title')
-        label_description = QtWidgets.QLabel('Task Description:')
+        label_description = QtWidgets.QLabel('Description:')
         label_software = QtWidgets.QLabel('Product:')
         label_language = QtWidgets.QLabel("Language:")
         label_deliverable = QtWidgets.QLabel('Deliverable:')
@@ -144,70 +152,92 @@ class RequestFeatureDialog(LJDialog):
         label_videos = QtWidgets.QLabel('Videos:')
         label_cgl_examples = QtWidgets.QLabel('CGL Examples & Tutorials:')
         label_attachments = QtWidgets.QLabel('Attachments:')
+        label_task_text = QtWidgets.QLabel('Task Preview Text:')
+        label_task_text.setProperty('class', 'ultra_title')
+        label_task_title = QtWidgets.QLabel("Title")
         self.message_requirements = QtWidgets.QLabel()
         self.message_expected_results = QtWidgets.QLabel()
         self.message_requirements.hide()
         self.message_expected_results.hide()
 
+
         # all the combo boxes:
-        combo_software = AdvComboBox()
-        combo_software.addItems(software_list)
-        combo_language = AdvComboBox()
-        combo_language.addItems(language_list)
+        self.combo_software = AdvComboBox()
+        self.combo_software.addItems(software_list)
+        self.combo_language = AdvComboBox()
+        self.combo_language.addItems(language_list)
         self.combo_deliverable_list = AdvComboBox()
         self.combo_deliverable_list.addItems(deliverable_list)
-        combo_delivery_method = AdvComboBox()
-        combo_delivery_method.addItems(delivery_method_list)
+        self.combo_delivery_method = AdvComboBox()
+        self.combo_delivery_method.addItems(delivery_method_list)
+        self.text_edit = QtWidgets.QTextEdit()
+
+        self.submit_task_button = QtWidgets.QPushButton('Submit Task')
+        self.submit_task_button.setDefault(False)
+        self.submit_task_button.setAutoDefault(False)
+        button_row = QtWidgets.QHBoxLayout()
+        button_row.addStretch(1)
+        button_row.addWidget(self.submit_task_button)
+
         # grid.addWidget(label_description, 0, 0)
 
-        description_line_edit = QtWidgets.QLineEdit()
-        description_line_edit.setPlaceholderText('Description: Less than 140 characters')
+        self.title_line_edit = QtWidgets.QLineEdit()
+        self.description_line_edit = QtWidgets.QLineEdit()
+        self.description_line_edit.setPlaceholderText('Description: Less than 140 characters')
         self.location_line_edit = QtWidgets.QLineEdit()
         self.requirements_line_edit = QtWidgets.QLineEdit()
         self.requirements_line_edit.setPlaceholderText('type requirement and hit enter')
         self.expected_results_line_edit = QtWidgets.QLineEdit()
         self.expected_results_line_edit.setPlaceholderText('type expected result and hit enter')
-        documentation_line_edit = QtWidgets.QLineEdit()
-        videos_line_edit = QtWidgets.QLineEdit()
-        cgl_line_edit = QtWidgets.QLineEdit()
+        self.documentation_line_edit = QtWidgets.QLineEdit()
+        self.videos_line_edit = QtWidgets.QLineEdit()
+        self.cgl_line_edit = QtWidgets.QLineEdit()
         
         self.widget_dict = {self.requirements_line_edit: self.message_requirements,
                             self.expected_results_line_edit: self.message_expected_results,
                             }
+        self.bullet_dict = {self.requirements_line_edit: self.requirements_list,
+                            self.expected_results_line_edit: self.results_list,
+                            }
 
         grid.addWidget(label_software, 1, 0)
-        grid.addWidget(combo_software, 1, 1)
+        grid.addWidget(self.combo_software, 1, 1)
         grid.addWidget(label_language, 1, 2)
-        grid.addWidget(combo_language, 1, 3)
+        grid.addWidget(self.combo_language, 1, 3)
         grid.addWidget(label_deliverable, 3, 0)
         grid.addWidget(self.combo_deliverable_list, 3, 1)
         grid.addWidget(label_delivery_method, 3, 2)
-        grid.addWidget(combo_delivery_method, 3, 3)
+        grid.addWidget(self.combo_delivery_method, 3, 3)
         grid.addWidget(self.label_code_location, 4, 0)
         grid.addWidget(self.location_line_edit, 4, 1)
+
+        grid2.addWidget(label_task_title, 0, 0)
+        grid2.addWidget(self.title_line_edit, 0, 1)
+        grid2.addWidget(label_description, 0, 2)
+        grid2.addWidget(self.description_line_edit, 0, 3)
+        grid2.addWidget(label_requirements, 1, 0)
+        grid2.addWidget(self.requirements_line_edit, 1, 1)
+        grid2.addWidget(self.message_requirements, 2, 1)
+        grid2.addWidget(label_expected_results, 1, 2)
+        grid2.addWidget(self.expected_results_line_edit, 1, 3)
+        grid2.addWidget(self.message_expected_results, 2, 3)
 
         #layout.addLayout(task_layout)
         layout.addWidget(label_details)
         layout.addLayout(grid)
-        layout.addStretch(1)
         layout.addWidget(label_task_info)
-        layout.addWidget(label_description)
-        layout.addWidget(description_line_edit)
-        layout.addWidget(label_requirements)
-        layout.addWidget(self.requirements_line_edit)
-        layout.addWidget(self.message_requirements)
-        layout.addWidget(label_expected_results)
-        layout.addWidget(self.expected_results_line_edit)
-        layout.addWidget(self.message_expected_results)
-        layout.addStretch(1)
-        layout.addWidget(label_resources)
-        layout.addWidget(label_documentation)
-        layout.addWidget(documentation_line_edit)
-        layout.addWidget(label_videos)
-        layout.addWidget(videos_line_edit)
-        layout.addWidget(label_cgl_examples)
-        layout.addWidget(cgl_line_edit)
-        layout.addWidget(label_attachments)
+        layout.addLayout(grid2)
+        # layout.addWidget(label_resources)
+        # layout.addWidget(label_documentation)
+        # layout.addWidget(self.documentation_line_edit)
+        # layout.addWidget(label_videos)
+        # layout.addWidget(self.videos_line_edit)
+        # layout.addWidget(label_cgl_examples)
+        # layout.addWidget(self.cgl_line_edit)
+        # layout.addWidget(label_attachments)
+        layout.addWidget(label_task_text)
+        layout.addWidget(self.text_edit)
+        layout.addLayout(button_row)
 
         self.setLayout(layout)
         self.setWindowTitle(title)
@@ -215,11 +245,62 @@ class RequestFeatureDialog(LJDialog):
         self.combo_deliverable_list.currentIndexChanged.connect(self.show_code_location)
         self.requirements_line_edit.returnPressed.connect(self.add_bullets)
         self.expected_results_line_edit.returnPressed.connect(self.add_bullets)
+        self.combo_software.currentIndexChanged.connect(self.update_text_edit)
+        self.combo_language.currentIndexChanged.connect(self.update_text_edit)
+        self.combo_deliverable_list.currentIndexChanged.connect(self.update_text_edit)
+        self.combo_delivery_method.currentIndexChanged.connect(self.update_text_edit)
+        self.description_line_edit.textChanged.connect(self.update_text_edit)
+        self.location_line_edit.textChanged.connect(self.update_text_edit)
+        self.submit_task_button.clicked.connect(self.on_submit_clicked)
         self.show_code_location()
+        self.update_text_edit()
+        # self.submit_task_button.setEnabled(False)
+
+    def on_submit_clicked(self):
+        AsanaJack().create_task(project_name='Test Project A', section_name='Backlog',
+                                task_name=self.title_line_edit.text(), notes=self.rtf_task_text)
+        self.accept()
+
+    def update_text_edit(self):
+        """
+        """
+        # self.safe_to_submit()
+        rtf_software = self.rtf_label('Software', self.combo_software.currentText())
+        rtf_language = self.rtf_label('Language', self.combo_language.currentText())
+        rtf_deliverable = self.rtf_label("Deliverable", self.combo_deliverable_list.currentText())
+        rtf_delivery_method = self.rtf_label("Delivery Method", self.combo_delivery_method.currentText())
+        info_line = "%s, %s\n\n" % (rtf_software, rtf_language)
+        rtf_task_description = "<strong>Task Description:</strong>\n\t%s\n\n" % self.description_line_edit.text()
+        rtf_code_location = "<strong>Code Location:</strong>\n\t<code>%s</code>\n\n" % self.location_line_edit.text()
+        rtf_requirements = self.rtf_bullet_list('Requirements:', self.requirements_list)
+        rtf_expected_results = self.rtf_bullet_list('Expected Results:', self.results_list)
+        rtf_deliverables = self.rtf_bullet_list("What You'll Deliver:", [rtf_deliverable, rtf_delivery_method])
+        self.rtf_task_text = "<body>%s%s%s%s%s%s</body>" % (info_line, rtf_task_description, rtf_code_location,
+                                                            rtf_requirements, rtf_expected_results, rtf_deliverables)
+        self.text_edit.setAcceptRichText(True)
+        self.text_edit.setText(self.rtf_task_text)
+
+    @staticmethod
+    def rtf_label(bold_text, regular_text):
+        if regular_text:
+            return "<strong>%s: </strong>%s" % (bold_text, regular_text)
+        else:
+            return "<strong>%s: </strong>%s" % (bold_text, 'Not Defined')
+
+    @staticmethod
+    def rtf_bullet_list(bold_label, bullet_list):
+        if bullet_list:
+            rtf_ul = "<strong>%s</strong>\n<ul>" % bold_label
+            for each in bullet_list:
+                rtf_ul += "<li>%s</li>" % each
+            rtf_ul += "</ul>\n"
+            return rtf_ul
+        else:
+            return "<strong>%s</strong>\n\n" % bold_label
 
     def show_code_location(self):
         deliverable_list = ['new function', 'updated function',
-                            'gui', 'class', 'file']
+                            'gui', 'class', 'new file', 'updated file', 'tutorial']
         if self.combo_deliverable_list.currentText() in deliverable_list:
             self.label_code_location.show()
             self.location_line_edit.show()
@@ -235,6 +316,9 @@ class RequestFeatureDialog(LJDialog):
             line_edit = self.sender()
         current_text = line_edit.text()
         requirements_text = self.widget_dict[line_edit].text()
+        list_ = self.bullet_dict[line_edit]
+        list_.append(current_text)
+        self.update_text_edit()
         if not requirements_text:
             requirements_text = '    *%s' % current_text
         else:
@@ -242,9 +326,6 @@ class RequestFeatureDialog(LJDialog):
         self.widget_dict[line_edit].setText(requirements_text)
         line_edit.setText('')
         self.widget_dict[line_edit].show()
-
-
-
 
 class ReportBugDialog(LJDialog):
 
@@ -274,7 +355,7 @@ class ReportBugDialog(LJDialog):
         self.label_subject = QtWidgets.QLabel('Subject')
         self.lineEdit_subject = QtWidgets.QLineEdit()
 
-        self.text_edit = QtWidgets.QTextEdit()
+        self.self.text_edit = QtWidgets.QTextEdit()
         self.screengrabs_layout = QtWidgets.QVBoxLayout()
 
         button_bar = QtWidgets.QHBoxLayout()
@@ -304,7 +385,7 @@ class ReportBugDialog(LJDialog):
         layout.addLayout(grid_layout)
         layout.addLayout(button_bar)
         layout.addWidget(self.label_description)
-        layout.addWidget(self.text_edit)
+        layout.addWidget(self.self.text_edit)
         layout.addLayout(self.screengrabs_layout)
         layout.addWidget(self.label_messaging)
         layout.addWidget(self.button_submit)
@@ -321,7 +402,7 @@ class ReportBugDialog(LJDialog):
         self.lineEdit_subject.textChanged.connect(self.ok_to_send)
         self.lineEdit_email.textChanged.connect(self.ok_to_send)
         self.lineEdit_software.textChanged.connect(self.ok_to_send)
-        self.text_edit.textChanged.connect(self.ok_to_send)
+        self.self.text_edit.textChanged.connect(self.ok_to_send)
         self.button_add_screen_grab.clicked.connect(self.screen_grab)
 
     def get_username(self):
@@ -339,7 +420,7 @@ class ReportBugDialog(LJDialog):
         return self.lineEdit_subject.text()
 
     def get_message(self):
-        return self.text_edit.toPlainText()
+        return self.self.text_edit.toPlainText()
 
     def add_attachments(self, file_paths=None):
         if not file_paths:
