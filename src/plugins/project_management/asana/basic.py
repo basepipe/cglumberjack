@@ -46,8 +46,6 @@ class AsanaJack(object):
                 return t
         return None
 
-    # CREATION METHODS
-    
     def create_project(self, project_name, create_sections=True):
         project = self.find_project_data(project_name)
         if not project:
