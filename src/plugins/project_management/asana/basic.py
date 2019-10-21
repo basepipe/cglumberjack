@@ -1,5 +1,4 @@
 import asana
-import json
 
 
 class AsanaJack(object):
@@ -10,7 +9,7 @@ class AsanaJack(object):
     task_data = None
 
     def __init__(self):
-        lmill_token = '0/a0bcee9eaec3882d7d15112eb13dac4b'
+        lmill_token = '0/a0bcee9eaec3882d7d15112eb13dac4b'  # personal Token for Tom's account - have to change to app
         # create the asana client
         self.client = asana.Client.access_token(lmill_token)
         # Get your user info
@@ -50,11 +49,11 @@ class AsanaJack(object):
     # CREATION METHODS
     
     def create_project(self, project_name, create_sections=True):
-        # see if it already exists
         project = self.find_project_data(project_name)
         if not project:
-            self.project_data = self.client.projects.create_in_workspace(self.workspace_data['id'], {'name': project_name,
-                                                                                           'default_view': 'board'})
+            self.project_data = self.client.projects.create_in_workspace(self.workspace_data['id'],
+                                                                         {'name': project_name,
+                                                                          'default_view': 'board'})
             if create_sections:
                 self.create_section(project_name, 'Backlog')
                 self.create_section(project_name, 'TODO')
@@ -84,7 +83,8 @@ class AsanaJack(object):
                                                        'projects': [project['gid']]})
             return self.task_data
 
-    def create_note(self):
+    @staticmethod
+    def create_note():
         section_one = "<strong>This is a Title:</strong>  This is not"
         ordered_list_items = "<ol><li>Item One</li><li>Item two</li><li>Item three</li></ol>"
         unordered_list_items = "<ul><li>Item One</li><li>Item two</li><li>Item three</li></ul>"
@@ -96,9 +96,9 @@ class AsanaJack(object):
         link_text = 'This is a link: <a href="http://www.google.com">"Google"</a>, asana only displays whats in href'
 
         return "<body>%s%s\n\n%s%s\n%s\n%s\n%s\n%s\n%s</body>" % (section_one, ordered_list_items,
-                                                              section_two, unordered_list_items,
-                                                              italic_text, underline_text, strikethrough_text,
-                                                              code_text, link_text)
+                                                                  section_two, unordered_list_items,
+                                                                  italic_text, underline_text, strikethrough_text,
+                                                                  code_text, link_text)
 
     # Deletion Methods
 
@@ -108,14 +108,7 @@ class AsanaJack(object):
             self.client.sections.delete(section_data['id'])
 
 
-
 # AsanaJack().create_project('Test Project D')
-#print AsanaJack().find_task_data(project_name='Test Project D', task_name='task 1')
-note = AsanaJack().create_note()
-AsanaJack().create_task(project_name='Test Project D', section_name='TODO', task_name='task 22', notes=note)
-
-
-
-
-
-
+# print AsanaJack().find_task_data(project_name='Test Project D', task_name='task 1')
+# note = AsanaJack().create_note()
+# AsanaJack().create_task(project_name='Test Project D', section_name='TODO', task_name='task 22', notes=note)
