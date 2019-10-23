@@ -605,7 +605,8 @@ class CGLumberjack(LJMainWindow):
         request_feature_button.triggered.connect(self.feature_request_clicked)
         time_tracking.triggered.connect(self.time_tracking_clicked)
 
-    def time_tracking_clicked(self):
+    @staticmethod
+    def time_tracking_clicked():
         from cglui.widgets.dialog import TimeTracker
         dialog = TimeTracker()
         dialog.exec_()

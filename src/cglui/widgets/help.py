@@ -19,10 +19,28 @@ class RequestFeatureDialog(LJDialog):
         self.rtf_task_text = ''
         self.requirements_list = []
         self.results_list = []
+        # This list should be connected to
+        repo_list = ['cglumberjack', 'core_tools', 'onboarding']
+        self.repo_dict = {'cglumberjack': {'guis': {'Lumbermill': ['src/apps/lumbermill/main.py'],
+                                                    'Pipeline Designer': ['src/apps/pipeline/designer.py'],
+                                                    'Request Feature': ['src/cglui/widgets/help.py',
+                                                                        'RequestFeatureDialog()'],
+                                                    'Time Tracker': ['src/cglui/widgets/dialog.py', 'TimeTracker()'],
+                                                    'Report Bug': ['src/cglui/widgets/help.py', 'ReportBugDialog()']
+                                                    },
+                                           'language': 'Python 2.7'
+                                           },
+                          'core_tools': {'guis': {'None': ['']},
+                                         'language': ''},
+                          'onboarding': {'guis': {'None': ['']},
+                                         'language': ''},
+                          'None': {'guis': {'None': ['']},
+                                   'language': ''}
+                          }
         software_list = sorted(['Smedge', 'Deadline', 'Maya', 'Nuke', 'Unreal Engine', 'Unity', 'Adobe Premiere',
                                 'Lumbermill', 'Github', 'Slack', 'S3', 'EC2', 'Asana'])
         software_list.insert(0, '')
-        language_list = sorted(['Python2.7', 'C++', 'C#', '.bat', 'wordpress', 'CMD', 'Bash script'])
+        language_list = sorted(['', 'Python 2.7', 'C++', 'C#', '.bat', 'wordpress', 'CMD', 'Bash script'])
         language_list.insert(0, '')
         deliverable_list = sorted(['CMD shell command', 'Batch script', '.bat script', 'Function (new)',
                                    'Function (existing)', 'Gui', 'Class', 'File (new)', 'File (existing)', 'Tutorial'])
@@ -129,37 +147,43 @@ class RequestFeatureDialog(LJDialog):
                                     },
                           }
         layout = QtWidgets.QVBoxLayout()
+        right_layout = QtWidgets.QVBoxLayout()
+        left_layout = QtWidgets.QVBoxLayout()
+        h_layout = QtWidgets.QHBoxLayout()
         grid = QtWidgets.QGridLayout()
-        grid2 = QtWidgets.QGridLayout()
-        self.setMinimumWidth(800)
+        self.setMinimumWidth(400)
 
         # all the labels
-        label_details = QtWidgets.QLabel('Details:')
-        label_details.setProperty('class', 'ultra_title')
-        label_task_info = QtWidgets.QLabel('Task Info:')
-        label_task_info.setProperty('class', 'ultra_title')
+        self.label_details = QtWidgets.QLabel('Details:')
+        self.label_details.setProperty('class', 'ultra_title')
+        self.label_code_info = QtWidgets.QLabel('Code Info:')
+        self.label_code_info.setProperty('class', 'ultra_title')
+        self.label_task_info = QtWidgets.QLabel('Task Info:')
+        self.label_task_info.setProperty('class', 'ultra_title')
         label_description = QtWidgets.QLabel('Description:')
-        label_software = QtWidgets.QLabel('Product:')
-        label_language = QtWidgets.QLabel("Language:")
-        label_deliverable = QtWidgets.QLabel('Deliverable:')
+        self.label_software = QtWidgets.QLabel('External Product(s):')
+        self.label_language = QtWidgets.QLabel("Language:")
+        self.label_deliverable = QtWidgets.QLabel('Deliverable:')
         self.label_code_location = QtWidgets.QLabel('Code Location:')
-        label_delivery_method = QtWidgets.QLabel('Delivery Method:')
-        label_requirements = QtWidgets.QLabel('Requirements:')
-        label_expected_results = QtWidgets.QLabel('Expected Results:')
-        label_resources = QtWidgets.QLabel('Resources:')
-        label_resources.setProperty('class', 'ultra_title')
-        label_documentation = QtWidgets.QLabel('Documentation:')
-        label_videos = QtWidgets.QLabel('Videos:')
-        label_cgl_examples = QtWidgets.QLabel('CGL Examples & Tutorials:')
-        label_attachments = QtWidgets.QLabel('Attachments:')
-        label_task_text = QtWidgets.QLabel('Task Preview Text:')
-        label_task_text.setProperty('class', 'ultra_title')
-        label_task_title = QtWidgets.QLabel("Title")
+        self.label_delivery_method = QtWidgets.QLabel('Delivery Method:')
+        self.label_requirements = QtWidgets.QLabel('Other Requirements:')
+        self.label_expected_results = QtWidgets.QLabel('Expected Results:')
+        self.label_expected_results.setProperty('class', 'ultra_title')
+        self.label_resources = QtWidgets.QLabel('Resources:')
+        self.label_resources.setProperty('class', 'ultra_title')
+        self.label_repo = QtWidgets.QLabel('Repo:')
+        self.label_gui = QtWidgets.QLabel('GUI:')
+        self.label_files = QtWidgets.QLabel('File(s):')
+        self.label_attachments = QtWidgets.QLabel('Attachments:')
+        self.label_task_text = QtWidgets.QLabel('Task Text:')
+        self.label_task_text.setProperty('class', 'ultra_title')
+        self.label_task_title = QtWidgets.QLabel("Title")
+        self.label_functions = QtWidgets.QLabel("Function(s)")
+        self.message_files = QtWidgets.QLabel()
+        self.message_functions = QtWidgets.QLabel()
         self.message_requirements = QtWidgets.QLabel()
         self.message_expected_results = QtWidgets.QLabel()
-        self.message_requirements.hide()
-        self.message_expected_results.hide()
-
+        self.message_software = QtWidgets.QLabel()
 
         # all the combo boxes:
         self.combo_software = AdvComboBox()
@@ -171,6 +195,12 @@ class RequestFeatureDialog(LJDialog):
         self.combo_delivery_method = AdvComboBox()
         self.combo_delivery_method.addItems(delivery_method_list)
         self.text_edit = QtWidgets.QTextEdit()
+        self.combo_files = AdvComboBox()
+        self.combo_repo = AdvComboBox()
+        self.combo_repo.addItems(self.repo_dict.keys())
+        ind = self.combo_repo.findText('cglumberjack')
+        self.combo_repo.setCurrentIndex(ind)
+        self.combo_gui = AdvComboBox()
 
         self.submit_task_button = QtWidgets.QPushButton('Submit Task')
         self.submit_task_button.setDefault(False)
@@ -192,93 +222,251 @@ class RequestFeatureDialog(LJDialog):
         self.documentation_line_edit = QtWidgets.QLineEdit()
         self.videos_line_edit = QtWidgets.QLineEdit()
         self.cgl_line_edit = QtWidgets.QLineEdit()
+        self.line_edit_functions = QtWidgets.QLineEdit()
         
         self.widget_dict = {self.requirements_line_edit: self.message_requirements,
                             self.expected_results_line_edit: self.message_expected_results,
+                            self.combo_gui: self.message_files
                             }
         self.bullet_dict = {self.requirements_line_edit: self.requirements_list,
                             self.expected_results_line_edit: self.results_list,
                             }
 
-        grid.addWidget(label_software, 1, 0)
-        grid.addWidget(self.combo_software, 1, 1)
-        grid.addWidget(label_language, 1, 2)
-        grid.addWidget(self.combo_language, 1, 3)
-        grid.addWidget(label_deliverable, 3, 0)
-        grid.addWidget(self.combo_deliverable_list, 3, 1)
-        grid.addWidget(label_delivery_method, 3, 2)
-        grid.addWidget(self.combo_delivery_method, 3, 3)
-        grid.addWidget(self.label_code_location, 4, 0)
-        grid.addWidget(self.location_line_edit, 4, 1)
+        grid.addWidget(self.label_task_title, 0, 0)
+        grid.addWidget(self.title_line_edit, 0, 1)
+        grid.addWidget(label_description, 1, 0)
+        grid.addWidget(self.description_line_edit, 1, 1)
+        grid.addWidget(self.label_code_info, 4, 0)
 
-        grid2.addWidget(label_task_title, 0, 0)
-        grid2.addWidget(self.title_line_edit, 0, 1)
-        grid2.addWidget(label_description, 0, 2)
-        grid2.addWidget(self.description_line_edit, 0, 3)
-        grid2.addWidget(label_requirements, 1, 0)
-        grid2.addWidget(self.requirements_line_edit, 1, 1)
-        grid2.addWidget(self.message_requirements, 2, 1)
-        grid2.addWidget(label_expected_results, 1, 2)
-        grid2.addWidget(self.expected_results_line_edit, 1, 3)
-        grid2.addWidget(self.message_expected_results, 2, 3)
+        grid.addWidget(self.label_repo, 10, 0)
+        grid.addWidget(self.combo_repo, 10, 1)
+        grid.addWidget(self.label_language, 11, 0)
+        grid.addWidget(self.combo_language, 11, 1)
+        grid.addWidget(self.label_gui, 12, 0)
+        grid.addWidget(self.combo_gui, 12, 1)
+
+        grid.addWidget(self.label_files, 13, 0)
+        grid.addWidget(self.combo_files, 13, 1)
+        grid.addWidget(self.message_files, 14, 1)
+
+        grid.addWidget(self.label_functions, 15, 0)
+        grid.addWidget(self.line_edit_functions, 15, 1)
+        grid.addWidget(self.message_functions, 16, 1)
+        grid.addWidget(self.label_delivery_method, 17, 0)
+        grid.addWidget(self.combo_delivery_method, 17, 1)
+        grid.addWidget(self.label_deliverable, 18, 0)
+        grid.addWidget(self.combo_deliverable_list, 18, 1)
+
+        grid.addWidget(self.label_details, 20, 0)
+        grid.addWidget(self.label_software, 21, 0)
+        grid.addWidget(self.combo_software, 21, 1)
+        grid.addWidget(self.message_software, 22, 1)
+        grid.addWidget(self.label_requirements, 23, 0)
+        grid.addWidget(self.requirements_line_edit, 23, 1)
+        grid.addWidget(self.message_requirements, 24, 1)
+
+        grid.addWidget(self.label_expected_results, 26, 0)
+        grid.addWidget(self.expected_results_line_edit,  27, 1)
+        grid.addWidget(self.message_expected_results, 28, 1)
+        # grid.addWidget(self.label_code_location, 28, 0)
+        # grid.addWidget(self.location_line_edit, 28, 1)
 
         #layout.addLayout(task_layout)
-        layout.addWidget(label_details)
-        layout.addLayout(grid)
-        layout.addWidget(label_task_info)
-        layout.addLayout(grid2)
-        # layout.addWidget(label_resources)
-        # layout.addWidget(label_documentation)
-        # layout.addWidget(self.documentation_line_edit)
-        # layout.addWidget(label_videos)
-        # layout.addWidget(self.videos_line_edit)
-        # layout.addWidget(label_cgl_examples)
-        # layout.addWidget(self.cgl_line_edit)
-        # layout.addWidget(label_attachments)
-        layout.addWidget(label_task_text)
-        layout.addWidget(self.text_edit)
+        right_layout.addWidget(self.label_task_info)
+        right_layout.addLayout(grid)
+        right_layout.addStretch(1)
+        left_layout.addWidget(self.label_task_text)
+        left_layout.addWidget(self.text_edit)
+        h_layout.addLayout(right_layout)
+        h_layout.addLayout(left_layout)
+        layout.addLayout(h_layout)
         layout.addLayout(button_row)
+
 
         self.setLayout(layout)
         self.setWindowTitle(title)
 
         self.combo_deliverable_list.currentIndexChanged.connect(self.show_code_location)
+        self.combo_gui.currentIndexChanged.connect(self.on_gui_chosen)
         self.requirements_line_edit.returnPressed.connect(self.add_bullets)
+        self.requirements_line_edit.textChanged.connect(self.update_text_edit)
         self.expected_results_line_edit.returnPressed.connect(self.add_bullets)
+        self.expected_results_line_edit.textChanged.connect(self.update_text_edit)
         self.combo_software.currentIndexChanged.connect(self.update_text_edit)
+        self.combo_software.currentIndexChanged.connect(self.show_stuff)
+        self.combo_software.currentIndexChanged.connect(self.on_software_chosen)
         self.combo_language.currentIndexChanged.connect(self.update_text_edit)
         self.combo_deliverable_list.currentIndexChanged.connect(self.update_text_edit)
         self.combo_delivery_method.currentIndexChanged.connect(self.update_text_edit)
         self.description_line_edit.textChanged.connect(self.update_text_edit)
+        self.description_line_edit.returnPressed.connect(self.show_stuff)
         self.location_line_edit.textChanged.connect(self.update_text_edit)
         self.submit_task_button.clicked.connect(self.on_submit_clicked)
+        self.combo_repo.currentIndexChanged.connect(self.on_repo_chosen)
+        self.on_repo_chosen()
         self.show_code_location()
         self.update_text_edit()
         # self.submit_task_button.setEnabled(False)
+        self.hide_all()
+
+        # TODO: add bullets underneath External Products
+        # pull in files and functions to the "requirements"
+        # pull in Repo to the requirements
+        # pull in external products to the requirements
+        # placeholder text on filescombo
+        # placeholder text on functionscombo
+        # add links to the task text
+
+
+    def choose_deliverable(self):
+        if self.message_functions or self.message_files:
+            index = self.combo_deliverable_list.findText('File (existing)')
+            self.combo_deliverable_list.setCurrentIndex(index)
+
+    def show_stuff(self):
+        if self.sender() == self.description_line_edit:
+            self.label_code_info.show()
+            self.label_language.show()
+            self.label_repo.show()
+            self.label_gui.show()
+            self.combo_repo.show()
+            self.combo_gui.show()
+            self.combo_language.show()
+            # change focus to the combo_gui.
+            self.combo_gui.setFocus()
+        elif self.sender() == self.combo_gui:
+            self.label_files.show()
+            self.combo_files.show()
+            self.message_files.show()
+            self.label_functions.show()
+            self.line_edit_functions.show()
+            self.message_functions.show()
+            self.label_details.show()
+            self.label_software.show()
+            self.combo_software.show()
+            self.label_delivery_method.show()
+            self.combo_delivery_method.show()
+            self.label_deliverable.show()
+            self.combo_deliverable_list.show()
+            self.choose_deliverable()
+            self.combo_software.setFocus()
+        elif self.sender() == self.combo_software:
+            self.label_requirements.show()
+            self.requirements_line_edit.show()
+            #self.label_code_location.show()
+            #self.location_line_edit.show()
+            self.label_task_info.show()
+            self.label_task_text.show()
+            self.label_expected_results.show()
+            self.expected_results_line_edit.show()
+            self.text_edit.show()
+            self.setMinimumWidth(1200)
+            self.expected_results_line_edit.setFocus()
+            self.submit_task_button.setEnabled(True)
+        else:
+            pass
+            # self.label_resources.show()
+            # self.label_attachments.show()
+            # self.message_expected_results.show()
+            # self.text_edit.show()
+            # self.documentation_line_edit.show()
+            # self.videos_line_edit.show()
+            # self.cgl_line_edit.show()
+
+    def hide_all(self):
+        self.message_software.hide()
+        self.label_details.hide()
+        self.label_details.hide()
+        self.label_code_info.hide()
+        self.label_code_info.hide()
+        self.label_task_info.hide()
+        self.label_software.hide()
+        self.label_language.hide()
+        self.label_deliverable.hide()
+        self.label_code_location.hide()
+        self.label_delivery_method.hide()
+        self.label_requirements.hide()
+        self.label_resources.hide()
+        self.label_repo.hide()
+        self.label_gui.hide()
+        self.label_files.hide()
+        self.label_attachments.hide()
+        self.label_task_text.hide()
+        self.label_functions.hide()
+        self.label_expected_results.hide()
+        self.expected_results_line_edit.hide()
+
+        self.location_line_edit.hide()
+        self.requirements_line_edit.hide()
+        self.documentation_line_edit.hide()
+        self.videos_line_edit.hide()
+        self.cgl_line_edit.hide()
+        self.line_edit_functions.hide()
+        self.message_files.hide()
+        self.message_functions.hide()
+        self.message_requirements.hide()
+        self.message_expected_results.hide()
+        self.message_requirements.hide()
+        self.message_expected_results.hide()
+        self.message_files.hide()
+        self.message_functions.hide()
+
+        # all the combo boxes:
+        self.combo_software.hide()
+        self.combo_language .hide()
+        self.combo_deliverable_list.hide()
+        self.combo_delivery_method.hide()
+        self.text_edit.hide()
+        self.combo_files.hide()
+        self.combo_repo.hide()
+        self.combo_gui.hide()
+
+        self.submit_task_button.setEnabled(False)
+
+    def on_repo_chosen(self):
+        repo = self.combo_repo.currentText()
+        self.combo_gui.clear()
+        self.combo_gui.insertItem(0, '')
+        self.combo_gui.addItems(self.repo_dict[repo]['guis'].keys())
+        language = self.repo_dict[repo]['language']
+        index = self.combo_language.findText(language)
+        self.combo_language.setCurrentIndex(index)
 
     def on_submit_clicked(self):
-        AsanaJack().create_task(project_name='Test Project A', section_name='Backlog',
+        AsanaJack().create_project('General Development')
+        AsanaJack().create_task(project_name='General Development', section_name='Backlog',
                                 task_name=self.title_line_edit.text(), notes=self.rtf_task_text)
         self.accept()
 
     def update_text_edit(self):
         """
         """
-        # self.safe_to_submit()
-        rtf_software = self.rtf_label('Software', self.combo_software.currentText())
+        rtf_repo = self.rtf_label('Repo', self.combo_repo.currentText())
         rtf_language = self.rtf_label('Language', self.combo_language.currentText())
         rtf_deliverable = self.rtf_label("Deliverable", self.combo_deliverable_list.currentText())
         rtf_delivery_method = self.rtf_label("Delivery Method", self.combo_delivery_method.currentText())
-        info_line = "%s, %s\n\n" % (rtf_software, rtf_language)
+
         rtf_task_description = "<strong>Task Description:</strong>\n\t%s\n\n" % self.description_line_edit.text()
-        rtf_code_location = "<strong>Code Location:</strong>\n\t<code>%s</code>\n\n" % self.location_line_edit.text()
+        self.requirements_list = [rtf_repo, rtf_language]
+        self.requirements_list.extend(self.list_from_bullets(self.message_software))
+        self.requirements_list.extend(self.list_from_bullets(self.message_files))
+        self.requirements_list.extend(self.list_from_bullets(self.message_functions))
+        self.requirements_list.extend(self.list_from_bullets(self.message_requirements))
+        self.results_list = [rtf_deliverable, rtf_delivery_method]
+        self.results_list.extend(self.list_from_bullets(self.message_expected_results))
         rtf_requirements = self.rtf_bullet_list('Requirements:', self.requirements_list)
         rtf_expected_results = self.rtf_bullet_list('Expected Results:', self.results_list)
-        rtf_deliverables = self.rtf_bullet_list("What You'll Deliver:", [rtf_deliverable, rtf_delivery_method])
-        self.rtf_task_text = "<body>%s%s%s%s%s%s</body>" % (info_line, rtf_task_description, rtf_code_location,
-                                                            rtf_requirements, rtf_expected_results, rtf_deliverables)
+        self.rtf_task_text = "<body>%s%s%s</body>" % (rtf_task_description, rtf_requirements, rtf_expected_results)
         self.text_edit.setAcceptRichText(True)
         self.text_edit.setText(self.rtf_task_text)
+
+    @staticmethod
+    def list_from_bullets(message_widget):
+        text = message_widget.text()
+        print '---------------'
+        print text
+        text = text.replace('\n', '')
+        return text.split(r'    * ')
 
     @staticmethod
     def rtf_label(bold_text, regular_text):
@@ -310,22 +498,57 @@ class RequestFeatureDialog(LJDialog):
 
     def check_description_length(self):
         pass
-    
-    def add_bullets(self, line_edit=None):
-        if not line_edit:
-            line_edit = self.sender()
-        current_text = line_edit.text()
-        requirements_text = self.widget_dict[line_edit].text()
-        list_ = self.bullet_dict[line_edit]
-        list_.append(current_text)
-        self.update_text_edit()
-        if not requirements_text:
-            requirements_text = '    *%s' % current_text
+
+    def on_software_chosen(self):
+        bullet_text = self.sender().currentText()
+        if bullet_text:
+            if bullet_text not in str(self.message_software.text()):
+                self.new_bullet_text(self.message_software, bullet_text)
+                self.list_from_bullets(self.message_software)
+                self.sender().setCurrentIndex(0)
+            else:
+                self.sender().setCurrentIndex(0)
         else:
-            requirements_text = '%s\n    *%s' % (requirements_text, current_text)
-        self.widget_dict[line_edit].setText(requirements_text)
-        line_edit.setText('')
-        self.widget_dict[line_edit].show()
+            print 'No Text'
+
+    def on_gui_chosen(self):
+        self.show_stuff()
+        self.message_files.setText('')
+        self.message_files.hide()
+        gui = self.sender().currentText()
+        if gui:
+            bullets = self.repo_dict[self.combo_repo.currentText()]['guis'][gui]
+            for each in bullets:
+                if '()' in each:
+                    self.new_bullet_text(self.message_functions, each)
+                else:
+                    self.new_bullet_text(self.message_files, each)
+
+    @staticmethod
+    def new_bullet_text(message_widget, bullet_item):
+        new_text = message_widget.text()
+        if not new_text:
+            new_text = '    * %s' % bullet_item
+        else:
+            new_text = '%s\n    * %s' % (new_text, bullet_item)
+        message_widget.setText(new_text)
+        message_widget.show()
+
+    def add_bullets(self):
+        if isinstance(self.sender(), QtWidgets.QLineEdit):
+            current_text = self.sender().text()
+            bullet_text = self.widget_dict[self.sender()].text()
+            list_ = self.bullet_dict[self.sender()]
+            list_.append(current_text)
+            self.update_text_edit()
+            if not bullet_text:
+                requirements_text = '    * %s' % current_text
+            else:
+                requirements_text = '%s\n    * %s' % (bullet_text, current_text)
+            self.widget_dict[self.sender()].setText(requirements_text)
+            self.sender().setText('')
+            self.widget_dict[self.sender()].show()
+
 
 class ReportBugDialog(LJDialog):
 
@@ -349,7 +572,7 @@ class ReportBugDialog(LJDialog):
         # define the software area
         self.label_messaging = QtWidgets.QLabel('*All fields must have valid values \nbefore submitting bug report')
         self.label_messaging.setStyleSheet('color: red')
-        self.label_software = QtWidgets.QLabel('Software')
+        self.self.label_software = QtWidgets.QLabel('Software')
         self.label_description = QtWidgets.QLabel('Description of Issue:')
         self.lineEdit_software = QtWidgets.QLineEdit()
         self.label_subject = QtWidgets.QLabel('Subject')
@@ -378,7 +601,7 @@ class ReportBugDialog(LJDialog):
         grid_layout.addWidget(self.lineEdit_username, 0, 1)
         grid_layout.addWidget(self.label_email, 1, 0)
         grid_layout.addWidget(self.lineEdit_email, 1, 1)
-        grid_layout.addWidget(self.label_software, 2, 0)
+        grid_layout.addWidget(self.self.label_software, 2, 0)
         grid_layout.addWidget(self.lineEdit_software, 2, 1)
         grid_layout.addWidget(self.label_subject, 3, 0)
         grid_layout.addWidget(self.lineEdit_subject, 3, 1)
