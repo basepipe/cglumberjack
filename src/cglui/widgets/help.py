@@ -19,6 +19,7 @@ class RequestFeatureDialog(LJDialog):
         self.rtf_task_text = ''
         self.requirements_list = []
         self.results_list = []
+        self.links_list = []
         # This list should be connected to
         repo_list = ['cglumberjack', 'core_tools', 'onboarding']
         self.repo_dict = {'cglumberjack': {'guis': {'Lumbermill': ['src/apps/lumbermill/main.py'],
@@ -46,7 +47,7 @@ class RequestFeatureDialog(LJDialog):
                                    'Function (existing)', 'Gui', 'Class', 'File (new)', 'File (existing)', 'Tutorial'])
         deliverable_list.insert(0, '')
         delivery_method_list = ['Github Pull Request', 'Send to Slack Channel']
-        reference_dict = {'smedge': {'documentation': {'user manual': 'https://www.uberware.net/User_Manual.pdf',
+        self.reference_dict = {'smedge': {'documentation': {'user manual': 'https://www.uberware.net/User_Manual.pdf',
                                                        'admin manual': 'https://www.uberware.net/Administrator_Manual.pdf',
                                                        'command line reference': 'http://dev.uberware.net/smedge2/manual/cli.shtml'},
                                      'videos': {},
@@ -103,7 +104,7 @@ class RequestFeatureDialog(LJDialog):
                                   'videos': {},
                                   'CGL Examples': {}
                                   },
-                          'python2.7': {'documentation': {},
+                          'python 2.7': {'documentation': {},
                                         'videos': {},
                                         'CGL Examples': {}
                                         },
@@ -317,7 +318,6 @@ class RequestFeatureDialog(LJDialog):
         # placeholder text on functionscombo
         # add links to the task text
 
-
     def choose_deliverable(self):
         if self.message_functions or self.message_files:
             index = self.combo_deliverable_list.findText('File (existing)')
@@ -456,15 +456,30 @@ class RequestFeatureDialog(LJDialog):
         self.results_list.extend(self.list_from_bullets(self.message_expected_results))
         rtf_requirements = self.rtf_bullet_list('Requirements:', self.requirements_list)
         rtf_expected_results = self.rtf_bullet_list('Expected Results:', self.results_list)
-        self.rtf_task_text = "<body>%s%s%s</body>" % (rtf_task_description, rtf_requirements, rtf_expected_results)
+        links = self.get_relevant_links()
+        rtf_links = ''
+        if links:
+            rtf_links = self.rtf_bullet_list('Resources:', links)
+        self.rtf_task_text = "<body>%s%s%s%s</body>" % (rtf_task_description, rtf_requirements, rtf_expected_results,
+                                                        rtf_links)
         self.text_edit.setAcceptRichText(True)
         self.text_edit.setText(self.rtf_task_text)
+
+    def get_relevant_links(self):
+        links = []
+        for s in self.list_from_bullets(self.message_software):
+            print s.lower()
+            if s.lower() in self.reference_dict.keys():
+                for link_type in self.reference_dict[s.lower()]:
+                    for link in self.reference_dict[s.lower()][link_type]:
+                        text = '%s - %s: <a href="%s">%s</a>' % (s, link, self.reference_dict[s.lower()][link_type][link], link)
+                        links.append(text)
+        return links
+
 
     @staticmethod
     def list_from_bullets(message_widget):
         text = message_widget.text()
-        print '---------------'
-        print text
         text = text.replace('\n', '')
         return text.split(r'    * ')
 
