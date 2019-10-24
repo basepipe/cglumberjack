@@ -453,7 +453,7 @@ class ConfigDialog(QtWidgets.QDialog):
 
     def cancel_clicked(self):
         self.accept()
-        
+
     def show_project_management_basics(self):
         self.project_management_label.show()
         self.proj_management_label.show()
