@@ -9,7 +9,8 @@ class AsanaJack(object):
     task_data = None
 
     def __init__(self):
-        lmill_token = '0/a0bcee9eaec3882d7d15112eb13dac4b'  # personal Token for Tom's account - have to change to app
+        # TODO - change this over to the "APP" rather than individual user token, this will only work for Tom currently.
+        lmill_token = '0/a0bcee9eaec3882d7d15112eb13dac4b'
         # create the asana client
         self.client = asana.Client.access_token(lmill_token)
         # Get your user info
@@ -81,8 +82,11 @@ class AsanaJack(object):
                                                        'projects': [project['gid']]})
             return self.task_data
 
-    @staticmethod
-    def create_note():
+    def create_note(self, task_description, software=None, language=None, deliverable=None, code_location=None,
+                    delivery_method=None, requirements=None, expected_results=None, resources=None):
+        """
+        Formats a Note according to the CGLumberjack task requirements.
+        examples:
         section_one = "<strong>This is a Title:</strong>  This is not"
         ordered_list_items = "<ol><li>Item One</li><li>Item two</li><li>Item three</li></ol>"
         unordered_list_items = "<ul><li>Item One</li><li>Item two</li><li>Item three</li></ul>"
@@ -93,20 +97,48 @@ class AsanaJack(object):
         code_text = '<code>    print "this is code text"</code>'
         link_text = 'This is a link: <a href="http://www.google.com">"Google"</a>, asana only displays whats in href'
 
-        return "<body>%s%s\n\n%s%s\n%s\n%s\n%s\n%s\n%s</body>" % (section_one, ordered_list_items,
-                                                                  section_two, unordered_list_items,
-                                                                  italic_text, underline_text, strikethrough_text,
-                                                                  code_text, link_text)
+        :param software:
+        :param language:
+        :param deliverable:
+        :param code_location:
+        :param del_method:
+        :param requirements:
+        :param expected_results:
+        :param resources:
+        :return: rich text string for use as a note within the self.create_task script.
+        """
+        rtf_software = self.rtf_label('Software', software)
+        rtf_language = self.rtf_label('Language', language)
+        rtf_deliverable = self.rtf_label("Deliverable", deliverable)
+        rtf_delivery_method = self.rtf_label("Delivery Method", delivery_method)
+        info_line = "%s, %s\n\n" % (rtf_software, rtf_language)
+        rtf_task_description = "<strong>Task Description:</strong>\n\t%s\n\n" % task_description
+        rtf_code_location = "<strong>Code Location:</strong>\n\t<code>%s</code>\n\n" % code_location
+        rtf_requirements = self.rtf_bullet_list('Requirements:', requirements)
+        rtf_expected_results = self.rtf_bullet_list('Expected Results:', expected_results)
+        rtf_deliverables = self.rtf_bullet_list("What You'll Deliver:", [rtf_deliverable, rtf_delivery_method])
+        return "<body>%s%s%s%s%s%s</body>" % (info_line, rtf_task_description, rtf_code_location, rtf_requirements,
+                                              rtf_expected_results, rtf_deliverables)
 
-    # Deletion Methods
+    @staticmethod
+    def rtf_label(bold_text, regular_text):
+        if regular_text:
+            return "<strong>%s: </strong>%s" % (bold_text, regular_text)
+        else:
+            return "<strong>%s:</strong>%s" % (bold_text, 'Not Defined')
+
+    @staticmethod
+    def rtf_bullet_list(bold_label, bullet_list):
+        if bullet_list:
+            rtf_ul = "<strong>%s</strong>\n<ul>" % bold_label
+            for each in bullet_list:
+                rtf_ul += "<li>%s</li>" % each
+            rtf_ul += "</ul>\n"
+            return rtf_ul
+        else:
+            return "<strong>%s</strong>\n" % bold_label
 
     def delete_section(self, project_name, section_name):
         section_data = self.find_section_data(project_name, section_name)
         if section_data:
             self.client.sections.delete(section_data['id'])
-
-
-# AsanaJack().create_project('Test Project D')
-# print AsanaJack().find_task_data(project_name='Test Project D', task_name='task 1')
-# note = AsanaJack().create_note()
-# AsanaJack().create_task(project_name='Test Project D', section_name='TODO', task_name='task 22', notes=note)

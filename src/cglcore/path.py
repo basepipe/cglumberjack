@@ -904,7 +904,7 @@ def start(filepath):
             os.startfile(filepath)
             return
     command = (cmd + filepath)
-
+    # this command will only ever be run locally, it does not need render farm support
     subprocess.Popen(command, shell=True)
 
 
@@ -929,6 +929,7 @@ def show_in_folder(path_string):
 
     command = (cmd + full_path)
     logging.info("running command: %s" % command)
+    # this command will only ever be run locally, it does not need render management support
     subprocess.Popen(command, shell=True)
 
 

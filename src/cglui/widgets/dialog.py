@@ -8,6 +8,73 @@ from cglui.widgets.containers.table import LJTableWidget
 from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.base import LJDialog
 from cglcore.util import current_user
+from cglcore.path import icon_path
+
+
+class TimeTracker(LJDialog):
+
+    def __init__(self):
+        LJDialog.__init__(self)
+
+        self.setWindowTitle('Time Tracker')
+        self.weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        self.today = datetime.datetime.today()
+        self.day_name = self.weekdays[self.today.weekday()]
+        self.date = self.today.date()
+        self.calendar_tool_button = QtWidgets.QToolButton()
+        calendar_icon_path = icon_path('calendar24px.png')
+        self.calendar_tool_button.setIcon(QtGui.QIcon(calendar_icon_path))
+        self.calendar_tool_button.setMinimumWidth(24)
+        self.calendar_tool_button.setMinimumHeight(24)
+        self.calendar_tool_button.setProperty('class', 'border')
+        time_for_date_label = QtWidgets.QLabel('Time Card')
+        time_for_date_label.setProperty('class', 'ultra_title')
+        layout = QtWidgets.QVBoxLayout()
+        label_user_name = QtWidgets.QLabel('tom mikota')
+        label_user_name.setProperty('class', 'ultra_title')
+        self.label_time_recorded = QtWidgets.QLabel('<b>Time Recorded:</b>')
+        self.label_time_recorded.setProperty('class', 'large')
+        button_add_time = QtWidgets.QPushButton('Add Time')
+        button_add_time.setProperty('class', 'basic')
+        self.calendar = QtGui.QCalendarWidget()
+        self.task_table = LJTableWidget(self)
+        self.task_table.setMinimumHeight(250)
+        self.task_table.setMinimumWidth(400)
+
+        button_row = QtWidgets.QHBoxLayout()
+        button_row.addStretch(1)
+        button_row.addWidget(button_add_time)
+
+        user_row = QtWidgets.QHBoxLayout()
+        user_row.addWidget(label_user_name)
+        user_row.addStretch(1)
+        user_row.addWidget(time_for_date_label)
+        time_row = QtWidgets.QHBoxLayout()
+        time_row.addWidget(self.calendar_tool_button)
+        time_row.addWidget(self.label_time_recorded)
+
+        layout.addLayout(user_row)
+        layout.addLayout(time_row)
+        layout.addWidget(self.task_table)
+        layout.addLayout(button_row)
+
+        self.setLayout(layout)
+        self.load_task_hours()
+
+    def load_task_hours(self):
+        tasks = [['King Kong', 'mdl', 3, None],
+                 ['trex', 'mdl', 4, None],
+                 ['blot', 'mdl', 4, None],
+                 ['clot', 'mdl', 4, None]]
+        total = 0
+        for each in tasks:
+            total = each[2]+total
+        print self.today.day
+        print self.today.month
+        print self.today.strftime("%B")
+        label_text = '%s, %s %s:' % (self.day_name, self.today.strftime("%B"), self.today.day)
+        self.label_time_recorded.setText(label_text)
+        self.task_table.set_item_model(FileTableModel(tasks, ['Shot/Asset', 'Task', 'Time Worked', 'Time Remaining']))
 
 
 class FileTableModel(ListItemModel):
