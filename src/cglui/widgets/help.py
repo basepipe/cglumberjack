@@ -21,7 +21,6 @@ class RequestFeatureDialog(LJDialog):
         self.results_list = []
         self.links_list = []
         # This list should be connected to
-        repo_list = ['cglumberjack', 'core_tools', 'onboarding']
         self.repo_dict = {'cglumberjack': {'guis': {'Lumbermill': ['src/apps/lumbermill/main.py'],
                                                     'Pipeline Designer': ['src/apps/pipeline/designer.py'],
                                                     'Request Feature': ['src/cglui/widgets/help.py',
@@ -224,7 +223,6 @@ class RequestFeatureDialog(LJDialog):
         self.videos_line_edit = QtWidgets.QLineEdit()
         self.cgl_line_edit = QtWidgets.QLineEdit()
         self.line_edit_functions = QtWidgets.QLineEdit()
-        
         self.widget_dict = {self.requirements_line_edit: self.message_requirements,
                             self.expected_results_line_edit: self.message_expected_results,
                             self.combo_gui: self.message_files
