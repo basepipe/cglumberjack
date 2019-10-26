@@ -19,7 +19,7 @@ def registerCallbacks(reg):
     sg = shotgun_api3.Shotgun(server, script_name=script_name, api_key=script_key)
 
     args = {
-        'asset_delivery_change': ['sg_asset_delivery']
+        'asset_delivery_change': ['sg_asset_delivery', 'sg_delivery_date']
     }
 
     # Bail if our validator fails.
