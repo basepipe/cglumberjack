@@ -722,9 +722,11 @@ if __name__ == "__main__":
     project_management = app_config()['account_info']['project_management']
     users = app_config()['project_management'][project_management]['users']
     if current_user() in users:
+        print 1
         user_info = users[current_user()]
         if user_info:
-            app = do_gui_init()
+            #app = do_gui_init()
+            app = QtGui.QApplication([])
             splash_pix = QtGui.QPixmap(cglpath.image_path('lumbermill.jpg'))
             #splash_dialog = ProgressDialog('Loading...', 'night_rider.gif')
             #splash_pix.show()
@@ -743,6 +745,7 @@ if __name__ == "__main__":
             # splash_dialog.hide()
             app.exec_()
     else:
+        print 2
         app = do_gui_init()
         mw = LoginDialog()
         # mw = Designer(type_='menus')
