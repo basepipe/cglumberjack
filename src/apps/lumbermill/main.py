@@ -745,8 +745,7 @@ if __name__ == "__main__":
             # splash_dialog.hide()
             app.exec_()
     else:
-        print 2
-        app = do_gui_init()
+        app = QtGui.QApplication([])
         mw = LoginDialog()
         # mw = Designer(type_='menus')
         mw.setWindowTitle('New User Login')
