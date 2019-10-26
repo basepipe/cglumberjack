@@ -7,6 +7,9 @@ pylint
 pandas
 ftrack-python-api
 asana
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
 
 #  http://aka.ms/vcpython27
 # https://s3.amazonaws.com/aws-cli/AWSCLI64.msi
