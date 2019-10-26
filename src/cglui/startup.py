@@ -151,7 +151,7 @@ def _load_lang():
 
 
 def do_gui_init():
-    do_app_init()
+    # do_app_init()
     do_freeze_fix()
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     app = _do_qt_init()

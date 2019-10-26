@@ -45,7 +45,7 @@ def _load_resources():
     """
     # noinspection PyUnresolvedReferences
     if Qt.__binding__ in ["PySide", "PySide2"]:
-        import cglui.testytest
+        import cglui.PySide_rc
 
 
 # noinspection SpellCheckingInspection
@@ -151,23 +151,14 @@ def _load_lang():
 
 
 def do_gui_init():
-    print 1
-    do_app_init()
-    print 2
+    # do_app_init()
     do_freeze_fix()
-    print 3
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    print 4
     app = _do_qt_init()
-    print 5
     _load_resources()
-    print 6
     _load_ui_themes()
-    print 7
     _load_ui_settings()
-    print 8
     _load_lang()
-    print 9
     return app
 
 
@@ -179,3 +170,5 @@ def do_maya_gui_init(gui):
 def do_nuke_gui_init(gui):
     _load_ui_themes(gui)
     _load_ui_settings()
+
+
