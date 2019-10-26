@@ -4,7 +4,7 @@ import json
 import shutil
 from Qt import QtCore, QtWidgets, QtGui
 # from cglui.widgets.containers.dict_tree import DictionaryTreeWidget
-from cglui.util import define_palettes
+# from cglui.util import define_palettes
 
 
 class PathItemWidget(QtWidgets.QWidget):
@@ -29,7 +29,7 @@ class PathItemWidget(QtWidgets.QWidget):
         self.vfx_label = QtWidgets.QLabel('VFX Paths')
         self.vfx_label.setProperty('class', 'ultra_title')
         self.vfx_label.hide()
-        self.red_palette, self.green_palette, self.black_palette = define_palettes()
+        # self.red_palette, self.green_palette, self.black_palette = define_palettes()
         self.cgl_tools_folder = None
         self.widget_dict = {}
         # Add User Globals, Root and The "Paths" label to the first slots.
@@ -82,7 +82,7 @@ class PathItemWidget(QtWidgets.QWidget):
         folder_button.line_edit = line_edit
         folder_button.label = label
         message = QtWidgets.QLabel('Path Not Found, Please Specify %s' % key)
-        message.setPalette(self.red_palette)
+        # message.setPalette(self.red_palette)
         folder_button.message = message
         self.widget_dict[key] = {'label': label,
                                  'line_edit': line_edit,
@@ -99,6 +99,7 @@ class PathItemWidget(QtWidgets.QWidget):
     def on_root_set(self):
         self.root_set.emit()
 
+
     @staticmethod
     def icon_path(filename):
         this = __file__.split('src')[0]
@@ -112,7 +113,7 @@ class PathItemWidget(QtWidgets.QWidget):
         if os.path.exists(path_):
             line_edit.setEnabled(False)
             message.setText('%s Found Path, Ready for Ass Kicking!' % path_name)
-            message.setPalette(self.black_palette)
+            # message.setPalette(self.black_palette)
             self.hide_line(label, line_edit, message, folder_button, hide_on_find)
         else:
             if path_name == 'cgl_tools':
@@ -124,13 +125,13 @@ class PathItemWidget(QtWidgets.QWidget):
                 line_edit.setEnabled(False)
                 line_edit.setText(code_root)
                 message.setText('%s Path Found, Ready for Ass Kicking!' % path_name)
-                message.setPalette(self.black_palette)
+                # message.setPalette(self.black_palette)
                 self.hide_line(label, line_edit, message, folder_button, hide_on_find)
             elif path_name == 'user_globals':
                 line_edit.setText(self.user_globals_path)
                 line_edit.setEnabled(False)
                 message.setText('Setting As Default Location, Click Folder Button to Change')
-                message.setPalette(self.black_palette)
+                # message.setPalette(self.black_palette)
             elif path_name == 'globals':
                 line_edit.setEnabled(False)
                 message.setText('%s Path Not Found, set "root"!' % path_name)
@@ -204,7 +205,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.proj_management_label = QtWidgets.QLabel('Software:')
         self.proj_management_combo = QtWidgets.QComboBox()
         self.proj_management_combo.addItems(['lumbermill', 'ftrack', 'shotgun'])
-        self.red_palette, self.green_palette, self.black_palette = define_palettes()
+        # self.red_palette, self.green_palette, self.black_palette = define_palettes()
 
         self.user_email_label = QtWidgets.QLabel('User Email:')
         self.user_email_line_edit = QtWidgets.QLineEdit()
@@ -301,7 +302,8 @@ class ConfigDialog(QtWidgets.QDialog):
         self.on_pm_changed()
         self.check_user_config()
         # self.globals_tree_widget.hide()
-        # self.on_globals_changed()
+        self.on_globals_changed()
+        self.set_some_stuff()
 
     def check_ok_to_create_globals(self):
         not_ready = 0
@@ -330,8 +332,17 @@ class ConfigDialog(QtWidgets.QDialog):
             else:
                 return 1
 
+    def set_some_stuff(self):
+        root = self.widget_dict['root']['line_edit'].text()
+        if root:
+            self.widget_dict['cgl_tools']['line_edit'].setText(os.path.join(root, '_config', 'cgl_tools'))
+            self.widget_dict['globals']['line_edit'].setText(os.path.join(root, '_config', 'globals.json'))
+        # self.widget_dict['cgl_tools']['line_edit'].setText('test')
+
     def on_root_line_edit_set(self):
         self.show_project_management_basics()
+        # change the lineEdit for cgl_tools
+
 
     @staticmethod
     def get_user_name():
@@ -373,15 +384,21 @@ class ConfigDialog(QtWidgets.QDialog):
     def copy_cgl_tools(self):
         src = os.path.join(self.widget_dict['code_root']['line_edit'].text(), 'src', 'cfg', 'cgl_tools')
         dst = os.path.join(self.widget_dict['cgl_tools']['line_edit'].text())
-        shutil.copytree(src, dst)
+        if not os.path.exists(dst):
+            shutil.copytree(src, dst)
 
     def create_global_config(self):
         if self.global_config:
+            pm_dict = self.global_config['project_management'][self.proj_management_combo.currentText()]
             self.global_config['paths']['root'] = self.widget_dict['root']['line_edit'].text()
             self.global_config['paths']['cgl_tools'] = self.widget_dict['cgl_tools']['line_edit'].text()
             self.global_config['paths']['code_root'] = self.widget_dict['code_root']['line_edit'].text()
             self.global_config['account_info']['project_management'] = self.project_management
             self.global_config['account_info']['globals_path'] = self.widget_dict['globals']['line_edit'].text()
+            pm_dict['users'] = {self.user_name_line_edit.text(): {'email': self.user_email_line_edit.text(),
+                                                                  'first': '',
+                                                                  'last': '',
+                                                                  'login': self.user_name_line_edit.text()}}
             api = self.global_config['project_management'][self.project_management]['api']
             if self.project_management == 'ftrack':
                 api['api_key'] = self.api_key_line_edit.text()
@@ -418,7 +435,8 @@ class ConfigDialog(QtWidgets.QDialog):
                  "user_email": self.user_email_line_edit.text(),
                  "user_name": self.user_name_line_edit.text(),
                  "proj_man_user_email": self.api_user_line_edit.text(),
-                 "proj_man_user_name": ""
+                 "proj_man_user_name": "",
+                 "my_tasks": {}
                  }
             self._write_json(user_globals, d)
         else:
@@ -573,10 +591,10 @@ class ConfigDialog(QtWidgets.QDialog):
 
 
 if __name__ == "__main__":
-    from cglcore.path import load_style_sheet
+    # from cglcore.path import load_style_sheet
     app = QtGui.QApplication([])
     form = ConfigDialog()
     form.show()
-    style_sheet = load_style_sheet()
-    app.setStyleSheet(style_sheet)
+    # style_sheet = load_style_sheet()
+    # app.setStyleSheet(style_sheet)
     app.exec_()
