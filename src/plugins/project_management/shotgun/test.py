@@ -93,7 +93,3 @@ def get_asset_status(task, status):
 
 #shotgun_daemon_root = r"C:\Users\tmikota\shotgun"
 #update_env_vars(path='%s/python-api' % shotgun_daemon_root, python_path=True)
-
-python_path = os.environ['PYTHONPATH']
-if python_path:
-    os.system('SET /M PYTHONPATH "C:\\Users\\tmikota\\shotgun\\shotgun-api"')
