@@ -8,7 +8,7 @@
 # See docs folder for detailed usage info.
 
 import os
-import plugins.project_management.shotgun.shotgun_api3
+import shotgun_api3
 
 
 def registerCallbacks(reg):
@@ -20,9 +20,9 @@ def registerCallbacks(reg):
 
     # Grab authentication env vars for this plugin. Install these into the env
     # if they don't already exist.
-    server = "https://fsuada.shotgunstudio.com"
-    script_name = 'core_tools'
-    script_key = 'bc29cd2fd4ce9fe3c2598c4d559b09f88eaa95b05edfd12a834a23aea0797e2f'
+    server = os.environ["SG_SERVER"]
+    script_name = os.environ["SGDAEMON_TSUES_NAME"]
+    script_key = os.environ["SGDAEMON_TSUES_KEY"]
 
     # User-defined plugin args, change at will.
     args = {
@@ -37,7 +37,7 @@ def registerCallbacks(reg):
     }
 
     # Grab an sg connection for the validator.
-    sg = plugins.project_management.shotgun.shotgun_api3.Shotgun(server, script_name=script_name, api_key=script_key)
+    sg = shotgun_api3.Shotgun(server, script_name=script_name, api_key=script_key)
 
     # Bail if our validator fails.
     if not is_valid(sg, reg.logger, args):

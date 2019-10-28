@@ -1,3 +1,29 @@
+import os
+
+"""
+A File for testing shotgun related functions as i figure out workflow for testing the daemon
+"""
+
+
+def sg_daemon_setup():
+    shotgun_daemon_root = r"C:\Users\tmikota\shotgun"
+    if not os.path.exists(shotgun_daemon_root):
+        os.makedirs(shotgun_daemon_root)
+        # Go to that directory
+        os.chdir(shotgun_daemon_root)
+        git_command = "git clone https://github.com/shotgunsoftware/python-api.git"
+        os.system(git_command)
+        update_env_vars(path='%s/python-api', python_path=True)
+
+        # Add the python-api directory to the PYTHONPATH in your system
+
+
+def update_env_vars(path, python_path=False):
+    if python_path:
+        os.system(r'setx /M PYTHONPATH "%PYTHONPATH%; %s"' % path)
+        os.system(r'setx /M PATH "%PATH%; %PYTHONPATH%;')
+    else:
+        os.system(r'setx /M PATH "%PATH%; %s;' % path)
 
 
 def get_asset_status(task, status):
@@ -37,31 +63,37 @@ def get_asset_status(task, status):
     return asset_status, long_to_short[asset_status]
 
 
-print get_asset_status('StandIn', 'Waiting to Start')
-print get_asset_status('StandIn', 'In Progress')
-print get_asset_status('StandIn', 'Done')
-print get_asset_status('StandIn', 'Review')
-print get_asset_status('StandIn', 'On Hold')
-print get_asset_status('StandIn', 'Omit')
+# print get_asset_status('StandIn', 'Waiting to Start')
+# print get_asset_status('StandIn', 'In Progress')
+# print get_asset_status('StandIn', 'Done')
+# print get_asset_status('StandIn', 'Review')
+# print get_asset_status('StandIn', 'On Hold')
+# print get_asset_status('StandIn', 'Omit')
+#
+# print get_asset_status('Model', 'Waiting to Start')
+# print get_asset_status('Model', 'In Progress')
+# print get_asset_status('Model', 'Done')
+# print get_asset_status('Model', 'Review')
+# print get_asset_status('Model', 'On Hold')
+# print get_asset_status('Model', 'Omit')
+#
+# print get_asset_status('Texture', 'Waiting to Start')
+# print get_asset_status('Texture', 'In Progress')
+# print get_asset_status('Texture', 'Done')
+# print get_asset_status('Texture', 'Review')
+# print get_asset_status('Texture', 'On Hold')
+# print get_asset_status('Texture', 'Omit')
+#
+# print get_asset_status('Shader', 'Waiting to Start')
+# print get_asset_status('Shader', 'In Progress')
+# print get_asset_status('Shader', 'Done')
+# print get_asset_status('Shader', 'Review')
+# print get_asset_status('Shader', 'On Hold')
+# print get_asset_status('Shader', 'Omit')
 
-print get_asset_status('Model', 'Waiting to Start')
-print get_asset_status('Model', 'In Progress')
-print get_asset_status('Model', 'Done')
-print get_asset_status('Model', 'Review')
-print get_asset_status('Model', 'On Hold')
-print get_asset_status('Model', 'Omit')
+#shotgun_daemon_root = r"C:\Users\tmikota\shotgun"
+#update_env_vars(path='%s/python-api' % shotgun_daemon_root, python_path=True)
 
-print get_asset_status('Texture', 'Waiting to Start')
-print get_asset_status('Texture', 'In Progress')
-print get_asset_status('Texture', 'Done')
-print get_asset_status('Texture', 'Review')
-print get_asset_status('Texture', 'On Hold')
-print get_asset_status('Texture', 'Omit')
-
-print get_asset_status('Shader', 'Waiting to Start')
-print get_asset_status('Shader', 'In Progress')
-print get_asset_status('Shader', 'Done')
-print get_asset_status('Shader', 'Review')
-print get_asset_status('Shader', 'On Hold')
-print get_asset_status('Shader', 'Omit')
-
+python_path = os.environ['PYTHONPATH']
+if python_path:
+    os.system('SET /M PYTHONPATH "C:\\Users\\tmikota\\shotgun\\shotgun-api"')
