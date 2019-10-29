@@ -11,6 +11,44 @@ import os
 import shotgun_api3
 
 
+def get_asset_status(task, status):
+    """
+    give task name and status name return the status the asset should be.
+    :param task:
+    :param status:
+    :return:
+    """
+    keep_same = ['rev', "omt", 'hld']
+    previous_task = ['stdn', 'mdl', 'tex', 'shd']
+    long_to_short = {'stdn ip': 's_ip',
+                     'stdn apr': 's_apr',
+                     'mdl wtg': 'wtg',
+                     'mdl ip': 'm_ip',
+                     'mdl apr': 'm_apr',
+                     'shd ip': 'sh_ip',
+                     'shd apr': 'sh_apr',
+                     'tex ip': 't_ip',
+                     'tex apr': 't_apr',
+                     'wtg': 'wtg',
+                     'rev': 'rev',
+                     'omt': 'omt',
+                     'hld': 'hld'
+                     }
+    if status == 'wtg':
+        index = previous_task.index(task)
+        if index:
+            task = previous_task[index-1]
+            status = 'apr'
+            asset_status = '%s %s' % (task, status)
+        else:
+            asset_status = 'wtg'
+    elif status in keep_same:
+        asset_status = status
+    else:
+        asset_status = '%s %s' % (task, status)
+    return long_to_short[asset_status]
+
+
 def registerCallbacks(reg):
     """
     Register our callbacks.
@@ -27,13 +65,6 @@ def registerCallbacks(reg):
     # User-defined plugin args, change at will.
     args = {
         "task_status_field": "sg_status_list",
-        "task_fin_status": "fin",
-        "task_ip_status": "ip",
-        "task_na_status": "na",
-        "target_status_field": "sg_status_list",
-        "target_fin_status": "fin",
-        "target_ip_status": "ip",
-        "target_disable_status": "na"
     }
 
     # Grab an sg connection for the validator.
@@ -95,134 +126,16 @@ def update_entity_status(sg, logger, event, args):
     task_id = event["meta"]["entity_id"]
     old_value = event["meta"]["old_value"]
     new_value = event["meta"]["new_value"]
-
     task = sg.find_one("Task", [["id", "is", task_id]], ["entity", 'content'])
+    shortname = task['content'].split('_')[-1]
     entity = sg.find_one(task['entity']['type'], [["id", "is", task['entity']['id']]], ['sg_status_list'])
+    new_asset_status = get_asset_status(shortname, new_value)
+    if new_asset_status:
+        sg.update(entity["type"], entity["id"],
+                        {'sg_status_list': new_asset_status}
+                  )
 
-    print '-----------------------------'
-    print task
-    print 'Task %s status changed from %s to %s' % (task['content'], old_value, new_value)
-    print 'Asset %s status: %s' % (task['entity']['name'], entity['sg_status_list'])
+    # TODO - add "ready to start" as a status
+    # TODO - we need something that will set the status of the following task for instance mdl apr = tex ready to start
 
-    # # If the Task status has been set to task_fin_status or task_na_status...
-    # if new_value == args["task_fin_status"] or new_value == args["task_na_status"]:
-    #
-    #     # Re-query the Task to gather additional field values.
-    #     task = sg.find_one("Task", [["id", "is", task_id]], ["entity"])
-    #
-    #     # Find all Tasks attached to the same entity. Note this will include the
-    #     # current Task, which is probably a good thing, in case its status has
-    #     # been changed.
-    #     tasks = sg.find(
-    #         "Task",
-    #         [
-    #             ["entity", "is", task["entity"]],
-    #         ],
-    #         [args["task_status_field"]],
-    #     )
-    #
-    #     # Determine if all those Tasks are set to fin_status.
-    #     all_tasks_final = True
-    #     task_na_count = 0
-    #     for linked_task in tasks:
-    #         if linked_task[args["task_status_field"]] == args["task_na_status"]:
-    #             task_na_count += 1
-    #             continue
-    #         if linked_task[args["task_status_field"]] != args["task_fin_status"]:
-    #             all_tasks_final = False
-    #             break
-    #
-    #     # Ignore Tasks set to task_na_status, unless all of them are set to na.
-    #     if task_na_count == len(tasks):
-    #         all_tasks_final = False
-    #
-    #     if all_tasks_final:
-    #
-    #         # Re-query our linked entity to get the target_status field value.
-    #         entity = sg.find_one(
-    #             task["entity"]["type"],
-    #             [["id", "is", task["entity"]["id"]]],
-    #             [args["target_status_field"], "code"],
-    #         )
-    #
-    #         # Update our linked entity if its target_status field value is not
-    #         # na_status.
-    #         if entity[args["target_status_field"]] != args["target_disable_status"]:
-    #             sg.update(
-    #                 entity["type"],
-    #                 entity["id"],
-    #                 {args["target_status_field"]: args["target_fin_status"]}
-    #             )
-    #
-    #             # Tell the logger all about it.
-    #             logger.info("Updated %s %s with new %s value %s." % (
-    #                 entity["type"],
-    #                 entity["code"],
-    #                 args["target_status_field"],
-    #                 args["target_fin_status"],
-    #             ))
-    #
-    # # Else if the Task status has been set to task_ip_status...
-    # elif new_value == args["task_ip_status"]:
-    #
-    #     # Re-query the Task to gather additional field values.
-    #     task = sg.find_one("Task", [["id", "is", task_id]], ["entity", args["task_status_field"]])
-    #
-    #     # Double-check the Task is still set to task_ip_status (could have
-    #     # changed since the event was triggered):
-    #     if task[args["task_status_field"]] == args["task_ip_status"]:
-    #
-    #         # Re-query our linked entity to get the target_status field value.
-    #         entity = sg.find_one(
-    #             task["entity"]["type"],
-    #             [["id", "is", task["entity"]["id"]]],
-    #             [args["target_status_field"], "code"],
-    #         )
-    #
-    #         # Set our parent entity to target_ip_status.
-    #         sg.update(
-    #             entity["type"],
-    #             entity["id"],
-    #             {args["target_status_field"]: args["target_ip_status"]}
-    #         )
-    #
-    #         # Tell the logger all about it.
-    #         logger.info("Updated %s %s with new %s value %s." % (
-    #             entity["type"],
-    #             entity["code"],
-    #             args["target_status_field"],
-    #             args["target_ip_status"],
-    #         ))
-    #
-    # # Else if the status has been set from task_fin/na_status to something
-    # # besides task_fin/na_status...
-    # elif (old_value == args["task_fin_status"] or old_value == args["task_na_status"]) \
-    # and (new_value != args["task_na_status"] or new_value != args["task_fin_status"]):
-    #
-    #     # Re-query the Task to gather additional field values.
-    #     task = sg.find_one("Task", [["id", "is", task_id]], ["entity"])
-    #
-    #     # Re-query our linked entity to get the target_status field value.
-    #     entity = sg.find_one(
-    #         task["entity"]["type"],
-    #         [["id", "is", task["entity"]["id"]]],
-    #         [args["target_status_field"], "code"],
-    #     )
-    #
-    #     # Update our linked entity status if its target_status field value is
-    #     # target_fin_status.
-    #     if entity[args["target_status_field"]] == args["target_fin_status"]:
-    #
-    #         sg.update(
-    #             entity["type"],
-    #             entity["id"],
-    #             {args["target_status_field"]: args["target_ip_status"]}
-    #         )
-    #
-    #         # Tell the logger all about it.
-    #         logger.info("Updated %s %s with new %s value %s." % (
-    #             entity["type"],
-    #             entity["code"],
-    #             args["target_status_field"],
-    #             args["target_ip_status"],
-    #         ))
+
