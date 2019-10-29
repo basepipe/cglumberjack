@@ -585,13 +585,13 @@ class ReportBugDialog(LJDialog):
         # define the software area
         self.label_messaging = QtWidgets.QLabel('*All fields must have valid values \nbefore submitting bug report')
         self.label_messaging.setStyleSheet('color: red')
-        self.self.label_software = QtWidgets.QLabel('Software')
+        self.label_software = QtWidgets.QLabel('Software')
         self.label_description = QtWidgets.QLabel('Description of Issue:')
         self.lineEdit_software = QtWidgets.QLineEdit()
         self.label_subject = QtWidgets.QLabel('Subject')
         self.lineEdit_subject = QtWidgets.QLineEdit()
 
-        self.self.text_edit = QtWidgets.QTextEdit()
+        self.text_edit = QtWidgets.QTextEdit()
         self.screengrabs_layout = QtWidgets.QVBoxLayout()
 
         button_bar = QtWidgets.QHBoxLayout()
@@ -614,14 +614,14 @@ class ReportBugDialog(LJDialog):
         grid_layout.addWidget(self.lineEdit_username, 0, 1)
         grid_layout.addWidget(self.label_email, 1, 0)
         grid_layout.addWidget(self.lineEdit_email, 1, 1)
-        grid_layout.addWidget(self.self.label_software, 2, 0)
+        grid_layout.addWidget(self.label_software, 2, 0)
         grid_layout.addWidget(self.lineEdit_software, 2, 1)
         grid_layout.addWidget(self.label_subject, 3, 0)
         grid_layout.addWidget(self.lineEdit_subject, 3, 1)
         layout.addLayout(grid_layout)
         layout.addLayout(button_bar)
         layout.addWidget(self.label_description)
-        layout.addWidget(self.self.text_edit)
+        layout.addWidget(self.text_edit)
         layout.addLayout(self.screengrabs_layout)
         layout.addWidget(self.label_messaging)
         layout.addWidget(self.button_submit)
@@ -638,7 +638,7 @@ class ReportBugDialog(LJDialog):
         self.lineEdit_subject.textChanged.connect(self.ok_to_send)
         self.lineEdit_email.textChanged.connect(self.ok_to_send)
         self.lineEdit_software.textChanged.connect(self.ok_to_send)
-        self.self.text_edit.textChanged.connect(self.ok_to_send)
+        self.text_edit.textChanged.connect(self.ok_to_send)
         self.button_add_screen_grab.clicked.connect(self.screen_grab)
 
     def get_username(self):
@@ -656,7 +656,7 @@ class ReportBugDialog(LJDialog):
         return self.lineEdit_subject.text()
 
     def get_message(self):
-        return self.self.text_edit.toPlainText()
+        return self.text_edit.toPlainText()
 
     def add_attachments(self, file_paths=None):
         if not file_paths:
