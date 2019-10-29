@@ -9,6 +9,7 @@ from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.base import LJDialog
 from cglcore.util import current_user
 from cglcore.path import icon_path
+from plugins.project_management.ftrack.util import get_all_tasks, get_all_projects
 
 
 class TimeTracker(LJDialog):
@@ -41,8 +42,10 @@ class TimeTracker(LJDialog):
         button_add_task.setProperty('class', 'basic')
         project_label = QtWidgets.QLabel('Project')
         self.project_combo = AdvComboBox()
+        self.project_combo.addItems(get_all_projects())
         task_label = QtWidgets.QLabel('Task')
         self.task_combo = AdvComboBox()
+        # self.task_combo.addItems()
         self.calendar = QtGui.QCalendarWidget()
         self.task_table = QtWidgets.QTableWidget()
         self.task_table.setColumnCount(5)
@@ -77,32 +80,43 @@ class TimeTracker(LJDialog):
         self.setLayout(layout)
         self.load_task_hours()
 
+        self.project_combo.currentIndexChanged.connect(self.on_project_select)
         button_add_task.clicked.connect(self.add_task_clicked)
 
-    def get_projects_from_ftrack(self):
+    def on_project_select(self):
         """
+        Function to fill task combo box with the tasks of the selected project
 
-        :return: list of project names
+        :return: None
         """
-        self.ftrack_projects = []
-        pass
+        self.task_combo.clear()
+        p_name = self.project_combo.currentText()
+        self.task_combo.addItems(get_all_tasks(p_name))
 
-    def get_tasks_from_ftrack(self):
-        """
-
-        :return: list of ftrack task objects
-        """
-        # TODO - this needs to actually query FTRACK to get this information. Ideally it's displayed this way, for now
-        # we're just hard coding it for convenience.
-        # this likely should store the task id for us to make submitting updates to ftrack easier as well.
-        # we can simply hide it later on.
-        self.ftrack_tasks = []  # this will keep all the tasks stored so we can edit them on the fly and submit changes to time cards when the user hits the submit button.
-        task_id = 12351
-        tasks = [['Project Name', 'King Kong', 'mdl', 3, task_id],
-                 ['Project Name', 'trex', 'mdl', 4, task_id],
-                 ['Project Name', 'blot', 'mdl', 4, task_id],
-                 ['Project Name', 'clot', 'mdl', 4, task_id]]
-        return tasks
+    # def get_projects_from_ftrack(self):
+    #     """
+    #
+    #     :return: list of project names
+    #     """
+    #     self.ftrack_projects = []
+    #     pass
+    #
+    # def get_tasks_from_ftrack(self):
+    #     """
+    #
+    #     :return: list of ftrack task objects
+    #     """
+    #     # TODO - this needs to actually query FTRACK to get this information. Ideally it's displayed this way, for now
+    #     # we're just hard coding it for convenience.
+    #     # this likely should store the task id for us to make submitting updates to ftrack easier as well.
+    #     # we can simply hide it later on.
+    #     self.ftrack_tasks = []  # this will keep all the tasks stored so we can edit them on the fly and submit changes to time cards when the user hits the submit button.
+    #     task_id = 12351
+    #     tasks = [['Project Name', 'King Kong', 'mdl', 3, task_id],
+    #              ['Project Name', 'trex', 'mdl', 4, task_id],
+    #              ['Project Name', 'blot', 'mdl', 4, task_id],
+    #              ['Project Name', 'clot', 'mdl', 4, task_id]]
+    #     return tasks
 
     def add_task_clicked(self, project='This Project', asset='bob', task='mdl'):
         pos = self.task_table.rowCount()

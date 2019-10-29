@@ -14,10 +14,11 @@ def get_all_projects():
 
     :return: Returns a list of Project Objects
     """
+    proj_list = []
     proj = ftrack.query("Project")
-    # for p in proj:
-    #     print p['name']
-    return proj
+    for p in proj:
+        proj_list.insert(0, p['name'])
+    return proj_list
 
 
 def get_all_tasks(proj_name):
@@ -28,12 +29,15 @@ def get_all_tasks(proj_name):
     :type proj_name: String
     :return: List of Task Objects
     """
+    task_list = []
     t = ftrack.query("Task where project.name is '%s'" % proj_name)
-    # for task in t:
-    #     print task['name']
-    return t
+    for task in t:
+        task_list.insert(0, task['name'])
+    return task_list
 
 
 project = get_all_projects()
+print project
 tasks = get_all_tasks("cgl_testProjectA")
+print tasks
 
