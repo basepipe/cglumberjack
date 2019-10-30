@@ -18,17 +18,23 @@ def get_asset_status(task, status):
     :param status:
     :return:
     """
-    keep_same = ['rev', "omt", 'hld']
+    print task, status
+    keep_same = ['rev', "omt", 'hld', 'not', 'wtg']
     previous_task = ['stdn', 'mdl', 'tex', 'shd']
     long_to_short = {'stdn ip': 's_ip',
+                     'stdn pub': 's_pub',
                      'stdn apr': 's_apr',
                      'mdl wtg': 'wtg',
                      'mdl ip': 'm_ip',
+                     'mdl pub': 'm_pub',
                      'mdl apr': 'm_apr',
                      'shd ip': 'sh_ip',
                      'shd apr': 'sh_apr',
+                     'shd pub': 'sh_pub',
                      'tex ip': 't_ip',
                      'tex apr': 't_apr',
+                     'tex pub': 't_pub',
+                     'not': 'not',
                      'wtg': 'wtg',
                      'rev': 'rev',
                      'omt': 'omt',
@@ -46,7 +52,28 @@ def get_asset_status(task, status):
         asset_status = status
     else:
         asset_status = '%s %s' % (task, status)
-    return long_to_short[asset_status]
+    if asset_status in long_to_short.keys():
+        return long_to_short[asset_status]
+    else:
+        print 'Didnt find %s in keys' % asset_status
+
+
+def get_next_task_status(task_status):
+    # these are things that *should change or at least require some kind of
+    # notification when they happen.
+    # a slack notification for example would be amazing.
+
+    # TODO - it'd be great to have a check to make sure the task to be changed
+    # is starting from a 'wtg' status.
+    status_lookup = {'stdn pub': ['mdl', 'rdy'],
+                     'mdl pub': ['tex', 'rdy'],
+                     'tex pub': ['shd', 'rdy']
+                     }
+
+    if task_status in status_lookup:
+        return status_lookup[task_status]
+    else:
+        return None
 
 
 def registerCallbacks(reg):
@@ -127,15 +154,23 @@ def update_entity_status(sg, logger, event, args):
     old_value = event["meta"]["old_value"]
     new_value = event["meta"]["new_value"]
     task = sg.find_one("Task", [["id", "is", task_id]], ["entity", 'content'])
-    shortname = task['content'].split('_')[-1]
-    entity = sg.find_one(task['entity']['type'], [["id", "is", task['entity']['id']]], ['sg_status_list'])
-    new_asset_status = get_asset_status(shortname, new_value)
-    if new_asset_status:
-        sg.update(entity["type"], entity["id"],
-                        {'sg_status_list': new_asset_status}
-                  )
+    if task:
+        shortname = task['content'].split('_')[-1]
+        entity = sg.find_one(task['entity']['type'], [["id", "is", task['entity']['id']]], ['sg_status_list'])
+        # next_task_status = get_next_task_status('%s %s' % (shortname, new_value))
+        # if next_task_status:
+        #     task, status = next_task_status
+        #     all_tasks = sg.find("Task", [['entity', 'is', entity]], ['content', 'sg_status_list'])
+        #     for t in all_tasks:
+        #         print t
+        #         print t['content']
+        #         print '-----------------'
+        #         if task in t['content']:
+        #             print 'found a match for %s' % task
 
-    # TODO - add "ready to start" as a status
-    # TODO - we need something that will set the status of the following task for instance mdl apr = tex ready to start
-
-
+        new_asset_status = get_asset_status(shortname, new_value)
+        if new_asset_status:
+            sg.update(entity["type"],
+                      entity["id"],
+                      {'sg_status_list': new_asset_status}
+                      )
