@@ -91,7 +91,6 @@ def update_entity_status(sg, logger, event, args):
 
     # Make some vars for convenience.
     entity_id = event["meta"]["entity_id"]
-    old_value = event["meta"]["old_value"]
     new_value = event["meta"]["new_value"]
     if new_value in delivery_dict.keys():
         delivery_field = delivery_dict[new_value]

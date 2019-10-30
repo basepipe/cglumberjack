@@ -151,7 +151,6 @@ def update_entity_status(sg, logger, event, args):
 
     # Make some vars for convenience.
     task_id = event["meta"]["entity_id"]
-    old_value = event["meta"]["old_value"]
     new_value = event["meta"]["new_value"]
     task = sg.find_one("Task", [["id", "is", task_id]], ["entity", 'content'])
     if task:
