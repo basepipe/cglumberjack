@@ -15,7 +15,8 @@ class TimeTracker(LJDialog):
 
     def __init__(self):
         LJDialog.__init__(self)
-
+        self.ftrack_projects = []
+        self.ftrack_tasks = []
         self.setWindowTitle('Time Tracker')
         self.weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         self.today = datetime.datetime.today()
@@ -34,16 +35,30 @@ class TimeTracker(LJDialog):
         label_user_name.setProperty('class', 'ultra_title')
         self.label_time_recorded = QtWidgets.QLabel('<b>Time Recorded:</b>')
         self.label_time_recorded.setProperty('class', 'large')
-        button_add_time = QtWidgets.QPushButton('Add Time')
-        button_add_time.setProperty('class', 'basic')
+        button_submit_time_card = QtWidgets.QPushButton('Submit Time Card')
+        button_submit_time_card.setProperty('class', 'add_button')
+        button_add_task = QtWidgets.QPushButton('Add Task')
+        button_add_task.setProperty('class', 'basic')
+        project_label = QtWidgets.QLabel('Project')
+        self.project_combo = AdvComboBox()
+        task_label = QtWidgets.QLabel('Task')
+        self.task_combo = AdvComboBox()
         self.calendar = QtGui.QCalendarWidget()
-        self.task_table = LJTableWidget(self)
+        self.task_table = QtWidgets.QTableWidget()
+        self.task_table.setColumnCount(5)
+        self.task_table.setHorizontalHeaderLabels(['Project', 'Shot/Asset', 'Task', 'Hours', 'Task ID'])
         self.task_table.setMinimumHeight(250)
         self.task_table.setMinimumWidth(400)
 
         button_row = QtWidgets.QHBoxLayout()
-        button_row.addStretch(1)
-        button_row.addWidget(button_add_time)
+        button_row.addWidget(project_label)
+        button_row.addWidget(self.project_combo)
+        button_row.addWidget(task_label)
+        button_row.addWidget(self.task_combo)
+        button_row.addWidget(button_add_task)
+        submit_row = QtWidgets.QHBoxLayout()
+        submit_row.addStretch(1)
+        submit_row.addWidget(button_submit_time_card)
 
         user_row = QtWidgets.QHBoxLayout()
         user_row.addWidget(label_user_name)
@@ -57,24 +72,64 @@ class TimeTracker(LJDialog):
         layout.addLayout(time_row)
         layout.addWidget(self.task_table)
         layout.addLayout(button_row)
+        layout.addLayout(submit_row)
 
         self.setLayout(layout)
         self.load_task_hours()
 
+        button_add_task.clicked.connect(self.add_task_clicked)
+
+    def get_projects_from_ftrack(self):
+        """
+
+        :return: list of project names
+        """
+        self.ftrack_projects = []
+        pass
+
+    def get_tasks_from_ftrack(self):
+        """
+
+        :return: list of ftrack task objects
+        """
+        # TODO - this needs to actually query FTRACK to get this information. Ideally it's displayed this way, for now
+        # we're just hard coding it for convenience.
+        # this likely should store the task id for us to make submitting updates to ftrack easier as well.
+        # we can simply hide it later on.
+        self.ftrack_tasks = []  # this will keep all the tasks stored so we can edit them on the fly and submit changes to time cards when the user hits the submit button.
+        task_id = 12351
+        tasks = [['Project Name', 'King Kong', 'mdl', 3, task_id],
+                 ['Project Name', 'trex', 'mdl', 4, task_id],
+                 ['Project Name', 'blot', 'mdl', 4, task_id],
+                 ['Project Name', 'clot', 'mdl', 4, task_id]]
+        return tasks
+
+    def add_task_clicked(self, project='This Project', asset='bob', task='mdl'):
+        pos = self.task_table.rowCount()
+        self.task_table.insertRow(pos)
+        self.task_table.setItem(pos, 0, QtGui.QTableWidgetItem(project))
+        self.task_table.setItem(pos, 1, QtGui.QTableWidgetItem(asset))
+        self.task_table.setItem(pos, 2, QtGui.QTableWidgetItem(task))
+        self.task_table.setItem(pos, 3, QtGui.QTableWidgetItem(0))
+        # add the task to the array
+
     def load_task_hours(self):
-        tasks = [['King Kong', 'mdl', 3, None],
-                 ['trex', 'mdl', 4, None],
-                 ['blot', 'mdl', 4, None],
-                 ['clot', 'mdl', 4, None]]
         total = 0
-        for each in tasks:
-            total = each[2]+total
+        tasks = self.get_tasks_from_ftrack()
+        for i, each in enumerate(tasks):
+            row = self.task_table.rowCount()
+            self.task_table.insertRow(row)
+            self.task_table.setItem(row, 0, QtGui.QTableWidgetItem(tasks[i][0]))
+            self.task_table.setItem(row, 1, QtGui.QTableWidgetItem(tasks[i][1]))
+            self.task_table.setItem(row, 2, QtGui.QTableWidgetItem(tasks[i][2]))
+            self.task_table.setItem(row, 3, QtGui.QTableWidgetItem(tasks[i][3]))
+            self.task_table.setItem(row, 4, QtGui.QTableWidgetItem(tasks[i][4]))
+            total = each[3]+total
         print self.today.day
         print self.today.month
         print self.today.strftime("%B")
         label_text = '%s, %s %s:' % (self.day_name, self.today.strftime("%B"), self.today.day)
         self.label_time_recorded.setText(label_text)
-        self.task_table.set_item_model(FileTableModel(tasks, ['Shot/Asset', 'Task', 'Time Worked', 'Time Remaining']))
 
 
 class FileTableModel(ListItemModel):
