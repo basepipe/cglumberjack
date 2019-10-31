@@ -3,14 +3,14 @@ import asana
 
 class AsanaJack(object):
     project_data = None
-    workspace_name = 'CG Lumberjack'
     workspace_data = None
     section_data = None
     task_data = None
 
-    def __init__(self):
+    def __init__(self, work_space='CG Lumberjack'):
         # TODO - change this over to the "APP" rather than individual user token, this will only work for Tom currently.
         lmill_token = '0/a0bcee9eaec3882d7d15112eb13dac4b'
+        self.workspace_name = work_space
         # create the asana client
         self.client = asana.Client.access_token(lmill_token)
         # Get your user info
@@ -21,8 +21,16 @@ class AsanaJack(object):
         if not self.workspace_data:
             return
 
+    def find_workspaces(self):
+        """
+        Find all workgroups available to us.
+        :return:
+        """
+        return self.me['workspaces']
+
     def find_project_data(self, project_name):
-        projects = self.client.projects.find_by_workspace(self.workspace_data['id'], iterator_type=None)
+
+        projects = self.client.projects.find_by_workspace(self.workspace_data['gid'], iterator_type=None)
         for p in projects:
             if p['name'] == project_name:
                 self.project_data = p
@@ -31,7 +39,7 @@ class AsanaJack(object):
 
     def find_section_data(self, project_name, section_name):
         self.find_project_data(project_name)
-        sections = self.client.sections.find_by_project(self.project_data['id'])
+        sections = self.client.sections.find_by_project(self.project_data['gid'])
         for s in sections:
             if s['name'] == section_name:
                 self.section_data = s
@@ -40,7 +48,7 @@ class AsanaJack(object):
 
     def find_task_data(self, project_name, task_name):
         self.find_project_data(project_name)
-        tasks = self.client.tasks.find_by_project(self.project_data['id'])
+        tasks = self.client.tasks.find_by_project(self.project_data['gid'])
         for t in tasks:
             if t['name'] == task_name:
                 self.task_data = t
@@ -50,7 +58,7 @@ class AsanaJack(object):
     def create_project(self, project_name, create_sections=True):
         project = self.find_project_data(project_name)
         if not project:
-            self.project_data = self.client.projects.create_in_workspace(self.workspace_data['id'],
+            self.project_data = self.client.projects.create_in_workspace(self.workspace_data['gid'],
                                                                          {'name': project_name,
                                                                           'default_view': 'board'})
             if create_sections:
@@ -64,7 +72,9 @@ class AsanaJack(object):
             return self.project_data
 
     def create_section(self, project_name, section_name):
+        print project_name, section_name
         self.section_data = self.find_section_data(project_name, section_name)
+        print self.section_data
         if not self.section_data:
             self.section_data = self.client.sections.create_in_project(self.project_data['id'], {'name': section_name})
             return self.section_data
