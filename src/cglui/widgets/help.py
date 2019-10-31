@@ -38,7 +38,14 @@ class RequestFeatureDialog(LJDialog):
                           'None': {'guis': {'None': ['']},
                                    'language': ''}
                           }
-        workgroup_list = sorted(['CGLumberjack', 'Virtual Camera Controller'])
+        workspace_data = AsanaJack().find_workspaces()
+        workspace_names = []
+        ignore = ['Personal Projects']
+        for w in workspace_data:
+            if w['name'] not in ignore:
+                workspace_names.append(w['name'])
+
+        workgroup_list = sorted(workspace_names)
         workgroup_list.insert(0, '')
         software_list = sorted(['Smedge', 'Deadline', 'Maya', 'Nuke', 'Unreal Engine', 'Unity', 'Adobe Premiere',
                                 'Lumbermill', 'Github', 'Slack', 'S3', 'EC2', 'Asana'])
@@ -182,10 +189,8 @@ class RequestFeatureDialog(LJDialog):
         self.label_task_text.setProperty('class', 'ultra_title')
         self.label_task_title = QtWidgets.QLabel("Title")
         self.label_functions = QtWidgets.QLabel("Function(s)")
-
         self.label_workgroup = QtWidgets.QLabel("Workgroup:")
         self.workgroup = QtWidgets.QHBoxLayout()
-
         self.message_files = QtWidgets.QLabel()
         self.message_functions = QtWidgets.QLabel()
         self.message_requirements = QtWidgets.QLabel()
@@ -208,8 +213,6 @@ class RequestFeatureDialog(LJDialog):
         ind = self.combo_repo.findText('cglumberjack')
         self.combo_repo.setCurrentIndex(ind)
         self.combo_gui = AdvComboBox()
-
-        #The list of possible workgroups
         self.combo_workgroup_list = AdvComboBox()
         self.combo_workgroup_list.addItems(workgroup_list)
         ind2 = self.combo_workgroup_list.findText(self.work_group)
@@ -335,7 +338,6 @@ class RequestFeatureDialog(LJDialog):
 
     def on_workgroup_changed(self):
         self.work_group = self.combo_workgroup_list.currentText()
-        pass
 
     def choose_deliverable(self):
         if self.message_functions or self.message_files:
@@ -453,9 +455,9 @@ class RequestFeatureDialog(LJDialog):
 
     def on_submit_clicked(self):
         # workgroup_chosen = self.combo_workgroup_list().currentText()
-        AsanaJack(work_group=self.work_group).create_project('General Development')
-        AsanaJack(work_group=self.work_group).create_task(project_name='General Development', section_name='Backlog',
-                                task_name=self.title_line_edit.text(), notes=self.rtf_task_text)
+        AsanaJack(work_space=self.work_group).create_project('General Development')
+        AsanaJack(work_space=self.work_group).create_task(project_name='General Development', section_name='Backlog',
+                                                          task_name=self.title_line_edit.text(), notes=self.rtf_task_text)
         self.accept()
 
     def update_text_edit(self):
