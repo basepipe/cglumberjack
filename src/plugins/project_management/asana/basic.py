@@ -29,8 +29,7 @@ class AsanaJack(object):
         return self.me['workspaces']
 
     def find_project_data(self, project_name):
-        print self.workspace_data
-        print self.workspace_data['gid']
+
         projects = self.client.projects.find_by_workspace(self.workspace_data['gid'], iterator_type=None)
         for p in projects:
             if p['name'] == project_name:
