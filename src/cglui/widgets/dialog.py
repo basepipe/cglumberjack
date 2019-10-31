@@ -93,8 +93,6 @@ class TimeTracker(LJDialog):
             duration = float(self.task_table.item(row, 3).text())
             ftrack_util.create_timelog(task_object, duration)
 
-        pass
-
     def on_project_select(self):
         """
         Function to fill task combo box with the tasks of the selected project

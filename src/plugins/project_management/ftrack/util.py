@@ -31,7 +31,6 @@ def get_all_projects():
 
     :return: Returns a list of Project Objects
     """
-    # ftrack = setup()
     proj_list = []
     proj = ftrack.query("Project")
     for p in proj:
@@ -40,10 +39,20 @@ def get_all_projects():
 
 
 def get_user(email_address='lonecoconutmail@gmail.com'):
+    """
+    Function to get user object from ftrack
+    :param email_address: FTrack user's email address
+    :type email_address: String
+    :return: Ftrack User Object
+    """
     return ftrack.query('User where username is "{}"'.format(email_address)).first()
 
 
 def get_timelogs():
+    """
+    Function to get all timelog objects for a certain date
+    :return: List of timelog objects
+    """
     import datetime
     date_ = datetime.datetime.today()
     date_ = date_.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
@@ -55,6 +64,14 @@ def get_timelogs():
 
 
 def create_timelog(task, hours):
+    """
+    Function to create a new timelog and send it to ftrack
+    :param task: Task to add timelog to
+    :type task: Ftrack Task Object
+    :param hours: Hours to add to timelog
+    :type hours: Float
+    :return: None
+    """
     user_id = get_user()['id']
     seconds = hours*60*60
     new_log = ftrack.create('Timelog', {"user_id": user_id, "duration": seconds})
@@ -71,24 +88,12 @@ def get_all_tasks(proj_name):
     :return: List of Task Objects
     """
     task_list = []
-    # ftrack = setup()
     t = ftrack.query("Task where project.name is '%s'" % proj_name)
     for task in t:
         task_list.insert(0, task)
     return task_list
 
 
-# def get_asset(task_name):
-#     ftrack = setup()
-#     a = ftrack.query("Asset")
-#     for ass in a:
-#         print ass.keys()
-#     return a
-
-
 if __name__ == '__main__':
     t = get_all_tasks('cgl_testProjectA')
     test = get_timelogs()
-    # for task in t:
-    #     print task
-    #     get_asset(task)
