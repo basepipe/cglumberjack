@@ -1,6 +1,7 @@
 from Qt import QtCore, QtWidgets, QtGui
 import re
 import datetime
+import plugins.project_management.ftrack.util as ftrack_util
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.widgets import AdvComboBox, EmptyStateWidget
@@ -9,13 +10,16 @@ from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.base import LJDialog
 from cglcore.util import current_user
 from cglcore.path import icon_path
+from plugins.project_management.ftrack.util import get_all_tasks, get_all_projects
 
 
 class TimeTracker(LJDialog):
 
     def __init__(self):
         LJDialog.__init__(self)
-
+        self.task_dict = {}
+        self.ftrack_projects = []
+        self.ftrack_tasks = []
         self.setWindowTitle('Time Tracker')
         self.weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         self.today = datetime.datetime.today()
@@ -34,16 +38,31 @@ class TimeTracker(LJDialog):
         label_user_name.setProperty('class', 'ultra_title')
         self.label_time_recorded = QtWidgets.QLabel('<b>Time Recorded:</b>')
         self.label_time_recorded.setProperty('class', 'large')
-        button_add_time = QtWidgets.QPushButton('Add Time')
-        button_add_time.setProperty('class', 'basic')
+        button_submit_time_card = QtWidgets.QPushButton('Submit Time Card')
+        button_submit_time_card.setProperty('class', 'add_button')
+        button_add_task = QtWidgets.QPushButton('Add Task')
+        button_add_task.setProperty('class', 'basic')
+        project_label = QtWidgets.QLabel('Project')
+        self.project_combo = AdvComboBox()
+        task_label = QtWidgets.QLabel('Task')
+        self.task_combo = AdvComboBox()
+
         self.calendar = QtGui.QCalendarWidget()
-        self.task_table = LJTableWidget(self)
+        self.task_table = QtWidgets.QTableWidget()
+        self.task_table.setColumnCount(5)
+        self.task_table.setHorizontalHeaderLabels(['Project', 'Shot/Asset', 'Task', 'Hours', 'Task ID'])
         self.task_table.setMinimumHeight(250)
         self.task_table.setMinimumWidth(400)
 
         button_row = QtWidgets.QHBoxLayout()
-        button_row.addStretch(1)
-        button_row.addWidget(button_add_time)
+        button_row.addWidget(project_label)
+        button_row.addWidget(self.project_combo)
+        button_row.addWidget(task_label)
+        button_row.addWidget(self.task_combo)
+        button_row.addWidget(button_add_task)
+        submit_row = QtWidgets.QHBoxLayout()
+        submit_row.addStretch(1)
+        submit_row.addWidget(button_submit_time_card)
 
         user_row = QtWidgets.QHBoxLayout()
         user_row.addWidget(label_user_name)
@@ -57,24 +76,109 @@ class TimeTracker(LJDialog):
         layout.addLayout(time_row)
         layout.addWidget(self.task_table)
         layout.addLayout(button_row)
+        layout.addLayout(submit_row)
 
         self.setLayout(layout)
         self.load_task_hours()
 
+        self.project_combo.currentIndexChanged.connect(self.on_project_select)
+        button_add_task.clicked.connect(self.add_task_clicked)
+        button_submit_time_card.clicked.connect(self.submit_button_clicked)
+        self.get_projects_from_ftrack()
+
+    def submit_button_clicked(self):
+        for row in xrange(0, self.task_table.rowCount()):
+            task = self.task_table.item(row, 4).text()
+            task_object = self.task_dict[task]
+            duration = float(self.task_table.item(row, 3).text())
+            ftrack_util.create_timelog(task_object, duration)
+
+    def on_project_select(self):
+        """
+        Function to fill task combo box with the tasks of the selected project
+
+        :return: None
+        """
+        self.task_combo.clear()
+        project_name = self.project_combo.currentText()
+        tasks = ftrack_util.get_all_tasks(project_name)
+        for task in tasks:
+            self.task_dict[task['name']] = task
+            self.task_combo.addItem(task['name'])
+            #self.task_combo.addItems(get_all_tasks(project_name))
+
+    def get_projects_from_ftrack(self):
+        """
+        Function to collect list of project names and fill project combo box
+
+        :return:
+        """
+        self.project_combo.addItems(ftrack_util.get_all_projects())
+        self.project_combo.addItems("")
+        num = self.project_combo.findText("")
+        self.project_combo.setCurrentIndex(num)
+
+    def get_timelogs(self, date):
+        """
+
+        :return: list of ftrack task objects
+        """
+        # TODO - this needs to actually query FTRACK to get this information. Ideally it's displayed this way, for now
+        # we're just hard coding it for convenience.
+        # this likely should store the task id for us to make submitting updates to ftrack easier as well.
+        # we can simply hide it later on.
+        self.ftrack_tasks = [[]]  # this will keep all the tasks stored so we can edit them on the fly and submit changes to time cards when the user hits the submit button.
+
+        timelogs = ftrack_util.get_timelogs()
+        for log in timelogs:
+            row = []
+            project = log['context']['parent']['project']['name']
+            asset = log['context']['parent']['name']
+            task = app_config()['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][log['context']['type']['name']]
+            hours = log['duration']
+            hours = hours/60/60
+            task_id = log['context']['name']
+            row.append(project)
+            row.append(asset)
+            row.append(task)
+            row.append(hours)
+            row.append(task_id)
+            self.ftrack_tasks.append(row)
+        return self.ftrack_tasks
+
+    def add_task_clicked(self):
+        project = self.project_combo.currentText()
+        task = self.task_combo.currentText()
+        task_data = self.task_dict[task]
+        asset = task_data['parent']['name']
+        task_short_name = app_config()['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][task_data['type']['name']]
+        pos = self.task_table.rowCount()
+        self.task_table.insertRow(pos)
+        self.task_table.setItem(pos, 0, QtGui.QTableWidgetItem(project))
+        self.task_table.setItem(pos, 1, QtGui.QTableWidgetItem(asset))
+        self.task_table.setItem(pos, 2, QtGui.QTableWidgetItem(task_short_name))
+        self.task_table.setItem(pos, 3, QtGui.QTableWidgetItem(0))
+        self.task_table.setItem(pos, 4, QtGui.QTableWidgetItem(task))
+        # add the task to the array
+
     def load_task_hours(self):
-        tasks = [['King Kong', 'mdl', 3, None],
-                 ['trex', 'mdl', 4, None],
-                 ['blot', 'mdl', 4, None],
-                 ['clot', 'mdl', 4, None]]
         total = 0
-        for each in tasks:
-            total = each[2]+total
-        print self.today.day
-        print self.today.month
-        print self.today.strftime("%B")
+        tasks = self.get_timelogs(self.today)
+        if len(tasks) == 1:
+            pass
+        else:
+            for i, each in enumerate(tasks):
+                if tasks[i]:
+                    row = self.task_table.rowCount()
+                    self.task_table.insertRow(row)
+                    self.task_table.setItem(row, 0, QtGui.QTableWidgetItem(tasks[i][0]))
+                    self.task_table.setItem(row, 1, QtGui.QTableWidgetItem(tasks[i][1]))
+                    self.task_table.setItem(row, 2, QtGui.QTableWidgetItem(tasks[i][2]))
+                    self.task_table.setItem(row, 3, QtGui.QTableWidgetItem(str(tasks[i][3])))
+                    self.task_table.setItem(row, 4, QtGui.QTableWidgetItem(tasks[i][4]))
+                    total = float(each[3])+total
         label_text = '%s, %s %s:' % (self.day_name, self.today.strftime("%B"), self.today.day)
         self.label_time_recorded.setText(label_text)
-        self.task_table.set_item_model(FileTableModel(tasks, ['Shot/Asset', 'Task', 'Time Worked', 'Time Remaining']))
 
 
 class FileTableModel(ListItemModel):
