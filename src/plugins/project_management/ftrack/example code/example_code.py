@@ -14,10 +14,10 @@ task_id = '5f3c64ce-0784-4f2e-8f4f-d6c828d4197d'
 result = ftrack.query('Task where id is "%s" ' % task_id)
 
 for task in result:
-    print task['timelogs'][0]["start"]
+    print task['timelogs'][0]['start']
     new_log = ftrack.create('Timelog', {"user_id": "bcdf57b0-acc6-11e1-a554-f23c91df1211", "duration": 10800.0})
     task['timelogs'].append(new_log)
-    ftrack.commit()
+    # ftrack.commit()
 
 
 # print result[0].__dict__
