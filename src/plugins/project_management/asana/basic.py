@@ -3,14 +3,14 @@ import asana
 
 class AsanaJack(object):
     project_data = None
-    workspace_name = 'CG Lumberjack'
     workspace_data = None
     section_data = None
     task_data = None
 
-    def __init__(self):
+    def __init__(self, work_group='CG Lumberjack'):
         # TODO - change this over to the "APP" rather than individual user token, this will only work for Tom currently.
         lmill_token = '0/a0bcee9eaec3882d7d15112eb13dac4b'
+        self.workspace_name = work_group
         # create the asana client
         self.client = asana.Client.access_token(lmill_token)
         # Get your user info

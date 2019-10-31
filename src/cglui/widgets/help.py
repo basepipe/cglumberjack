@@ -16,6 +16,7 @@ PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 class RequestFeatureDialog(LJDialog):
     def __init__(self, parent=None, title='Request Feature'):
         LJDialog.__init__(self, parent)
+        self.work_group = 'CGLumberjack'
         self.rtf_task_text = ''
         self.requirements_list = []
         self.results_list = []
@@ -37,6 +38,8 @@ class RequestFeatureDialog(LJDialog):
                           'None': {'guis': {'None': ['']},
                                    'language': ''}
                           }
+        workgroup_list = sorted(['CGLumberjack', 'Virtual Camera Controller'])
+        workgroup_list.insert(0, '')
         software_list = sorted(['Smedge', 'Deadline', 'Maya', 'Nuke', 'Unreal Engine', 'Unity', 'Adobe Premiere',
                                 'Lumbermill', 'Github', 'Slack', 'S3', 'EC2', 'Asana'])
         software_list.insert(0, '')
@@ -179,6 +182,10 @@ class RequestFeatureDialog(LJDialog):
         self.label_task_text.setProperty('class', 'ultra_title')
         self.label_task_title = QtWidgets.QLabel("Title")
         self.label_functions = QtWidgets.QLabel("Function(s)")
+
+        self.label_workgroup = QtWidgets.QLabel("Workgroup:")
+        self.workgroup = QtWidgets.QHBoxLayout()
+
         self.message_files = QtWidgets.QLabel()
         self.message_functions = QtWidgets.QLabel()
         self.message_requirements = QtWidgets.QLabel()
@@ -201,6 +208,12 @@ class RequestFeatureDialog(LJDialog):
         ind = self.combo_repo.findText('cglumberjack')
         self.combo_repo.setCurrentIndex(ind)
         self.combo_gui = AdvComboBox()
+
+        #The list of possible workgroups
+        self.combo_workgroup_list = AdvComboBox()
+        self.combo_workgroup_list.addItems(workgroup_list)
+        ind2 = self.combo_workgroup_list.findText(self.work_group)
+        self.combo_workgroup_list.setCurrentIndex(ind2)
 
         self.submit_task_button = QtWidgets.QPushButton('Submit Task')
         self.submit_task_button.setDefault(False)
@@ -231,10 +244,13 @@ class RequestFeatureDialog(LJDialog):
                             self.expected_results_line_edit: self.results_list,
                             }
 
-        grid.addWidget(self.label_task_title, 0, 0)
-        grid.addWidget(self.title_line_edit, 0, 1)
-        grid.addWidget(label_description, 1, 0)
-        grid.addWidget(self.description_line_edit, 1, 1)
+        grid.addWidget(self.label_workgroup, 0, 0)
+        grid.addWidget(self.combo_workgroup_list, 0, 1)
+
+        grid.addWidget(self.label_task_title, 1, 0)
+        grid.addWidget(self.title_line_edit, 1, 1)
+        grid.addWidget(label_description, 2, 0)
+        grid.addWidget(self.description_line_edit, 2, 1)
         grid.addWidget(self.label_code_info, 4, 0)
 
         grid.addWidget(self.label_repo, 10, 0)
@@ -291,6 +307,7 @@ class RequestFeatureDialog(LJDialog):
         self.requirements_line_edit.textChanged.connect(self.update_text_edit)
         self.expected_results_line_edit.returnPressed.connect(self.add_bullets)
         self.expected_results_line_edit.textChanged.connect(self.update_text_edit)
+        self.combo_workgroup_list.currentIndexChanged.connect(self.on_workgroup_changed)
         self.combo_software.currentIndexChanged.connect(self.update_text_edit)
         self.combo_software.currentIndexChanged.connect(self.show_stuff)
         self.combo_software.currentIndexChanged.connect(self.on_software_chosen)
@@ -315,6 +332,10 @@ class RequestFeatureDialog(LJDialog):
         # placeholder text on filescombo
         # placeholder text on functionscombo
         # add links to the task text
+
+    def on_workgroup_changed(self):
+        self.work_group = self.combo_workgroup_list.currentText()
+        pass
 
     def choose_deliverable(self):
         if self.message_functions or self.message_files:
@@ -431,8 +452,9 @@ class RequestFeatureDialog(LJDialog):
         self.combo_language.setCurrentIndex(index)
 
     def on_submit_clicked(self):
-        AsanaJack().create_project('General Development')
-        AsanaJack().create_task(project_name='General Development', section_name='Backlog',
+        # workgroup_chosen = self.combo_workgroup_list().currentText()
+        AsanaJack(work_group=self.work_group).create_project('General Development')
+        AsanaJack(work_group=self.work_group).create_task(project_name='General Development', section_name='Backlog',
                                 task_name=self.title_line_edit.text(), notes=self.rtf_task_text)
         self.accept()
 
