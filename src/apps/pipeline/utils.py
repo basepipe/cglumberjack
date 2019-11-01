@@ -70,6 +70,7 @@ class PreflightStep(QtWidgets.QWidget):
         module_label = QtWidgets.QLabel('module')
         required_label = QtWidgets.QLabel('required')
         label_label = QtWidgets.QLabel('label')
+        icon_button = QtWidgets.QToolButton()
         self.icon_label = QtWidgets.QLabel('icon')
 
         # line edits
@@ -107,8 +108,14 @@ class PreflightStep(QtWidgets.QWidget):
         grid_layout.addWidget(self.required_line_edit, 2, 1)
         grid_layout.addWidget(self.icon_label, 3, 0)
         grid_layout.addWidget(self.icon_path_line_edit, 3, 1)
-        self.icon_label.hide()
-        self.icon_path_line_edit.hide()
+        grid_layout.addWidget(icon_button, 3, 2)
+        if self.menu_type != 'shelves':
+            self.icon_label.hide()
+            self.icon_path_line_edit.hide()
+            icon_button.hide()
+        else:
+            self.required_line_edit.hide()
+            required_label.hide()
 
         # Layout the tool row
         tool_row.addStretch(1)
@@ -197,6 +204,7 @@ class CGLMenu(QtWidgets.QWidget):
 
         # initialize variables
         self.menu_type = menu_type
+        print self.menu_type
         if self.menu_type == 'shelves':
             self.singular = 'shelf'
         elif self.menu_type == 'menus':
@@ -229,8 +237,8 @@ class CGLMenu(QtWidgets.QWidget):
         elif self.menu_type == 'context-menus':
             self.title = QtWidgets.QLabel('Context Menu Buttons: (Drag to Reorder)')
         self.title.setProperty('class', 'title')
-
         if self.menu_type == 'shelves':
+            print 'add button'
             self.add_button = QtWidgets.QPushButton('add shelf button')
             self.import_menu_button = QtWidgets.QPushButton('import shelf button')
         elif self.menu_type == 'preflights':
@@ -282,6 +290,7 @@ class CGLMenu(QtWidgets.QWidget):
             dialog.accept()
 
     def on_add_menu_button(self):
+        print 0
         if self.menu_type == 'preflights':
             title_ = 'Add Preflight Step'
             message = 'Enter a Name for your Preflight Step'
@@ -289,6 +298,7 @@ class CGLMenu(QtWidgets.QWidget):
             title_ = 'Add Menu'
             message = 'Enter a Name for your Menu Button'
         elif self.menu_type == 'shelves':
+            print 1
             title_ = 'Add Shelf'
             message = 'Enter a Name for your shelf button'
         elif self.menu_type == 'context-menus':

@@ -114,12 +114,16 @@ class Designer(LJDialog):
         self.update_menu_path()
 
     def update_menu_path(self):
+
         self.software = self.software_combo.currentText()
         self.type = self.menu_type_combo.currentText()
         self.get_singular(self.type)
+
         if self.type:
+            print 'type is:', self.type
             self.menu_path = os.path.join(self.cgl_tools, self.software, '%s.cgl' % self.type)
             self.add_menu_button.setText('add %s' % self.singular)
+            print 'added button %s to %s' % (self.singular, self.add_menu_button)
             self.delete_menu_button.setText('delete %s' % self.singular)
             if os.path.exists(self.menu_path):
                 self.load_menus()
@@ -137,6 +141,7 @@ class Designer(LJDialog):
             self.singular = 'not defined'
 
     def on_add_menu_clicked(self):
+        print 'this'
         if self.type == 'preflights' or self.type == 'context-menus':
             if self.type == 'preflights':
                 singular = 'preflight'
@@ -165,6 +170,17 @@ class Designer(LJDialog):
                 self.menus.setCurrentIndex(index)
         elif self.type == 'menus':
             dialog = InputDialog(title='Add Menu', message='Create a Custom Menu', line_edit=True)
+            dialog.exec_()
+            if dialog.button == 'Ok':
+                menu_name = dialog.line_edit.text()
+                cgl_file = self.menu_path
+                new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
+                                   menu_path=cgl_file, menu_type=self.type)
+                new_menu.save_clicked.connect(self.on_save_clicked)
+                index = self.menus.addTab(new_menu, menu_name)
+                self.menus.setCurrentIndex(index)
+        elif self.type == 'shelves':
+            dialog = InputDialog(title='Add Shelf', message='Create a Custom Shelf', line_edit=True)
             dialog.exec_()
             if dialog.button == 'Ok':
                 menu_name = dialog.line_edit.text()
