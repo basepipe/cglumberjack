@@ -130,6 +130,12 @@ class CustomMenu(object):
             return {}
 
     def get_icon_path(self, shelf, button):
+        """
+        returns the icon path within the current menu of the cgl_tools directory of the corresponding icon
+        :param shelf:
+        :param button:
+        :return: icon path string
+        """
         icon_path = os.path.join(self.company_config, 'cgl_tools')
         if self.menus[shelf][button]['icon']:
             icon_file = os.path.join(icon_path, self.menus[shelf][button]['icon'])

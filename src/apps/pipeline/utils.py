@@ -1,7 +1,7 @@
 import os
-from Qt import QtWidgets, QtCore
+from Qt import QtWidgets, QtCore, QtGui
 from cglui.widgets.dialog import InputDialog
-from cglcore.path import start
+from cglcore.path import start, icon_path, get_cgl_tools
 from cglui.widgets.text import Highlighter
 
 
@@ -54,6 +54,8 @@ class PreflightStep(QtWidgets.QWidget):
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path='',
                  menu_type='preflights'):
         QtWidgets.QWidget.__init__(self, parent)
+        dialog = self.parent().parent().parent()
+        self.software = dialog.software_combo.currentText()
         self.menu_type = menu_type
         self.attrs = attrs
         self.name = preflight_step_name
@@ -71,6 +73,7 @@ class PreflightStep(QtWidgets.QWidget):
         required_label = QtWidgets.QLabel('required')
         label_label = QtWidgets.QLabel('label')
         icon_button = QtWidgets.QToolButton()
+        icon_button.setIcon(QtGui.QIcon(os.path.join(icon_path(), 'folder24px.png')))
         self.icon_label = QtWidgets.QLabel('icon')
 
         # line edits
@@ -83,7 +86,8 @@ class PreflightStep(QtWidgets.QWidget):
         self.label_line_edit = QtWidgets.QLineEdit()
         self.attrs_dict = {'module': self.command_line_edit,
                            'required': self.required_line_edit,
-                           'label': self.label_line_edit}
+                           'label': self.label_line_edit,
+                           'icon': self.icon_path_line_edit}
 
         # tool buttons
         delete_button = QtWidgets.QPushButton('Delete')
@@ -130,11 +134,19 @@ class PreflightStep(QtWidgets.QWidget):
 
         # Signals and Slots
         self.code_text_edit.textChanged.connect(self.on_code_changed)
+        icon_button.clicked.connect(self.on_icon_button_clicked)
         delete_button.clicked.connect(self.on_delete_clicked)
         open_button.clicked.connect(self.on_open_clicked)
         self.save_button.clicked.connect(self.on_save_clicked)
         self.load_attrs()
         self.label_line_edit.textChanged.connect(self.on_code_changed)
+
+    def on_icon_button_clicked(self):
+        default_folder = os.path.join(get_cgl_tools(), self.software, self.menu_type, self.preflight_name)
+        print default_folder
+        file_paths = QtWidgets.QFileDialog.getOpenFileName(self, 'Choose a File to Attach', default_folder, "*")
+        self.icon_path_line_edit.setText(file_paths[0])
+        print file_paths
 
     def on_save_clicked(self):
         self.save_clicked.emit()
@@ -154,6 +166,7 @@ class PreflightStep(QtWidgets.QWidget):
     def load_attrs(self):
         for attr in self.attrs:
             if attr in self.attrs_dict:
+                print self.attrs[attr]
                 self.attrs_dict[attr].setText(str(self.attrs[attr]))
         # load the python file into the text edit
         code_text = self.load_code_text()
@@ -204,7 +217,6 @@ class CGLMenu(QtWidgets.QWidget):
 
         # initialize variables
         self.menu_type = menu_type
-        print self.menu_type
         if self.menu_type == 'shelves':
             self.singular = 'shelf'
         elif self.menu_type == 'menus':
@@ -238,7 +250,6 @@ class CGLMenu(QtWidgets.QWidget):
             self.title = QtWidgets.QLabel('Context Menu Buttons: (Drag to Reorder)')
         self.title.setProperty('class', 'title')
         if self.menu_type == 'shelves':
-            print 'add button'
             self.add_button = QtWidgets.QPushButton('add shelf button')
             self.import_menu_button = QtWidgets.QPushButton('import shelf button')
         elif self.menu_type == 'preflights':
@@ -247,7 +258,6 @@ class CGLMenu(QtWidgets.QWidget):
         else:
             self.add_button = QtWidgets.QPushButton('add %s button' % self.singular)
             self.import_menu_button = QtWidgets.QPushButton('import %s button' % self.singular)
-        print self.parent()
         self.add_submenu_button = QtWidgets.QPushButton('add submenu')
         self.add_submenu_button.hide()
         self.import_menu_button.hide()

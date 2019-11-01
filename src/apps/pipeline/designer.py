@@ -120,10 +120,8 @@ class Designer(LJDialog):
         self.get_singular(self.type)
 
         if self.type:
-            print 'type is:', self.type
             self.menu_path = os.path.join(self.cgl_tools, self.software, '%s.cgl' % self.type)
             self.add_menu_button.setText('add %s' % self.singular)
-            print 'added button %s to %s' % (self.singular, self.add_menu_button)
             self.delete_menu_button.setText('delete %s' % self.singular)
             if os.path.exists(self.menu_path):
                 self.load_menus()
@@ -163,7 +161,7 @@ class Designer(LJDialog):
                 else:
                     menu_name = long_name
                 cgl_file = self.menu_path
-                new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
+                new_menu = CGLMenu(parent=self, software=self.software, menu_name=menu_name, menu=[],
                                    menu_path=cgl_file, menu_type=self.type)
                 new_menu.save_clicked.connect(self.on_save_clicked)
                 index = self.menus.addTab(new_menu, menu_name)
@@ -174,7 +172,7 @@ class Designer(LJDialog):
             if dialog.button == 'Ok':
                 menu_name = dialog.line_edit.text()
                 cgl_file = self.menu_path
-                new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
+                new_menu = CGLMenu(parent=self, software=self.software, menu_name=menu_name, menu=[],
                                    menu_path=cgl_file, menu_type=self.type)
                 new_menu.save_clicked.connect(self.on_save_clicked)
                 index = self.menus.addTab(new_menu, menu_name)
@@ -185,7 +183,7 @@ class Designer(LJDialog):
             if dialog.button == 'Ok':
                 menu_name = dialog.line_edit.text()
                 cgl_file = self.menu_path
-                new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
+                new_menu = CGLMenu(parent=self, software=self.software, menu_name=menu_name, menu=[],
                                    menu_path=cgl_file, menu_type=self.type)
                 new_menu.save_clicked.connect(self.on_save_clicked)
                 index = self.menus.addTab(new_menu, menu_name)
@@ -207,7 +205,7 @@ class Designer(LJDialog):
                 for i in range(len(menu_dict[self.software])+1):
                     for menu in menu_dict[self.software]:
                         if i == menu_dict[self.software][menu]['order']:
-                            buttons = CGLMenu(software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
+                            buttons = CGLMenu(parent=self, software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
                                               menu_path=self.menu_path, menu_type=self.type)
                             buttons.save_clicked.connect(self.on_save_clicked)
                             self.menus.addTab(buttons, menu)
@@ -249,7 +247,7 @@ class Designer(LJDialog):
                         'module': button_widget.command_line_edit.text(),
                         'label': button_widget.label_line_edit.text(),
                         'order': bi + 1,
-                        'icon': button_widget.required_line_edit.text()
+                        'icon': button_widget.icon_path_line_edit.text()
                     }
                 else:
                     menu_dict[menu_name][button_name] = {
