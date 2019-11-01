@@ -277,7 +277,6 @@ class Designer(LJDialog):
 
     def make_init_for_folders_in_path(self, folder):
         config = self.cgl_tools.replace('\\', '/')
-
         folder = folder.replace('\\', '/')
         folder = folder.replace(config, '')
         parts = folder.split('/')

@@ -54,8 +54,12 @@ class PreflightStep(QtWidgets.QWidget):
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path='',
                  menu_type='preflights'):
         QtWidgets.QWidget.__init__(self, parent)
-        dialog = self.parent().parent().parent()
-        self.software = dialog.software_combo.currentText()
+        try:
+            dialog = self.parent().parent().parent()
+            self.software = dialog.software_combo.currentText()
+        except AttributeError:
+            print 'getting a wierd error on %s ' % dialog
+            self.software = ''
         self.menu_type = menu_type
         self.attrs = attrs
         self.name = preflight_step_name

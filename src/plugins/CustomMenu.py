@@ -1,6 +1,6 @@
 import os
 import json
-from cglcore.path import PathObject, get_cgl_tools
+from cglcore.path import PathObject, get_cgl_tools, get_cgl_config
 
 
 class CustomMenu(object):
@@ -32,15 +32,15 @@ class CustomMenu(object):
             self.path_object = PathObject(str(self.scene_path))
         else:
             print 'No Valid Scene Path'
-            return
-        self.company_config = os.path.dirname(self.path_object.company_config)
+        self.company_config = os.path.dirname(get_cgl_config())
         print 'Company Config is: %s' % self.company_config
         if not os.path.exists(self.company_config):
             print 'Company Config %s: does no exist' % self.company_config
             return
 
         self.menus_file = os.path.join(get_cgl_tools(), software, '%s.cgl' % self.type)
-        print self.menus_file
+        print self.menus_file, 11111111
+
         self.menus = self.load_cgl()
         self.menus_folder = os.path.join(os.path.dirname(self.menus_file), type_)
         self.menu_dict = {}
