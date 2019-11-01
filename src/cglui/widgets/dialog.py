@@ -23,6 +23,7 @@ class TimeTracker(LJDialog):
         self.setWindowTitle('Time Tracker')
         self.weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         self.today = datetime.datetime.today()
+        print 'self.today from datetime.datetime: ', self.today
         self.day_name = self.weekdays[self.today.weekday()]
         self.date = self.today.date()
         self.calendar_tool_button = QtWidgets.QToolButton()
@@ -31,6 +32,8 @@ class TimeTracker(LJDialog):
         self.calendar_tool_button.setMinimumWidth(24)
         self.calendar_tool_button.setMinimumHeight(24)
         self.calendar_tool_button.setProperty('class', 'border')
+
+
         time_for_date_label = QtWidgets.QLabel('Time Card')
         time_for_date_label.setProperty('class', 'ultra_title')
         layout = QtWidgets.QVBoxLayout()
@@ -84,7 +87,21 @@ class TimeTracker(LJDialog):
         self.project_combo.currentIndexChanged.connect(self.on_project_select)
         button_add_task.clicked.connect(self.add_task_clicked)
         button_submit_time_card.clicked.connect(self.submit_button_clicked)
+        self.calendar_tool_button.clicked.connect(self.open_calendar)
+
         self.get_projects_from_ftrack()
+
+    def open_calendar(self):
+        print "GOOOOOOOOOOOOOOOOOD morning cglumberjack"
+        self.calendar_popup_window = LJDialog(self)
+        self.calendar_popup_window.setWindowTitle("Select Date")
+        self.calendar_popup = QtGui.QCalendarWidget(self.calendar_popup_window)
+        self.calendar_popup.resize(300, 160)
+        self.calendar_popup_window.resize(303,170)
+        self.calendar_popup.setGridVisible(True)
+        self.calendar_popup_window.exec_()
+        self.today = datetime.datetime(self.calendar_popup.selectedDate().year(), self.calendar_popup.selectedDate().month(), self.calendar_popup.selectedDate().day())
+        self.load_task_hours()
 
     def submit_button_clicked(self):
         for row in xrange(0, self.task_table.rowCount()):
@@ -118,7 +135,7 @@ class TimeTracker(LJDialog):
         num = self.project_combo.findText("")
         self.project_combo.setCurrentIndex(num)
 
-    def get_timelogs(self, date):
+    def get_timelogs(self, month, date, year):
         """
 
         :return: list of ftrack task objects
@@ -129,7 +146,7 @@ class TimeTracker(LJDialog):
         # we can simply hide it later on.
         self.ftrack_tasks = [[]]  # this will keep all the tasks stored so we can edit them on the fly and submit changes to time cards when the user hits the submit button.
 
-        timelogs = ftrack_util.get_timelogs()
+        timelogs = ftrack_util.get_timelogs(month, date, year)
         for log in timelogs:
             row = []
             project = log['context']['parent']['project']['name']
@@ -162,8 +179,10 @@ class TimeTracker(LJDialog):
         # add the task to the array
 
     def load_task_hours(self):
+        # clear self.task_table
+        self.task_table.clear()
         total = 0
-        tasks = self.get_timelogs(self.today)
+        tasks = self.get_timelogs(self.today.month, self.today.day, self.today.year)
         if len(tasks) == 1:
             pass
         else:

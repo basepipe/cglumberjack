@@ -1,11 +1,6 @@
 from cglcore.config import app_config
 import ftrack_api
-
-server_url = app_config()['project_management']['ftrack']['api']['server_url']
-api_key = app_config()['project_management']['ftrack']['api']['api_key']
-api_user = app_config()['project_management']['ftrack']['api']['api_user']
-
-ftrack = ftrack_api.Session(server_url=server_url, api_key=api_key, api_user=api_user)
+import datetime
 
 
 def setup():
@@ -31,6 +26,7 @@ def get_all_projects():
 
     :return: Returns a list of Project Objects
     """
+    ftrack = setup()
     proj_list = []
     proj = ftrack.query("Project")
     for p in proj:
@@ -45,20 +41,24 @@ def get_user(email_address='lonecoconutmail@gmail.com'):
     :type email_address: String
     :return: Ftrack User Object
     """
+    ftrack = setup()
     return ftrack.query('User where username is "{}"'.format(email_address)).first()
 
 
-def get_timelogs():
+def get_timelogs(month=datetime.datetime.today().month, day=datetime.datetime.today().day, year=datetime.datetime.today().year):
     """
     Function to get all timelog objects for a certain date
     :return: List of timelog objects
     """
-    import datetime
-    date_ = datetime.datetime.today()
-    date_ = date_.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    ftrack = setup()
+    date1 = datetime.datetime(year, month, day)
+    date2 = datetime.datetime(year,month, day + 1)
+    date1 = date1.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    date2 = date2.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
     timelogs = []
-    logs = ftrack.query("Timelog where start >= '%s'" % date_)
+    logs = ftrack.query("Timelog where start >= '%s' and start <= '%s'" % (date1, date2))
     for log in logs:
+        print log['start']
         timelogs.append(log)
     return timelogs
 
@@ -72,6 +72,7 @@ def create_timelog(task, hours):
     :type hours: Float
     :return: None
     """
+    ftrack = setup()
     user_id = get_user()['id']
     seconds = hours*60*60
     new_log = ftrack.create('Timelog', {"user_id": user_id, "duration": seconds})
@@ -87,6 +88,7 @@ def get_all_tasks(proj_name):
     :type proj_name: String
     :return: List of Task Objects
     """
+    ftrack = setup()
     task_list = []
     t = ftrack.query("Task where project.name is '%s'" % proj_name)
     for task in t:
@@ -96,4 +98,4 @@ def get_all_tasks(proj_name):
 
 if __name__ == '__main__':
     t = get_all_tasks('cgl_testProjectA')
-    test = get_timelogs()
+    test = get_timelogs(datetime.datetime.today().month, datetime.datetime.today().day, datetime.datetime.today().year)
