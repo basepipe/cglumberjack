@@ -57,6 +57,7 @@ def get_timelogs(month=datetime.datetime.today().month, day=datetime.datetime.to
     date2 = date2.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
     timelogs = []
     logs = ftrack.query("Timelog where start >= '%s' and start <= '%s'" % (date1, date2))
+    # TODO: Fix datetime objects to limit query to specifically today, currently it bugs out when next date is start of month
     for log in logs:
         print log['start']
         timelogs.append(log)
