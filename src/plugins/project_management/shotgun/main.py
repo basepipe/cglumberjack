@@ -49,8 +49,6 @@ class ProjectManagementData(object):
                 self.__dict__[key] = path_object.__dict__[key]
         for key in kwargs:
             self.__dict__[key] = kwargs[key]
-        print self.__dict__
-        print 'Creating Entries for Shotgun:'
 
     def create_project_management_data(self):
         self.project_data = self.entity_exists('project')
@@ -95,7 +93,6 @@ class ProjectManagementData(object):
             if self.user:
                 self.user_data = self.entity_exists('user')
                 # TODO - add user to the project if they aren't on it.
-
                 if self.version:
                     if self.scope == 'shots':
                         self.version_name = '%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.version)
@@ -129,6 +126,10 @@ class ProjectManagementData(object):
         return data
 
     def create_version(self):
+        """
+        Creates a Version within the Project Management system based off information passed through the PathObject
+        :return: Version Data Object
+        """
         data = {'project': self.project_data,
                 'entity': self.entity_data,
                 'sg_task': self.task_data,
@@ -142,6 +143,11 @@ class ProjectManagementData(object):
         return sg_data['id']
 
     def create_project(self, short_name=None):
+        """
+        Creates a Project within the Project Management system based off information passed through the PathObject
+        :param short_name: Short Name of the Project (typically a linux friendly version of the Project Name)
+        :return: project object
+        """
         if not short_name:
             short_name = self.project
         data = {'name': self.project,
@@ -150,7 +156,10 @@ class ProjectManagementData(object):
         return ShotgunQuery.create('Project', data)
 
     def create_asset(self):
-        print self.type
+        """
+        Creates a Asset within the Project Management system based off information passed through the PathObject
+        :return: asset object
+        """
         data = {'project': self.project_data,
                 'sg_asset_type': self.type,
                 'code': self.asset}
@@ -158,12 +167,20 @@ class ProjectManagementData(object):
         return ShotgunQuery.create('Asset', data)
 
     def create_sequence(self):
+        """
+        Creates a sequence within the Project Management system based off information passed through the PathObject
+        :return: sequence object
+        """
         data = {'project': self.project_data,
                 'code': self.seq}
         logging.info('Creating Shotgun Sequence %s' % self.seq)
         return ShotgunQuery.create('Sequence', data)
 
     def create_shot(self):
+        """
+        Creates a Shot within the Project Management system based off information passed through the PathObject
+        :return: shot object
+        """
         data = {'project': self.project_data,
                 'sg_sequence': self.seq_data,
                 'code': self.shot}
@@ -171,6 +188,10 @@ class ProjectManagementData(object):
         return ShotgunQuery.create('Shot', data)
 
     def create_task(self):
+        """
+        Creates a Task within the Project Management system based off information passed through the PathObject
+        :return: task object
+        """
         # Need to catch if this task already exists before attempting to make it.
         # For some reason the "sim" task doesn't work on this, others seem to
 
@@ -195,15 +216,20 @@ class ProjectManagementData(object):
 
     def find_project(self):
         """
-
-        Returns:
-
+        Query to find the project "object" within the Project Management system based off information passed through
+        the PathObject
+        :return:
         """
         filters = [['name', 'is', self.project],
                    ]
         return ShotgunQuery.find_one("Project", filters, fields=PROJECTFIELDS)
 
     def find_asset(self):
+        """
+        Query to find the asset "object" within the Project Management system based off information passed through
+        the PathObject
+        :return: asset object
+        """
         filters = [['code', 'is', self.asset],
                    ['project', 'is', self.project_data],
                    ['sg_asset_type', 'is', self.type]]
@@ -215,22 +241,32 @@ class ProjectManagementData(object):
         return ShotgunQuery.find_one('Step', filters, fields=STEPFIELDS)
 
     def find_shot(self):
+        """
+        Query to find the shot "object" within the Project Management system based off information passed through
+        the PathObject
+        :return:
+        """
         filters = [['project', 'is', self.project_data],
                    ['code', 'is', self.seq],
                    ['sg_sequence', 'is', self.seq_data]]
         return ShotgunQuery.find_one('Shot', filters, fields=SHOTFIELDS)
 
     def find_seq(self):
+        """
+        Query to find the sequence within the Project Management system based off information passed through
+        the PathObject
+        :return:
+        """
         filters = [['code', 'is', self.seq],
                    ['project', 'is', self.project_data]]
         return ShotgunQuery.find_one('Sequence', filters, fields=ASSETFIELDS)
 
     def find_user(self):
         """
-        find a user based on object values
-        Returns:
-            dict: shotgun dict for a HumanUser
-
+        Query to find the "user" within the Project Management system based off information passed through
+        the PathObject
+        :param user:
+        :return: user object
         """
         user = ShotgunQuery.find_one('HumanUser',
                                      [['login', 'contains', self.user]],
@@ -238,6 +274,11 @@ class ProjectManagementData(object):
         return user
 
     def find_task(self):
+        """
+        Query to find the "task" within the Project Management system based off information passed through
+        the PathObject
+        :return: task_object
+        """
         filters = [['project', 'is', self.project_data],
                    ['content', 'is', self.task_name],
                    ['entity', 'is', self.entity_data]
@@ -245,6 +286,11 @@ class ProjectManagementData(object):
         return ShotgunQuery.find("Task", filters, fields=TASKFIELDS)
 
     def find_version(self):
+        """
+        Query to find the version object within the Project Management system based off information passed through
+        the PathObject
+        :return: version object
+        """
         filters = [['code', 'is', self.version_name],
                    ['project', 'is', self.project_data]
                    ]
