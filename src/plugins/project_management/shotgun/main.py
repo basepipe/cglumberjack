@@ -3,7 +3,7 @@ from plugins.project_management.shotgun.tracking_internal.shotgun_specific impor
 from cglcore.config import app_config
 
 
-PROJECTSHORTNAME = app_config()['shotgun']['project_short_name']
+PROJECTSHORTNAME = app_config()['project_management']['shotgun']['api']['project_short_name']
 PROJECTFIELDS = ['code', 'name', 'sg_status', 'sg_description', PROJECTSHORTNAME]
 HUMANUSERFIELDS = ['code', 'name', 'email', 'department', 'login']
 TASKFIELDS = ['content', 'sg_status_list', 'step', 'step.Step.short_name',
@@ -26,6 +26,7 @@ class ProjectManagementData(object):
     scope = None
     seq = None
     shot = None
+    shot_name = ''
     type = None
     asset = None
     user = None
@@ -56,10 +57,8 @@ class ProjectManagementData(object):
             self.project_data = self.create_project()
         if self.scope == 'assets':
             if self.type:
-                print 'type = %s' % self.type
                 if self.asset:
                     self.asset_data = self.entity_exists('asset')
-                    print 'Asset Data:', self.asset_data
                     if not self.asset_data:
                         self.asset_data = self.create_asset()
             self.entity_data = self.asset_data
@@ -69,13 +68,18 @@ class ProjectManagementData(object):
                 if not self.seq_data:
                     self.seq_data = self.create_sequence()
             if self.shot:
+                self.shot_name = '%s_%s' % (self.seq, self.shot)
                 self.shot_data = self.entity_exists('shot')
                 if not self.shot_data:
                     self.shot_data = self.create_shot()
             self.entity_data = self.shot_data
         else:
-            print 'No Scope Defined!'
             return
+
+        if self.user:
+            self.user_data = self.entity_exists('user')
+            if self.project_data not in self.user_data['projects']:
+                self.add_project_to_user()
 
         if self.entity_data:
             if self.task:
@@ -83,25 +87,18 @@ class ProjectManagementData(object):
                 if self.scope == 'assets':
                     self.task_name = '%s_%s' % (self.asset, self.task)
                 elif self.scope == 'shots':
-                    self.task_name = '%s_%s' % (self.shot, self.task)
+                    self.task_name = '%s_%s' % (self.shot_name, self.task)
                 # get task_data
                 self.task_data = self.entity_exists('task')
-                print 'TASK DATA FOUND: %s' % self.task_data
                 if not self.task_data:
                     self.task_data = self.create_task()
-                    print '2 task data: %s' % self.task_data
-            if self.user:
-                self.user_data = self.entity_exists('user')
-                # TODO - add user to the project if they aren't on it.
                 if self.version:
                     if self.scope == 'shots':
                         self.version_name = '%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.version)
                     elif self.scope == 'assets':
                         self.version_name = '%s_%s_%s_%s' % (self.type, self.asset, self.task, self.version)
                     if self.version_name:
-                        self.version_data = self.find_version()
-                        if not self.version_data:
-                            self.version_data = self.create_version()
+                        self.version_data = self.create_version()
 
     def entity_exists(self, data_type):
         """
@@ -122,7 +119,7 @@ class ProjectManagementData(object):
         elif data_type == 'user':
             data = self.find_user()
         elif data_type == 'task':
-            data = self.find_task()[0]
+            data = self.find_task()
         return data
 
     def create_version(self):
@@ -136,9 +133,9 @@ class ProjectManagementData(object):
                 'code': self.version_name,
                 'user': self.user_data}
         if self.find_version():
-            logging.info('Shotgun Version %s Already Exists - skipping' % self.version_name)
+            print('Shotgun Version %s Already Exists - skipping' % self.version_name)
             return
-        logging.info('Creating Version: %s' % self.version)
+        print('Creating Version: %s' % self.version)
         sg_data = ShotgunQuery.create('Version', data)
         return sg_data['id']
 
@@ -183,8 +180,8 @@ class ProjectManagementData(object):
         """
         data = {'project': self.project_data,
                 'sg_sequence': self.seq_data,
-                'code': self.shot}
-        logging.info('Creating Shotgun Shot %s' % self.shot)
+                'code': self.shot_name}
+        logging.info('Creating Shotgun Shot %s' % self.shot_name)
         return ShotgunQuery.create('Shot', data)
 
     def create_task(self):
@@ -196,9 +193,8 @@ class ProjectManagementData(object):
         # For some reason the "sim" task doesn't work on this, others seem to
 
         task_data = self.find_task_shortname()
-        print 'Task Data: %s' % task_data
-        print 'User Data: %s' % self.user_data
         if self.user_data:
+            print 'user exists'
             data = {'project': self.project_data,
                     'entity': self.entity_data,
                     'step': task_data,
@@ -206,6 +202,7 @@ class ProjectManagementData(object):
                     'content': self.task_name
                     }
         else:
+            print 'no user'
             data = {'project': self.project_data,
                     'entity': self.entity_data,
                     'step': task_data,
@@ -213,6 +210,10 @@ class ProjectManagementData(object):
                     }
         logging.info('Creating Shotgun Task: %s, %s' % (self.task, self.task_name))
         return ShotgunQuery.create('Task', data)
+
+    def add_project_to_user(self):
+        ShotgunQuery.update("HumanUser", self.user_data['id'], {'projects': [self.project_data]},
+                            multi_entity_update_modes={'projects': 'add'})
 
     def find_project(self):
         """
@@ -247,7 +248,7 @@ class ProjectManagementData(object):
         :return:
         """
         filters = [['project', 'is', self.project_data],
-                   ['code', 'is', self.seq],
+                   ['code', 'is', self.shot_name],
                    ['sg_sequence', 'is', self.seq_data]]
         return ShotgunQuery.find_one('Shot', filters, fields=SHOTFIELDS)
 
@@ -283,7 +284,7 @@ class ProjectManagementData(object):
                    ['content', 'is', self.task_name],
                    ['entity', 'is', self.entity_data]
                    ]
-        return ShotgunQuery.find("Task", filters, fields=TASKFIELDS)
+        return ShotgunQuery.find_one("Task", filters, fields=TASKFIELDS)
 
     def find_version(self):
         """

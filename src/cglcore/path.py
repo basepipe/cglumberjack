@@ -728,7 +728,6 @@ class CreateProductionData(object):
             return
         if not self.path_object.context:
             self.path_object.set_attr(context='source')
-        print self.path_object.path_root, 'creating these directories'
         self.safe_makedirs(self.path_object, test=self.test)
         self.create_other_context(self.path_object)
         if self.do_scope:
