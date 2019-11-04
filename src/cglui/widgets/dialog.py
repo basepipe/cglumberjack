@@ -117,12 +117,14 @@ class TimeTracker(LJDialog):
 
     def submit_button_clicked(self):
         for row in xrange(0, self.task_table.rowCount()):
-            task = self.task_table.item(row, 4).text()
-            if task in self.edited_logs:
+            task_name = self.task_table.item(row, 4).text()
+            if task_name in self.edited_logs:
                 print 'doing stuff to edited logs'
+                # task_object = self.task_dict[task]
+                ftrack_util.edit_timelog(log_id, self.task_table.item(row, 3).text())
                 # TODO run the edit timelog function
-            elif task in self.new_logs:
-                task_object = self.task_dict[task]
+            elif task_name in self.new_logs:
+                task_object = self.task_dict[task_name]
                 duration = float(self.task_table.item(row, 3).text())
                 ftrack_util.create_timelog(task_object, duration, self.today.month, self.today.day, self.today.year)
                 self.accept()
@@ -179,8 +181,8 @@ class TimeTracker(LJDialog):
             row.append(asset)
             row.append(task)
             row.append(hours)
-            row.append(task_name)
-            self.timelogs[task_name] = log
+            row.append(log['id'])
+            self.timelogs[log['id']] = log
             self.ftrack_tasks.append(row)
         self.total_time_label.setText("Total Hours Today: %s" % daily_hours)
         return self.ftrack_tasks

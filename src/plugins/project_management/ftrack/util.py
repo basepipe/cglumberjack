@@ -62,6 +62,21 @@ def get_timelogs(month=datetime.datetime.today().month, day=datetime.datetime.to
     return timelogs
 
 
+def edit_timelog(task_name, hours):
+    ftrack = setup()
+    hours = float(hours)
+    hours = hours * 60 * 60
+    task = ftrack.query("Task where name is '%s'" % task_name)
+    print task_name
+    task_id = task[0]['id']
+    print task_id
+    timelog = ftrack.query("Timelog where context_id is '%s'" % task_id)
+    print timelog
+    for t in timelog:
+        print t
+    timelog[0]['duration'] = float(hours)
+    ftrack.commit()
+
 def create_timelog(task, hours, month, day, year):
     """
     Function to create a new timelog and send it to ftrack
