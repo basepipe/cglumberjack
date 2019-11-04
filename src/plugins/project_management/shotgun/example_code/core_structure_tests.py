@@ -24,7 +24,7 @@ path_object.set_attr(shot='0100')
 CreateProductionData(path_object, project_management=proj_man, force_pm_creation=True)
 
 #     # Create a Plate Task
-path_object.set_attr(task='lite')
+path_object.set_attr(task='anim')
 # print 4, path_object.path_root
 # CreateProductionData(path_object, project_management=proj_man, force_pm_creation=True)
 path_object.set_attr(user='tmikota')
@@ -32,5 +32,5 @@ path_object.set_attr(version='000.002')
 path_object.set_attr(resolution='high')
 # print 5, path_object.path_root
 # path_object.set_preview_path()
-CreateProductionData(path_object, project_management=proj_man, force_pm_creation=True)
+CreateProductionData(path_object, project_management=proj_man, force_pm_creation=True, status='ip')
 print "How am i handling status in shotgun"

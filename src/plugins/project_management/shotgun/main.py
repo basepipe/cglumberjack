@@ -43,7 +43,7 @@ class ProjectManagementData(object):
     version_name = None
     version_data = None
     entity_data = None
-    status = 'ip'
+    status = None
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
@@ -89,6 +89,8 @@ class ProjectManagementData(object):
                         self.version_name = '%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.version)
                     elif self.scope == 'assets':
                         self.version_name = '%s_%s_%s_%s' % (self.type, self.asset, self.task, self.version)
+            if self.status:
+                self.set_status()
 
     def create_project_management_data(self):
         self.project_data = self.entity_exists('project')
@@ -137,7 +139,11 @@ class ProjectManagementData(object):
                     elif self.scope == 'assets':
                         self.version_name = '%s_%s_%s_%s' % (self.type, self.asset, self.task, self.version)
                     if self.version_name:
-                        self.version_data = self.create_version()
+                        self.version_data = self.find_version()
+                        if not self.version_data:
+                            self.version_data = self.create_version()
+            if self.status:
+                self.set_status()
 
     def entity_exists(self, data_type):
         """
@@ -171,9 +177,6 @@ class ProjectManagementData(object):
                 'sg_task': self.task_data,
                 'code': self.version_name,
                 'user': self.user_data}
-        if self.find_version():
-            print('Shotgun Version %s Already Exists - skipping' % self.version_name)
-            return
         print('Creating Version: %s' % self.version)
         sg_data = ShotgunQuery.create('Version', data)
         return sg_data['id']
@@ -336,28 +339,77 @@ class ProjectManagementData(object):
                    ]
         return ShotgunQuery.find_one("Version", filters, fields=VERSIONFIELDS)
 
-    def set_status(self):
+    def set_status(self, force=False):
         """
         given a data object set the status for it.
         :param data:
         :param status:
         :return:
         """
-        self.get_project_management_data()
+        if force:
+            self.get_project_management_data()
         if self.version_data:
             print 'Setting Version Status to: %s' % self.status
             ShotgunQuery.update('Version', entity_id=self.version_data['id'], data={'sg_status_list': self.status})
             print 'Setting Task Status to: %s' % self.status
             ShotgunQuery.update('Task', entity_id=self.task_data['id'], data={'sg_status_list': self.status})
-            self.set_entity_status(self.entity_data, self.status)
+            self.set_entity_status()
             return
         if self.task_data:
             print 'setting status for the task'
             ShotgunQuery.update('Task', entity_id=self.task_data['id'], data={'sg_status_list': self.status})
-            self.set_entity_status(self.entity_data, self.status)
+            self.set_entity_status()
 
-    def set_entity_status():
-        print 'Setting Entity Status to: %s' % status
+    def set_entity_status(self):
+        asset_status = self.get_asset_status()
+        print 'Setting Entity Status to: %s' % asset_status
+
+    def get_asset_status(self):
+        """
+        give task name and status name return the status the asset should be.
+        :param task:
+        :param status:
+        :return:
+        """
+        task = self.task
+        status = self.status
+        keep_same = ['rev', "omt", 'hld', 'not', 'wtg']
+        previous_task = ['stdn', 'mdl', 'tex', 'shd']
+        long_to_short = {'stdn ip': 's_ip',
+                         'stdn pub': 's_pub',
+                         'stdn apr': 's_apr',
+                         'mdl wtg': 'wtg',
+                         'mdl ip': 'm_ip',
+                         'mdl pub': 'm_pub',
+                         'mdl apr': 'm_apr',
+                         'shd ip': 'sh_ip',
+                         'shd apr': 'sh_apr',
+                         'shd pub': 'sh_pub',
+                         'tex ip': 't_ip',
+                         'tex apr': 't_apr',
+                         'tex pub': 't_pub',
+                         'not': 'not',
+                         'wtg': 'wtg',
+                         'rev': 'rev',
+                         'omt': 'omt',
+                         'hld': 'hld'
+                         }
+        if status == 'wtg':
+            index = previous_task.index(task)
+            if index:
+                task = previous_task[index - 1]
+                status = 'apr'
+                asset_status = '%s %s' % (task, status)
+            else:
+                asset_status = 'wtg'
+        elif status in keep_same:
+            asset_status = status
+        else:
+            asset_status = '%s %s' % (task, status)
+        if asset_status in long_to_short.keys():
+            return long_to_short[asset_status]
+        else:
+            print 'Didnt find %s in keys' % asset_status
 
 
 
