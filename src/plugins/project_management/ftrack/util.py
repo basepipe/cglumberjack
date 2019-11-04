@@ -52,19 +52,17 @@ def get_timelogs(month=datetime.datetime.today().month, day=datetime.datetime.to
     """
     ftrack = setup()
     date1 = datetime.datetime(year, month, day)
-    date2 = datetime.datetime(year,month, day + 1)
+    date2 = date1 + datetime.timedelta(days=1)
     date1 = date1.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
     date2 = date2.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
     timelogs = []
     logs = ftrack.query("Timelog where start >= '%s' and start <= '%s'" % (date1, date2))
-    # TODO: Fix datetime objects to limit query to specifically today, currently it bugs out when next date is start of month
     for log in logs:
-        print log['start']
         timelogs.append(log)
     return timelogs
 
 
-def create_timelog(task, hours):
+def create_timelog(task, hours, month, day, year):
     """
     Function to create a new timelog and send it to ftrack
     :param task: Task to add timelog to
@@ -75,8 +73,11 @@ def create_timelog(task, hours):
     """
     ftrack = setup()
     user_id = get_user()['id']
+    task_id = task['id']
     seconds = hours*60*60
-    new_log = ftrack.create('Timelog', {"user_id": user_id, "duration": seconds})
+    date1 = datetime.datetime(year, month, day)
+    date1 = date1.replace(hour=12, minute=0, second=0, microsecond=0).isoformat()
+    new_log = ftrack.create('Timelog', {"user_id": user_id, "duration": seconds, "start": date1, "context_id": task_id})
     task['timelogs'].append(new_log)
     ftrack.commit()
 

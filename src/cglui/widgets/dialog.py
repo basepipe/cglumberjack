@@ -17,15 +17,18 @@ class TimeTracker(LJDialog):
 
     def __init__(self):
         LJDialog.__init__(self)
+        self.timelogs = {}
+        self.new_logs = []
+        self.edited_logs = []
         self.task_dict = {}
         self.ftrack_projects = []
         self.ftrack_tasks = []
         self.setWindowTitle('Time Tracker')
         self.weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         self.today = datetime.datetime.today()
-        print 'self.today from datetime.datetime: ', self.today
         self.day_name = self.weekdays[self.today.weekday()]
         self.date = self.today.date()
+        self.total_hrs = 0
         self.calendar_tool_button = QtWidgets.QToolButton()
         calendar_icon_path = icon_path('calendar24px.png')
         self.calendar_tool_button.setIcon(QtGui.QIcon(calendar_icon_path))
@@ -41,10 +44,12 @@ class TimeTracker(LJDialog):
         label_user_name.setProperty('class', 'ultra_title')
         self.label_time_recorded = QtWidgets.QLabel('<b>Time Recorded:</b>')
         self.label_time_recorded.setProperty('class', 'large')
+        self.total_time_label = QtWidgets.QLabel('Total Time Today:')
+        self.total_time_label.setProperty('class', 'large')
         button_submit_time_card = QtWidgets.QPushButton('Submit Time Card')
         button_submit_time_card.setProperty('class', 'add_button')
-        button_add_task = QtWidgets.QPushButton('Add Task')
-        button_add_task.setProperty('class', 'basic')
+        self.button_add_task = QtWidgets.QPushButton('Add Task')
+        self.button_add_task.setProperty('class', 'basic')
         project_label = QtWidgets.QLabel('Project')
         self.project_combo = AdvComboBox()
         task_label = QtWidgets.QLabel('Task')
@@ -62,7 +67,7 @@ class TimeTracker(LJDialog):
         button_row.addWidget(self.project_combo)
         button_row.addWidget(task_label)
         button_row.addWidget(self.task_combo)
-        button_row.addWidget(button_add_task)
+        button_row.addWidget(self.button_add_task)
         submit_row = QtWidgets.QHBoxLayout()
         submit_row.addStretch(1)
         submit_row.addWidget(button_submit_time_card)
@@ -74,6 +79,7 @@ class TimeTracker(LJDialog):
         time_row = QtWidgets.QHBoxLayout()
         time_row.addWidget(self.calendar_tool_button)
         time_row.addWidget(self.label_time_recorded)
+        time_row.addWidget(self.total_time_label)
 
         layout.addLayout(user_row)
         layout.addLayout(time_row)
@@ -85,14 +91,20 @@ class TimeTracker(LJDialog):
         self.load_task_hours()
 
         self.project_combo.currentIndexChanged.connect(self.on_project_select)
-        button_add_task.clicked.connect(self.add_task_clicked)
+        self.task_combo.currentIndexChanged.connect(self.on_task_changed)
+        self.button_add_task.clicked.connect(self.add_task_clicked)
         button_submit_time_card.clicked.connect(self.submit_button_clicked)
         self.calendar_tool_button.clicked.connect(self.open_calendar)
+        self.task_table.itemChanged.connect(self.on_hours_changed)
 
         self.get_projects_from_ftrack()
+        self.button_add_task.setEnabled(False)
+
+    def on_task_changed(self):
+        if self.task_combo.currentText():
+            self.button_add_task.setEnabled(True)
 
     def open_calendar(self):
-        print "GOOOOOOOOOOOOOOOOOD morning cglumberjack"
         self.calendar_popup_window = LJDialog(self)
         self.calendar_popup_window.setWindowTitle("Select Date")
         self.calendar_popup = QtGui.QCalendarWidget(self.calendar_popup_window)
@@ -106,9 +118,14 @@ class TimeTracker(LJDialog):
     def submit_button_clicked(self):
         for row in xrange(0, self.task_table.rowCount()):
             task = self.task_table.item(row, 4).text()
-            task_object = self.task_dict[task]
-            duration = float(self.task_table.item(row, 3).text())
-            ftrack_util.create_timelog(task_object, duration)
+            if task in self.edited_logs:
+                print 'doing stuff to edited logs'
+                # TODO run the edit timelog function
+            elif task in self.new_logs:
+                task_object = self.task_dict[task]
+                duration = float(self.task_table.item(row, 3).text())
+                ftrack_util.create_timelog(task_object, duration, self.today.month, self.today.day, self.today.year)
+                self.accept()
 
     def on_project_select(self):
         """
@@ -134,6 +151,7 @@ class TimeTracker(LJDialog):
         self.project_combo.addItems("")
         num = self.project_combo.findText("")
         self.project_combo.setCurrentIndex(num)
+    #TODO Bug fix: When creating timelogs from added task and log, program reads already existing logs from today and re adds them
 
     def get_timelogs(self, month, date, year):
         """
@@ -144,8 +162,9 @@ class TimeTracker(LJDialog):
         # we're just hard coding it for convenience.
         # this likely should store the task id for us to make submitting updates to ftrack easier as well.
         # we can simply hide it later on.
-        self.ftrack_tasks = [[]]  # this will keep all the tasks stored so we can edit them on the fly and submit changes to time cards when the user hits the submit button.
 
+        self.ftrack_tasks = [[]]  # this will keep all the tasks stored so we can edit them on the fly and submit changes to time cards when the user hits the submit button.
+        daily_hours = 0
         timelogs = ftrack_util.get_timelogs(month, date, year)
         for log in timelogs:
             row = []
@@ -154,13 +173,16 @@ class TimeTracker(LJDialog):
             task = app_config()['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][log['context']['type']['name']]
             hours = log['duration']
             hours = hours/60/60
-            task_id = log['context']['name']
+            daily_hours += hours
+            task_name = log['context']['name']
             row.append(project)
             row.append(asset)
             row.append(task)
             row.append(hours)
-            row.append(task_id)
+            row.append(task_name)
+            self.timelogs[task_name] = log
             self.ftrack_tasks.append(row)
+        self.total_time_label.setText("Total Hours Today: %s" % daily_hours)
         return self.ftrack_tasks
 
     def add_task_clicked(self):
@@ -176,11 +198,25 @@ class TimeTracker(LJDialog):
         self.task_table.setItem(pos, 2, QtGui.QTableWidgetItem(task_short_name))
         self.task_table.setItem(pos, 3, QtGui.QTableWidgetItem(0))
         self.task_table.setItem(pos, 4, QtGui.QTableWidgetItem(task))
+        self.new_logs.append(task)
+
         # add the task to the array
+    def on_hours_changed(self, item):
+        row = item.row()
+        col = item.column()
+        try:
+            task_name = self.task_table.item(row, 4).text()
+            if task_name in self.timelogs.keys():
+                if task_name not in self.edited_logs:
+                    self.edited_logs.append(task_name)
+        except AttributeError:
+            print row, 'Strange things are afoot at the circle k'
 
     def load_task_hours(self):
         # clear self.task_table
+        self.day_name = self.weekdays[self.today.weekday()]
         self.task_table.clear()
+        self.task_table.setRowCount(0)
         total = 0
         tasks = self.get_timelogs(self.today.month, self.today.day, self.today.year)
         if len(tasks) == 1:
@@ -198,6 +234,7 @@ class TimeTracker(LJDialog):
                     total = float(each[3])+total
         label_text = '%s, %s %s:' % (self.day_name, self.today.strftime("%B"), self.today.day)
         self.label_time_recorded.setText(label_text)
+        self.edited_logs = []
 
 
 class FileTableModel(ListItemModel):
