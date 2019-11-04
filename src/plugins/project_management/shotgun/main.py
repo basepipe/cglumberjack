@@ -43,6 +43,7 @@ class ProjectManagementData(object):
     version_name = None
     version_data = None
     entity_data = None
+    status = 'ip'
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
@@ -50,6 +51,44 @@ class ProjectManagementData(object):
                 self.__dict__[key] = path_object.__dict__[key]
         for key in kwargs:
             self.__dict__[key] = kwargs[key]
+
+    def get_project_management_data(self):
+        self.project_data = self.entity_exists('project')
+        if not self.project_data:
+            return
+        if self.scope == 'assets':
+            if self.type:
+                if self.asset:
+                    self.asset_data = self.entity_exists('asset')
+                    if self.asset_data:
+                        self.entity_data = self.asset_data
+        elif self.scope == 'shots':
+            if self.seq:
+                self.seq_data = self.entity_exists('seq')
+            if self.shot:
+                self.shot_name = '%s_%s' % (self.seq, self.shot)
+                self.shot_data = self.entity_exists('shot')
+                if self.shot_data:
+                    self.entity_data = self.shot_data
+        else:
+            return
+
+        if self.user:
+            self.user_data = self.entity_exists('user')
+        if self.entity_data:
+            if self.task:
+                # set task_name
+                if self.scope == 'assets':
+                    self.task_name = '%s_%s' % (self.asset, self.task)
+                elif self.scope == 'shots':
+                    self.task_name = '%s_%s' % (self.shot_name, self.task)
+                # get task_data
+                self.task_data = self.entity_exists('task')
+                if self.version:
+                    if self.scope == 'shots':
+                        self.version_name = '%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.version)
+                    elif self.scope == 'assets':
+                        self.version_name = '%s_%s_%s_%s' % (self.type, self.asset, self.task, self.version)
 
     def create_project_management_data(self):
         self.project_data = self.entity_exists('project')
@@ -296,4 +335,30 @@ class ProjectManagementData(object):
                    ['project', 'is', self.project_data]
                    ]
         return ShotgunQuery.find_one("Version", filters, fields=VERSIONFIELDS)
+
+    def set_status(self):
+        """
+        given a data object set the status for it.
+        :param data:
+        :param status:
+        :return:
+        """
+        self.get_project_management_data()
+        if self.version_data:
+            print 'Setting Version Status to: %s' % self.status
+            ShotgunQuery.update('Version', entity_id=self.version_data['id'], data={'sg_status_list': self.status})
+            print 'Setting Task Status to: %s' % self.status
+            ShotgunQuery.update('Task', entity_id=self.task_data['id'], data={'sg_status_list': self.status})
+            self.set_entity_status(self.entity_data, self.status)
+            return
+        if self.task_data:
+            print 'setting status for the task'
+            ShotgunQuery.update('Task', entity_id=self.task_data['id'], data={'sg_status_list': self.status})
+            self.set_entity_status(self.entity_data, self.status)
+
+    def set_entity_status():
+        print 'Setting Entity Status to: %s' % status
+
+
+
 

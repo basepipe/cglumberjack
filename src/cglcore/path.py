@@ -607,7 +607,8 @@ class CreateProductionData(object):
                  user_login=None,
                  do_scope=False, test=False, json=False, create_default_file=False,
                  force_pm_creation=False,
-                 session=None):
+                 session=None,
+                 status=None):
         self.session = session
         self.force_pm_creation = force_pm_creation
         self.user_login = user_login
@@ -781,6 +782,9 @@ class CreateProductionData(object):
                 loaded_module = __import__(module, globals(), locals(), 'main', -1)
                 loaded_module.ProjectManagementData(path_object, session=session,
                                                     user_email=user_login).create_project_management_data()
+                if self.status:
+                    loaded_module.ProjectManagementData(path_object, session=session,
+                                                        user_email=user_login).set_status(status=self.status)
             else:
                 print('Creating Paths on Disk, lumbermill will create %s '
                       'versions when you add files' % project_management)
