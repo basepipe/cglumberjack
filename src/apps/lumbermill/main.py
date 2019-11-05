@@ -724,7 +724,6 @@ if __name__ == "__main__":
     project_management = app_config()['account_info']['project_management']
     users = app_config()['project_management'][project_management]['users']
     if current_user() in users:
-        print 1
         user_info = users[current_user()]
         if user_info:
             if ftrack_util.check_for_timelog():

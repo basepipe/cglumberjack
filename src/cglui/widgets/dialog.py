@@ -17,7 +17,6 @@ class TimeTracker(LJDialog):
     def __init__(self):
         LJDialog.__init__(self)
 
-
         self.timelogs = {}
         self.new_logs = []
         self.edited_logs = []
@@ -36,7 +35,6 @@ class TimeTracker(LJDialog):
         self.calendar_tool_button.setMinimumWidth(24)
         self.calendar_tool_button.setMinimumHeight(24)
         self.calendar_tool_button.setProperty('class', 'border')
-
 
         time_for_date_label = QtWidgets.QLabel('Time Card')
         time_for_date_label.setProperty('class', 'ultra_title')
@@ -158,7 +156,6 @@ class TimeTracker(LJDialog):
         for task in tasks:
             self.task_dict[task['name']] = task
             self.task_combo.addItem(task['name'])
-            #self.task_combo.addItems(get_all_tasks(project_name))
 
     def get_projects_from_ftrack(self):
         """
@@ -177,12 +174,7 @@ class TimeTracker(LJDialog):
 
         :return: List of tuples(project, asset, task, hours, task_name) of timelog info
         """
-
-        # we're just hard coding it for convenience.
-        # this likely should store the task id for us to make submitting updates to ftrack easier as well.
-        # we can simply hide it later on.
-
-        self.ftrack_tasks = [[]]  # this will keep all the tasks stored so we can edit them on the fly and submit changes to time cards when the user hits the submit button.
+        self.ftrack_tasks = [[]]
         daily_hours = 0
         timelogs = ftrack_util.get_timelogs(month, date, year)
         for log in timelogs:
