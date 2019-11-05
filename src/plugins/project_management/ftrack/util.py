@@ -106,9 +106,37 @@ def create_timelog(task, hours, month, day, year):
     ftrack.commit()
 
 
+def check_for_timelog():
+    """
+    Function to check for any timelogs in a certain date range
+
+    NOTE: Both parameters must be in isoformat
+
+    :param start_date: First Date in range to check for
+    :type start_date: DateTime object
+    :param end_date: Last Date in range to check
+    :type end_date: DateTime object
+    :return: True if any timelogs exist, false if none exist
+    :rtype: Boolean
+    """
+    date2 = datetime.datetime.today()
+    date1 = date2 - datetime.timedelta(days=1)
+    end_date = date2.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    start_date = date1.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+
+    ftrack = setup()
+    timelogs = ftrack.query("Timelog where start >= '%s' and start <= '%s'" % (start_date, end_date))
+    if len(timelogs) > 0:
+        return True
+    elif len(timelogs) == 0:
+        # popup the window to allow them to fill their time card in.
+        return False
+
+
 def get_all_tasks(proj_name):
     """
     Function to get a list of all tasks for a project in ftrack
+
 
     :param proj_name: Name of Project to get info from
     :type proj_name: String

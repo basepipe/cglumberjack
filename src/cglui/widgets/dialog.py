@@ -1,7 +1,6 @@
 from Qt import QtCore, QtWidgets, QtGui
 import re
 import datetime
-import plugins.project_management.ftrack.util as ftrack_util
 from cglcore.config import app_config, UserConfig
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.widgets import AdvComboBox, EmptyStateWidget
@@ -10,13 +9,15 @@ from cglui.widgets.containers.menu import LJMenu
 from cglui.widgets.base import LJDialog
 from cglcore.util import current_user
 from cglcore.path import icon_path
-from plugins.project_management.ftrack.util import get_all_tasks, get_all_projects
+import plugins.project_management.ftrack.util as ftrack_util
 
 
 class TimeTracker(LJDialog):
 
     def __init__(self):
         LJDialog.__init__(self)
+
+
         self.timelogs = {}
         self.new_logs = []
         self.edited_logs = []
@@ -99,6 +100,10 @@ class TimeTracker(LJDialog):
 
         self.get_projects_from_ftrack()
         self.button_add_task.setEnabled(False)
+
+    def set_date(self, new_date):
+        self.today = new_date
+        self.load_task_hours()
 
     def on_task_changed(self):
         """
@@ -245,6 +250,7 @@ class TimeTracker(LJDialog):
         """
         # clear self.task_table
         self.day_name = self.weekdays[self.today.weekday()]
+        print self.today
         self.task_table.clear()
         self.task_table.setRowCount(0)
         total = 0
