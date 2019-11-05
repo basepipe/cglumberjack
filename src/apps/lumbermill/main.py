@@ -8,6 +8,8 @@ from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog, InputDialog
 import cglcore.path as cglpath
+import plugins.project_management.ftrack.util as ftrack_util
+import datetime
 from cglcore.util import current_user, check_for_latest_master, update_master
 from cglcore.config import app_config, UserConfig
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
@@ -722,28 +724,40 @@ if __name__ == "__main__":
     project_management = app_config()['account_info']['project_management']
     users = app_config()['project_management'][project_management]['users']
     if current_user() in users:
-        print 1
         user_info = users[current_user()]
         if user_info:
-            #app = do_gui_init()
-            app = QtGui.QApplication([])
-            splash_pix = QtGui.QPixmap(cglpath.image_path('lumbermill.jpg'))
-            #splash_dialog = ProgressDialog('Loading...', 'night_rider.gif')
-            #splash_pix.show()
-            QtWidgets.qApp.processEvents()
+            if ftrack_util.check_for_timelog():
+                #app = do_gui_init()
+                app = QtGui.QApplication([])
+                splash_pix = QtGui.QPixmap(cglpath.image_path('lumbermill.jpg'))
+                #splash_dialog = ProgressDialog('Loading...', 'night_rider.gif')
+                #splash_pix.show()
+                QtWidgets.qApp.processEvents()
 
-            splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
-            splash.setMask(splash_pix.mask())
-            splash.show()
-            gui = CGLumberjack(show_import=False, user_info=user_info)
-            gui.show()
-            gui.raise_()
-            # # setup stylesheet
-            style_sheet = cglpath.load_style_sheet()
-            app.setStyleSheet(style_sheet)
-            splash.finish(gui)
-            # splash_dialog.hide()
-            app.exec_()
+                splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+                splash.setMask(splash_pix.mask())
+                splash.show()
+                gui = CGLumberjack(show_import=False, user_info=user_info)
+                gui.show()
+                gui.raise_()
+                # # setup stylesheet
+                style_sheet = cglpath.load_style_sheet()
+                app.setStyleSheet(style_sheet)
+                splash.finish(gui)
+                # splash_dialog.hide()
+                app.exec_()
+            else:
+                from cglui.widgets.dialog import TimeTracker
+
+                app = QtGui.QApplication([])
+                gui = TimeTracker()
+                date = datetime.datetime.today()
+                gui.set_date(datetime.datetime.today() - datetime.timedelta(days=1))
+                gui.show()
+                gui.raise_()
+                style_sheet = cglpath.load_style_sheet()
+                app.setStyleSheet(style_sheet)
+                app.exec_()
     else:
         app = QtGui.QApplication([])
         mw = LoginDialog()
