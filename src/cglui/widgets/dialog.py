@@ -101,10 +101,19 @@ class TimeTracker(LJDialog):
         self.button_add_task.setEnabled(False)
 
     def on_task_changed(self):
+        """
+        Function to ensure add_task button only shows after a task has been selected
+
+        :return: None
+        """
         if self.task_combo.currentText():
             self.button_add_task.setEnabled(True)
 
     def open_calendar(self):
+        """
+        Function to open calendar gui when icon is clicked
+        :return: None
+        """
         self.calendar_popup_window = LJDialog(self)
         self.calendar_popup_window.setWindowTitle("Select Date")
         self.calendar_popup = QtGui.QCalendarWidget(self.calendar_popup_window)
@@ -116,15 +125,18 @@ class TimeTracker(LJDialog):
         self.load_task_hours()
 
     def submit_button_clicked(self):
+        """
+        Function to edit/create timelog when submit timecard button is clicked
+
+        :return: None
+        """
         for row in xrange(0, self.task_table.rowCount()):
-            task_name = self.task_table.item(row, 4).text()
-            if task_name in self.edited_logs:
-                print 'doing stuff to edited logs'
-                # task_object = self.task_dict[task]
-                ftrack_util.edit_timelog(log_id, self.task_table.item(row, 3).text())
-                # TODO run the edit timelog function
-            elif task_name in self.new_logs:
-                task_object = self.task_dict[task_name]
+            timelog_id = self.task_table.item(row, 4).text()
+            if timelog_id in self.edited_logs:
+                duration = float(self.task_table.item(row,3).text())
+                ftrack_util.edit_timelog(timelog_id, duration)
+            elif timelog_id in self.new_logs:
+                task_object = self.task_dict[timelog_id]
                 duration = float(self.task_table.item(row, 3).text())
                 ftrack_util.create_timelog(task_object, duration, self.today.month, self.today.day, self.today.year)
                 self.accept()
@@ -153,14 +165,14 @@ class TimeTracker(LJDialog):
         self.project_combo.addItems("")
         num = self.project_combo.findText("")
         self.project_combo.setCurrentIndex(num)
-    #TODO Bug fix: When creating timelogs from added task and log, program reads already existing logs from today and re adds them
 
     def get_timelogs(self, month, date, year):
         """
+        Function to create list of tuples containing existing timelog information
 
-        :return: list of ftrack task objects
+        :return: List of tuples(project, asset, task, hours, task_name) of timelog info
         """
-        # TODO - this needs to actually query FTRACK to get this information. Ideally it's displayed this way, for now
+
         # we're just hard coding it for convenience.
         # this likely should store the task id for us to make submitting updates to ftrack easier as well.
         # we can simply hide it later on.
@@ -188,6 +200,11 @@ class TimeTracker(LJDialog):
         return self.ftrack_tasks
 
     def add_task_clicked(self):
+        """
+        Function to add new task to time card table when add_task button is clicked
+
+        :return: None
+        """
         project = self.project_combo.currentText()
         task = self.task_combo.currentText()
         task_data = self.task_dict[task]
@@ -204,17 +221,28 @@ class TimeTracker(LJDialog):
 
         # add the task to the array
     def on_hours_changed(self, item):
+        """
+        Function to add timelog_id to edited_logs list whenever an existing log's hours are edited
+
+        :param item: Box in table being edited
+        :return: None
+        """
         row = item.row()
         col = item.column()
         try:
-            task_name = self.task_table.item(row, 4).text()
-            if task_name in self.timelogs.keys():
-                if task_name not in self.edited_logs:
-                    self.edited_logs.append(task_name)
+            timelog_id = self.task_table.item(row, 4).text()
+            if timelog_id in self.timelogs.keys():
+                if timelog_id not in self.edited_logs:
+                    self.edited_logs.append(timelog_id)
         except AttributeError:
             print row, 'Strange things are afoot at the circle k'
 
     def load_task_hours(self):
+        """
+        Function to load existing timelogs into gui whenever a date is selected or  Time Tracker is first run
+
+        :return: None
+        """
         # clear self.task_table
         self.day_name = self.weekdays[self.today.weekday()]
         self.task_table.clear()
@@ -379,7 +407,6 @@ class MagicList(LJDialog):
         self.combo_changed_signal.emit()
 
     def on_selected(self, data):
-        print 'on selected', data
         self.selection = data
         self.item_selected.emit(data)
 
