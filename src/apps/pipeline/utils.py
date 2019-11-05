@@ -58,7 +58,9 @@ class CGLMenuButton(QtWidgets.QWidget):
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path='',
                  menu_type='preflights'):
         QtWidgets.QWidget.__init__(self, parent)
+        self.parent = parent
         try:
+
             dialog = self.parent().parent().parent()
             self.software = dialog.software_combo.currentText()
         except AttributeError:
@@ -67,7 +69,6 @@ class CGLMenuButton(QtWidgets.QWidget):
         self.menu_type = menu_type
         self.attrs = attrs
         self.name = preflight_step_name
-        self.parent = parent
         self.preflight_name = preflight_name
         self.preflight_path = preflight_path
         self.do_save = True
@@ -153,7 +154,7 @@ class CGLMenuButton(QtWidgets.QWidget):
         default_folder = os.path.join(get_cgl_tools(), self.software, self.menu_type, self.preflight_name)
         file_paths = QtWidgets.QFileDialog.getOpenFileName(self, 'Choose a File to Attach', default_folder, "*")
         from_path = file_paths[0].replace('\\', '/')
-        folder_, file_ = os.path.split(from_path)
+        _, file_ = os.path.split(from_path)
         to_path = os.path.join(default_folder, file_).replace('\\', '/')
         if from_path != to_path:
             dirname = os.path.dirname(to_path)
