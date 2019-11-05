@@ -1,4 +1,5 @@
 import os
+import shutil
 from Qt import QtWidgets, QtCore, QtGui
 from cglui.widgets.dialog import InputDialog
 from cglcore.path import start, icon_path, get_cgl_tools
@@ -146,19 +147,18 @@ class PreflightStep(QtWidgets.QWidget):
         self.label_line_edit.textChanged.connect(self.on_code_changed)
 
     def on_icon_button_clicked(self):
-        import shutil
         default_folder = os.path.join(get_cgl_tools(), self.software, self.menu_type, self.preflight_name)
-        print default_folder
         file_paths = QtWidgets.QFileDialog.getOpenFileName(self, 'Choose a File to Attach', default_folder, "*")
-        from_path = file_paths[0]
+        from_path = file_paths[0].replace('\\', '/')
         folder_, file_ = os.path.split(from_path)
-        to_path = os.path.join(default_folder, file_)
-        print 'copying %s to %s' % (from_path, to_path)
+        to_path = os.path.join(default_folder, file_).replace('\\', '/')
         if from_path != to_path:
+            dirname = os.path.dirname(to_path)
+            if not os.path.exists(dirname):
+                os.makedirs(dirname)
             shutil.copy2(from_path, to_path)
         self.icon_path_line_edit.setText(to_path)
         # copy selected icon to icon folder path
-
 
     def on_save_clicked(self):
         self.save_clicked.emit()
@@ -166,20 +166,23 @@ class PreflightStep(QtWidgets.QWidget):
     def on_open_clicked(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), self.menu_type, self.preflight_name,
                                  '%s.py' % self.name)
-        print code_path
         start(code_path)
 
     def on_code_changed(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), self.menu_type, self.preflight_name,
                                  '%s.py' % self.name)
-        print code_path
         self.do_save = True
 
     def load_attrs(self):
         for attr in self.attrs:
             if attr in self.attrs_dict:
-                print self.attrs[attr]
+                print self.attrs[attr], 'button name'
                 self.attrs_dict[attr].setText(str(self.attrs[attr]))
+                if self.attrs['icon']:
+                    tab_icon = QtGui.QIcon(self.attrs['icon'])
+                    print self.attrs_dict[attr].parent()
+                    #self.attrs_dict[attr].setIcon(tab_icon)
+                    print 'icon path: %s' % self.attrs['icon']
         # load the python file into the text edit
         code_text = self.load_code_text()
         if code_text:
@@ -312,7 +315,6 @@ class CGLMenu(QtWidgets.QWidget):
             dialog.accept()
 
     def on_add_menu_button(self):
-        print 0
         if self.menu_type == 'preflights':
             title_ = 'Add Preflight Step'
             message = 'Enter a Name for your Preflight Step'
@@ -320,7 +322,6 @@ class CGLMenu(QtWidgets.QWidget):
             title_ = 'Add Menu'
             message = 'Enter a Name for your Menu Button'
         elif self.menu_type == 'shelves':
-            print 1
             title_ = 'Add Shelf'
             message = 'Enter a Name for your shelf button'
         elif self.menu_type == 'context-menus':
