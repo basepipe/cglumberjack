@@ -146,11 +146,19 @@ class PreflightStep(QtWidgets.QWidget):
         self.label_line_edit.textChanged.connect(self.on_code_changed)
 
     def on_icon_button_clicked(self):
+        import shutil
         default_folder = os.path.join(get_cgl_tools(), self.software, self.menu_type, self.preflight_name)
         print default_folder
         file_paths = QtWidgets.QFileDialog.getOpenFileName(self, 'Choose a File to Attach', default_folder, "*")
-        self.icon_path_line_edit.setText(file_paths[0])
-        print file_paths
+        from_path = file_paths[0]
+        folder_, file_ = os.path.split(from_path)
+        to_path = os.path.join(default_folder, file_)
+        print 'copying %s to %s' % (from_path, to_path)
+        if from_path != to_path:
+            shutil.copy2(from_path, to_path)
+        self.icon_path_line_edit.setText(to_path)
+        # copy selected icon to icon folder path
+
 
     def on_save_clicked(self):
         self.save_clicked.emit()

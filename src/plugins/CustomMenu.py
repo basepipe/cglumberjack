@@ -146,18 +146,23 @@ class CustomMenu(object):
     def add_menu_buttons(self, menu, buttons):
         for button in buttons:
             label = self.menus[menu][button]['label']
-            try:
-                icon_file = self.get_icon_path(menu, button)
+            if 'icon' in self.menus[menu][button].keys():
+                icon_file = self.menus[menu][button]['icon']
                 if icon_file:
                     label = ''
-                self.add_button(menu, label=self.menus[menu][button]['label'],
-                                annotation=self.menus[menu][button]['annotation'],
-                                command=self.menus[menu][button]['module'],
-                                icon=icon_file,
-                                image_overlay_label=label)
-            except KeyError:
-                self.add_button(menu, label=self.menus[menu][button]['label'],
-                                command=self.menus[menu][button]['module'])
+            else:
+                icon_file = ''
+
+            if 'annotation' in self.menus[menu][button].keys():
+                annotation = self.menus[menu][button]['annotation']
+            else:
+                annotation = ''
+            print icon_file
+            self.add_button(menu, label=self.menus[menu][button]['label'],
+                            annotation=annotation,
+                            command=self.menus[menu][button]['module'],
+                            icon=icon_file,
+                            image_overlay_label=label)
 
     def load_menus(self):
         self.delete_menus()
