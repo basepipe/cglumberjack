@@ -185,7 +185,6 @@ class TimeTracker(LJDialog):
             hours = log['duration']
             hours = hours/60/60
             daily_hours += hours
-            task_name = log['context']['name']
             row.append(project)
             row.append(asset)
             row.append(task)
@@ -225,7 +224,6 @@ class TimeTracker(LJDialog):
         :return: None
         """
         row = item.row()
-        col = item.column()
         try:
             timelog_id = self.task_table.item(row, 4).text()
             if timelog_id in self.timelogs.keys():
