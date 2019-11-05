@@ -226,15 +226,16 @@ class Designer(LJDialog):
             self.software_combo.setCurrentIndex(num)
 
     def save_menus(self):
+        # TODO - if you change the label this actually deletes stuff.
         menu_dict = {}
         for mi in range(self.menus.count()):
             menu_name = self.menus.tabText(mi)
             menu = self.menus.widget(mi)
             menu_dict[menu_name] = {}
             menu_dict[menu_name]['order'] = mi+1
-            for bi in range(menu.buttons.count()):
-                button_name = menu.buttons.tabText(bi)
-                button_widget = menu.buttons.widget(bi)
+            for bi in range(menu.buttons_tab_widget.count()):
+                button_name = menu.buttons_tab_widget.tabText(bi)
+                button_widget = menu.buttons_tab_widget.widget(bi)
                 if self.type == 'preflights':
                     menu_dict[menu_name][button_name] = {
                         'module': button_widget.command_line_edit.text(),

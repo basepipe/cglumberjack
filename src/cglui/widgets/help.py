@@ -298,7 +298,7 @@ class RequestFeatureDialog(LJDialog):
         self.combo_deliverable_list.currentIndexChanged.connect(self.update_text_edit)
         self.combo_delivery_method.currentIndexChanged.connect(self.update_text_edit)
         self.description_line_edit.textChanged.connect(self.update_text_edit)
-        self.description_line_edit.returnPressed.connect(self.show_stuff)
+        self.description_line_edit.editingFinished.connect(self.show_stuff)
         self.location_line_edit.textChanged.connect(self.update_text_edit)
         self.submit_task_button.clicked.connect(self.on_submit_clicked)
         self.combo_repo.currentIndexChanged.connect(self.on_repo_chosen)

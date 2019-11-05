@@ -49,7 +49,10 @@ class LJTabWidget(QtWidgets.QTabWidget):
         self.setTabPosition(QtWidgets.QTabWidget.West)
 
 
-class PreflightStep(QtWidgets.QWidget):
+class CGLMenuButton(QtWidgets.QWidget):
+    """
+    Represents the "Button" within the parent "Menu".
+    """
     save_clicked = QtCore.Signal()
 
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path='',
@@ -174,15 +177,14 @@ class PreflightStep(QtWidgets.QWidget):
         self.do_save = True
 
     def load_attrs(self):
+        """
+        Loads the attrs for each "button" in the "Menu".
+        :return:
+        """
         for attr in self.attrs:
             if attr in self.attrs_dict:
                 print self.attrs[attr], 'button name'
                 self.attrs_dict[attr].setText(str(self.attrs[attr]))
-                if self.attrs['icon']:
-                    tab_icon = QtGui.QIcon(self.attrs['icon'])
-                    print self.attrs_dict[attr].parent()
-                    #self.attrs_dict[attr].setIcon(tab_icon)
-                    print 'icon path: %s' % self.attrs['icon']
         # load the python file into the text edit
         code_text = self.load_code_text()
         if code_text:
@@ -225,6 +227,11 @@ class PreflightStep(QtWidgets.QWidget):
 
 
 class CGLMenu(QtWidgets.QWidget):
+    """
+    This creates the top level "Menu" Tab with the "buttons" within it.  Menu is a catch all for "Menus", "Shelves",
+    "Preflights", "Context-menus" and anything else in the future that fits the structure we've got here.
+
+    """
     save_clicked = QtCore.Signal()
 
     def __init__(self, parent=None, software=None, menu_type='menus', menu_name='', menu=None, menu_path=''):
@@ -251,9 +258,13 @@ class CGLMenu(QtWidgets.QWidget):
         # create layouts
         layout = QtWidgets.QVBoxLayout(self)
         title_layout = QtWidgets.QHBoxLayout()
-        self.buttons = LJTabWidget()
-        self.buttons.setProperty('class', 'vertical')
-        self.buttons.tabBar().setProperty('class', 'vertical')
+        if menu_type != 'shelves':
+            self.buttons_tab_widget = LJTabWidget()
+            self.buttons_tab_widget.setProperty('class', 'vertical')
+            self.buttons_tab_widget.tabBar().setProperty('class', 'vertical')
+        else:
+            self.buttons_tab_widget = QtWidgets.QTabWidget()
+
         self.title = ''
         if self.menu_type == 'menus':
             self.title = QtWidgets.QLabel('%s %s Buttons: (Drag to Reorder)' % (self.menu_name, self.menu_type.title()))
@@ -281,7 +292,7 @@ class CGLMenu(QtWidgets.QWidget):
         self.import_menu_button.setProperty('class', 'add_button')
 
         # set parameters
-        self.buttons.setMovable(True)
+        self.buttons_tab_widget.setMovable(True)
 
         # layout the widget
         title_layout.addWidget(self.title)
@@ -290,7 +301,7 @@ class CGLMenu(QtWidgets.QWidget):
         title_layout.addWidget(self.add_button)
         title_layout.addStretch(1)
         layout.addLayout(title_layout)
-        layout.addWidget(self.buttons)
+        layout.addWidget(self.buttons_tab_widget)
 
         # connect SIGNALS and SLOTS
         self.add_button.clicked.connect(self.on_add_menu_button)
@@ -347,12 +358,16 @@ class CGLMenu(QtWidgets.QWidget):
                 attrs = {'label': preflight_name,
                          'module': command,
                          'icon': ''}
-            self.new_button_widget = PreflightStep(parent=self.buttons, preflight_name=self.menu_name,
+            self.new_button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
                                                    preflight_step_name=dialog.line_edit.text(),
                                                    attrs=attrs, preflight_path=self.menu_path, menu_type=self.menu_type)
             self.new_button_widget.save_clicked.connect(self.on_save_clicked)
-            index = self.buttons.addTab(self.new_button_widget, preflight_name)
-            self.buttons.setCurrentIndex(index)
+            if 'icon' in attrs.keys():
+                icon = QtGui.QIcon(attrs['icon'])
+                index = self.buttons_tab_widget.addTab(self.new_button_widget, icon, preflight_name)
+            else:
+                index = self.buttons_tab_widget.addTab(self.new_button_widget, preflight_name)
+            self.buttons_tab_widget.setCurrentIndex(index)
 
     def on_save_clicked(self):
         self.save_clicked.emit()
@@ -371,11 +386,18 @@ class CGLMenu(QtWidgets.QWidget):
             for button in self.menu:
                 if button != 'order':
                     if i == self.menu[button]['order']:
-                        button_widget = PreflightStep(parent=self.buttons, preflight_name=self.menu_name,
+                        button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
                                                       preflight_step_name=button,
                                                       attrs=self.menu[button], preflight_path=self.menu_path,
                                                       menu_type=self.menu_type)
-                        self.buttons.addTab(button_widget, button)
+                        if 'icon' in self.menu[button].keys():
+                            if self.menu[button]['icon']:
+                                icon = QtGui.QIcon(self.menu[button]['icon'])
+                                self.buttons_tab_widget.addTab(button_widget, icon, '')
+                            else:
+                                self.buttons_tab_widget.addTab(button_widget, button)
+                        else:
+                            self.buttons_tab_widget.addTab(button_widget, button)
 
 
 

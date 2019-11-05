@@ -22,7 +22,7 @@ class AsanaJack(object):
             return
 
     def find_project_data(self, project_name):
-        projects = self.client.projects.find_by_workspace(self.workspace_data['id'], iterator_type=None)
+        projects = self.client.projects.find_by_workspace(self.workspace_data['gid'], iterator_type=None)
         for p in projects:
             if p['name'] == project_name:
                 self.project_data = p
@@ -31,7 +31,7 @@ class AsanaJack(object):
 
     def find_section_data(self, project_name, section_name):
         self.find_project_data(project_name)
-        sections = self.client.sections.find_by_project(self.project_data['id'])
+        sections = self.client.sections.find_by_project(self.project_data['gid'])
         for s in sections:
             if s['name'] == section_name:
                 self.section_data = s
@@ -40,7 +40,7 @@ class AsanaJack(object):
 
     def find_task_data(self, project_name, task_name):
         self.find_project_data(project_name)
-        tasks = self.client.tasks.find_by_project(self.project_data['id'])
+        tasks = self.client.tasks.find_by_project(self.project_data['gid'])
         for t in tasks:
             if t['name'] == task_name:
                 self.task_data = t
@@ -50,7 +50,7 @@ class AsanaJack(object):
     def create_project(self, project_name, create_sections=True):
         project = self.find_project_data(project_name)
         if not project:
-            self.project_data = self.client.projects.create_in_workspace(self.workspace_data['id'],
+            self.project_data = self.client.projects.create_in_workspace(self.workspace_data['gid'],
                                                                          {'name': project_name,
                                                                           'default_view': 'board'})
             if create_sections:
@@ -66,7 +66,7 @@ class AsanaJack(object):
     def create_section(self, project_name, section_name):
         self.section_data = self.find_section_data(project_name, section_name)
         if not self.section_data:
-            self.section_data = self.client.sections.create_in_project(self.project_data['id'], {'name': section_name})
+            self.section_data = self.client.sections.create_in_project(self.project_data['gid'], {'name': section_name})
             return self.section_data
 
     def create_task(self, project_name, section_name, task_name, assignee=None, notes=''):
@@ -141,4 +141,4 @@ class AsanaJack(object):
     def delete_section(self, project_name, section_name):
         section_data = self.find_section_data(project_name, section_name)
         if section_data:
-            self.client.sections.delete(section_data['id'])
+            self.client.sections.delete(section_data['gid'])
