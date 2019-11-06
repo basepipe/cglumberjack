@@ -172,8 +172,6 @@ class CGLMenuButton(QtWidgets.QWidget):
         start(code_path)
 
     def on_code_changed(self):
-        code_path = os.path.join(os.path.dirname(self.preflight_path), self.menu_type, self.preflight_name,
-                                 '%s.py' % self.name)
         self.do_save = True
 
     def load_attrs(self):
