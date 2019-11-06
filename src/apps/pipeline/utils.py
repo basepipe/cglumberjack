@@ -57,12 +57,14 @@ class CGLMenuButton(QtWidgets.QWidget):
 
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path='',
                  menu_type='preflights'):
+        # TODO - we need to choose better variable names, this is obviously "preflight" specific.
         QtWidgets.QWidget.__init__(self, parent)
 
         try:
             dialog = self.parent().parent().parent()
             self.software = dialog.software_combo.currentText()
         except AttributeError:
+            # TODO - look into this a bit deeper, this is a fairly generic catch right now.
             print 'getting a wierd error on %s ' % dialog
             self.software = ''
         self.menu_type = menu_type
@@ -233,7 +235,6 @@ class CGLMenu(QtWidgets.QWidget):
 
     def __init__(self, parent=None, software=None, menu_type='menus', menu_name='', menu=None, menu_path=''):
         QtWidgets.QWidget.__init__(self, parent)
-
         # initialize variables
         self.menu_type = menu_type
         if self.menu_type == 'shelves':

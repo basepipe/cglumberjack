@@ -20,7 +20,6 @@ class MayaCustomMenu(CustomMenu):
         return pm.tabLayout(name, query=True, fullPathName=True)
 
     def add_button(self, shelf, label='', annotation='', command='', icon='', image_overlay_label=''):
-        print 'add button, %s' % icon
         button_name = pm.shelfButton(image1=icon,
                                      parent=shelf,
                                      label=label,

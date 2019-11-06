@@ -39,8 +39,6 @@ class CustomMenu(object):
             return
 
         self.menus_file = os.path.join(get_cgl_tools(), software, '%s.cgl' % self.type)
-        print self.menus_file, 11111111
-
         self.menus = self.load_cgl()
         self.menus_folder = os.path.join(os.path.dirname(self.menus_file), type_)
         self.menu_dict = {}
