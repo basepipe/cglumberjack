@@ -27,10 +27,10 @@ class ShotgunQuery(object):
 ==================""" % (self.type, self.args, self.kwargs)
     @staticmethod
     def base_shotgun_query(type_, *args, **kwargs):
-        config = app_config()['shotgun']
-        connection = sg_api.Shotgun(base_url=config['url'],
-                                         script_name=config['api_script'],
-                                         api_key=config['api_key'])
+        config = app_config()['project_management']['shotgun']['api']
+        connection = sg_api.Shotgun(base_url=config['server_url'],
+                                    script_name=config['api_script'],
+                                    api_key=config['api_key'])
         return getattr(connection, type_)(*args, **kwargs)
 
     @classmethod

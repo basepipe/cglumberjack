@@ -607,7 +607,8 @@ class CreateProductionData(object):
                  user_login=None,
                  do_scope=False, test=False, json=False, create_default_file=False,
                  force_pm_creation=False,
-                 session=None):
+                 session=None,
+                 status=None):
         self.session = session
         self.force_pm_creation = force_pm_creation
         self.user_login = user_login
@@ -619,7 +620,7 @@ class CreateProductionData(object):
         if project_management:
             logging.debug('Creating Production Management Data for %s: %s' % (project_management,
                                                                               self.path_object.data))
-            self.create_project_management_data(self.path_object, project_management, self.user_login)
+            self.create_project_management_data(self.path_object, project_management, self.user_login, status)
         if self.path_object.resolution:
             if self.path_object.version == '000.000':
                 self.create_default_file()
@@ -728,7 +729,6 @@ class CreateProductionData(object):
             return
         if not self.path_object.context:
             self.path_object.set_attr(context='source')
-        print self.path_object.path_root, 'creating these directories'
         self.safe_makedirs(self.path_object, test=self.test)
         self.create_other_context(self.path_object)
         if self.do_scope:
@@ -770,7 +770,7 @@ class CreateProductionData(object):
         else:
             logging.info('TEST MODE: No directories were created')
 
-    def create_project_management_data(self, path_object, project_management, user_login=None):
+    def create_project_management_data(self, path_object, project_management, user_login=None, status=None):
 
         if project_management != 'lumbermill':
             if path_object.filename or self.force_pm_creation:
@@ -780,8 +780,10 @@ class CreateProductionData(object):
                 module = "plugins.project_management.%s.main" % project_management
                 # noinspection PyTypeChecker
                 loaded_module = __import__(module, globals(), locals(), 'main', -1)
-                loaded_module.ProjectManagementData(path_object, session=session,
-                                                    user_email=user_login).create_project_management_data()
+                loaded_module.ProjectManagementData(path_object,
+                                                    session=session,
+                                                    user_email=user_login,
+                                                    status=status).create_project_management_data()
             else:
                 print('Creating Paths on Disk, lumbermill will create %s '
                       'versions when you add files' % project_management)
