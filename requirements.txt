@@ -7,6 +7,9 @@ pylint
 pandas
 ftrack-python-api
 asana
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
 PyWin32
 
 #  http://aka.ms/vcpython27

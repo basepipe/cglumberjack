@@ -104,7 +104,6 @@ class UserConfig(object):
         if my_tasks:
             self.my_tasks = my_tasks
         else:
-            print self.d
             self.my_tasks = self.d['my_tasks']
 
     def update_all(self):
