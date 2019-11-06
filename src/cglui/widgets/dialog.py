@@ -16,7 +16,12 @@ class TimeTracker(LJDialog):
 
     def __init__(self):
         LJDialog.__init__(self)
-
+        user = current_user()
+        users = app_config()['project_management']['ftrack']['users']
+        if current_user() in users:
+            user_info = users[user]
+            if not user_info:
+                print 'User: %s not found in ftrack globals' % user
         self.timelogs = {}
         self.new_logs = []
         self.edited_logs = []
@@ -39,7 +44,9 @@ class TimeTracker(LJDialog):
         time_for_date_label = QtWidgets.QLabel('Time Card')
         time_for_date_label.setProperty('class', 'ultra_title')
         layout = QtWidgets.QVBoxLayout()
-        label_user_name = QtWidgets.QLabel('tom mikota')
+        label_user_name = QtWidgets.QLabel('%s %s' % (user_info['first'], user_info['last']))
+        label_user_login = QtWidgets.QLabel('(%s)' % user_info['login'])
+        label_user_login.setProperty('class', 'large')
         label_user_name.setProperty('class', 'ultra_title')
         self.label_time_recorded = QtWidgets.QLabel('<b>Time Recorded:</b>')
         self.label_time_recorded.setProperty('class', 'large')
@@ -79,12 +86,14 @@ class TimeTracker(LJDialog):
 
         user_row = QtWidgets.QHBoxLayout()
         user_row.addWidget(label_user_name)
+        user_row.addWidget(label_user_login)
         user_row.addStretch(1)
         user_row.addWidget(time_for_date_label)
         time_row = QtWidgets.QHBoxLayout()
         time_row.addWidget(self.calendar_tool_button)
         time_row.addWidget(self.label_time_recorded)
         time_row.addWidget(self.total_time_label)
+        time_row.addStretch(1)
 
         layout.addLayout(user_row)
         layout.addLayout(time_row)
@@ -198,7 +207,7 @@ class TimeTracker(LJDialog):
             row.append(log['id'])
             self.timelogs[log['id']] = log
             self.ftrack_tasks.append(row)
-        self.total_time_label.setText("Total Hours Today: %s" % daily_hours)
+        self.total_time_label.setText('%s Logged hours' % str(daily_hours))
         return self.ftrack_tasks
 
     def add_task_clicked(self):
