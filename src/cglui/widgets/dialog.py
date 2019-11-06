@@ -57,7 +57,13 @@ class TimeTracker(LJDialog):
         self.calendar = QtGui.QCalendarWidget()
         self.task_table = QtWidgets.QTableWidget()
         self.task_table.setColumnCount(5)
+        self.task_table.setColumnHidden(4, True)
         self.task_table.setHorizontalHeaderLabels(['Project', 'Shot/Asset', 'Task', 'Hours', 'Task ID'])
+        header = self.task_table.horizontalHeader()
+        header.setResizeMode(0, QtGui.QHeaderView.ResizeToContents)
+        header.setResizeMode(1, QtGui.QHeaderView.Stretch)
+        header.setResizeMode(2, QtGui.QHeaderView.ResizeToContents)
+        header.setResizeMode(3, QtGui.QHeaderView.Stretch)
         self.task_table.setMinimumHeight(250)
         self.task_table.setMinimumWidth(400)
 
@@ -230,7 +236,7 @@ class TimeTracker(LJDialog):
                 if timelog_id not in self.edited_logs:
                     self.edited_logs.append(timelog_id)
         except AttributeError:
-            print row, 'Strange things are afoot at the circle k'
+            pass
 
     def load_task_hours(self):
         """
@@ -240,8 +246,8 @@ class TimeTracker(LJDialog):
         """
         # clear self.task_table
         self.day_name = self.weekdays[self.today.weekday()]
-        print self.today
         self.task_table.clear()
+        self.task_table.setHorizontalHeaderLabels(['Project', 'Shot/Asset', 'Task', 'Hours', 'Task ID'])
         self.task_table.setRowCount(0)
         total = 0
         tasks = self.get_timelogs(self.today.month, self.today.day, self.today.year)
