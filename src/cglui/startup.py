@@ -5,7 +5,7 @@ import signal
 from os.path import dirname, join
 from Qt import QtWidgets, QtCore
 import Qt
-from cglcore.startup import do_app_init
+# from cglcore.startup import do_app_init
 from cglui.util import UISettings
 
 
@@ -151,7 +151,7 @@ def _load_lang():
 
 
 def do_gui_init():
-    do_app_init()
+    # do_app_init()
     do_freeze_fix()
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     app = _do_qt_init()

@@ -4,7 +4,7 @@ from cglcore.path import PathObject, CreateProductionData
 # Tests for Basic Project Creation
 #######################################
 path_object = PathObject(r'D:/VFX/testoby/testco/render/cgl_unittestC/shots/010/0200/plate/publish/000.000/high')
-proj_man = 'ftrack'
+proj_man = 's'
 # Create a Company
 d = {'company': 'testco'}
 path_object = PathObject(d)

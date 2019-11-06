@@ -16,6 +16,7 @@ PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 class RequestFeatureDialog(LJDialog):
     def __init__(self, parent=None, title='Request Feature'):
         LJDialog.__init__(self, parent)
+        self.work_group = 'CGLumberjack'
         self.rtf_task_text = ''
         self.requirements_list = []
         self.results_list = []
@@ -37,6 +38,15 @@ class RequestFeatureDialog(LJDialog):
                           'None': {'guis': {'None': ['']},
                                    'language': ''}
                           }
+        workspace_data = AsanaJack().find_workspaces()
+        workspace_names = []
+        ignore = ['Personal Projects']
+        for w in workspace_data:
+            if w['name'] not in ignore:
+                workspace_names.append(w['name'])
+
+        workgroup_list = sorted(workspace_names)
+        workgroup_list.insert(0, '')
         software_list = sorted(['Smedge', 'Deadline', 'Maya', 'Nuke', 'Unreal Engine', 'Unity', 'Adobe Premiere',
                                 'Lumbermill', 'Github', 'Slack', 'S3', 'EC2', 'Asana'])
         software_list.insert(0, '')
@@ -179,6 +189,8 @@ class RequestFeatureDialog(LJDialog):
         self.label_task_text.setProperty('class', 'ultra_title')
         self.label_task_title = QtWidgets.QLabel("Title")
         self.label_functions = QtWidgets.QLabel("Function(s)")
+        self.label_workgroup = QtWidgets.QLabel("Workgroup:")
+        self.workgroup = QtWidgets.QHBoxLayout()
         self.message_files = QtWidgets.QLabel()
         self.message_functions = QtWidgets.QLabel()
         self.message_requirements = QtWidgets.QLabel()
@@ -201,6 +213,10 @@ class RequestFeatureDialog(LJDialog):
         ind = self.combo_repo.findText('cglumberjack')
         self.combo_repo.setCurrentIndex(ind)
         self.combo_gui = AdvComboBox()
+        self.combo_workgroup_list = AdvComboBox()
+        self.combo_workgroup_list.addItems(workgroup_list)
+        ind2 = self.combo_workgroup_list.findText(self.work_group)
+        self.combo_workgroup_list.setCurrentIndex(ind2)
 
         self.submit_task_button = QtWidgets.QPushButton('Submit Task')
         self.submit_task_button.setDefault(False)
@@ -231,10 +247,13 @@ class RequestFeatureDialog(LJDialog):
                             self.expected_results_line_edit: self.results_list,
                             }
 
-        grid.addWidget(self.label_task_title, 0, 0)
-        grid.addWidget(self.title_line_edit, 0, 1)
-        grid.addWidget(label_description, 1, 0)
-        grid.addWidget(self.description_line_edit, 1, 1)
+        grid.addWidget(self.label_workgroup, 0, 0)
+        grid.addWidget(self.combo_workgroup_list, 0, 1)
+
+        grid.addWidget(self.label_task_title, 1, 0)
+        grid.addWidget(self.title_line_edit, 1, 1)
+        grid.addWidget(label_description, 2, 0)
+        grid.addWidget(self.description_line_edit, 2, 1)
         grid.addWidget(self.label_code_info, 4, 0)
 
         grid.addWidget(self.label_repo, 10, 0)
@@ -291,6 +310,7 @@ class RequestFeatureDialog(LJDialog):
         self.requirements_line_edit.textChanged.connect(self.update_text_edit)
         self.expected_results_line_edit.returnPressed.connect(self.add_bullets)
         self.expected_results_line_edit.textChanged.connect(self.update_text_edit)
+        self.combo_workgroup_list.currentIndexChanged.connect(self.on_workgroup_changed)
         self.combo_software.currentIndexChanged.connect(self.update_text_edit)
         self.combo_software.currentIndexChanged.connect(self.show_stuff)
         self.combo_software.currentIndexChanged.connect(self.on_software_chosen)
@@ -298,7 +318,7 @@ class RequestFeatureDialog(LJDialog):
         self.combo_deliverable_list.currentIndexChanged.connect(self.update_text_edit)
         self.combo_delivery_method.currentIndexChanged.connect(self.update_text_edit)
         self.description_line_edit.textChanged.connect(self.update_text_edit)
-        self.description_line_edit.returnPressed.connect(self.show_stuff)
+        self.description_line_edit.editingFinished.connect(self.show_stuff)
         self.location_line_edit.textChanged.connect(self.update_text_edit)
         self.submit_task_button.clicked.connect(self.on_submit_clicked)
         self.combo_repo.currentIndexChanged.connect(self.on_repo_chosen)
@@ -315,6 +335,9 @@ class RequestFeatureDialog(LJDialog):
         # placeholder text on filescombo
         # placeholder text on functionscombo
         # add links to the task text
+
+    def on_workgroup_changed(self):
+        self.work_group = self.combo_workgroup_list.currentText()
 
     def choose_deliverable(self):
         if self.message_functions or self.message_files:
@@ -431,9 +454,10 @@ class RequestFeatureDialog(LJDialog):
         self.combo_language.setCurrentIndex(index)
 
     def on_submit_clicked(self):
-        AsanaJack().create_project('General Development')
-        AsanaJack().create_task(project_name='General Development', section_name='Backlog',
-                                task_name=self.title_line_edit.text(), notes=self.rtf_task_text)
+        # workgroup_chosen = self.combo_workgroup_list().currentText()
+        AsanaJack(work_space=self.work_group).create_project('General Development')
+        AsanaJack(work_space=self.work_group).create_task(project_name='General Development', section_name='Backlog',
+                                                          task_name=self.title_line_edit.text(), notes=self.rtf_task_text)
         self.accept()
 
     def update_text_edit(self):
@@ -585,13 +609,13 @@ class ReportBugDialog(LJDialog):
         # define the software area
         self.label_messaging = QtWidgets.QLabel('*All fields must have valid values \nbefore submitting bug report')
         self.label_messaging.setStyleSheet('color: red')
-        self.self.label_software = QtWidgets.QLabel('Software')
+        self.label_software = QtWidgets.QLabel('Software')
         self.label_description = QtWidgets.QLabel('Description of Issue:')
         self.lineEdit_software = QtWidgets.QLineEdit()
         self.label_subject = QtWidgets.QLabel('Subject')
         self.lineEdit_subject = QtWidgets.QLineEdit()
 
-        self.self.text_edit = QtWidgets.QTextEdit()
+        self.text_edit = QtWidgets.QTextEdit()
         self.screengrabs_layout = QtWidgets.QVBoxLayout()
 
         button_bar = QtWidgets.QHBoxLayout()
@@ -614,14 +638,14 @@ class ReportBugDialog(LJDialog):
         grid_layout.addWidget(self.lineEdit_username, 0, 1)
         grid_layout.addWidget(self.label_email, 1, 0)
         grid_layout.addWidget(self.lineEdit_email, 1, 1)
-        grid_layout.addWidget(self.self.label_software, 2, 0)
+        grid_layout.addWidget(self.label_software, 2, 0)
         grid_layout.addWidget(self.lineEdit_software, 2, 1)
         grid_layout.addWidget(self.label_subject, 3, 0)
         grid_layout.addWidget(self.lineEdit_subject, 3, 1)
         layout.addLayout(grid_layout)
         layout.addLayout(button_bar)
         layout.addWidget(self.label_description)
-        layout.addWidget(self.self.text_edit)
+        layout.addWidget(self.text_edit)
         layout.addLayout(self.screengrabs_layout)
         layout.addWidget(self.label_messaging)
         layout.addWidget(self.button_submit)
@@ -638,7 +662,7 @@ class ReportBugDialog(LJDialog):
         self.lineEdit_subject.textChanged.connect(self.ok_to_send)
         self.lineEdit_email.textChanged.connect(self.ok_to_send)
         self.lineEdit_software.textChanged.connect(self.ok_to_send)
-        self.self.text_edit.textChanged.connect(self.ok_to_send)
+        self.text_edit.textChanged.connect(self.ok_to_send)
         self.button_add_screen_grab.clicked.connect(self.screen_grab)
 
     def get_username(self):
@@ -656,7 +680,7 @@ class ReportBugDialog(LJDialog):
         return self.lineEdit_subject.text()
 
     def get_message(self):
-        return self.self.text_edit.toPlainText()
+        return self.text_edit.toPlainText()
 
     def add_attachments(self, file_paths=None):
         if not file_paths:
