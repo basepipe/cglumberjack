@@ -58,9 +58,8 @@ class CGLMenuButton(QtWidgets.QWidget):
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path='',
                  menu_type='preflights'):
         QtWidgets.QWidget.__init__(self, parent)
-        self.parent = parent
-        try:
 
+        try:
             dialog = self.parent().parent().parent()
             self.software = dialog.software_combo.currentText()
         except AttributeError:
@@ -184,7 +183,6 @@ class CGLMenuButton(QtWidgets.QWidget):
         """
         for attr in self.attrs:
             if attr in self.attrs_dict:
-                print self.attrs[attr], 'button name'
                 self.attrs_dict[attr].setText(str(self.attrs[attr]))
         # load the python file into the text edit
         code_text = self.load_code_text()
@@ -224,7 +222,7 @@ class CGLMenuButton(QtWidgets.QWidget):
             return "def run():\n    print(\"hello world: %s\")" % self.name
 
     def on_delete_clicked(self):
-        self.parent.removeTab(self.parent.currentIndex())
+        self.parent().removeTab(self.parent.currentIndex())
 
 
 class CGLMenu(QtWidgets.QWidget):
