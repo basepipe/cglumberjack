@@ -1,21 +1,20 @@
 import logging
-import webbrowser
-import datetime
-import os
-import json
-import ftrack_api
+# import webbrowser
+# import datetime
+# import os
+# import json
 from cglcore.config import app_config, UserConfig
 from cglcore.util import current_user
-from cglcore.path import create_previews
+# from cglcore.path import create_previews
 
 
 class ProjectManagementData(object):
     """
-    This is intended to be used as a tmplate for creating API connections to
+    This is intended to be used as a template for creating API connections to
     just about any project management system.  Once everything is filled out
     we should have a working version of project management fo just about anything.
     """
-    project_managmenet = 'lumbermill'
+    project_management = 'lumbermill'
     create = False
     edit = False
     delete = False
