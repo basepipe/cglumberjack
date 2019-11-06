@@ -10,7 +10,6 @@ from utils import CGLMenu
 class Designer(LJDialog):
     def __init__(self, parent=None, type_=None, menu_path=None, pm_tasks=None):
         LJDialog.__init__(self, parent)
-        print type_
         self.type = type_
         self.cgl_tools = get_cgl_tools()
         self.singular = ''
@@ -95,7 +94,6 @@ class Designer(LJDialog):
                              message='Are you sure you want to delete %s' % menu_name)
         dialog.exec_()
         if dialog.button == 'Ok':
-            print 'Deleting %s' % menu_name
             self.menus.removeTab(index)
 
     def load_software(self):
@@ -121,8 +119,9 @@ class Designer(LJDialog):
             self.menu_path = os.path.join(self.cgl_tools, self.software, '%s.cgl' % self.type)
             self.add_menu_button.setText('add %s' % self.singular)
             self.delete_menu_button.setText('delete %s' % self.singular)
-            if os.path.exists(self.menu_path):
-                self.load_menus()
+            if not os.path.exists(self.menu_path):
+                self.create_empty_menu()
+            self.load_menus()
 
     def get_singular(self, type_):
         if self.type == 'shelves':
@@ -157,23 +156,22 @@ class Designer(LJDialog):
                     menu_name = self.schema['long_to_short']['shots'][long_name]
                 else:
                     menu_name = long_name
-                cgl_file = self.menu_path
-                new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
-                                   menu_path=cgl_file, menu_type=self.type)
-                new_menu.save_clicked.connect(self.on_save_clicked)
-                index = self.menus.addTab(new_menu, menu_name)
-                self.menus.setCurrentIndex(index)
-        elif self.type == 'menus':
-            dialog = InputDialog(title='Add Menu', message='Create a Custom Menu', line_edit=True)
+                self.do_add_menu(menu_name)
+        elif self.type == 'menus' or self.type == 'shelves':
+            dialog = InputDialog(title='Add %s' % self.singular, message='Create a Custom %s' % self.singular,
+                                 line_edit=True)
             dialog.exec_()
             if dialog.button == 'Ok':
                 menu_name = dialog.line_edit.text()
-                cgl_file = self.menu_path
-                new_menu = CGLMenu(software=self.software, menu_name=menu_name, menu=[],
-                                   menu_path=cgl_file, menu_type=self.type)
-                new_menu.save_clicked.connect(self.on_save_clicked)
-                index = self.menus.addTab(new_menu, menu_name)
-                self.menus.setCurrentIndex(index)
+                self.do_add_menu(menu_name)
+
+    def do_add_menu(self, menu_name):
+        cgl_file = self.menu_path
+        new_menu = CGLMenu(parent=self, software=self.software, menu_name=menu_name, menu=[],
+                           menu_path=cgl_file, menu_type=self.type)
+        new_menu.save_clicked.connect(self.on_save_clicked)
+        index = self.menus.addTab(new_menu, menu_name)
+        self.menus.setCurrentIndex(index)
 
     def on_save_clicked(self):
         self.save_menus()
@@ -191,7 +189,7 @@ class Designer(LJDialog):
                 for i in range(len(menu_dict[self.software])+1):
                     for menu in menu_dict[self.software]:
                         if i == menu_dict[self.software][menu]['order']:
-                            buttons = CGLMenu(software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
+                            buttons = CGLMenu(parent=self, software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
                                               menu_path=self.menu_path, menu_type=self.type)
                             buttons.save_clicked.connect(self.on_save_clicked)
                             self.menus.addTab(buttons, menu)
@@ -212,15 +210,16 @@ class Designer(LJDialog):
             self.software_combo.setCurrentIndex(num)
 
     def save_menus(self):
+        # TODO - if you change the label this actually deletes stuff.
         menu_dict = {}
         for mi in range(self.menus.count()):
             menu_name = self.menus.tabText(mi)
             menu = self.menus.widget(mi)
             menu_dict[menu_name] = {}
             menu_dict[menu_name]['order'] = mi+1
-            for bi in range(menu.buttons.count()):
-                button_name = menu.buttons.tabText(bi)
-                button_widget = menu.buttons.widget(bi)
+            for bi in range(menu.buttons_tab_widget.count()):
+                button_name = menu.buttons_tab_widget.tabText(bi)
+                button_widget = menu.buttons_tab_widget.widget(bi)
                 if self.type == 'preflights':
                     menu_dict[menu_name][button_name] = {
                         'module': button_widget.command_line_edit.text(),
@@ -233,7 +232,7 @@ class Designer(LJDialog):
                         'module': button_widget.command_line_edit.text(),
                         'label': button_widget.label_line_edit.text(),
                         'order': bi + 1,
-                        'icon': button_widget.required_line_edit.text()
+                        'icon': button_widget.icon_path_line_edit.text()
                     }
                 else:
                     menu_dict[menu_name][button_name] = {
@@ -246,8 +245,11 @@ class Designer(LJDialog):
         json_object = {self.software: menu_dict}
         self.save_json(self.menu_path, json_object)
 
+    def create_empty_menu(self):
+        json_object = {self.software: {}}
+        self.save_json(self.menu_path, json_object)
+
     def save_code(self, menu_name, button_widget):
-        print 'Saving Code now'
         button_name = button_widget.name
         code = button_widget.code_text_edit.document().toPlainText()
         button_file = os.path.join(self.cgl_tools, self.software, self.type, menu_name,
@@ -263,7 +265,6 @@ class Designer(LJDialog):
 
     def make_init_for_folders_in_path(self, folder):
         config = self.cgl_tools.replace('\\', '/')
-
         folder = folder.replace('\\', '/')
         folder = folder.replace(config, '')
         parts = folder.split('/')

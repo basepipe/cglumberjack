@@ -1,6 +1,6 @@
 import os
 import json
-from cglcore.path import PathObject, get_cgl_tools
+from cglcore.path import PathObject, get_cgl_tools, get_cgl_config
 
 
 class CustomMenu(object):
@@ -32,15 +32,13 @@ class CustomMenu(object):
             self.path_object = PathObject(str(self.scene_path))
         else:
             print 'No Valid Scene Path'
-            return
-        self.company_config = os.path.dirname(self.path_object.company_config)
+        self.company_config = os.path.dirname(get_cgl_config())
         print 'Company Config is: %s' % self.company_config
         if not os.path.exists(self.company_config):
             print 'Company Config %s: does no exist' % self.company_config
             return
 
         self.menus_file = os.path.join(get_cgl_tools(), software, '%s.cgl' % self.type)
-        print self.menus_file
         self.menus = self.load_cgl()
         self.menus_folder = os.path.join(os.path.dirname(self.menus_file), type_)
         self.menu_dict = {}
@@ -130,6 +128,12 @@ class CustomMenu(object):
             return {}
 
     def get_icon_path(self, shelf, button):
+        """
+        returns the icon path within the current menu of the cgl_tools directory of the corresponding icon
+        :param shelf:
+        :param button:
+        :return: icon path string
+        """
         icon_path = os.path.join(self.company_config, 'cgl_tools')
         if self.menus[shelf][button]['icon']:
             icon_file = os.path.join(icon_path, self.menus[shelf][button]['icon'])
@@ -140,18 +144,23 @@ class CustomMenu(object):
     def add_menu_buttons(self, menu, buttons):
         for button in buttons:
             label = self.menus[menu][button]['label']
-            try:
-                icon_file = self.get_icon_path(menu, button)
+            if 'icon' in self.menus[menu][button].keys():
+                icon_file = self.menus[menu][button]['icon']
                 if icon_file:
                     label = ''
-                self.add_button(menu, label=self.menus[menu][button]['label'],
-                                annotation=self.menus[menu][button]['annotation'],
-                                command=self.menus[menu][button]['module'],
-                                icon=icon_file,
-                                image_overlay_label=label)
-            except KeyError:
-                self.add_button(menu, label=self.menus[menu][button]['label'],
-                                command=self.menus[menu][button]['module'])
+            else:
+                icon_file = ''
+
+            if 'annotation' in self.menus[menu][button].keys():
+                annotation = self.menus[menu][button]['annotation']
+            else:
+                annotation = ''
+            print icon_file
+            self.add_button(menu, label=self.menus[menu][button]['label'],
+                            annotation=annotation,
+                            command=self.menus[menu][button]['module'],
+                            icon=icon_file,
+                            image_overlay_label=label)
 
     def load_menus(self):
         self.delete_menus()
