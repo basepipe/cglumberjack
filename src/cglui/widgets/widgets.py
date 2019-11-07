@@ -22,12 +22,12 @@ class LJButton(QtWidgets.QPushButton):
 class LJTag(QtWidgets.QFrame):
     close_clicked = QtCore.Signal()
 
-    def __init__(self, parent=None, text='Tab Text'):
+    def __init__(self, parent=None, text='Tab Text', height=30):
         QtWidgets.QFrame.__init__(self, parent)
         self.setProperty('class', 'tag_red')
-        # self.setMaximumHeight(50)
+        self.setMaximumHeight(height)
         self.text = text
-        close_width = 30
+        close_width = height/2
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         label = QtWidgets.QLabel(text)
@@ -49,12 +49,22 @@ class LJTag(QtWidgets.QFrame):
         self.close_clicked.emit()
 
 
-class TagWidget(QtWidgets.QFrame):
+class TagWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        layout = QtWidgets.QVBoxLayout(self)
+        frame = TagFrame()
+        layout.addWidget(frame)
+
+
+class TagFrame(QtWidgets.QFrame):
+
+    def __init__(self, parent=None, tag_height=30):
         QtWidgets.QFrame.__init__(self, parent)
+        self.tag_height = tag_height
         self.setProperty('class', 'tag_widget')
-        self.setMinimumHeight(60)
+        self.setMinimumHeight(tag_height+4)
         self.layout = QtWidgets.QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.tags_layout = QtWidgets.QHBoxLayout()
@@ -75,7 +85,7 @@ class TagWidget(QtWidgets.QFrame):
             self.sender().setText('')
 
     def add_tag(self, tag_text):
-        tag = LJTag(text=tag_text)
+        tag = LJTag(text=tag_text, height=self.tag_height)
         tag.close_clicked.connect(self.remove_tag)
         self.tag_dict['tag_text'] = tag
         self.tags_layout.addWidget(tag)

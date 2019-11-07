@@ -40,7 +40,7 @@ QLineEdit.dark_grey{
 }
 
 QFrame.tag_widget{
-    border: 1px solid #383838;
+    border: 1px solid #707070;
     border-radius: 4px;
 }
 
@@ -51,11 +51,11 @@ QLineEdit.tag_entry{
 }
 
 QFrame.tag_red{
-    background-color: #E24545;
+    background-color: #707070;
     margin: 5px;
-    padding: 10px;
+    padding: 0px 4px 0px 10px;
     border: 0px;
-    border-radius: 25px;
+    border-radius: 10px;
 }
 
 QToolButton.tag{
@@ -74,7 +74,7 @@ QToolButton.tag:hover{
     color: #383838;
     font-family: "Courier New";
     border: none;
-    border-radius: 15px;
+    border-radius: 7px;
 }
 
 
@@ -157,6 +157,10 @@ QToolButton.add_button:disabled{
     width: 170px;
     padding-left: 15px;
     padding-right: 15px;
+}
+
+QToolButton.assign{
+    background-color: transparent;
 }
 
 QPushButton.empty_state{
