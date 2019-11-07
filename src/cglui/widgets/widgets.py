@@ -66,7 +66,6 @@ class TagWidget(QtWidgets.QFrame):
         self.layout.addLayout(self.tags_layout)
         self.layout.addWidget(self.text_entry)
         self.text_entry.textEdited.connect(self.on_text_entry_changed)
-        self.add_tag('test')
 
     def on_text_entry_changed(self):
         text = self.sender().text()

@@ -20,8 +20,9 @@ if __name__ == "__main__":
 
     # TODO - Select CG Lumberjack as the default workgroup
     # TODO - select General Development as the project
-    # TODO  - Add "Tags" Button (i really want to create a tags widget for lumbermill!)
     # TODO - Add "Assignment" button (would be cool to have a dropdown like they do on Asana)
-    #
+    # TODO - files_line_edit does nothing to add things to the list
+    # TODO - functions_line_edit does nothing to add things to the list
+
 
 
