@@ -39,6 +39,53 @@ QLineEdit.dark_grey{
     color: white;
 }
 
+QFrame.tag_widget{
+    border: 1px solid #707070;
+    border-radius: 4px;
+}
+
+QLineEdit.tag_entry{
+    background-color: transparent;
+    border: 0px;
+    font-size: 10pt;
+}
+
+QFrame.tag_red{
+    background-color: #E54A25;
+    margin: 5px;
+    padding: 0px 4px 0px 10px;
+    border: 0px;
+    border-radius: 10px;
+}
+
+QToolButton.tag{
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+    margin: 0px;
+    color: white;
+    font-family: "Courier New";
+}
+
+QToolButton.tag:hover{
+    background-color: white;
+    padding: 0px;
+    margin: 0px;
+    color: #383838;
+    font-family: "Courier New";
+    border: none;
+    border-radius: 7px;
+}
+
+
+QLabel.tag_text{
+    color: white;
+    margin: 0px;
+    padding: 0px;
+    font-family: "Courier New";
+    font-size: 10pt;
+}
+
 
 QFrame.light_grey{
     background-color: #BFBFBF;
@@ -110,6 +157,10 @@ QToolButton.add_button:disabled{
     width: 170px;
     padding-left: 15px;
     padding-right: 15px;
+}
+
+QToolButton.assign{
+    background-color: transparent;
 }
 
 QPushButton.empty_state{
@@ -191,7 +242,6 @@ QLineEdit.feedback{
 
 QLineEdit{
     font-family: "Courier New";
-    height: 40px;
 }
 
 QLineEdit::placeholder{

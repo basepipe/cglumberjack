@@ -720,14 +720,18 @@ def sleeper():
 
 
 if __name__ == "__main__":
-    from cglui.startup import do_gui_init
     project_management = app_config()['account_info']['project_management']
     users = app_config()['project_management'][project_management]['users']
+    time_log = True
     if current_user() in users:
         user_info = users[current_user()]
         if user_info:
-            if ftrack_util.check_for_timelog():
-                #app = do_gui_init()
+            if project_management == 'ftrack':
+                if ftrack_util.check_for_timelog():
+                    time_log = True
+                else:
+                    time_log = False
+            if time_log:
                 app = QtGui.QApplication([])
                 splash_pix = QtGui.QPixmap(cglpath.image_path('lumbermill.jpg'))
                 #splash_dialog = ProgressDialog('Loading...', 'night_rider.gif')
