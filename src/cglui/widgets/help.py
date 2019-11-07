@@ -8,7 +8,7 @@ from cglui.widgets.base import LJDialog
 from cglcore.util import current_user
 from cglcore import screen_grab
 import cglcore.path as cglpath
-from cglui.widgets.widgets import AdvComboBox, TagFrame, TagWidget
+from cglui.widgets.widgets import AdvComboBox, TagWidget
 from plugins.project_management.asana.basic import AsanaJack
 
 PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
@@ -227,9 +227,9 @@ class RequestFeatureDialog(LJDialog):
         self.submit_task_button.setAutoDefault(False)
         self.tag_widget = TagWidget()
         self.tag_widget.hide()
-        assign_icon = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'assign_default48px.png'))
+        # assign_icon = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'assign_default48px.png'))
         assign_icon_hover = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'assign_hover48px.png'))
-        tag_icon = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'tag_default48px.png'))
+        # tag_icon = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'tag_default48px.png'))
         tag_icon_hover = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'tag_hover48px.png'))
         assign_button = QtWidgets.QToolButton()
         assign_button.setProperty('class', 'assign')

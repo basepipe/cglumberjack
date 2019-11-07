@@ -53,6 +53,10 @@ class TagWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
+        # TODO - add the tag icon to this
+        # TODO - add the hide/show functionality to pushing the tag icon
+        # TODO - add the abililty to choose the color of the tag
+        # TODO - add the ability to have a list of commonly used tags.
         layout = QtWidgets.QVBoxLayout(self)
         frame = TagFrame()
         layout.addWidget(frame)
