@@ -191,6 +191,7 @@ class RequestFeatureDialog(LJDialog):
         self.label_functions = QtWidgets.QLabel("Function(s)")
         self.label_workgroup = QtWidgets.QLabel("Workgroup:")
         self.label_tags = QtWidgets.QLabel("Tags:")
+        self.label_tags.setProperty('class', 'ultra_title')
         self.workgroup = QtWidgets.QHBoxLayout()
         self.message_files = QtWidgets.QLabel()
         self.message_functions = QtWidgets.QLabel()
@@ -223,6 +224,8 @@ class RequestFeatureDialog(LJDialog):
         self.submit_task_button = QtWidgets.QPushButton('Submit Task')
         self.submit_task_button.setDefault(False)
         self.submit_task_button.setAutoDefault(False)
+        self.tag_widget = TagWidget()
+
         button_row = QtWidgets.QHBoxLayout()
         button_row.addStretch(1)
         button_row.addWidget(self.submit_task_button)
@@ -241,8 +244,6 @@ class RequestFeatureDialog(LJDialog):
         self.videos_line_edit = QtWidgets.QLineEdit()
         self.cgl_line_edit = QtWidgets.QLineEdit()
         self.line_edit_functions = QtWidgets.QLineEdit()
-
-        self.tag_widget = TagWidget()
 
         self.widget_dict = {self.requirements_line_edit: self.message_requirements,
                             self.expected_results_line_edit: self.message_expected_results,
@@ -295,8 +296,7 @@ class RequestFeatureDialog(LJDialog):
         grid.addWidget(self.label_expected_results, 26, 0)
         grid.addWidget(self.expected_results_line_edit,  27, 1)
         grid.addWidget(self.message_expected_results, 28, 1)
-        grid.addWidget(self.label_tags, 29, 0)
-        grid.addWidget(self.tag_widget, 29, 1)
+
         # grid.addWidget(self.label_code_location, 28, 0)
         # grid.addWidget(self.location_line_edit, 28, 1)
 
@@ -309,6 +309,8 @@ class RequestFeatureDialog(LJDialog):
         h_layout.addLayout(right_layout)
         h_layout.addLayout(left_layout)
         layout.addLayout(h_layout)
+        layout.addWidget(self.label_tags)
+        layout.addWidget(self.tag_widget)
         layout.addLayout(button_row)
 
 
@@ -588,13 +590,15 @@ class RequestFeatureDialog(LJDialog):
         list_ = self.bullet_dict[self.sender()]
         if current_text not in list_:
             list_.append(current_text)
-        print list_
+        requirements_text = ''
         self.update_text_edit()
         if not bullet_text:
             requirements_text = '    * %s' % current_text
         else:
-            requirements_text = '%s\n    * %s' % (bullet_text, current_text)
-        self.widget_dict[self.sender()].setText(requirements_text)
+            if current_text not in bullet_text:
+                requirements_text = '%s\n    * %s' % (bullet_text, current_text)
+        if requirements_text:
+            self.widget_dict[self.sender()].setText(requirements_text)
         if isinstance(self.sender(), QtWidgets.QLineEdit):
             self.sender().setText('')
         elif isinstance(self.sender(), AdvComboBox):

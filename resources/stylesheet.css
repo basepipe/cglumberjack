@@ -53,7 +53,7 @@ QLineEdit.tag_entry{
 QFrame.tag_red{
     background-color: #E24545;
     margin: 5px;
-    padding: 10px; /* top right bottom left */
+    padding: 10px;
     border: 0px;
     border-radius: 25px;
 }
