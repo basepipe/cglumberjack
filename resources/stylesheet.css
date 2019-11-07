@@ -39,6 +39,53 @@ QLineEdit.dark_grey{
     color: white;
 }
 
+QFrame.tag_widget{
+    border: 1px solid #383838;
+    border-radius: 4px;
+}
+
+QLineEdit.tag_entry{
+    background-color: transparent;
+    border: 0px;
+    font-size: 10pt;
+}
+
+QFrame.tag_red{
+    background-color: #E24545;
+    margin: 5px;
+    padding: 10px; /* top right bottom left */
+    border: 0px;
+    border-radius: 25px;
+}
+
+QToolButton.tag{
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+    margin: 0px;
+    color: white;
+    font-family: "Courier New";
+}
+
+QToolButton.tag:hover{
+    background-color: white;
+    padding: 0px;
+    margin: 0px;
+    color: #383838;
+    font-family: "Courier New";
+    border: none;
+    border-radius: 15px;
+}
+
+
+QLabel.tag_text{
+    color: white;
+    margin: 0px;
+    padding: 0px;
+    font-family: "Courier New";
+    font-size: 10pt;
+}
+
 
 QFrame.light_grey{
     background-color: #BFBFBF;
@@ -191,7 +238,6 @@ QLineEdit.feedback{
 
 QLineEdit{
     font-family: "Courier New";
-    height: 40px;
 }
 
 QLineEdit::placeholder{

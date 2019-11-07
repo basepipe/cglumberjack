@@ -7,7 +7,7 @@ from cglcore.config import app_config
 from cglui.widgets.base import LJDialog
 from cglcore.util import current_user
 from cglcore import screen_grab
-from cglui.widgets.widgets import AdvComboBox
+from cglui.widgets.widgets import AdvComboBox, LJTag, TagWidget
 from plugins.project_management.asana.basic import AsanaJack
 
 PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
@@ -255,6 +255,10 @@ class RequestFeatureDialog(LJDialog):
         grid.addWidget(label_description, 2, 0)
         grid.addWidget(self.description_line_edit, 2, 1)
         grid.addWidget(self.label_code_info, 4, 0)
+        tags_label = QtWidgets.QLabel("Tags:")
+        tag_widget = TagWidget()
+        grid.addWidget(tags_label, 5, 0)
+        grid.addWidget(tag_widget, 5, 1)
 
         grid.addWidget(self.label_repo, 10, 0)
         grid.addWidget(self.combo_repo, 10, 1)
