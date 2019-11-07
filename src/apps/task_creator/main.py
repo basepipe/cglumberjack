@@ -18,12 +18,7 @@ if __name__ == "__main__":
     app.setStyleSheet(style_sheet)
     app.exec_()
 
-    # TODO - select General Development as the project (once projects can be chosen)
-    # TODO - possibly change description to be a wider box.
-    # TODO - the line_edits are fairly skinny
-    # TODO - Add "Assignment" button (would be cool to have a dropdown like they do on Asana)
-    # TODO - files_line_edit does nothing to add things to the list
-    # TODO - functions_line_edit does nothing to add things to the list
+
 
 
 
