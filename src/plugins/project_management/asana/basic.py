@@ -28,6 +28,9 @@ class AsanaJack(object):
         """
         return self.me['workspaces']
 
+    def find_projects(self):
+        return self.client.projects.find_by_workspace(self.workspace_data['gid'], iterator_type=None)
+
     def find_project_data(self, project_name):
 
         projects = self.client.projects.find_by_workspace(self.workspace_data['gid'], iterator_type=None)

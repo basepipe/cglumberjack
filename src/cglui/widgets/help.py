@@ -17,7 +17,9 @@ PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 class RequestFeatureDialog(LJDialog):
     def __init__(self, parent=None, title='Request Feature'):
         LJDialog.__init__(self, parent)
+        self.combo_projects_list = AdvComboBox()
         self.work_group = 'CG Lumberjack'
+        self.projects = ''
         self.rtf_task_text = ''
         self.requirements_list = []
         self.results_list = []
@@ -48,6 +50,15 @@ class RequestFeatureDialog(LJDialog):
 
         workgroup_list = sorted(workspace_names)
         workgroup_list.insert(0, '')
+
+        projects_data = AsanaJack().find_projects()
+        project_names = []
+        for p in projects_data:
+            if p['name'] not in ignore:
+                project_names.append(p['name'])
+        project_list = sorted(project_names)
+        project_list.insert(0, '')
+
         software_list = sorted(['Smedge', 'Deadline', 'Maya', 'Nuke', 'Unreal Engine', 'Unity', 'Adobe Premiere',
                                 'Lumbermill', 'Github', 'Slack', 'S3', 'EC2', 'Asana'])
         software_list.insert(0, '')
@@ -191,6 +202,7 @@ class RequestFeatureDialog(LJDialog):
         self.label_task_title = QtWidgets.QLabel("Title")
         self.label_functions = QtWidgets.QLabel("Function(s)")
         self.label_workgroup = QtWidgets.QLabel("Workgroup:")
+        self.label_projects = QtWidgets.QLabel("Projects: ")
         self.label_tags = QtWidgets.QLabel("Tags:")
         self.label_tags.setProperty('class', 'ultra_title')
         self.workgroup = QtWidgets.QHBoxLayout()
@@ -221,7 +233,6 @@ class RequestFeatureDialog(LJDialog):
         ind2 = self.combo_workgroup_list.findText(self.work_group)
         if ind2 != -1:
             self.combo_workgroup_list.setCurrentIndex(ind2)
-
         self.submit_task_button = QtWidgets.QPushButton('Submit Task')
         self.submit_task_button.setDefault(False)
         self.submit_task_button.setAutoDefault(False)
@@ -277,12 +288,13 @@ class RequestFeatureDialog(LJDialog):
 
         grid.addWidget(self.label_workgroup, 0, 0)
         grid.addWidget(self.combo_workgroup_list, 0, 1)
-
         grid.addWidget(self.label_task_title, 1, 0)
         grid.addWidget(self.title_line_edit, 1, 1)
         grid.addWidget(label_description, 2, 0)
         grid.addWidget(self.description_line_edit, 2, 1)
         grid.addWidget(self.label_code_info, 4, 0)
+        grid.addWidget(self.label_projects, 5, 0)
+        grid.addWidget(self.combo_projects_list, 5, 1)
 
         grid.addWidget(self.label_repo, 10, 0)
         grid.addWidget(self.combo_repo, 10, 1)
@@ -359,6 +371,7 @@ class RequestFeatureDialog(LJDialog):
         self.hide_all()
         if self.combo_workgroup_list.currentText():
             self.title_line_edit.setFocus()
+        self.on_workgroup_changed()
 
     def on_show_tags_clicked(self):
         self.tag_widget.show()
@@ -366,6 +379,20 @@ class RequestFeatureDialog(LJDialog):
 
     def on_workgroup_changed(self):
         self.work_group = self.combo_workgroup_list.currentText()
+        projects_data = AsanaJack().find_projects()
+        project_names = []
+        for p in projects_data:
+            if p['name'] not in ['Personal Projects']:
+                project_names.append(p['name'])
+            project_list = sorted(project_names)
+            project_list.insert(0, '')
+        self.combo_projects_list.clear()
+        self.combo_projects_list.addItems(project_list)
+        ind3 = self.combo_projects_list.findText(self.projects)
+        if ind3 != -1:
+            self.combo_projects_list.setCurrentIndex(ind3)
+
+
 
     def choose_deliverable(self):
         if self.message_functions or self.message_files:
