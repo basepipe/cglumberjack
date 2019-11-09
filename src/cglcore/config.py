@@ -2,7 +2,6 @@ import os
 import logging
 import sys
 import json
-from cglcore.util import cgl_copy
 
 
 class Configuration(object):
@@ -53,6 +52,7 @@ class Configuration(object):
             os.makedirs(self.cg_lumberjack_dir)
 
     def make_company_global_dir(self):
+        from cglcore.util import cgl_copy
         default_global = os.path.join(self.cg_lumberjack_dir, 'globals.json')
         to_path = os.path.join(self.company_global_dir, 'globals.json')
         if os.path.exists(self.company_global_dir):
