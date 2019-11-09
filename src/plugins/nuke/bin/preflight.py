@@ -2,8 +2,8 @@ from Qt import QtCore
 import plugins.nuke.cglnuke as cglnuke
 from plugins.nuke.gui import CGLNuke
 import plugins.preflight.main
-from cglcore.config import app_config
-from cglcore.util import current_user
+from src.core.config import app_config
+from src.core.util import current_user
 
 
 def launch_(task):

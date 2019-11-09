@@ -1,6 +1,6 @@
 from Qt import QtCore, QtWidgets
-from cglui.widgets.base import LJDialog
-from cglcore.path import PathObject, lj_list_dir
+from src.ui.widgets.base import LJDialog
+from src.core.path import PathObject, lj_list_dir
 
 
 class ListWidget(QtWidgets.QListWidget):
@@ -97,7 +97,7 @@ class PublishDialog(LJDialog):
 
 
 if __name__ == "__main__":
-    from cglui.startup import do_gui_init
+    from src.ui.startup import do_gui_init
     test_path = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectH/shots/SJM/010/comp/tmiko/000.006/high/' \
                 r'03_2a_#####.exr'
     path_object = PathObject(test_path)

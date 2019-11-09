@@ -1,8 +1,8 @@
 from Qt import QtCore, QtWidgets, QtGui
-from cglui.util import UISettings
-from cglui.widgets.base import StateSavers
-from cglui.widgets.combo import AdvComboBox
-from cglcore.path import get_file_icon
+from src.ui.util import UISettings
+from src.ui.widgets.base import StateSavers
+from src.ui.widgets.combo import AdvComboBox
+from src.core.path import get_file_icon
 
 FILEPATH = 1
 FILENAME = 0

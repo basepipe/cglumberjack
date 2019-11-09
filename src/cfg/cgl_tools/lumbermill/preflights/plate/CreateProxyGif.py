@@ -1,5 +1,5 @@
 from plugins.preflight.preflight_check import PreflightCheck
-from cglcore.convert import create_gif_proxy, create_gif_thumb
+from src.core.convert import create_gif_proxy, create_gif_thumb
 
 
 class CreateProxyGif(PreflightCheck):

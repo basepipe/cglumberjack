@@ -3,8 +3,8 @@ import glob
 import datetime
 import pandas as pd
 from plugins.preflight.preflight_check import PreflightCheck
-from cglcore.path import PathObject, CreateProductionData, split_sequence, split_sequence_frange
-from cglcore.util import cgl_copy
+from src.core.path import PathObject, CreateProductionData, split_sequence, split_sequence_frange
+from src.core.util import cgl_copy
 
 FILEPATH = 0
 FILENAME = 1

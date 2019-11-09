@@ -1,8 +1,8 @@
 import glob
 import os
 from plugins.preflight.preflight_check import PreflightCheck
-from cglcore.path import PathObject, lj_list_dir
-from cglcore.convert import create_gif_proxy, create_gif_thumb
+from src.core.path import PathObject, lj_list_dir
+from src.core.convert import create_gif_proxy, create_gif_thumb
 
 
 class CreateProxyGif(PreflightCheck):

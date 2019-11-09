@@ -1,4 +1,4 @@
-from cglcore.config import app_config
+from src.core.config import app_config
 import ftrack_api
 import datetime
 

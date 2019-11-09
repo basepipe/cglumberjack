@@ -4,13 +4,13 @@ import logging
 import glob
 import threading
 from Qt import QtCore, QtGui, QtWidgets
-from cglui.widgets.progress_gif import ProgressGif
-from cglui.widgets.dialog import InputDialog
-from cglui.widgets.containers.tree import LJTreeWidget
-from cglui.widgets.combo import AdvComboBox
-from cglui.widgets.widgets import LJListWidget, EmptyStateWidget
-from cglcore.config import app_config
-from cglcore.path import PathObject, icon_path, lj_list_dir, split_sequence_frange, get_file_type
+from src.ui.widgets.progress_gif import ProgressGif
+from src.ui.widgets.dialog import InputDialog
+from src.ui.widgets.containers.tree import LJTreeWidget
+from src.ui.widgets.combo import AdvComboBox
+from src.ui.widgets.widgets import LJListWidget, EmptyStateWidget
+from src.core.config import app_config
+from src.core.path import PathObject, icon_path, lj_list_dir, split_sequence_frange, get_file_type
 from plugins.preflight.main import Preflight
 from panels import clear_layout
 
@@ -213,7 +213,7 @@ class IOPanel(QtWidgets.QWidget):
         if path == '*':
             print 'Please Select An Ingest Source Before Dragging Files'
             return
-        from cglcore.util import cgl_copy
+        from src.core.util import cgl_copy
         cgl_copy(files, to_folder, verbose=False, dest_is_folder=True)
         self.progress_bar.hide()
         self.load_import_events()

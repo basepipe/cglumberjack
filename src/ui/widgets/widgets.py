@@ -1,13 +1,13 @@
 import os
 from Qt import QtWidgets, QtGui, QtCore
-from cglcore import path
-from cglui.util import drop_handler, define_palettes
-from cglui.widgets.containers.table import LJTableWidget
-from cglui.widgets.containers.model import ListItemModel
-from cglui.widgets.containers.menu import LJMenu
-from cglcore.config import app_config
-from cglcore.path import get_cgl_tools, get_task_info
-from cglcore.util import load_json
+from src.core import path
+from src.ui.util import drop_handler, define_palettes
+from src.ui.widgets.containers.table import LJTableWidget
+from src.ui.widgets.containers.model import ListItemModel
+from src.ui.widgets.containers.menu import LJMenu
+from src.core.config import app_config
+from src.core.path import get_cgl_tools, get_task_info
+from src.core.util import load_json
 
 PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 
@@ -741,7 +741,7 @@ class FileTableWidget(LJTableWidget):
         self.selected.connect(self.on_row_selected)
 
     def show_in_proj(self):
-        from cglcore.path import show_in_project_management
+        from src.core.path import show_in_project_management
         show_in_project_management(self.path_object)
 
     def add_custom_task_items(self):

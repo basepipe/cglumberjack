@@ -2,7 +2,7 @@ import getpass
 import os
 import json
 from Qt import QtCore, QtWidgets, QtGui
-from cglcore.util import cgl_copy
+from src.core.util import cgl_copy
 
 
 class PathItemWidget(QtWidgets.QWidget):
@@ -589,7 +589,7 @@ class ConfigDialog(QtWidgets.QDialog):
 
 
 if __name__ == "__main__":
-    # from cglcore.path import load_style_sheet
+    # from src.core.path import load_style_sheet
     app = QtGui.QApplication([])
     form = ConfigDialog()
     form.show()

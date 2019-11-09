@@ -1,15 +1,15 @@
 import glob
 import os
 from Qt import QtWidgets, QtCore, QtGui
-from cglcore.config import app_config
-from cglui.widgets.widgets import LJListWidget, LJButton
-from cglui.widgets.dialog import InputDialog
-from cglui.widgets.containers.model import ListItemModel
-from cglcore.path import PathObject, CreateProductionData, icon_path
-from cglcore.path import create_project_config
-from cglui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
-from cglcore.util import current_user
-from cglui.widgets.progress_gif import process_method
+from src.core.config import app_config
+from src.ui.widgets.widgets import LJListWidget, LJButton
+from src.ui.widgets.dialog import InputDialog
+from src.ui.widgets.containers.model import ListItemModel
+from src.core.path import PathObject, CreateProductionData, icon_path
+from src.core.path import create_project_config
+from src.ui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
+from src.core.util import current_user
+from src.ui.widgets.progress_gif import process_method
 
 
 class CompanyPanel(QtWidgets.QWidget):
@@ -324,7 +324,7 @@ class ProductionPanel(QtWidgets.QWidget):
         self.assets.tasks_radio.clicked.connect(self.load_tasks)
 
     def load_tasks(self):
-        from cglcore.config import UserConfig
+        from src.core.config import UserConfig
         # TODO - figure out how to add the progress bar to this.
         self.assets.add_button.setEnabled(False)
         self.assets.data_table.clearSpans()

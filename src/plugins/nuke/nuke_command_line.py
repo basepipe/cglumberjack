@@ -1,4 +1,4 @@
-from cglcore.config import app_config
+from src.core.config import app_config
 
 filepath = r'D:/VFX/companies/cgl-fsutests/source/comptestB/shots/SEA/1500/comp/tmikota/000.000/high/SEA_1500_comp.nk'
 

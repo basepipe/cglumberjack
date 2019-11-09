@@ -2,10 +2,10 @@ from Qt import QtWidgets, QtCore, QtGui
 from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import nuke
 import cglnuke
-import cglui.startup as startup
-from cglcore.path import PathObject
-from cglcore.config import app_config
-from cglcore.util import current_user
+import src.ui.startup as startup
+from src.core.path import PathObject
+from src.core.config import app_config
+from src.core.util import current_user
 
 
 class NukeBrowserWidget(CGLumberjackWidget):

@@ -1,4 +1,4 @@
-from cglcore.path import PathObject, CreateProductionData
+from src.core.path import PathObject, CreateProductionData
 
 #######################################
 # Tests for Basic Project Creation

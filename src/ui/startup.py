@@ -5,8 +5,8 @@ import signal
 from os.path import dirname, join
 from Qt import QtWidgets, QtCore
 import Qt
-# from cglcore.startup import do_app_init
-from cglui.util import UISettings
+# from src.core.startup import do_app_init
+from src.ui.util import UISettings
 
 
 class ThemeFileWatcher(QtCore.QFileSystemWatcher):
@@ -45,7 +45,7 @@ def _load_resources():
     """
     # noinspection PyUnresolvedReferences
     if Qt.__binding__ in ["PySide", "PySide2"]:
-        import cglui.PySide_rc
+        import ui.PySide_rc
 
 
 # noinspection SpellCheckingInspection
@@ -170,5 +170,3 @@ def do_maya_gui_init(gui):
 def do_nuke_gui_init(gui):
     _load_ui_themes(gui)
     _load_ui_settings()
-
-

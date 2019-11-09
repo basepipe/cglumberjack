@@ -1,4 +1,4 @@
-from cglcore.path import PathObject
+from src.core.path import PathObject
 # noinspection PyPackageRequirements
 import nuke
 

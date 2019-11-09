@@ -3,7 +3,7 @@ import logging
 from Queue import Empty
 from multiprocessing import Process, Queue, Manager
 
-from cglcore.config import app_config
+from src.core.config import app_config
 
 
 class ShotgunQueueEnd(object):

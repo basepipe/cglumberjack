@@ -1,6 +1,6 @@
 import logging
 from plugins.project_management.shotgun.tracking_internal.shotgun_specific import ShotgunQuery
-from cglcore.config import app_config
+from src.core.config import app_config
 
 
 PROJECTSHORTNAME = app_config()['project_management']['shotgun']['api']['project_short_name']

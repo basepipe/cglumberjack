@@ -1,12 +1,12 @@
 import re
 import os
 import glob
-from cglcore.path import CreateProductionData, PathObject
+from src.core.path import CreateProductionData, PathObject
 from Qt import QtWidgets, QtCore
-from cglui.util import define_palettes
-from cglcore.config import app_config
-from cglui.widgets.base import LJDialog
-from cglui.widgets.combo import AdvComboBox, LabelComboRow
+from src.ui.util import define_palettes
+from src.core.config import app_config
+from src.ui.widgets.base import LJDialog
+from src.ui.widgets.combo import AdvComboBox, LabelComboRow
 
 
 class AssetWidget(QtWidgets.QWidget):
@@ -294,7 +294,7 @@ class AssetCreator(LJDialog):
 
 
 if __name__ == "__main__":
-    from cglui.startup import do_gui_init
+    from src.ui.startup import do_gui_init
 
     app = do_gui_init()
     td = AssetCreator()

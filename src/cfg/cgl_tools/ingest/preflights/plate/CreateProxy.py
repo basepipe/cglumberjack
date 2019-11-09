@@ -1,8 +1,8 @@
 import glob
 import os
 from plugins.preflight.preflight_check import PreflightCheck
-from cglcore.path import PathObject, CreateProductionData
-from cglcore.convert import create_proxy, create_proxy
+from src.core.path import PathObject, CreateProductionData
+from src.core.convert import create_proxy, create_proxy
 
 
 class CreateProxy(PreflightCheck):

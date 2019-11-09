@@ -1,5 +1,5 @@
 from Qt import QtCore, QtWidgets
-from cglui.widgets.widgets import LJButton
+from src.ui.widgets.widgets import LJButton
 
 
 class LabelComboRow(QtWidgets.QVBoxLayout):

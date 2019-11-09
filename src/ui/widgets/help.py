@@ -2,13 +2,13 @@ from Qt import QtCore
 from Qt import QtWidgets
 from Qt import QtGui
 import os
-from cglcore import lj_mail
-from cglcore.config import app_config
-from cglui.widgets.base import LJDialog
-from cglcore.util import current_user
-from cglcore import screen_grab
-import cglcore.path as cglpath
-from cglui.widgets.widgets import AdvComboBox, TagWidget
+from src.core import lj_mail
+from src.core.config import app_config
+from src.ui.widgets.base import LJDialog
+from src.core.util import current_user
+from src.core import screen_grab
+import core.path as cglpath
+from src.ui.widgets.widgets import AdvComboBox, TagWidget
 from plugins.project_management.asana.basic import AsanaJack
 
 PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
@@ -25,10 +25,10 @@ class RequestFeatureDialog(LJDialog):
         # This list should be connected to
         self.repo_dict = {'cglumberjack': {'guis': {'Lumbermill': ['src/apps/lumbermill/main.py'],
                                                     'Pipeline Designer': ['src/apps/pipeline/designer.py'],
-                                                    'Request Feature': ['src/cglui/widgets/help.py',
+                                                    'Request Feature': ['src/ui/widgets/help.py',
                                                                         'RequestFeatureDialog()'],
-                                                    'Time Tracker': ['src/cglui/widgets/dialog.py', 'TimeTracker()'],
-                                                    'Report Bug': ['src/cglui/widgets/help.py', 'ReportBugDialog()']
+                                                    'Time Tracker': ['src/ui/widgets/dialog.py', 'TimeTracker()'],
+                                                    'Report Bug': ['src/ui/widgets/help.py', 'ReportBugDialog()']
                                                     },
                                            'language': 'Python 2.7'
                                            },

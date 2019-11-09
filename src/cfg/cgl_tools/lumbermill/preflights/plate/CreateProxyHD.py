@@ -1,5 +1,5 @@
 from plugins.preflight.preflight_check import PreflightCheck
-from cglcore.convert import create_hd_proxy
+from src.core.convert import create_hd_proxy
 
 
 class CreateProxyHD(PreflightCheck):

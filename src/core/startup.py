@@ -3,10 +3,10 @@ import os
 import time
 import signal
 from os.path import dirname, join
-from Qt import QtWidgets, QtCore
+from Qt import QtWidgets, QtCore, QtGui
 import Qt
-# from cglcore.startup import do_app_init
-from cglui.util import UISettings
+from src.ui.util import UISettings
+import core.path
 
 
 class ThemeFileWatcher(QtCore.QFileSystemWatcher):
@@ -45,7 +45,7 @@ def _load_resources():
     """
     # noinspection PyUnresolvedReferences
     if Qt.__binding__ in ["PySide", "PySide2"]:
-        import cglui.PySide_rc
+        import ui.PySide_rc
 
 
 # noinspection SpellCheckingInspection
@@ -170,3 +170,49 @@ def do_maya_gui_init(gui):
 def do_nuke_gui_init(gui):
     _load_ui_themes(gui)
     _load_ui_settings()
+
+
+def load_style_sheet():
+    root_ = __file__.split('src')[0]
+    style_file = os.path.join(root_, 'resources', 'stylesheet.css')
+    f = open(style_file, 'r')
+    data = f.read()
+    data.strip('\n')
+    return data
+
+
+def user_init():
+    """
+    Initializes needed User information
+    :return:
+    """
+    from src.core.config import app_config
+    from src.core.util import current_user
+    proj_man = app_config()['account_info']['project_management']
+    users = app_config()['project_management'][proj_man]['users']
+    if current_user() in users:
+        return proj_man, users[current_user()]
+    else:
+        return False
+
+
+def check_time_log(project_management):
+    if project_management == 'ftrack':
+        import plugins.project_management.ftrack.util as ftrack_util
+        print 'Checking Ftrack Time Log'
+        if ftrack_util.check_for_timelog():
+            return True
+        else:
+            return False
+
+
+def app_init():
+    app_ = QtGui.QApplication([])
+    splash_pix = QtGui.QPixmap(core.path.image_path('lumbermill.jpg'))
+    splash_ = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
+    splash_.setMask(splash_pix.mask())
+    splash_.show()
+    app_.setStyleSheet(load_style_sheet())
+    return app_, splash_
+
+

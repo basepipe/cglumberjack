@@ -1,9 +1,9 @@
 import os
 import json
 from Qt import QtWidgets
-from cglui.widgets.dialog import InputDialog
-from cglui.widgets.base import LJDialog
-from cglcore.path import load_style_sheet, get_cgl_tools
+from src.ui.widgets.dialog import InputDialog
+from src.ui.widgets.base import LJDialog
+from src.core.path import load_style_sheet, get_cgl_tools
 from utils import CGLMenu
 
 
@@ -19,12 +19,16 @@ class Designer(LJDialog):
         self.setWindowTitle('Pipeline Designer')
         self.schema = pm_tasks
         self.task_list = []
-        for each in self.schema['long_to_short']['assets']:
-            if each not in self.task_list:
-                self.task_list.append(each)
-        for each in self.schema['long_to_short']['shots']:
-            if each not in self.task_list:
-                self.task_list.append(each)
+        try:
+            for each in self.schema['long_to_short']['assets']:
+                if each not in self.task_list:
+                    self.task_list.append(each)
+            for each in self.schema['long_to_short']['shots']:
+                if each not in self.task_list:
+                    self.task_list.append(each)
+        except TypeError:
+            print 'Problems found in your globals "schema"'
+            self.closeEvent()
         self.task_list.sort()
         self.task_list.insert(0, '')
 
@@ -297,11 +301,12 @@ class Designer(LJDialog):
         return data
 
     def closeEvent(self, event):
-        self.save_menus()
+        if event:
+            self.save_menus()
 
 
 if __name__ == "__main__":
-    from cglui.startup import do_gui_init
+    from src.ui.startup import do_gui_init
     app = do_gui_init()
     mw = Designer(type_='preflights')
     # mw = Designer(type_='menus')

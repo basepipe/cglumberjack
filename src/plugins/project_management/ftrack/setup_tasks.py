@@ -1,7 +1,7 @@
 from Qt import QtWidgets, QtGui
 import json
 import os
-from cglcore.config import app_config
+from src.core.config import app_config
 import ftrack_api
 
 

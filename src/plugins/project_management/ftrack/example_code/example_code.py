@@ -1,4 +1,4 @@
-from cglcore.config import app_config
+from src.core.config import app_config
 import ftrack_api
 
 server_url = app_config()['project_management']['ftrack']['api']['server_url']

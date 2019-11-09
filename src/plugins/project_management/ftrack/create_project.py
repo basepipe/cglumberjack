@@ -1,6 +1,6 @@
 import ftrack_api
 import pprint
-from cglcore.config import app_config
+from src.core.config import app_config
 
 # this works but will have to be made more universal in the way that CreateProjectData is.
 

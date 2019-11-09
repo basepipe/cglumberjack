@@ -2,14 +2,14 @@ import os
 import logging
 import glob
 from Qt import QtWidgets, QtCore
-from cglcore.config import app_config
-from cglui.widgets.containers.model import ListItemModel
-from cglui.widgets.dialog import InputDialog
-from cglcore.util import current_user, cgl_copy
-from cglui.widgets.progress_gif import process_method
-from cglcore.path import PathObject, CreateProductionData
-from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file, get_frange_from_seq
-from cglui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
+from src.core.config import app_config
+from src.ui.widgets.containers.model import ListItemModel
+from src.ui.widgets.dialog import InputDialog
+from src.core.util import current_user, cgl_copy
+from src.ui.widgets.progress_gif import process_method
+from src.core.path import PathObject, CreateProductionData
+from src.core.path import replace_illegal_filename_characters, show_in_folder, seq_from_file, get_frange_from_seq
+from src.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 from panels import clear_layout
 
 

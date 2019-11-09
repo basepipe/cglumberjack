@@ -1,14 +1,14 @@
 from Qt import QtCore, QtWidgets, QtGui
 import re
 import datetime
-from cglcore.config import app_config, UserConfig
-from cglui.widgets.containers.model import ListItemModel
-from cglui.widgets.widgets import AdvComboBox, EmptyStateWidget
-from cglui.widgets.containers.table import LJTableWidget
-from cglui.widgets.containers.menu import LJMenu
-from cglui.widgets.base import LJDialog
-from cglcore.util import current_user
-from cglcore.path import icon_path
+from src.core.config import app_config, UserConfig
+from src.ui.widgets.containers.model import ListItemModel
+from src.ui.widgets.widgets import AdvComboBox, EmptyStateWidget
+from src.ui.widgets.containers.table import LJTableWidget
+from src.ui.widgets.containers.menu import LJMenu
+from src.ui.widgets.base import LJDialog
+from src.core.util import current_user
+from src.core.path import icon_path
 import plugins.project_management.ftrack.util as ftrack_util
 
 
@@ -17,7 +17,11 @@ class TimeTracker(LJDialog):
     def __init__(self):
         LJDialog.__init__(self)
         user = current_user()
-        users = app_config()['project_management']['ftrack']['users']
+        try:
+            users = app_config()['project_management']['ftrack']['users']
+        except KeyError:
+            print 'No Ftrack User Found - check Ftrack Globals'
+            return
         if current_user() in users:
             user_info = users[user]
             if not user_info:
@@ -787,7 +791,7 @@ class ProjectCreator(LJDialog):
         self.shot_task_line_edit.hide()
 
     def load_companies(self):
-        from cglcore.path import get_companies
+        from src.core.path import get_companies
         self.company_combo.addItems(get_companies())
 
     def shots_radio_clicked(self):
@@ -897,7 +901,7 @@ class ProjectCreator(LJDialog):
 
     def read_file(self, filepath):
         import pandas as pd
-        from cglui.widgets.containers.pandas_model import PandasModel
+        from src.ui.widgets.containers.pandas_model import PandasModel
         df = pd.read_csv(filepath)
         df.columns = [x.lower() for x in df.columns]
         df = self.parse_tasks(df)
@@ -944,7 +948,7 @@ class ProjectCreator(LJDialog):
                 df.at[index, 'bid days'] = 0
 
     def on_create_project_clicked(self):
-        from cglcore.path import PathObject, CreateProductionData, show_in_project_management
+        from src.core.path import PathObject, CreateProductionData, show_in_project_management
         for irow in xrange(self.model.rowCount()):
             row_dict = {}
             row_dict['project'] = self.project_line_edit.text()

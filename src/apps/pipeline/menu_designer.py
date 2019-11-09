@@ -8,8 +8,8 @@ class MenuDesigner(Designer):
 
 
 if __name__ == "__main__":
-    from cglui.startup import do_gui_init
-    from cglcore.path import load_style_sheet
+    from src.ui.startup import do_gui_init
+    from src.core.path import load_style_sheet
     app = do_gui_init()
     mw = MenuDesigner()
     mw.setWindowTitle('Menu Designer')

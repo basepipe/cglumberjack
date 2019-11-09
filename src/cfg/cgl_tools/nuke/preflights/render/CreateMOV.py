@@ -1,5 +1,5 @@
 from plugins.preflight.preflight_check import PreflightCheck
-from cglcore.convert import create_mov
+from src.core.convert import create_mov
 
 
 class CreateMOV(PreflightCheck):

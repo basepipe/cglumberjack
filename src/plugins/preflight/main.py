@@ -1,12 +1,12 @@
 import os
 import json
 from Qt import QtWidgets, QtCore, QtGui
-from cglcore.config import app_config
-from cglcore.path import icon_path, image_path, PathObject
-from cglui.widgets.containers.table import LJTableWidget
-from cglui.startup import do_gui_init
-from cglui.widgets.containers.model import ListItemModel
-from cglui.widgets.widgets import GifWidget
+from src.core.config import app_config
+from src.core.path import icon_path, image_path, PathObject
+from src.ui.widgets.containers.table import LJTableWidget
+from src.ui.startup import do_gui_init
+from src.ui.widgets.containers.model import ListItemModel
+from src.ui.widgets.widgets import GifWidget
 from preflight_check import PreflightCheck
 
 

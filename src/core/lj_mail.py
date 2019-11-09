@@ -1,7 +1,7 @@
 import requests
 import os
 import logging
-from cglcore.config import app_config
+from src.core.config import app_config
 
 email = app_config()['email']
 

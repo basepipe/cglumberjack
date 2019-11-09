@@ -1,7 +1,7 @@
 from Qt import QtCore, QtGui, QtWidgets
-from cglui.widgets.base import LJMainWindow
-import cglcore.assetcore as ac
-from cglcore.config import app_config
+from src.ui.widgets.base import LJMainWindow
+import core.assetcore as ac
+from src.core.config import app_config
 
 
 VIEWS = {'All Assets': ['mdl', 'rig', 'tex', 'shd'],
@@ -275,7 +275,7 @@ class BirdsEye(LJMainWindow):
 
 
 if __name__ == "__main__":
-    from cglui.startup import do_gui_init
+    from src.ui.startup import do_gui_init
     app = do_gui_init()
     td = BirdsEye()
     td.setWindowTitle("Bird's Eye View")

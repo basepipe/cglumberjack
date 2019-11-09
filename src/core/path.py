@@ -6,8 +6,8 @@ import sys
 import re
 import shutil
 import copy
-from cglcore.util import split_all, cgl_copy, cgl_execute
-from cglcore.config import app_config, UserConfig
+from src.core.util import split_all, cgl_copy, cgl_execute
+from src.core.config import app_config, UserConfig
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 EXT_MAP = app_config()['ext_map']
@@ -648,7 +648,7 @@ class CreateProductionData(object):
         if task_json doesn't exist it creates one, if it does exist it edits it with the new information
         :return:
         """
-        from cglcore import assetcore
+        from src.core import assetcore
 
         self.path_object.set_status()
         if os.path.exists(self.path_object.task_json):
@@ -673,7 +673,7 @@ class CreateProductionData(object):
         asset_meta.save(self.path_object.task_json)
 
     def update_asset_json(self):
-        from cglcore import assetcore
+        from src.core import assetcore
 
         obj = self.path_object
         if os.path.exists(obj.asset_json):
@@ -696,7 +696,7 @@ class CreateProductionData(object):
         asset_meta.save(obj.asset_json)
 
     def update_project_json(self):
-        from cglcore import assetcore
+        from src.core import assetcore
 
         if os.path.exists(self.path_object.project_json):
             project_meta = assetcore.MetaObject(jsonfile=self.path_object.project_json)
@@ -816,7 +816,7 @@ class CreateProductionData(object):
 
 def create_previews(path_object):
     import time
-    from cglcore.convert import create_thumbnail, create_hd_proxy, create_movie_thumb, create_mov
+    from src.core.convert import create_thumbnail, create_hd_proxy, create_movie_thumb, create_mov
     path_object = PathObject(path_object)
     preview_dir = os.path.dirname(str(path_object.preview_path_full))
     thumb_dir = os.path.dirname(str(path_object.thumb_path_full))
@@ -963,7 +963,7 @@ def get_task_info(path_object, force=False):
 
 def pull_task_info(path_object):
     print path_object.path_root
-    from cglcore.util import current_user
+    from src.core.util import current_user
     if PROJ_MANAGEMENT == 'ftrack':
         from plugins.project_management.ftrack.main import find_user_assignments
         login = app_config()['project_management']['ftrack']['users'][current_user()]
@@ -1271,7 +1271,7 @@ def publish(path_obj):
 
 
 def do_review(progress_bar=None, path_object=None):
-    from cglui.widgets.dialog import InputDialog
+    from src.ui.widgets.dialog import InputDialog
     if not path_object:
         return None
     else:

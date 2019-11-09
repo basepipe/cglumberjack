@@ -1,7 +1,7 @@
 import logging
 from Queue import Empty
 from plugins.project_management.shotgun import shotgun_api3 as sg_api
-from cglcore.config import app_config
+from src.core.config import app_config
 
 # TODO: This is a temporary fix until i can sort out the maya multi-threading issues
 # TODO: This disables multi-threading for the Shotgun Queries

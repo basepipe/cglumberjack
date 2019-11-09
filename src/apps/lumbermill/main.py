@@ -2,16 +2,16 @@ import time
 import os
 import logging
 from Qt import QtWidgets, QtCore, QtGui
-from cglui.widgets.progress_gif import ProgressGif, process_method
-from cglui.widgets.search import LJSearchEdit
-from cglui.widgets.base import LJMainWindow
-from cglui.widgets.dialog import LoginDialog, InputDialog
-import cglcore.path as cglpath
-from cglcore.util import current_user, check_for_latest_master, update_master
-from cglcore.config import app_config, UserConfig
+from src.ui.widgets.progress_gif import ProgressGif, process_method
+from src.ui.widgets.search import LJSearchEdit
+from src.ui.widgets.base import LJMainWindow
+from src.ui.widgets.dialog import LoginDialog, InputDialog
+import core.path as cglpath
+from src.core.util import current_user, check_for_latest_master, update_master
+from src.core.config import app_config, UserConfig
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
-from cglui.widgets.help import ReportBugDialog, RequestFeatureDialog
+from src.ui.widgets.help import ReportBugDialog, RequestFeatureDialog
 try:
     import apps.lumbermill.elements.IOPanel as IoP
     DO_IOP = True
@@ -513,7 +513,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def publish_clicked(self):
         from plugins.preflight.launch import launch_
-        from cglui.widgets.publish_dialog import PublishDialog
+        from src.ui.widgets.publish_dialog import PublishDialog
         selection = cglpath.PathObject(self.path_widget.path_line_edit.text())
         if not selection.filename or selection.context == 'source':
             dialog = InputDialog(title='Invalid Selection', message='Please select a valid file or sequence\nfrom '
@@ -607,7 +607,7 @@ class CGLumberjack(LJMainWindow):
 
     @staticmethod
     def time_tracking_clicked():
-        from cglui.widgets.dialog import TimeTracker
+        from src.ui.widgets.dialog import TimeTracker
         dialog = TimeTracker()
         dialog.exec_()
         print 'time tracking clicked'
@@ -644,7 +644,7 @@ class CGLumberjack(LJMainWindow):
         dialog.exec_()
 
     def open_create_project_dialog(self):
-        from cglui.widgets.dialog import ProjectCreator
+        from src.ui.widgets.dialog import ProjectCreator
         dialog = ProjectCreator(self)
         dialog.exec_()
 

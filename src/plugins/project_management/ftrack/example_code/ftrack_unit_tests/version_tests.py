@@ -1,6 +1,6 @@
 import os
-from cglcore.path import PathObject, CreateProductionData, lj_list_dir
-from cglcore.convert import create_proxy, create_hd_proxy, create_mov
+from src.core.path import PathObject, CreateProductionData, lj_list_dir
+from src.core.convert import create_proxy, create_hd_proxy, create_mov
 
 
 

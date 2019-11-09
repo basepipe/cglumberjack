@@ -1,6 +1,6 @@
 import os
 from plugins.preflight.preflight_check import PreflightCheck
-from cglcore.path import PathObject
+from src.core.path import PathObject
 
 
 # noinspection PyPep8Naming

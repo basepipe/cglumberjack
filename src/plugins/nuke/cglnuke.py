@@ -2,7 +2,7 @@ import os
 import nuke
 from Qt import QtWidgets
 
-from cglcore.path import PathObject
+from src.core.path import PathObject
 
 
 def get_main_window():

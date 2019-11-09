@@ -1,12 +1,12 @@
 from Qt import QtCore, QtGui
 # noinspection PyUnresolvedReferences
 from Qt.QtWidgets import QTableView, QHeaderView
-from cglui.util import UISettings, widget_name
-from cglui.widgets.base import StateSavers
-from cglui.util import drop_handler
-from cglui.widgets.containers.proxy import LJTableSearchProxy
-from cglui.widgets.containers.menu import LJMenu
-from cglcore.config import app_config
+from src.ui.util import UISettings, widget_name
+from src.ui.widgets.base import StateSavers
+from src.ui.util import drop_handler
+from src.ui.widgets.containers.proxy import LJTableSearchProxy
+from src.ui.widgets.containers.menu import LJMenu
+from src.core.config import app_config
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 
@@ -120,7 +120,7 @@ class LJTableWidget(QTableView):
         self.menu.popup(QtGui.QCursor.pos())
 
     def show_in_proj(self):
-        from cglcore.path import PathObject, show_in_project_management
+        from src.core.path import PathObject, show_in_project_management
         mdl_index = self.model().mapToSource(self.selectionModel().selectedRows()[0])
         mdl = self.model().sourceModel()
         row = mdl_index.row()

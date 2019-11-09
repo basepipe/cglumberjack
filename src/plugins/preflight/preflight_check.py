@@ -1,5 +1,5 @@
 import logging
-from cglui.widgets.dialog import InputDialog
+from src.ui.widgets.dialog import InputDialog
 
 
 class PreflightCheck(object):

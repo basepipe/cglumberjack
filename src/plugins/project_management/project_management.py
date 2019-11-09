@@ -3,9 +3,9 @@ import logging
 # import datetime
 # import os
 # import json
-from cglcore.config import app_config, UserConfig
-from cglcore.util import current_user
-# from cglcore.path import create_previews
+from src.core.config import app_config, UserConfig
+from src.core.util import current_user
+# from src.core.path import create_previews
 
 
 class ProjectManagementData(object):
@@ -467,7 +467,7 @@ class ProjectManagementData(object):
 
 
 def find_user_assignments(path_object, user_email, force=False):
-    from cglcore.path import PathObject
+    from src.core.path import PathObject
     continue_parse = False
     company = path_object.company
     project = path_object.project

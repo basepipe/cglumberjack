@@ -1,9 +1,9 @@
 import os
-from cglcore.util import cgl_copy
+from src.core.util import cgl_copy
 from Qt import QtWidgets, QtCore, QtGui
-from cglui.widgets.dialog import InputDialog
-from cglcore.path import start, icon_path, get_cgl_tools
-from cglui.widgets.text import Highlighter
+from src.ui.widgets.dialog import InputDialog
+from src.core.path import start, icon_path, get_cgl_tools
+from src.ui.widgets.text import Highlighter
 
 
 GUI_DICT = {'shelves.yaml': ['button name', 'command', 'icon', 'order', 'annotation', 'label'],
