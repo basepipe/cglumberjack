@@ -19,15 +19,18 @@ def load_lumbermill(app, splash=None):
 if __name__ == "__main__":
     app, splash = startup.app_init()
     project_management, user_info = startup.user_init()
-    project_management = 'lumbermill'
+    time_required = True
     if user_info:
         print 'Found User, %s' % user_info['login']
-        if startup.check_time_log(project_management):
-            load_lumbermill(app, splash)
+        if time_required:
+            if startup.check_time_log(project_management):
+                load_lumbermill(app, splash)
+            else:
+                from cgl.bin.time_sheet import load_time_sheet
+                load_time_sheet(app, splash)
         else:
-            from cgl.bin.time_sheet import load_time_sheet
-            load_time_sheet(app)
+            load_lumbermill(app, splash)
     else:
         from cgl.bin.login_dialog import load_login_dialog
-        load_login_dialog(app)
+        load_login_dialog(app, splash)
 
