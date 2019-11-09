@@ -1,5 +1,4 @@
 import os
-import subprocess
 import logging
 from cglcore.config import app_config
 from cglcore.path import PathObject, CreateProductionData, split_sequence, number_to_hash, hash_to_number
@@ -70,19 +69,7 @@ def get_info(input_file):
     if get_file_type(input_file) == 'movie':
         ffprobe_cmd = "%s -v error -show_format -show_streams -of default=noprint_wrappers=1 %s"\
                       % (config['ffprobe'], input_file)
-        p = subprocess.Popen(ffprobe_cmd,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT)
-        d = {}
-        for each in p.stdout:
-            print each
-            try:
-                key, value = each.strip('\n').split('=')
-                if key != 'None':
-                    d[key] = value
-            except ValueError:
-                pass
-        return d
+        return cgl_execute(ffprobe_cmd)
 
     elif get_file_type(input_file) == 'sequence':
         _, middle, _ = get_first_frame(input_file)
@@ -92,20 +79,7 @@ def get_info(input_file):
 def get_image_info(input_file):
     # TODO - can we replace this with the metadata module i created?
     command = "%s --info %s" % (config['oiiotool'], input_file)
-    p = subprocess.Popen(command,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-    d = {}
-    for each in p.stdout:
-        res, channels, filetype = each.strip('\n').split(':')[-1].split(',')
-        w, h = res.split(' x ')
-        d['width'] = w.strip()
-        d['height'] = h
-        d['channels'] = channels.split(' ')[-2]
-        d['encoding'] = filetype.split(' ')[1]
-        d['filetype'] = filetype.split(' ')[-1]
-
-    return d
+    return cgl_execute(command)
 
 
 def print_info(d):
@@ -346,6 +320,14 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
 
 
 def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True):
+    """
+    Create a thumbnail from a movie file.
+    :param input_file: path to mov
+    :param output_file: output file (jpg)
+    :param frame: first, middle, or last
+    :param thumb: Default value is True, this pulls the thumbnail resolution from the settings.
+    :return:
+    """
     if not output_file:
         if '.preview' in input_file:
             output_file.replace('.preview', '.thumb')
@@ -410,6 +392,12 @@ def make_full_res_jpg(input_file, preview_path=None):
 
 
 def make_images_from_pdf(input_file, preview_path=None):
+    """
+    Creates jpg images from a pdf
+    :param input_file:
+    :param preview_path:
+    :return:
+    """
     # This requires imagemagick as well as ghostscript.  this is on hold until i understand better how
     # the licensing for ghostscript works and how we'd package it.
     if not preview_path:
@@ -426,6 +414,10 @@ def make_images_from_pdf(input_file, preview_path=None):
 
 
 def get_thumb_res(input_file):
+    """
+    :param input_file: image file
+    :return:
+    """
     res = get_resolution(input_file)
     width, height = res.split('x')
     if width > height:
@@ -442,12 +434,19 @@ def get_thumb_res(input_file):
 
 
 def create_thumbnail(input_file, output_file):
+    """
+    Creates an thumbnail based off resolution defined in the get_thumb_res
+    :param input_file:
+    :param output_file:
+    :return:
+    """
     res = get_thumb_res(input_file)
     width, height = res.split('x')
     create_hd_proxy(input_file, output_file, width=width, height=height)
 
 
 def make_animated_gif(input_file):
+    import subprocess
     input_file = input_file.replace('####', '%04d')
     h, _ = thumb_res.split('x')
     # palette = PathParser.thumbpath_from_path(input_file)

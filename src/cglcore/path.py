@@ -6,8 +6,7 @@ import sys
 import re
 import shutil
 import copy
-import subprocess
-from cglcore.util import split_all, cgl_copy
+from cglcore.util import split_all, cgl_copy, cgl_execute
 from cglcore.config import app_config, UserConfig
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
@@ -906,7 +905,7 @@ def start(filepath):
             return
     command = (cmd + filepath)
     # this command will only ever be run locally, it does not need render farm support
-    subprocess.Popen(command, shell=True)
+    cgl_execute(command)
 
 
 def start_url(url):
@@ -931,7 +930,7 @@ def show_in_folder(path_string):
     command = (cmd + full_path)
     logging.info("running command: %s" % command)
     # this command will only ever be run locally, it does not need render management support
-    subprocess.Popen(command, shell=True)
+    cgl_execute(command)
 
 
 def show_in_project_management(path_object):
