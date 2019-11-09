@@ -1,12 +1,11 @@
 import os
-import shutil
 import logging
 import glob
 from Qt import QtWidgets, QtCore
 from cglcore.config import app_config
 from cglui.widgets.containers.model import ListItemModel
 from cglui.widgets.dialog import InputDialog
-from cglcore.util import current_user
+from cglcore.util import current_user, cgl_copy
 from cglui.widgets.progress_gif import process_method
 from cglcore.path import PathObject, CreateProductionData
 from cglcore.path import replace_illegal_filename_characters, show_in_folder, seq_from_file, get_frange_from_seq
@@ -167,12 +166,12 @@ class FilesPanel(QtWidgets.QWidget):
             to_file = os.path.join(to_folder, file_)
             if '.' in file_:
                 logging.info('Copying %s to %s' % (f, to_file))
-                shutil.copy2(f, to_file)
+                cgl_copy(f, to_file)
                 CreateProductionData(path_object=to_object)
                 self.on_task_selected(self.version_obj)
             else:
                 logging.info('Copying directory %s to %s' % (f, to_file))
-                shutil.copytree(f, to_file)
+                cgl_copy(f, to_file)
                 CreateProductionData(path_object=to_object)
                 self.on_task_selected(self.version_obj)
 
@@ -344,7 +343,7 @@ class FilesPanel(QtWidgets.QWidget):
         next_minor = current.new_minor_version_object()
         next_minor.set_attr(filename='')
         next_minor.set_attr(ext='')
-        shutil.copytree(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
+        cgl_copy(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
         CreateProductionData(next_minor)
         # reselect the original asset.
         self.on_task_selected(next_minor)
@@ -463,10 +462,10 @@ class FilesPanel(QtWidgets.QWidget):
             if os.path.isfile(d):
                 filename_ = replace_illegal_filename_characters(filename_)
                 logging.info('Copying File From %s to %s' % (d, os.path.join(to_path, filename_)))
-                shutil.copy2(d, os.path.join(to_path, filename_))
+                cgl_copy(d, os.path.join(to_path, filename_))
             elif os.path.isdir(d):
                 logging.info('Copying Folder From %s to %s' % (d, to_path))
-                shutil.copytree(d, os.path.join(to_path, filename_))
+                cgl_copy(d, os.path.join(to_path, filename_))
         self.parent().progress_bar.hide()
 
     def reload_task_widget(self, widget, path_object=None, populate_versions=True):

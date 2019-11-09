@@ -2,7 +2,7 @@ import os
 import logging
 import sys
 import json
-import shutil
+from cglcore.util import cgl_copy
 
 
 class Configuration(object):
@@ -58,13 +58,13 @@ class Configuration(object):
         if os.path.exists(self.company_global_dir):
             print 'Copying from %s to %s' % (default_global, to_path)
             if 'globals.json' not in os.listdir(self.company_global_dir):
-                shutil.copy2(default_global, to_path)
+                cgl_copy(default_global, to_path)
                 if self.proj_management:
                     self.update_proj_management()
         else:
             print '%s does not exist' % self.company_global_dir
             os.makedirs(self.company_global_dir)
-            shutil.copy2(default_global, to_path)
+            cgl_copy(default_global, to_path)
             if self.proj_management:
                 self.update_proj_management()
 

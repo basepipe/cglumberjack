@@ -108,21 +108,16 @@ def test_string_against_rules(test_string, rule, effected_label=None):
         return app_config()['paths']['rules']['%s_example' % rule]
 
 
-def copy_file(src, dest):
-    if not os.path.isdir(dest):
-        dir_ = os.path.dirname(dest)
-        if not os.path.exists(dir_):
-            os.makedirs(dir_)
-    if os.path.isdir(src):
-        files = os.listdir(src)
-        for f in files:
-            copy_file(os.path.join(src, f), os.path.join(dest, f))
-    else:
-        logging.info('COPYING: %s -----> %s' % (src, dest))
-        shutil.copyfile(src, dest)
-
-
 def cgl_copy(source, destination, test=False, verbose=False, dest_is_folder=False):
+    """
+    Catch all for any type of copy function.  Handles a list of files/folders as well as individual files.
+    :param source: takes a list of files/folders, or a string represeting a file or folder
+    :param destination: string, directory or filename
+    :param test: if True no the function only prints what it would be copying
+    :param verbose:
+    :param dest_is_folder: If True the copy tool will assume that the destination string represents a folder
+    :return:
+    """
     if isinstance(source, list):
         print 'list'
         start_time = time.time()

@@ -1,5 +1,5 @@
 import os
-import shutil
+from cglcore.util import cgl_copy
 from Qt import QtWidgets, QtCore, QtGui
 from cglui.widgets.dialog import InputDialog
 from cglcore.path import start, icon_path, get_cgl_tools
@@ -161,7 +161,7 @@ class CGLMenuButton(QtWidgets.QWidget):
             dirname = os.path.dirname(to_path)
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
-            shutil.copy2(from_path, to_path)
+            cgl_copy(from_path, to_path)
         self.icon_path_line_edit.setText(to_path)
         # copy selected icon to icon folder path
 

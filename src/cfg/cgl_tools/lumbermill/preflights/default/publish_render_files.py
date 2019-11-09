@@ -1,7 +1,7 @@
 import os
-import shutil
 from plugins.preflight.preflight_check import PreflightCheck
 from cglcore.path import PathObject
+from cglcore.util import cgl_copy
 
 
 # noinspection PyPep8Naming
@@ -24,7 +24,7 @@ class publish_render_files(PreflightCheck):
         for each in os.listdir(from_dir):
             print(os.path.join(from_dir, each), os.path.join(major_version_obj.path_root, each))
             print(os.path.join(from_dir, each), os.path.join(pub_obj.path_root, each))
-            shutil.copyfile(os.path.join(from_dir, each), os.path.join(major_version_obj.path_root, each))
-            shutil.copyfile(os.path.join(from_dir, each), os.path.join(pub_obj.path_root, each))
+            cgl_copy(os.path.join(from_dir, each), os.path.join(major_version_obj.path_root, each))
+            cgl_copy(os.path.join(from_dir, each), os.path.join(pub_obj.path_root, each))
         self.pass_check('Done Copying Render Files to %s' % pub_obj.path_root)
 

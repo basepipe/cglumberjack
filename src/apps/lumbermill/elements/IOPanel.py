@@ -210,23 +210,12 @@ class IOPanel(QtWidgets.QWidget):
             print "I'm creating a new source for you"
 
     def file_interaction(self, files, path, to_folder):
+        # TODO - ultimately we want to figure out how to handle the progress bar through the cgl_execute function.
         if path == '*':
             print 'Please Select An Ingest Source Before Dragging Files'
             return
         from cglcore.util import cgl_copy
         cgl_copy(files, to_folder, verbose=False, dest_is_folder=True)
-        # if not os.path.exists(to_folder):
-        #     os.makedirs(to_folder)
-        # for f in files:
-        #     file_ = os.path.split(f)[-1]
-        #     to_file = os.path.join(to_folder, file_)
-        #     if '.' in file_:
-        #         logging.info('Copying File From %s to %s' % (f, to_file))
-        #         shutil.copy2(f, to_file)
-        #     else:
-        #         logging.info('Copying Folder From %s to %s' % (f, to_file))
-        #         shutil.copytree(f, to_file)
-        #
         self.progress_bar.hide()
         self.load_import_events()
         num = self.ingest_widget.list.count()

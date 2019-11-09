@@ -3,7 +3,7 @@ import glob
 import shutil
 import datetime
 import pandas as pd
-import time
+from cglcore.util import cgl_copy
 from plugins.preflight.preflight_check import PreflightCheck
 from cglcore.path import PathObject, CreateProductionData, split_sequence, split_sequence_frange
 
@@ -69,7 +69,7 @@ class CreatePublishFiles(PreflightCheck):
                     print 'Copying %s to %s' % (from_file, to_file)
                     # Send this to the Preflights - No matter what basically
                     if not self.test:
-                        shutil.copytree(from_file, to_file)
+                        cgl_copy(from_file, to_file)
                         CreateProductionData(to_file, json=True)
                     self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
                     self.signal_one.emit([index, STATUS, 'Published'])
@@ -96,7 +96,7 @@ class CreatePublishFiles(PreflightCheck):
                             to_file = os.path.join(to_dir, os.path.basename(f))
                             print 'Copying %s to %s' % (f, to_file)
                             if not self.test:
-                                shutil.copy2(f, to_file)
+                                cgl_copy(f, to_file)
                             self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
                             self.data_frame.at[index, 'Status'] = 'Published'
                             self.data_frame.at[index, 'Publish_Date'] = current_date
@@ -109,7 +109,7 @@ class CreatePublishFiles(PreflightCheck):
                         if not self.test:
                             print 'Creating File: %s' % to_file
                             CreateProductionData(os.path.dirname(to_file), json=True)
-                            shutil.copy2(from_file, to_file)
+                            cgl_copy(from_file, to_file)
                         self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
                         self.data_frame.at[index, 'Status'] = 'Published'
                         self.data_frame.at[index, 'Publish_Date'] = current_date

@@ -1,10 +1,8 @@
 import getpass
 import os
 import json
-import shutil
 from Qt import QtCore, QtWidgets, QtGui
-# from cglui.widgets.containers.dict_tree import DictionaryTreeWidget
-# from cglui.util import define_palettes
+from cglcore.util import cgl_copy
 
 
 class PathItemWidget(QtWidgets.QWidget):
@@ -385,7 +383,7 @@ class ConfigDialog(QtWidgets.QDialog):
         src = os.path.join(self.widget_dict['code_root']['line_edit'].text(), 'src', 'cfg', 'cgl_tools')
         dst = os.path.join(self.widget_dict['cgl_tools']['line_edit'].text())
         if not os.path.exists(dst):
-            shutil.copytree(src, dst)
+            cgl_copy(src, dst)
 
     def create_global_config(self):
         if self.global_config:

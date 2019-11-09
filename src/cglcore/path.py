@@ -7,7 +7,7 @@ import re
 import shutil
 import copy
 import subprocess
-from cglcore.util import split_all, copy_file
+from cglcore.util import split_all, cgl_copy
 from cglcore.config import app_config, UserConfig
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
@@ -812,7 +812,7 @@ class CreateProductionData(object):
         this = __file__.split('src')[0]
         default_file = "%ssrc/%s" % (this, r'plugins/%s/templates/default.%s' % (software, ext))
         logging.info('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
-        shutil.copy2(default_file, self.path_object.path_root)
+        cgl_copy(default_file, self.path_object.path_root)
 
 
 def create_previews(path_object):
@@ -848,8 +848,7 @@ def create_previews(path_object):
             create_movie_thumb(path_object.path_root, path_object.thumb_path_full)
         if path_object.preview_path_full:
             if path_object.path_root.endswith('mp4'):
-                print('Copying %s to %s' % (path_object.path_root, path_object.preview_path_full))
-                copy_file(path_object.path_root, path_object.preview_path_full)
+                cgl_copy(path_object.path_root, path_object.preview_path_full)
             else:
                 create_mov(path_object.path_root, output=path_object.preview_path_full)
     else:
@@ -982,7 +981,7 @@ def create_project_config(company, project):
     if os.path.exists(company_config):
         if not os.path.exists(project_dir):
             os.makedirs(project_dir)
-            shutil.copy2(company_config, project_config)
+            cgl_copy(company_config, project_config)
 
 
 def seq_from_file(basename):
@@ -1254,16 +1253,16 @@ def publish(path_obj):
                                                                          source_next.path_root))
             logging.info('Copying Source Resolution %s from %s to %s' % (each, source_object.path_root,
                                                                          source_pub.path_root))
-            shutil.copytree(os.path.join(source_object.path_root, each), os.path.join(source_next.path_root, each))
-            shutil.copytree(os.path.join(source_object.path_root, each), os.path.join(source_pub.path_root, each))
+            cgl_copy(os.path.join(source_object.path_root, each), os.path.join(source_next.path_root, each))
+            cgl_copy(os.path.join(source_object.path_root, each), os.path.join(source_pub.path_root, each))
 
         for each in os.listdir(render_object.path_root):
             logging.info('Copying Render Resolution %s from %s to %s' % (each, render_object.path_root,
                                                                          render_next.path_root))
             logging.info('Copying Render Resolution %s from %s to %s' % (each, render_object.path_root,
                                                                          render_pub.path_root))
-            shutil.copytree(os.path.join(render_object.path_root, each), os.path.join(render_next.path_root, each))
-            shutil.copytree(os.path.join(render_object.path_root, each), os.path.join(render_pub.path_root, each))
+            cgl_copy(os.path.join(render_object.path_root, each), os.path.join(render_next.path_root, each))
+            cgl_copy(os.path.join(render_object.path_root, each), os.path.join(render_pub.path_root, each))
         # Register with Production Management etc...
         CreateProductionData(source_next)
         CreateProductionData(source_pub)
@@ -1322,7 +1321,7 @@ def do_review(progress_bar=None, path_object=None):
                 if move:
                     shutil.move(from_file, to_file)
                 else:
-                    shutil.copyfile(from_file, to_file)
+                    cgl_copy(from_file, to_file)
             selection.set_attr(filename='')
             selection.set_attr(ext='')
         else:
@@ -1331,7 +1330,7 @@ def do_review(progress_bar=None, path_object=None):
             if move:
                 shutil.move(selection.path_root, to_object.path_root)
             else:
-                shutil.copyfile(selection.path_root, to_object.path_root)
+                cgl_copy(selection.path_root, to_object.path_root)
             selection.set_attr(filename='')
             selection.set_attr(ext='')
     if progress_bar:
