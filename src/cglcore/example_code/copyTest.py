@@ -2,7 +2,6 @@ import shutil
 import os
 import time
 import sys
-from cglcore.util import cgl_copy
 
 
 def shutil_copy_test(from_dir, to_dir):
@@ -98,7 +97,7 @@ def copy(source, destination, test=False, verbose=True):
                 print command
             else:
                 print command
-                os.system(command)
+                # os.system(command)
             if verbose:
                 print 'Lumbermill Copied %s file(s) in %s seconds' % (len(files), (time.time() - start_time))
             return True
