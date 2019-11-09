@@ -1,5 +1,4 @@
 import os
-import shutil
 import pandas as pd
 import logging
 import glob

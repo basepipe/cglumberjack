@@ -1,7 +1,6 @@
 import os
 import time
 import logging
-import shutil
 from Qt import QtWidgets, QtCore, QtGui
 from cglui.widgets.progress_gif import ProgressGif, process_method
 from cglui.widgets.search import LJSearchEdit

@@ -1,6 +1,5 @@
 import os
 import glob
-import shutil
 import datetime
 import pandas as pd
 from plugins.preflight.preflight_check import PreflightCheck

@@ -1,6 +1,5 @@
 import os
 import glob
-import shutil
 import datetime
 import pandas as pd
 from cglcore.util import cgl_copy

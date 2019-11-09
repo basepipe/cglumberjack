@@ -2,7 +2,6 @@ import pprint
 import os
 import json
 import sys
-import shutil
 import getpass
 import datetime
 import time
