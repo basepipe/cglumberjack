@@ -44,7 +44,7 @@ def main():
         for x in sys.path:
             pyside_rc = os.path.join(x, "PySide", "pyside-rcc.exe")
             if which(pyside_rc):
-                cmd ="%s -o ../src/ui/PySide_rc.py lumberjack.qrc" % pyside_rc
+                cmd ="%s -o ../cgl/ui/PySide_rc.py lumberjack.qrc" % pyside_rc
                 print cmd
                 os.system(cmd)
                 break
@@ -60,7 +60,7 @@ def main():
             pyside_rc = pyside_rc + " -py2"
         if pyside_rc:
             print "Building %s" % pyside_rc
-            os.system("%s -o ../src/ui/PySide_rc.py lumberjack.qrc" % pyside_rc)
+            os.system("%s -o ../cgl/ui/PySide_rc.py lumberjack.qrc" % pyside_rc)
 
         pyqt_rc = which("pyrcc4")
         if pyqt_rc:
@@ -73,7 +73,7 @@ def main():
         *                 !!!!! DANGER !!!!!                 *
         ******************************************************
         """
-            os.system("pyrcc4 -o ../src/ui/pyqt4_rc.py lumberjack.qrc")
+            os.system("pyrcc4 -o ../cgl/ui/pyqt4_rc.py lumberjack.qrc")
         if not pyside_rc and not pyqt_rc:
             print "WTF CANT find pyside or pyqt"
 
