@@ -19,6 +19,86 @@ class LJButton(QtWidgets.QPushButton):
         self.setProperty('class', 'basic')
 
 
+class LJTag(QtWidgets.QFrame):
+    close_clicked = QtCore.Signal()
+
+    def __init__(self, parent=None, text='Tab Text', height=30):
+        QtWidgets.QFrame.__init__(self, parent)
+        self.setProperty('class', 'tag_red')
+        self.setMaximumHeight(height)
+        self.text = text
+        close_width = height/2
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        label = QtWidgets.QLabel(text)
+        label.setProperty('class', 'tag_text')
+        close_button = QtWidgets.QToolButton()
+        close_button.setText('x')
+        close_button.setProperty('class', 'tag')
+        close_button.setMaximumWidth(close_width)
+        close_button.setMaximumHeight(close_width)
+        layout.addWidget(label)
+        layout.addWidget(close_button)
+        # Shape of the button is a "Frame" with an hlayout
+        # close button is a "tool button" with an 'x'
+        close_button.clicked.connect(self.delete_tag)
+
+    def delete_tag(self):
+        print self.text
+        print 'delete'
+        self.close_clicked.emit()
+
+
+class TagWidget(QtWidgets.QWidget):
+
+    def __init__(self, parent=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        # TODO - add the tag icon to this
+        # TODO - add the hide/show functionality to pushing the tag icon
+        # TODO - add the abililty to choose the color of the tag
+        # TODO - add the ability to have a list of commonly used tags.
+        layout = QtWidgets.QVBoxLayout(self)
+        frame = TagFrame()
+        layout.addWidget(frame)
+
+
+class TagFrame(QtWidgets.QFrame):
+
+    def __init__(self, parent=None, tag_height=30):
+        QtWidgets.QFrame.__init__(self, parent)
+        self.tag_height = tag_height
+        self.setProperty('class', 'tag_widget')
+        self.setMinimumHeight(tag_height+4)
+        self.layout = QtWidgets.QHBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.tags_layout = QtWidgets.QHBoxLayout()
+        self.tags_layout.setContentsMargins(0, 0, 0, 0)
+        self.text_entry = QtWidgets.QLineEdit()
+        self.text_entry.setProperty('class', 'tag_entry')
+        self.tag_dict = {}
+
+        self.layout.addLayout(self.tags_layout)
+        self.layout.addWidget(self.text_entry)
+        self.text_entry.textEdited.connect(self.on_text_entry_changed)
+
+    def on_text_entry_changed(self):
+        text = self.sender().text()
+        if ',' in text:
+            text = text.replace(',', '')
+            self.add_tag(tag_text=text)
+            self.sender().setText('')
+
+    def add_tag(self, tag_text):
+        tag = LJTag(text=tag_text, height=self.tag_height)
+        tag.close_clicked.connect(self.remove_tag)
+        self.tag_dict['tag_text'] = tag
+        self.tags_layout.addWidget(tag)
+
+    def remove_tag(self):
+        self.sender().deleteLater()
+        self.layout.removeWidget(self.sender())
+
+
 class VersionButton(LJButton):
 
     def __init__(self, parent):

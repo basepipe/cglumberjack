@@ -7,7 +7,8 @@ from cglcore.config import app_config
 from cglui.widgets.base import LJDialog
 from cglcore.util import current_user
 from cglcore import screen_grab
-from cglui.widgets.widgets import AdvComboBox
+import cglcore.path as cglpath
+from cglui.widgets.widgets import AdvComboBox, TagWidget
 from plugins.project_management.asana.basic import AsanaJack
 
 PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
@@ -16,7 +17,7 @@ PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 class RequestFeatureDialog(LJDialog):
     def __init__(self, parent=None, title='Request Feature'):
         LJDialog.__init__(self, parent)
-        self.work_group = 'CGLumberjack'
+        self.work_group = 'CG Lumberjack'
         self.rtf_task_text = ''
         self.requirements_list = []
         self.results_list = []
@@ -190,6 +191,8 @@ class RequestFeatureDialog(LJDialog):
         self.label_task_title = QtWidgets.QLabel("Title")
         self.label_functions = QtWidgets.QLabel("Function(s)")
         self.label_workgroup = QtWidgets.QLabel("Workgroup:")
+        self.label_tags = QtWidgets.QLabel("Tags:")
+        self.label_tags.setProperty('class', 'ultra_title')
         self.workgroup = QtWidgets.QHBoxLayout()
         self.message_files = QtWidgets.QLabel()
         self.message_functions = QtWidgets.QLabel()
@@ -216,16 +219,36 @@ class RequestFeatureDialog(LJDialog):
         self.combo_workgroup_list = AdvComboBox()
         self.combo_workgroup_list.addItems(workgroup_list)
         ind2 = self.combo_workgroup_list.findText(self.work_group)
-        self.combo_workgroup_list.setCurrentIndex(ind2)
+        if ind2 != -1:
+            self.combo_workgroup_list.setCurrentIndex(ind2)
 
         self.submit_task_button = QtWidgets.QPushButton('Submit Task')
         self.submit_task_button.setDefault(False)
         self.submit_task_button.setAutoDefault(False)
-        button_row = QtWidgets.QHBoxLayout()
-        button_row.addStretch(1)
-        button_row.addWidget(self.submit_task_button)
+        self.tag_widget = TagWidget()
+        self.tag_widget.hide()
+        # assign_icon = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'assign_default48px.png'))
+        assign_icon_hover = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'assign_hover48px.png'))
+        # tag_icon = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'tag_default48px.png'))
+        tag_icon_hover = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'tag_hover48px.png'))
+        assign_button = QtWidgets.QToolButton()
+        assign_button.setProperty('class', 'assign')
+        assign_button.setIcon(assign_icon_hover)
+        show_tags_button = QtWidgets.QToolButton()
+        show_tags_button.setProperty('class', 'assign')
+        show_tags_button.setIcon(tag_icon_hover)
 
-        # grid.addWidget(label_description, 0, 0)
+        self.button_row = QtWidgets.QHBoxLayout()
+        self.button_row.setAlignment(QtCore.Qt.AlignLeft)
+
+        self.button_row.addWidget(assign_button)
+        self.button_row.addWidget(show_tags_button)
+        self.button_row.addWidget(self.tag_widget)
+        # self.button_row.addStretch(1)
+
+        submit_row = QtWidgets.QHBoxLayout()
+        submit_row.addStretch(1)
+        submit_row.addWidget(self.submit_task_button)
 
         self.title_line_edit = QtWidgets.QLineEdit()
         self.description_line_edit = QtWidgets.QLineEdit()
@@ -239,12 +262,17 @@ class RequestFeatureDialog(LJDialog):
         self.videos_line_edit = QtWidgets.QLineEdit()
         self.cgl_line_edit = QtWidgets.QLineEdit()
         self.line_edit_functions = QtWidgets.QLineEdit()
+
         self.widget_dict = {self.requirements_line_edit: self.message_requirements,
                             self.expected_results_line_edit: self.message_expected_results,
-                            self.combo_gui: self.message_files
+                            self.combo_gui: self.message_files,
+                            self.combo_files: self.message_files,
+                            self.line_edit_functions: self.message_functions
                             }
         self.bullet_dict = {self.requirements_line_edit: self.requirements_list,
                             self.expected_results_line_edit: self.results_list,
+                            self.combo_files: self.requirements_list,
+                            self.line_edit_functions: self.requirements_list
                             }
 
         grid.addWidget(self.label_workgroup, 0, 0)
@@ -263,31 +291,30 @@ class RequestFeatureDialog(LJDialog):
         grid.addWidget(self.label_gui, 12, 0)
         grid.addWidget(self.combo_gui, 12, 1)
 
-        grid.addWidget(self.label_files, 13, 0)
-        grid.addWidget(self.combo_files, 13, 1)
-        grid.addWidget(self.message_files, 14, 1)
+        grid.addWidget(self.label_delivery_method, 13, 0)
+        grid.addWidget(self.combo_delivery_method, 13, 1)
+        grid.addWidget(self.label_deliverable, 14, 0)
+        grid.addWidget(self.combo_deliverable_list, 14, 1)
+        grid.addWidget(self.label_software, 15, 0)
+        grid.addWidget(self.combo_software, 15, 1)
+        grid.addWidget(self.message_software, 16, 1)
 
-        grid.addWidget(self.label_functions, 15, 0)
-        grid.addWidget(self.line_edit_functions, 15, 1)
-        grid.addWidget(self.message_functions, 16, 1)
-        grid.addWidget(self.label_delivery_method, 17, 0)
-        grid.addWidget(self.combo_delivery_method, 17, 1)
-        grid.addWidget(self.label_deliverable, 18, 0)
-        grid.addWidget(self.combo_deliverable_list, 18, 1)
+        grid.addWidget(self.label_details, 17, 0)
+        grid.addWidget(self.label_files, 18, 0)
+        grid.addWidget(self.combo_files, 18, 1)
+        grid.addWidget(self.message_files, 19, 1)
 
-        grid.addWidget(self.label_details, 20, 0)
-        grid.addWidget(self.label_software, 21, 0)
-        grid.addWidget(self.combo_software, 21, 1)
-        grid.addWidget(self.message_software, 22, 1)
-        grid.addWidget(self.label_requirements, 23, 0)
-        grid.addWidget(self.requirements_line_edit, 23, 1)
-        grid.addWidget(self.message_requirements, 24, 1)
+        grid.addWidget(self.label_functions, 20, 0)
+        grid.addWidget(self.line_edit_functions, 20, 1)
+        grid.addWidget(self.message_functions, 21, 1)
+
+        grid.addWidget(self.label_requirements, 22, 0)
+        grid.addWidget(self.requirements_line_edit, 22, 1)
+        grid.addWidget(self.message_requirements, 23, 1)
 
         grid.addWidget(self.label_expected_results, 26, 0)
         grid.addWidget(self.expected_results_line_edit,  27, 1)
         grid.addWidget(self.message_expected_results, 28, 1)
-        # grid.addWidget(self.label_code_location, 28, 0)
-        # grid.addWidget(self.location_line_edit, 28, 1)
 
         #layout.addLayout(task_layout)
         right_layout.addWidget(self.label_task_info)
@@ -298,14 +325,16 @@ class RequestFeatureDialog(LJDialog):
         h_layout.addLayout(right_layout)
         h_layout.addLayout(left_layout)
         layout.addLayout(h_layout)
-        layout.addLayout(button_row)
-
+        layout.addLayout(self.button_row)
+        layout.addLayout(submit_row)
 
         self.setLayout(layout)
         self.setWindowTitle(title)
 
         self.combo_deliverable_list.currentIndexChanged.connect(self.show_code_location)
         self.combo_gui.currentIndexChanged.connect(self.on_gui_chosen)
+        self.combo_files.currentIndexChanged.connect(self.add_bullets)
+        self.line_edit_functions.returnPressed.connect(self.add_bullets)
         self.requirements_line_edit.returnPressed.connect(self.add_bullets)
         self.requirements_line_edit.textChanged.connect(self.update_text_edit)
         self.expected_results_line_edit.returnPressed.connect(self.add_bullets)
@@ -322,19 +351,18 @@ class RequestFeatureDialog(LJDialog):
         self.location_line_edit.textChanged.connect(self.update_text_edit)
         self.submit_task_button.clicked.connect(self.on_submit_clicked)
         self.combo_repo.currentIndexChanged.connect(self.on_repo_chosen)
+        show_tags_button.clicked.connect(self.on_show_tags_clicked)
         self.on_repo_chosen()
         self.show_code_location()
         self.update_text_edit()
         # self.submit_task_button.setEnabled(False)
         self.hide_all()
+        if self.combo_workgroup_list.currentText():
+            self.title_line_edit.setFocus()
 
-        # TODO: add bullets underneath External Products
-        # pull in files and functions to the "requirements"
-        # pull in Repo to the requirements
-        # pull in external products to the requirements
-        # placeholder text on filescombo
-        # placeholder text on functionscombo
-        # add links to the task text
+    def on_show_tags_clicked(self):
+        self.tag_widget.show()
+        # self.tag_widget.setMinimumWidth(850)
 
     def on_workgroup_changed(self):
         self.work_group = self.combo_workgroup_list.currentText()
@@ -376,13 +404,13 @@ class RequestFeatureDialog(LJDialog):
             self.requirements_line_edit.show()
             #self.label_code_location.show()
             #self.location_line_edit.show()
-            self.label_task_info.show()
-            self.label_task_text.show()
+            # self.label_task_info.show()
+            # self.label_task_text.show()
             self.label_expected_results.show()
             self.expected_results_line_edit.show()
             self.text_edit.show()
             self.setMinimumWidth(1200)
-            self.expected_results_line_edit.setFocus()
+            self.combo_files.setFocus()
             self.submit_task_button.setEnabled(True)
         else:
             pass
@@ -400,7 +428,7 @@ class RequestFeatureDialog(LJDialog):
         self.label_details.hide()
         self.label_code_info.hide()
         self.label_code_info.hide()
-        self.label_task_info.hide()
+        # self.label_task_info.hide()
         self.label_software.hide()
         self.label_language.hide()
         self.label_deliverable.hide()
@@ -412,7 +440,7 @@ class RequestFeatureDialog(LJDialog):
         self.label_gui.hide()
         self.label_files.hide()
         self.label_attachments.hide()
-        self.label_task_text.hide()
+        # self.label_task_text.hide()
         self.label_functions.hide()
         self.label_expected_results.hide()
         self.expected_results_line_edit.hide()
@@ -437,7 +465,7 @@ class RequestFeatureDialog(LJDialog):
         self.combo_language .hide()
         self.combo_deliverable_list.hide()
         self.combo_delivery_method.hide()
-        self.text_edit.hide()
+        # self.text_edit.hide()
         self.combo_files.hide()
         self.combo_repo.hide()
         self.combo_gui.hide()
@@ -574,17 +602,32 @@ class RequestFeatureDialog(LJDialog):
     def add_bullets(self):
         if isinstance(self.sender(), QtWidgets.QLineEdit):
             current_text = self.sender().text()
-            bullet_text = self.widget_dict[self.sender()].text()
-            list_ = self.bullet_dict[self.sender()]
+        else:
+            current_text = self.sender().currentText()
+            if not current_text:
+                return
+        bullet_text = self.widget_dict[self.sender()].text()
+        list_ = self.bullet_dict[self.sender()]
+        if current_text not in list_:
             list_.append(current_text)
-            self.update_text_edit()
-            if not bullet_text:
-                requirements_text = '    * %s' % current_text
-            else:
+        requirements_text = ''
+        self.update_text_edit()
+        if not bullet_text:
+            requirements_text = '    * %s' % current_text
+        else:
+            if current_text not in bullet_text:
                 requirements_text = '%s\n    * %s' % (bullet_text, current_text)
+        if requirements_text:
             self.widget_dict[self.sender()].setText(requirements_text)
+        if isinstance(self.sender(), QtWidgets.QLineEdit):
             self.sender().setText('')
-            self.widget_dict[self.sender()].show()
+        elif isinstance(self.sender(), AdvComboBox):
+            print 'its a combo'
+            if self.sender().itemText(0) != '':
+                self.sender().insertItem(0, '')
+            else:
+                self.sender().setCurrentIndex(0)
+        self.widget_dict[self.sender()].show()
 
 
 class ReportBugDialog(LJDialog):
