@@ -1,5 +1,5 @@
-import os
 import time
+import os
 import logging
 from Qt import QtWidgets, QtCore, QtGui
 from cglui.widgets.progress_gif import ProgressGif, process_method
@@ -7,8 +7,6 @@ from cglui.widgets.search import LJSearchEdit
 from cglui.widgets.base import LJMainWindow
 from cglui.widgets.dialog import LoginDialog, InputDialog
 import cglcore.path as cglpath
-import plugins.project_management.ftrack.util as ftrack_util
-import datetime
 from cglcore.util import current_user, check_for_latest_master, update_master
 from cglcore.config import app_config, UserConfig
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
@@ -266,9 +264,8 @@ class NavigationWidget(QtWidgets.QFrame):
 
 class CGLumberjackWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, project_management=None, machine_user=None, user_email=None, company=None,
-                 path=None, radio_filter=None,
-                 show_import=False):
+    def __init__(self, parent=None, project_management=None, user_email=None, company=None,
+                 path=None, radio_filter=None, show_import=False):
         QtWidgets.QWidget.__init__(self, parent)
         try:
             font_db = QtWidgets.QFontDatabase()
@@ -531,8 +528,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
 
 class CGLumberjack(LJMainWindow):
-    def __init__(self, show_import=False, user_info=None):
+    def __init__(self, show_import=False, user_info=None, start_time=None):
         LJMainWindow.__init__(self)
+        if start_time:
+            print 'Finished Loading Modules in %s seconds' % (time.time() - start_time)
         self.user_config = UserConfig().d
         self.previous_path = self.user_config['previous_path']
         self.filter = 'Everything'
@@ -717,60 +716,4 @@ class CGLumberjack(LJMainWindow):
 def sleeper():
     time.sleep(5)
 
-
-if __name__ == "__main__":
-    project_management = app_config()['account_info']['project_management']
-    users = app_config()['project_management'][project_management]['users']
-    time_log = True
-    if current_user() in users:
-        user_info = users[current_user()]
-        if user_info:
-            if project_management == 'ftrack':
-                if ftrack_util.check_for_timelog():
-                    time_log = True
-                else:
-                    time_log = False
-            if time_log:
-                app = QtGui.QApplication([])
-                splash_pix = QtGui.QPixmap(cglpath.image_path('lumbermill.jpg'))
-                #splash_dialog = ProgressDialog('Loading...', 'night_rider.gif')
-                #splash_pix.show()
-                QtWidgets.qApp.processEvents()
-
-                splash = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
-                splash.setMask(splash_pix.mask())
-                splash.show()
-                gui = CGLumberjack(show_import=False, user_info=user_info)
-                gui.show()
-                gui.raise_()
-                # # setup stylesheet
-                style_sheet = cglpath.load_style_sheet()
-                app.setStyleSheet(style_sheet)
-                splash.finish(gui)
-                # splash_dialog.hide()
-                app.exec_()
-            else:
-                from cglui.widgets.dialog import TimeTracker
-
-                app = QtGui.QApplication([])
-                gui = TimeTracker()
-                date = datetime.datetime.today()
-                gui.set_date(datetime.datetime.today() - datetime.timedelta(days=1))
-                gui.show()
-                gui.raise_()
-                style_sheet = cglpath.load_style_sheet()
-                app.setStyleSheet(style_sheet)
-                app.exec_()
-    else:
-        app = QtGui.QApplication([])
-        mw = LoginDialog()
-        # mw = Designer(type_='menus')
-        mw.setWindowTitle('New User Login')
-        mw.setMinimumWidth(300)
-        mw.setMinimumHeight(300)
-        mw.show()
-        mw.raise_()
-        style_sheet = cglpath.load_style_sheet()
-        app.setStyleSheet(style_sheet)
-        app.exec_()
 
