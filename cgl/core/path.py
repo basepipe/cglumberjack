@@ -1044,6 +1044,7 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
     :return: list of prepared files/items.
     """
     ignore = ['publish_data.csv', '.preview', '.thumb']
+    print directory
     list_ = os.listdir(directory)
     if not list_:
         return

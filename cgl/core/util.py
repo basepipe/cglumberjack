@@ -118,7 +118,6 @@ def cgl_copy(source, destination, test=False, verbose=False, dest_is_folder=Fals
     :return:
     """
     if isinstance(source, list):
-        print 'list'
         start_time = time.time()
         for f_ in source:
             cgl_copy_single(f_, destination, test, verbose, dest_is_folder)

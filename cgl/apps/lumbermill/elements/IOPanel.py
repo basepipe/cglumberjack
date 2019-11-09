@@ -223,10 +223,7 @@ class IOPanel(QtWidgets.QWidget):
         # self.on_ingest_selected()
 
     def new_files_dragged(self, files):
-        if self.version == self.path_object.version:
-            to_folder = self.path_object.path_root
-        else:
-            to_folder = self.path_object_next.path_root
+        to_folder = self.path_object_next.path_root
         if os.path.exists(os.path.join(to_folder, 'publish_data.old.csv')):
             os.remove(os.path.join(to_folder, 'publish_data.old.csv'))
         if os.path.exists(os.path.join(to_folder, 'publish_data.csv')):
