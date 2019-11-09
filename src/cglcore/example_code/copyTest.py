@@ -54,7 +54,7 @@ def robocopy_test(from_path, to_path):
     # robocopy command - all these flags are needed to avoid printouts and save time.
     command = 'robocopy "%s" "%s" /NFL /NDL /NJH /NJS /nc /ns /np /MT:8' % (from_path, to_path)
     start_time = time.time()
-    # os.system(command)
+    os.system(command)
     print 'Copied %s files with robocopy in %s' % (len(files), (time.time() - start_time))
     # for f in files:
     #     to_file = os.path.join(to_dir, f)
@@ -97,7 +97,7 @@ def copy(source, destination, test=False, verbose=True):
                 print command
             else:
                 print command
-                # os.system(command)
+                os.system(command)
             if verbose:
                 print 'Lumbermill Copied %s file(s) in %s seconds' % (len(files), (time.time() - start_time))
             return True
