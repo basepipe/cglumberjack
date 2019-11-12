@@ -69,7 +69,7 @@ def get_info(input_file):
     if get_file_type(input_file) == 'movie':
         ffprobe_cmd = "%s -v error -show_format -show_streams -of default=noprint_wrappers=1 %s"\
                       % (config['ffprobe'], input_file)
-        return cgl_execute(ffprobe_cmd)
+        return cgl_execute(ffprobe_cmd, verbose=True)
 
     elif get_file_type(input_file) == 'sequence':
         _, middle, _ = get_first_frame(input_file)
@@ -79,7 +79,7 @@ def get_info(input_file):
 def get_image_info(input_file):
     # TODO - can we replace this with the metadata module i created?
     command = "%s --info %s" % (config['oiiotool'], input_file)
-    return cgl_execute(command)
+    return cgl_execute(command, verbose=True)
 
 
 def print_info(d):
@@ -128,7 +128,7 @@ def get_file_type(input_file):
 #####################################################################
 
 
-def create_proxy(sequence, ext='jpg'):
+def create_proxy(sequence, ext='jpg', verbose=True):
     """
     Creates a Jpeg proxy resolution based off the resolution of the given path.
     :param sequence:
@@ -150,13 +150,13 @@ def create_proxy(sequence, ext='jpg'):
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
         command = '%s %s -scene %s %s' % (config['magick'], in_seq, start_frame, out_seq)
-        cgl_execute(command)
+        cgl_execute(command, verbose=verbose)
     print out_seq
     return out_seq
 
 
 def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', height='x1080', do_height=False,
-                    start_frame='1001'):
+                    start_frame='1001', verbose=True):
     hashes = ''
     fileout = ''
     out_seq = ''
@@ -196,11 +196,11 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
             fileout = this_+'.jpg'
         command = '%s %s -resize %s %s' % (config['magick'], sequence, res, fileout)
     print 'Command is:', command
-    cgl_execute(command)
+    cgl_execute(command, verbose=verbose)
     return fileout
 
 
-def create_gif_proxy(sequence, ext='gif', width='480', height='x100', do_height=False):
+def create_gif_proxy(sequence, ext='gif', width='480', height='x100', do_height=False, verbose=True):
     if do_height:
         res = height
     else:
@@ -219,11 +219,11 @@ def create_gif_proxy(sequence, ext='gif', width='480', height='x100', do_height=
         command = '%s %s -resize %s %s' % (config['magick'], in_seq, res, out_seq)
 
     if command:
-        cgl_execute(command)
+        cgl_execute(command, verbose=verbose)
         return out_seq
 
 
-def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=True):
+def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=True, verbose=True):
     if do_height:
         res = height
     else:
@@ -242,7 +242,7 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
         command = '%s %s -resize %s %s' % (config['magick'], in_seq, res, out_seq)
 
     if command:
-        cgl_execute(command)
+        cgl_execute(command, verbose=verbose)
         return out_seq
 
 
@@ -313,7 +313,7 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
                                                             encoder, profile, constant_rate_factor, pixel_format,
                                                             output_frame_rate, filter_arg, output_file)
     if ffmpeg_cmd:
-        cgl_execute(ffmpeg_cmd)
+        cgl_execute(ffmpeg_cmd, verbose=True)
         create_movie_thumb(sequence, output_file=thumb_path)
 
     return output_file
@@ -355,7 +355,7 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True)
         command = '%s -i %s -vf "thumbnail,scale=%s" ' \
                   '-frames:v 1 %s' % (config['ffmpeg'], input_file, res, output_file)
         if command:
-            cgl_execute(command)
+            cgl_execute(command, verbose=True)
         return output_file
 
     else:
@@ -375,7 +375,7 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True)
             res = settings['resolution']['image_review']
         # command = r"%s %s --fit %s --ch R,G,B -o %s" % (config['oiiotool'], input_file, res, output_file)
         command = '%s %s -resize %s %s' % (config['magick'], input_file, res, output_file)
-        cgl_execute(command)
+        cgl_execute(command, verbose=True)
         return output_file
 
 
@@ -387,7 +387,7 @@ def make_full_res_jpg(input_file, preview_path=None):
             os.makedirs(os.path.split(preview_path)[0])
     command = r"%s %s --ch R,G,B -o %s" % (config['magick'], input_file, preview_path)
     if command:
-        cgl_execute(command)
+        cgl_execute(command, verbose=True)
     return preview_path
 
 
@@ -409,7 +409,7 @@ def make_images_from_pdf(input_file, preview_path=None):
     command = r"%s -density 300 %s %s/%s" % (config['imagemagick'], input_file,
                                              os.path.split(input_file)[0], output_file)
     if command:
-        cgl_execute(command)
+        cgl_execute(command, verbose=True)
     return True
 
 

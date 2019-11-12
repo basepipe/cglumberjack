@@ -123,10 +123,7 @@ def cgl_copy(source, destination, test=False, verbose=False, dest_is_folder=Fals
             cgl_copy_single(f_, destination, test, verbose, dest_is_folder)
         print('Lumbermill finished copying %s items in %s seconds' % (len(source), time.time() - start_time))
     else:
-        print 'string'
-        start_time = time.time()
-        cgl_copy(source, destination, test=False, verbose=False, dest_is_folder=dest_is_folder)
-        print('Lumbermill finished copying 1 item in %s seconds' % (time.time() - start_time))
+        cgl_copy_single(source, destination, test=False, verbose=False, dest_is_folder=dest_is_folder)
 
 
 def cgl_copy_single(source, destination, test=False, verbose=False, dest_is_folder=False):
