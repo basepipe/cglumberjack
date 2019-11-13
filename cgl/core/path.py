@@ -117,13 +117,13 @@ class PathObject(object):
         self.unpack_path(path_object)
         self.set_data_from_attrs()
         self.set_project_config()
-        self.set_json()
+        # self.set_json()
 
     def process_dict(self, path_object):
         self.set_attrs_from_dict(path_object)
         self.set_path()
         self.set_project_config()
-        self.set_json()
+        # self.set_json()
 
     @staticmethod
     def get_attrs_from_config():
@@ -1189,6 +1189,7 @@ def get_start_frame(sequence):
 
 
 def prep_seq_delimiter(sequence, replace_with='*', ext=None):
+    # TODO - could i just use regex for this and have it be a fraction of the code?
     """
     takes a sequence ('####', '%04d', '*') transforms it to another type.  This is used for instances where one
     piece of software needs sequences delimited in a particular way.
