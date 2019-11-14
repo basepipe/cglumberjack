@@ -247,8 +247,11 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
                 command_name='cgl_execute', dependent_job=None):
     # TODO - we need to make sure this command is used everywhere we're passing commands if at all possible.
     run_dict = {'command': command,
+                'command_name': command_name,
                 'start_time': time.time(),
                 'methodology': methodology,
+                'farm_processing_end': '',
+                'farm_processing_time': '',
                 'job_id': None}
     if methodology == 'local':
         import subprocess
@@ -319,4 +322,35 @@ def update_master():
 
 def get_end_time(start_time):
     return time.time()-start_time
+
+
+def get_job_id():
+    return int(str(time.time()).replace('.', ''))
+
+
+def write_to_cgl_data(run_dict):
+    job_id = None
+    if 'job_id' in run_dict.keys():
+        if run_dict['job_id']:
+            job_id = run_dict['job_id']
+        else:
+            run_dict['job_id'] = get_job_id()
+    user = current_user()
+    cgl_data = os.path.join(os.path.dirname(app_config()['paths']['globals']), 'cgl_data.json')
+    if os.path.exists(cgl_data):
+        data = load_json(cgl_data)
+    else:
+        data = {}
+    if user not in data.keys():
+        data[user] = {}
+    if job_id not in data[user].keys():
+        data[user][job_id] = run_dict
+    else:
+        print '%s already exists in %s dict' % (job_id, user)
+        return
+    save_json(cgl_data, data)
+
+
+
+
 

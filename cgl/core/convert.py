@@ -4,7 +4,7 @@ import logging
 from cgl.core.config import app_config
 from cgl.core.path import PathObject, CreateProductionData, split_sequence, number_to_hash, hash_to_number
 from cgl.core.path import prep_seq_delimiter, lj_list_dir, get_start_frame
-from cgl.core.util import cgl_execute
+from cgl.core.util import cgl_execute, write_to_cgl_data
 
 config = app_config()['paths']
 settings = app_config()['default']
@@ -152,6 +152,7 @@ def create_proxy(sequence, ext='jpg', verbose=True):
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
         command = '%s %s -scene %s %s' % (config['magick'], in_seq, start_frame, out_seq)
         run_dict = cgl_execute(command, verbose=verbose)
+        write_to_cgl_data(run_dict)
     return run_dict
 
 
@@ -200,6 +201,7 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
         run_dict = cgl_execute(command, command_name='create_hd_proxy', methodology=methodology,
                                dependent_job=dependent_job)
         run_dict['file_out'] = fileout
+        write_to_cgl_data(run_dict)
         return run_dict
 
     if not start_frame:
@@ -212,6 +214,7 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
     run_dict = cgl_execute(command, verbose=verbose, methodology=methodology, command_name='create_hd_proxy',
                            dependent_job=dependent_job)
     run_dict['file_out'] = fileout
+    write_to_cgl_data(run_dict)
     print 'file_out: %s' % fileout
     return run_dict
 
@@ -294,6 +297,7 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
         command = r'python %s -i %s -t %s' % (__file__, sequence, 'mov')
         run_dict = cgl_execute(command, command_name='create_mov', methodology=methodology, dependent_job=dependent_job)
         run_dict['file_out'] = output_file
+        write_to_cgl_data(run_dict)
         return run_dict
 
     if path_object.file_type == 'sequence':
@@ -343,6 +347,7 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
         run_dict = cgl_execute(ffmpeg_cmd, verbose=True, methodology=methodology, dependent_job=dependent_job,
                                command_name='create_mov')
         run_dict['file_out'] = output_file
+        write_to_cgl_data(run_dict)
         create_movie_thumb(sequence, output_file=thumb_path, methodology=methodology, dependent_job=run_dict['job_id'])
 
     return run_dict
@@ -384,9 +389,11 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True,
         command = '%s -i %s -vf "thumbnail,scale=%s" ' \
                   '-frames:v 1 %s' % (config['ffmpeg'], input_file, res, output_file)
         if command:
-            cgl_execute(command, verbose=True, methodology=methodology, dependent_job=dependent_job,
-                        command_name='create_movie_thumb')
-        return output_file
+            run_dict = cgl_execute(command, verbose=True, methodology=methodology, dependent_job=dependent_job,
+                                   command_name='create_movie_thumb')
+            run_dict['file_out'] = output_file
+            write_to_cgl_data(run_dict)
+        return run_dict
 
     else:
         if get_file_type(input_file) == 'sequence':
@@ -405,8 +412,10 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True,
             res = settings['resolution']['image_review']
         # command = r"%s %s --fit %s --ch R,G,B -o %s" % (config['oiiotool'], input_file, res, output_file)
         command = '%s %s -resize %s %s' % (config['magick'], input_file, res, output_file)
-        cgl_execute(command, verbose=True, methodology=methodology, dependent_job=dependent_job)
-        return output_file
+        run_dict = cgl_execute(command, verbose=True, methodology=methodology, dependent_job=dependent_job)
+        run_dict['file_out'] = output_file
+        write_to_cgl_data(run_dict)
+        return run_dict
 
 
 def make_full_res_jpg(input_file, preview_path=None):

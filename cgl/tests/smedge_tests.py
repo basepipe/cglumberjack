@@ -44,6 +44,7 @@ new_publish = path_object.copy(scope='shots', seq='000', shot='0900', task='plat
 # mov_dict = create_mov(proxy_dict['file_out'])
 # print '-->>  Created mov in %s seconds' % mov_dict['artist_time']
 #### Running it all on Smedge
+print new_publish.path_root
 run_dict = cgl_copy(files_, new_publish.path_root, dest_is_folder=True, verbose=False, methodology='smedge')
 print '-->>  Copied Files in %s seconds' % run_dict['artist_time']
 proxy_dict = create_hd_proxy(run_dict['output'], methodology='smedge', dependent_job=run_dict['job_id'])
