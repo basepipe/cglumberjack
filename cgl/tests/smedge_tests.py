@@ -35,22 +35,22 @@ path_object = PathObject(files_)
 new_publish = path_object.copy(scope='shots', seq='000', shot='0900', task='plate', resolution='high',
                                user=current_user(), version='000.000')
 #### Running it all Locally
-# run_dict = cgl_copy(files_, new_publish.path_root, dest_is_folder=True, verbose=False)
-# print '-->>  Copied Files in %s seconds' % run_dict['artist_time']
-# time.sleep(4)
-# proxy_dict = create_hd_proxy(run_dict['output'])
-# print '-->>  Created hd proxies in %s seconds' % proxy_dict['artist_time']
-# time.sleep(4)
-# mov_dict = create_mov(proxy_dict['file_out'])
-# print '-->>  Created mov in %s seconds' % mov_dict['artist_time']
-#### Running it all on Smedge
-print new_publish.path_root
-run_dict = cgl_copy(files_, new_publish.path_root, dest_is_folder=True, verbose=False, methodology='smedge')
+run_dict = cgl_copy(files_, new_publish.path_root, dest_is_folder=True, verbose=False)
 print '-->>  Copied Files in %s seconds' % run_dict['artist_time']
-proxy_dict = create_hd_proxy(run_dict['output'], methodology='smedge', dependent_job=run_dict['job_id'])
+time.sleep(4)
+proxy_dict = create_hd_proxy(run_dict['output'])
 print '-->>  Created hd proxies in %s seconds' % proxy_dict['artist_time']
-mov_dict = create_mov(proxy_dict['file_out'], methodology='smedge', dependent_job=proxy_dict['job_id'])
+time.sleep(4)
+mov_dict = create_mov(proxy_dict['file_out'])
 print '-->>  Created mov in %s seconds' % mov_dict['artist_time']
+#### Running it all on Smedge
+# print new_publish.path_root
+# run_dict = cgl_copy(files_, new_publish.path_root, dest_is_folder=True, verbose=False, methodology='smedge')
+# print '-->>  Copied Files in %s seconds' % run_dict['artist_time']
+# proxy_dict = create_hd_proxy(run_dict['output'], methodology='smedge', dependent_job=run_dict['job_id'])
+# print '-->>  Created hd proxies in %s seconds' % proxy_dict['artist_time']
+# mov_dict = create_mov(proxy_dict['file_out'], methodology='smedge', dependent_job=proxy_dict['job_id'])
+# print '-->>  Created mov in %s seconds' % mov_dict['artist_time']
 
 # create a quicktime movie
 # upload to ftrack

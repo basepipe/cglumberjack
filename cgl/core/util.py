@@ -270,7 +270,7 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
                         print output.strip()
                     output_values.append(output.strip())
 
-        run_dict['artist_time'] = run_dict['start_time']-time.time()
+        run_dict['artist_time'] = time.time() - run_dict['start_time']
         run_dict['end_time'] = time.time()
         run_dict['printout'] = output_values
         return run_dict
@@ -284,14 +284,12 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         print 'deadline not yet supported'
     elif methodology == 'smedge':
         smedge_command = r'Submit Script -Type Generic Script -Name %s -Command "%s"' % (command_name, command)
-        print smedge_command
         for k in kwargs:
             value = kwargs[k]
             smedge_command = '%s -%s %s' % (smedge_command, k, value)
-        print smedge_command
         temp_dict = cgl_execute(smedge_command)
         run_dict['job_id'] = temp_dict['printout'][0].split('Job ID: ')[-1]
-        run_dict['artist_time'] = run_dict['start_time'] - time.time()
+        run_dict['artist_time'] = time.time() - run_dict['start_time']
         run_dict['end_time'] = time.time()
         return run_dict
 
@@ -325,7 +323,7 @@ def get_end_time(start_time):
 
 
 def get_job_id():
-    return int(str(time.time()).replace('.', ''))
+    return str(time.time()).replace('.', '')
 
 
 def write_to_cgl_data(run_dict):
@@ -344,9 +342,9 @@ def write_to_cgl_data(run_dict):
     if user not in data.keys():
         data[user] = {}
     if job_id not in data[user].keys():
-        data[user][job_id] = run_dict
+        data[user][run_dict['job_id']] = run_dict
     else:
-        print '%s already exists in %s dict' % (job_id, user)
+        print '%s already exists in %s dict' % (run_dict['job_id'], user)
         return
     save_json(cgl_data, data)
 
