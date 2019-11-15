@@ -1,4 +1,5 @@
 import pprint
+import click
 import os
 import glob
 import json
@@ -244,7 +245,7 @@ def load_json(filepath):
 
 
 def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=False,
-                command_name='cgl_execute', dependent_job=None):
+                command_name='cgl_execute', dependent_job=None, **kwargs):
     # TODO - we need to make sure this command is used everywhere we're passing commands if at all possible.
     run_dict = {'command': command,
                 'command_name': command_name,
@@ -282,13 +283,12 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         # TODO - add deadline integration
         print 'deadline not yet supported'
     elif methodology == 'smedge':
-        print 'running smedge'
-        if dependent_job:
-            smedge_command = r'Submit Script -Type Generic Script -Name %s -Command "%s" -Wait %s' % (command_name,
-                                                                                                      command,
-                                                                                                      dependent_job)
-        else:
-            smedge_command = r'Submit Script -Type Generic Script -Name %s -Command "%s"' % (command_name, command)
+        smedge_command = r'Submit Script -Type Generic Script -Name %s -Command "%s"' % (command_name, command)
+        print smedge_command
+        for k in kwargs:
+            value = kwargs[k]
+            smedge_command = '%s -%s %s' % (smedge_command, k, value)
+        print smedge_command
         temp_dict = cgl_execute(smedge_command)
         run_dict['job_id'] = temp_dict['printout'][0].split('Job ID: ')[-1]
         run_dict['artist_time'] = run_dict['start_time'] - time.time()
@@ -350,6 +350,42 @@ def write_to_cgl_data(run_dict):
         return
     save_json(cgl_data, data)
 
+
+def edit_cgl_data(user, job_id, key, value):
+    if not job_id:
+        logging.info('No Job ID Defined')
+        click.echo('No Job ID Defined')
+        return
+    if not user:
+        user = current_user()
+    cgl_data = os.path.join(os.path.dirname(app_config()['paths']['globals']), 'cgl_data.json')
+    if os.path.exists(cgl_data):
+        data = load_json(cgl_data)
+        if key == 'farm_processing_time':
+            value = 'BOB_RULEZ %s' % time.time()
+        data[user][job_id][key] = value
+        save_json(cgl_data, data)
+    else:
+        logging.info('No cgl_data.json found! Aborting')
+        click.echo('No cgl_data.json found! Aborting')
+        return
+
+
+@click.command()
+@click.option('--edit_cgl', '-e', default=False, prompt='edit cgl data file for a user, job_id, and key/value pair')
+@click.option('--user', '-u', default=current_user(), prompt='File Sequence Path (file.####.ext)',
+              help='Path to the Input File.  Can be Image, Image Sequence, Movie')
+@click.option('--job_id', '-j', default=None,
+              help='job_id object to edit')
+@click.option('--key', '-k', help='key to edit')
+@click.option('--value', '-v', help='value for the key')
+def main(edit_cgl, user, job_id, key, value):
+    if edit_cgl:
+        edit_cgl_data(user, job_id, key, value)
+
+
+if __name__ == '__main__':
+    main()
 
 
 
