@@ -6,15 +6,15 @@ def load_time_sheet(app_, splash_=None):
     from cgl.ui.widgets.dialog import TimeTracker
     import datetime
     gui = TimeTracker()
-    # try:
-    gui.set_date(datetime.datetime.today() - datetime.timedelta(days=1))
-    gui.show()
-    gui.raise_()
-    if splash_:
-        splash_.finish(gui)
-    app_.exec_()
-    # except AttributeError:
-    #     print 'The Time Tracker GUI could not load'
+    try:
+        gui.set_date(datetime.datetime.today() - datetime.timedelta(days=1))
+        gui.show()
+        gui.raise_()
+        if splash_:
+            splash_.finish(gui)
+        app_.exec_()
+    except AttributeError:
+        print 'The Time Tracker GUI could not load'
 
 
 if __name__ == "__main__":

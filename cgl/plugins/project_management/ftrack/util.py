@@ -67,7 +67,6 @@ def get_total_time(task):
     timelogs = task['timelogs']
     for log in timelogs:
         total += log['duration']
-    print total/60/60
     return total/60/60
 
 
