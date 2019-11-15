@@ -62,6 +62,15 @@ def get_timelogs(month=datetime.datetime.today().month, day=datetime.datetime.to
     return timelogs
 
 
+def get_total_time(task):
+    total = 0
+    timelogs = task['timelogs']
+    for log in timelogs:
+        total += log['duration']
+    print total/60/60
+    return total/60/60
+
+
 def edit_timelog(timelog_id, hours):
     """
     Function to edit pre-existing timelog in ftrack
@@ -153,3 +162,8 @@ def get_all_tasks(proj_name):
 if __name__ == '__main__':
     t = get_all_tasks('cgl_testProjectA')
     test = get_timelogs(datetime.datetime.today().month, datetime.datetime.today().day, datetime.datetime.today().year)
+    ftrack = setup()
+    result = ftrack.query("Task where id is dfb1ba9a-302d-4761-a719-77fe07cf000f")
+    task = result[0]
+    get_total_time(task)
+
