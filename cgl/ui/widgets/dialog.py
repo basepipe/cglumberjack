@@ -120,6 +120,8 @@ class TimeTracker(LJDialog):
         self.get_projects_from_ftrack()
         self.button_add_task.setEnabled(False)
 
+        # self.task_table.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+
     def set_date(self, new_date):
         self.today = new_date
         self.load_task_hours()
@@ -245,8 +247,17 @@ class TimeTracker(LJDialog):
         self.task_table.setItem(pos, 5, QtGui.QTableWidgetItem(str(total_hours)))
         self.task_table.setItem(pos, 6, QtGui.QTableWidgetItem(str(bid)))
         self.new_logs.append(task)
-
         # add the task to the array
+        self.lock_table()
+
+    def lock_table(self):
+        for r in range(self.task_table.rowCount()):
+            for c in range(0, 7):
+                if c == 3:
+                    pass
+                else:
+                    self.task_table.item(r, c).setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+
     def on_hours_changed(self, item):
         """
         Function to add timelog_id to edited_logs list whenever an existing log's hours are edited
@@ -294,6 +305,7 @@ class TimeTracker(LJDialog):
         label_text = '%s, %s %s:' % (self.day_name, self.today.strftime("%B"), self.today.day)
         self.label_time_recorded.setText(label_text)
         self.edited_logs = []
+        self.lock_table()
 
 
 class FileTableModel(ListItemModel):
