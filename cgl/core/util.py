@@ -134,17 +134,37 @@ def cgl_copy(source, destination, test=False, methodology='local', verbose=False
         run_dict['output'] = os.path.join(destination, file_)
         run_dict['job_id'] = temp_dict['job_id']
     if isinstance(source, list):
-        for f_ in source:
-            print "Come up with a good way of handling these instances"
-            # TODO - i need a function that will sort a list of files and figure out the best options for copying no
-            # matter what.
-            # temp_dict = cgl_copy_single(f_, destination, test, methodology, verbose, dest_is_folder, )
+        copy_file_list(source, destination, methodology, verbose, dest_is_folder)
+        return
     else:
         temp_dict = cgl_copy_single(source, destination, test=False, verbose=False, dest_is_folder=dest_is_folder)
     run_dict['command'] = temp_dict['command']
     run_dict['artist_time'] = get_end_time(run_dict['start_time'])
     run_dict['end_time'] = time.time()
     return run_dict
+
+
+def copy_file_list(file_list, destination, methodology, verbose, dest_is_folder=True):
+    """
+    this function takes a list of files and figures out the most efficient way to copy them in the following order:
+    1) Are there any folders in this list?
+    2) Are there file sequences in this list?
+    3) Are there unique individual files in this list?
+    :param file_list:
+    :param destination:
+    :param methodology:
+    :param verbose:
+    :param dest_is_folder:
+    :return:
+    """
+    # For a First Draft cgl_copy_single works just fine for files and folders.
+    # as a next step i'd like to process it so i can also identify sequences within the list.  This is tricky because
+    # i have to be able to handle the instance of there's a sequence in the folder and i only want to copy certain
+    # frame ranges.
+
+    for f in file_list:
+        cgl_copy_single(f, destination=destination, methodology=methodology, verbose=verbose,
+                        dest_is_folder=dest_is_folder)
 
 
 def cgl_copy_single(source, destination, test=False, methodology='local', verbose=False, dest_is_folder=False,
