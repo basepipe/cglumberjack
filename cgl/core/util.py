@@ -109,7 +109,7 @@ def test_string_against_rules(test_string, rule, effected_label=None):
         return app_config()['paths']['rules']['%s_example' % rule]
 
 
-def cgl_copy(source, destination, test=False, methodology='local', verbose=False, dest_is_folder=False):
+def cgl_copy(source, destination, methodology='local', verbose=False, dest_is_folder=False, test=False):
     """
     Catch all for any type of copy function.  Handles a list of files/folders as well as individual files.
     :param source: takes a list of files/folders, or a string represeting a file or folder
@@ -119,7 +119,8 @@ def cgl_copy(source, destination, test=False, methodology='local', verbose=False
     :param dest_is_folder: If True the copy tool will assume that the destination string represents a folder
     :return:
     """
-    from cgl.core.path import get_file_type, lj_list_dir
+    from cgl.core.path import get_file_type
+
     run_dict = {'start_time': time.time(),
                 'function': 'cgl_copy()'}
     if get_file_type(source) == 'sequence':
@@ -134,8 +135,7 @@ def cgl_copy(source, destination, test=False, methodology='local', verbose=False
         run_dict['output'] = os.path.join(destination, file_)
         run_dict['job_id'] = temp_dict['job_id']
     if isinstance(source, list):
-        copy_file_list(source, destination, methodology, verbose, dest_is_folder)
-        return
+        temp_dict = copy_file_list(source, destination, methodology, verbose, dest_is_folder)
     else:
         temp_dict = cgl_copy_single(source, destination, test=False, verbose=False, dest_is_folder=dest_is_folder)
     run_dict['command'] = temp_dict['command']
@@ -161,10 +161,14 @@ def copy_file_list(file_list, destination, methodology, verbose, dest_is_folder=
     # as a next step i'd like to process it so i can also identify sequences within the list.  This is tricky because
     # i have to be able to handle the instance of there's a sequence in the folder and i only want to copy certain
     # frame ranges.
-
+    run_dict = {'start_time': time.time(),
+                'function': 'cgl_copy_file_list()'}
     for f in file_list:
         cgl_copy_single(f, destination=destination, methodology=methodology, verbose=verbose,
                         dest_is_folder=dest_is_folder)
+    run_dict['command'] = 'cgl_copy_file_list()'
+    run_dict['artist_time'] = get_end_time(run_dict['start_time'])
+    return run_dict
 
 
 def cgl_copy_single(source, destination, test=False, methodology='local', verbose=False, dest_is_folder=False,
@@ -221,6 +225,7 @@ def cgl_copy_single(source, destination, test=False, methodology='local', verbos
             else:
                 run_dict['start_time'] = time.time()
                 run_dict['command'] = command
+                print command, 1
                 cgl_execute(command=command, print_output=False, methodology=methodology, verbose=verbose,
                             command_name=command_name)
                 run_dict['artist_time'] = time.time()-run_dict['start_time']
@@ -265,7 +270,7 @@ def load_json(filepath):
 
 
 def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=False,
-                command_name='cgl_execute', dependent_job=None, **kwargs):
+                command_name='cgl_execute', **kwargs):
     # TODO - we need to make sure this command is used everywhere we're passing commands if at all possible.
     run_dict = {'command': command,
                 'command_name': command_name,
@@ -307,7 +312,8 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         for k in kwargs:
             value = kwargs[k]
             smedge_command = '%s -%s %s' % (smedge_command, k, value)
-        temp_dict = cgl_execute(smedge_command)
+        # this needs to check for a smedge connection
+        temp_dict = cgl_execute(smedge_command, methodology='local')
         run_dict['job_id'] = temp_dict['printout'][0].split('Job ID: ')[-1]
         run_dict['artist_time'] = time.time() - run_dict['start_time']
         run_dict['end_time'] = time.time()

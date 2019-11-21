@@ -906,7 +906,7 @@ def start(filepath):
             return
     command = (cmd + filepath)
     # this command will only ever be run locally, it does not need render farm support
-    cgl_execute(command)
+    cgl_execute(command, methodology='local')
 
 
 def start_url(url):
@@ -931,7 +931,7 @@ def show_in_folder(path_string):
     command = (cmd + full_path)
     logging.info("running command: %s" % command)
     # this command will only ever be run locally, it does not need render management support
-    cgl_execute(command)
+    cgl_execute(command, methodology='local')
 
 
 def show_in_project_management(path_object):
@@ -1130,6 +1130,8 @@ def get_file_type(filepath):
     if "." not in filepath:
         ft = 'folder'
     if '###' in filepath:
+        ft = 'sequence'
+    if '%0' in filepath:
         ft = 'sequence'
     return ft
 

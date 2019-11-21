@@ -113,9 +113,9 @@ def get_file_type(input_file):
         if _type == 'movie':
             return 'movie'
         if _type == 'image':
-            if '%04d' in input_file:
+            if '%0' in input_file:
                 return 'sequence'
-            elif '####' in input_file:
+            elif '###' in input_file:
                 return 'sequence'
             else:
                 return 'image'
@@ -129,7 +129,7 @@ def get_file_type(input_file):
 #####################################################################
 
 
-def create_proxy(sequence, ext='jpg', verbose=True):
+def create_proxy(sequence, ext='jpg', verbose=True, methodology='local'):
     """
     Creates a Jpeg proxy resolution based off the resolution of the given path.
     :param sequence:
@@ -151,7 +151,8 @@ def create_proxy(sequence, ext='jpg', verbose=True):
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
         command = '%s %s -scene %s %s' % (config['magick'], in_seq, start_frame, out_seq)
-        run_dict = cgl_execute(command, verbose=verbose)
+        run_dict = cgl_execute(command, methodology=methodology, verbose=verbose)
+        run_dict['file_out'] = out_seq
         write_to_cgl_data(run_dict)
     return run_dict
 
@@ -202,7 +203,8 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
         # set_process_time = r'"python %s -e True -j %s -k farm_processing_end"' % (util_file, '%SMEDGE_JOB_ID%')
         # run_dict = cgl_execute(command, command_name='create_hd_proxy', methodology=methodology,
         #                        Wait=dependent_job, WorkPostExecuteSuccessfulEvt=set_process_time)
-        run_dict = cgl_execute(command, command_name='create_hd_proxy', methodology=methodology,
+        run_dict = cgl_execute(command, command_name='%s_%s: create_hd_proxy' % (path_object.seq, path_object.shot),
+                               methodology='smedge',
                                Wait=dependent_job)
         run_dict['file_out'] = fileout
         write_to_cgl_data(run_dict)
@@ -215,7 +217,8 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
         command = '%s %s -scene %s -resize %s %s' % (config['magick'], in_seq, start_frame, res, out_seq)
     if not os.path.exists(output_dir):
         CreateProductionData(path_object=output_dir, project_management='lumbermill')
-    run_dict = cgl_execute(command, verbose=verbose, methodology=methodology, command_name='create_hd_proxy',
+    run_dict = cgl_execute(command, verbose=verbose, methodology=methodology,
+                           command_name='%s_%s: create_hd_proxy' % (path_object.seq, path_object.shot),
                            Wait=dependent_job)
     run_dict['file_out'] = fileout
     write_to_cgl_data(run_dict)
@@ -299,7 +302,8 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
 
     if methodology == 'smedge':
         command = r'python %s -i %s -t %s' % (__file__, sequence, 'mov')
-        run_dict = cgl_execute(command, command_name='create_mov', methodology=methodology, Wait=dependent_job)
+        run_dict = cgl_execute(command, command_name='%s_%s: create_mov' % (path_object.seq, path_object.shot),
+                               methodology='smedge', Wait=dependent_job)
         run_dict['file_out'] = output_file
         write_to_cgl_data(run_dict)
         return run_dict
@@ -349,7 +353,9 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
                                                             output_frame_rate, filter_arg, output_file)
     if ffmpeg_cmd:
         run_dict = cgl_execute(ffmpeg_cmd, verbose=True, methodology=methodology,
-                               command_name='create_mov', Wait=dependent_job)
+                               command_name='%s_%s: create_mov' % (path_object.seq, path_object.shot),
+                               Wait=dependent_job)
+
         run_dict['file_out'] = output_file
         write_to_cgl_data(run_dict)
         create_movie_thumb(sequence, output_file=thumb_path, methodology=methodology, dependent_job=run_dict['job_id'])
@@ -367,6 +373,8 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True,
     :param thumb: Default value is True, this pulls the thumbnail resolution from the settings.
     :return:
     """
+
+    path_object = PathObject(input_file)
     if not output_file:
         if '.preview' in input_file:
             output_file.replace('.preview', '.thumb')
@@ -394,7 +402,8 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True,
                   '-frames:v 1 %s' % (config['ffmpeg'], input_file, res, output_file)
         if command:
             run_dict = cgl_execute(command, verbose=True, methodology=methodology,
-                                   command_name='create_movie_thumb', Wait=dependent_job)
+                                   command_name='%s_%s: create_mov_thumb' % (path_object.seq, path_object.shot),
+                                   Wait=dependent_job)
             run_dict['file_out'] = output_file
             write_to_cgl_data(run_dict)
         return run_dict
@@ -546,6 +555,7 @@ def make_animated_gif(input_file):
 def main(input_file, output_file, conversion_type):
     file_type = get_file_type(input_file)
     run_dict = {}
+    print file_type
     if file_type == 'sequence':
         if conversion_type == 'proxy':
             run_dict = create_hd_proxy(input_file, output=output_file)
