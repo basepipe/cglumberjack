@@ -274,7 +274,6 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
 def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame_rate'], output_frame_rate=None,
                res=settings['resolution']['video_review'], methodology='local', dependent_job=None):
 
-    start_frame = 1001
     path_object = PathObject(sequence)
 
     if output:
@@ -519,6 +518,7 @@ def make_animated_gif(input_file):
             os.remove(output_file)
     filters = "fps=15,scale=%s:-1:flags=lanczos" % h
     command = '%s -i %s -vf "%s,palettegen" -y %s' % (config['ffmpeg'], input_file, filters, palette)
+    print 'command 1', command
     p = subprocess.Popen([config['ffmpeg'], '-i', input_file, '-vf', "%s,palettegen" % filters, '-y', palette],
                          stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
     print p.stdout.readline()  # read the first line
