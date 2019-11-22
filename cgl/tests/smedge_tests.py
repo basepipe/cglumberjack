@@ -1,7 +1,7 @@
 import time
 import os
-from cgl.core.path import PathObject, get_start_frame
-from cgl.core.util import current_user, cgl_copy, cgl_execute
+from cgl.core.path import PathObject
+from cgl.core.util import current_user, cgl_copy
 from cgl.core.convert import create_hd_proxy, create_mov
 proccessing_method = 'local'
 

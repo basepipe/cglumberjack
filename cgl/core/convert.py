@@ -199,7 +199,6 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
     if methodology == 'smedge':
         print "I'm sending this to smedge to start after %s" % dependent_job
         command = r'python %s -i %s' % (__file__, sequence)
-        util_file = os.path.join(os.path.dirname(__file__), 'util.py')
         # set_process_time = r'"python %s -e True -j %s -k farm_processing_end"' % (util_file, '%SMEDGE_JOB_ID%')
         # run_dict = cgl_execute(command, command_name='create_hd_proxy', methodology=methodology,
         #                        Wait=dependent_job, WorkPostExecuteSuccessfulEvt=set_process_time)
@@ -555,7 +554,6 @@ def make_animated_gif(input_file):
 def main(input_file, output_file, conversion_type):
     file_type = get_file_type(input_file)
     run_dict = {}
-    print file_type
     if file_type == 'sequence':
         if conversion_type == 'proxy':
             run_dict = create_hd_proxy(input_file, output=output_file)
