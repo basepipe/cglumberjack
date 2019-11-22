@@ -75,11 +75,9 @@ class AsanaJack(object):
             return self.project_data
 
     def create_section(self, project_name, section_name):
-        print project_name, section_name
         self.section_data = self.find_section_data(project_name, section_name)
-        print self.section_data
         if not self.section_data:
-            self.section_data = self.client.sections.create_in_project(self.project_data['id'], {'name': section_name})
+            self.section_data = self.client.sections.create_in_project(self.project_data['gid'], {'name': section_name})
             return self.section_data
 
     def create_task(self, project_name, section_name, task_name, assignee=None, notes=''):
@@ -154,4 +152,4 @@ class AsanaJack(object):
     def delete_section(self, project_name, section_name):
         section_data = self.find_section_data(project_name, section_name)
         if section_data:
-            self.client.sections.delete(section_data['id'])
+            self.client.sections.delete(section_data['gid'])

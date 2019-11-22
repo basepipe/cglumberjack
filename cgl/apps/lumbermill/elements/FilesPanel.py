@@ -122,7 +122,7 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.copy_selected_version.connect(self.version_up_selected_clicked)
             task_widget.files_area.work_files_table.selected.connect(self.on_source_selected)
             task_widget.files_area.export_files_table.selected.connect(self.on_render_selected)
-            task_widget.files_area.export_files_table.show_in_folder.connect(self.show_in_folder)
+            task_widget.files_area.export_files_table.show_in_folder.connect(self.show_selected_in_folder)
             task_widget.files_area.work_files_table.doubleClicked.connect(self.on_open_clicked)
             task_widget.files_area.open_button.clicked.connect(self.on_open_clicked)
             task_widget.files_area.import_button.clicked.connect(self.on_import_clicked)
@@ -132,7 +132,7 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.start_task_clicked.connect(self.on_assign_button_clicked)
             task_widget.files_area.work_files_table.dropped.connect(self.on_file_dragged_to_source)
             task_widget.files_area.export_files_table.dropped.connect(self.on_file_dragged_to_render)
-            task_widget.files_area.work_files_table.show_in_folder.connect(self.show_in_folder)
+            task_widget.files_area.work_files_table.show_in_folder.connect(self.show_selected_in_folder)
             task_widget.files_area.work_files_table.copy_folder_path.connect(self.copy_folder_path)
             task_widget.files_area.work_files_table.copy_file_path.connect(self.copy_file_path)
             task_widget.files_area.work_files_table.import_version_from.connect(self.import_versions_from)
@@ -407,7 +407,7 @@ class FilesPanel(QtWidgets.QWidget):
                                  force_pm_creation=True)
         self.update_location(path_object=self.path_object)
 
-    def show_in_folder(self):
+    def show_selected_in_folder(self):
         show_in_folder(self.path_object.path_root)
 
     def copy_folder_path(self):

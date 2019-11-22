@@ -1,9 +1,10 @@
 import os
+import click
 import logging
 from cgl.core.config import app_config
 from cgl.core.path import PathObject, CreateProductionData, split_sequence, number_to_hash, hash_to_number
 from cgl.core.path import prep_seq_delimiter, lj_list_dir, get_start_frame
-from cgl.core.util import cgl_execute
+from cgl.core.util import cgl_execute, write_to_cgl_data
 
 config = app_config()['paths']
 settings = app_config()['default']
@@ -112,9 +113,9 @@ def get_file_type(input_file):
         if _type == 'movie':
             return 'movie'
         if _type == 'image':
-            if '%04d' in input_file:
+            if '%0' in input_file:
                 return 'sequence'
-            elif '####' in input_file:
+            elif '###' in input_file:
                 return 'sequence'
             else:
                 return 'image'
@@ -128,7 +129,7 @@ def get_file_type(input_file):
 #####################################################################
 
 
-def create_proxy(sequence, ext='jpg', verbose=True):
+def create_proxy(sequence, ext='jpg', verbose=True, methodology='local'):
     """
     Creates a Jpeg proxy resolution based off the resolution of the given path.
     :param sequence:
@@ -150,32 +151,32 @@ def create_proxy(sequence, ext='jpg', verbose=True):
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
         command = '%s %s -scene %s %s' % (config['magick'], in_seq, start_frame, out_seq)
-        cgl_execute(command, verbose=verbose)
-    print out_seq
-    return out_seq
+        run_dict = cgl_execute(command, methodology=methodology, verbose=verbose)
+        run_dict['file_out'] = out_seq
+        write_to_cgl_data(run_dict)
+    return run_dict
 
 
 def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', height='x1080', do_height=False,
-                    start_frame='1001', verbose=True):
-    hashes = ''
-    fileout = ''
-    out_seq = ''
-    command = ''
-    number = ''
+                    start_frame=None, verbose=True, methodology='local', dependent_job=None):
+
     if do_height:
         res = height
     else:
         res = width
     path_object = PathObject(sequence)
     path_object.set_file_type()
+    hashes = ''
+    fileout = ''
+    out_seq = ''
+    command = ''
+    number = ''
     if not output:
         path_object_output = path_object.copy(resolution='hdProxy')
         output_dir = os.path.dirname(path_object_output.path_root)
     else:
         path_object_output = None
         output_dir = os.path.dirname(output)
-    if not os.path.exists(output_dir):
-        CreateProductionData(path_object=output_dir, project_management='lumbermill')
     if path_object.file_type == 'sequence':
         # replace ### with "*"
         if '##' in sequence:
@@ -184,7 +185,6 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
             hashes, number = number_to_hash(sequence)
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
-        command = '%s %s -scene %s -resize %s %s' % (config['magick'], in_seq, start_frame, res, out_seq)
         fileout = out_seq.replace(number, hashes)
     elif path_object.file_type == 'image':
         sequence = sequence
@@ -195,9 +195,34 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
             this_ = os.path.splitext(output)[0]
             fileout = this_+'.jpg'
         command = '%s %s -resize %s %s' % (config['magick'], sequence, res, fileout)
-    print 'Command is:', command
-    cgl_execute(command, verbose=verbose)
-    return fileout
+
+    if methodology == 'smedge':
+        print "I'm sending this to smedge to start after %s" % dependent_job
+        command = r'python %s -i %s' % (__file__, sequence)
+        # set_process_time = r'"python %s -e True -j %s -k farm_processing_end"' % (util_file, '%SMEDGE_JOB_ID%')
+        # run_dict = cgl_execute(command, command_name='create_hd_proxy', methodology=methodology,
+        #                        Wait=dependent_job, WorkPostExecuteSuccessfulEvt=set_process_time)
+        run_dict = cgl_execute(command, command_name='%s_%s: create_hd_proxy' % (path_object.seq, path_object.shot),
+                               methodology='smedge',
+                               Wait=dependent_job)
+        run_dict['file_out'] = fileout
+        write_to_cgl_data(run_dict)
+        return run_dict
+
+    if not start_frame:
+        start_frame = get_start_frame(sequence)
+
+    if path_object.file_type == 'sequence':
+        command = '%s %s -scene %s -resize %s %s' % (config['magick'], in_seq, start_frame, res, out_seq)
+    if not os.path.exists(output_dir):
+        CreateProductionData(path_object=output_dir, project_management='lumbermill')
+    run_dict = cgl_execute(command, verbose=verbose, methodology=methodology,
+                           command_name='%s_%s: create_hd_proxy' % (path_object.seq, path_object.shot),
+                           Wait=dependent_job)
+    run_dict['file_out'] = fileout
+    write_to_cgl_data(run_dict)
+    print 'file_out: %s' % fileout
+    return run_dict
 
 
 def create_gif_proxy(sequence, ext='gif', width='480', height='x100', do_height=False, verbose=True):
@@ -247,13 +272,12 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
 
 
 def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame_rate'], output_frame_rate=None,
-               res=settings['resolution']['video_review']):
-    start_frame = 1001
+               res=settings['resolution']['video_review'], methodology='local', dependent_job=None):
+
     path_object = PathObject(sequence)
 
     if output:
         if path_object.file_type == 'sequence':
-            start_frame = get_first_frame(sequence)[0]
             input_file = prep_seq_delimiter(sequence, replace_with='%')
             output_file = output
             if not os.path.exists(os.path.dirname(output_file)):
@@ -264,10 +288,7 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
         web_path_object = PathObject(sequence).copy(resolution='webMov')
         CreateProductionData(web_path_object, project_management='lumbermill')
         output_file = web_path_object.path_root
-
         if path_object.file_type == 'sequence':
-            start_frame = get_first_frame(sequence)[0]
-            input_file = prep_seq_delimiter(sequence, replace_with='%')
             if not output:
                 output_file = output_file.split('#')[0]
                 if output_file.endswith('.'):
@@ -277,9 +298,18 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
                 filename = os.path.basename(output_file)
                 web_path_object.set_attr(filename=filename)
 
+    if methodology == 'smedge':
+        command = r'python %s -i %s -t %s' % (__file__, sequence, 'mov')
+        run_dict = cgl_execute(command, command_name='%s_%s: create_mov' % (path_object.seq, path_object.shot),
+                               methodology='smedge', Wait=dependent_job)
+        run_dict['file_out'] = output_file
+        write_to_cgl_data(run_dict)
+        return run_dict
+
+    if path_object.file_type == 'sequence':
+        input_file = prep_seq_delimiter(sequence, replace_with='%')
     if os.path.exists(output_file):
         os.remove(output_file)
-
     if os.path.splitext(input_file)[-1] == '.exr' or os.path.splitext(input_file)[-1] == '.dpx':
         logging.info('applying gamma 2.2 to linear sequence')
         gamma = 2.2
@@ -296,12 +326,19 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
     res_list = res.split('x')
     width = res_list[0]
     height = res_list[1]
-    filter_arg = r' -filter:v "scale=iw*min($width/iw\,$height/ih):ih*min($width/iw\,$height/ih),' \
-                 r' pad=$width:$height:($width-iw*min($width/iw\,$height/ih))/2:' \
-                 r'($height-ih*min($width/iw\,$height/ih))/2" '.replace('$width', width).replace('$height',
-                                                                                                 height)
+    if methodology == 'smedge':
+        filter_arg = r' -filter:v \"scale=iw*min($width/iw\,$height/ih):ih*min($width/iw\,$height/ih),' \
+                     r' pad=$width:$height:($width-iw*min($width/iw\,$height/ih))/2:' \
+                     r'($height-ih*min($width/iw\,$height/ih))/2\" '.replace('$width', width).replace('$height',
+                                                                                                      height)
+    else:
+        filter_arg = r' -filter:v "scale=iw*min($width/iw\,$height/ih):ih*min($width/iw\,$height/ih),' \
+                     r' pad=$width:$height:($width-iw*min($width/iw\,$height/ih))/2:' \
+                     r'($height-ih*min($width/iw\,$height/ih))/2" '.replace('$width', width).replace('$height',
+                                                                                                     height)
     ffmpeg_cmd = ''
     if path_object.file_type == 'sequence':
+        start_frame = get_first_frame(sequence)[0]
         ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
                      r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'],
                                                             start_frame, framerate, gamma, input_file, res, encoder,
@@ -313,13 +350,19 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
                                                             encoder, profile, constant_rate_factor, pixel_format,
                                                             output_frame_rate, filter_arg, output_file)
     if ffmpeg_cmd:
-        cgl_execute(ffmpeg_cmd, verbose=True)
-        create_movie_thumb(sequence, output_file=thumb_path)
+        run_dict = cgl_execute(ffmpeg_cmd, verbose=True, methodology=methodology,
+                               command_name='%s_%s: create_mov' % (path_object.seq, path_object.shot),
+                               Wait=dependent_job)
 
-    return output_file
+        run_dict['file_out'] = output_file
+        write_to_cgl_data(run_dict)
+        create_movie_thumb(sequence, output_file=thumb_path, methodology=methodology, dependent_job=run_dict['job_id'])
+
+    return run_dict
 
 
-def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True):
+def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True, methodology='local',
+                       dependent_job=None):
     """
     Create a thumbnail from a movie file.
     :param input_file: path to mov
@@ -328,12 +371,13 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True)
     :param thumb: Default value is True, this pulls the thumbnail resolution from the settings.
     :return:
     """
+
+    path_object = PathObject(input_file)
     if not output_file:
         if '.preview' in input_file:
             output_file.replace('.preview', '.thumb')
         else:
             output_file = PathObject(path_object=input_file).copy(resolution='thumb', ext='jpg').path_root
-    print output_file
     if not output_file.endswith('.jpg'):
         file_ = os.path.splitext(output_file)[0]
         output_file = '%s.%s' % (file_, 'jpg')
@@ -355,8 +399,12 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True)
         command = '%s -i %s -vf "thumbnail,scale=%s" ' \
                   '-frames:v 1 %s' % (config['ffmpeg'], input_file, res, output_file)
         if command:
-            cgl_execute(command, verbose=True)
-        return output_file
+            run_dict = cgl_execute(command, verbose=True, methodology=methodology,
+                                   command_name='%s_%s: create_mov_thumb' % (path_object.seq, path_object.shot),
+                                   Wait=dependent_job)
+            run_dict['file_out'] = output_file
+            write_to_cgl_data(run_dict)
+        return run_dict
 
     else:
         if get_file_type(input_file) == 'sequence':
@@ -375,8 +423,10 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True)
             res = settings['resolution']['image_review']
         # command = r"%s %s --fit %s --ch R,G,B -o %s" % (config['oiiotool'], input_file, res, output_file)
         command = '%s %s -resize %s %s' % (config['magick'], input_file, res, output_file)
-        cgl_execute(command, verbose=True)
-        return output_file
+        run_dict = cgl_execute(command, verbose=True, methodology=methodology, Wait=dependent_job)
+        run_dict['file_out'] = output_file
+        write_to_cgl_data(run_dict)
+        return run_dict
 
 
 def make_full_res_jpg(input_file, preview_path=None):
@@ -468,7 +518,7 @@ def make_animated_gif(input_file):
             os.remove(output_file)
     filters = "fps=15,scale=%s:-1:flags=lanczos" % h
     command = '%s -i %s -vf "%s,palettegen" -y %s' % (config['ffmpeg'], input_file, filters, palette)
-    print command
+    print 'command 1', command
     p = subprocess.Popen([config['ffmpeg'], '-i', input_file, '-vf', "%s,palettegen" % filters, '-y', palette],
                          stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
     print p.stdout.readline()  # read the first line
@@ -494,3 +544,25 @@ def make_animated_gif(input_file):
     p.wait()
     return output_file
 
+
+@click.command()
+@click.option('--input_file', '-i', prompt='File Sequence Path (file.####.ext)',
+              help='Path to the Input File.  Can be Image, Image Sequence, Movie')
+@click.option('--output_file', '-o', default=None,
+              help='Path to the output file/folder/sequence')
+@click.option('--conversion_type', '-t', default='proxy', help='Type of Conversion - sequence, movie, image, gif')
+def main(input_file, output_file, conversion_type):
+    file_type = get_file_type(input_file)
+    run_dict = {}
+    if file_type == 'sequence':
+        if conversion_type == 'proxy':
+            run_dict = create_hd_proxy(input_file, output=output_file)
+        elif conversion_type == 'mov':
+            run_dict = create_mov(input_file)
+    if run_dict.keys():
+        for key in run_dict:
+            click.echo('%s: %s' % (key, run_dict[key]))
+
+
+if __name__ == '__main__':
+    main()

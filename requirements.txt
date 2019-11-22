@@ -1,3 +1,4 @@
+click
 pyside
 PyYAML
 PyInstaller

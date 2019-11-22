@@ -222,6 +222,9 @@ class CGLMenuButton(QtWidgets.QWidget):
             return "def run():\n    print(\"hello world: %s\")" % self.name
 
     def on_delete_clicked(self):
+        print self
+        print self.parent()
+        print '--------------------'
         self.parent().removeTab(self.parent.currentIndex())
 
 
