@@ -684,7 +684,7 @@ class PathObject(object):
             
     def make_preview(self):
         """
-        Creates web optimized preview of PathObject.  For movies and image sequences it's a 1920x1080 quicktime h264, 
+        Creates web optimized preview of PathObject.  For movies and image sequences it's a 1920x1080 quicktime h264,
         for images it's a jpeg within the boundaries of 1920x1080
         :return:
         """
@@ -710,12 +710,11 @@ class PathObject(object):
     
     def make_proxy(self, width=1920, height=1080, copy_input_padding=True, ext='jpg'):
         """
-        
         :param width: width in pixels
         :param height: height in pixels
         :param copy_input_padding: if True use padding from input sequence, if False use padding from Globals
         :param ext: extension for the proxy file.  Default is jpg
-        :return: 
+        :return:
         """
         name_ = os.path.splitext(self.filename)[0]
         filename = '%s.%s' % (name_, ext)
