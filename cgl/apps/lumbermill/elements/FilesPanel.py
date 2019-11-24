@@ -7,8 +7,8 @@ from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.util import current_user, cgl_copy
 from cgl.ui.widgets.progress_gif import process_method
-from cgl.core.path import PathObject, CreateProductionData
-from cgl.core.path import replace_illegal_filename_characters, show_in_folder, seq_from_file, get_frange_from_seq
+from cgl.core.path import PathObject, CreateProductionData, lj_list_dir
+from cgl.core.path import replace_illegal_filename_characters, show_in_folder
 from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 from panels import clear_layout
 
@@ -560,30 +560,8 @@ class FilesPanel(QtWidgets.QWidget):
         if not list_:
             return
         list_.sort()
-        file_count = len(list_)
         output_ = []
         dirname = os.path.dirname(list_[0])
-        for each in list_:
-            if path_filter:
-                filtered = PathObject(each).data[path_filter]
-                output_.append([filtered])
-            else:
-                if basename:
-
-                    seq_string = str(seq_from_file(os.path.basename(each)))
-                    if file_count == 1:
-                        output_.append([os.path.basename(each)])
-                    elif seq_string:
-                        if [seq_string] not in output_:
-                            output_.append([seq_string])
-                    else:
-                        output_.append([each])
-                else:
-                    output_.append([each])
-        for each in output_:
-            if '#' in each[0]:
-                frange = get_frange_from_seq(os.path.join(dirname, each[0]))
-                if frange:
-                    each[0] = '%s %s' % (each[0], frange)
+        output_.append(lj_list_dir(dirname, path_filter=path_filter, basename=basename))
         return output_
 

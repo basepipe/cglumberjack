@@ -44,14 +44,7 @@ class PathWidget(QtWidgets.QFrame):
 
     def update_path(self, path_object):
         if path_object:
-            path_object = cglpath.PathObject(path_object)
-            if path_object.filename:
-                if '###' in path_object.filename:
-                    try:
-                        filename = cglpath.split_sequence_frange(path_object.filename)[0]
-                        path_object.set_attr(filename=filename)
-                    except TypeError:
-                        logging.error('passing update_path due to exception')
+            print 'Path Object filename is: ', path_object.filename
             self.text = path_object.path_root
             self.path_line_edit.setText(path_object.path_root)
 
@@ -288,7 +281,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.source_selection = []
         self.setMinimumWidth(700)
         self.setMinimumHeight(600)
-        self.frange = None
+        self.frame_range = None
 
         self.layout = QtWidgets.QVBoxLayout(self)
         self.setContentsMargins(0, 0, 0, 0)
@@ -362,8 +355,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             path_object = cglpath.PathObject(data)
         elif type(data) == cglpath.PathObject:
             path_object = cglpath.PathObject(data)
-        if path_object.frange:
-            self.frange = path_object.frange
+        if path_object.frame_range:
+            self.frame_range = path_object.frame_range
         self.nav_widget.set_text(path_object.path_root)
         self.nav_widget.update_buttons(path_object=path_object)
         last = path_object.get_last_attr()
@@ -509,7 +502,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     @staticmethod
     def do_review(progress_bar, path_object):
-        cglpath.do_review(progress_bar, path_object)
+        from cgl.core.project import do_review
+        do_review(progress_bar, path_object)
 
     def publish_clicked(self):
         from plugins.preflight.launch import launch_

@@ -1,5 +1,5 @@
 from plugins.preflight.preflight_check import PreflightCheck
-from cgl.core.path import publish
+from cgl.core.project import publish
 
 
 # noinspection PyPep8Naming

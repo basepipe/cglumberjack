@@ -817,7 +817,7 @@ class ProjectCreator(LJDialog):
         self.shot_task_line_edit.hide()
 
     def load_companies(self):
-        from cgl.core.path import get_companies
+        from cgl.core.project import get_companies
         self.company_combo.addItems(get_companies())
 
     def shots_radio_clicked(self):

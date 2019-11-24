@@ -1,6 +1,7 @@
 import os
 import json
-from cgl.core.path import PathObject, get_cgl_tools, get_cgl_config
+from cgl.core.path import PathObject
+from cgl.core.project import get_cgl_tools, get_cgl_config
 
 
 class CustomMenu(object):

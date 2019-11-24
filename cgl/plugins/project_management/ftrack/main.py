@@ -6,7 +6,6 @@ import json
 import ftrack_api
 from cgl.core.config import app_config, UserConfig
 from cgl.core.util import current_user
-from cgl.core.path import create_previews
 
 
 class ProjectManagementData(object):
@@ -53,8 +52,8 @@ class ProjectManagementData(object):
     description = ''
     bid = 0
     type = None
-    preview_path_full = None
-    thumb_path_full = None
+    preview_path = None
+    thumb_path = None
     task_asset = None
     user_info = app_config()['project_management']['ftrack']['users']
     server_url = app_config()['project_management']['ftrack']['api']['server_url']
@@ -242,10 +241,10 @@ class ProjectManagementData(object):
             'description': self.description,
             'bid': self.bid
         })
-        if self.thumb_path_full:
-            if os.path.exists(self.thumb_path_full):
-                logging.debug(self.thumb_path_full)
-                self.task_data.create_thumbnail(self.thumb_path_full)
+        if self.thumb_path:
+            if os.path.exists(self.thumb_path):
+                logging.debug(self.thumb_path)
+                self.task_data.create_thumbnail(self.thumb_path)
         return self.task_data
 
     def create_assignment(self):
@@ -311,19 +310,18 @@ class ProjectManagementData(object):
             print('No File defined, skipping version creation')
         return self.version_data
 
-    def upload_media(self):
+    def upload_media(self, force_creation=False):
         # set the status name to 'Needs Review'
         if not self.file_type:
             print 'Cannot Determine File Type - skipping Ftrack Upload'
             return
+        if not os.path.exists(self.path_object.preview_path):
+            print self.path_object.preview_path, 'Does Not Exist'
+            return
 
-        if not os.path.exists(self.path_object.preview_path_full):
-            print self.path_object.preview_path_full, 'preview path'
-            preview, thumb = create_previews(path_object=self.path_root)
-            print preview, thumb
         else:
-            preview = self.path_object.preview_path_full
-            thumb = self.path_object.thumb_path_full
+            preview = self.path_object.preview_path
+            thumb = self.path_object.thumb_path
         server_location = self.ftrack.query('Location where name is "ftrack.server"').first()
         thumb_component = ''
         component = None
@@ -349,7 +347,7 @@ class ProjectManagementData(object):
 
         elif self.file_type == 'image':
             component = self.version_data.create_component(
-                path=self.path_object.preview_path_full,
+                path=self.path_object.preview_path,
                 data={
                     'name': 'ftrackreview-image'
                 },
@@ -359,7 +357,7 @@ class ProjectManagementData(object):
                 'format': 'image'
             })
             thumb_component = self.version_data.create_component(
-                              path=self.path_object.thumb_path_full,
+                              path=self.path_object.thumb_path,
                               data={'name': 'thumbnail'},
                               location=server_location
             )
