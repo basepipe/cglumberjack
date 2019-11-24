@@ -221,6 +221,11 @@ class PathObject(object):
             self.set_attr(company='*')
 
     def unpack_path(self, path_string):
+        """
+        parse a path_string and unpack it into the various values within a pathObject.
+        :param path_string: string value representing a path.
+        :return:
+        """
         path_string = os.path.normpath(path_string.split(self.company)[-1])
         path_ = os.path.normpath(path_string)
         path_parts = path_.split(os.sep)
@@ -264,7 +269,12 @@ class PathObject(object):
             self.set_attr(minor_version=minor_version.replace('.', ''))
         self.set_shotname()
 
-    def set_path(self, root=False):
+    def set_path(self):
+        """
+        set's self.path_root, self.path, self.filename, self.command_base, self.hd_proxy_path, self.thumb_path, and
+        self.preview_path
+        :return:
+        """
         self.get_template()
         keep_if = self.context_list + self.scope_list
         path_string = ''
@@ -297,12 +307,16 @@ class PathObject(object):
                         p_path = os.path.splitext(self.preview_path)[0]
                         self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
                         self.data['thumb_path'] = self.thumb_path
-        if root:
-            return self.path_root
-        else:
-            return self.path        
+        return self.path
 
     def set_attr(self, attr=None, value=None, **kwargs):
+        """
+        sets attribute on the path object.  You can use "attr"/"value" or simply put attr=value into the function
+        :param attr: attribute name
+        :param value: value for corresponding attribute name
+        :param kwargs: expecting any number of key value pairs.
+        :return:
+        """
         if attr:
             kwargs[attr] = value
         for attr in kwargs:
@@ -463,6 +477,10 @@ class PathObject(object):
         return new_obj
 
     def next_minor_version_number(self):
+        """
+        versions up the minor version part of the version number.
+        :return:
+        """
         latest_version = self.latest_version()
         major = latest_version.major_version
         minor = latest_version.minor_version
@@ -499,6 +517,10 @@ class PathObject(object):
         return new_obj
 
     def new_minor_version_object(self):
+        """
+        returns a new minor version object.
+        :return:
+        """
         # TODO - this will need to take into account Publish Versions eventually
         next_minor = self.next_minor_version_number()
         new_obj = copy.deepcopy(self)
@@ -539,14 +561,22 @@ class PathObject(object):
             self.data['file_type'] = None
 
     def set_hd_proxy_path(self):
+        """
+        sets the hd_proxy_path variable to a standard location
+        :return:
+        """
         if self.path_root and self.resolution:
-            name_, ext_ = os.path.splitext(self.filename)
+            name_ = os.path.splitext(self.filename)[0]
             filename = '%s.jpg' % name_
             dir_ = os.path.dirname(self.path_root.replace(self.resolution, '1920x1080'))
             self.hd_proxy_path = os.path.join(dir_, filename)
             self.data['hd_proxy_path'] = self.hd_proxy_path
 
     def set_preview_path(self):
+        """
+        sets the .preview_path variable to a standard location
+        :return:
+        """
         if self.file_type == 'movie':
             ext = '.mp4'
         elif self.file_type == 'sequence':
@@ -585,6 +615,10 @@ class PathObject(object):
             self.data['preview_path'] = self.preview_path
 
     def set_proper_filename(self):
+        """
+        function that sets filename according to patterns in globals.
+        :return:
+        """
         # TODO - this needs to be basted off formulas like the path object.  Curses.
         self.filename_base = '%s_%s_%s' % (self.seq, self.shot, self.task)
         if self.ext:
@@ -592,10 +626,18 @@ class PathObject(object):
         self.set_path()
 
     def set_shotname(self):
+        """
+        sets shot name and asset name if seq is 010 and shot is 0100 shot name is 010_0100
+        :return:
+        """
         self.set_attr(shotname='%s_%s' % (self.seq, self.shot))
         self.set_attr(assetname='%s_%s' % (self.seq, self.shot))
 
     def set_project_config(self):
+        """
+        sets the .company_config and .project_config values
+        :return:
+        """
         self.company_config = os.path.join(app_config()['account_info']['globals_path'], 'globals.json')
         self.project_config = os.path.join(app_config()['account_info']['globals_path'], 'globals.json')
 
@@ -611,9 +653,19 @@ class PathObject(object):
             self.project_json = os.path.join(json_obj.path_root.split(proj_name)[0], proj_name, '%s.json' % proj_name)
 
     def set_command_base(self):
+        """
+        sets a base string for command_names for the render farm.   seq_shot_task is the default.
+        :return:
+        """
         self.command_base = '%s_%s_%s' % (self.seq, self.shot, self.task)
 
     def upload_review(self, job_id=None):
+        """
+        uploads a review file to project management/review software as defined in globals.  where review file
+        is not present it attempts to make one.
+        :param job_id: job_id for dependencies on the farm.  Essentially if a job_id is present this is sent to the farm
+        :return:
+        """
         if job_id:
             command = r'python %s -p %s -r True' % (__file__, self.path_root)
             process_info = cgl_execute(command, command_name='%s: upload_review()' % self.command_base,
@@ -634,7 +686,7 @@ class PathObject(object):
         """
         Creates web optimized preview of PathObject.  For movies and image sequences it's a 1920x1080 quicktime h264, 
         for images it's a jpeg within the boundaries of 1920x1080
-        :return: 
+        :return:
         """
         if self.file_type == 'sequence':
             # make sure that an hd_proxy exists:
@@ -710,8 +762,8 @@ class PathObject(object):
         :return:
         """
         pyperclip.copy(str(os.path.dirname(self.path_root)))
-        
-        
+
+
 class CreateProductionData(object):
     def __init__(self, path_object=None, file_system=True,
                  project_management=PROJ_MANAGEMENT,

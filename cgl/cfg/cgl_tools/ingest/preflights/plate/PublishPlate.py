@@ -46,7 +46,7 @@ class PublishPlate(PreflightCheck):
         source_path = PathObject(to_path)
         source_path.set_attr(context='source')
         source_path.set_attr(filename='system_report.csv')
-        dir = os.path.dirname(source_path.path_root)
+        # dir = os.path.dirname(source_path.path_root)
         # CreateProductionData(dir)
         data = []
         data.append((row["Filepath"], row["Filename"], row["Filetype"], row["Frame_Range"], row["Tags"],
@@ -59,7 +59,7 @@ class PublishPlate(PreflightCheck):
     def save_data_frame(self):
         self.data_frame.to_csv(self.pandas_path, index=False)
 
-    def ingest_folder(self, row, from_file, to_file, current_date):
+    def ingest_folder(self, index, row, from_file, to_file, current_date):
         print 'Copying %s to %s' % (from_file, to_file)
         # Send this to the Preflights - No matter what basically
         if not self.test:
@@ -71,7 +71,7 @@ class PublishPlate(PreflightCheck):
         row['Status'] = 'Published'
         self.make_source_file(to_file, row)
 
-    def ingest_sequence(self, row, from_file, to_file, current_date):
+    def ingest_sequence(self, index, row, from_file, to_file, current_date):
         to_dir = os.path.dirname(to_file)
         if not self.test:
             CreateProductionData(to_dir)
@@ -85,7 +85,7 @@ class PublishPlate(PreflightCheck):
         row['Status'] = 'Published'
         self.make_source_file(to_dir, row)
 
-    def ingest_file(self, row, from_file, to_file, current_date):
+    def ingest_file(self, index, row, from_file, to_file, current_date):
         print 'FILETYPE =', row['Filetype']
         if not self.test:
             print 'Copying %s to %s' % (from_file, to_file)
@@ -110,11 +110,11 @@ class PublishPlate(PreflightCheck):
                     self.shared_data['source_path_object'] = path_object
 
                     if row['Filetype'] == 'folder':
-                        self.ingest_folder(row, from_file, to_file, current_date)
+                        self.ingest_folder(index, row, from_file, to_file, current_date)
                     elif row['Filetype'] == 'sequence':
-                        self.ingest_sequence(row, from_file, to_file, current_date)
+                        self.ingest_sequence(index, row, from_file, to_file, current_date)
                     else:
-                        self.ingest_file(row, from_file, to_file, current_date)
+                        self.ingest_file(index, row, from_file, to_file, current_date)
                     self.pass_check('Check Passed')
                     if not self.test:
                         self.save_data_frame()

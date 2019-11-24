@@ -35,7 +35,7 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     :param dependent_job: job_id of any dependencies
     :param copy_input_padding: if True use the same padding as the input file,  if False, use studio wide padding setting
     :param command_name: this is the command name that will be sent to the render farm
-    :return: 
+    :return:
     """
     from cgl.core.path import Sequence
     input_ = Sequence(input_sequence)
