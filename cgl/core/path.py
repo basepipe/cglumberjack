@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
 import glob
+import pyperclip
+import click
 import logging
 import os
 import sys
 import re
-import shutil
 import copy
 from cgl.core.util import split_all, cgl_copy, cgl_execute
 from cgl.core.config import app_config, UserConfig
+import convert_new as convert
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
+PADDING = app_config()['default']['padding']
+PROCESSING_METHOD = UserConfig().d['methodology']
 EXT_MAP = app_config()['ext_map']
 ROOT = app_config()['paths']['root']
 SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
@@ -42,7 +46,6 @@ class PathObject(object):
         self.type = None
         self.asset = None
         self.variant = None
-        self.frange = None
         self.user = None
         self.version = None
         self.major_version = None
@@ -63,11 +66,13 @@ class PathObject(object):
         self.context_list = app_config()['rules']['context_list']
         self.path = None  # string of the properly formatted path
         self.path_root = None  # this gives the full path with the root
-        self.thumb_path_full = None
-        self.preview_path_full = None
+        self.thumb_path = None
+        self.preview_path = None
+        self.hd_proxy_path = None
         self.start_frame = None
         self.end_frame = None
         self.frame_rate = None
+        self.frame_range = None
         self.template = []
         self.filename_template = []
         self.actual_resolution = None
@@ -79,13 +84,14 @@ class PathObject(object):
         self.asset_json = None
         self.shot_json = None
         self.task_json = None
+        self.command_base = ''
         self.project_json = None
         self.status = None
         self.due = None
         self.assigned = None
         self.priority = None
         self.ingest_source = '*'
-
+        self.processing_method = PROCESSING_METHOD
 
         if isinstance(path_object, unicode):
             path_object = str(path_object)
@@ -275,21 +281,22 @@ class PathObject(object):
         path_string = path_string.replace('\\', '/')
         if sys.platform == 'win32':
             self.path_root = '%s/%s' % (self.root, path_string)
-            path_, file_ = os.path.split(self.path_root)
         else:
             self.path_root = os.path.join(self.root, path_string).replace('\\', '/')
-            path_, file_ = os.path.split(self.path_root)
         self.path = path_string
+        self.set_command_base()
         if self.filename:
             if self.filename != '*':
                 self.set_file_type()
-                if not self.preview_path_full:
+                if not self.hd_proxy_path:
+                    self.set_hd_proxy_path()
+                if not self.preview_path:
                     self.set_preview_path()
-                if not self.thumb_path_full:
+                if not self.thumb_path:
                     if sys.platform == 'win32':
-                        p_path, ext = os.path.splitext(self.preview_path_full)
-                        self.thumb_path_full = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
-                        self.data['thumb_path_full'] = self.thumb_path_full
+                        p_path, ext = os.path.splitext(self.preview_path)
+                        self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
+                        self.data['thumb_path'] = self.thumb_path
         if root:
             return self.path_root
         else:
@@ -505,10 +512,13 @@ class PathObject(object):
         :return:
         """
         # first see if it's a sequence
-        result = split_sequence_frange(self.path)
-        if result:
-            self.path = result[0]
-            self.frange = result[1]
+        sequence = Sequence(self.path_root)
+        if sequence.is_valid_sequence():
+            self.filename = os.path.basename(sequence.hash_sequence)
+            self.frame_range = sequence.frame_range
+            self.__dict__['file_type'] = 'sequence'
+            self.file_type = 'sequence'
+            return
         _, file_ext = os.path.splitext(self.path)
         try:
             _type = EXT_MAP[file_ext.lower()]
@@ -517,15 +527,8 @@ class PathObject(object):
                     self.__dict__['file_type'] = 'movie'
                     self.data['file_type'] = 'movie'
                 elif _type == 'image':
-                    if '%0' in self.path:
-                        self.__dict__['file_type'] = 'sequence'
-                        self.data['file_type'] = 'sequence'
-                    elif '####' in self.path:
-                        self.__dict__['file_type'] = 'sequence'
-                        self.data['file_type'] = 'sequence'
-                    else:
-                        self.__dict__['file_type'] = 'image'
-                        self.data['file_type'] = 'image'
+                    self.__dict__['file_type'] = 'image'
+                    self.data['file_type'] = 'image'
                 else:
                     self.__dict__['file_type'] = _type
                     self.data['file_type'] = _type
@@ -534,6 +537,14 @@ class PathObject(object):
         except KeyError:
             self.__dict__['file_type'] = None
             self.data['file_type'] = None
+
+    def set_hd_proxy_path(self):
+        if self.path_root and self.resolution:
+            name_, ext_ = os.path.splitext(self.filename)
+            filename = '%s.jpg' % name_
+            dir_ = os.path.dirname(self.path_root.replace(self.resolution, '1920x1080'))
+            self.hd_proxy_path = os.path.join(dir_, filename)
+            self.data['hd_proxy_path'] = self.hd_proxy_path
 
     def set_preview_path(self):
         if self.file_type == 'movie':
@@ -567,11 +578,11 @@ class PathObject(object):
                 name_ = self.filename
         path_ = os.path.split(self.path_root)[0]
         if sys.platform == 'win32':
-            self.preview_path_full = '%s/%s/%s' % (path_, '.preview', name_)
-            self.data['preview_path_full'] = self.preview_path_full
+            self.preview_path = '%s/%s/%s' % (path_, '.preview', name_)
+            self.data['preview_path'] = self.preview_path
         else:
-            self.preview_path_full = os.path.join(self.root, '.preview', name_)
-            self.data['preview_path_full'] = self.preview_path_full
+            self.preview_path = os.path.join(self.root, '.preview', name_)
+            self.data['preview_path'] = self.preview_path
 
     def set_proper_filename(self):
         # TODO - this needs to be basted off formulas like the path object.  Curses.
@@ -599,7 +610,107 @@ class PathObject(object):
             proj_name = json_obj.data['project']
             self.project_json = os.path.join(json_obj.path_root.split(proj_name)[0], proj_name, '%s.json' % proj_name)
 
+    def set_command_base(self):
+        self.command_base = '%s_%s_%s' % (self.seq, self.shot, self.task)
 
+    def upload_review(self, job_id=None):
+        if job_id:
+            command = r'python %s -p %s -r True' % (__file__, self.path_root)
+            process_info = cgl_execute(command, command_name='%s: upload_review()' % self.command_base,
+                                       methodology='smedge', Wait=job_id)
+            return process_info
+        else:
+            if os.path.exists(self.preview_path):
+                if PROJ_MANAGEMENT == 'ftrack':
+                    CreateProductionData(path_object=self)
+                elif PROJ_MANAGEMENT == 'lumbermill':
+                    print 'no review process defined for default lumbermill'
+                elif PROJ_MANAGEMENT == 'shotgun':
+                    print 'shotgun not yet set up in lumbermill'
+            else:
+                print 'No preview file found for uploading: %s' % self.preview_path
+            
+    def make_preview(self):
+        """
+        Creates web optimized preview of PathObject.  For movies and image sequences it's a 1920x1080 quicktime h264, 
+        for images it's a jpeg within the boundaries of 1920x1080
+        :return: 
+        """
+        if self.file_type == 'sequence':
+            # make sure that an hd_proxy exists:
+            proxy_info = self.make_proxy()
+            mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
+                                              command_name='%s: create_web_mov()' % self.command_base,
+                                              dependent_job=proxy_info['job_id'], processing_method=PROCESSING_METHOD)
+            thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
+                                                    command_name='%s: create_movie_thumb()' % self.command_base,
+                                                    dependent_job=mov_info['job_id'],
+                                                    processing_method=PROCESSING_METHOD)
+            return thumb_info
+        elif self.file_type == 'movie':
+            print 'making movie preview not supported'
+        elif self.file_type == 'image':
+            print 'making image preview not supported'
+        elif self.file_type == 'ppt':
+            print 'making ppt preview not supported'
+        elif self.file_type == 'pdf':
+            print 'making pdf preview not supported'
+    
+    def make_proxy(self, width=1920, height=1080, copy_input_padding=True, ext='jpg'):
+        """
+        
+        :param width: width in pixels
+        :param height: height in pixels
+        :param copy_input_padding:
+        :return: 
+        """
+        name_, ext_ = os.path.splitext(self.filename)
+        filename = '%s.%s' % (name_, ext)
+        dir_ = os.path.dirname(self.path_root.replace(self.resolution, '%sx%s' % (width, height)))
+        output_sequence = os.path.join(dir_, filename)
+        proxy_info = convert.create_proxy_sequence(self.path_root, output_sequence=output_sequence, width=width,
+                                                   height=height, copy_input_padding=copy_input_padding,
+                                                   processing_method=PROCESSING_METHOD,
+                                                   command_name='%s: create_proxy_sequence()' % self.command_base)
+        return proxy_info
+
+    def show_in_folder(self):
+        """
+        open the folder location of the current path_object
+        :return:
+        """
+        show_in_folder(self.path_root)
+
+    def show_web_page(self):
+        """
+        assuming project management is set - it shows the web page for the current path_object in that tool.
+        :return:
+        """
+        show_in_project_management(self)
+
+    def open(self):
+        """
+        opens the path_root with default application
+        :return:
+        """
+        start(self.path_root)
+
+    def copy_path(self):
+        """
+        copies the full path to the clipboard
+        :return:
+        """
+        pyperclip.copy(str(self.path_root))
+        # pyperclip.paste()
+
+    def copy_folder(self):
+        """
+        copies the directory path to the clipboard
+        :return:
+        """
+        pyperclip.copy(str(os.path.dirname(self.path_root)))
+        
+        
 class CreateProductionData(object):
     def __init__(self, path_object=None, file_system=True,
                  project_management=PROJ_MANAGEMENT,
@@ -776,7 +887,7 @@ class CreateProductionData(object):
                 session = None
                 if self.session:
                     session = self.session
-                module = "plugins.project_management.%s.main" % project_management
+                module = "cgl.plugins.project_management.%s.main" % project_management
                 # noinspection PyTypeChecker
                 loaded_module = __import__(module, globals(), locals(), 'main', -1)
                 loaded_module.ProjectManagementData(path_object,
@@ -815,45 +926,180 @@ class CreateProductionData(object):
         cgl_copy(default_file, self.path_object.path_root)
 
 
-def create_previews(path_object):
-    import time
-    from cgl.core.convert import create_thumbnail, create_hd_proxy, create_movie_thumb, create_mov
-    path_object = PathObject(path_object)
-    preview_dir = os.path.dirname(str(path_object.preview_path_full))
-    thumb_dir = os.path.dirname(str(path_object.thumb_path_full))
-    if not os.path.exists(preview_dir):
-        os.makedirs(preview_dir)
-    if not os.path.exists(thumb_dir):
-        os.makedirs(thumb_dir)
+class Sequence(object):
+    """
+    Class for dealing with "Sequences" of images or files in general as defined within a vfx/animation/games pipeline
+    """
+    sequence = None
+    frame_range = None
+    start_frame = None
+    end_frame = None
+    middle_frame = None
+    hash_sequence = None
+    num_sequence = None
+    star_sequence = None
+    padding = None
+    ext = None
+    num = None
+    hash = None
 
-    if path_object.file_type == 'image':
-        if path_object.thumb_path_full:
-            logging.info('Creating Thumbnail: %s' % path_object.thumb_path_full)
-            create_thumbnail(path_object.path_root, path_object.thumb_path_full)
-        if path_object.preview_path_full:
-            logging.info('Creating Preview: %s' % path_object.preview_path_full)
-            create_hd_proxy(path_object.path_root, path_object.preview_path_full)
-    elif path_object.file_type == 'sequence':
-        if path_object.preview_path_full:
-            if path_object.file_type == 'sequence':
-                print 1
-                # create hdProxy for the exr sequence
-                hd_proxy = create_hd_proxy(sequence=path_object.path_root)
-                time.sleep(2)  # if we don't sleep here the directory hasn't had time to refresh.
-                create_mov(hd_proxy, output=path_object.preview_path_full)
-        if path_object.thumb_path_full:
-            create_movie_thumb(hd_proxy, path_object.thumb_path_full)
-    elif path_object.file_type == 'movie':
-        if path_object.thumb_path_full:
-            create_movie_thumb(path_object.path_root, path_object.thumb_path_full)
-        if path_object.preview_path_full:
-            if path_object.path_root.endswith('mp4'):
-                cgl_copy(path_object.path_root, path_object.preview_path_full)
+    def __init__(self, sequence, padding=PADDING, verbose=False):
+        self.sequence = sequence
+        self.verbose = verbose
+        if not self.is_valid_sequence():
+            return
+        self.padding = padding
+        self.set_frange()
+        self.set_sequence_strings()
+        # self.print_info()
+
+    def is_valid_sequence(self):
+        """
+        Checks "sequence" to ensure it matches our definition of a sequence:
+        sequence.####.ext, sequence.%04d.ext, sequence.*.ext
+        :return: boolean
+        """
+        self.set_ext()
+        valid = False
+        if not self.sequence:
+            return False
+        if self.sequence.endswith('#%s' % self.ext):
+            valid = True
+        elif '%' in self.sequence:
+            valid = True
+        elif self.sequence.endswith('*%s' % self.ext):
+            valid = True
+        if not valid and self.verbose:
+            logging.error('%s is not a valid sequence' % self.sequence)
+        return valid
+
+    def set_ext(self):
+        """
+        sets the ext value for the sequence
+        :return:
+        """
+        _, self.ext = os.path.splitext(self.sequence)
+
+    def print_info(self):
+        print '---------------- sequence info -------------------'
+        print 'Star: %s' % self.star_sequence
+        print 'Hash: %s' % self.hash_sequence
+        print 'Num: %s' % self.num_sequence
+        print 'Frame Range: %s' % self.frame_range
+        print 'Start Frame: %s' % self.start_frame
+        print 'End Frame: %s' % self.end_frame
+        print 'Middle Frame: %s' % self.middle_frame
+
+    def set_sequence_strings(self):
+        """
+        THis is a utility function for setting all the various string formats we need for sequences depending
+        on the software we happen to be working in:
+        ####.exr - hash_sequence
+        %04d.exr - num_sequence
+        *.exr - star_sequence
+        :return:
+        """
+        seq_base = self.split_sequence()
+        self.star_sequence = '%s*%s' % (seq_base, self.ext)
+        self.num_sequence = '%s%s%s' % (seq_base, self.num, self.ext)
+        self.hash_sequence = '%s%s%s' % (seq_base, self.hash, self.ext)
+
+    def split_sequence(self):
+        """
+        We split the sequence at the delimeter ('*', '%0Nd', or '###') and return the first value.
+        Examples:
+        sequence.####.exr returns - sequence.
+        sequence.%04d.exr returns - sequence.
+        sequence.*.exr returns - sequence.
+        :return:
+        """
+        frange = None
+        group = None
+        if self.sequence.endswith('#%s' % self.ext):
+            frange = re.search(SEQ_SPLIT, self.sequence)
+            group = frange.group(0)
+        elif '%' in self.sequence:
+            frange = re.search(SEQ2_SPLIT, self.sequence)
+            group = frange.group(0)
+        elif self.sequence.endswith('*%s' % self.ext):
+            frange = True
+            group = '*.'
+        if frange:
+            return self.sequence.split(group)[0]
+        else:
+            return
+
+    def set_frange(self):
+        """
+        sets all information regarding frame range for the sequence
+        start_frame, end_frame, middle_frame, frame_range are all set by this function
+        :return:
+        """
+        # This requires the # form of the sequence
+        glob_string = ''
+        if '#' in self.sequence:
+            glob_string = '%s*%s' % (self.sequence.split('#')[0], self.ext)
+        elif '%' in self.sequence:
+            glob_string = '%s*%s' % (self.sequence.split('%')[0], self.ext)
+        elif '*' in self.sequence:
+            glob_string = self.sequence
+        frames = glob.glob(glob_string)
+        if frames:
+            try:
+                sframe = re.search(SEQ_REGEX, frames[0]).group(0).replace('.', '')
+                eframe = re.search(SEQ_REGEX, frames[-1]).group(0).replace('.', '')
+                if sframe and eframe:
+                    self.frame_range = '%s-%s' % (sframe, eframe)
+                    self.start_frame = sframe
+                    self.end_frame = eframe
+                    self.padding = len(self.start_frame)
+                    self.hash = '#'*self.padding
+                    if self.padding < 10:
+                        self.num = '%0'+str(self.padding)+'d'
+                    else:
+                        self.num = '%'+str(self.padding)+'d'
+                    mid_frame = int((int(eframe) - int(sframe)) / 2) + int(sframe)
+                    self.middle_frame = self.int_as_padded_frame(mid_frame, self.padding)
+            except AttributeError:
+                logging.error('problem with filepath: %s and frames: '
+                              '%s in get_frange_from_seq, skipping.' % (self.sequence, frames))
+        else:
+            self.start_frame = app_config()['default']['start_frame']
+            self.hash = '#' * self.padding
+            if self.padding < 10:
+                self.num = '%0' + str(self.padding) + 'd'
             else:
-                create_mov(path_object.path_root, output=path_object.preview_path_full)
-    else:
-        print path_object.file_type, 'is not set up for preview creation'
-    return (path_object.preview_path_full, path_object.thumb_path_full)
+                self.num = '%' + str(self.padding) + 'd'
+
+    @staticmethod
+    def int_as_padded_frame(number, padding=None):
+        """
+        given number, return a string with padding of padding:
+        example, given 3 return string with padding of 4 = 0003
+        :param number: int
+        :param padding: int (number of the string padding)
+        :return:
+        """
+        if padding == 2:
+            return '%02d' % number
+        elif padding == 3:
+            return '%03d' % number
+        elif padding == 4:
+            return '%04d' % number
+        elif padding == 5:
+            return '%05d' % number
+        elif padding == 6:
+            return '%06d' % number
+        elif padding == 7:
+            return '%07d' % number
+        elif padding == 8:
+            return '%08d' % number
+        elif padding == 9:
+            return '%09d' % number
+        elif padding == 10:
+            return '%10d' % number
+        elif padding == 11:
+            return '%11d' % number
 
 
 def image_path(image=None):
@@ -874,26 +1120,6 @@ def font_path():
     return os.path.join(app_config()['paths']['code_root'], 'resources', 'fonts')
 
 
-def get_projects(company):
-    d = {'root': ROOT,
-         'company': company,
-         'project': '*',
-         'context': 'source'}
-    path_object = PathObject(d)
-    return path_object.glob_project_element('project')
-
-
-def get_companies():
-    d = {'root': ROOT,
-         'company': '*'
-         }
-    path_object = PathObject(d)
-    companies = path_object.glob_project_element('company')
-    if '_config' in companies:
-        companies.remove('_config')
-    return companies
-
-
 def start(filepath):
     cmd = "cmd /c start "
     if sys.platform == "darwin":
@@ -909,6 +1135,7 @@ def start(filepath):
     cgl_execute(command, methodology='local')
 
 
+# TODO - this seems more like a "util" than a "Path"
 def start_url(url):
     import webbrowser
     webbrowser.open(url)
@@ -935,6 +1162,11 @@ def show_in_folder(path_string):
 
 
 def show_in_project_management(path_object):
+    """
+    This shows the url of the path_object in the chose project management software.
+    :param path_object:
+    :return:
+    """
     if PROJ_MANAGEMENT != 'lumbermill':
         module = "plugins.project_management.%s.main" % PROJ_MANAGEMENT
         # noinspection PyTypeChecker
@@ -942,49 +1174,12 @@ def show_in_project_management(path_object):
         start_url(loaded_module.ProjectManagementData(path_object).get_url())
 
 
-def get_task_info(path_object, force=False):
-    task_info = None
-    all_tasks = UserConfig().d['my_tasks'][path_object.company][path_object.project]
-    if path_object.task:
-        if path_object.scope == 'assets':
-            path_object.task_name = '%s_%s_%s' % (path_object.category, path_object.asset, path_object.task)
-        elif path_object.scope == 'shots':
-            path_object.task_name = '%s_%s_%s' % (path_object.seq, path_object.shot, path_object.task)
-        if path_object.task_name:
-            if force:
-                task_info = pull_task_info(path_object)
-                return task_info
-            else:
-                if path_object.task_name in all_tasks:
-                    task_info = all_tasks[path_object.task_name]
-                else:
-                    task_info = pull_task_info(path_object)
-                return task_info
-
-
-def pull_task_info(path_object):
-    print path_object.path_root
-    from cgl.core.util import current_user
-    if PROJ_MANAGEMENT == 'ftrack':
-        from plugins.project_management.ftrack.main import find_user_assignments
-        login = app_config()['project_management']['ftrack']['users'][current_user()]
-        project_tasks = find_user_assignments(path_object, login, force=True)
-        task_info = project_tasks[path_object.task_name]
-        return task_info
-
-
-def create_project_config(company, project):
-    config_dir = os.path.dirname(UserConfig().user_config_path)
-    company_config = os.path.join(config_dir, 'companies', company, 'global.yaml')
-    project_dir = os.path.join(config_dir, 'companies', company, project)
-    project_config = os.path.join(project_dir, 'global.yaml')
-    if os.path.exists(company_config):
-        if not os.path.exists(project_dir):
-            os.makedirs(project_dir)
-            cgl_copy(company_config, project_config)
-
-
 def seq_from_file(basename):
+    """
+    checks to see if a filename can be displayed as a hash_sequence
+    :param basename:
+    :return:
+    """
     numbers = re.search(SEQ_REGEX, basename)
     if numbers:
         numbers = numbers.group(0).replace('.', '')
@@ -996,22 +1191,6 @@ def seq_from_file(basename):
         return basename
 
 
-def get_frange_from_seq(filepath):
-    _, ext = os.path.splitext(filepath)
-    glob_string = filepath.split('#')[0]
-    frames = glob.glob('%s*%s' % (glob_string, ext))
-    if frames:
-        try:
-            sframe = re.search(SEQ_REGEX, frames[0]).group(0).replace('.', '')
-            eframe = re.search(SEQ_REGEX, frames[-1]).group(0).replace('.', '')
-            if sframe and eframe:
-                return '%s-%s' % (sframe, eframe)
-        except AttributeError:
-            print 'problem with filepath: %s and frames: %s in get_frange_from_seq, skipping.' % (filepath, frames)
-    else:
-        return None
-
-
 def test_string_against_path_rules(variable, string):
     regex = app_config()['rules']['path_variables'][variable]['regex']
     example = app_config()['rules']['path_variables'][variable]['example']
@@ -1021,15 +1200,6 @@ def test_string_against_path_rules(variable, string):
     else:
         message_string = '%s is not a valid %s: \n\n%s' % (string, variable, example)
         return message_string
-
-
-def load_style_sheet(style_file='stylesheet.css'):
-    f = open(style_file, 'r')
-    data = f.read()
-    data.strip('\n')
-    # path = APP_PATH.replace('\\', '/')
-    # data = data.replace('<PATH>', path)
-    return data
 
 
 def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=False):
@@ -1066,7 +1236,8 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
                     output_.append(each)
     for each in output_:
         if '#' in each:
-            frange = get_frange_from_seq(os.path.join(directory, each))
+            sequence = Sequence(each)
+            frange = sequence.frame_range
             if frange:
                 index = output_.index(each)
                 output_[index] = '%s %s' % (each, frange)
@@ -1136,209 +1307,20 @@ def get_file_type(filepath):
     return ft
 
 
-def get_company_config():
-    user_dir = os.path.expanduser("~")
-    if 'Documents' in user_dir:
-        cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
+@click.command()
+@click.option('--path_string', '-p', help='path string to be passed as a PATH_OBJECT')
+@click.option('--upload_review', '-r', default=False, help='uploads review media for given path')
+def main(path_string, upload_review):
+    if path_string:
+        if upload_review:
+            path_object = PathObject(path_string)
+            path_object.upload_review()
     else:
-        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
-    return cg_lumberjack_dir
+        click.echo('No Path Provided, aborting cgl.core.path command line operation')
 
 
-def get_cgl_config():
-
-    user_dir = os.path.expanduser("~")
-    if 'Documents' in user_dir:
-        cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack')
-    else:
-        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
-    return cg_lumberjack_dir
-
-
-def get_cgl_tools():
-    return app_config()['paths']['cgl_tools']
-
-
-def hash_to_number(sequence):
-    frange = re.search(SEQ_SPLIT, sequence)
-    count = frange.group(0).count('#')
-    if count < 10:
-        num = '%0'+str(count)+'d'
-    else:
-        num = '%'+str(count)+'d'
-    return frange.group(0), num
-
-
-def number_to_hash(sequence, full=False):
-    frange = re.search(SEQ2_SPLIT, sequence)
-    number = frange.group(0)
-    count = frange.group(0).replace('%', '').replace('d', '')
-    if full:
-        return sequence.replace(number, '%'+count+'d')
-    else:
-        return '#'*int(count), '%'+count+'d'
-
-
-def get_start_frame(sequence):
-    dir_ = os.path.split(sequence)[0]
-    results = lj_list_dir(dir_)
-    for each in results:
-        this = re.search(SEQ, each)
-        if this:
-            return this.group(0).split('-')[0]
-    return None
-
-
-def prep_seq_delimiter(sequence, replace_with='*', ext=None):
-    # TODO - could i just use regex for this and have it be a fraction of the code?
-    """
-    takes a sequence ('####', '%04d', '*') transforms it to another type.  This is used for instances where one
-    piece of software needs sequences delimited in a particular way.
-    :param sequence: file sequence - sequence.*.dpx, sequence.%04d.dpx, sequence.####.dpx
-    :param replace_with: '*': for sequences like .*.dpx, '%': for %04d style sequence definition, '#': for '####'
-    :param ext: extension
-    style sequence definition
-    :return:
-    """
-    path_object = PathObject(sequence)
-    if not ext:
-        ext = path_object.ext
-    dir_ = os.path.dirname(sequence)
-    seq_split = split_sequence(sequence)
-    stuff = lj_list_dir(dir_)
-    hash_seq = ''
-    for each in stuff:
-        this = re.search(SEQ, each)
-        if this:
-            frange = this.group(0).split('-')[0]
-            hash_seq = each.replace(' %s' % frange, '')
-    if replace_with == '*':
-        return '%s%s.%s' % (split_sequence(sequence), replace_with, ext)
-    elif replace_with == '#':
-        return os.path.join(dir_, hash_seq)
-    elif replace_with == '%':
-        return '%s%s.%s' % (seq_split, hash_to_number(hash_seq)[-1], ext)
-    elif replace_with == '':
-        return '%s.%s' % (split_sequence(sequence), ext)
-
-
-def publish(path_obj):
-    """
-    Requires a path with render folder with existing data.
-    Creates the next major version of the "USER" directory and copies all source & render files to it.
-    Creates the Next Major Version of the "PUBLISH" directory and copies all source & render files to it.
-    As a first step these will be the same as whatever is the highest directory.
-    :param path_obj: this can be a path object, a string, or a dictionary
-    :return: boolean depending on whether publish is successful or not.
-    """
-    path_object = PathObject(path_obj)
-    filename = path_object.filename
-    resolution = path_object.resolution
-    ext = path_object.ext
-    # remove filename and ext to make sure we're dealing with a folder
-    path_object = path_object.copy(filename='', ext='', resolution='')
-    user = path_object.user
-    if user != 'publish':
-        if path_object.context == 'source':
-            source_object = path_object
-            render_object = PathObject.copy(path_object, context='render')
-        else:
-            source_object = PathObject.copy(path_object, context='source')
-            render_object = path_object
-        # Get the Right Version Number
-        source_next = source_object.next_major_version()
-        render_next = render_object.copy(version=source_next.version)
-        source_pub = source_next.copy(user='publish')
-        render_pub = render_next.copy(user='publish')
-
-        for each in os.listdir(source_object.path_root):
-            logging.info('Copying Source Resolution %s from %s to %s' % (each, source_object.path_root,
-                                                                         source_next.path_root))
-            logging.info('Copying Source Resolution %s from %s to %s' % (each, source_object.path_root,
-                                                                         source_pub.path_root))
-            cgl_copy(os.path.join(source_object.path_root, each), os.path.join(source_next.path_root, each))
-            cgl_copy(os.path.join(source_object.path_root, each), os.path.join(source_pub.path_root, each))
-
-        for each in os.listdir(render_object.path_root):
-            logging.info('Copying Render Resolution %s from %s to %s' % (each, render_object.path_root,
-                                                                         render_next.path_root))
-            logging.info('Copying Render Resolution %s from %s to %s' % (each, render_object.path_root,
-                                                                         render_pub.path_root))
-            cgl_copy(os.path.join(render_object.path_root, each), os.path.join(render_next.path_root, each))
-            cgl_copy(os.path.join(render_object.path_root, each), os.path.join(render_pub.path_root, each))
-        # Register with Production Management etc...
-        CreateProductionData(source_next)
-        CreateProductionData(source_pub)
-
-        return render_pub.copy(filename=filename, resolution=resolution, ext=ext)
-    return False
-
-
-def do_review(progress_bar=None, path_object=None):
-    from cgl.ui.widgets.dialog import InputDialog
-    if not path_object:
-        return None
-    else:
-        selection = path_object
-    if selection.context == 'render':
-        # lin_images = ['exr', 'dpx']
-        # LUMBERMILL REVIEWS
-        if PROJ_MANAGEMENT == 'lumbermill':
-            # do this for movies
-            print 'Lumbermill Not connected to review features'
-        # FTRACK REVIEWS
-        elif PROJ_MANAGEMENT == 'ftrack':
-            if selection.filename:
-                if selection.file_type == 'folder' or not selection.file_type:
-                    dialog = InputDialog(title='Error: unsupported folder or file_type',
-                                         message="%s is a folder or undefined file_type\nunsure how to proceed" %
-                                         selection.filename)
-                    dialog.exec_()
-                    if dialog.button == 'Ok' or dialog.button == 'Cancel':
-                        dialog.accept()
-                        return
-                else:
-                    CreateProductionData(selection)
-            else:
-                print('Select file for Review')
-
-        elif PROJ_MANAGEMENT == 'shotgun':
-            print 'Shotgun Reviews not connected yet'
-        selection.set_attr(filename='')
-        selection.set_attr(ext='')
-    else:
-        dialog = InputDialog(title="Prep for Review", message="Move or copy files to review area?",
-                             buttons=['Move', 'Copy'])
-        dialog.exec_()
-        move = False
-        if dialog.button == 'Move':
-            move = True
-        if selection.file_type == 'sequence':
-            # sequence_name = selection.filename
-            from_path = os.path.dirname(selection.path_root)
-            to_object = PathObject(from_path)
-            to_object.set_attr(context='render')
-            for each in os.listdir(from_path):
-                from_file = os.path.join(from_path, each)
-                to_file = os.path.join(to_object.path_root, each)
-                if move:
-                    shutil.move(from_file, to_file)
-                else:
-                    cgl_copy(from_file, to_file)
-            selection.set_attr(filename='')
-            selection.set_attr(ext='')
-        else:
-            to_object = PathObject.copy(selection, context='render')
-            logging.info('Copying %s to %s' % (selection.path_root, to_object.path_root))
-            if move:
-                shutil.move(selection.path_root, to_object.path_root)
-            else:
-                cgl_copy(selection.path_root, to_object.path_root)
-            selection.set_attr(filename='')
-            selection.set_attr(ext='')
-    if progress_bar:
-        progress_bar.hide()
-    return True
+if __name__ == '__main__':
+    main()
 
 
 

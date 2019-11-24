@@ -56,8 +56,8 @@ class ProjectManagementData(object):
     description = ''
     bid = 0
     type = None
-    preview_path_full = None
-    thumb_path_full = None
+    preview_path = None
+    thumb_path = None
     task_asset = None
     task_status_dict = {}
     task_types = []

@@ -25,7 +25,8 @@
         "frame_rate": 24, 
         "linear_gamma": 2.2, 
         "output_colorspace": "rec709", 
-        "padding": 4, 
+        "padding": 4,
+        "start_frame": 1001,
         "resolution": {
             "full": "1920x1080", 
             "half": "960x540", 

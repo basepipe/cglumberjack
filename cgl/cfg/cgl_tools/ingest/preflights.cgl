@@ -1,46 +1,52 @@
 {
     "ingest": {
         "default": {
+            "MarkAsPublished": {
+                "label": "MarkAsPublished", 
+                "module": "cgl_tools.ingest.preflights.default.MarkAsPublished", 
+                "order": 2, 
+                "required": "True"
+            }, 
             "PublishFromIngestDataFrame": {
                 "label": "Publish From Ingest Tool", 
                 "module": "cgl_tools.ingest.preflights.default.PublishFromIngestDataFrame", 
                 "order": 1, 
                 "required": "True"
             }, 
-            "order": 2
+            "order": 1
         }, 
         "plate": {
-            "CreateProxy": {
-                "label": "Create Proxy", 
-                "module": "cgl_tools.ingest.preflights.plate.CreateProxy", 
-                "order": 2, 
-                "required": "True"
-            }, 
-            "CreateProxyGif": {
-                "label": "Create Proxy Gif", 
-                "module": "cgl_tools.ingest.preflights.plate.CreateProxyGif", 
-                "order": 5, 
-                "required": "True"
-            }, 
-            "CreateProxyHD": {
-                "label": "Create Proxy HD", 
-                "module": "cgl_tools.ingest.preflights.plate.CreateProxyHD", 
+            "CreateHDProxy": {
+                "label": "CreateHDProxy", 
+                "module": "cgl_tools.ingest.preflights.plate.CreateHDProxy", 
                 "order": 3, 
                 "required": "True"
             }, 
-            "CreateProxyMov": {
-                "label": "Create Proxy Mov", 
-                "module": "cgl_tools.ingest.preflights.plate.CreateProxyMov", 
+            "CreateHdMovie": {
+                "label": "CreateHdMovie", 
+                "module": "cgl_tools.ingest.preflights.plate.CreateHdMovie", 
                 "order": 4, 
                 "required": "True"
             }, 
-            "CreatePublishFiles": {
-                "label": "Publish Files", 
-                "module": "cgl_tools.ingest.preflights.plate.CreatePublishFiles", 
+            "MarkAsPublished": {
+                "label": "MarkAsPublished", 
+                "module": "cgl_tools.ingest.preflights.plate.MarkAsPublished", 
+                "order": 5,
+                "required": "True"
+            }, 
+            "PublishPlate": {
+                "label": "PublishPlate", 
+                "module": "cgl_tools.ingest.preflights.plate.PublishPlate", 
                 "order": 1, 
                 "required": "True"
             }, 
-            "order": 1
+            "createProxy": {
+                "label": "Create Full Res Proxy", 
+                "module": "cgl_tools.ingest.preflights.plate.createProxy", 
+                "order": 2, 
+                "required": "True"
+            }, 
+            "order": 2
         }
     }
 }

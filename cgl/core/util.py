@@ -5,9 +5,7 @@ import glob
 import json
 import sys
 import getpass
-import datetime
 import time
-from os.path import expanduser
 import logging
 import re
 from cgl.core.config import app_config
@@ -80,14 +78,6 @@ def current_user():
 
     """
     return getpass.getuser()
-
-
-def timestamp():
-    return datetime.datetime.now()
-
-
-def home_dir():
-    return expanduser("~")
 
 
 def test_string_against_rules(test_string, rule, effected_label=None):
@@ -269,6 +259,15 @@ def load_json(filepath):
     return data
 
 
+def load_style_sheet(style_file='stylesheet.css'):
+    f = open(style_file, 'r')
+    data = f.read()
+    data.strip('\n')
+    # path = APP_PATH.replace('\\', '/')
+    # data = data.replace('<PATH>', path)
+    return data
+
+
 def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=False,
                 command_name='cgl_execute', **kwargs):
     # TODO - we need to make sure this command is used everywhere we're passing commands if at all possible.
@@ -352,13 +351,13 @@ def get_job_id():
     return str(time.time()).replace('.', '')
 
 
-def write_to_cgl_data(run_dict):
+def write_to_cgl_data(process_info):
     job_id = None
-    if 'job_id' in run_dict.keys():
-        if run_dict['job_id']:
-            job_id = run_dict['job_id']
+    if 'job_id' in process_info.keys():
+        if process_info['job_id']:
+            job_id = process_info['job_id']
         else:
-            run_dict['job_id'] = get_job_id()
+            process_info['job_id'] = get_job_id()
     user = current_user()
     cgl_data = os.path.join(os.path.dirname(app_config()['paths']['globals']), 'cgl_data.json')
     if os.path.exists(cgl_data):
@@ -368,27 +367,39 @@ def write_to_cgl_data(run_dict):
     if user not in data.keys():
         data[user] = {}
     if job_id not in data[user].keys():
-        data[user][run_dict['job_id']] = run_dict
+        data[user][process_info['job_id']] = process_info
     else:
-        print '%s already exists in %s dict' % (run_dict['job_id'], user)
+        print '%s already exists in %s dict' % (process_info['job_id'], user)
         return
     save_json(cgl_data, data)
 
 
-def edit_cgl_data(user, job_id, key, value):
+def edit_cgl_data(job_id, key, value=None, user=None):
+    print 1
     if not job_id:
+        print 3
         logging.info('No Job ID Defined')
         click.echo('No Job ID Defined')
         return
+    if not key:
+        print 2
+        logging.info('No Key Defined')
+        click.echo('No Key Defined')
+    if not value:
+        print 4
+        value = time.time()
     if not user:
+        print 5
         user = current_user()
     cgl_data = os.path.join(os.path.dirname(app_config()['paths']['globals']), 'cgl_data.json')
     if os.path.exists(cgl_data):
+        print 6
+        print cgl_data
         data = load_json(cgl_data)
-        if key == 'farm_processing_time':
-            value = 'BOB_RULEZ %s' % time.time()
+        print user, job_id, key, value
         data[user][job_id][key] = value
         save_json(cgl_data, data)
+        print 'saved it probably'
     else:
         logging.info('No cgl_data.json found! Aborting')
         click.echo('No cgl_data.json found! Aborting')

@@ -159,6 +159,21 @@ def create_proxy(sequence, ext='jpg', verbose=True, methodology='local'):
 
 def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', height='x1080', do_height=False,
                     start_frame=None, verbose=True, methodology='local', dependent_job=None):
+    """
+    Create HD Proxy Sequence from a givein image sequence.
+    :param sequence:
+    :param output:
+    :param mov:
+    :param ext:
+    :param width:
+    :param height:
+    :param do_height:
+    :param start_frame:
+    :param verbose:
+    :param methodology:
+    :param dependent_job:
+    :return:
+    """
 
     if do_height:
         res = height
@@ -172,8 +187,7 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
     command = ''
     number = ''
     if not output:
-        path_object_output = path_object.copy(resolution='hdProxy')
-        output_dir = os.path.dirname(path_object_output.path_root)
+        logging.info('No output defined for create_hd_proxy')
     else:
         path_object_output = None
         output_dir = os.path.dirname(output)
@@ -271,12 +285,14 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
         return out_seq
 
 
-def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame_rate'], output_frame_rate=None,
+def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_frame_rate=None,
                res=settings['resolution']['video_review'], methodology='local', dependent_job=None):
 
     path_object = PathObject(sequence)
-
+    output_file = ''
+    input_file = ''
     if output:
+        print 1, path_object.file_type
         if path_object.file_type == 'sequence':
             input_file = prep_seq_delimiter(sequence, replace_with='%')
             output_file = output
@@ -285,9 +301,8 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
         else:
             print('Nothing defined for %s' % path_object.file_type)
     else:
-        web_path_object = PathObject(sequence).copy(resolution='webMov')
-        CreateProductionData(web_path_object, project_management='lumbermill')
-        output_file = web_path_object.path_root
+        print 2
+        output_file = path_object.preview_path
         if path_object.file_type == 'sequence':
             if not output:
                 output_file = output_file.split('#')[0]
@@ -296,7 +311,6 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
                 else:
                     output_file = '%s.mp4' % output_file
                 filename = os.path.basename(output_file)
-                web_path_object.set_attr(filename=filename)
 
     if methodology == 'smedge':
         command = r'python %s -i %s -t %s' % (__file__, sequence, 'mov')
@@ -305,7 +319,7 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
         run_dict['file_out'] = output_file
         write_to_cgl_data(run_dict)
         return run_dict
-
+    print output_file, 'output file'
     if path_object.file_type == 'sequence':
         input_file = prep_seq_delimiter(sequence, replace_with='%')
     if os.path.exists(output_file):
@@ -338,6 +352,7 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
                                                                                                      height)
     ffmpeg_cmd = ''
     if path_object.file_type == 'sequence':
+        print 3
         start_frame = get_first_frame(sequence)[0]
         ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
                      r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'],
@@ -345,20 +360,23 @@ def create_mov(sequence, output=None, thumb_path=None, framerate=settings['frame
                                                             profile, constant_rate_factor, pixel_format,
                                                             output_frame_rate, filter_arg, output_file)
     elif path_object.file_type == 'movie':
+        print 4
         ffmpeg_cmd = r'%s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
                      r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'], gamma, input_file, res,
                                                             encoder, profile, constant_rate_factor, pixel_format,
                                                             output_frame_rate, filter_arg, output_file)
     if ffmpeg_cmd:
+        print 5
         run_dict = cgl_execute(ffmpeg_cmd, verbose=True, methodology=methodology,
                                command_name='%s_%s: create_mov' % (path_object.seq, path_object.shot),
                                Wait=dependent_job)
 
         run_dict['file_out'] = output_file
         write_to_cgl_data(run_dict)
-        create_movie_thumb(sequence, output_file=thumb_path, methodology=methodology, dependent_job=run_dict['job_id'])
+        create_movie_thumb(sequence, methodology=methodology,
+                           dependent_job=run_dict['job_id'])
 
-    return run_dict
+        return run_dict
 
 
 def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True, methodology='local',
@@ -432,7 +450,7 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True,
 def make_full_res_jpg(input_file, preview_path=None):
     if not preview_path:
         # preview_path = PathParser.preview_path_from_frame_path(input_file, file_type='image')
-        preview_path = PathObject(path_object=input_file).preview_path_full
+        preview_path = PathObject(path_object=input_file).preview_path
         if not os.path.isdir(os.path.split(preview_path)[0]):
             os.makedirs(os.path.split(preview_path)[0])
     command = r"%s %s --ch R,G,B -o %s" % (config['magick'], input_file, preview_path)
@@ -451,7 +469,7 @@ def make_images_from_pdf(input_file, preview_path=None):
     # This requires imagemagick as well as ghostscript.  this is on hold until i understand better how
     # the licensing for ghostscript works and how we'd package it.
     if not preview_path:
-        preview_path = PathObject(input_file).preview_path_full
+        preview_path = PathObject(input_file).preview_path
         if not os.path.exists(os.path.split(preview_path)[0]):
             os.makedirs(os.path.split(preview_path)[0])
     name = os.path.splitext(os.path.split(input_file)[-1])[0]
@@ -500,14 +518,14 @@ def make_animated_gif(input_file):
     input_file = input_file.replace('####', '%04d')
     h, _ = thumb_res.split('x')
     # palette = PathParser.thumbpath_from_path(input_file)
-    palette = PathObject(input_file).thumb_path_full
+    palette = PathObject(input_file).thumb_path
     path_, _ = os.path.splitext(palette)
     ext = '.palette.png'
     palette = path_+ext
     if os.path.exists(palette):
         os.remove(palette)
     # output_file = PathParser.thumbpath_from_path(input_file.replace('%04d', 'seq'))
-    output_file = PathObject(input_file.replace('%04d', 'seq')).thumb_path_full
+    output_file = PathObject(input_file.replace('%04d', 'seq')).thumb_path
     ext2 = '.gif'
     path_, _ = os.path.splitext(output_file)
     output_file = path_+ext2
