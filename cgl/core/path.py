@@ -497,9 +497,7 @@ class PathObject(object):
         :return:
         """
         major = self.latest_version().major_version
-        print 'major', major
         pub_major = self.latest_version(publish_=True).major_version
-        print 'pub_major', pub_major
         if int(major) < int(pub_major):
             major = pub_major
         next_major = '%03d' % (int(major)+1)
@@ -972,10 +970,11 @@ class CreateProductionData(object):
                                                             self.path_object.task,
                                                             ext))
         this = __file__.split('cglumberjack')[0]
-        this = '%s/cglumberjack' % this
-        default_file = "%ssrc/%s" % (this, r'plugins/%s/templates/default.%s' % (software, ext))
+        this = this.replace('\\', '/')
+        this = '%scglumberjack/cgl' % this
+        default_file = "%s/plugins/%s/templates/default.%s" % (this, software, ext)
         logging.info('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
-        cgl_copy(default_file, self.path_object.path_root)
+        cgl_copy(default_file, self.path_object.path_root, methodology='local')
 
 
 class Sequence(object):

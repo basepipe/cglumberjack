@@ -181,10 +181,13 @@ def cgl_copy_single(source, destination, test=False, methodology='local', verbos
     :return: True if successful
     """
     run_dict = {'function': 'cgl_copy_single()'}
+    do_system = False
     if verbose:
         logging.info('copying %s to %s' % (source, destination))
     command = None
     if sys.platform == 'win32':
+        source = source.replace('/', '\\')
+        destination = destination.replace('/', '\\')
         # make sure the destination directories exist
         if dest_is_folder:
             if not os.path.exists(destination):
@@ -209,15 +212,15 @@ def cgl_copy_single(source, destination, test=False, methodology='local', verbos
                 run_dict['command_type'] = 'file to renamed file'
                 # TODO - check to ensure the files have the same extension.
                 command = 'copy "%s" "%s" /Y >nul' % (source, destination)
+                do_system = True
         if command:
             if test:
                 print command
             else:
                 run_dict['start_time'] = time.time()
                 run_dict['command'] = command
-                print command, 1
                 cgl_execute(command=command, print_output=False, methodology=methodology, verbose=verbose,
-                            command_name=command_name)
+                            command_name=command_name, do_system=do_system)
                 run_dict['artist_time'] = time.time()-run_dict['start_time']
                 run_dict['end_time'] = time.time()
         return run_dict
@@ -268,8 +271,8 @@ def load_style_sheet(style_file='stylesheet.css'):
     return data
 
 
-def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=False,
-                command_name='cgl_execute', **kwargs):
+def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=True,
+                command_name='cgl_execute', do_system=False, **kwargs):
     # TODO - we need to make sure this command is used everywhere we're passing commands if at all possible.
     run_dict = {'command': command,
                 'command_name': command_name,
@@ -279,20 +282,23 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
                 'farm_processing_time': '',
                 'job_id': None}
     if methodology == 'local':
+        output_values = []
         import subprocess
         if verbose:
             print('Executing Command: %s' % command)
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-        output_values = []
-        if return_output or print_output:
-            while True:
-                output = p.stdout.readline()
-                if output == '' and p.poll() is not None:
-                    break
-                if output:
-                    if print_output:
-                        print output.strip()
-                    output_values.append(output.strip())
+        if do_system:
+            os.system(command)
+        else:
+            p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+            if return_output or print_output:
+                while True:
+                    output = p.stdout.readline()
+                    if output == '' and p.poll() is not None:
+                        break
+                    if output:
+                        if print_output:
+                            print output.strip()
+                        output_values.append(output.strip())
 
         run_dict['artist_time'] = time.time() - run_dict['start_time']
         run_dict['end_time'] = time.time()

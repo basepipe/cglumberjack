@@ -27,8 +27,17 @@ non_exist = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/
 #path_object.make_thumbnail()
 #path_object.upload_to_project_management()
 
-exr_sequence_hash = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/high/03_2a_#####.exr'
-path_object = PathObject(exr_sequence_hash)
-path_object.copy_path()
+# exr_sequence_hash = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/high/03_2a_#####.exr'
+# path_object = PathObject(exr_sequence_hash)
+# path_object.copy_path()
 #process_info = path_object.make_preview()
 #path_object.upload_review(job_id=process_info['job_id'])
+import subprocess
+import os
+source = r"C:\Users\tmiko\PycharmProjects\cglumberjack\cgl\plugins\nuke\templates\default.nk"
+dest = r"D:\VFX\FRIDAY_ROOT\cglumberjack\source\cgl_testProjectJ\shots\080\900\comp\tmiko\000.000\high\080_900_comp.nk"
+command = 'copy %s %s /Y >nul' % (source, dest)
+os.system(command)
+list = ['copy', r'C:\\Users\\tmiko\\PycharmProjects\\cglumberjack\\cgl\\plugins\\nuke\\templates\\default.nk', r'D:\\VFX\\FRIDAY_ROOT\\cglumberjack\\source\\cgl_testProjectJ\\shots\\080\\0200\\comp\\tmiko\\000.000\\high\\080_0200_comp.nk', '/Y >nul']
+command = list
+p = subprocess.Popen(command)

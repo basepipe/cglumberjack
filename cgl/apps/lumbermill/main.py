@@ -43,8 +43,9 @@ class PathWidget(QtWidgets.QFrame):
         # self.path_line_edit.setObjectName('display_path')
 
     def update_path(self, path_object):
+        if isinstance(path_object, dict):
+            path_object = cglpath.PathObject(path_object)
         if path_object:
-            print 'Path Object filename is: ', path_object.filename
             self.text = path_object.path_root
             self.path_line_edit.setText(path_object.path_root)
 
