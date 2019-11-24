@@ -1,10 +1,8 @@
 import os
-import glob
 import datetime
 import pandas as pd
-import time
 from plugins.preflight.preflight_check import PreflightCheck
-from cgl.core.path import PathObject, CreateProductionData, split_sequence, split_sequence_frange
+from cgl.core.path import PathObject, CreateProductionData
 from cgl.core.util import cgl_copy
 from cgl.core.config import UserConfig
 
@@ -27,8 +25,8 @@ STATUS = 12
 
 class PublishPlate(PreflightCheck):
     """
-    This Class is designed specifically to work with the lumbermill ingest tool.  It expects a lumbermill data frame in order to function.
-    This is designed to work with only one selected row at the moment.
+    This Class is designed specifically to work with the lumbermill ingest tool.  It expects a lumbermill data frame
+    in order to function. This is designed to work with only one selected row at the moment.
 
     """
 
@@ -61,6 +59,45 @@ class PublishPlate(PreflightCheck):
     def save_data_frame(self):
         self.data_frame.to_csv(self.pandas_path, index=False)
 
+    def ingest_folder(self, row, from_file, to_file, current_date):
+        print 'Copying %s to %s' % (from_file, to_file)
+        # Send this to the Preflights - No matter what basically
+        if not self.test:
+            cgl_copy(from_file, to_file, methodology=METHODOLOGY)
+            CreateProductionData(to_file, json=True)
+        self.data_frame.at[index, 'Status'] = 'Published'
+        self.data_frame.at[index, 'Publish_Date'] = current_date
+        row['Publish_Date'] = current_date
+        row['Status'] = 'Published'
+        self.make_source_file(to_file, row)
+
+    def ingest_sequence(self, row, from_file, to_file, current_date):
+        to_dir = os.path.dirname(to_file)
+        if not self.test:
+            CreateProductionData(to_dir)
+        from_filename = os.path.split(from_file)[-1]
+        self.shared_data['publish_path_object'] = PathObject(os.path.join(to_dir, from_filename))
+        print 'Copying sequence %s to %s' % (from_file, to_dir)
+        cgl_copy(from_file, to_dir, methodology=METHODOLOGY)
+        self.data_frame.at[index, 'Status'] = 'Published'
+        self.data_frame.at[index, 'Publish_Date'] = current_date
+        row['Publish_Date'] = current_date
+        row['Status'] = 'Published'
+        self.make_source_file(to_dir, row)
+
+    def ingest_file(self, row, from_file, to_file, current_date):
+        print 'FILETYPE =', row['Filetype']
+        if not self.test:
+            print 'Copying %s to %s' % (from_file, to_file)
+            CreateProductionData(os.path.dirname(to_file))
+            cgl_copy(from_file, to_file, methodology=METHODOLOGY)
+            self.shared_data['publish_path_object'] = PathObject(to_file)
+        self.data_frame.at[index, 'Status'] = 'Published'
+        self.data_frame.at[index, 'Publish_Date'] = current_date
+        row['Publish_Date'] = current_date
+        row['Status'] = 'Published'
+        self.make_source_file(to_file, row)
+
     def run(self):
         d = datetime.datetime.today()
         current_date = d.strftime('%d-%m-%Y %H:%M:%S')
@@ -69,48 +106,15 @@ class PublishPlate(PreflightCheck):
                 if row['Status'] == 'Tagged':
                     from_file = row['Filepath']
                     to_file = row['Publish_Filepath']
+                    path_object = PathObject(to_file)
+                    self.shared_data['source_path_object'] = path_object
 
                     if row['Filetype'] == 'folder':
-                        print 'Copying %s to %s' % (from_file, to_file)
-                        # Send this to the Preflights - No matter what basically
-                        if not self.test:
-                            cgl_copy(from_file, to_file, methodology=METHODOLOGY)
-                            CreateProductionData(to_file, json=True)
-                        # self.data_frame.at[index, 'Status'] = 'Published'
-                        # self.data_frame.at[index, 'Publish_Date'] = current_date
-                        # row['Publish_Date'] = current_date
-                        # row['Status'] = 'Published'
-                        self.make_source_file(to_file, row)
-
+                        self.ingest_folder(row, from_file, to_file, current_date)
                     elif row['Filetype'] == 'sequence':
-                        to_dir = os.path.dirname(to_file)
-                        if not self.test:
-                            CreateProductionData(to_dir)
-                        file_sequence, self.shared_data['frange'] = split_sequence_frange(from_file)
-                        print file_sequence
-                        from_query = split_sequence(from_file)
-                        from_filename = os.path.split(file_sequence)[-1]
-                        self.shared_data['published_seq'] = os.path.join(to_dir, from_filename)
-                        self.shared_data['publish_file'] = os.path.join(to_dir, from_filename)
-                        print 'Copying sequence %s to %s' % (file_sequence, to_dir)
-                        cgl_copy(file_sequence, to_dir, methodology=METHODOLOGY)
-                        # self.data_frame.at[index, 'Status'] = 'Published'
-                        # self.data_frame.at[index, 'Publish_Date'] = current_date
-                        # row['Publish_Date'] = current_date
-                        # row['Status'] = 'Published'
-                        self.make_source_file(to_dir, row)
+                        self.ingest_sequence(row, from_file, to_file, current_date)
                     else:
-                        print 'FILETYPE =', row['Filetype']
-                        if not self.test:
-                            print 'Copying %s to %s' % (from_file, to_file)
-                            CreateProductionData(os.path.dirname(to_file))
-                            cgl_copy(from_file, to_file, methodology=METHODOLOGY)
-                            self.shared_data['publish_file'] = to_file
-                        # self.data_frame.at[index, 'Status'] = 'Published'
-                        # self.data_frame.at[index, 'Publish_Date'] = current_date
-                        # row['Publish_Date'] = current_date
-                        # row['Status'] = 'Published'
-                        self.make_source_file(to_file, row)
+                        self.ingest_file(row, from_file, to_file, current_date)
                     self.pass_check('Check Passed')
                     if not self.test:
                         self.save_data_frame()

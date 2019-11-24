@@ -1,4 +1,4 @@
-from cgl.core.path import PathObject, Sequence
+from cgl.core.path import PathObject
 
 # hdri sequence conversion
 exr_sequence_hash = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/high/03_2a_#####.exr'

@@ -16,22 +16,16 @@
             "order": 1
         }, 
         "plate": {
-            "CreateHDProxy": {
-                "label": "CreateHDProxy", 
-                "module": "cgl_tools.ingest.preflights.plate.CreateHDProxy", 
-                "order": 3, 
-                "required": "True"
-            }, 
             "CreateHdMovie": {
                 "label": "CreateHdMovie", 
                 "module": "cgl_tools.ingest.preflights.plate.CreateHdMovie", 
-                "order": 4, 
+                "order": 2, 
                 "required": "True"
             }, 
             "MarkAsPublished": {
                 "label": "MarkAsPublished", 
                 "module": "cgl_tools.ingest.preflights.plate.MarkAsPublished", 
-                "order": 5,
+                "order": 4, 
                 "required": "True"
             }, 
             "PublishPlate": {
@@ -40,10 +34,10 @@
                 "order": 1, 
                 "required": "True"
             }, 
-            "createProxy": {
-                "label": "Create Full Res Proxy", 
-                "module": "cgl_tools.ingest.preflights.plate.createProxy", 
-                "order": 2, 
+            "SendToFtrack": {
+                "label": "SendToFtrack", 
+                "module": "cgl_tools.ingest.preflights.plate.SendToFtrack", 
+                "order": 3, 
                 "required": "True"
             }, 
             "order": 2

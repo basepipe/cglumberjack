@@ -9,7 +9,7 @@ import re
 import copy
 from cgl.core.util import split_all, cgl_copy, cgl_execute
 from cgl.core.config import app_config, UserConfig
-import convert_new as convert
+import convert
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 PADDING = app_config()['default']['padding']
@@ -294,7 +294,7 @@ class PathObject(object):
                     self.set_preview_path()
                 if not self.thumb_path:
                     if sys.platform == 'win32':
-                        p_path, ext = os.path.splitext(self.preview_path)
+                        p_path = os.path.splitext(self.preview_path)[0]
                         self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
                         self.data['thumb_path'] = self.thumb_path
         if root:
@@ -661,10 +661,11 @@ class PathObject(object):
         
         :param width: width in pixels
         :param height: height in pixels
-        :param copy_input_padding:
+        :param copy_input_padding: if True use padding from input sequence, if False use padding from Globals
+        :param ext: extension for the proxy file.  Default is jpg
         :return: 
         """
-        name_, ext_ = os.path.splitext(self.filename)
+        name_ = os.path.splitext(self.filename)[0]
         filename = '%s.%s' % (name_, ext)
         dir_ = os.path.dirname(self.path_root.replace(self.resolution, '%sx%s' % (width, height)))
         output_sequence = os.path.join(dir_, filename)
