@@ -1,6 +1,6 @@
 from Qt import QtCore
-import plugins.nuke.cglnuke as cglnuke
-from plugins.nuke.gui import CGLNuke
+import plugins.nuke.cgl_nuke as cgl_nuke
+from plugins.nuke.gui import cgl_nuke
 import plugins.preflight.main
 from cgl.core.config import app_config
 from cgl.core.util import current_user

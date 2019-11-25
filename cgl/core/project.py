@@ -86,6 +86,7 @@ def create_project_config(company, project):
     project_config = os.path.join(project_dir, 'global.yaml')
     if os.path.exists(company_config):
         if not os.path.exists(project_dir):
+            print project_dir
             os.makedirs(project_dir)
             cgl_copy(company_config, project_config)
 

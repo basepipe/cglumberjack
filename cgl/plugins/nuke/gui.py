@@ -1,7 +1,6 @@
 from Qt import QtWidgets, QtCore, QtGui
 from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import nuke
-import cglnuke
 import cgl.ui.startup as startup
 from cgl.core.path import PathObject
 from cgl.core.config import app_config
@@ -19,12 +18,13 @@ class NukeBrowserWidget(CGLumberjackWidget):
         print 'open nuke'
 
     def import_clicked(self):
+        from cgl_nuke import import_media, import_script
         for selection in self.source_selection:
             if selection.endswith('.nk'):
-                cglnuke.import_script(selection)
+                import_script(selection)
             else:
                 print selection, '-------------------'
-                cglnuke.import_media(selection)
+                import_media(selection)
             print 'nuke import'
 
 
@@ -36,7 +36,9 @@ class CGLNuke(CGLumberjack):
 
 
 class RenderDialog(QtWidgets.QDialog):
-    def __init__(self, parent=cglnuke.get_main_window(), write_node=''):
+    from cgl_nuke import get_main_window
+
+    def __init__(self, parent=get_main_window(), write_node=''):
         QtWidgets.QDialog.__init__(self, parent)
 
         self.write_node = write_node
@@ -104,6 +106,10 @@ class RenderDialog(QtWidgets.QDialog):
 
 
 def render_all_write_nodes():
+    """
+    render all write nodes (spedifically for handilng in GUI rendering)
+    :return:
+    """
     render_paths = []
     for n in nuke.allNodes('Write'):
         dialog = RenderDialog(write_node=n.name())
@@ -112,7 +118,25 @@ def render_all_write_nodes():
     return render_paths
 
 
+def render_node(n):
+    """
+    this is a render command specifically for rendering through the nuke gui interface.
+    :param n: nuke node
+    :return:
+    """
+    if n.Class() == 'Write':
+        dialog = RenderDialog(write_node=n.name())
+        dialog.exec_()
+        return dialog.render_path
+    else:
+        print '%s is not a Write node' % n
+
+
 def render_selected_write_nodes():
+    """
+    renders selected write nodes through the GUI
+    :return:
+    """
     render_paths = []
     for s in nuke.selectedNodes():
         if s.Class() == 'Write':
@@ -123,7 +147,8 @@ def render_selected_write_nodes():
 
 
 def launch():
-    scene_name = cglnuke.get_file_name()
+    from cgl_nuke import get_file_name, get_main_window
+    scene_name = get_file_name()
     if scene_name == 'Root':
         print 'Lumbermill can not determine project, please launch files from the lumbermill browser'
         location = ''
@@ -136,7 +161,7 @@ def launch():
     if current_user() in users:
         user_info = users[current_user()]
         if user_info:
-            gui = CGLNuke(parent=cglnuke.get_main_window(), path=location, user_info=user_info)
+            gui = CGLNuke(parent=get_main_window(), path=location, user_info=user_info)
             app = startup.do_nuke_gui_init(gui)
             gui.setWindowFlags(QtCore.Qt.Window)
             gui.setWindowTitle('CG Lumberjack')

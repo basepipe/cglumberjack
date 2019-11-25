@@ -115,6 +115,9 @@ class CustomMenu(object):
         for menu in self.menus:
             self.delete_menu(menu)
 
+    def delete_menu(self, menu_name):
+        pass
+
     def remove_inactive_menus(self):
         menus = self.menus
         to_pop = []
@@ -202,9 +205,6 @@ class CustomMenu(object):
     def find_menu_by_name(**kwargs):
         pass
 
-    @staticmethod
-    def delete_menu(shelf_name):
-        pass
 
 
 
