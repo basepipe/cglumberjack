@@ -272,8 +272,9 @@ def load_style_sheet(style_file='stylesheet.css'):
 
 
 def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=True,
-                command_name='cgl_execute', do_system=False, **kwargs):
+                command_name='cgl_execute', do_system=False, new_window=False, **kwargs):
     # TODO - we need to make sure this command is used everywhere we're passing commands if at all possible.
+
     run_dict = {'command': command,
                 'command_name': command_name,
                 'start_time': time.time(),
@@ -288,16 +289,21 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
             os.system(command)
         else:
             print('Executing Command:\n%s' % command)
-            p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-            if return_output or print_output:
-                while True:
-                    output = p.stdout.readline()
-                    if output == '' and p.poll() is not None:
-                        break
-                    if output:
-                        if print_output:
-                            print output.strip()
-                        output_values.append(output.strip())
+            if new_window:
+                p = subprocess.Popen(command, universal_newlines=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
+                # TODO - would like a way to ensure output prints to the new console as well as to our output.  For now
+                # it seems like it's a one or the other scneario
+            else:
+                p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+                if return_output or print_output:
+                    while True:
+                        output = p.stdout.readline()
+                        if output == '' and p.poll() is not None:
+                            break
+                        if output:
+                            if print_output:
+                                print output.strip()
+                            output_values.append(output.strip())
 
         run_dict['artist_time'] = time.time() - run_dict['start_time']
         run_dict['end_time'] = time.time()

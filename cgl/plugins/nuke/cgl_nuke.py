@@ -1,9 +1,10 @@
 import os
 import logging
-import nuke
 from Qt import QtWidgets
-from cgl.core.util import cgl_execute
-from cgl.core.path import PathObject
+import time
+import nuke
+from cgl.core.util import cgl_execute, write_to_cgl_data
+from cgl.core.path import PathObject, Sequence
 from cgl.core.config import app_config, UserConfig
 
 
@@ -78,11 +79,11 @@ class NukePathObject(PathObject):
         if isinstance(path_object, unicode):
             path_object = str(path_object)
         if isinstance(path_object, dict):
-            self.process_dict(path_object)
+            self.process_info(path_object)
         elif isinstance(path_object, str):
             self.process_string(path_object)
         elif isinstance(path_object, PathObject):
-            self.process_dict(path_object.data)
+            self.process_info(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
         self.set_frame_range()
@@ -103,23 +104,55 @@ class NukePathObject(PathObject):
         command line locally.  smedge/deadline - submit the job to a render manager for farm rendering.
         :return:
         """
+        process_info_list = []
+        process_info = {'command': 'cgl_nuke.NukePathObject().render()',
+                        'command_name': 'Nuke GUI Render',
+                        'start_time': time.time(),
+                        'methodology': PROCESSING_METHOD,
+                        'farm_processing_end': '',
+                        'farm_processing_time': '',
+                        'job_id': None}
         if selected:
             if not nuke.selectedNodes():
                 print 'render() set to selected, please select a write node and try again'
                 return
             for s in nuke.selectedNodes():
                 if s.Class() == 'Write':
+                    file_name = s['file'].value()
+                    dir_ = os.path.dirname(file_name)
+                    if not os.path.exists(dir_):
+                        os.makedirs(dir_)
+                    sequence = Sequence(file_name)
+                    if sequence.is_valid_sequence():
+                        file_name = sequence.hash_sequence
+                    print file_name, 2222
                     if processing_method == 'gui':
                         from gui import render_node
                         render_node(s)
+                        process_info['file_out'] = file_name
+                        process_info['artist_time'] = time.time() - process_info['start_time']
+                        process_info['end_time'] = time.time()
+                        write_to_cgl_data(process_info)
+                        process_info_list.append(process_info)
                     else:
                         command = '%s -F %s -sro -x %s' % (app_config()['paths']['nuke'], self.frame_range,
                                                            self.path_root)
                         command_name = '"%s: NukePathObject.render()"' % self.command_base
-                        process_dict = cgl_execute(command, methodology=processing_method, command_name=command_name)
-                        return process_dict
+                        if processing_method == 'local':
+                            process_info = cgl_execute(command, methodology=processing_method,
+                                                       command_name=command_name,
+                                                       new_window=True)
+                        elif processing_method == 'smedge':
+                            process_info = cgl_execute(command, methodology=processing_method,
+                                                       command_name=command_name)
+                        process_info['file_out'] = file_name
+                        process_info['artist_time'] = time.time() - process_info['start_time']
+                        process_info['end_time'] = time.time()
+                        write_to_cgl_data(process_info)
+                        process_info_list.append(process_info)
+            return process_info_list
         else:
-            print 'this is what happenes when selected is set to False'
+            print 'this is what happens when selected is set to False'
 
 
 def get_main_window():
@@ -241,8 +274,43 @@ def deselected():
     nuke.invertSelection()
 
 
-def render_local():
-    print 'Rendering locally'
+def check_write_node_version(selected=True):
+    scene_object = NukePathObject()
+    if selected:
+        for s in nuke.selectedNodes():
+            if s.Class() == 'Write':
+                path = s['file'].value()
+                path_object = NukePathObject(path)
+                if scene_object.version != path_object.version:
+                    print 'scene %s, render %s, versions do not match' % (scene_object.version, path_object.version)
+                    return False
+                else:
+                    return True
+
+
+def write_node_selected():
+    """
+    if write node is selected returns it.
+    :return:
+    """
+    write_nodes = []
+    for s in nuke.selectedNodes():
+        if s.Class() == 'Write':
+            print 'yup'
+            write_nodes.append(s)
+    return write_nodes
+
+
+def version_up_write_nodes(vesion=None, main=True):
+    """
+    ajdusts version number on the main write node, or all write nodes to version
+    :param main: if true this only effects the version number of the main write node
+    :param version: the version to set write node(s) at.
+    :return:
+    """
+    pass
+
+
 
 
 

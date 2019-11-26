@@ -1,5 +1,8 @@
 from plugins.preflight.preflight_check import PreflightCheck
-from cgl.core.convert import create_mov
+from cgl.core.path import PathObject
+from cgl.core.config import UserConfig
+
+PROCESSING_METHOD = UserConfig().d['methodology']
 
 
 class CreateMOV(PreflightCheck):
@@ -8,10 +11,13 @@ class CreateMOV(PreflightCheck):
         pass
 
     def run(self):
-        # get the sequence to be converted
-        for r in self.shared_data['render_paths']:
-            create_mov(r)
-        self.pass_check('Movie Created!')
+        if PROCESSING_METHOD == 'local' or PROCESSING_METHOD == 'gui':
+            process_info = self.shared_data['render_path_object'].make_preview(new_window=True)
+        else:
+            process_info = self.shared_data['render_path_object'].make_preview(job_id=self.shared_data['job_id'])
+
+        self.shared_data['job_id'] = process_info['job_id']
+        self.pass_check('Create MOV passed!')
         
         
 

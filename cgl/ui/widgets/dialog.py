@@ -515,7 +515,7 @@ class FrameRange(LJDialog):
 class InputDialog(LJDialog):
     button_clicked = QtCore.Signal(object)
 
-    def __init__(self, parent=None, title='Title', message="message",
+    def __init__(self, parent=None, title='Attention:', message="message",
                  buttons=None, line_edit=False, line_edit_text=False, combo_box_items=None,
                  combo_box2_items=None, regex=None, name_example=None):
         """
