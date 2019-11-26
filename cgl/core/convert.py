@@ -22,7 +22,7 @@ OPTIONS = {'320p': ['180k', '360k', '-1:320'],
 
 def create_proxy_sequence(input_sequence, output_sequence, width='1920', height='1080', do_height=False,
                           processing_method='local', dependent_job=None, copy_input_padding=True,
-                          command_name='create_proxy_sequence()'):
+                          command_name='create_proxy_sequence()', new_window=False):
     """
     Create a proxy jpeg sequence in sRGB color space from the given input sequence.
     :param input_sequence: input sequence string, formatted with (#, %04d, *)
@@ -68,7 +68,8 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
         process_info = cgl_execute(command, command_name=command_name, methodology='smedge', Wait=dependent_job)
     elif processing_method == 'local':
         command = '%s %s -scene %s -resize %s %s' % (config['magick'], filein, start_frame, res, fileout)
-        process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True)
+        process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
+                                   new_window=new_window)
 
     if process_info:
         process_info['file_out'] = fileout
@@ -88,7 +89,7 @@ def create_prores_mov(input_sequence, output):
 
 def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], output_frame_rate=None,
                    res=settings['resolution']['video_review'], processing_method='local', dependent_job=None,
-                   command_name='create_web_mov()'):
+                   command_name='create_web_mov()', new_window=False):
     """
     create a web optimized h264 mp4 from an specified input_sequence to a specified output.mov.
     This assumes an sRGB jpg sequence as input
@@ -156,7 +157,7 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
                                                             output_frame_rate, filter_arg, fileout)
     if ffmpeg_cmd:
         process_info = cgl_execute(ffmpeg_cmd, verbose=True,
-                                   command_name=command_name, Wait=dependent_job)
+                                   command_name=command_name, Wait=dependent_job, new_window=new_window)
 
         process_info['file_out'] = fileout
         write_to_cgl_data(process_info)
@@ -174,7 +175,7 @@ def prep_for_output(fileout, cleanup=True):
 
 
 def create_movie_thumb(input_file, output_file, processing_method='local', command_name='create_movie_thumb()',
-                       dependent_job=None):
+                       dependent_job=None, new_window=False):
     """
     creates thumbnail for a movie file.
     :param input_file: input sequence string, formatted with (#, %04d, *)
@@ -201,7 +202,7 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
         command = '%s -i %s -vf "thumbnail,scale=%s" ' \
                   '-frames:v 1 %s' % (config['ffmpeg'], input_file, res, output_file)
         process_info = cgl_execute(command, verbose=True, methodology=processing_method,
-                                   command_name=command_name,
+                                   command_name=command_name, new_window=new_window,
                                    Wait=dependent_job)
         process_info['file_out'] = output_file
         write_to_cgl_data(process_info)

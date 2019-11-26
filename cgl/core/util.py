@@ -181,10 +181,13 @@ def cgl_copy_single(source, destination, test=False, methodology='local', verbos
     :return: True if successful
     """
     run_dict = {'function': 'cgl_copy_single()'}
+    do_system = False
     if verbose:
         logging.info('copying %s to %s' % (source, destination))
     command = None
     if sys.platform == 'win32':
+        source = source.replace('/', '\\')
+        destination = destination.replace('/', '\\')
         # make sure the destination directories exist
         if dest_is_folder:
             if not os.path.exists(destination):
@@ -209,15 +212,15 @@ def cgl_copy_single(source, destination, test=False, methodology='local', verbos
                 run_dict['command_type'] = 'file to renamed file'
                 # TODO - check to ensure the files have the same extension.
                 command = 'copy "%s" "%s" /Y >nul' % (source, destination)
+                do_system = True
         if command:
             if test:
                 print command
             else:
                 run_dict['start_time'] = time.time()
                 run_dict['command'] = command
-                print command, 1
                 cgl_execute(command=command, print_output=False, methodology=methodology, verbose=verbose,
-                            command_name=command_name)
+                            command_name=command_name, do_system=do_system)
                 run_dict['artist_time'] = time.time()-run_dict['start_time']
                 run_dict['end_time'] = time.time()
         return run_dict
@@ -268,9 +271,10 @@ def load_style_sheet(style_file='stylesheet.css'):
     return data
 
 
-def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=False,
-                command_name='cgl_execute', **kwargs):
+def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=True,
+                command_name='cgl_execute', do_system=False, new_window=False, **kwargs):
     # TODO - we need to make sure this command is used everywhere we're passing commands if at all possible.
+
     run_dict = {'command': command,
                 'command_name': command_name,
                 'start_time': time.time(),
@@ -279,20 +283,28 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
                 'farm_processing_time': '',
                 'job_id': None}
     if methodology == 'local':
-        import subprocess
-        if verbose:
-            print('Executing Command: %s' % command)
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         output_values = []
-        if return_output or print_output:
-            while True:
-                output = p.stdout.readline()
-                if output == '' and p.poll() is not None:
-                    break
-                if output:
-                    if print_output:
-                        print output.strip()
-                    output_values.append(output.strip())
+        import subprocess
+        if do_system:
+            # TODO this requires testing, i think i've solved why this was needed, it'd ne nice to remove it.
+            os.system(command)
+        else:
+            print('Executing Command:\n%s' % command)
+            if new_window:
+                subprocess.Popen(command, universal_newlines=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
+                # TODO - would like a way to ensure output prints to the new console as well as to our output.  For now
+                # it seems like it's a one or the other scneario
+            else:
+                p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+                if return_output or print_output:
+                    while True:
+                        output = p.stdout.readline()
+                        if output == '' and p.poll() is not None:
+                            break
+                        if output:
+                            if print_output:
+                                print output.strip()
+                            output_values.append(output.strip())
 
         run_dict['artist_time'] = time.time() - run_dict['start_time']
         run_dict['end_time'] = time.time()
@@ -307,7 +319,8 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         # TODO - add deadline integration
         print 'deadline not yet supported'
     elif methodology == 'smedge':
-        smedge_command = r'Submit Script -Type Generic Script -Name %s -Command "%s"' % (command_name, command)
+        smedge_command = r'%s Script -Type Generic Script -Name %s -Command "%s"' % (app_config()['paths']['smedge'],
+                                                                                     command_name, command)
         for k in kwargs:
             value = kwargs[k]
             smedge_command = '%s -%s %s' % (smedge_command, k, value)

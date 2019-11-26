@@ -497,9 +497,7 @@ class PathObject(object):
         :return:
         """
         major = self.latest_version().major_version
-        print 'major', major
         pub_major = self.latest_version(publish_=True).major_version
-        print 'pub_major', pub_major
         if int(major) < int(pub_major):
             major = pub_major
         next_major = '%03d' % (int(major)+1)
@@ -682,7 +680,7 @@ class PathObject(object):
             else:
                 print 'No preview file found for uploading: %s' % self.preview_path
             
-    def make_preview(self):
+    def make_preview(self, job_id=None, new_window=False):
         """
         Creates web optimized preview of PathObject.  For movies and image sequences it's a 1920x1080 quicktime h264,
         for images it's a jpeg within the boundaries of 1920x1080
@@ -690,14 +688,18 @@ class PathObject(object):
         """
         if self.file_type == 'sequence':
             # make sure that an hd_proxy exists:
-            proxy_info = self.make_proxy()
+            if job_id:
+                proxy_info = self.make_proxy(job_id=job_id)
+            else:
+                proxy_info = self.make_proxy(job_id=job_id)
             mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
                                               command_name='%s: create_web_mov()' % self.command_base,
-                                              dependent_job=proxy_info['job_id'], processing_method=PROCESSING_METHOD)
+                                              dependent_job=proxy_info['job_id'], processing_method=PROCESSING_METHOD,
+                                              new_window=new_window)
             thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
                                                     command_name='%s: create_movie_thumb()' % self.command_base,
                                                     dependent_job=mov_info['job_id'],
-                                                    processing_method=PROCESSING_METHOD)
+                                                    processing_method=PROCESSING_METHOD, new_window=new_window)
             return thumb_info
         elif self.file_type == 'movie':
             print 'making movie preview not supported'
@@ -708,21 +710,28 @@ class PathObject(object):
         elif self.file_type == 'pdf':
             print 'making pdf preview not supported'
     
-    def make_proxy(self, width=1920, height=1080, copy_input_padding=True, ext='jpg'):
+    def make_proxy(self, width=1920, height=1080, copy_input_padding=True, ext='jpg', new_window=False, job_id=None):
         """
         :param width: width in pixels
         :param height: height in pixels
         :param copy_input_padding: if True use padding from input sequence, if False use padding from Globals
         :param ext: extension for the proxy file.  Default is jpg
+        :param new_window: start process in a new command window
+        :param job_id: job_id of dependent job.
         :return:
         """
         name_ = os.path.splitext(self.filename)[0]
         filename = '%s.%s' % (name_, ext)
         dir_ = os.path.dirname(self.path_root.replace(self.resolution, '%sx%s' % (width, height)))
         output_sequence = os.path.join(dir_, filename)
+        proc_meth = PROCESSING_METHOD
+        if job_id:
+            proc_meth = 'smedge'
+
         proxy_info = convert.create_proxy_sequence(self.path_root, output_sequence=output_sequence, width=width,
                                                    height=height, copy_input_padding=copy_input_padding,
-                                                   processing_method=PROCESSING_METHOD,
+                                                   processing_method=proc_meth, dependent_job=job_id,
+                                                   new_window=new_window,
                                                    command_name='%s: create_proxy_sequence()' % self.command_base)
         return proxy_info
 
@@ -972,10 +981,11 @@ class CreateProductionData(object):
                                                             self.path_object.task,
                                                             ext))
         this = __file__.split('cglumberjack')[0]
-        this = '%s/cglumberjack' % this
-        default_file = "%ssrc/%s" % (this, r'plugins/%s/templates/default.%s' % (software, ext))
+        this = this.replace('\\', '/')
+        this = '%scglumberjack/cgl' % this
+        default_file = "%s/plugins/%s/templates/default.%s" % (this, software, ext)
         logging.info('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
-        cgl_copy(default_file, self.path_object.path_root)
+        cgl_copy(default_file, self.path_object.path_root, methodology='local')
 
 
 class Sequence(object):
