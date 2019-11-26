@@ -286,11 +286,12 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         output_values = []
         import subprocess
         if do_system:
+            # TODO this requires testing, i think i've solved why this was needed, it'd ne nice to remove it.
             os.system(command)
         else:
             print('Executing Command:\n%s' % command)
             if new_window:
-                p = subprocess.Popen(command, universal_newlines=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
+                subprocess.Popen(command, universal_newlines=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
                 # TODO - would like a way to ensure output prints to the new console as well as to our output.  For now
                 # it seems like it's a one or the other scneario
             else:

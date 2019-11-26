@@ -686,11 +686,9 @@ class PathObject(object):
         for images it's a jpeg within the boundaries of 1920x1080
         :return:
         """
-        proc_meth = PROCESSING_METHOD
         if self.file_type == 'sequence':
             # make sure that an hd_proxy exists:
             if job_id:
-                proc_meth = 'smedge'
                 proxy_info = self.make_proxy(job_id=job_id)
             else:
                 proxy_info = self.make_proxy(job_id=job_id)
