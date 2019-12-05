@@ -17,9 +17,12 @@ PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 class RequestFeatureDialog(LJDialog):
     def __init__(self, parent=None, title='Request Feature'):
         LJDialog.__init__(self, parent)
+        self.tag_names = []
         self.combo_projects_list = AdvComboBox()
+        self.combo_users_list = AdvComboBox()
         self.work_group = 'CG Lumberjack'
         self.projects = ''
+        self.users = ''
         self.rtf_task_text = ''
         self.requirements_list = []
         self.results_list = []
@@ -203,6 +206,7 @@ class RequestFeatureDialog(LJDialog):
         self.label_functions = QtWidgets.QLabel("Function(s)")
         self.label_workgroup = QtWidgets.QLabel("Workgroup:")
         self.label_projects = QtWidgets.QLabel("Projects: ")
+        self.label_users = QtWidgets.QLabel("Users: ")
         self.label_tags = QtWidgets.QLabel("Tags:")
         self.label_tags.setProperty('class', 'ultra_title')
         self.workgroup = QtWidgets.QHBoxLayout()
@@ -295,6 +299,8 @@ class RequestFeatureDialog(LJDialog):
         grid.addWidget(self.label_code_info, 4, 0)
         grid.addWidget(self.label_projects, 5, 0)
         grid.addWidget(self.combo_projects_list, 5, 1)
+        grid.addWidget(self.label_users, 6, 0)
+        grid.addWidget(self.combo_users_list, 6, 1)
 
         grid.addWidget(self.label_repo, 10, 0)
         grid.addWidget(self.combo_repo, 10, 1)
@@ -328,7 +334,7 @@ class RequestFeatureDialog(LJDialog):
         grid.addWidget(self.expected_results_line_edit,  27, 1)
         grid.addWidget(self.message_expected_results, 28, 1)
 
-        #layout.addLayout(task_layout)
+        # layout.addLayout(task_layout)
         right_layout.addWidget(self.label_task_info)
         right_layout.addLayout(grid)
         right_layout.addStretch(1)
@@ -375,10 +381,13 @@ class RequestFeatureDialog(LJDialog):
 
     def on_show_tags_clicked(self):
         self.tag_widget.show()
+        print self.tag_widget.frame.tags
         # self.tag_widget.setMinimumWidth(850)
 
     def on_workgroup_changed(self):
         self.work_group = self.combo_workgroup_list.currentText()
+
+    # List the projects under chosen workgroup
         projects_data = AsanaJack().find_projects()
         project_names = []
         for p in projects_data:
@@ -392,7 +401,20 @@ class RequestFeatureDialog(LJDialog):
         if ind3 != -1:
             self.combo_projects_list.setCurrentIndex(ind3)
 
-
+    # List the users under the chosen project
+        users_data = AsanaJack().find_users()
+        users_names = []
+        for u in users_data:
+            if u['name'] not in ['Personal Projects']:
+                users_names.append(u['name'])
+            users_list = sorted(users_names)
+            project_list.insert(0, '')
+        self.combo_users_list.clear()
+        self.combo_users_list.addItems(users_list)
+        ind4 = self.combo_users_list.findText(self.users)
+        if ind4 != -1:
+            self.combo_users_list.setCurrentIndex(ind4)
+        self.users = self.combo_users_list.currentText()
 
     def choose_deliverable(self):
         if self.message_functions or self.message_files:
@@ -512,7 +534,10 @@ class RequestFeatureDialog(LJDialog):
         # workgroup_chosen = self.combo_workgroup_list().currentText()
         AsanaJack(work_space=self.work_group).create_project('General Development')
         AsanaJack(work_space=self.work_group).create_task(project_name='General Development', section_name='Backlog',
-                                                          task_name=self.title_line_edit.text(), notes=self.rtf_task_text)
+                                                          task_name=self.title_line_edit.text(),
+                                                          tag_names=self.tag_widget.frame.tags,
+                                                          assignee=self.users,
+                                                          notes=self.rtf_task_text)
         self.accept()
 
     def update_text_edit(self):

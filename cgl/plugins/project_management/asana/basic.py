@@ -6,6 +6,7 @@ class AsanaJack(object):
     workspace_data = None
     section_data = None
     task_data = None
+    users_data = None
 
     def __init__(self, work_space='CG Lumberjack'):
         # TODO - change this over to the "APP" rather than individual user token, this will only work for Tom currently.
@@ -27,6 +28,9 @@ class AsanaJack(object):
         :return:
         """
         return self.me['workspaces']
+
+    def find_users(self):
+        return self.client.users.find_by_workspace(self.workspace_data['gid'], iterator_type=None)
 
     def find_projects(self):
         return self.client.projects.find_by_workspace(self.workspace_data['gid'], iterator_type=None)
@@ -82,17 +86,27 @@ class AsanaJack(object):
             self.section_data = self.client.sections.create_in_project(self.project_data['id'], {'name': section_name})
             return self.section_data
 
-    def create_task(self, project_name, section_name, task_name, assignee=None, notes=''):
+    def create_task(self, project_name, section_name, task_name, tag_names=None, assignee=None, notes=''):
         project = self.find_project_data(project_name)
         section = self.find_section_data(project_name, section_name)
         self.task_data = self.find_task_data(project_name, task_name)
+
+        # For loop used to iterate through the array of tag names and assign each one to a tag object
+        tag_array = []
+        for t in tag_names:
+            tags = self.client.tags.create_in_workspace(self.workspace_data['gid'], {'name': t})
+            tag_array.append(tags)
+
+        print assignee
         if not self.task_data:
             self.task_data = self.client.tasks.create({'name': task_name,
                                                        'html_notes': notes,
-                                                       'assignee': assignee,
+                                                       'assignee': None,
                                                        'memberships': [{"project": project['gid'],
                                                                         "section": section['gid']}],
-                                                       'projects': [project['gid']]})
+                                                       'projects': [project['gid']],
+                                                       'tags': tags['gid'],
+                                                       })
             return self.task_data
 
     def create_note(self, task_description, software=None, language=None, deliverable=None, code_location=None,
