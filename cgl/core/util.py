@@ -8,6 +8,7 @@ import getpass
 import time
 import logging
 import re
+import xmltodict
 from cgl.core.config import app_config
 
 
@@ -260,6 +261,16 @@ def load_json(filepath):
     with open(filepath) as jsonfile:
         data = json.load(jsonfile)
     return data
+
+def save_xml(filepath, data):
+    with open(filepath, 'w') as outfile:
+        outfile.write(xmltodict.unparse(data))
+
+
+def load_xml(filepath):
+    with open(filepath) as xmlfile:
+        docs = xmltodict.parse(xmlfile.read())
+    return docs
 
 
 def load_style_sheet(style_file='stylesheet.css'):
