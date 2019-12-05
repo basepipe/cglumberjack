@@ -1,6 +1,7 @@
 import os
 import json
-from cgl.core.path import PathObject, get_cgl_tools, get_cgl_config
+from cgl.core.path import PathObject
+from cgl.core.project import get_cgl_tools, get_cgl_config
 
 
 class CustomMenu(object):
@@ -114,6 +115,9 @@ class CustomMenu(object):
         for menu in self.menus:
             self.delete_menu(menu)
 
+    def delete_menu(self, menu_name):
+        pass
+
     def remove_inactive_menus(self):
         menus = self.menus
         to_pop = []
@@ -201,9 +205,6 @@ class CustomMenu(object):
     def find_menu_by_name(**kwargs):
         pass
 
-    @staticmethod
-    def delete_menu(shelf_name):
-        pass
 
 
 

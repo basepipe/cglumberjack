@@ -2,7 +2,8 @@ import os
 from cgl.core.util import cgl_copy
 from Qt import QtWidgets, QtCore, QtGui
 from cgl.ui.widgets.dialog import InputDialog
-from cgl.core.path import start, icon_path, get_cgl_tools
+from cgl.core.path import start, icon_path
+from cgl.core.project import get_cgl_tools
 from cgl.ui.widgets.text import Highlighter
 
 
@@ -222,7 +223,12 @@ class CGLMenuButton(QtWidgets.QWidget):
             return "def run():\n    print(\"hello world: %s\")" % self.name
 
     def on_delete_clicked(self):
-        self.parent().removeTab(self.parent.currentIndex())
+        print self
+        print self.parent().parent()
+        print self.parent().parent().parent()
+        print '--------------------'
+        print self.parent().parent().currentIndex()
+        self.parent().parent().removeTab(self.parent().parent().currentIndex())
 
 
 class CGLMenu(QtWidgets.QWidget):

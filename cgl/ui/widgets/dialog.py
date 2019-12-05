@@ -44,7 +44,6 @@ class TimeTracker(LJDialog):
         self.calendar_tool_button.setMinimumWidth(24)
         self.calendar_tool_button.setMinimumHeight(24)
         self.calendar_tool_button.setProperty('class', 'border')
-
         time_for_date_label = QtWidgets.QLabel('Time Card')
         time_for_date_label.setProperty('class', 'ultra_title')
         layout = QtWidgets.QVBoxLayout()
@@ -67,14 +66,17 @@ class TimeTracker(LJDialog):
 
         self.calendar = QtGui.QCalendarWidget()
         self.task_table = QtWidgets.QTableWidget()
-        self.task_table.setColumnCount(5)
+        self.task_table.setColumnCount(7)
         self.task_table.setColumnHidden(4, True)
-        self.task_table.setHorizontalHeaderLabels(['Project', 'Shot/Asset', 'Task', 'Hours', 'Task ID'])
+        self.task_table.setHorizontalHeaderLabels(['Project', 'Shot/Asset', 'Task', 'Hours', 'Task ID',
+                                                   'Hours Worked', 'Bid Hours'])
         header = self.task_table.horizontalHeader()
         header.setResizeMode(0, QtGui.QHeaderView.ResizeToContents)
         header.setResizeMode(1, QtGui.QHeaderView.Stretch)
         header.setResizeMode(2, QtGui.QHeaderView.ResizeToContents)
         header.setResizeMode(3, QtGui.QHeaderView.Stretch)
+        header.setResizeMode(5, QtGui.QHeaderView.Stretch)
+        header.setResizeMode(6, QtGui.QHeaderView.Stretch)
         self.task_table.setMinimumHeight(250)
         self.task_table.setMinimumWidth(400)
 
@@ -117,6 +119,8 @@ class TimeTracker(LJDialog):
 
         self.get_projects_from_ftrack()
         self.button_add_task.setEnabled(False)
+
+        # self.task_table.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
 
     def set_date(self, new_date):
         self.today = new_date
@@ -191,7 +195,7 @@ class TimeTracker(LJDialog):
         """
         Function to create list of tuples containing existing timelog information
 
-        :return: List of tuples(project, asset, task, hours, task_name) of timelog info
+        :return: List of tuples(project, asset, task, hours, task_name, hours worked, bid hours) of timelog info
         """
         self.ftrack_tasks = [[]]
         daily_hours = 0
@@ -203,12 +207,17 @@ class TimeTracker(LJDialog):
             task = app_config()['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][log['context']['type']['name']]
             hours = log['duration']
             hours = hours/60/60
+            bid = log['context']['bid']
+            bid = bid/60/60
+            total_hours = ftrack_util.get_total_time(log['context'])
             daily_hours += hours
             row.append(project)
             row.append(asset)
             row.append(task)
             row.append(hours)
             row.append(log['id'])
+            row.append(total_hours)
+            row.append(bid)
             self.timelogs[log['id']] = log
             self.ftrack_tasks.append(row)
         self.total_time_label.setText('%s Logged hours' % str(daily_hours))
@@ -224,6 +233,9 @@ class TimeTracker(LJDialog):
         task = self.task_combo.currentText()
         task_data = self.task_dict[task]
         asset = task_data['parent']['name']
+        bid = task_data['bid']
+        bid = bid/60/60
+        total_hours = ftrack_util.get_total_time(task_data)
         task_short_name = app_config()['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][task_data['type']['name']]
         pos = self.task_table.rowCount()
         self.task_table.insertRow(pos)
@@ -232,9 +244,20 @@ class TimeTracker(LJDialog):
         self.task_table.setItem(pos, 2, QtGui.QTableWidgetItem(task_short_name))
         self.task_table.setItem(pos, 3, QtGui.QTableWidgetItem(0))
         self.task_table.setItem(pos, 4, QtGui.QTableWidgetItem(task))
+        self.task_table.setItem(pos, 5, QtGui.QTableWidgetItem(str(total_hours)))
+        self.task_table.setItem(pos, 6, QtGui.QTableWidgetItem(str(bid)))
         self.new_logs.append(task)
-
         # add the task to the array
+        self.lock_table()
+
+    def lock_table(self):
+        for r in range(self.task_table.rowCount()):
+            for c in range(0, 7):
+                if c == 3:
+                    pass
+                else:
+                    self.task_table.item(r, c).setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+
     def on_hours_changed(self, item):
         """
         Function to add timelog_id to edited_logs list whenever an existing log's hours are edited
@@ -260,7 +283,7 @@ class TimeTracker(LJDialog):
         # clear self.task_table
         self.day_name = self.weekdays[self.today.weekday()]
         self.task_table.clear()
-        self.task_table.setHorizontalHeaderLabels(['Project', 'Shot/Asset', 'Task', 'Hours', 'Task ID'])
+        self.task_table.setHorizontalHeaderLabels(['Project', 'Shot/Asset', 'Task', 'Hours', 'Task ID', 'Hours Worked', 'Bid Hours'])
         self.task_table.setRowCount(0)
         total = 0
         tasks = self.get_timelogs(self.today.month, self.today.day, self.today.year)
@@ -276,10 +299,13 @@ class TimeTracker(LJDialog):
                     self.task_table.setItem(row, 2, QtGui.QTableWidgetItem(tasks[i][2]))
                     self.task_table.setItem(row, 3, QtGui.QTableWidgetItem(str(tasks[i][3])))
                     self.task_table.setItem(row, 4, QtGui.QTableWidgetItem(tasks[i][4]))
+                    self.task_table.setItem(row, 5, QtGui.QTableWidgetItem(str(tasks[i][5])))
+                    self.task_table.setItem(row, 6, QtGui.QTableWidgetItem(str(tasks[i][6])))
                     total = float(each[3])+total
         label_text = '%s, %s %s:' % (self.day_name, self.today.strftime("%B"), self.today.day)
         self.label_time_recorded.setText(label_text)
         self.edited_logs = []
+        self.lock_table()
 
 
 class FileTableModel(ListItemModel):
@@ -489,7 +515,7 @@ class FrameRange(LJDialog):
 class InputDialog(LJDialog):
     button_clicked = QtCore.Signal(object)
 
-    def __init__(self, parent=None, title='Title', message="message",
+    def __init__(self, parent=None, title='Attention:', message="message",
                  buttons=None, line_edit=False, line_edit_text=False, combo_box_items=None,
                  combo_box2_items=None, regex=None, name_example=None):
         """
@@ -791,7 +817,7 @@ class ProjectCreator(LJDialog):
         self.shot_task_line_edit.hide()
 
     def load_companies(self):
-        from cgl.core.path import get_companies
+        from cgl.core.project import get_companies
         self.company_combo.addItems(get_companies())
 
     def shots_radio_clicked(self):

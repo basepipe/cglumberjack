@@ -315,8 +315,6 @@ class IOPanel(QtWidgets.QWidget):
             frange = ' '
             fullpath = os.path.join(os.path.abspath(directory), filename)
             type_ = get_file_type(filename)
-            if type_ == 'sequence':
-                file_, frange = split_sequence_frange(filename)
             data.append((file_, fullpath, type_, frange, ' ', False, ' ', ' ', ' ', ' ', ' ', ' ',
                          self.io_statuses[0], parent))
             if type_ == 'folder':

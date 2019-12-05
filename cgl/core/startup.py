@@ -187,8 +187,10 @@ def user_init():
     """
     from cgl.core.config import app_config
     from cgl.core.util import current_user
+    print app_config()
     proj_man = app_config()['account_info']['project_management']
     users = app_config()['project_management'][proj_man]['users']
+    print users
     if current_user() in users:
         return proj_man, users[current_user()]
     else:

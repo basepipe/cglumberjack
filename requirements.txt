@@ -1,3 +1,5 @@
+pyperclip
+click
 pyside
 PyYAML
 PyInstaller
