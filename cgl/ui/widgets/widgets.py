@@ -58,8 +58,8 @@ class TagWidget(QtWidgets.QWidget):
         # TODO - add the abililty to choose the color of the tag
         # TODO - add the ability to have a list of commonly used tags.
         layout = QtWidgets.QVBoxLayout(self)
-        frame = TagFrame()
-        layout.addWidget(frame)
+        self.frame = TagFrame()
+        layout.addWidget(self.frame)
 
 
 class TagFrame(QtWidgets.QFrame):
@@ -76,6 +76,7 @@ class TagFrame(QtWidgets.QFrame):
         self.text_entry = QtWidgets.QLineEdit()
         self.text_entry.setProperty('class', 'tag_entry')
         self.tag_dict = {}
+        self.tags = []
 
         self.layout.addLayout(self.tags_layout)
         self.layout.addWidget(self.text_entry)
@@ -92,6 +93,7 @@ class TagFrame(QtWidgets.QFrame):
         tag = LJTag(text=tag_text, height=self.tag_height)
         tag.close_clicked.connect(self.remove_tag)
         self.tag_dict['tag_text'] = tag
+        self.tags.append(tag_text)
         self.tags_layout.addWidget(tag)
 
     def remove_tag(self):
