@@ -84,26 +84,34 @@ class AsanaJack(object):
             self.section_data = self.client.sections.create_in_project(self.project_data['gid'], {'name': section_name})
             return self.section_data
 
-    def create_task(self, project_name, section_name, task_name, tag_names=None, assignee=None, notes=''):
+    def create_task(self, project_name, section_name, task_name, tag_names=None, assignee_name=None, notes=''):
         project = self.find_project_data(project_name)
         section = self.find_section_data(project_name, section_name)
         self.task_data = self.find_task_data(project_name, task_name)
 
         # For loop used to iterate through the array of tag names and assign each one to a tag object
         tag_array = []
+        tag_list = []
         for t in tag_names:
             tags = self.client.tags.create_in_workspace(self.workspace_data['gid'], {'name': t})
             tag_array.append(tags)
 
-        print assignee
+        for t in tag_array:
+            tag_list.append(t['gid'])
+
+        assignee_list = self.client.users.find_by_workspace(self.workspace_data['gid'], iterator_type=None)
+        for a in assignee_list:
+            if a['name'] == assignee_name:
+                assignee = a['gid']
+
         if not self.task_data:
             self.task_data = self.client.tasks.create({'name': task_name,
                                                        'html_notes': notes,
-                                                       'assignee': None,
+                                                       'assignee': assignee,
                                                        'memberships': [{"project": project['gid'],
                                                                         "section": section['gid']}],
                                                        'projects': [project['gid']],
-                                                       'tags': tags['gid'],
+                                                       'tags': tag_list
                                                        })
             return self.task_data
 

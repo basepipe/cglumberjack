@@ -536,7 +536,7 @@ class RequestFeatureDialog(LJDialog):
         AsanaJack(work_space=self.work_group).create_task(project_name='General Development', section_name='Backlog',
                                                           task_name=self.title_line_edit.text(),
                                                           tag_names=self.tag_widget.frame.tags,
-                                                          assignee=self.users,
+                                                          assignee_name=self.users,
                                                           notes=self.rtf_task_text)
         self.accept()
 
