@@ -3,12 +3,14 @@ import shutil
 import os
 import sys
 from Qt import QtCore, QtWidgets, QtGui
+from cgl.core.config import app_config
 from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.widgets import AdvComboBox
 from core.util import load_xml, save_xml, cgl_copy
 
 workspace = "1145700648005039"
-
+ROOT = app_config()['paths']['code_root']
+print ROOT
 
 class SetupGUI(LJDialog):
     def __init__(self, parent=None, title='Setup'):
@@ -93,24 +95,13 @@ class SetupGUI(LJDialog):
         Settings for pycharm editor will already be setup by onboarding setup script
         :return:
         """
-        # home = os.path.expanduser("~")
-        # print home
-        # path_ = os.path.join(home + "\\.PyCharm2019.2\\config\\options\\")
-        # source_file1 = '../../resources/pycharm_setup/colors.scheme.xml'
-        # shutil.copy(source_file1, os.path.join(path_ + "colors.scheme.xml"))
-        #
-        # source_file2 = '../../resources/pycharm_setup/keymap.xml'
-        # shutil.copy(source_file2, os.path.join(path_ + "keymap.xml"))
-        #
-        # source_file3 = '../../resources/pycharm_setup/laf.xml'
-        # shutil.copy(source_file3, os.path.join(path_ + "laf.xml"))
-
-        githook_file = '../../resources/githooks/post-checkout'
-        destination_file = '../../.git/hooks/post-checkout'
+        githook_file = os.path.join(ROOT, 'resources', 'githooks', 'post-checkout')
+        destination_file = os.path.join(ROOT, '.git', 'hooks', 'post-checkout')
         shutil.copy(githook_file, destination_file)
 
     def edit_xml(self, user_id, project_id):
-        docs = load_xml("../../resources/pycharm_setup/workspace.xml")
+        xml_file = os.path.join(ROOT, 'resources', 'pycharm_setup', 'workspace.xml')
+        docs = load_xml(xml_file)
         for item in docs['project']['component']:
             if item['@name'] == "TaskManager":
                 item['servers']['Generic']['username'] = user_id
@@ -119,7 +110,8 @@ class SetupGUI(LJDialog):
                     if element['@name'] == "templateVariables":
                         element['list']['TemplateVariable'][0]['option'][1]['@value'] = project_id
                        # print element['list']['TemplateVariable'][0]['option'][1]['@value']
-        save_xml("../../.idea/workspace.xml", docs)
+        idea_xml = os.path.join(ROOT, '.idea', 'workspace.xml')
+        save_xml(idea_xml, docs)
 
 
 if __name__ == "__main__":
