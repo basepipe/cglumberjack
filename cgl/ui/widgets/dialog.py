@@ -17,6 +17,7 @@ class TimeTracker(LJDialog):
     def __init__(self):
         LJDialog.__init__(self)
         user = current_user()
+        user_info = {}
         try:
             users = app_config()['project_management']['ftrack']['users']
         except KeyError:

@@ -98,14 +98,15 @@ class UserConfig(object):
 
     def __init__(self, user_email=None, user_name=None, current_path=None, my_tasks=None):
         self.user_config_path = app_config()['paths']['user_globals']
-        print self.user_config_path
+        print self.user_config_path, '-------------------'
         if os.path.exists(self.user_config_path):
             self.d = self._load_json(self.user_config_path)
         self.current_path = current_path
         if my_tasks:
             self.my_tasks = my_tasks
         else:
-            self.my_tasks = self.d['my_tasks']
+            if 'my_tasks' in self.d:
+                self.my_tasks = self.d['my_tasks']
 
     def update_all(self):
         self.update_path()
