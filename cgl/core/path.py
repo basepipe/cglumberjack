@@ -13,7 +13,6 @@ import convert
 
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 PADDING = app_config()['default']['padding']
-print UserConfig().d
 PROCESSING_METHOD = UserConfig().d['methodology']
 EXT_MAP = app_config()['ext_map']
 ROOT = app_config()['paths']['root']
