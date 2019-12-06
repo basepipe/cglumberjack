@@ -17,13 +17,16 @@ class TimeTracker(LJDialog):
     def __init__(self):
         LJDialog.__init__(self)
         user = current_user()
+        user_info = {}
         try:
             users = app_config()['project_management']['ftrack']['users']
         except KeyError:
             print 'No Ftrack User Found - check Ftrack Globals'
             return
+        print users
         if current_user() in users:
             user_info = users[user]
+            print '1111111', user_info
             if not user_info:
                 print 'User: %s not found in ftrack globals' % user
         self.timelogs = {}

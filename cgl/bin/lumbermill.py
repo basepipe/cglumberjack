@@ -22,12 +22,15 @@ if __name__ == "__main__":
     time_required = True
     if user_info:
         print 'Found User, %s' % user_info['login']
-        if time_required:
-            if startup.check_time_log(project_management):
-                load_lumbermill(app, splash)
+        if project_management == 'ftrack':
+            if time_required:
+                if startup.check_time_log(project_management):
+                    load_lumbermill(app, splash)
+                else:
+                    from cgl.bin.time_sheet import load_time_sheet
+                    load_time_sheet(app, splash)
             else:
-                from cgl.bin.time_sheet import load_time_sheet
-                load_time_sheet(app, splash)
+                load_lumbermill(app, splash)
         else:
             load_lumbermill(app, splash)
     else:
