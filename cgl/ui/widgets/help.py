@@ -411,9 +411,6 @@ class RequestFeatureDialog(LJDialog):
             project_list.insert(0, '')
         self.combo_users_list.clear()
         self.combo_users_list.addItems(users_list)
-        ind4 = self.combo_users_list.findText(self.users)
-        if ind4 != -1:
-            self.combo_users_list.setCurrentIndex(ind4)
         self.users = self.combo_users_list.currentText()
 
     def choose_deliverable(self):
@@ -532,6 +529,11 @@ class RequestFeatureDialog(LJDialog):
 
     def on_submit_clicked(self):
         # workgroup_chosen = self.combo_workgroup_list().currentText()
+        self.users = self.combo_users_list.currentText()
+        ind4 = self.combo_users_list.findText(self.users)
+        if ind4 != -1:
+            self.combo_users_list.setCurrentIndex(ind4)
+
         AsanaJack(work_space=self.work_group).create_project('General Development')
         AsanaJack(work_space=self.work_group).create_task(project_name='General Development', section_name='Backlog',
                                                           task_name=self.title_line_edit.text(),
