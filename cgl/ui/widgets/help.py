@@ -382,7 +382,7 @@ class RequestFeatureDialog(LJDialog):
         show_tags_button.clicked.connect(self.on_show_tags_clicked)
         self.on_repo_chosen()
         self.show_code_location()
-        self.update_text_edit()
+        # self.update_text_edit()
         # self.submit_task_button.setEnabled(False)
         self.hide_all()
         if self.combo_workgroup_list.currentText():
@@ -560,9 +560,6 @@ class RequestFeatureDialog(LJDialog):
         self.combo_language.setCurrentIndex(index)
 
     def on_submit_clicked(self):
-        # workgroup_chosen = self.combo_workgroup_list().currentText()
-
-        # self.users = None
         AsanaJack(work_space=self.work_group).create_project('General Development')
         AsanaJack(work_space=self.work_group).create_task(project_name='General Development', section_name='Backlog',
                                                           task_name=self.title_line_edit.text(),
@@ -581,12 +578,12 @@ class RequestFeatureDialog(LJDialog):
 
         rtf_task_description = "<strong>Task Description:</strong>\n\t%s\n\n" % self.description_line_edit.text()
         self.requirements_list = [rtf_repo, rtf_language]
-        self.requirements_list.extend(self.list_from_bullets(self.message_software))
-        self.requirements_list.extend(self.list_from_bullets(self.message_files))
-        self.requirements_list.extend(self.list_from_bullets(self.message_functions))
-        self.requirements_list.extend(self.list_from_bullets(self.message_requirements))
+        # self.requirements_list.extend(self.list_from_bullets(self.message_software))
+        # self.requirements_list.extend(self.list_from_bullets(self.message_files))
+        # self.requirements_list.extend(self.list_from_bullets(self.message_functions))
+        # self.requirements_list.extend(self.list_from_bullets(self.message_requirements))
         self.results_list = [rtf_deliverable, rtf_delivery_method]
-        self.results_list.extend(self.list_from_bullets(self.message_expected_results))
+        # self.results_list.extend(self.list_from_bullets(self.message_expected_results))
         rtf_requirements = self.rtf_bullet_list('Requirements:', self.requirements_list)
         rtf_expected_results = self.rtf_bullet_list('Expected Results:', self.results_list)
         links = self.get_relevant_links()
@@ -595,6 +592,7 @@ class RequestFeatureDialog(LJDialog):
             rtf_links = self.rtf_bullet_list('Resources:', links)
         self.rtf_task_text = "<body>%s%s%s%s</body>" % (rtf_task_description, rtf_requirements, rtf_expected_results,
                                                         rtf_links)
+        print self.rtf_task_text
         self.text_edit.setAcceptRichText(True)
         self.text_edit.setText(self.rtf_task_text)
 
