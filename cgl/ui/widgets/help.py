@@ -246,17 +246,27 @@ class RequestFeatureDialog(LJDialog):
         assign_icon_hover = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'assign_hover48px.png'))
         # tag_icon = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'tag_default48px.png'))
         tag_icon_hover = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'tag_hover48px.png'))
-        assign_button = QtWidgets.QToolButton()
-        assign_button.setProperty('class', 'assign')
-        assign_button.setIcon(assign_icon_hover)
+        self.assign_button = QtWidgets.QToolButton()
+        self.assign_button.setProperty('class', 'assign')
+        self.assign_button.setIcon(assign_icon_hover)
         show_tags_button = QtWidgets.QToolButton()
         show_tags_button.setProperty('class', 'assign')
         show_tags_button.setIcon(tag_icon_hover)
 
+        self.assign_button.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.assign_button.customContextMenuRequested.connect(self.on_context_menu)
+
+        # create context menu
+        self.popMenu = QtGui.QMenu(self)
+        # self.popMenu.addAction(QtGui.QAction('test0', self))
+        # self.popMenu.addAction(QtGui.QAction('test1', self))
+        # self.popMenu.addSeparator()
+        # self.popMenu.addAction(QtGui.QAction('test2', self))
+
         self.button_row = QtWidgets.QHBoxLayout()
         self.button_row.setAlignment(QtCore.Qt.AlignLeft)
 
-        self.button_row.addWidget(assign_button)
+        self.button_row.addWidget(self.assign_button)
         self.button_row.addWidget(show_tags_button)
         self.button_row.addWidget(self.tag_widget)
         # self.button_row.addStretch(1)
@@ -379,10 +389,32 @@ class RequestFeatureDialog(LJDialog):
             self.title_line_edit.setFocus()
         self.on_workgroup_changed()
 
+    def on_context_menu(self, point):
+        # show context menu
+
+        users_data = AsanaJack().find_users()
+        users_names = []
+        for u in users_data:
+            if u['name'] not in ['Personal Projects']:
+                users_names.append(u['name'])
+            users_list = sorted(users_names)
+
+        self.popMenu.clear()
+        for u in users_list:
+            action_ = QtGui.QAction(u, self)
+            action_.user = u
+            action_.triggered.connect(self.on_user_selected)
+            self.popMenu.addAction(action_)
+        # self.users = self.popMenu.clicked.show()
+
+        self.popMenu.exec_(self.assign_button.mapToGlobal(point))
+
+    def on_user_selected(self):
+        self.users =  self.sender().user
+        # print 'i rule'
+
     def on_show_tags_clicked(self):
         self.tag_widget.show()
-        print self.tag_widget.frame.tags
-        # self.tag_widget.setMinimumWidth(850)
 
     def on_workgroup_changed(self):
         self.work_group = self.combo_workgroup_list.currentText()
@@ -402,16 +434,16 @@ class RequestFeatureDialog(LJDialog):
             self.combo_projects_list.setCurrentIndex(ind3)
 
     # List the users under the chosen project
-        users_data = AsanaJack().find_users()
-        users_names = []
-        for u in users_data:
-            if u['name'] not in ['Personal Projects']:
-                users_names.append(u['name'])
-            users_list = sorted(users_names)
-            project_list.insert(0, '')
-        self.combo_users_list.clear()
-        self.combo_users_list.addItems(users_list)
-        self.users = self.combo_users_list.currentText()
+    #     users_data = AsanaJack().find_users()
+    #     users_names = []
+    #     for u in users_data:
+    #         if u['name'] not in ['Personal Projects']:
+    #             users_names.append(u['name'])
+    #         users_list = sorted(users_names)
+    #         project_list.insert(0, '')
+    #     self.combo_users_list.clear()
+    #     self.combo_users_list.addItems(users_list)
+    #     self.users = self.combo_users_list.currentText()
 
     def choose_deliverable(self):
         if self.message_functions or self.message_files:
@@ -529,11 +561,8 @@ class RequestFeatureDialog(LJDialog):
 
     def on_submit_clicked(self):
         # workgroup_chosen = self.combo_workgroup_list().currentText()
-        self.users = self.combo_users_list.currentText()
-        ind4 = self.combo_users_list.findText(self.users)
-        if ind4 != -1:
-            self.combo_users_list.setCurrentIndex(ind4)
 
+        # self.users = None
         AsanaJack(work_space=self.work_group).create_project('General Development')
         AsanaJack(work_space=self.work_group).create_task(project_name='General Development', section_name='Backlog',
                                                           task_name=self.title_line_edit.text(),
