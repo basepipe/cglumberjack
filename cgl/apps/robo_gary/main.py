@@ -25,16 +25,23 @@ class RoboGary(LJDialog):
         transcript_file = r'B:\Users\tmiko\Downloads\tom_ahmed_conversation_12_10_2019.json'
         transcript = load_json(transcript_file)
         # for now assumes 1 transcript
+        print transcript.keys()
+        words = transcript['results']['items']
+        for w in words:
+            start_time = ''
+            end_time = ''
+            if 'start_time' in w.keys():
+                start_time = w['start_time']
+            if 'end_time' in w.keys():
+                end_time = w['end_time']
+            print w['alternatives'][0]['content'], start_time, end_time
         raw_text = transcript['results']['transcripts'][0]['transcript']
         speaker_labels = transcript['results']['speaker_labels']
         self.script_text_area.setPlainText(raw_text)
         num_speakers = speaker_labels['speakers']
         print len(speaker_labels['segments']), 'speech segments'
         for segment in speaker_labels['segments']:
-            print segment
-
-
-
+            print segment['start_time'], segment['end_time']
 
 
 if __name__ == "__main__":
