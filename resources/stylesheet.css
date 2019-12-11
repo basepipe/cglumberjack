@@ -435,3 +435,30 @@ QPushButton.delete_button{
 QMainWindow{
     background-color: white;
 }
+
+QTextEdit.screen_play{
+    background-color: white;
+    font-family: "Courier";
+    font-size: 12px;
+    border: 0px;
+}
+
+QLineEdit.screen_play_title{
+    border: 0px;
+    background-color: white;
+    font-family: "Courier";
+    font-size: 18pt;
+    text-align: center;
+}
+
+QLineEdit.screen_play_edit{
+    border: 0px;
+    background-color: white;
+    font-family: "Courier";
+    font-size: 12pt;
+}
+
+QLabel.screen_play_edit{
+    font-family: "Courier";
+    font-size: 12pt;
+}

@@ -1,0 +1,223 @@
+QLineEdit{
+    background-color: #707070;
+    border: 0px;
+    color: white;
+    font-family: "Courier New";
+    font-size: 10pt;
+    padding-left: 5px;
+    height: 24px;
+}
+
+QPushButton{
+    background-color: white;
+    border: 1px solid #707070;
+    font-family: "Courier New";
+    font-size: 10pt;
+    color: #707070;
+    height: 24px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+QPushButton.add_button{
+    background-color: powderblue;
+    border: 3px solid #707070;
+    font-family: "ArcadeClassic";
+    font-size: 14pt;
+    color: #707070;
+    height: 18px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+QPushButton.delete_button{
+    background-color: #E54A25;
+    border: 3px solid #707070;
+    font-family: "ArcadeClassic";
+    font-size: 14pt;
+    color: #707070;
+    height: 18px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+
+QLabel.title_text{
+    font-family: "ArcadeClassic";
+    font-size: 18pt;
+    color: #707070;
+}
+
+QLabel.ultra_title{
+    font-family: "Karmatic Arcade";
+    font-size: 16pt;
+    color: #707070;
+}
+
+QLabel{
+    font-family: "Courier New";
+    font-size: 10pt;
+    color: #383838;
+}
+
+QLabel.title{
+    font-family: "Courier New";
+    font-size: 10pt;
+    color: #707070;
+}
+
+QLabel.feedback{
+    background-color: #383838;
+    border: 1px solid #A7A7A7;
+    font-family: "Courier New";
+    font-size: 12pt;
+    padding: 6px;
+    color: #E24545;
+}
+
+QListWidget{
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    border: 2px solid #707070;
+}
+
+
+QTreeView{
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    border: 2px solid #707070;
+}
+
+QTreeView::item{
+    height: 24px;
+    padding-left: 12px;
+    color: #707070;
+}
+
+QTableView{
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    border: 2px solid #707070;
+}
+
+QTableView::item{
+    height: 24px;
+    padding-left: 12px;
+    color: #707070;
+}
+
+QComboBox{
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    height: 20px;
+    width: 180px;
+}
+
+QHeaderView::section{
+    background-color: whitesmoke;
+    height: 24px;
+    padding-left: 5px;
+    padding-top: 5px;
+    font-family: "Courier New";
+    font-size: 12pt;
+    color: #707070;
+    border: 0px;
+}
+
+QRadioButton{
+    font-family: "Courier New";
+    font-size: 14pt;
+    color: #707070;
+}
+
+QMenu{
+    background-color: #F5F5F5;
+    color: #707070;
+    font-family: "Courier New";
+}
+
+QMenuBar{
+    background-color: #383838;
+    border: 0px;
+    font-family: "ArcadeClassic";
+    font-size: 18px;
+}
+
+QMenuBar::item{
+    background-color: #383838;
+    color: #F5F5F5;
+    padding: 5px;
+}
+
+QMenuBar::item::selected{
+    background-color: #A7A7A7;
+    color: #F5F5F5;
+}
+
+
+
+QWidget.menu_button{
+    background-color: #A7A7A7;
+    font-family: 'ArcadeClassic';
+    font-size: 15px;
+    color: #F5F5F5;
+}
+
+QTabBar.vertical{
+    background-color: white;
+    color: #707070;
+    font-family: 'Courier New';
+    font-size: 15px;
+
+}
+
+QTabBar::tab::selected.vertical{
+    background-color: #A7A7A7;
+    font-family: 'Courier New';
+    font-size: 15px;
+    color: #F5F5F5;
+    height: 200px;
+}
+
+QTabBar::tab.vertical{
+    background-color: #F5F5F5;
+}
+
+QTabWidget::pane.vertical{ /* The Buttons info widget  */
+    border-left: 10px solid white;
+    background-color: #A7A7A7;
+    color: #F5F5F5;
+}
+
+QTabBar{/* Unselected Tabs On the Menu Bar*/
+    color: #707070;
+    font-family: 'Courier New';
+    font-size: 15px;
+}
+
+QTabBar::tab::selected{/* Selected Tabs On the Menu Bar*/
+    background-color: #A7A7A7;
+    font-family: 'Courier New';
+    font-size: 15px;
+    color: #F5F5F5;
+}
+
+QTextEdit{
+    background-color: white;
+    font-family: "Courier";
+    font-size: 12px;
+}
+
+QPlainTextEdit{
+    background-color: white;
+    font-family: "Courier";
+    font-size: 12px;
+}
+
+QDialog{/* The Main Dialog */
+    background-color: white;
+}

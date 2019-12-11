@@ -207,10 +207,10 @@ def check_time_log(project_management):
             return False
 
 
-def app_init():
+def app_init(splash_image='lubmermill.jpg'):
     from cgl.core.path import image_path
     app_ = QtGui.QApplication([])
-    splash_pix = QtGui.QPixmap(image_path('lumbermill.jpg'))
+    splash_pix = QtGui.QPixmap(image_path(splash_image))
     splash_ = QtGui.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
     splash_.setMask(splash_pix.mask())
     splash_.show()
