@@ -26,7 +26,8 @@ class RoboGary(LJDialog):
         self.load_transcript()
 
     def load_transcript(self):
-        transcript_file = r'B:\Users\tmiko\Downloads\tom_ahmed_conversation_12_10_2019.json'
+        # transcript_file = r'B:\Users\tmiko\Downloads\tom_ahmed_conversation_12_10_2019.json'
+        transcript_file = r'\\Mac\Home\Downloads\tom_ahmed_conversation_12_10_2019.json'
         transcript = load_json(transcript_file)
         # for now assumes 1 transcript
         words = transcript['results']['items']
@@ -36,34 +37,41 @@ class RoboGary(LJDialog):
         formatted_text = ""
         num_speakers = speaker_labels['speakers']
         previous_speaker = ''
+        previous_list = []
         for segment in speaker_labels['segments']:
             # find out if we're doing the same speaker or a new one:
-            speaker = segment['speaker_label']
-            if speaker != previous_speaker:
-                if previous_speaker:
-                    formatted_text = '%s\n\n%s\n%s' % (formatted_text, previous_speaker.upper().center(self.width/7),
-                                                       string_from_segment_list(previous_list))
-                segment_list = []
-            else:
-                segment_list = previous_list
-            start_time = segment['start_time']
-            end_time = segment['end_time']
-            segment_name = '%s_%s_%s' % (speaker, start_time, end_time)
+            segment_list = []
+            speaker = segment['speaker_label'].upper()
+
+            # if speaker != previous_speaker:
+            #     if previous_speaker:
+            #         # if the current speaker is not the same as the last one you print it.
+            #         formatted_text = '%s\n\n%s\n%s' % (formatted_text, previous_speaker.upper().center(self.width/7),
+            #                                            string_from_segment_list(previous_list))
+            #     segment_list = []
+            # else:
+            #     # if the previous speaker is the same as the last one, segment list starts out as the previous list.
+            #     segment_list = previous_list
+            start_time = float(segment['start_time'])
+            end_time = float(segment['end_time'])
             for w in words:
                 # find the start and end index for the 'segment'
                 if 'start_time' in w.keys():
-                    if w['start_time'] >= segment['start_time']:
+                    if float(w['start_time']) >= start_time:
                         in_segment = True
-                        if w['start_time'] < segment['end_time']:
+                        if float(w['start_time']) < end_time:
                             segment_list.append(w['alternatives'][0]['content'])
-                        if w['start_time'] > segment['end_time']:
+                        if float(w['start_time']) > end_time:
                             in_segment = False
                 else:
                     if in_segment:
                         segment_list.append(w['alternatives'][0]['content'])
-
+            if speaker != previous_speaker:
+                formatted_text = formatted_text + '\n%s' % speaker.center(self.width/8)
+                formatted_text = formatted_text + '\n' + string_from_segment_list(segment_list)
+            else:
+                formatted_text = formatted_text + string_from_segment_list(segment_list)
             previous_speaker = speaker
-            previous_list = segment_list
         self.script_text_area.setPlainText(formatted_text)
 
 
