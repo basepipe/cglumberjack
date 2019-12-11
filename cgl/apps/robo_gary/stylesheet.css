@@ -206,6 +206,12 @@ QTabBar::tab::selected{/* Selected Tabs On the Menu Bar*/
     color: #F5F5F5;
 }
 
+QTextEdit{
+    background-color: white;
+    font-family: "Courier";
+    font-size: 12px;
+}
+
 QPlainTextEdit{
     background-color: white;
     font-family: "Courier";
