@@ -79,15 +79,12 @@ class RoboGary(LJDialog):
         print self.screenplay_text_edit.textCursor().selectedText()
         print 'now i just have to get the start time of the first word, and the end time of the last word'
 
-
     def load_transcript(self):
         transcript_file = r'B:\Users\tmiko\Downloads\tom_ahmed_conversation_12_10_2019.json'
         # transcript_file = r'\\Mac\Home\Downloads\tom_ahmed_conversation_12_10_2019.json'
         transcript = load_json(transcript_file)
         words = transcript['results']['items']
-        # raw_text = transcript['results']['transcripts'][0]['transcript']
         speaker_labels = transcript['results']['speaker_labels']
-        formatted_text = ""
         previous_speaker = ''
         speakers = []
         row = 5
