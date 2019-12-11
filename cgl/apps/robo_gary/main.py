@@ -1,4 +1,3 @@
-import json
 from Qt import QtWidgets
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.util import load_style_sheet, load_json
@@ -10,7 +9,6 @@ class RoboGary(LJDialog):
         self.setWindowTitle('Robo Gary')
         trifecta_layout = QtWidgets.QHBoxLayout(self)
         self.script_layout = QtWidgets.QVBoxLayout()
-
         # script layout stuff
         self.title_line_edit = QtWidgets.QLineEdit()
         self.title_line_edit.setText('TitleOfInterview')
@@ -35,23 +33,11 @@ class RoboGary(LJDialog):
         speaker_labels = transcript['results']['speaker_labels']
         self.raw_text_area.setPlainText(raw_text)
         formatted_text = ""
-        num_speakers = speaker_labels['speakers']
         previous_speaker = ''
-        previous_list = []
         for segment in speaker_labels['segments']:
             # find out if we're doing the same speaker or a new one:
             segment_list = []
             speaker = segment['speaker_label'].upper()
-
-            # if speaker != previous_speaker:
-            #     if previous_speaker:
-            #         # if the current speaker is not the same as the last one you print it.
-            #         formatted_text = '%s\n\n%s\n%s' % (formatted_text, previous_speaker.upper().center(self.width/7),
-            #                                            string_from_segment_list(previous_list))
-            #     segment_list = []
-            # else:
-            #     # if the previous speaker is the same as the last one, segment list starts out as the previous list.
-            #     segment_list = previous_list
             start_time = float(segment['start_time'])
             end_time = float(segment['end_time'])
             for w in words:
@@ -91,8 +77,7 @@ if __name__ == "__main__":
     from cgl.ui.startup import do_gui_init
     app = do_gui_init()
     mw = RoboGary()
-    # mw = Designer(type_='menus')
-    mw.setWindowTitle('Preflight Designer')
+    mw.setWindowTitle('Robo Gary')
     mw.setMinimumWidth(1200)
     mw.setMinimumHeight(500)
     mw.show()
