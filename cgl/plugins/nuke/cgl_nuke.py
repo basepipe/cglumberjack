@@ -322,10 +322,11 @@ def match_scene_version():
     nuke.scriptSave()
 
 
-def version_up():
+def version_up(write_nodes=True):
     path_object = PathObject(nuke.Root().name())
     next_minor = path_object.new_minor_version_object()
     print('Versioning Up %s: %s' % (next_minor.version, next_minor.path_root))
     CreateProductionData(next_minor, project_management='lumbermill')
     nuke.scriptSaveAs(next_minor.path_root)
-    match_scene_version()
+    if write_nodes:
+        match_scene_version()
