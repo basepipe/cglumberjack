@@ -4,7 +4,7 @@ from Qt import QtWidgets
 import time
 import nuke
 from cgl.core.util import cgl_execute, write_to_cgl_data
-from cgl.core.path import PathObject, Sequence
+from cgl.core.path import PathObject, Sequence, CreateProductionData
 from cgl.core.config import app_config, UserConfig
 
 
@@ -301,23 +301,31 @@ def write_node_selected():
     return write_nodes
 
 
-def version_up_write_nodes(vesion=None, main=True):
+def match_scene_version():
     """
     ajdusts version number on the main write node, or all write nodes to version
     :param main: if true this only effects the version number of the main write node
     :param version: the version to set write node(s) at.
     :return:
     """
-    pass
+
+    padding = '#'*get_biggest_read_padding()
+    path_object = PathObject(get_file_name())
+    for n in nuke.allNodes('Write'):
+        write_output = PathObject(n['file'].value())
+        if write_output.version == path_object.version:
+            print('Write Node version %s matches scene version' % write_output.version)
+        else:
+            print('Changing Write Version %s to %s') % (write_output.version, path_object.version)
+            write_output.set_attr(version=path_object.version)
+            n.knob('file').fromUserText(write_output.path_root)
+    nuke.scriptSave()
 
 
-
-
-
-
-
-
-
-
-
-
+def version_up():
+    path_object = PathObject(nuke.Root().name())
+    next_minor = path_object.new_minor_version_object()
+    print('Versioning Up %s: %s' % (next_minor.version, next_minor.path_root))
+    CreateProductionData(next_minor, project_management='lumbermill')
+    nuke.scriptSaveAs(next_minor.path_root)
+    match_scene_version()
