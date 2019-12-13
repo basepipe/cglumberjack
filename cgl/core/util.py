@@ -319,8 +319,9 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         # TODO - add deadline integration
         print 'deadline not yet supported'
     elif methodology == 'smedge':
-        smedge_command = r'%s Script -Type Generic Script -Name %s -Command "%s"' % (app_config()['paths']['smedge'],
-                                                                                     command_name, command)
+        range = '1'
+        smedge_command = r'%s Script -Type Generic Script -Name %s -Range %s -Command "%s"' % (app_config()['paths']['smedge'],
+                                                                                     command_name, range, command)
         for k in kwargs:
             value = kwargs[k]
             smedge_command = '%s -%s %s' % (smedge_command, k, value)

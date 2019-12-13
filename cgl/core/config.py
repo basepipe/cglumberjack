@@ -97,7 +97,10 @@ class Configuration(object):
 class UserConfig(object):
 
     def __init__(self, user_email=None, user_name=None, current_path=None, my_tasks=None):
-        self.user_config_path = app_config()['paths']['user_globals']
+        try:
+            self.user_config_path = app_config()['paths']['user_globals']
+        except KeyError:
+            print 'No user Globals found in :\n %s' % app_config()['paths']
         print self.user_config_path
         if os.path.exists(self.user_config_path):
             self.d = self._load_json(self.user_config_path)
@@ -165,6 +168,7 @@ def app_config(company=None, proj_management=None):
     Returns: dict
 
     """
+
     return Configuration(company=company, proj_management=proj_management).LOADED_CONFIG['app']
 
 

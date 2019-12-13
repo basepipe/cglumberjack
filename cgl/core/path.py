@@ -688,10 +688,7 @@ class PathObject(object):
         """
         if self.file_type == 'sequence':
             # make sure that an hd_proxy exists:
-            if job_id:
-                proxy_info = self.make_proxy(job_id=job_id)
-            else:
-                proxy_info = self.make_proxy(job_id=job_id)
+            proxy_info = self.make_proxy(job_id=job_id)
             mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
                                               command_name='%s: create_web_mov()' % self.command_base,
                                               dependent_job=proxy_info['job_id'], processing_method=PROCESSING_METHOD,

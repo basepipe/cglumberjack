@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import click
 from cgl.core.config import app_config
 from cgl.core.util import cgl_execute, write_to_cgl_data
@@ -38,6 +39,7 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     :return:
     """
     from cgl.core.path import Sequence
+    input_sequence.replace('/', '\\')
     input_ = Sequence(input_sequence)
     if not input_.is_valid_sequence():
         logging.error('%s is not a valid sequence' % input_sequence)
@@ -46,8 +48,9 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
         padding = input_.padding
     else:
         padding = PADDING
-
+    output_sequence = output_sequence.replace('/', '\\')
     output_ = Sequence(output_sequence, padding=padding)
+
     if not output_.is_valid_sequence():
         logging.error('%s is not a valid sequence' % output_sequence)
     fileout = output_.num_sequence
@@ -65,11 +68,21 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     if processing_method == 'smedge':
         command = r'python %s -i %s -o %s -w %s -h %s -ft sequence -t proxy' % (__file__, filein, fileout,
                                                                                 width, height)
+        # probably good to write a custom imagemagick command for smedge for this.
         process_info = cgl_execute(command, command_name=command_name, methodology='smedge', Wait=dependent_job)
     elif processing_method == 'local':
-        command = '%s %s -scene %s -resize %s %s' % (config['magick'], filein, start_frame, res, fileout)
-        process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
-                                   new_window=new_window)
+        dirname, filename = os.path.split(filein)
+        match = filename.split('*')[0]
+        for each in os.listdir(os.path.dirname(filein)):
+            if match in each:
+                file_ = os.path.join(os.path.dirname(filein), each)
+                SEQ_SPLIT = "\d{3,}\.\w{2,4}$"
+                frange = re.search(SEQ_SPLIT, each)
+                num = os.path.splitext(frange.group(0))[0]
+                file_out = '%s%s.jpg' % (fileout.split('%')[0], num)
+                command = '%s %s -resize %s %s' % (config['magick'], file_, res, file_out)
+                process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
+                                           new_window=new_window)
 
     if process_info:
         process_info['file_out'] = fileout
