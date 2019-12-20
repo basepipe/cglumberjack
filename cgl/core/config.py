@@ -105,8 +105,11 @@ class UserConfig(object):
         if my_tasks:
             self.my_tasks = my_tasks
         else:
-            if 'my_tasks' in self.d:
-                self.my_tasks = self.d['my_tasks']
+            try:
+                if 'my_tasks' in self.d.keys():
+                    self.my_tasks = self.d['my_tasks']
+            except AttributeError:
+                print('No tasks detected')
 
     def update_all(self):
         self.update_path()
