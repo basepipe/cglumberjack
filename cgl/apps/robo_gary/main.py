@@ -205,13 +205,12 @@ class RoboGary(LJDialog):
             splited.pop(0)
         for i, s in enumerate(splited):
             if len(new_list) < self.next_words_length:
-                new_list = self.fix_punctuation(self.punctuation, i, splited, new_list)
+                new_list = self.fix_punctuation(self.punctuation, s, i, splited, new_list)
         return new_list
 
     @staticmethod
-    def fix_punctuation(punctuation, i, splitted, new_list):
+    def fix_punctuation(punctuation, word, i, splitted, new_list):
         appended = False
-        word = splitted[i]
         if word:
             for p in punctuation:
                 if p in splitted[i]:
@@ -230,8 +229,6 @@ class RoboGary(LJDialog):
         :param word:
         :return:
         """
-        punctuation = ['?', ',', '.']
-        next_ = ''
         if start_of_phrase:
             splited = self.screenplay_text_edit.textCursor().selectedText().split(' ')
             while '' in splited:
@@ -254,13 +251,6 @@ class RoboGary(LJDialog):
             while '' in splited:
                 splited.remove('')
             next_ = splited[0]
-
-        # if '.' in next_:
-        #     return '.'
-        # elif ',' in next_:
-        #     return ','
-        # elif '?' in next_:
-        #     return '?'
         return next_
 
     def on_highlight_clicked(self):
