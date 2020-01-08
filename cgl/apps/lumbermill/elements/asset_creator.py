@@ -2,7 +2,7 @@ import re
 import os
 import glob
 from cgl.core.path import CreateProductionData, PathObject
-from PySide import QtCore
+from PySide import QtCore, QtGui
 from cgl.ui.util import define_palettes
 from cgl.core.config import app_config
 from cgl.ui.widgets.base import LJDialog

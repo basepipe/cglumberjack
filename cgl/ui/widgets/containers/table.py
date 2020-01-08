@@ -1,5 +1,4 @@
 from PySide import QtCore, QtGui
-# noinspection PyUnresolvedReferences
 from cgl.ui.util import UISettings, widget_name
 from cgl.ui.widgets.base import StateSavers
 from cgl.ui.util import drop_handler
@@ -177,7 +176,7 @@ class LJTableWidget(QtGui.QTableView):
             try:
                 self.horizontalHeader().setResizeMode(column, QtGui.QHeaderView.ResizeToContents)
                 width = header.sectionSize(column)
-                header.setResizeMode(column, QHeaderView.Interactive)
+                header.setResizeMode(column, QtGui.QHeaderView.Interactive)
                 header.resizeSection(column, width)
                 total_width += width
             except AttributeError:
