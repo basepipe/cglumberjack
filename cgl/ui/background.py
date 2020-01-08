@@ -1,4 +1,4 @@
-from Qt import QtCore
+from PySide import QtCore
 
 BACKGROUND_THREADS = []
 THREAD_MANAGER = None

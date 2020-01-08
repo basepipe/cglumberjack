@@ -1,4 +1,4 @@
-from Qt import QtGui, QtCore
+from PySide import QtGui, QtCore
 
 
 # noinspection PyPep8Naming

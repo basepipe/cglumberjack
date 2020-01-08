@@ -1,4 +1,4 @@
-from Qt import QtCore
+from PySide import QtCore
 import plugins.nuke.cgl_nuke as cgl_nuke
 from plugins.nuke.gui import CGLNuke
 import plugins.preflight.main

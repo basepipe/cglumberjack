@@ -2,14 +2,15 @@ import requests
 import shutil
 import os
 import sys
-from Qt import QtCore, QtWidgets, QtGui
+from PySide import QtGui
 from cgl.core.config import app_config
 from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.widgets import AdvComboBox
-from core.util import load_xml, save_xml, cgl_copy
+from core.util import load_xml, save_xml
 
 workspace = "1145700648005039"
 ROOT = app_config()['paths']['code_root']
+
 
 class SetupGUI(LJDialog):
     def __init__(self, parent=None, title='Setup'):
@@ -21,26 +22,26 @@ class SetupGUI(LJDialog):
         self.project_dict = {}
         self.project_names = self.get_projects()
 
-        self.label_asana = QtWidgets.QLabel("Asana")
-        self.edit_label = QtWidgets.QLabel("API_Key")
-        self.project_label = QtWidgets.QLabel("Project")
+        self.label_asana = QtGui.QLabel("Asana")
+        self.edit_label = QtGui.QLabel("API_Key")
+        self.project_label = QtGui.QLabel("Project")
         self.label_asana.setProperty('class', 'ultra_title')
-        self.submit_button = QtWidgets.QPushButton("Submit")
+        self.submit_button = QtGui.QPushButton("Submit")
         self.submit_button.setProperty('class', 'basic')
-        self.user_line_edit = QtWidgets.QLineEdit()
+        self.user_line_edit = QtGui.QLineEdit()
         self.project_combo = AdvComboBox()
 
         self.project_combo.addItems("")
         num = self.project_combo.findText("")
         self.project_combo.setCurrentIndex(num)
 
-        layout = QtWidgets.QFormLayout()
+        layout = QtGui.QFormLayout()
 
-        user_id = QtWidgets.QHBoxLayout()
+        user_id = QtGui.QHBoxLayout()
         user_id.addWidget(self.edit_label)
         user_id.addWidget(self.user_line_edit)
 
-        project_row = QtWidgets.QHBoxLayout()
+        project_row = QtGui.QHBoxLayout()
         project_row.addWidget(self.project_label)
         project_row.addWidget(self.project_combo)
 
@@ -114,7 +115,7 @@ class SetupGUI(LJDialog):
 
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     s = SetupGUI()
     s.show()
     app.exec_()

@@ -1,20 +1,20 @@
-from Qt import QtCore, QtWidgets, QtGui
+from PySide import QtCore, QtGui
 import logging
 import threading
 from cgl.core.path import image_path
 
 
-class ProgressGif(QtWidgets.QWidget):
+class ProgressGif(QtGui.QWidget):
 
     def __init__(self, title='CG Lumberjacking...', height=150):
-        QtWidgets.QWidget.__init__(self)
-        layout = QtWidgets.QVBoxLayout(self)
+        QtGui.QWidget.__init__(self)
+        layout = QtGui.QVBoxLayout(self)
         self.gif_height = QtCore.QSize(height, height)
 
-        self.message = QtWidgets.QLabel(title)
+        self.message = QtGui.QLabel(title)
         self.message.setProperty('class', 'ultra_title')
         self.message.setAlignment(QtCore.Qt.AlignCenter)
-        self.progress_bar = QtWidgets.QLabel()
+        self.progress_bar = QtGui.QLabel()
         self.progress_bar.setAlignment(QtCore.Qt.AlignCenter)
         self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
         self.movie.setScaledSize(self.gif_height)
@@ -34,14 +34,14 @@ class ProgressGif(QtWidgets.QWidget):
         logging.info(self.movie.scaledSize())
 
 
-class ProgressDialog(QtWidgets.QDialog):
+class ProgressDialog(QtGui.QDialog):
 
     def __init__(self, message, gif_name):
-        QtWidgets.QDialog.__init__(self)
+        QtGui.QDialog.__init__(self)
         self.setWindowTitle("Gif Tester")
 
-        self.message = QtWidgets.QLabel(message)
-        self.movie_screen = QtWidgets.QLabel()
+        self.message = QtGui.QLabel(message)
+        self.movie_screen = QtGui.QLabel()
 
         self.movie = QtGui.QMovie(image_path(gif_name))
         logging.info(self.movie.isValid())
@@ -49,7 +49,7 @@ class ProgressDialog(QtWidgets.QDialog):
 
         self.movie_screen.setMovie(self.movie)
 
-        layout = QtWidgets.QVBoxLayout()
+        layout = QtGui.QVBoxLayout()
         layout.addWidget(self.message)
         layout.addWidget(self.movie_screen)
         self.setLayout(layout)
@@ -57,7 +57,7 @@ class ProgressDialog(QtWidgets.QDialog):
     @staticmethod
     def update_gif():
         for i in range(60):
-            QtWidgets.qApp.processEvents()
+            QtGui.qApp.processEvents()
 
 
 def process_method(progress_bar, target, args=(), text=None):
@@ -65,9 +65,9 @@ def process_method(progress_bar, target, args=(), text=None):
     if text:
         progress_bar.message.setText(text)
     progress_bar.show()
-    # QtWidgets.qApp.processEvents()
+    # QtGui.qApp.processEvents()
     p = threading.Thread(target=target, args=args)
-    # QtWidgets.qApp.processEvents()
+    # QtGui.qApp.processEvents()
     p.start()
     return p
 

@@ -1,6 +1,4 @@
-from Qt import QtCore, QtGui
-# noinspection PyUnresolvedReferences
-from Qt.QtWidgets import QTableView, QHeaderView
+from PySide import QtCore, QtGui
 from cgl.ui.util import UISettings, widget_name
 from cgl.ui.widgets.base import StateSavers
 from cgl.ui.util import drop_handler
@@ -11,13 +9,13 @@ from cgl.core.config import app_config
 PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 
 
-class LJTableWidget(QTableView):
+class LJTableWidget(QtGui.QTableView):
     selected = QtCore.Signal(object)
     right_clicked = QtCore.Signal(object)
     dropped = QtCore.Signal(object)
 
     def __init__(self, parent):
-        QTableView.__init__(self, parent)
+        QtGui.QTableView.__init__(self, parent)
         self.verticalHeader().hide()
         self.horizontalHeader().setStretchLastSection(True)
         # self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -176,18 +174,18 @@ class LJTableWidget(QTableView):
         total_width = 0
         for column in range(header.count()):
             try:
-                self.horizontalHeader().setResizeMode(column, QHeaderView.ResizeToContents)
+                self.horizontalHeader().setResizeMode(column, QtGui.QHeaderView.ResizeToContents)
                 width = header.sectionSize(column)
-                header.setResizeMode(column, QHeaderView.Interactive)
+                header.setResizeMode(column, QtGui.QHeaderView.Interactive)
                 header.resizeSection(column, width)
                 total_width += width
             except AttributeError:
                 print 'PySide2 compatibility issue: setResizeMode'
         for row in range(v_header.count()):
             try:
-                self.verticalHeader().setResizeMode(row, QHeaderView.ResizeToContents)
+                self.verticalHeader().setResizeMode(row, QtGui.QHeaderView.ResizeToContents)
                 height = v_header.sectionSize(row)
-                v_header.setResizeMode(row, QHeaderView.Interactive)
+                v_header.setResizeMode(row, QtGui.QHeaderView.Interactive)
                 v_header.resizeSection(row, height)
                 total_height += height
             except AttributeError:

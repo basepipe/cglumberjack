@@ -1,16 +1,16 @@
-from Qt import QtWidgets, QtGui
+from PySide import QtGui
 import json
 import os
 from cgl.core.config import app_config
 import ftrack_api
 
 
-class TaskSetupGUI(QtWidgets.QDialog):
+class TaskSetupGUI(QtGui.QDialog):
     def __init__(self, parent=None):
-        QtWidgets.QDialog.__init__(self, parent)
+        QtGui.QDialog.__init__(self, parent)
         self.previous_selection = ''
-        layout = QtWidgets.QVBoxLayout(self)
-        self.task_table = QtWidgets.QTableWidget()
+        layout = QtGui.QVBoxLayout(self)
+        self.task_table = QtGui.QTableWidget()
         self.task_table.setColumnCount(4)
         self.task_table.verticalHeader().hide()
         self.headers = ['Full Name', 'Short Name', 'Shots/Assets/Both', 'Schema']
@@ -67,10 +67,10 @@ class TaskSetupGUI(QtWidgets.QDialog):
         self.task_table.setRowCount(row_count)
         for task in self.schemas:
             row += 1
-            longname = QtWidgets.QTableWidgetItem(self.schemas[task]['long_name'])
-            shortname = QtWidgets.QTableWidgetItem(self.schemas[task]['short_name'])
-            type_ = QtWidgets.QTableWidgetItem(self.schemas[task]['type'])
-            schma = QtWidgets.QTableWidgetItem(str(self.schemas[task]['schema']))
+            longname = QtGui.QTableWidgetItem(self.schemas[task]['long_name'])
+            shortname = QtGui.QTableWidgetItem(self.schemas[task]['short_name'])
+            type_ = QtGui.QTableWidgetItem(self.schemas[task]['type'])
+            schma = QtGui.QTableWidgetItem(str(self.schemas[task]['schema']))
             self.task_table.setItem(row, 0, longname)
             self.task_table.setItem(row, 1, shortname)
             self.task_table.setItem(row, 2, type_)

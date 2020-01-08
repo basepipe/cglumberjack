@@ -1,4 +1,4 @@
-from Qt import QtGui
+from PySide import QtGui
 from cgl.apps.lumbermill import build_config
 
 if __name__ == "__main__":
