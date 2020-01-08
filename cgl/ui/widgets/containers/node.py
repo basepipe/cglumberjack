@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # noinspection PyUnresolvedReferences
-from Qt import QtXml
+from PySide import QtXml
 
 
 # noinspection PyPropertyAccess,PyProtectedMember

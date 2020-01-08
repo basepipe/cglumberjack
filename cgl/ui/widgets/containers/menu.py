@@ -1,12 +1,12 @@
-from Qt import QtWidgets
+from PySide import QtGui
 
 
-class LJMenu(QtWidgets.QMenu):
+class LJMenu(QtGui.QMenu):
     def __init__(self, parent):
-        QtWidgets.QMenu.__init__(self, parent)
+        QtGui.QMenu.__init__(self, parent)
 
     def create_action(self, name, trigger=None, checkable=False):
-        action = QtWidgets.QAction(name, self)
+        action = QtGui.QAction(name, self)
         if trigger:
             action.triggered[()].connect(trigger)
         if checkable:

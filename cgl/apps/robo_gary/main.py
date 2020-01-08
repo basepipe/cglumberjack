@@ -1,13 +1,13 @@
-from Qt import QtWidgets, QtCore, QtGui
+from PySide import QtCore, QtGui
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.util import load_json
 from cgl.core.path import icon_path
 import os
 
 
-class ScreenPlayTextEdit(QtWidgets.QTextEdit):
+class ScreenPlayTextEdit(QtGui.QTextEdit):
     def __init__(self, parent=None):
-        QtWidgets.QTextEdit.__init__(self, parent)
+        QtGui.QTextEdit.__init__(self, parent)
         self.setViewportMargins(144, 0, 144, 0)
         self.setProperty('class', 'screen_play')
 
@@ -16,7 +16,7 @@ class RoboGary(LJDialog):
     def __init__(self, parent=None):
         LJDialog.__init__(self, parent)
         self.setWindowTitle('RoboGary')
-        trifecta_layout = QtWidgets.QHBoxLayout(self)
+        trifecta_layout = QtGui.QHBoxLayout(self)
         trifecta_layout.setContentsMargins(0, 96, 0, 96)
         highlight_icon = os.path.join(icon_path(), 'highlight_24px.png')
         # self.transcript_file = r'B:\Users\tmiko\Downloads\tom_ahmed_conversation_12_10_2019.json'
@@ -25,16 +25,16 @@ class RoboGary(LJDialog):
         self.words = self.transcript['results']['items']
         self.next_words_length = 5
         self.cgl_word_dict = self.create_cgl_word_dict()
-        self.tools_layout = QtWidgets.QVBoxLayout()
-        self.script_layout = QtWidgets.QVBoxLayout()
-        self.title_line_edit = QtWidgets.QLineEdit()
-        self.gridA = QtWidgets.QGridLayout()
+        self.tools_layout = QtGui.QVBoxLayout()
+        self.script_layout = QtGui.QVBoxLayout()
+        self.title_line_edit = QtGui.QLineEdit()
+        self.gridA = QtGui.QGridLayout()
         self.gridA.setContentsMargins(96, 0, 0, 12)
-        self.grid = QtWidgets.QGridLayout()
+        self.grid = QtGui.QGridLayout()
         self.grid.setContentsMargins(96, 0, 0, 0)
 
         # Screenplay stuff
-        self.title_label = QtWidgets.QLabel('TITLE:')
+        self.title_label = QtGui.QLabel('TITLE:')
         self.title_line_edit.setProperty('class', 'screen_play_edit')
         self.title_line_edit.setText('TYPE TITLE HERE')
         self.screenplay_text_edit = ScreenPlayTextEdit()
@@ -45,19 +45,19 @@ class RoboGary(LJDialog):
         self.punctuation = [',', '.', '?']
 
         # Details stuff
-        self.description_label = QtWidgets.QLabel("DESCRIPTION:")
-        self.description_line_edit = QtWidgets.QLineEdit('TYPE DESCRIPTION HERE')
+        self.description_label = QtGui.QLabel("DESCRIPTION:")
+        self.description_line_edit = QtGui.QLineEdit('TYPE DESCRIPTION HERE')
         self.description_line_edit.setProperty('class', 'screen_play_edit')
-        self.location_label = QtWidgets.QLabel("LOCATION: ")
-        self.location_line_edit = QtWidgets.QLineEdit('TYPE LOCATION HERE')
+        self.location_label = QtGui.QLabel("LOCATION: ")
+        self.location_line_edit = QtGui.QLineEdit('TYPE LOCATION HERE')
         self.location_line_edit.setProperty('class', 'screen_play_edit')
-        self.date_label = QtWidgets.QLabel("DATE: ")
-        self.date_line_edit = QtWidgets.QLineEdit('TYPE DATE HERE')
+        self.date_label = QtGui.QLabel("DATE: ")
+        self.date_line_edit = QtGui.QLineEdit('TYPE DATE HERE')
         self.date_line_edit.setProperty('class', 'screen_play_edit')
-        self.selection_start_label = QtWidgets.QLabel("Start:")
-        self.selection_start_line_edit = QtWidgets.QLineEdit()
-        self.selection_end_label = QtWidgets.QLabel("End:")
-        self.selection_end_line_edit = QtWidgets.QLineEdit()
+        self.selection_start_label = QtGui.QLabel("Start:")
+        self.selection_start_line_edit = QtGui.QLineEdit()
+        self.selection_end_label = QtGui.QLabel("End:")
+        self.selection_end_line_edit = QtGui.QLineEdit()
 
 
 
@@ -76,7 +76,7 @@ class RoboGary(LJDialog):
         self.grid.addWidget(self.selection_end_line_edit, 15, 1)
 
         # Toolbar
-        toolbar = QtWidgets.QHBoxLayout()
+        toolbar = QtGui.QHBoxLayout()
         toolbar.setContentsMargins(96, 0, 0, 0)
 
         self.script_layout.addLayout(self.gridA)
@@ -85,7 +85,7 @@ class RoboGary(LJDialog):
 
         self.tools_layout.addLayout(self.grid)
 
-        self.highlight_button = QtWidgets.QToolButton()
+        self.highlight_button = QtGui.QToolButton()
         self.highlight_button.setIcon(QtGui.QIcon(highlight_icon))
         toolbar.addWidget(self.highlight_button)
         toolbar.addStretch(1)
@@ -284,8 +284,8 @@ class RoboGary(LJDialog):
             if speaker != previous_speaker:
                 if speaker not in speakers:
                     row += 1
-                    speaker_label = QtWidgets.QLabel('%s NAME:' % speaker.upper())
-                    speaker_line_edit = QtWidgets.QLineEdit('TYPE SPEAKER HERE')
+                    speaker_label = QtGui.QLabel('%s NAME:' % speaker.upper())
+                    speaker_line_edit = QtGui.QLineEdit('TYPE SPEAKER HERE')
                     speaker_line_edit.setProperty('class', 'screen_play_edit')
                     self.grid.addWidget(speaker_label, row, 0)
                     self.grid.addWidget(speaker_line_edit, row, 1)

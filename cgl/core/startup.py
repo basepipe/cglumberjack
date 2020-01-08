@@ -3,8 +3,7 @@ import os
 import time
 import signal
 from os.path import dirname, join
-from Qt import QtWidgets, QtCore, QtGui
-import Qt
+from PySide import QtCore, QtGui
 from cgl.ui.util import UISettings
 
 
@@ -27,24 +26,24 @@ class ThemeFileWatcher(QtCore.QFileSystemWatcher):
 def _do_qt_init():
     """
     set up the QT app
-    Returns: QtWidgets.Application
+    Returns: QtGui.Application
 
     """
-    app = QtWidgets.QApplication([])
+    app = QtGui.QApplication([])
     return app
 
 
-# noinspection PyUnresolvedReferences
-def _load_resources():
-    """
-    load the resource file
-
-    Returns:
-
-    """
-    # noinspection PyUnresolvedReferences
-    if Qt.__binding__ in ["PySide", "PySide2"]:
-        import ui.PySide_rc
+# # noinspection PyUnresolvedReferences
+# def _load_resources():
+#     """
+#     load the resource file
+#
+#     Returns:
+#
+#     """
+#     # noinspection PyUnresolvedReferences
+#     if Qt.__binding__ in ["PySide", "PySide2"]:
+#         import ui.PySide_rc
 
 
 # noinspection SpellCheckingInspection
@@ -64,7 +63,7 @@ def _load_ui_themes(gui=None):
         rsc_dir = join(dirname(dirname(dirname(__file__))), "resources")
         if os.path.isdir(rsc_dir):
             theme = join(rsc_dir, "theme.css")
-            app = QtWidgets.QApplication.instance()
+            app = QtGui.QApplication.instance()
             # need to stash this some where so it doesnt get GCC'd
             app.theme_watcher = ThemeFileWatcher(theme)
 
@@ -95,7 +94,7 @@ def _read_theme_file(theme, gui=None):
         theme_data += line
     css_f.close()
 
-    app = QtWidgets.QApplication.instance()
+    app = QtGui.QApplication.instance()
     logging.info('setting theme: %s' % gui)
     if gui:
         gui.setStyleSheet(theme_data)
@@ -107,9 +106,9 @@ def do_freeze_fix():
     import sys
     if getattr(sys, 'frozen', False) and sys.platform == "darwin":
         os.environ["QT_PLUGIN_PATH"] = "."
-        QtWidgets.QApplication.setLibraryPaths([os.path.dirname(sys.executable)+"/plugins",
+        QtGui.QApplication.setLibraryPaths([os.path.dirname(sys.executable)+"/plugins",
                                                 os.path.dirname(sys.executable)])
-        # print QtWidgets.QApplication.libraryPaths()
+        # print QtGui.QApplication.libraryPaths()
 
 
 def _load_ui_settings():
@@ -142,10 +141,10 @@ def _load_lang():
             logging.debug("falling back to english")
             return
     logging.debug("found lang file %s " % lang_file.fileName())
-    app = QtWidgets.QApplication.instance()
+    app = QtGui.QApplication.instance()
     trans = QtCore.QTranslator(app)
     trans.load(lang_file.fileName())
-    app = QtWidgets.QApplication.instance()
+    app = QtGui.QApplication.instance()
     app.installTranslator(trans)
 
 

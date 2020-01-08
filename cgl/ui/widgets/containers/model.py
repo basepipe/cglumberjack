@@ -1,5 +1,5 @@
 # noinspection PyUnresolvedReferences
-from Qt.QtCore import QAbstractTableModel, Qt
+from PySide.QtCore import QAbstractTableModel, Qt
 
 
 # noinspection PyUnusedLocal

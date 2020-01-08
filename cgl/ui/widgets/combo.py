@@ -1,16 +1,16 @@
-from Qt import QtCore, QtWidgets
+from PySide import QtCore, QtGui
 from cgl.ui.widgets.widgets import LJButton
 
 
-class LabelComboRow(QtWidgets.QVBoxLayout):
+class LabelComboRow(QtGui.QVBoxLayout):
     def __init__(self, label, button=True, bold=True, text=''):
-        QtWidgets.QVBoxLayout.__init__(self)
+        QtGui.QVBoxLayout.__init__(self)
         if bold:
-            self.label = QtWidgets.QLabel("<b>%s</b>" % label)
+            self.label = QtGui.QLabel("<b>%s</b>" % label)
         else:
-            self.label = QtWidgets.QLabel("%s" % label)
+            self.label = QtGui.QLabel("%s" % label)
         self.combo = AdvComboBox()
-        self.h_layout = QtWidgets.QHBoxLayout()
+        self.h_layout = QtGui.QHBoxLayout()
         self.h_layout.addWidget(self.label)
         self.h_layout.addWidget(self.combo)
         if button:
@@ -40,13 +40,13 @@ class LabelComboRow(QtWidgets.QVBoxLayout):
             self.add_button.show()
 
 
-class AdvComboBoxLabeled(QtWidgets.QVBoxLayout):
+class AdvComboBoxLabeled(QtGui.QVBoxLayout):
     def __init__(self, label):
-        QtWidgets.QVBoxLayout.__init__(self)
-        self.label = QtWidgets.QLabel("<b>%s</b>" % label)
+        QtGui.QVBoxLayout.__init__(self)
+        self.label = QtGui.QLabel("<b>%s</b>" % label)
 
 
-class AdvComboBox(QtWidgets.QComboBox):
+class AdvComboBox(QtGui.QComboBox):
     def __init__(self, parent=None):
         super(AdvComboBox, self).__init__(parent)
 
@@ -54,21 +54,21 @@ class AdvComboBox(QtWidgets.QComboBox):
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setEditable(True)
         self.setMinimumWidth(90)
-        self.SizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+        self.SizeAdjustPolicy(QtGui.QComboBox.AdjustToContents)
         # self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
-        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
+        self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
         # add a filter model to filter matching items
         self.pFilterModel = QtCore.QSortFilterProxyModel(self)
         self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
         self.pFilterModel.setSourceModel(self.model())
 
         # add a completer
-        self.completer = QtWidgets.QCompleter(self)
+        self.completer = QtGui.QCompleter(self)
         # Set the model that the QCompleter uses
         # - in PySide doing this as a separate step worked better
         self.completer.setModel(self.pFilterModel)
         # always show all (filtered) completions
-        self.completer.setCompletionMode(QtWidgets.QCompleter.UnfilteredPopupCompletion)
+        self.completer.setCompletionMode(QtGui.QCompleter.UnfilteredPopupCompletion)
 
         self.setCompleter(self.completer)
 

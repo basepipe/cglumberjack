@@ -1,6 +1,6 @@
 import os
 import logging
-from Qt import QtWidgets
+from PySide import QtGui
 import time
 import nuke
 from cgl.core.util import cgl_execute, write_to_cgl_data
@@ -156,7 +156,7 @@ class NukePathObject(PathObject):
 
 
 def get_main_window():
-    return QtWidgets.QApplication.activeWindow()
+    return QtGui.QApplication.activeWindow()
 
 
 def get_scene_name():

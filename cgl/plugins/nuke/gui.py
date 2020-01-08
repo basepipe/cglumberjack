@@ -1,4 +1,4 @@
-from Qt import QtWidgets, QtCore, QtGui
+from PySide import QtCore, QtGui
 from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import nuke
 import cgl.ui.startup as startup
@@ -35,11 +35,11 @@ class CGLNuke(CGLumberjack):
         self.setCentralWidget(NukeBrowserWidget(self, show_import=True))
 
 
-class RenderDialog(QtWidgets.QDialog):
+class RenderDialog(QtGui.QDialog):
     from cgl_nuke import get_main_window
 
     def __init__(self, parent=get_main_window(), write_node=''):
-        QtWidgets.QDialog.__init__(self, parent)
+        QtGui.QDialog.__init__(self, parent)
 
         self.write_node = write_node
         self.render_path = ''
@@ -49,21 +49,21 @@ class RenderDialog(QtWidgets.QDialog):
         self.setWindowTitle("Render %s" % self.write_node)
 
         # define the layouts
-        layout = QtWidgets.QVBoxLayout(self)
-        grid_layout = QtWidgets.QGridLayout()
-        button_row = QtWidgets.QHBoxLayout()
+        layout = QtGui.QVBoxLayout(self)
+        grid_layout = QtGui.QGridLayout()
+        button_row = QtGui.QHBoxLayout()
 
         # define the widgets
-        # self.title = QtWidgets.QLabel('Render Write Node:')
-        frange_label = QtWidgets.QLabel('Frame Range')
-        render_by_label = QtWidgets.QLabel('Render By')
+        # self.title = QtGui.QLabel('Render Write Node:')
+        frange_label = QtGui.QLabel('Frame Range')
+        render_by_label = QtGui.QLabel('Render By')
 
-        self.frange_line_edit = QtWidgets.QLineEdit()
-        self.render_by_line_edit = QtWidgets.QLineEdit()
+        self.frange_line_edit = QtGui.QLineEdit()
+        self.render_by_line_edit = QtGui.QLineEdit()
         self.render_by_line_edit.setText("1")
 
-        self.cancel_button = QtWidgets.QPushButton('Cancel')
-        self.render_button = QtWidgets.QPushButton('Render')
+        self.cancel_button = QtGui.QPushButton('Cancel')
+        self.render_button = QtGui.QPushButton('Render')
 
         # add stuff to layouts
         grid_layout.addWidget(frange_label, 0, 0)
