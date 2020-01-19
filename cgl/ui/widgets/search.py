@@ -1,15 +1,15 @@
-from Qt import QtWidgets
-from Qt import QtCore
+from PySide import QtGui
+from PySide import QtCore
 # noinspection PyUnresolvedReferences
 
-class LJSearchEdit(QtWidgets.QLineEdit):
+class LJSearchEdit(QtGui.QLineEdit):
     def __init__(self, parent, button=False):
-        QtWidgets.QLineEdit.__init__(self, parent)
-        QtWidgets.QLineEdit.setPlaceholderText(self, self.tr("Type to Filter"))
-        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
-        self.button = QtWidgets.QToolButton(self)
+        QtGui.QLineEdit.__init__(self, parent)
+        QtGui.QLineEdit.setPlaceholderText(self, self.tr("Type to Filter"))
+        self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
+        self.button = QtGui.QToolButton(self)
         self.button.setObjectName("search_cancel_button")
-        self.layout = QtWidgets.QHBoxLayout(self)
+        self.layout = QtGui.QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(self.button, 0, QtCore.Qt.AlignRight)
         self.button.clicked.connect(self.cancel_clicked)
@@ -20,6 +20,6 @@ class LJSearchEdit(QtWidgets.QLineEdit):
         self.setMinimumWidth(250)
 
     def cancel_clicked(self):
-        from Qt import QtTest
-        QtWidgets.QLineEdit.setText(self, "")
+        from PySide import QtTest
+        QtGui.QLineEdit.setText(self, "")
         QtTest.QTest.keyClick(self, QtCore.Qt.Key_Return)

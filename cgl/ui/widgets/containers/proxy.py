@@ -1,7 +1,7 @@
-from Qt import QtCore
+from PySide import QtCore, QtGui
 
 
-class LJTableSearchProxy(QtCore.QSortFilterProxyModel):
+class LJTableSearchProxy(QtGui.QSortFilterProxyModel):
     def __init__(self):
         QtCore.QSortFilterProxyModel.__init__(self)
         self.search_wgt = None

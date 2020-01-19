@@ -1,7 +1,8 @@
 import time
 import os
 import logging
-from Qt import QtWidgets, QtCore, QtGui
+# from PySide import QtGui, QtCore, QtGui
+from PySide import QtCore, QtGui
 from cgl.ui.widgets.progress_gif import ProgressGif, process_method
 from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
@@ -22,17 +23,17 @@ except ImportError:
 ICON_WIDTH = 24
 
 
-class PathWidget(QtWidgets.QFrame):
+class PathWidget(QtGui.QFrame):
 
     def __init__(self, parent=None, path_object=None):
-        QtWidgets.QFrame.__init__(self, parent)
+        QtGui.QFrame.__init__(self, parent)
         if path_object:
             self.path_object = cglpath.PathObject(path_object)
             self.path_root = self.path_object.path_root
         else:
             return
-        layout = QtWidgets.QHBoxLayout(self)
-        self.path_line_edit = QtWidgets.QLineEdit()
+        layout = QtGui.QHBoxLayout(self)
+        self.path_line_edit = QtGui.QLineEdit()
         self.path_line_edit.setMinimumHeight(ICON_WIDTH)
         self.text = self.path_object.path_root
         layout.addWidget(self.path_line_edit)
@@ -50,37 +51,37 @@ class PathWidget(QtWidgets.QFrame):
             self.path_line_edit.setText(path_object.path_root)
 
 
-class NavigationWidget(QtWidgets.QFrame):
+class NavigationWidget(QtGui.QFrame):
     location_changed = QtCore.Signal(object)
     my_tasks_clicked = QtCore.Signal()
     ingest_button_clicked = QtCore.Signal()
 
     def __init__(self, parent=None, path_object=None):
-        QtWidgets.QFrame.__init__(self, parent)
+        QtGui.QFrame.__init__(self, parent)
         if path_object:
             self.path_object = path_object
         else:
             return
         self.setProperty('class', 'light_grey')
-        self.my_tasks_button = QtWidgets.QPushButton()
+        self.my_tasks_button = QtGui.QPushButton()
         self.my_tasks_button.setToolTip('My Tasks')
         tasks_icon = os.path.join(cglpath.icon_path(), 'star24px.png')
         self.my_tasks_button.setProperty('class', 'grey_border')
         self.my_tasks_button.setIcon(QtGui.QIcon(tasks_icon))
         self.my_tasks_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
 
-        self.ingest_button = QtWidgets.QPushButton()
+        self.ingest_button = QtGui.QPushButton()
         self.ingest_button.setToolTip('My Tasks')
         self.ingest_button.setProperty('class', 'grey_border')
         ingest_icon = os.path.join(cglpath.icon_path(), 'ingest24px.png')
         self.ingest_button.setIcon(QtGui.QIcon(ingest_icon))
         self.ingest_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
 
-        self.back_button = QtWidgets.QPushButton()
+        self.back_button = QtGui.QPushButton()
         self.back_button.setToolTip('Go back')
-        self.projects_button = QtWidgets.QPushButton()
+        self.projects_button = QtGui.QPushButton()
         self.projects_button.setToolTip('Go to Projects')
-        self.companies_button = QtWidgets.QPushButton()
+        self.companies_button = QtGui.QPushButton()
         self.companies_button.setToolTip('Go to Companies')
         self.my_tasks_button.setProperty('class', 'grey_border')
         self.back_button.setStyleSheet("background: transparent;")
@@ -97,14 +98,14 @@ class NavigationWidget(QtWidgets.QFrame):
         self.companies_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
         self.projects_button.setIcon(QtGui.QIcon(home_icon))
         self.projects_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
-        self.current_location_line_edit = QtWidgets.QLineEdit()
+        self.current_location_line_edit = QtGui.QLineEdit()
         self.current_location_line_edit.setReadOnly(True)
         self.current_location_line_edit.setMinimumHeight(ICON_WIDTH*1.28)
         self.current_location_line_edit.hide()
         self.search_box = LJSearchEdit(self)
 
-        layout = QtWidgets.QVBoxLayout(self)
-        self.cl_row = QtWidgets.QHBoxLayout()
+        layout = QtGui.QVBoxLayout(self)
+        self.cl_row = QtGui.QHBoxLayout()
         self.cl_row.addWidget(self.back_button)
         self.cl_row.addWidget(self.companies_button)
         self.cl_row.addWidget(self.projects_button)
@@ -256,13 +257,13 @@ class NavigationWidget(QtWidgets.QFrame):
         return new_path
 
 
-class CGLumberjackWidget(QtWidgets.QWidget):
+class CGLumberjackWidget(QtGui.QWidget):
 
     def __init__(self, parent=None, project_management=None, user_email=None, company=None,
                  path=None, radio_filter=None, show_import=False):
-        QtWidgets.QWidget.__init__(self, parent)
+        QtGui.QWidget.__init__(self, parent)
         try:
-            font_db = QtWidgets.QFontDatabase()
+            font_db = QtGui.QFontDatabase()
             font_db.addApplicationFont(os.path.join(cglpath.font_path(), 'ARCADECLASSIC.TTF'))
             font_db.addApplicationFont(os.path.join(cglpath.font_path(), 'ka1.ttf'))
         except AttributeError:
@@ -284,7 +285,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.setMinimumHeight(600)
         self.frame_range = None
 
-        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout = QtGui.QVBoxLayout(self)
         self.setContentsMargins(0, 0, 0, 0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         if path:
@@ -546,7 +547,7 @@ class CGLumberjack(LJMainWindow):
             self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['first'])
         else:
             self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['login'])
-        self.status_bar = QtWidgets.QStatusBar()
+        self.status_bar = QtGui.QStatusBar()
         self.setStatusBar(self.status_bar)
 
         # Load Style Sheet and set up Styles:
@@ -558,23 +559,23 @@ class CGLumberjack(LJMainWindow):
         two_bar = self.menuBar()
         icon = QtGui.QPixmap(":/images/lumberjack.24px.png").scaled(24, 24)
         self.setWindowIcon(icon)
-        login = QtWidgets.QAction('login', self)
-        time_tracking = QtWidgets.QAction('time', self)
-        proj_man = QtWidgets.QAction('%s' % self.project_management, self)
-        update_button = QtWidgets.QAction('Check For Updates', self)
-        report_bug_button = QtWidgets.QAction('Report Bug', self)
-        request_feature_button = QtWidgets.QAction('Request Feature', self)
+        login = QtGui.QAction('login', self)
+        time_tracking = QtGui.QAction('time', self)
+        proj_man = QtGui.QAction('%s' % self.project_management, self)
+        update_button = QtGui.QAction('Check For Updates', self)
+        report_bug_button = QtGui.QAction('Report Bug', self)
+        request_feature_button = QtGui.QAction('Request Feature', self)
         tools_menu = menu_bar.addMenu('&Tools')
         if self.project_management != 'lumbermill':
             self.proj_man_link = two_bar.addAction(proj_man)
         self.login_menu = two_bar.addAction(login)
         two_bar.addAction(time_tracking)
-        settings = QtWidgets.QAction('Settings', self)
-        open_globals = QtWidgets.QAction('Go to Company Globals', self)
-        open_user_globals = QtWidgets.QAction('Go to User Globals', self)
-        create_project = QtWidgets.QAction('Import .csv', self)
+        settings = QtGui.QAction('Settings', self)
+        open_globals = QtGui.QAction('Go to Company Globals', self)
+        open_user_globals = QtGui.QAction('Go to User Globals', self)
+        create_project = QtGui.QAction('Import .csv', self)
         settings.setShortcut('Ctrl+,')
-        pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
+        pipeline_designer = QtGui.QAction('Pipeline Designer', self)
 
         # add actions to the file menu
         tools_menu.addAction(settings)

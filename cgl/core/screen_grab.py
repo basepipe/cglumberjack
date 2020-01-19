@@ -1,9 +1,9 @@
 import os
-from Qt import QtWidgets, QtCore
+from PySide import QtCore, QtGui
 from datetime import datetime
 
 
-class ScreenCapture(QtWidgets.QDialog):
+class ScreenCapture(QtGui.QDialog):
 
     def __init__(self, parent=None):
         """
@@ -22,7 +22,7 @@ class ScreenCapture(QtWidgets.QDialog):
         self.setMouseTracking(True)
         self.set_screen_area()
 
-        desktop = QtWidgets.QApplication.instance().desktop()
+        desktop = QtGui.QApplication.instance().desktop()
         desktop.resized.connect(self.set_screen_area)
         desktop.screenCountChanged.connect(self.set_screen_area)
 
@@ -35,7 +35,7 @@ class ScreenCapture(QtWidgets.QDialog):
         return self.rectangle
 
     def set_screen_area(self):
-        desktop = QtWidgets.QApplication.instance().desktop()
+        desktop = QtGui.QApplication.instance().desktop()
         total_desktop = QtCore.QRect()
         for r in range(desktop.screenCount()):
             total_desktop = total_desktop.united(desktop.screenGeometry(r))
@@ -56,14 +56,14 @@ class ScreenCapture(QtWidgets.QDialog):
         self.repaint()
 
     def paintEvent(self, event):
-        mouse_pos = self.mapFromGlobal(QtWidgets.QCursor.pos())
+        mouse_pos = self.mapFromGlobal(QtGui.QCursor.pos())
         click_pos = None
         if self.click_position is not None:
             click_pos = self.mapFromGlobal(self.click_position)
 
-        qp = QtWidgets.QPainter(self)
+        qp = QtGui.QPainter(self)
         # initialize the crosshairs
-        qp.setBrush(QtWidgets.QColor(0, 0, 0, 1))
+        qp.setBrush(QtGui.QColor(0, 0, 0, 1))
         qp.setPen(QtCore.Qt.NoPen)
         qp.drawRect(event.rect())
 
@@ -71,11 +71,11 @@ class ScreenCapture(QtWidgets.QDialog):
 
         if click_pos is not None:
             self.rectangle = QtCore.QRect(click_pos, mouse_pos)
-            qp.setCompositionMode(QtWidgets.QPainter.CompositionMode_Clear)
+            qp.setCompositionMode(QtGui.QPainter.CompositionMode_Clear)
             qp.drawRect(self.rectangle)
-            qp.setCompositionMode(QtWidgets.QPainter.CompositionMode_SourceOver)
+            qp.setCompositionMode(QtGui.QPainter.CompositionMode_SourceOver)
 
-        pen = QtWidgets.QPen(QtWidgets.QColor('white'), 3, QtCore.Qt.SolidLine)
+        pen = QtGui.QPen(QtGui.QColor('white'), 3, QtCore.Qt.SolidLine)
         qp.setPen(pen)
         # Draw cropping markers at click position
         if click_pos is not None:
@@ -90,9 +90,9 @@ class ScreenCapture(QtWidgets.QDialog):
 
 
 def capture_area(rect, output_path):
-    desktop = QtWidgets.QApplication.instance().desktop()
+    desktop = QtGui.QApplication.instance().desktop()
     print desktop.winId()
-    pixmap = QtWidgets.QPixmap.grabWindow(desktop.winId(), rect.x()+2, rect.y()+2, rect.width()-4, rect.height()-4)
+    pixmap = QtGui.QPixmap.grabWindow(desktop.winId(), rect.x()+2, rect.y()+2, rect.width()-4, rect.height()-4)
     pixmap.save(output_path)
     return output_path
 

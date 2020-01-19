@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="ded71a0a-3f7d-4ad4-a8fc-80c09cc91a01" name="1148184574086157 When i merge a pull request on GitHub i want to move the task to the &quot;Done&quot; colu..." comment="test" />
+    <list id="e51d2454-ccb9-4853-8319-9a6393945730" name="Default Changelist" comment="" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GithubProjectSettings">
+    <option name="CREATE_PULL_REQUEST_DEFAULT_BRANCH" value="master" />
+    <option name="CREATE_PULL_REQUEST_DEFAULT_REPO_USER" value="basepipe" />
+    <option name="CREATE_PULL_REQUEST_DEFAULT_REPO_NAME" value="cglumberjack" />
+  </component>
+  <component name="IgnoredFileRootStore">
+    <option name="generatedRoots">
+      <set>
+        <option value="C:\Users\Gary Host\PycharmProjects\cglumberjack\.idea" />
+      </set>
+    </option>
+  </component>
+  <component name="ProjectId" id="1SqDD1W5VEn1OkA5bC9xiGyf3US" />
+  <component name="PropertiesComponent">
+    <property name="Git.Branch.Popup.ShowAllRemotes" value="true" />
+    <property name="TODO_SCOPE" value="All Places" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
+    <property name="start.from.branch" value="master" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Gary Host\PycharmProjects\cglumberjack\src\Sphinx" />
+      <recent name="C:\Users\Gary Host\PycharmProjects\cglumberjack\src" />
+      <recent name="C:\Users\Gary Host\PycharmProjects\cglumberjack\source\FTrack doc" />
+      <recent name="C:\Users\Gary Host\PycharmProjects\cglumberjack\src\plugins\project_management\ftrack\example code" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.lumbermill">
+    <configuration name="lumbermill" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="cglumberjack" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/cgl/bin" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/cgl/bin/lumbermill.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="cglumberjack" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/cgl/apps/lumbermill" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/cgl/apps/lumbermill/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="time_sheet" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="cglumberjack" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/cgl/bin" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/cgl/bin/time_sheet.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="util (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="cglumberjack" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/cgl/plugins/project_management/ftrack" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/cgl/plugins/project_management/ftrack/util.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="util" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="cglumberjack" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/plugins/project_management/ftrack" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/plugins/project_management/ftrack/util.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.main" />
+      <item itemvalue="Python.util" />
+      <item itemvalue="Python.lumbermill" />
+      <item itemvalue="Python.time_sheet" />
+      <item itemvalue="Python.util (1)" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.util (1)" />
+        <item itemvalue="Python.time_sheet" />
+        <item itemvalue="Python.lumbermill" />
+        <item itemvalue="Python.util" />
+        <item itemvalue="Python.main" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task id="Default" summary="Default task">
+      <branch name="master" repository="C:\Users\Gary Host\PycharmProjects\cglumberjack" />
+      <changelist id="e51d2454-ccb9-4853-8319-9a6393945730" name="Default Changelist" comment="" />
+      <created>1572282108794</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1573055821995</updated>
+      <workItem from="1572282111063" duration="6747000" />
+      <workItem from="1572370833269" duration="8580000" />
+      <workItem from="1572461797829" duration="12983000" />
+      <workItem from="1572535771649" duration="11434000" />
+      <workItem from="1572636774996" duration="1543000" />
+      <workItem from="1572639945803" duration="869000" />
+      <workItem from="1572882674810" duration="676000" />
+      <workItem from="1572884177376" duration="10823000" />
+      <workItem from="1572970597879" duration="7600000" />
+      <workItem from="1572986979686" duration="4783000" />
+      <workItem from="1572991807201" duration="433000" />
+      <workItem from="1573054056070" duration="1566000" />
+      <workItem from="1573055647817" duration="173000" />
+    </task>
+    <option name="localTasksCounter" value="0" />
+    <option name="searchClosedTasks" value="true" />
+    <servers>
+      <Generic url="https://app.asana.com/api/1.0">
+        <option name="downloadTasksInSeparateRequests" value="true" />
+        <option name="responseHandlers">
+          <XPathResponseHandler>
+            <selectors>
+              <selector name="tasks" />
+              <selector name="id" />
+              <selector name="summary" />
+              <selector name="description" />
+              <selector name="updated" />
+              <selector name="created" />
+              <selector name="issueUrl" />
+              <selector name="singleTask-id" />
+              <selector name="singleTask-summary" />
+              <selector name="singleTask-description" />
+              <selector name="singleTask-updated" />
+              <selector name="singleTask-created" />
+              <selector name="singleTask-issueUrl" />
+            </selectors>
+          </XPathResponseHandler>
+          <JsonResponseHandler>
+            <selectors>
+              <selector name="tasks" path="data[*]" />
+              <selector name="id" path="gid" />
+              <selector name="summary" path="name" />
+              <selector name="description" />
+              <selector name="updated" />
+              <selector name="created" />
+              <selector name="closed" />
+              <selector name="issueUrl" />
+              <selector name="singleTask-id" path="data.gid" />
+              <selector name="singleTask-summary" path="data.name" />
+              <selector name="singleTask-description" path="data.notes" />
+              <selector name="singleTask-updated" path="data.modified_at" />
+              <selector name="singleTask-created" path="data.created_at" />
+              <selector name="singleTask-closed" path="data.completed" />
+              <selector name="singleTask-issueUrl" />
+            </selectors>
+          </JsonResponseHandler>
+          <RegExResponseHandler />
+        </option>
+        <option name="responseType" value="JSON" />
+        <option name="singleTaskUrl" value="{serverUrl}/tasks/{id}" />
+        <option name="subtypeName" value="Asana [G]" />
+        <option name="tasksListUrl" value="{serverUrl}/projects/{project_ID}/tasks" />
+        <option name="templateVariables">
+          <list>
+            <TemplateVariable shownOnFirstTab="true">
+              <option name="name" value="project_ID" />
+              <option name="value" value="1146097158800436" />
+            </TemplateVariable>
+            <TemplateVariable shownOnFirstTab="true">
+              <option name="name" value="workspaces_ID" />
+              <option name="value" value="1145700648005039" />
+            </TemplateVariable>
+          </list>
+        </option>
+        <option name="useHttpAuthentication" value="true" />
+        <username>0/14c27c9c183a882fc90eccc13f9dfa2d</username>
+      </Generic>
+    </servers>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Updated add task button to add selected project and task to time card table" />
+    <MESSAGE value="Implemented functionality to get all timelogs for a date in ftrack&#10;Updated Time Card gui to read timelogs for today&#10;Implemented functionality to create new timelogs in ftrack" />
+    <MESSAGE value="Fixed formatting" />
+    <MESSAGE value="Implemented Functionality to load timelogs from date selected by calendar popup" />
+    <MESSAGE value="Added todo" />
+    <MESSAGE value="Fixed bugs with timelog creation" />
+    <MESSAGE value="Fixing bugs with timelog gui" />
+    <MESSAGE value="Added functionality to edit existing timelogs&#10;Fixed bugs with Time Tracker gui" />
+    <MESSAGE value="Added implementation to autolaunch TimeTracker gui if no timelogs exist from yesterday" />
+    <MESSAGE value="Removed unnecessary comments" />
+    <MESSAGE value="Removed redundant variables" />
+    <MESSAGE value="1148184574086157 When i merge a pull request on GitHub i want to move the task to the &quot;Done&quot; colu..." />
+    <MESSAGE value="Added test statement" />
+    <MESSAGE value="Added two new columns to TimeTracker&#10;Implemented get_all_time function for FTrack Task" />
+    <MESSAGE value="Locked all columns in time card table except for hours column" />
+    <MESSAGE value="Removed unnecessary tests" />
+    <MESSAGE value="Testing pull request signal" />
+    <MESSAGE value="Added git hooks directory&#10;Added branch creation hook to git" />
+    <MESSAGE value="testing" />
+    <MESSAGE value="Test1" />
+    <MESSAGE value="Testing background" />
+    <MESSAGE value="No conflicts" />
+    <MESSAGE value="TEST" />
+    <MESSAGE value="Added githook folder and branch githook" />
+    <MESSAGE value="test" />
+    <option name="LAST_COMMIT_MESSAGE" value="test" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/cglumberjack$util.coverage" NAME="util Coverage Results" MODIFIED="1572640114819" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/plugins/project_management/ftrack" />
+    <SUITE FILE_PATH="coverage/cglumberjack$main.coverage" NAME="main Coverage Results" MODIFIED="1573845237333" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cgl/apps/lumbermill" />
+    <SUITE FILE_PATH="coverage/cglumberjack$lumbermill.coverage" NAME="lumbermill Coverage Results" MODIFIED="1574096684600" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cgl/bin" />
+    <SUITE FILE_PATH="coverage/cglumberjack$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1573845125864" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cgl/apps/lumbermill" />
+    <SUITE FILE_PATH="coverage/cglumberjack$example_code.coverage" NAME="example_code Coverage Results" MODIFIED="1572470387338" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/plugins/project_management/ftrack/example code" />
+    <SUITE FILE_PATH="coverage/cglumberjack$time_sheet.coverage" NAME="time_sheet Coverage Results" MODIFIED="1573846528578" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cgl/bin" />
+    <SUITE FILE_PATH="coverage/cglumberjack$build_config.coverage" NAME="build_config Coverage Results" MODIFIED="1572282148670" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/apps/lumbermill" />
+    <SUITE FILE_PATH="coverage/cglumberjack$util__1_.coverage" NAME="util (1) Coverage Results" MODIFIED="1573852799139" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cgl/plugins/project_management/ftrack" />
+    <SUITE FILE_PATH="coverage/cglumberjack$test.coverage" NAME="test Coverage Results" MODIFIED="1572289634005" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/plugins/project_management/ftrack" />
+  </component>
+</project>

@@ -3,7 +3,7 @@ import pandas as pd
 import logging
 import glob
 import threading
-from Qt import QtCore, QtGui, QtWidgets
+from PySide import QtCore, QtGui
 from cgl.ui.widgets.progress_gif import ProgressGif
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.containers.tree import LJTreeWidget
@@ -50,11 +50,11 @@ class EmptyStateWidgetIO(EmptyStateWidget):
             e.ignore()
 
 
-class IOPanel(QtWidgets.QWidget):
+class IOPanel(QtGui.QWidget):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None):
-        QtWidgets.QWidget.__init__(self, parent)
+        QtGui.QWidget.__init__(self, parent)
         if path_object:
             self.path_object = path_object
         else:
@@ -64,8 +64,8 @@ class IOPanel(QtWidgets.QWidget):
         self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
         self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
         self.path_object_next = None
-        self.panel = QtWidgets.QVBoxLayout(self)
-        h_layout = QtWidgets.QHBoxLayout()
+        self.panel = QtGui.QVBoxLayout(self)
+        h_layout = QtGui.QHBoxLayout()
         self.title = 'Import to %s' % path_object.project
         self.task = None
         self.version = '000.000'
@@ -97,56 +97,56 @@ class IOPanel(QtWidgets.QWidget):
                                           empty_state_icon=import_empty_icon)
         # self.import_events.hide()f
 
-        self.tags_title = QtWidgets.QLineEdit("<b>Select File(s) or Folder(s) to tag</b>")
+        self.tags_title = QtGui.QLineEdit("<b>Select File(s) or Folder(s) to tag</b>")
         self.tags_title.setReadOnly(True)
         self.tags_title.setProperty('class', 'feedback')
-        self.tags_button = QtWidgets.QPushButton('View Publish')
+        self.tags_button = QtGui.QPushButton('View Publish')
         self.tags_button.setProperty('class', 'basic')
         self.tags_button.setMaximumWidth(180)
-        self.tags_title_row = QtWidgets.QHBoxLayout()
+        self.tags_title_row = QtGui.QHBoxLayout()
         self.tags_title_row.addWidget(self.tags_title)
         self.tags_title_row.addWidget(self.tags_button)
         self.tags_button.hide()
 
-        self.scope_label = QtWidgets.QLabel('Scope')
+        self.scope_label = QtGui.QLabel('Scope')
         self.scope_combo = AdvComboBox()
         self.scope_combo.addItems(['', 'assets', 'shots'])
-        self.seq_row = QtWidgets.QHBoxLayout()
+        self.seq_row = QtGui.QHBoxLayout()
         self.seq_row.addWidget(self.scope_label)
         self.seq_row.addWidget(self.scope_combo)
-        self.feedback_area = QtWidgets.QLabel('')
+        self.feedback_area = QtGui.QLabel('')
 
-        self.seq_label = QtWidgets.QLabel('Seq ')
+        self.seq_label = QtGui.QLabel('Seq ')
         self.seq_combo = AdvComboBox()
 
         self.seq_row.addWidget(self.seq_label)
         self.seq_row.addWidget(self.seq_combo)
 
-        self.shot_label = QtWidgets.QLabel('Shot')
+        self.shot_label = QtGui.QLabel('Shot')
         self.shot_combo = AdvComboBox()
         self.seq_row.addWidget(self.shot_label)
         self.seq_row.addWidget(self.shot_combo)
 
-        self.task_label = QtWidgets.QLabel('Task')
+        self.task_label = QtGui.QLabel('Task')
         self.task_combo = AdvComboBox()
         self.task_combo.setEditable(False)
         self.seq_row.addWidget(self.task_label)
         self.seq_row.addWidget(self.task_combo)
 
-        self.tags_label = QtWidgets.QLabel("Tags")
+        self.tags_label = QtGui.QLabel("Tags")
         self.tags_label.setWordWrap(True)
         self.tags_label.setMaximumWidth(100)
-        self.tags_line_edit = QtWidgets.QLineEdit()
-        self.tags_row = QtWidgets.QHBoxLayout()
+        self.tags_line_edit = QtGui.QLineEdit()
+        self.tags_row = QtGui.QHBoxLayout()
         self.tags_row.addWidget(self.tags_label)
         self.tags_row.addWidget(self.tags_line_edit)
         # create buttons row
-        self.buttons_row = QtWidgets.QHBoxLayout()
+        self.buttons_row = QtGui.QHBoxLayout()
 
-        self.publish_button = QtWidgets.QPushButton('Publish Selected')
-        self.view_in_lumbermill = QtWidgets.QPushButton('View in Lumbermill')
+        self.publish_button = QtGui.QPushButton('Publish Selected')
+        self.view_in_lumbermill = QtGui.QPushButton('View in Lumbermill')
         self.view_in_lumbermill.setMinimumWidth(220)
-        self.refresh_button = QtWidgets.QPushButton('Refresh')
+        self.refresh_button = QtGui.QPushButton('Refresh')
         self.refresh_button.hide()
         self.publish_button.setProperty('class', 'basic')
         self.view_in_lumbermill.setProperty('class', 'basic')
@@ -230,9 +230,9 @@ class IOPanel(QtWidgets.QWidget):
             os.rename(os.path.join(to_folder, 'publish_data.csv'), os.path.join(to_folder, 'publish_data.old.csv'))
         path = self.path_object.ingest_source
         self.progress_bar.show()
-        QtWidgets.qApp.processEvents()
+        QtGui.qApp.processEvents()
         file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
-        QtWidgets.qApp.processEvents()
+        QtGui.qApp.processEvents()
         file_process.start()
 
     def load_companies(self):

@@ -1,6 +1,4 @@
-from Qt import QtCore
-from Qt import QtWidgets
-from Qt import QtGui
+from PySide import QtCore, QtGui
 import os
 from cgl.core import lj_mail
 from cgl.core.config import app_config
@@ -17,9 +15,12 @@ PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 class RequestFeatureDialog(LJDialog):
     def __init__(self, parent=None, title='Request Feature'):
         LJDialog.__init__(self, parent)
+        self.tag_names = []
         self.combo_projects_list = AdvComboBox()
+        self.combo_users_list = AdvComboBox()
         self.work_group = 'CG Lumberjack'
         self.projects = ''
+        self.users = ''
         self.rtf_task_text = ''
         self.requirements_list = []
         self.results_list = []
@@ -168,49 +169,50 @@ class RequestFeatureDialog(LJDialog):
                                     'CGL Examples': {}
                                     },
                           }
-        layout = QtWidgets.QVBoxLayout()
-        right_layout = QtWidgets.QVBoxLayout()
-        left_layout = QtWidgets.QVBoxLayout()
-        h_layout = QtWidgets.QHBoxLayout()
-        grid = QtWidgets.QGridLayout()
+        layout = QtGui.QVBoxLayout()
+        right_layout = QtGui.QVBoxLayout()
+        left_layout = QtGui.QVBoxLayout()
+        h_layout = QtGui.QHBoxLayout()
+        grid = QtGui.QGridLayout()
         self.setMinimumWidth(400)
 
         # all the labels
-        self.label_details = QtWidgets.QLabel('Details:')
+        self.label_details = QtGui.QLabel('Details:')
         self.label_details.setProperty('class', 'ultra_title')
-        self.label_code_info = QtWidgets.QLabel('Code Info:')
+        self.label_code_info = QtGui.QLabel('Code Info:')
         self.label_code_info.setProperty('class', 'ultra_title')
-        self.label_task_info = QtWidgets.QLabel('Task Info:')
+        self.label_task_info = QtGui.QLabel('Task Info:')
         self.label_task_info.setProperty('class', 'ultra_title')
-        label_description = QtWidgets.QLabel('Description:')
-        self.label_software = QtWidgets.QLabel('External Product(s):')
-        self.label_language = QtWidgets.QLabel("Language:")
-        self.label_deliverable = QtWidgets.QLabel('Deliverable:')
-        self.label_code_location = QtWidgets.QLabel('Code Location:')
-        self.label_delivery_method = QtWidgets.QLabel('Delivery Method:')
-        self.label_requirements = QtWidgets.QLabel('Other Requirements:')
-        self.label_expected_results = QtWidgets.QLabel('Expected Results:')
+        label_description = QtGui.QLabel('Description:')
+        self.label_software = QtGui.QLabel('External Product(s):')
+        self.label_language = QtGui.QLabel("Language:")
+        self.label_deliverable = QtGui.QLabel('Deliverable:')
+        self.label_code_location = QtGui.QLabel('Code Location:')
+        self.label_delivery_method = QtGui.QLabel('Delivery Method:')
+        self.label_requirements = QtGui.QLabel('Other Requirements:')
+        self.label_expected_results = QtGui.QLabel('Expected Results:')
         self.label_expected_results.setProperty('class', 'ultra_title')
-        self.label_resources = QtWidgets.QLabel('Resources:')
+        self.label_resources = QtGui.QLabel('Resources:')
         self.label_resources.setProperty('class', 'ultra_title')
-        self.label_repo = QtWidgets.QLabel('Repo:')
-        self.label_gui = QtWidgets.QLabel('GUI:')
-        self.label_files = QtWidgets.QLabel('File(s):')
-        self.label_attachments = QtWidgets.QLabel('Attachments:')
-        self.label_task_text = QtWidgets.QLabel('Task Text:')
+        self.label_repo = QtGui.QLabel('Repo:')
+        self.label_gui = QtGui.QLabel('GUI:')
+        self.label_files = QtGui.QLabel('File(s):')
+        self.label_attachments = QtGui.QLabel('Attachments:')
+        self.label_task_text = QtGui.QLabel('Task Text:')
         self.label_task_text.setProperty('class', 'ultra_title')
-        self.label_task_title = QtWidgets.QLabel("Title")
-        self.label_functions = QtWidgets.QLabel("Function(s)")
-        self.label_workgroup = QtWidgets.QLabel("Workgroup:")
-        self.label_projects = QtWidgets.QLabel("Projects: ")
-        self.label_tags = QtWidgets.QLabel("Tags:")
+        self.label_task_title = QtGui.QLabel("Title")
+        self.label_functions = QtGui.QLabel("Function(s)")
+        self.label_workgroup = QtGui.QLabel("Workgroup:")
+        self.label_projects = QtGui.QLabel("Projects: ")
+        self.label_users = QtGui.QLabel("Users: ")
+        self.label_tags = QtGui.QLabel("Tags:")
         self.label_tags.setProperty('class', 'ultra_title')
-        self.workgroup = QtWidgets.QHBoxLayout()
-        self.message_files = QtWidgets.QLabel()
-        self.message_functions = QtWidgets.QLabel()
-        self.message_requirements = QtWidgets.QLabel()
-        self.message_expected_results = QtWidgets.QLabel()
-        self.message_software = QtWidgets.QLabel()
+        self.workgroup = QtGui.QHBoxLayout()
+        self.message_files = QtGui.QLabel()
+        self.message_functions = QtGui.QLabel()
+        self.message_requirements = QtGui.QLabel()
+        self.message_expected_results = QtGui.QLabel()
+        self.message_software = QtGui.QLabel()
 
         # all the combo boxes:
         self.combo_software = AdvComboBox()
@@ -221,7 +223,7 @@ class RequestFeatureDialog(LJDialog):
         self.combo_deliverable_list.addItems(deliverable_list)
         self.combo_delivery_method = AdvComboBox()
         self.combo_delivery_method.addItems(delivery_method_list)
-        self.text_edit = QtWidgets.QTextEdit()
+        self.text_edit = QtGui.QTextEdit()
         self.combo_files = AdvComboBox()
         self.combo_repo = AdvComboBox()
         self.combo_repo.addItems(self.repo_dict.keys())
@@ -233,7 +235,7 @@ class RequestFeatureDialog(LJDialog):
         ind2 = self.combo_workgroup_list.findText(self.work_group)
         if ind2 != -1:
             self.combo_workgroup_list.setCurrentIndex(ind2)
-        self.submit_task_button = QtWidgets.QPushButton('Submit Task')
+        self.submit_task_button = QtGui.QPushButton('Submit Task')
         self.submit_task_button.setDefault(False)
         self.submit_task_button.setAutoDefault(False)
         self.tag_widget = TagWidget()
@@ -242,14 +244,14 @@ class RequestFeatureDialog(LJDialog):
         assign_icon_hover = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'assign_hover48px.png'))
         # tag_icon = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'tag_default48px.png'))
         tag_icon_hover = QtGui.QIcon(os.path.join(cglpath.icon_path(), 'tag_hover48px.png'))
-        assign_button = QtWidgets.QToolButton()
+        assign_button = QtGui.QToolButton()
         assign_button.setProperty('class', 'assign')
         assign_button.setIcon(assign_icon_hover)
-        show_tags_button = QtWidgets.QToolButton()
+        show_tags_button = QtGui.QToolButton()
         show_tags_button.setProperty('class', 'assign')
         show_tags_button.setIcon(tag_icon_hover)
 
-        self.button_row = QtWidgets.QHBoxLayout()
+        self.button_row = QtGui.QHBoxLayout()
         self.button_row.setAlignment(QtCore.Qt.AlignLeft)
 
         self.button_row.addWidget(assign_button)
@@ -257,22 +259,22 @@ class RequestFeatureDialog(LJDialog):
         self.button_row.addWidget(self.tag_widget)
         # self.button_row.addStretch(1)
 
-        submit_row = QtWidgets.QHBoxLayout()
+        submit_row = QtGui.QHBoxLayout()
         submit_row.addStretch(1)
         submit_row.addWidget(self.submit_task_button)
 
-        self.title_line_edit = QtWidgets.QLineEdit()
-        self.description_line_edit = QtWidgets.QLineEdit()
+        self.title_line_edit = QtGui.QLineEdit()
+        self.description_line_edit = QtGui.QLineEdit()
         self.description_line_edit.setPlaceholderText('Description: Less than 140 characters')
-        self.location_line_edit = QtWidgets.QLineEdit()
-        self.requirements_line_edit = QtWidgets.QLineEdit()
+        self.location_line_edit = QtGui.QLineEdit()
+        self.requirements_line_edit = QtGui.QLineEdit()
         self.requirements_line_edit.setPlaceholderText('type requirement and hit enter')
-        self.expected_results_line_edit = QtWidgets.QLineEdit()
+        self.expected_results_line_edit = QtGui.QLineEdit()
         self.expected_results_line_edit.setPlaceholderText('type expected result and hit enter')
-        self.documentation_line_edit = QtWidgets.QLineEdit()
-        self.videos_line_edit = QtWidgets.QLineEdit()
-        self.cgl_line_edit = QtWidgets.QLineEdit()
-        self.line_edit_functions = QtWidgets.QLineEdit()
+        self.documentation_line_edit = QtGui.QLineEdit()
+        self.videos_line_edit = QtGui.QLineEdit()
+        self.cgl_line_edit = QtGui.QLineEdit()
+        self.line_edit_functions = QtGui.QLineEdit()
 
         self.widget_dict = {self.requirements_line_edit: self.message_requirements,
                             self.expected_results_line_edit: self.message_expected_results,
@@ -295,6 +297,8 @@ class RequestFeatureDialog(LJDialog):
         grid.addWidget(self.label_code_info, 4, 0)
         grid.addWidget(self.label_projects, 5, 0)
         grid.addWidget(self.combo_projects_list, 5, 1)
+        grid.addWidget(self.label_users, 6, 0)
+        grid.addWidget(self.combo_users_list, 6, 1)
 
         grid.addWidget(self.label_repo, 10, 0)
         grid.addWidget(self.combo_repo, 10, 1)
@@ -328,7 +332,7 @@ class RequestFeatureDialog(LJDialog):
         grid.addWidget(self.expected_results_line_edit,  27, 1)
         grid.addWidget(self.message_expected_results, 28, 1)
 
-        #layout.addLayout(task_layout)
+        # layout.addLayout(task_layout)
         right_layout.addWidget(self.label_task_info)
         right_layout.addLayout(grid)
         right_layout.addStretch(1)
@@ -375,10 +379,13 @@ class RequestFeatureDialog(LJDialog):
 
     def on_show_tags_clicked(self):
         self.tag_widget.show()
+        print self.tag_widget.frame.tags
         # self.tag_widget.setMinimumWidth(850)
 
     def on_workgroup_changed(self):
         self.work_group = self.combo_workgroup_list.currentText()
+
+    # List the projects under chosen workgroup
         projects_data = AsanaJack().find_projects()
         project_names = []
         for p in projects_data:
@@ -392,7 +399,17 @@ class RequestFeatureDialog(LJDialog):
         if ind3 != -1:
             self.combo_projects_list.setCurrentIndex(ind3)
 
-
+    # List the users under the chosen project
+        users_data = AsanaJack().find_users()
+        users_names = []
+        for u in users_data:
+            if u['name'] not in ['Personal Projects']:
+                users_names.append(u['name'])
+            users_list = sorted(users_names)
+            project_list.insert(0, '')
+        self.combo_users_list.clear()
+        self.combo_users_list.addItems(users_list)
+        self.users = self.combo_users_list.currentText()
 
     def choose_deliverable(self):
         if self.message_functions or self.message_files:
@@ -510,9 +527,17 @@ class RequestFeatureDialog(LJDialog):
 
     def on_submit_clicked(self):
         # workgroup_chosen = self.combo_workgroup_list().currentText()
+        self.users = self.combo_users_list.currentText()
+        ind4 = self.combo_users_list.findText(self.users)
+        if ind4 != -1:
+            self.combo_users_list.setCurrentIndex(ind4)
+
         AsanaJack(work_space=self.work_group).create_project('General Development')
         AsanaJack(work_space=self.work_group).create_task(project_name='General Development', section_name='Backlog',
-                                                          task_name=self.title_line_edit.text(), notes=self.rtf_task_text)
+                                                          task_name=self.title_line_edit.text(),
+                                                          tag_names=self.tag_widget.frame.tags,
+                                                          assignee_name=self.users,
+                                                          notes=self.rtf_task_text)
         self.accept()
 
     def update_text_edit(self):
@@ -627,7 +652,7 @@ class RequestFeatureDialog(LJDialog):
         message_widget.show()
 
     def add_bullets(self):
-        if isinstance(self.sender(), QtWidgets.QLineEdit):
+        if isinstance(self.sender(), QtGui.QLineEdit):
             current_text = self.sender().text()
         else:
             current_text = self.sender().currentText()
@@ -646,7 +671,7 @@ class RequestFeatureDialog(LJDialog):
                 requirements_text = '%s\n    * %s' % (bullet_text, current_text)
         if requirements_text:
             self.widget_dict[self.sender()].setText(requirements_text)
-        if isinstance(self.sender(), QtWidgets.QLineEdit):
+        if isinstance(self.sender(), QtGui.QLineEdit):
             self.sender().setText('')
         elif isinstance(self.sender(), AdvComboBox):
             print 'its a combo'
@@ -662,44 +687,44 @@ class ReportBugDialog(LJDialog):
     def __init__(self, parent=None, title='Report A Bug'):
         LJDialog.__init__(self, parent)
         self.title_ = parent.windowTitle()
-        layout = QtWidgets.QVBoxLayout()
-        grid_layout = QtWidgets.QGridLayout()
+        layout = QtGui.QVBoxLayout()
+        grid_layout = QtGui.QGridLayout()
         self.attachments = []
         icon_path = os.path.join(app_config()['paths']['code_root'], 'resources', 'images')
         # define the user name area
-        self.label_username = QtWidgets.QLabel('Username')
-        self.lineEdit_username = QtWidgets.QLineEdit()
+        self.label_username = QtGui.QLabel('Username')
+        self.lineEdit_username = QtGui.QLineEdit()
         self.lineEdit_username.setText(current_user())
 
         # define the email area
-        self.label_email = QtWidgets.QLabel('Email')
-        self.lineEdit_email = QtWidgets.QLineEdit()
+        self.label_email = QtGui.QLabel('Email')
+        self.lineEdit_email = QtGui.QLineEdit()
         self.get_email()
 
         # define the software area
-        self.label_messaging = QtWidgets.QLabel('*All fields must have valid values \nbefore submitting bug report')
+        self.label_messaging = QtGui.QLabel('*All fields must have valid values \nbefore submitting bug report')
         self.label_messaging.setStyleSheet('color: red')
-        self.label_software = QtWidgets.QLabel('Software')
-        self.label_description = QtWidgets.QLabel('Description of Issue:')
-        self.lineEdit_software = QtWidgets.QLineEdit()
-        self.label_subject = QtWidgets.QLabel('Subject')
-        self.lineEdit_subject = QtWidgets.QLineEdit()
+        self.label_software = QtGui.QLabel('Software')
+        self.label_description = QtGui.QLabel('Description of Issue:')
+        self.lineEdit_software = QtGui.QLineEdit()
+        self.label_subject = QtGui.QLabel('Subject')
+        self.lineEdit_subject = QtGui.QLineEdit()
 
-        self.text_edit = QtWidgets.QTextEdit()
-        self.screengrabs_layout = QtWidgets.QVBoxLayout()
+        self.text_edit = QtGui.QTextEdit()
+        self.screengrabs_layout = QtGui.QVBoxLayout()
 
-        button_bar = QtWidgets.QHBoxLayout()
+        button_bar = QtGui.QHBoxLayout()
         self.paperclip_icon = os.path.join(icon_path, 'paperclip.png')
         self.screen_grab_icon = os.path.join(icon_path, 'screen_grab24px.png')
-        self.button_add_screen_grab = QtWidgets.QPushButton('')
-        self.button_attachment = QtWidgets.QPushButton('')
+        self.button_add_screen_grab = QtGui.QPushButton('')
+        self.button_attachment = QtGui.QPushButton('')
         self.button_attachment.setIcon(QtGui.QIcon(self.paperclip_icon))
         self.button_attachment.setIconSize(QtCore.QSize(24, 24))
 
         self.button_add_screen_grab.setIcon(QtGui.QIcon(self.screen_grab_icon))
         self.button_add_screen_grab.setIconSize(QtCore.QSize(24, 24))
         # self.button_add_screen_grab.setEnabled(False)
-        self.button_submit = QtWidgets.QPushButton('Submit')
+        self.button_submit = QtGui.QPushButton('Submit')
         button_bar.addWidget(self.button_add_screen_grab)
         button_bar.addWidget(self.button_attachment)
         button_bar.addWidget(self.label_description)
@@ -755,12 +780,12 @@ class ReportBugDialog(LJDialog):
     def add_attachments(self, file_paths=None):
         if not file_paths:
             default_folder = os.path.expanduser(r'~/Desktop')
-            file_paths = QtWidgets.QFileDialog.getOpenFileName(self, 'Choose a File to Attach', default_folder, "*")
+            file_paths = QtGui.QFileDialog.getOpenFileName(self, 'Choose a File to Attach', default_folder, "*")
         for each in file_paths:
             if os.path.isfile(each):
                 filename = os.path.split(each)
                 self.attachments.append(each)
-                label = QtWidgets.QLabel("<html><img cgl=%s> %s </html>" % (self.paperclip_icon, (filename[-1])))
+                label = QtGui.QLabel("<html><img cgl=%s> %s </html>" % (self.paperclip_icon, (filename[-1])))
                 self.screengrabs_layout.addWidget(label)
         return file_paths
 
@@ -798,7 +823,7 @@ class ReportBugDialog(LJDialog):
         self.add_attachments(file_paths=[output_path])
         # filename = os.path.split(output_path)[-1]
         # self.attachments.append(filename)
-        # label = QtWidgets.QLabel("<html><img cgl=%s> %s </html>" % (self.paperclip_icon, filename))
+        # label = QtGui.QLabel("<html><img cgl=%s> %s </html>" % (self.paperclip_icon, filename))
         # self.screengrabs_layout.addWidget(label)
         return output_path
 

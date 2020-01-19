@@ -1,4 +1,4 @@
-from Qt import QtCore
+from PySide import QtCore
 from plugins.preflight.main import Preflight
 
 

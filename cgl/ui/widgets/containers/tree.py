@@ -1,4 +1,4 @@
-from Qt import QtCore, QtWidgets, QtGui
+from PySide import QtCore, QtGui
 from cgl.ui.util import UISettings
 from cgl.ui.widgets.base import StateSavers
 from cgl.ui.widgets.combo import AdvComboBox
@@ -20,11 +20,11 @@ STATUS = 12
 PARENT = 13
 
 
-class ProductionComboDelegate(QtWidgets.QItemDelegate):
+class ProductionComboDelegate(QtGui.QItemDelegate):
     index_changed = QtCore.Signal(object)
 
     def __init__(self, parent, items):
-        QtWidgets.QItemDelegate.__init__(self, parent)
+        QtGui.QItemDelegate.__init__(self, parent)
         self.items = items
 
     def createEditor(self, parent):
@@ -54,14 +54,14 @@ class LJTreeModel(QtGui.QStandardItemModel):
         QtGui.QStandardItemModel.__init__(self)
 
 
-class LJTreeWidget(QtWidgets.QTreeView):
+class LJTreeWidget(QtGui.QTreeView):
     nothing_selected = QtCore.Signal()
     selected = QtCore.Signal(object)
     files_added = QtCore.Signal(object)
     header_labels = []
 
     def __init__(self, parent=None, parents=None):
-        QtWidgets.QTreeView.__init__(self, parent)
+        QtGui.QTreeView.__init__(self, parent)
         StateSavers.remember_me(self)
 
         self.items_ = []
@@ -87,23 +87,23 @@ class LJTreeWidget(QtWidgets.QTreeView):
         self.height_hint = 150
         self.path_object = path_object
         for row in data_frame.itertuples():
-            filename_item = QtWidgets.QStandardItem(row.Filename)
+            filename_item = QtGui.QStandardItem(row.Filename)
             filename_item.setIcon(QtGui.QIcon(get_file_icon(row.Filename)))
             if 'Parent' in data_frame:
                 row_list = [filename_item,
-                            QtWidgets.QStandardItem(row.Filepath),
-                            QtWidgets.QStandardItem(row.Filetype),
-                            QtWidgets.QStandardItem(row.Frame_Range),
-                            QtWidgets.QStandardItem(row.Tags),
-                            QtWidgets.QStandardItem(row.Keep_Client_Naming),
-                            QtWidgets.QStandardItem(row.Scope),
-                            QtWidgets.QStandardItem(row.Seq),
-                            QtWidgets.QStandardItem(row.Shot),
-                            QtWidgets.QStandardItem(row.Task),
-                            QtWidgets.QStandardItem(row.Publish_Filepath),
-                            QtWidgets.QStandardItem(row.Publish_Date),
-                            QtWidgets.QStandardItem(row.Status),
-                            QtWidgets.QStandardItem(row.Parent)]
+                            QtGui.QStandardItem(row.Filepath),
+                            QtGui.QStandardItem(row.Filetype),
+                            QtGui.QStandardItem(row.Frame_Range),
+                            QtGui.QStandardItem(row.Tags),
+                            QtGui.QStandardItem(row.Keep_Client_Naming),
+                            QtGui.QStandardItem(row.Scope),
+                            QtGui.QStandardItem(row.Seq),
+                            QtGui.QStandardItem(row.Shot),
+                            QtGui.QStandardItem(row.Task),
+                            QtGui.QStandardItem(row.Publish_Filepath),
+                            QtGui.QStandardItem(row.Publish_Date),
+                            QtGui.QStandardItem(row.Status),
+                            QtGui.QStandardItem(row.Parent)]
                 if row.Parent == 'self':
                     self.model.appendRow(row_list)
                 else:
@@ -112,7 +112,7 @@ class LJTreeWidget(QtWidgets.QTreeView):
                     parent = items[-1]
                     parent.appendRow(row_list)
         self.model.setHorizontalHeaderLabels(header)
-        self.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
         self.header().setMinimumSectionSize(140)
         # scopes_del = ProductionComboDelegate(self, scopes)
         # scopes_del.index_changed.connect(self.scope_changed)
@@ -212,9 +212,9 @@ class LJTreeWidget(QtWidgets.QTreeView):
     #     total_width = 0
     #     for column in range(header.count()):
     #         try:
-    #             header.setResizeMode(column, QtWidgets.QHeaderView.ResizeToContents)
+    #             header.setResizeMode(column, QtGui.QHeaderView.ResizeToContents)
     #             width = header.sectionSize(column)
-    #             header.setResizeMode(column, QtWidgets.QHeaderView.Interactive)
+    #             header.setResizeMode(column, QtGui.QHeaderView.Interactive)
     #             header.resizeSection(column, width)
     #             total_width += width
     #         except AttributeError:
