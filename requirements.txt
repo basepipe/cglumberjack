@@ -1,8 +1,6 @@
 pyperclip
 click
 pyside
-PyYAML
-PyInstaller
 requests
 sphinx
 pylint
