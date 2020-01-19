@@ -143,6 +143,8 @@ class NukePathObject(PathObject):
                                                        command_name=command_name,
                                                        new_window=True)
                         elif processing_method == 'smedge':
+                            command = "-Type Nuke -Name %s -Range %s -Scene %s" % (command_name,
+                                                                                   self.frame_range, self.path_root)
                             process_info = cgl_execute(command, methodology=processing_method,
                                                        command_name=command_name)
                         process_info['file_out'] = file_name
@@ -321,6 +323,15 @@ def match_scene_version():
             n.knob('file').fromUserText(write_output.path_root)
     nuke.scriptSave()
 
+
+def version_up(write_nodes=True):
+    path_object = PathObject(nuke.Root().name())
+    next_minor = path_object.new_minor_version_object()
+    print('Versioning Up %s: %s' % (next_minor.version, next_minor.path_root))
+    CreateProductionData(next_minor, project_management='lumbermill')
+    nuke.scriptSaveAs(next_minor.path_root)
+    if write_nodes:
+        match_scene_version()
 
 def version_up(write_nodes=True):
     path_object = PathObject(nuke.Root().name())

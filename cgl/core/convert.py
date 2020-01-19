@@ -136,7 +136,8 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
     process_info = None
 
     if processing_method == 'smedge':
-        command = r'python %s -i %s -o %s -t web_preview -ft sequence' % (__file__, filein, fileout)
+        filename = "%s.py" % os.path.splitext(__file__)[0]
+        command = r'python %s -i %s -o %s -t web_preview -ft sequence' % (filename, filein, fileout)
         process_info = cgl_execute(command, command_name=command_name, methodology='smedge', Wait=dependent_job)
         process_info['file_out'] = fileout
         write_to_cgl_data(process_info)

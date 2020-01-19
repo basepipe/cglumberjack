@@ -98,7 +98,7 @@ class UserConfig(object):
 
     def __init__(self, user_email=None, user_name=None, current_path=None, my_tasks=None):
         try:
-            self.user_config_path = app_config()['paths']['user_globals']
+            self.user_config_path = os.path.join('C:', os.environ['HOMEPATH'], 'Documents', 'cglumberjack', 'user_globals.json')
         except KeyError:
             print 'No user Globals found in :\n %s' % app_config()['paths']
         print self.user_config_path
