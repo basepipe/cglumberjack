@@ -1,10 +1,8 @@
 from PySide import QtCore, QtGui
 from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import nuke
-import cgl.ui.startup as startup
-from cgl.core.path import PathObject
-from cgl.core.config import app_config
-from cgl.core.util import current_user
+from cgl.ui.widgets.dialog import InputDialog
+from cgl.plugins.nuke import cgl_nuke
 
 
 class NukeBrowserWidget(CGLumberjackWidget):
@@ -29,10 +27,10 @@ class NukeBrowserWidget(CGLumberjackWidget):
 
 
 class CGLNuke(CGLumberjack):
-    def __init__(self, parent, path=None, user_info=None):
-        CGLumberjack.__init__(self, parent, user_info=user_info)
+    def __init__(self, parent=None, path=None, user_info=None):
+        CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path)
         print 'CGLNuke path is %s' % path
-        self.setCentralWidget(NukeBrowserWidget(self, show_import=True))
+        self.setCentralWidget(NukeBrowserWidget(self, show_import=True, path=path))
 
 
 class RenderDialog(QtGui.QDialog):
@@ -146,30 +144,27 @@ def render_selected_write_nodes():
     return render_paths
 
 
-def launch():
-    from cgl_nuke import get_file_name, get_main_window
-    scene_name = get_file_name()
-    if scene_name == 'Root':
-        print 'Lumbermill can not determine project, please launch files from the lumbermill browser'
-        location = ''
-    else:
-        scene = PathObject(scene_name)
-        location = '%s/*' % scene.split_after('shot')
-        new_object = PathObject(location)
-    project_management = app_config()['account_info']['project_management']
-    users = app_config()['project_management'][project_management]['users']
-    if current_user() in users:
-        user_info = users[current_user()]
-        if user_info:
-            gui = CGLNuke(parent=get_main_window(), path=location, user_info=user_info)
-            app = startup.do_nuke_gui_init(gui)
-            gui.setWindowFlags(QtCore.Qt.Window)
-            gui.setWindowTitle('CG Lumberjack')
-            if scene_name != 'Root':
-                gui.centralWidget().update_location(new_object)
-            gui.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-            gui.show()
-            gui.raise_()
-            app.exec_()  # this is required to work, yet i get this error: "NoneType" object has no attribute 'exec_',
-        else:
-            print 'Cant find user info in lumbermill for %s' % current_user()
+def create_write_node():
+    """
+    Pops up a gui that allows you to create a custom write node or a default write node if left blank
+    :return:
+    """
+    write_nodes = ['']
+    for n in nuke.allNodes('Write'):
+        write_nodes.append(n.name())
+    dialog = InputDialog(title='Create Write Node',
+                         message='Type a Name for an Element (Leave blank for default write node)',
+                         combo_box_items=write_nodes)
+    dialog.exec_()
+    if dialog.button == 'Ok':
+        print 1
+        if dialog.combo_box.currentText():
+            print dialog.combo_box.currentText(), 2
+            padding = '#' * cgl_nuke.get_biggest_read_padding()
+            path_object = cgl_nuke.NukePathObject(cgl_nuke.get_file_name())
+            path_object.set_attr(task='elem')
+            path_object.set_attr(context='render')
+            path_object.set_attr(ext='%s.dpx' % padding)
+            write_node = nuke.createNode('Write')
+            write_node.knob('file').fromUserText(path_object.path_root)
+            write_node.knob('name').setValue(dialog.combo_box.currentText())

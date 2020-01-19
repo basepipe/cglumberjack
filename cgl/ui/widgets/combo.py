@@ -58,7 +58,7 @@ class AdvComboBox(QtGui.QComboBox):
         # self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
         self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
         # add a filter model to filter matching items
-        self.pFilterModel = QtCore.QSortFilterProxyModel(self)
+        self.pFilterModel = QtGui.QSortFilterProxyModel(self)
         self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
         self.pFilterModel.setSourceModel(self.model())
 

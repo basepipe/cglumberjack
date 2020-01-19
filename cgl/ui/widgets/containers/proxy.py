@@ -19,7 +19,7 @@ class LJTableSearchProxy(QtGui.QSortFilterProxyModel):
             self.search_text = text.lower()
         else:
             self.search_text = None
-        QtCore.QSortFilterProxyModel.invalidateFilter(self)
+        QtGui.QSortFilterProxyModel.invalidateFilter(self)
 
     def filterAcceptsRow(self, src_row, src_parent):
         if not self.search_text:  # there is no search we can accept

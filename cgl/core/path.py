@@ -670,7 +670,7 @@ class PathObject(object):
         if job_id:
             command = r'python %s -p %s -r True' % (__file__, self.path_root)
             process_info = cgl_execute(command, command_name='%s: upload_review()' % self.command_base,
-                                       methodology='smedge', Wait=job_id)
+                                       methodology='smedge', WaitForJobID=job_id)
             return process_info
         else:
             if os.path.exists(self.preview_path):
@@ -692,10 +692,12 @@ class PathObject(object):
         if self.file_type == 'sequence':
             # make sure that an hd_proxy exists:
             proxy_info = self.make_proxy(job_id=job_id)
+            print 'proxy id %s' % proxy_info['job_id']
             mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
                                               command_name='%s: create_web_mov()' % self.command_base,
                                               dependent_job=proxy_info['job_id'], processing_method=PROCESSING_METHOD,
                                               new_window=new_window)
+            print 'mov info id %s' % mov_info['job_id']
             thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
                                                     command_name='%s: create_movie_thumb()' % self.command_base,
                                                     dependent_job=mov_info['job_id'],
@@ -1105,6 +1107,7 @@ class Sequence(object):
             glob_string = '%s*%s' % (self.sequence.split('%')[0], self.ext)
         elif '*' in self.sequence:
             glob_string = self.sequence
+        print glob_string
         frames = glob.glob(glob_string)
         if frames:
             try:
@@ -1298,7 +1301,7 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
                     output_.append(each)
     for each in output_:
         if '#' in each:
-            sequence = Sequence(each)
+            sequence = Sequence(os.path.join(directory, each))
             frange = sequence.frame_range
             if frange:
                 index = output_.index(each)

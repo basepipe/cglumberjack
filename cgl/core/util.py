@@ -100,7 +100,7 @@ def test_string_against_rules(test_string, rule, effected_label=None):
         return app_config()['paths']['rules']['%s_example' % rule]
 
 
-def cgl_copy(source, destination, methodology='local', verbose=False, dest_is_folder=False, test=False):
+def cgl_copy(source, destination, methodology='local', verbose=False, dest_is_folder=False, test=False, job_name=''):
     """
     Catch all for any type of copy function.  Handles a list of files/folders as well as individual files.
     :param source: takes a list of files/folders, or a string represeting a file or folder
@@ -121,7 +121,7 @@ def cgl_copy(source, destination, methodology='local', verbose=False, dest_is_fo
         source = glob.glob(source)
         command = 'robocopy "%s" "%s" "%s" /NFL /NDL /NJH /NJS /nc /ns /np /MT:8' % (dir_, destination, pattern)
         temp_dict = cgl_execute(command=command, print_output=False, methodology=methodology, verbose=verbose,
-                                command_name='copy_sequence')
+                                command_name='%s:copy_sequence' % job_name)
         # return the sequence based off the folder
         run_dict['output'] = os.path.join(destination, file_)
         run_dict['job_id'] = temp_dict['job_id']
@@ -262,6 +262,7 @@ def load_json(filepath):
         data = json.load(jsonfile)
     return data
 
+
 def save_xml(filepath, data):
     with open(filepath, 'w') as outfile:
         outfile.write(xmltodict.unparse(data))
@@ -274,7 +275,8 @@ def load_xml(filepath):
 
 
 def load_style_sheet(style_file='stylesheet.css'):
-    f = open(style_file, 'r')
+    file_ = os.path.join(__file__.split('cglumberjack')[0], 'cglumberjack', 'resources', style_file)
+    f = open(file_, 'r')
     data = f.read()
     data.strip('\n')
     # path = APP_PATH.replace('\\', '/')
@@ -337,7 +339,6 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
             smedge_command = r'%s Script -Type Generic Script -Name %s -Range %s ' \
                              r'-Command "%s"' % (app_config()['paths']['smedge'], command_name, range, command)
         print '-----------------'
-        print smedge_command
         for k in kwargs:
             value = kwargs[k]
             smedge_command = '%s -%s %s' % (smedge_command, k, value)

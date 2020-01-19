@@ -75,7 +75,7 @@ class LJTableWidget(QtGui.QTableView):
 
     def header_right_click_menu_trigger(self, header):
         mdl = self.model()
-        if isinstance(mdl, QtCore.QSortFilterProxyModel):
+        if isinstance(mdl, QtGui.QSortFilterProxyModel):
             mdl = mdl.sourceModel()
 
         if self.isColumnHidden(mdl.headers.index(header)):

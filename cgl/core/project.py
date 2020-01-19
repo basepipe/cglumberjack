@@ -178,10 +178,16 @@ def do_review(progress_bar=None, path_object=None):
     import logging
     from cgl.core.util import cgl_copy
     from cgl.ui.widgets.dialog import InputDialog
+    job_id = None
     if not path_object:
+        print 'No Valid PathObject() found for review'
         return None
     else:
         selection = path_object
+    if not os.path.exists(selection.preview_path):
+        print('No Web Preview Found, creating one')
+        job_info = selection.make_preview()
+        job_id = job_info['job_id']
     if selection.context == 'render':
         # lin_images = ['exr', 'dpx']
         # LUMBERMILL REVIEWS
@@ -200,7 +206,8 @@ def do_review(progress_bar=None, path_object=None):
                         dialog.accept()
                         return
                 else:
-                    CreateProductionData(selection)
+                    selection.upload_review(job_id=job_id)
+                    # CreateProductionData(selection)
             else:
                 print('Select file for Review')
 

@@ -66,10 +66,11 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     start_frame = input_.start_frame
 
     if processing_method == 'smedge':
-        command = r'python %s -i %s -o %s -w %s -h %s -ft sequence -t proxy' % (__file__, filein, fileout,
+        pyfile = '%s.py' % os.path.splitext(__file__)[0]
+        command = r'python %s -i %s -o %s -w %s -h %s -ft sequence -t proxy' % (pyfile, filein, fileout,
                                                                                 width, height)
         # probably good to write a custom imagemagick command for smedge for this.
-        process_info = cgl_execute(command, command_name=command_name, methodology='smedge', Wait=dependent_job)
+        process_info = cgl_execute(command, command_name=command_name, methodology='smedge', WaitForJobID=dependent_job)
     elif processing_method == 'local':
         dirname, filename = os.path.split(filein)
         match = filename.split('*')[0]
@@ -138,7 +139,7 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
     if processing_method == 'smedge':
         filename = "%s.py" % os.path.splitext(__file__)[0]
         command = r'python %s -i %s -o %s -t web_preview -ft sequence' % (filename, filein, fileout)
-        process_info = cgl_execute(command, command_name=command_name, methodology='smedge', Wait=dependent_job)
+        process_info = cgl_execute(command, command_name=command_name, methodology='smedge', WaitForJobID=dependent_job)
         process_info['file_out'] = fileout
         write_to_cgl_data(process_info)
         return process_info
@@ -171,7 +172,7 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
                                                             output_frame_rate, filter_arg, fileout)
     if ffmpeg_cmd:
         process_info = cgl_execute(ffmpeg_cmd, verbose=True,
-                                   command_name=command_name, Wait=dependent_job, new_window=new_window)
+                                   command_name=command_name, WaitForJobID=dependent_job, new_window=new_window)
 
         process_info['file_out'] = fileout
         write_to_cgl_data(process_info)
@@ -206,8 +207,9 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
     prep_for_output(output_file)
 
     if processing_method == 'smedge':
-        command = r'python %s -i %s -o %s -t thumb -ft movie' % (__file__, input_file, output_file)
-        process_info = cgl_execute(command, command_name=command_name, methodology='smedge', Wait=dependent_job)
+        pyfile = '%s.py' % os.path.splitext(__file__)[0]
+        command = r'python %s -i %s -o %s -t thumb -ft movie' % (pyfile, input_file, output_file)
+        process_info = cgl_execute(command, command_name=command_name, methodology='smedge', WaitForJobID=dependent_job)
         process_info['file_out'] = output_file
         write_to_cgl_data(process_info)
         return process_info
@@ -217,7 +219,7 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
                   '-frames:v 1 %s' % (config['ffmpeg'], input_file, res, output_file)
         process_info = cgl_execute(command, verbose=True, methodology=processing_method,
                                    command_name=command_name, new_window=new_window,
-                                   Wait=dependent_job)
+                                   WaitForJobID=dependent_job)
         process_info['file_out'] = output_file
         write_to_cgl_data(process_info)
         return process_info

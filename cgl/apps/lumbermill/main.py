@@ -524,14 +524,20 @@ class CGLumberjackWidget(QtGui.QWidget):
 
 
 class CGLumberjack(LJMainWindow):
-    def __init__(self, show_import=False, user_info=None, start_time=None):
+    def __init__(self, show_import=False, user_info=None, start_time=None, previous_path=None):
         LJMainWindow.__init__(self)
+
+
         if start_time:
             print 'Finished Loading Modules in %s seconds' % (time.time() - start_time)
         self.user_config = UserConfig().d
-        self.previous_path = self.user_config['previous_path']
+        if previous_path:
+            self.previous_path = previous_path
+            self.previous_paths = []
+        else:
+            self.previous_path = self.user_config['previous_path']
+            self.previous_paths = self.user_config['previous_paths']
         self.filter = 'Everything'
-        self.previous_paths = self.user_config['previous_paths']
         self.project_management = app_config()['account_info']['project_management']
         self.user_info = ''
         self.user_email = ''

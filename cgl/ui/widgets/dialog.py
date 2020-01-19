@@ -930,7 +930,9 @@ class ProjectCreator(LJDialog):
         import pandas as pd
         from cgl.ui.widgets.containers.pandas_model import PandasModel
         df = pd.read_csv(filepath)
+
         df.columns = [x.lower() for x in df.columns]
+        df['shot'] = df['shot'].apply('{:0>4}'.format)
         df = self.parse_tasks(df)
         drop_these = []
         for c in df.columns:
@@ -962,7 +964,8 @@ class ProjectCreator(LJDialog):
             else:
                 for _, row in df.iterrows():
                     if row[c] and str(row[c]) != 'nan':
-                        df = df.append({'shot': row['shot'], 'ftrack_task': c, 'bid days': row[c],
+                        print '%04d' % int(row['shot'])
+                        df = df.append({'shot': row['shot'], 'ftrack_task': c, 'bid hours': row[c],
                                         'description': row['description']}, ignore_index=True)
         return df
 
@@ -971,8 +974,12 @@ class ProjectCreator(LJDialog):
         for index, row in df.iterrows():
             if str(row['ftrack_task']).lower() == 'nan':
                 df.at[index, 'ftrack_task'] = ''
-            if str(row['bid days']).lower() == 'nan':
-                df.at[index, 'bid days'] = 0
+            if 'bid days' in row.keys():
+                if str(row['bid days']).lower() == 'nan':
+                    df.at[index, 'bid days'] = 0
+            if 'bid hours' in row.keys():
+                if str(row['bid hours']).lower() == 'nan':
+                    df.at[index, 'bid hours'] = 0
 
     def on_create_project_clicked(self):
         from cgl.core.path import PathObject, CreateProductionData, show_in_project_management
@@ -985,6 +992,10 @@ class ProjectCreator(LJDialog):
             for icol in xrange(self.model.columnCount()):
                 cell = self.model.data(self.model.createIndex(irow, icol))
                 row_dict[self.model._df.columns[icol]] = cell
+                if self.model._df.columns[icol] == 'bid hours':
+                    print 'found bid hours'
+                    print 'cell value is %s' % cell
+                    row_dict['bid'] = float(cell)*60 * 60
                 if self.model._df.columns[icol] == 'bid days':
                     # ftrack wants bids in seconds.
                     total_hours = self.daily_hours*float(cell)
@@ -993,13 +1004,14 @@ class ProjectCreator(LJDialog):
                 if self.model._df.columns[icol] == 'ftrack_task':
                     if cell:
                         d_ = self.project_management['tasks'][self.task_template_combo.currentText()]['long_to_short']
+                        print d_[self.scope].keys()
                         sn = d_[self.scope][cell.title()]
                         row_dict['task'] = sn
                 if self.model._df.columns[icol] == 'shot':
                     if '_' in cell:
                         seq, shot = cell.split('_')
                         row_dict['seq'] = seq
-                        row_dict['shot'] = shot
+                        row_dict['shot'] = '%04d' % int(shot)
             path_object = PathObject(row_dict)
             CreateProductionData(path_object=path_object, force_pm_creation=True)
         # open up Ftrack to the project page
