@@ -78,7 +78,7 @@ def current_user():
         str: username
 
     """
-    return getpass.getuser()
+    return getpass.getuser().lower()
 
 
 def test_string_against_rules(test_string, rule, effected_label=None):
