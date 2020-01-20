@@ -72,8 +72,8 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
 
     if processing_method == 'smedge':
         pyfile = '%s.py' % os.path.splitext(__file__)[0]
-        command = r'python %s -i %s -o %s -w %s -h %s -ft sequence -t proxy -ext %s' % (pyfile, filein, fileout,
-                                                                                        width, height, ext)
+        command = r'python %s -i %s -o %s -w %s -h %s -ft sequence -t proxy' % (pyfile, filein, fileout,
+                                                                                        width, height)
         # probably good to write a custom imagemagick command for smedge for this.
         process_info = cgl_execute(command, command_name=command_name, methodology='smedge', WaitForJobID=dependent_job)
     elif processing_method == 'local':
