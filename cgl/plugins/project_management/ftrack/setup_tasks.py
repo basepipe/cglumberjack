@@ -1,4 +1,4 @@
-from cgl.plugins.Qt import QtGui
+from cgl.plugins.Qt import QtGui, QtWidgets
 import json
 import os
 from cgl.core.config import app_config

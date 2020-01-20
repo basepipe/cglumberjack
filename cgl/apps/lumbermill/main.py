@@ -256,11 +256,11 @@ class NavigationWidget(QtWidgets.QFrame):
         return new_path
 
 
-class CGLumberjackWidget(QtWidgets.QSplashScreen):
+class CGLumberjackWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None, project_management=None, user_email=None, company=None,
                  path=None, radio_filter=None, show_import=False):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         try:
             font_db = QtGui.QFontDatabase()
             font_db.addApplicationFont(os.path.join(cglpath.font_path(), 'ARCADECLASSIC.TTF'))

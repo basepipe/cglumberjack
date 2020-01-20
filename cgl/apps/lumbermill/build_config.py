@@ -5,12 +5,12 @@ from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.util import cgl_copy
 
 
-class PathItemWidget(QtWidgets.QSplashScreen):
+class PathItemWidget(QtWidgets.QWidget):
     line_edit_changed = QtCore.Signal(object)
     root_set = QtCore.Signal()
 
     def __init__(self, parent=None, paths_dict=None, hide_on_find=False):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         self.layout = QtWidgets.QVBoxLayout(self)
         self.globals_layout = QtWidgets.QGridLayout()
         self.paths_layout = QtWidgets.QGridLayout()

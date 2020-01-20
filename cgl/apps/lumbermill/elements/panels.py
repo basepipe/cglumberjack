@@ -12,11 +12,11 @@ from cgl.core.util import current_user
 from cgl.ui.widgets.progress_gif import process_method
 
 
-class CompanyPanel(QtWidgets.QSplashScreen):
+class CompanyPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, search_box=None):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         self.search_box = search_box
         self.path_object = path_object
         self.panel = QtWidgets.QVBoxLayout(self)
@@ -95,11 +95,11 @@ class CompanyPanel(QtWidgets.QSplashScreen):
         self.location_changed.emit(path_object.data)
 
 
-class ProjectPanel(QtWidgets.QSplashScreen):
+class ProjectPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, search_box=None):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         self.path_object = path_object
         self.project_management = app_config()['account_info']['project_management']
         self.user_email = app_config()['project_management'][self.project_management]['users'][current_user()]
@@ -187,7 +187,7 @@ class ProjectPanel(QtWidgets.QSplashScreen):
         clear_layout(self, layout=layout)
 
 
-class TaskPanel(QtWidgets.QSplashScreen):
+class TaskPanel(QtWidgets.QWidget):
     """
     Vertical Button Panel - built to display tasks in a vertical line.  This is essentially the Task Panel
     """
@@ -195,7 +195,7 @@ class TaskPanel(QtWidgets.QSplashScreen):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, element='task', pixmap=None):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         self.element = element
         if path_object:
             self.path_object = path_object
@@ -257,11 +257,11 @@ class TaskPanel(QtWidgets.QSplashScreen):
         clear_layout(self, layout=layout)
 
 
-class ScopePanel(QtWidgets.QSplashScreen):
+class ScopePanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         if path_object:
             self.path_object = path_object.copy(seq=None, shot=None, ingest_source=None, resolution='', version='',
                                                 user=None, scope=None)
@@ -300,11 +300,11 @@ class ScopePanel(QtWidgets.QSplashScreen):
         clear_layout(self, layout=layout)
 
 
-class ProductionPanel(QtWidgets.QSplashScreen):
+class ProductionPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, search_box=None, my_tasks=False):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         # Create the Middle Panel
         if path_object:
             self.path_object = path_object.copy(seq='*', shot='*', ingest_source='*', resolution='', version='',

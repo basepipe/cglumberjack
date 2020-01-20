@@ -4,18 +4,9 @@ from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import nuke
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.plugins.nuke import cgl_nuke
-
-
-class InputDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None):
-        super(InputDialog, self).__init__(parent)
-
-        layout = QtWidgets.QVBoxLayout(self)
-        message = QtWidgets.QLabel('This is a message')
-        self.combo = QtWidgets.QComboBox()
-        layout.addWidget(message)
-        layout.addWidget(self.combo)
-        self.setWindowTitle("WindowTitle")
+from cgl.core.path import PathObject
+from cgl.core.config import app_config
+from cgl.core.util import current_user
 
 
 def get_nuke_main_window():
@@ -50,6 +41,21 @@ class NukeBrowserWidget(CGLumberjackWidget):
             print 'nuke import'
         print self.parent()
         self.parent().close()
+
+
+class CGLNukeWidget(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        QtWidgets.QDialog.__init__(self, parent)
+        scene_name = cgl_nuke.get_file_name()
+        scene = PathObject(scene_name)
+        self.setWindowTitle('Nuke - Lumbermill')
+        location = '%s/*' % scene.split_after('shot')
+        project_management = app_config()['account_info']['project_management']
+        users = app_config()['project_management'][project_management]['users']
+        user_info = users[current_user()]
+        layout = QtWidgets.QVBoxLayout(self)
+        main = CGLNuke(path=location, user_info=user_info)
+        layout.addWidget(main)
 
 
 class CGLNuke(CGLumberjack):
@@ -193,20 +199,11 @@ def create_write_node():
     """
     import sys
     write_nodes = ['']
-    try:
-        app = QtWidgets.QApplication(sys.argv)
-    except RuntimeError:
-        app = None
-        print 'app already exists'
-    for n in nuke.allNodes('Write'):
-        write_nodes.append(n.name())
     dialog = InputDialog(title='Create Write Node',
                          message='Type a Name for an Element (Leave blank for default write node)',
                          combo_box_items=write_nodes)
     dialog.setAttribute(QtCore.Qt.WA_QuitOnClose)
-    dialog.show()
-    if app:
-        app.exec_()
+    dialog.exec_()
     if dialog.button == 'Ok':
         if dialog.combo_box.currentText():
             elem_name = 'elem%s' % dialog.combo_box.currentText().title()
@@ -225,3 +222,22 @@ def create_write_node():
         else:
             cgl_nuke.create_scene_write_node()
 
+
+
+
+def launch_lumbermill():
+    import sys
+    scene_name = cgl_nuke.get_file_name()
+    scene = PathObject(scene_name)
+    location = '%s/*' % scene.split_after('shot')
+    project_management = app_config()['account_info']['project_management']
+    users = app_config()['project_management'][project_management]['users']
+    if current_user() in users:
+        user_info = users[current_user()]
+        app = QtWidgets.QApplication.instance()
+        main_window = CGLNuke(user_info=user_info, path=location)
+        main_window.setWindowTitle('CG Lumberjack: Nuke')
+        main_window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        main_window.show()
+        main_window.raise_()
+    app.exec_()

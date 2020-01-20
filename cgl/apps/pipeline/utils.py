@@ -50,7 +50,7 @@ class LJTabWidget(QtWidgets.QTabWidget):
         self.setTabPosition(QtWidgets.QTabWidget.West)
 
 
-class CGLMenuButton(QtWidgets.QSplashScreen):
+class CGLMenuButton(QtWidgets.QWidget):
     """
     Represents the "Button" within the parent "Menu".
     """
@@ -59,7 +59,7 @@ class CGLMenuButton(QtWidgets.QSplashScreen):
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path='',
                  menu_type='preflights'):
         # TODO - we need to choose better variable names, this is obviously "preflight" specific.
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
         try:
             dialog = self.parent().parent().parent()
@@ -231,7 +231,7 @@ class CGLMenuButton(QtWidgets.QSplashScreen):
         self.parent().parent().removeTab(self.parent().parent().currentIndex())
 
 
-class CGLMenu(QtWidgets.QSplashScreen):
+class CGLMenu(QtWidgets.QWidget):
     """
     This creates the top level "Menu" Tab with the "buttons" within it.  Menu is a catch all for "Menus", "Shelves",
     "Preflights", "Context-menus" and anything else in the future that fits the structure we've got here.
@@ -240,7 +240,7 @@ class CGLMenu(QtWidgets.QSplashScreen):
     save_clicked = QtCore.Signal()
 
     def __init__(self, parent=None, software=None, menu_type='menus', menu_name='', menu=None, menu_path=''):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         # initialize variables
         self.menu_type = menu_type
         if self.menu_type == 'shelves':

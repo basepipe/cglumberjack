@@ -36,7 +36,7 @@ class Designer(LJDialog):
         # create layouts
         layout = QtWidgets.QVBoxLayout(self)
         tool_bar = QtWidgets.QHBoxLayout()
-        self.title_widget = QtWidgets.QSplashScreen()
+        self.title_widget = QtWidgets.QWidget()
         title_widget_layout = QtWidgets.QHBoxLayout()
         self.title_widget.setLayout(title_widget_layout)
         grid_layout = QtWidgets.QGridLayout()

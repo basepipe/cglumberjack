@@ -13,7 +13,7 @@ from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 from panels import clear_layout
 
 
-class FilesPanel(QtWidgets.QSplashScreen):
+class FilesPanel(QtWidgets.QWidget):
     source_selection_changed = QtCore.Signal(object)
     location_changed = QtCore.Signal(object)
     open_signal = QtCore.Signal()
@@ -23,7 +23,7 @@ class FilesPanel(QtWidgets.QSplashScreen):
     publish_signal = QtCore.Signal()
 
     def __init__(self, parent=None, path_object=None, user_email='', machine_user=None, show_import=False):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
         self.work_files = []
         self.high_files = []

@@ -49,10 +49,10 @@ class LJTag(QtWidgets.QFrame):
         self.close_clicked.emit()
 
 
-class TagWidget(QtWidgets.QSplashScreen):
+class TagWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         # TODO - add the tag icon to this
         # TODO - add the hide/show functionality to pushing the tag icon
         # TODO - add the abililty to choose the color of the tag
@@ -315,7 +315,7 @@ class QVLine(QtWidgets.QFrame):
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
 
 
-class TaskWidget(QtWidgets.QSplashScreen):
+class TaskWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
@@ -330,7 +330,7 @@ class TaskWidget(QtWidgets.QSplashScreen):
     copy_selected_version = QtCore.Signal()
 
     def __init__(self, parent, title, filter_string=None, path_object=None, show_import=False):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         task_row = QtWidgets.QHBoxLayout()
         self.show_import = show_import
@@ -510,14 +510,14 @@ class TaskWidget(QtWidgets.QSplashScreen):
         self.title.setText('<b>%s</b>' % new_title.title())
 
 
-class ProjectWidget(QtWidgets.QSplashScreen):
+class ProjectWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
     assign_clicked = QtCore.Signal(object)
 
     def __init__(self, parent=None, title='', filter_string=None, path_object=None, pixmap=None, search_box=None):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
@@ -595,14 +595,14 @@ class ProjectWidget(QtWidgets.QSplashScreen):
         self.title.show()
 
 
-class AssetWidget(QtWidgets.QSplashScreen):
+class AssetWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
     assign_clicked = QtCore.Signal(object)
 
     def __init__(self, parent, title, filter_string=None, path_object=None, search_box=None):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         self.right_click = False
         self.shots_icon = QtGui.QPixmap(path.icon_path('shots24px.png'))
         self.assets_icon = QtGui.QPixmap(path.icon_path('assets24px.png'))
@@ -643,7 +643,7 @@ class AssetWidget(QtWidgets.QSplashScreen):
         self.assets_radio = QtWidgets.QRadioButton('Assets')
         self.shots_radio = QtWidgets.QRadioButton('Shots')
         self.tasks_radio = QtWidgets.QRadioButton('My Tasks')
-        self.radio_group_scope = QtGui.QButtonGroup(self)
+        self.radio_group_scope = QtWidgets.QButtonGroup(self)
         self.radio_group_scope.addButton(self.shots_radio)
         self.radio_group_scope.addButton(self.assets_radio)
         self.radio_group_scope.addButton(self.tasks_radio)
@@ -794,9 +794,9 @@ class FileTableWidget(LJTableWidget):
             menu.create_action('Render on Farm', self.render_nuke_farm)
 
 
-class LJListWidget(QtWidgets.QSplashScreen):
+class LJListWidget(QtWidgets.QWidget):
     def __init__(self, label, pixmap, empty_state_text='', empty_state_icon=None):
-        QtWidgets.QSplashScreen.__init__(self)
+        QtWidgets.QWidget.__init__(self)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
         layout = QtWidgets.QVBoxLayout(self)
         self.label = QtWidgets.QLabel(label)
@@ -1019,9 +1019,9 @@ class AdvComboBox(QtWidgets.QComboBox):
             self.addItem(item)
 
 
-class GifWidget(QtWidgets.QSplashScreen):
+class GifWidget(QtWidgets.QWidget):
     def __init__(self, parent=None, gif_path=None, animated=True):
-        QtWidgets.QSplashScreen.__init__(self, parent=parent)
+        QtWidgets.QWidget.__init__(self, parent=parent)
         self.setProperty('class', 'gif_widget')
         self.animated = animated
         layout = QtWidgets.QHBoxLayout()

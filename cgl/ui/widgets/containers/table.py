@@ -45,7 +45,10 @@ class LJTableWidget(QtWidgets.QTableView):
     def set_item_model(self, mdl, proxy=None):
         if proxy is None:
             proxy = LJTableSearchProxy()
+        print 2, proxy
         self.setModel(proxy)
+        print self.model()
+        print self.model().rowCount()
         proxy.setSourceModel(mdl)
         self.setSortingEnabled(True)
 

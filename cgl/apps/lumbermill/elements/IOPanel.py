@@ -50,11 +50,11 @@ class EmptyStateWidgetIO(EmptyStateWidget):
             e.ignore()
 
 
-class IOPanel(QtWidgets.QSplashScreen):
+class IOPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         if path_object:
             self.path_object = path_object
         else:

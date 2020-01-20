@@ -9,12 +9,12 @@ from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.combo import AdvComboBox, LabelComboRow
 
 
-class AssetWidget(QtWidgets.QSplashScreen):
+class AssetWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
 
     def __init__(self, parent, title, scope):
-        QtWidgets.QSplashScreen.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout(self)
         if scope == 'assets':

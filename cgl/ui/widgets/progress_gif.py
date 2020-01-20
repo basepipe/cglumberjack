@@ -4,10 +4,10 @@ import threading
 from cgl.core.path import image_path
 
 
-class ProgressGif(QtWidgets.QSplashScreen):
+class ProgressGif(QtWidgets.QWidget):
 
     def __init__(self, title='CG Lumberjacking...', height=150):
-        QtWidgets.QSplashScreen.__init__(self)
+        QtWidgets.QWidget.__init__(self)
         layout = QtWidgets.QVBoxLayout(self)
         self.gif_height = QtCore.QSize(height, height)
 
