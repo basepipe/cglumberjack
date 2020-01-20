@@ -359,7 +359,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(self.path_object)
 
     def update_location_to_latest(self, data):
-        path_object = data.copy(latest=True)
+        path_object = data.copy(latest=True, filename=None, ext=None)
         self.update_location(path_object)
 
     def update_location(self, data):

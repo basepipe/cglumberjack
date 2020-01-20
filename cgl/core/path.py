@@ -737,6 +737,40 @@ class PathObject(object):
                                                    command_name='%s: create_proxy_sequence()' % self.command_base)
         return proxy_info
 
+    def publish(self):
+        """
+        This will create a publish version from the current pathObject.   Essentially that means:
+        we will create the next major version for this user and copy all elements into the new version
+        we will create a "publish" version of it as well to
+        :param source:
+        :param render:
+        :return:
+        """
+        if self.user == 'publish':
+            print "This is a publish user already, traditionally you'll be publishing from a user context."
+        if not self.resolution:
+            print('You must have resolution in order to publish')
+        # current folders to be copied
+        current_source = self.copy(filename=None, ext=None).path_root
+        current_render = self.copy(context='render', filename=None, ext=None).path_root
+        # create the next major version folders to copy to
+        next_major = self.copy(filename=None, ext=None)
+        next_major = next_major.next_major_version()
+        next_major_render = next_major.copy(context='render').path_root
+        next_major_source = next_major.path_root
+        publish = next_major.copy(user='publish')
+        publish_source = publish.path_root
+        publish_render = publish.copy(context='render').path_root
+        print 'Copying %s to %s' % (current_source, next_major_source)
+        cgl_copy(current_source, next_major_source)
+        print 'Copying %s to %s' % (current_source, publish_source)
+        cgl_copy(current_source, publish_source)
+        print 'Copying %s to %s' % (current_render, next_major_render)
+        cgl_copy(current_render, next_major_render)
+        print 'Copying %s to %s' % (current_render, publish_render)
+        cgl_copy(current_render, publish_render)
+        print 'Finished Copying'
+
     def show_in_folder(self):
         """
         open the folder location of the current path_object

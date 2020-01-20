@@ -51,7 +51,7 @@ class FilesPanel(QtWidgets.QWidget):
         else:
             self.user = current_user()
         self.project_management = app_config()['account_info']['project_management']
-        self.on_task_selected(self.path_object.data)
+        self.on_task_selected(self.path_object)
         self.panel.addLayout(self.tasks)
         self.panel.addStretch(1)
 
@@ -60,7 +60,11 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_task_selected(self, data):
         try:
-            current = PathObject(data)
+            if isinstance(data, PathObject):
+                current = data.copy()
+            elif isinstance(data, dict):
+                'its a dict, this sucks'
+                current = PathObject(data)
         except IndexError:
             print 'Nothing Selected'
             return
@@ -73,7 +77,7 @@ class FilesPanel(QtWidgets.QWidget):
             # current.set_attr(user_email=self.user_email)
             self.panel.seq = current.seq
             self.panel.shot = current.shot
-            self.update_location(path_object=current)
+            self.update_task_location(path_object=current)
 
             self.panel.tasks = []
             try:
@@ -97,7 +101,7 @@ class FilesPanel(QtWidgets.QWidget):
             self.current_location['user'] = user
             self.current_location['version'] = version
             self.current_location['resolution'] = resolution
-            self.update_location(self.current_location)
+            self.update_task_location(self.current_location)
             self.panel.addWidget(task_widget)
             self.panel.tasks.append(self.task)
             self.version_obj = current.copy(task=self.task, user=user, version=version,
@@ -181,7 +185,7 @@ class FilesPanel(QtWidgets.QWidget):
                 CreateProductionData(path_object=to_object)
                 self.on_task_selected(self.version_obj)
 
-    def update_location(self, path_object):
+    def update_task_location(self, path_object, latest=False):
         """
         Method that sends the path object dictionary for anything happening within the Tasks Panel.
         :param path_object:
@@ -191,7 +195,7 @@ class FilesPanel(QtWidgets.QWidget):
             if isinstance(path_object, dict):
                 path_object = PathObject(path_object)
             self.current_location = path_object.data
-            self.path_object = path_object.copy(latest=True)
+            self.path_object = path_object.copy()
             self.location_changed.emit(self.path_object)
 
     def on_create_asset(self):
@@ -242,8 +246,6 @@ class FilesPanel(QtWidgets.QWidget):
         if set_to_latest:
             version = latest
         if not version:
-            print items
-            print 'version not set, %s' % latest
             version = latest
         for each in items:
             task_widget.versions.addItem(each)
@@ -297,7 +299,7 @@ class FilesPanel(QtWidgets.QWidget):
         except IndexError:
             # this indicates a selection within the module, but not a specific selected files
             pass
-        self.update_location(object_)
+        self.update_task_location(object_)
         for each in data:
             dir_ = os.path.dirname(object_.path_root)
             new_data.append(os.path.join(dir_, each[0]))
@@ -324,7 +326,7 @@ class FilesPanel(QtWidgets.QWidget):
             except IndexError:
                 # this indicates a selection within the module, but not a specific selected files
                 pass
-            self.update_location(object_)
+            self.update_task_location(object_)
             for each in data:
                 dir_ = os.path.dirname(object_.path_root)
                 new_data.append(os.path.join(dir_, each[0]))
@@ -375,7 +377,8 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_publish_clicked(self):
         print 'Publishing stuff now'
-        print self.current_location
+        current = PathObject(self.current_location)
+        current.publish()
 
     def on_task_info_changed(self):
         """
@@ -383,15 +386,23 @@ class FilesPanel(QtWidgets.QWidget):
         It essentially refreshes the task window.
         :return:
         """
-        files_widget = self.sender().parent().parent()
+
+        version = None
+        user = self.sender().parent().users.currentText()
         version = self.sender().parent().versions.currentText()
         resolution = self.sender().parent().resolutions.currentText()
-        user = self.sender().parent().users.currentText()
-        self.path_object.set_attr(version=version)
-        self.path_object.set_attr(user=user)
-        self.path_object.set_attr(resolution=resolution)
-        self.current_location = self.path_object.data
-        files_widget.on_task_selected(self.path_object.data)
+        name = None
+        if self.sender().name:
+            name = self.sender().name
+        if name == 'users':
+            self.path_object = self.path_object.copy(user=user, latest=True, resolution='high')
+        elif name == 'versions':
+            self.path_object = self.path_object.copy(user=user, version=version, resolution='high')
+        else:
+            self.path_object = self.path_object.copy(user=user, version=version, resolution=resolution)
+        files_widget = self.sender().parent().parent()
+        # self.current_location = self.path_object.data
+        files_widget.on_task_selected(self.path_object)
 
     def on_assign_button_clicked(self, data):
         task = self.sender().task
@@ -418,12 +429,12 @@ class FilesPanel(QtWidgets.QWidget):
             self.path_object.set_attr(filename=None)
             self.path_object.set_attr(ext=None)
             self.path_object.set_attr(filename_base=None)
-            # self.update_location(self.path_object)
+            # self.update_task_location(self.path_object)
             CreateProductionData(path_object=self.path_object,
                                  project_management=self.project_management,
                                  user_login=self.user_info['login'],
                                  force_pm_creation=True)
-        self.update_location(path_object=self.path_object)
+        self.update_task_location(path_object=self.path_object)
 
     def show_selected_in_folder(self):
         show_in_folder(self.path_object.path_root)
@@ -468,7 +479,7 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_file_dragged(self, path_object, data):
         logging.debug('Path: %s has files added to it' % path_object.path_root)
-        self.update_location(path_object)
+        self.update_task_location(path_object)
         self.clear_task_selection_except(path_object.task)
         to_path = path_object.path_root
         if os.path.isfile(to_path):
@@ -498,7 +509,7 @@ class FilesPanel(QtWidgets.QWidget):
             path_obj.set_attr(version=widget.versions.currentText())
             path_obj.set_attr(resolution=widget.resolutions.currentText())
         path_obj.set_attr(task=widget.task)
-        self.update_location(path_obj)
+        self.update_task_location(path_obj)
         list_ = []
         files_ = glob.glob('%s/*' % path_obj.path_root)
         for each in files_:

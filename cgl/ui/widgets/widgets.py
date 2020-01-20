@@ -350,9 +350,11 @@ class TaskWidget(QtWidgets.QWidget):
         self.in_file_tree = None
         self.versions_label = QtWidgets.QLabel("Version:")
         self.versions = AdvComboBox()
+        self.versions.name = 'versions'
 
         self.users_label = QtWidgets.QLabel("User:")
         self.users = AdvComboBox()
+        self.users.name = 'users'
         self.resolutions_label = QtWidgets.QLabel("Resolution:")
         self.resolutions = AdvComboBox()
         self.start_task_button = LJButton()
@@ -492,7 +494,6 @@ class TaskWidget(QtWidgets.QWidget):
     def setup(self, table, mdl):
 
         if isinstance(mdl, FileTableModel):
-            print 'FileTableModel'
             table.set_item_model(mdl)
             self.empty_state.hide()
             if not table.model().rowCount():
@@ -500,7 +501,6 @@ class TaskWidget(QtWidgets.QWidget):
                 if not self.start_task_button.isVisible():
                     self.empty_state.show()
         elif isinstance(mdl, ListItemModel):
-            print 'ListItemModel'
             table.set_item_model(mdl)
             self.empty_state.hide()
             if not table.model().rowCount():
@@ -508,7 +508,6 @@ class TaskWidget(QtWidgets.QWidget):
                 if not self.start_task_button.isVisible():
                     self.empty_state.show()
         elif isinstance(mdl, FilesModel):
-            print 'FilesModel'
             table.set_item_model(mdl)
             self.empty_state.hide()
             if not table.model().rowCount():
