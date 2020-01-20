@@ -334,7 +334,6 @@ class CGLumberjackWidget(QtWidgets.QSplashScreen):
         self.nav_widget.location_changed.connect(self.path_widget.update_path)
         self.layout.addWidget(self.nav_widget)
         self.update_location(self.path_object)
-        print 1
 
     def show_my_tasks(self):
         self.path_object = cglpath.PathObject(self.path_widget.path_line_edit.text())
@@ -716,5 +715,17 @@ class CGLumberjack(LJMainWindow):
 
 def sleeper():
     time.sleep(5)
+
+
+if __name__ == "__main__":
+    import sys
+    project_management = app_config()['account_info']['project_management']
+    users = app_config()['project_management'][project_management]['users']
+    app = QtWidgets.QApplication(sys.argv)
+    main_window = CGLumberjack(user_info=users[current_user()])
+    main_window.setWindowTitle('CG Lumberjack: Nuke')
+    main_window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+    main_window.show()
+    app.exec_()
 
 

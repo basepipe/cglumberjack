@@ -7,7 +7,7 @@ def load_lumbermill(app, splash=None):
     import time
     start_time = time.time()
     print 'Loading Lumbermill'
-    QtWidgets.QApplication.processEvents()
+    # QtWidgets.QApplication.processEvents()
     gui = CGLumberjack(show_import=False, user_info=user_info, start_time=start_time)
     gui.show()
     gui.raise_()
