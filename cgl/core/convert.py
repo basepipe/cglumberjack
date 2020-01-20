@@ -23,7 +23,7 @@ OPTIONS = {'320p': ['180k', '360k', '-1:320'],
 
 def create_proxy_sequence(input_sequence, output_sequence, width='1920', height='1080', do_height=False,
                           processing_method='local', dependent_job=None, copy_input_padding=True,
-                          command_name='create_proxy_sequence()', new_window=False, ext='jpg'):
+                          command_name='create_proxy_sequence()', new_window=False, ext=None):
     """
     Create a proxy jpeg sequence in sRGB color space from the given input sequence.
     :param input_sequence: input sequence string, formatted with (#, %04d, *)
@@ -92,6 +92,9 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
                 SEQ_SPLIT = "\d{3,}\.\w{2,4}$"
                 frange = re.search(SEQ_SPLIT, each)
                 num = os.path.splitext(frange.group(0))[0]
+                filename, ext_ = fileout.split('%')
+                if not ext:
+                    ext = ext_
                 file_out = '%s%s.%s' % (fileout.split('%')[0], num, ext)
                 command = '%s %s -resize %s %s' % (config['magick'], file_, res, file_out)
                 process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
