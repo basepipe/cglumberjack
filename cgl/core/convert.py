@@ -239,12 +239,11 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
 @click.option('--height', '-h', default=1080, help='height in pixels')
 @click.option('--file_type', '-ft', default='sequence', help='options: sequence, image, movie, ppt, pdf')
 @click.option('--conversion_type', '-t', default='proxy', help='Type of Conversion - sequence, movie, image, gif')
-@click.option('--extension', '-ext', default='jpg', help='extension of the file in question')
-def main(input_file, output_file, height, width, file_type, conversion_type, ext):
+def main(input_file, output_file, height, width, file_type, conversion_type):
     run_dict = {}
     if file_type == 'sequence':
         if conversion_type == 'proxy':
-            create_proxy_sequence(input_file, output_sequence=output_file, width=width, height=height, ext=ext)
+            create_proxy_sequence(input_file, output_sequence=output_file, width=width, height=height)
         elif conversion_type == 'web_preview':
             create_web_mov(input_file, output=output_file)
     if file_type == 'movie':
