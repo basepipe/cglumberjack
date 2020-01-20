@@ -1,20 +1,20 @@
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 import logging
 import threading
 from cgl.core.path import image_path
 
 
-class ProgressGif(QtGui.QWidget):
+class ProgressGif(QtWidgets.QSplashScreen):
 
     def __init__(self, title='CG Lumberjacking...', height=150):
-        QtGui.QWidget.__init__(self)
-        layout = QtGui.QVBoxLayout(self)
+        QtWidgets.QSplashScreen.__init__(self)
+        layout = QtWidgets.QVBoxLayout(self)
         self.gif_height = QtCore.QSize(height, height)
 
-        self.message = QtGui.QLabel(title)
+        self.message = QtWidgets.QLabel(title)
         self.message.setProperty('class', 'ultra_title')
         self.message.setAlignment(QtCore.Qt.AlignCenter)
-        self.progress_bar = QtGui.QLabel()
+        self.progress_bar = QtWidgets.QLabel()
         self.progress_bar.setAlignment(QtCore.Qt.AlignCenter)
         self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
         self.movie.setScaledSize(self.gif_height)
@@ -34,14 +34,14 @@ class ProgressGif(QtGui.QWidget):
         logging.info(self.movie.scaledSize())
 
 
-class ProgressDialog(QtGui.QDialog):
+class ProgressDialog(QtWidgets.QDialog):
 
     def __init__(self, message, gif_name):
-        QtGui.QDialog.__init__(self)
+        QtWidgets.QDialog.__init__(self)
         self.setWindowTitle("Gif Tester")
 
-        self.message = QtGui.QLabel(message)
-        self.movie_screen = QtGui.QLabel()
+        self.message = QtWidgets.QLabel(message)
+        self.movie_screen = QtWidgets.QLabel()
 
         self.movie = QtGui.QMovie(image_path(gif_name))
         logging.info(self.movie.isValid())
@@ -49,7 +49,7 @@ class ProgressDialog(QtGui.QDialog):
 
         self.movie_screen.setMovie(self.movie)
 
-        layout = QtGui.QVBoxLayout()
+        layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.message)
         layout.addWidget(self.movie_screen)
         self.setLayout(layout)
@@ -73,7 +73,7 @@ def process_method(progress_bar, target, args=(), text=None):
 
 
 if __name__ == '__main__':
-    app = QtGui.QApplication([])
+    app = QtWidgets.QApplication([])
     form = ProgressDialog(message='test', gif_name='')
     form.show()
     app.exec_()

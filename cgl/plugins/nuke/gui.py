@@ -1,9 +1,33 @@
 import os
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
+from PySide2 import QtWidgets
 from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import nuke
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.plugins.nuke import cgl_nuke
+
+
+class InputDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super(InputDialog, self).__init__(parent)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        message = QtWidgets.QLabel('This is a message')
+        self.combo = QtWidgets.QComboBox()
+        layout.addWidget(message)
+        layout.addWidget(self.combo)
+        self.setWindowTitle("WindowTitle")
+
+
+def get_nuke_main_window():
+    """Returns Nuke's main window"""
+
+    app = QtWidgets.QApplication.instance()
+    for obj in app.topLevelWidgets():
+        if obj.inherits('QMainWindow') and obj.metaObject().className() == 'Foundry::UI::DockMainWindow':
+            return obj
+    else:
+        raise RuntimeError('Could not find DockMainWindow instance')
 
 
 class NukeBrowserWidget(CGLumberjackWidget):
@@ -36,11 +60,11 @@ class CGLNuke(CGLumberjack):
         self.setCentralWidget(NukeBrowserWidget(self, show_import=True, path=path))
 
 
-class RenderDialog(QtGui.QDialog):
+class RenderDialog(QtWidgets.QDialog):
     from cgl_nuke import get_main_window
 
     def __init__(self, parent=get_main_window(), write_node=''):
-        QtGui.QDialog.__init__(self, parent)
+        QtWidgets.QDialog.__init__(self, parent)
 
         self.write_node = write_node
         self.render_path = ''
@@ -50,21 +74,21 @@ class RenderDialog(QtGui.QDialog):
         self.setWindowTitle("Render %s" % self.write_node)
 
         # define the layouts
-        layout = QtGui.QVBoxLayout(self)
-        grid_layout = QtGui.QGridLayout()
-        button_row = QtGui.QHBoxLayout()
+        layout = QtWidgets.QVBoxLayout(self)
+        grid_layout = QtWidgets.QGridLayout()
+        button_row = QtWidgets.QHBoxLayout()
 
         # define the widgets
-        # self.title = QtGui.QLabel('Render Write Node:')
-        frange_label = QtGui.QLabel('Frame Range')
-        render_by_label = QtGui.QLabel('Render By')
+        # self.title = QtWidgets.QLabel('Render Write Node:')
+        frange_label = QtWidgets.QLabel('Frame Range')
+        render_by_label = QtWidgets.QLabel('Render By')
 
-        self.frange_line_edit = QtGui.QLineEdit()
-        self.render_by_line_edit = QtGui.QLineEdit()
+        self.frange_line_edit = QtWidgets.QLineEdit()
+        self.render_by_line_edit = QtWidgets.QLineEdit()
         self.render_by_line_edit.setText("1")
 
-        self.cancel_button = QtGui.QPushButton('Cancel')
-        self.render_button = QtGui.QPushButton('Render')
+        self.cancel_button = QtWidgets.QPushButton('Cancel')
+        self.render_button = QtWidgets.QPushButton('Render')
 
         # add stuff to layouts
         grid_layout.addWidget(frange_label, 0, 0)
@@ -147,8 +171,17 @@ def render_selected_write_nodes():
     return render_paths
 
 
+def render_selected_to_smedge():
+    import plugins.nuke.bin.preflight as preflight
+    if nuke.selectedNodes():
+        print 'found selected'
+        if nuke.selectedNodes()[0].Class() == 'Write':
+            print 'launching preflight'
+            preflight.launch_('render')
+
+
 def getMainWindow():
-    app = QtGui.QApplication.instance()
+    app = QtWidgets.QApplication.instance()
     for widget in app.topLevelWidgets():
         if widget.metaObject().className() == 'Foundry::UI::DockMainWindow':
             return widget
@@ -162,7 +195,7 @@ def create_write_node():
     import sys
     write_nodes = ['']
     try:
-        app = QtGui.QApplication(sys.argv)
+        app = QtWidgets.QApplication(sys.argv)
     except RuntimeError:
         app = None
         print 'app already exists'

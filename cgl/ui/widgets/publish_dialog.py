@@ -1,9 +1,9 @@
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.path import PathObject, lj_list_dir
 
 
-class ListWidget(QtGui.QListWidget):
+class ListWidget(QtWidgets.QListWidget):
 
     def sizeHint(self):
         s = QtCore.QSize()
@@ -23,7 +23,7 @@ class PublishDialog(LJDialog):
         self.do_review = True
         self.setMinimumWidth(300)
         self.setWindowTitle('Publish %s -->> %s' % (path_object.version, path_object.next_major_version().version))
-        layout = QtGui.QVBoxLayout()
+        layout = QtWidgets.QVBoxLayout()
         if path_object.context == 'render':
             render_files = lj_list_dir(path_object.split_after('resolution'))
             path_object.set_attr(context='source')
@@ -32,29 +32,29 @@ class PublishDialog(LJDialog):
             source_files = lj_list_dir(path_object.split_after('resolution'))
             path_object.set_attr(context='render')
             render_files = lj_list_dir(path_object.split_after('resolution'))
-        current_user_label = QtGui.QLabel('Current User: <b>%s</b>' % path_object.user)
-        current_version_label = QtGui.QLabel('Current Version: <b>%s</b>' % path_object.version)
-        publish_version_label = QtGui.QLabel('<b>Publish to Version: %s?</b>' %
+        current_user_label = QtWidgets.QLabel('Current User: <b>%s</b>' % path_object.user)
+        current_version_label = QtWidgets.QLabel('Current Version: <b>%s</b>' % path_object.version)
+        publish_version_label = QtWidgets.QLabel('<b>Publish to Version: %s?</b>' %
                                                  path_object.next_major_version().version)
         publish_version_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
-        self.source_label = QtGui.QLabel('My Files')
-        self.render_label = QtGui.QLabel('Publish Files')
+        self.source_label = QtWidgets.QLabel('My Files')
+        self.render_label = QtWidgets.QLabel('Publish Files')
         self.source_files_widget = ListWidget()
         self.source_files_widget.setEnabled(False)
         self.render_files_widget = ListWidget()
         self.source_files_widget.addItems(source_files)
         self.render_files_widget.addItems(render_files)
-        cancel_button = QtGui.QPushButton()
+        cancel_button = QtWidgets.QPushButton()
         cancel_button.setText('Cancel')
-        self.publish_button = QtGui.QPushButton()
+        self.publish_button = QtWidgets.QPushButton()
         self.publish_button.setText('Publish')
         self.submit_review_checkbox = QtGui.QCheckBox('Submit Review with Publish')
         if render_files:
             self.render_files_widget.setCurrentItem(self.render_files_widget.item(0))
             self.submit_review_checkbox.setChecked(True)
 
-        button_row = QtGui.QHBoxLayout()
+        button_row = QtWidgets.QHBoxLayout()
         button_row.addStretch(1)
         button_row.addWidget(cancel_button)
         button_row.addWidget(self.publish_button)

@@ -1,9 +1,9 @@
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 
 
-class LJTableSearchProxy(QtGui.QSortFilterProxyModel):
+class LJTableSearchProxy(QtCore.QSortFilterProxyModel):
     def __init__(self):
-        QtGui.QSortFilterProxyModel.__init__(self)
+        QtCore.QSortFilterProxyModel.__init__(self)
         self.search_wgt = None
         self.search_text = None
         self.setSortCaseSensitivity(QtCore.Qt.CaseInsensitive)
@@ -19,7 +19,7 @@ class LJTableSearchProxy(QtGui.QSortFilterProxyModel):
             self.search_text = text.lower()
         else:
             self.search_text = None
-        QtGui.QSortFilterProxyModel.invalidateFilter(self)
+        QtCore.QSortFilterProxyModel.invalidateFilter(self)
 
     def filterAcceptsRow(self, src_row, src_parent):
         if not self.search_text:  # there is no search we can accept

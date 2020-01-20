@@ -1,7 +1,7 @@
 import os
 import logging
 import glob
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.config import app_config
 from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.ui.widgets.dialog import InputDialog
@@ -13,7 +13,7 @@ from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 from panels import clear_layout
 
 
-class FilesPanel(QtGui.QWidget):
+class FilesPanel(QtWidgets.QSplashScreen):
     source_selection_changed = QtCore.Signal(object)
     location_changed = QtCore.Signal(object)
     open_signal = QtCore.Signal()
@@ -23,7 +23,7 @@ class FilesPanel(QtGui.QWidget):
     publish_signal = QtCore.Signal()
 
     def __init__(self, parent=None, path_object=None, user_email='', machine_user=None, show_import=False):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QSplashScreen.__init__(self, parent)
         # self.setWidgetResizable(True)
         self.work_files = []
         self.high_files = []
@@ -41,8 +41,8 @@ class FilesPanel(QtGui.QWidget):
         self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
 
         self.current_location = path_object.data
-        self.panel = QtGui.QVBoxLayout(self)
-        self.tasks = QtGui.QHBoxLayout()
+        self.panel = QtWidgets.QVBoxLayout(self)
+        self.tasks = QtWidgets.QHBoxLayout()
         self.in_file_tree = None
         self.user_changed_versions = False
         self.user_email = user_email
@@ -368,7 +368,8 @@ class FilesPanel(QtGui.QWidget):
         self.review_signal.emit()
 
     def on_publish_clicked(self):
-        self.publish_signal.emit()
+        print 'Publishing stuff now'
+        print self.current_location
 
     def on_task_info_changed(self):
         """
@@ -421,11 +422,11 @@ class FilesPanel(QtGui.QWidget):
         show_in_folder(self.path_object.path_root)
 
     def copy_folder_path(self):
-        clipboard = QtGui.QApplication.clipboard()
+        clipboard = QtWidgets.QApplication.clipboard()
         clipboard.setText(os.path.dirname(self.path_object.path_root))
 
     def copy_file_path(self):
-        clipboard = QtGui.QApplication.clipboard()
+        clipboard = QtWidgets.QApplication.clipboard()
         clipboard.setText(self.path_object.path_root)
 
     @staticmethod

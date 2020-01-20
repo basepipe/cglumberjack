@@ -1,4 +1,4 @@
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.util import UISettings, widget_name
 from cgl.core.util import app_name
 
@@ -31,9 +31,9 @@ def _restore_size(self, default_size):
         self.resize(default_size)
 
 
-class LJMainWindow(QtGui.QMainWindow):
+class LJMainWindow(QtWidgets.QMainWindow):
     def __init__(self, default_size=None):
-        QtGui.QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
         title = app_name(human=True)
         self.setWindowTitle(title.title())
         _restore_size(self, default_size)
@@ -45,14 +45,14 @@ class LJMainWindow(QtGui.QMainWindow):
         super(LJMainWindow, self).closeEvent(event)
 
 
-class LJDialog(QtGui.QDialog):
+class LJDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
-        QtGui.QDialog.__init__(self, parent)
+        QtWidgets.QDialog.__init__(self, parent)
 
 
-class LJWindow(QtGui.QWidget):
+class LJWindow(QtWidgets.QWidget):
     def __init__(self, parent, default_size=None):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         _restore_size(self, default_size)
 
     def closeEvent(self, event):
@@ -70,7 +70,7 @@ class LJWidgetWrapper(LJDialog):
     def __init__(self, parent=None, title='', widget=None):
         LJDialog.__init__(self, parent=parent)
         widget.parent_ = self
-        self.layout = QtGui.QVBoxLayout(self)
+        self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.addWidget(widget)
         self.setWindowTitle(title)
         self.setLayout(self.layout)

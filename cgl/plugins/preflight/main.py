@@ -1,6 +1,6 @@
 import os
 import json
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.config import app_config
 from cgl.core.path import icon_path, image_path, PathObject
 from cgl.ui.widgets.containers.table import LJTableWidget
@@ -61,12 +61,12 @@ class ItemTable(LJTableWidget):
             self.nothing_selected.emit()
 
 
-class Preflight(QtGui.QDialog):
+class Preflight(QtWidgets.QDialog):
     signal_one = QtCore.Signal(object)
 
     def __init__(self, parent=None, software='lumbermill', preflight='', model=None, path_object=None,
                  current_selection=None, **kwargs):
-        QtGui.QDialog.__init__(self, parent)
+        QtWidgets.QDialog.__init__(self, parent)
         self.software = software
         self.preflight = preflight
         self.software_dir = os.path.join(app_config()['paths']['cgl_tools'], software)
@@ -88,23 +88,23 @@ class Preflight(QtGui.QDialog):
             PreflightCheck.shared_data['parent'] = parent
             PreflightCheck.shared_data['mdl'] = model
         # create the lay
-        v_layout = QtGui.QVBoxLayout(self)
-        combo_layout = QtGui.QHBoxLayout(self)
+        v_layout = QtWidgets.QVBoxLayout(self)
+        combo_layout = QtWidgets.QHBoxLayout(self)
 
         # create the widgets
         self.preflights = ItemTable(self)
         self.preflights.setMinimumWidth(800)
         self.preflights.setMinimumHeight(250)
-        self.software_label = QtGui.QLabel('Preflight Checks')
+        self.software_label = QtWidgets.QLabel('Preflight Checks')
         self.software_label.setProperty('class', 'ultra_title')
 
         self.image_plane = GifWidget(gif_path=image_path('rolling_logs.gif'))
         # self.image_plane.start()
         self.image_plane.hide()
 
-        self.run_all = QtGui.QPushButton('Run All')
+        self.run_all = QtWidgets.QPushButton('Run All')
         self.run_all.setProperty('class', 'add_button')
-        self.run_selected = QtGui.QPushButton('Run Selected')
+        self.run_selected = QtWidgets.QPushButton('Run Selected')
         self.run_selected.setProperty('class', 'basic')
 
         # construct the GUI
@@ -113,9 +113,9 @@ class Preflight(QtGui.QDialog):
         ##combo_layout.addWidget(self.software_selector)
         #c#ombo_layout.addWidget(self.preflight_label)
         #c#ombo_layout.addWidget(self.preflight_selector)
-        #combo_layout.addItem(QtGui.QSpacerItem(0, 0, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum))
-        button_bar = QtGui.QHBoxLayout(self)
-        button_bar.addItem(QtGui.QSpacerItem(0, 0, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum))
+        #combo_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        button_bar = QtWidgets.QHBoxLayout(self)
+        button_bar.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         button_bar.addWidget(self.run_selected)
         button_bar.addWidget(self.run_all)
         v_layout.addLayout(combo_layout)

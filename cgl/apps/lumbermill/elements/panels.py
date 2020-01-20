@@ -1,6 +1,6 @@
 import glob
 import os
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.config import app_config
 from cgl.ui.widgets.widgets import LJListWidget, LJButton
 from cgl.ui.widgets.dialog import InputDialog
@@ -12,18 +12,18 @@ from cgl.core.util import current_user
 from cgl.ui.widgets.progress_gif import process_method
 
 
-class CompanyPanel(QtGui.QWidget):
+class CompanyPanel(QtWidgets.QSplashScreen):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, search_box=None):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QSplashScreen.__init__(self, parent)
         self.search_box = search_box
         self.path_object = path_object
-        self.panel = QtGui.QVBoxLayout(self)
+        self.panel = QtWidgets.QVBoxLayout(self)
         pixmap = QtGui.QPixmap(icon_path('company24px.png'))
         self.company_widget = LJListWidget('Companies', pixmap=pixmap)
         self.company_widget.add_button.setText('add company')
-        self.company_widget.list.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Expanding)
+        self.company_widget.list.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Expanding)
         self.user_root = app_config()['cg_lumberjack_dir']
         self.panel.addWidget(self.company_widget)
         self.panel.addStretch(0)
@@ -95,11 +95,11 @@ class CompanyPanel(QtGui.QWidget):
         self.location_changed.emit(path_object.data)
 
 
-class ProjectPanel(QtGui.QWidget):
+class ProjectPanel(QtWidgets.QSplashScreen):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, search_box=None):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QSplashScreen.__init__(self, parent)
         self.path_object = path_object
         self.project_management = app_config()['account_info']['project_management']
         self.user_email = app_config()['project_management'][self.project_management]['users'][current_user()]
@@ -108,7 +108,7 @@ class ProjectPanel(QtGui.QWidget):
         self.left_column_visibility = True
 
         # Create the Left Panel
-        self.panel = QtGui.QVBoxLayout(self)
+        self.panel = QtWidgets.QVBoxLayout(self)
 
         self.project_filter = ProjectWidget(title="Projects", pixmap=QtGui.QPixmap(icon_path('project24px.png')),
                                             search_box=search_box)
@@ -187,7 +187,7 @@ class ProjectPanel(QtGui.QWidget):
         clear_layout(self, layout=layout)
 
 
-class TaskPanel(QtGui.QWidget):
+class TaskPanel(QtWidgets.QSplashScreen):
     """
     Vertical Button Panel - built to display tasks in a vertical line.  This is essentially the Task Panel
     """
@@ -195,7 +195,7 @@ class TaskPanel(QtGui.QWidget):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, element='task', pixmap=None):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QSplashScreen.__init__(self, parent)
         self.element = element
         if path_object:
             self.path_object = path_object
@@ -207,17 +207,17 @@ class TaskPanel(QtGui.QWidget):
         schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
         self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
         self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
-        self.panel = QtGui.QVBoxLayout(self)
-        self.title_layout = QtGui.QHBoxLayout()
-        self.task_button = QtGui.QToolButton()
+        self.panel = QtWidgets.QVBoxLayout(self)
+        self.title_layout = QtWidgets.QHBoxLayout()
+        self.task_button = QtWidgets.QToolButton()
         self.task_button.setText('add %s' % element)
         self.task_button.setProperty('class', 'add_button')
         if pixmap:
-            self.icon = QtGui.QLabel()
+            self.icon = QtWidgets.QLabel()
             self.icon.setPixmap(pixmap)
             self.h_layout.addWidget(self.icon)
             self.title_layout.addWidget(pixmap)
-        self.title = QtGui.QLabel('%ss' % element.title())
+        self.title = QtWidgets.QLabel('%ss' % element.title())
         self.title.setProperty('class', 'ultra_title')
         self.title_layout.addWidget(self.title)
         self.title_layout.addStretch(1)
@@ -257,17 +257,17 @@ class TaskPanel(QtGui.QWidget):
         clear_layout(self, layout=layout)
 
 
-class ScopePanel(QtGui.QWidget):
+class ScopePanel(QtWidgets.QSplashScreen):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QSplashScreen.__init__(self, parent)
         if path_object:
             self.path_object = path_object.copy(seq=None, shot=None, ingest_source=None, resolution='', version='',
                                                 user=None, scope=None)
         else:
             return
-        self.panel = QtGui.QVBoxLayout(self)
+        self.panel = QtWidgets.QVBoxLayout(self)
         for each in ['assets', 'shots']:
             if each == 'assets':
                 image_name = 'flower_80px.png'
@@ -300,11 +300,11 @@ class ScopePanel(QtGui.QWidget):
         clear_layout(self, layout=layout)
 
 
-class ProductionPanel(QtGui.QWidget):
+class ProductionPanel(QtWidgets.QSplashScreen):
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, search_box=None, my_tasks=False):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QSplashScreen.__init__(self, parent)
         # Create the Middle Panel
         if path_object:
             self.path_object = path_object.copy(seq='*', shot='*', ingest_source='*', resolution='', version='',
@@ -312,7 +312,7 @@ class ProductionPanel(QtGui.QWidget):
         else:
             return
         self.my_tasks = my_tasks
-        self.panel = QtGui.QVBoxLayout(self)
+        self.panel = QtWidgets.QVBoxLayout(self)
         self.assets = None
         self.assets_filter_default = filter
         self.root = app_config()['paths']['root']

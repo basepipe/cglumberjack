@@ -1,30 +1,30 @@
 import getpass
 import os
 import json
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.util import cgl_copy
 
 
-class PathItemWidget(QtGui.QWidget):
+class PathItemWidget(QtWidgets.QSplashScreen):
     line_edit_changed = QtCore.Signal(object)
     root_set = QtCore.Signal()
 
     def __init__(self, parent=None, paths_dict=None, hide_on_find=False):
-        QtGui.QWidget.__init__(self, parent)
-        self.layout = QtGui.QVBoxLayout(self)
-        self.globals_layout = QtGui.QGridLayout()
-        self.paths_layout = QtGui.QGridLayout()
-        self.vfx_paths_layout = QtGui.QGridLayout()
+        QtWidgets.QSplashScreen.__init__(self, parent)
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.globals_layout = QtWidgets.QGridLayout()
+        self.paths_layout = QtWidgets.QGridLayout()
+        self.vfx_paths_layout = QtWidgets.QGridLayout()
         self.user_dir = os.path.expanduser("~")
         self.user_name = self.get_user_name()
         self.cgl_dir = self.get_default_cgl_dir()
         self.user_globals_path = self.get_user_config(self.cgl_dir)
-        self.globals_label = QtGui.QLabel('Globals Locations')
+        self.globals_label = QtWidgets.QLabel('Globals Locations')
         self.globals_label.setProperty('class', 'ultra_title')
-        self.paths_label = QtGui.QLabel('CGL Tool Paths')
+        self.paths_label = QtWidgets.QLabel('CGL Tool Paths')
         self.paths_label.setProperty('class', 'ultra_title')
         self.paths_label.hide()
-        self.vfx_label = QtGui.QLabel('VFX Paths')
+        self.vfx_label = QtWidgets.QLabel('VFX Paths')
         self.vfx_label.setProperty('class', 'ultra_title')
         self.vfx_label.hide()
         # self.red_palette, self.green_palette, self.black_palette = define_palettes()
@@ -66,20 +66,20 @@ class PathItemWidget(QtGui.QWidget):
         :param hide_on_find:
         :return:
         """
-        label = QtGui.QLabel(key)
-        line_edit = QtGui.QLineEdit()
+        label = QtWidgets.QLabel(key)
+        line_edit = QtWidgets.QLineEdit()
 
         line_edit.setText(paths_dict[key])
         if key == 'root':
             line_edit.editingFinished.connect(self.on_root_set)
 
-        folder_button = QtGui.QToolButton()
+        folder_button = QtWidgets.QToolButton()
         if key == 'cgl_tools':
             self.cgl_tools_folder = folder_button
         folder_button.setIcon(QtGui.QIcon(self.icon_path('folder24px.png')))
         folder_button.line_edit = line_edit
         folder_button.label = label
-        message = QtGui.QLabel('Path Not Found, Please Specify %s' % key)
+        message = QtWidgets.QLabel('Path Not Found, Please Specify %s' % key)
         # message.setPalette(self.red_palette)
         folder_button.message = message
         self.widget_dict[key] = {'label': label,
@@ -180,12 +180,12 @@ class PathItemWidget(QtGui.QWidget):
         return os.path.join(cgl_dir, 'user_globals.json')
 
 
-class ConfigDialog(QtGui.QDialog):
+class ConfigDialog(QtWidgets.QDialog):
 
     def __init__(self, parent=None, company='', config_dict=None, root="C:\CGLUMBERJACK"):
-        QtGui.QDialog.__init__(self, parent)
+        QtWidgets.QDialog.__init__(self, parent)
         self.app_config = config_dict
-        self.proj_management_label = QtGui.QLabel('Project Management')
+        self.proj_management_label = QtWidgets.QLabel('Project Management')
         self.contents = {}
         self.company = company
         self.global_config = {}
@@ -198,42 +198,42 @@ class ConfigDialog(QtGui.QDialog):
         self.api_server = ''
         self.setWindowTitle('Create Globals')
 
-        layout = QtGui.QVBoxLayout(self)
-        self.project_management_label = QtGui.QLabel('Project Management:')
+        layout = QtWidgets.QVBoxLayout(self)
+        self.project_management_label = QtWidgets.QLabel('Project Management:')
         self.project_management_label.setProperty('class', 'ultra_title')
-        self.proj_management_label = QtGui.QLabel('Software:')
-        self.proj_management_combo = QtGui.QComboBox()
+        self.proj_management_label = QtWidgets.QLabel('Software:')
+        self.proj_management_combo = QtWidgets.QComboBox()
         self.proj_management_combo.addItems(['lumbermill', 'ftrack', 'shotgun'])
         # self.red_palette, self.green_palette, self.black_palette = define_palettes()
 
-        self.user_email_label = QtGui.QLabel('User Email:')
-        self.user_email_line_edit = QtGui.QLineEdit()
-        self.user_name_label = QtGui.QLabel('User Name:')
-        self.user_name_line_edit = QtGui.QLineEdit()
+        self.user_email_label = QtWidgets.QLabel('User Email:')
+        self.user_email_line_edit = QtWidgets.QLineEdit()
+        self.user_name_label = QtWidgets.QLabel('User Name:')
+        self.user_name_line_edit = QtWidgets.QLineEdit()
         self.user_name_line_edit.setText(self.user_name)
-        self.globals_label = QtGui.QLabel('Globals')
+        self.globals_label = QtWidgets.QLabel('Globals')
         self.globals_label.setProperty('class', 'ultra_title')
-        self.paths_label = QtGui.QLabel('Paths')
+        self.paths_label = QtWidgets.QLabel('Paths')
         self.paths_label.setProperty('class', 'ultra_title')
 
-        self.server_label = QtGui.QLabel('server url:')
-        self.api_key_label = QtGui.QLabel('api key:')
-        self.api_user_label = QtGui.QLabel('api user:')
-        self.api_script_label = QtGui.QLabel('api script:')
-        self.root_label = QtGui.QLabel('Production Root:')
-        self.server_line_edit = QtGui.QLineEdit()
-        self.api_key_line_edit = QtGui.QLineEdit()
-        self.api_user_line_edit = QtGui.QLineEdit()
-        self.api_script_line_edit = QtGui.QLineEdit()
+        self.server_label = QtWidgets.QLabel('server url:')
+        self.api_key_label = QtWidgets.QLabel('api key:')
+        self.api_user_label = QtWidgets.QLabel('api user:')
+        self.api_script_label = QtWidgets.QLabel('api script:')
+        self.root_label = QtWidgets.QLabel('Production Root:')
+        self.server_line_edit = QtWidgets.QLineEdit()
+        self.api_key_line_edit = QtWidgets.QLineEdit()
+        self.api_user_line_edit = QtWidgets.QLineEdit()
+        self.api_script_line_edit = QtWidgets.QLineEdit()
 
-        self.choose_folder_button = QtGui.QToolButton()
+        self.choose_folder_button = QtWidgets.QToolButton()
         self.choose_folder_button.setText('...')
-        self.choose_root = QtGui.QToolButton()
+        self.choose_root = QtWidgets.QToolButton()
         self.choose_root.setText('...')
-        self.choose_code_root_button = QtGui.QToolButton()
+        self.choose_code_root_button = QtWidgets.QToolButton()
         self.choose_code_root_button.setText('...')
 
-        self.proj_man_grid = QtGui.QGridLayout()
+        self.proj_man_grid = QtWidgets.QGridLayout()
         self.proj_man_grid.addWidget(self.proj_management_label, 0, 0)
         self.proj_man_grid.addWidget(self.proj_management_combo, 0, 1)
         self.proj_man_grid.addWidget(self.api_key_label, 1, 0)
@@ -249,16 +249,16 @@ class ConfigDialog(QtGui.QDialog):
         self.proj_man_grid.addWidget(self.user_email_label, 6, 0)
         self.proj_man_grid.addWidget(self.user_email_line_edit, 6, 1)
 
-        self.cancel_button = QtGui.QPushButton('Cancel')
-        self.ok_button = QtGui.QPushButton('Ok')
+        self.cancel_button = QtWidgets.QPushButton('Cancel')
+        self.ok_button = QtWidgets.QPushButton('Ok')
         self.button = ''
         self.ok_button.setEnabled(False)
-        self.create_globals_button = QtGui.QPushButton('Create Globals')
+        self.create_globals_button = QtWidgets.QPushButton('Create Globals')
         self.create_globals_button.setEnabled(False)
 
         # self.project_management = self.app_config['account_info']['project_management']
 
-        button_layout = QtGui.QHBoxLayout()
+        button_layout = QtWidgets.QHBoxLayout()
         button_layout.addStretch(1)
         button_layout.addWidget(self.cancel_button)
         button_layout.addWidget(self.create_globals_button)
@@ -318,13 +318,13 @@ class ConfigDialog(QtGui.QDialog):
 
     @staticmethod
     def widget_not_ready(widget):
-        if isinstance(widget, QtGui.QLineEdit):
+        if isinstance(widget, QtWidgets.QLineEdit):
             text = widget.text()
             if text:
                 return int(0)
             else:
                 return int(1)
-        elif isinstance(widget, QtGui.QComboBox):
+        elif isinstance(widget, QtWidgets.QComboBox):
             text = widget.currentText()
             if text:
                 return int(0)
@@ -595,7 +595,7 @@ class ConfigDialog(QtGui.QDialog):
 
 if __name__ == "__main__":
     # from cgl.core.util import load_style_sheet
-    app = QtGui.QApplication([])
+    app = QtWidgets.QApplication([])
     form = ConfigDialog()
     form.show()
     # style_sheet = load_style_sheet()
