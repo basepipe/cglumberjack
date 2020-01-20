@@ -12,3 +12,14 @@ class LJMenu(QtWidgets.QMenu):
         if checkable:
             action.setCheckable(True)
         self.addAction(action)
+
+    def action_exists(self, action_name):
+        """
+        handy function to determine if an action by name "action_name" already exists
+        :param action_name:
+        :return:
+        """
+        for each in self.actions():
+            if action_name == each.text():
+                return False
+        return True

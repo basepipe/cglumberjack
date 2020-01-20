@@ -360,8 +360,9 @@ class FilesPanel(QtWidgets.QWidget):
                             module = button_command.split()[1]
                             loaded_module = __import__(module, globals(), locals(), item, -1)
                             widget = self.render_files_widget
-                            widget.item_right_click_menu.create_action(button_label,
-                                                                       lambda: loaded_module.run(self.path_object))
+                            if widget.item_right_click_menu.action_exists(button_label):
+                                widget.item_right_click_menu.create_action(button_label,
+                                                                           lambda: loaded_module.run(self.path_object))
 
     @staticmethod
     def new_version_from_latest():
