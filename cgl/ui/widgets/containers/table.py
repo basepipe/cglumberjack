@@ -41,6 +41,11 @@ class LJTableWidget(QtWidgets.QTableView):
         if e.button() == QtCore.Qt.LeftButton:
             self.viewClicked()
 
+    def mousePressEvent(self, e):
+        super(LJTableWidget, self).mousePressEvent(e)
+        if e.button() == QtCore.Qt.RightButton:
+            self.viewClicked()
+
     # noinspection PyShadowingNames,PyPep8
     def set_item_model(self, mdl, proxy=None):
         if proxy is None:

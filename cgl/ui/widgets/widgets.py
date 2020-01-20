@@ -726,8 +726,6 @@ class FileTableWidget(LJTableWidget):
     copy_file_path = QtCore.Signal()
     import_version_from = QtCore.Signal()
     share_download_link = QtCore.Signal()
-    render_nuke_command_line = QtCore.Signal()
-    render_nuke_farm = QtCore.Signal()
 
     def __init__(self, parent, hide_header=True):
         LJTableWidget.__init__(self, parent)
@@ -746,7 +744,7 @@ class FileTableWidget(LJTableWidget):
         self.item_right_click_menu.addSeparator()
         self.item_right_click_menu.create_action("Import Version From...", self.import_version_from)
         self.item_right_click_menu.addSeparator()
-        self.add_custom_task_items()
+        # self.add_custom_task_items()
         self.item_right_click_menu.addSeparator()
         self.customContextMenuRequested.connect(self.item_right_click)
 
@@ -757,58 +755,33 @@ class FileTableWidget(LJTableWidget):
         # self.item_right_click_menu.create_action("Create Dailies Template", self.create_dailies_template_signal)
         # self.item_right_click_menu.addSeparator()
         self.setAcceptDrops(True)
-        self.selected.connect(self.on_row_selected)
 
     def show_in_proj(self):
         from cgl.core.path import show_in_project_management
         show_in_project_management(self.path_object)
 
-    def add_custom_task_items(self):
-        # get the current task
-        if self.task and 'elem' not in self.task:
-            menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
-            if os.path.exists(menu_file):
-                menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())
-                if self.task in menu_items['lumbermill']:
-                    for item in menu_items['lumbermill'][self.task]:
-                        if item != 'order':
-                            button_label = menu_items['lumbermill'][self.task][item]['label']
-                            button_command = menu_items['lumbermill'][self.task][item]['module']
-                            module = button_command.split()[1]
-                            loaded_module = __import__(module, globals(), locals(), item, -1)
-                            self.item_right_click_menu.create_action(button_label, loaded_module.run)
+    # def add_custom_task_items(self):
+    #     # get the current task
+    #     if self.task and 'elem' not in self.task:
+    #         menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
+    #         if os.path.exists(menu_file):
+    #             menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())
+    #             if self.task in menu_items['lumbermill']:
+    #                 for item in menu_items['lumbermill'][self.task]:
+    #                     if item != 'order':
+    #                         button_label = menu_items['lumbermill'][self.task][item]['label']
+    #                         button_command = menu_items['lumbermill'][self.task][item]['module']
+    #                         module = button_command.split()[1]
+    #                         loaded_module = __import__(module, globals(), locals(), item, -1)
+    #                         self.item_right_click_menu.create_action(button_label,
+    #                                                                  lambda: loaded_module.run(''))
         # see if there are custom menu items required for this task.
-
-    def on_row_selected(self, data):
-        dict_ = {'.nk': 'nuke'}
-        if data:
-            file_name = data[-1][0]
-            file_name, ext = os.path.splitext(file_name)
-            if ext in dict_:
-                self.add_custom_menu(self.item_right_click_menu, dict_[ext])
-        else:
-            print ' No data in table'
 
     def item_right_click(self, position):
         self.item_right_click_menu.exec_(self.mapToGlobal(position))
 
     def sizeHint(self):
         return QtCore.QSize(350, 150)
-
-    def add_custom_menu(self, menu, software):
-        # For this to really work i need to be able to connect these signals to slots from another script entirely.
-        # i would want to pass the file name for instance to a script within the nuke plugins directory.
-        # That's the holy grail in terms of flexibility.
-
-        add = True
-        if software == 'nuke':
-            print 0
-            for each in menu.actions():
-                if each.text() == 'Render Local' or each.text() == 'Render on Farm':
-                    add = False
-        if add:
-            menu.create_action('Render Local', self.render_nuke_command_line)
-            menu.create_action('Render on Farm', self.render_nuke_farm)
 
 
 class LJListWidget(QtWidgets.QWidget):

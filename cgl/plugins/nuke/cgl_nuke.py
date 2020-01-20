@@ -194,15 +194,16 @@ def import_media(filepath):
     sequence.####.dpx 1-234
     regular files are simply listed as a string with no frame numbers requred:
     bob.jpg
+    this will also look for an HD proxy file, first jpgs and then exrs.
     :param filepath:
     :return:
     """
     readNode = nuke.createNode('Read')
     readNode.knob('file').fromUserText(filepath)
-    path_object = PathObject(filepath).copy(resolution='hdProxy', ext='jpg')
-    dir_ = os.path.dirname(path_object.path_root)
+    proxy_object = PathObject(filepath).copy(resolution='1920x1080', ext='jpg')
+    dir_ = os.path.dirname(proxy_object.path_root)
     if os.path.exists(dir_):
-        readNode.knob('proxy').fromUserText(path_object.path_root)
+        readNode.knob('proxy').fromUserText(proxy_object.path_root)
 
 
 def create_scene_write_node():

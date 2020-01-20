@@ -37,7 +37,6 @@ class NukeBrowserWidget(CGLumberjackWidget):
             if selection.endswith('.nk'):
                 import_script(selection)
             else:
-                print selection, '-------------------'
                 import_media(selection)
             print 'nuke import'
         self.parent().parent().accept()

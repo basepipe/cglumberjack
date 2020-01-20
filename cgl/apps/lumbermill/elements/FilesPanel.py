@@ -91,6 +91,7 @@ class FilesPanel(QtWidgets.QWidget):
                                      title=title,
                                      path_object=current, show_import=self.show_import)
             task_widget.task = self.task
+            self.render_files_widget = task_widget.files_area.export_files_table
             task_widget.files_area.export_files_table.hide()
             self.task_widgets_dict[self.task] = task_widget
 
@@ -185,7 +186,7 @@ class FilesPanel(QtWidgets.QWidget):
                 CreateProductionData(path_object=to_object)
                 self.on_task_selected(self.version_obj)
 
-    def update_task_location(self, path_object, latest=False):
+    def update_task_location(self, path_object):
         """
         Method that sends the path object dictionary for anything happening within the Tasks Panel.
         :param path_object:
@@ -335,8 +336,32 @@ class FilesPanel(QtWidgets.QWidget):
             self.sender().parent().show_tool_buttons(user=self.user)
             self.sender().parent().review_button.setEnabled(True)
             self.sender().parent().publish_button.setEnabled(True)
+            self.add_context_menu()
         else:
             logging.debug('No render Files, Drag/Drop them to interface, or create them through software.')
+
+    def add_context_menu(self):
+        """
+
+        :return:
+        """
+        from cgl.core.util import load_json
+        from cgl.core.project import get_cgl_tools
+        # get the current task
+        if self.task and 'elem' not in self.task:
+            menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
+            if os.path.exists(menu_file):
+                menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())
+                if self.task in menu_items['lumbermill']:
+                    for item in menu_items['lumbermill'][self.task]:
+                        if item != 'order':
+                            button_label = menu_items['lumbermill'][self.task][item]['label']
+                            button_command = menu_items['lumbermill'][self.task][item]['module']
+                            module = button_command.split()[1]
+                            loaded_module = __import__(module, globals(), locals(), item, -1)
+                            widget = self.render_files_widget
+                            widget.item_right_click_menu.create_action(button_label,
+                                                                       lambda: loaded_module.run(self.path_object))
 
     @staticmethod
     def new_version_from_latest():

@@ -23,7 +23,7 @@ OPTIONS = {'320p': ['180k', '360k', '-1:320'],
 
 def create_proxy_sequence(input_sequence, output_sequence, width='1920', height='1080', do_height=False,
                           processing_method='local', dependent_job=None, copy_input_padding=True,
-                          command_name='create_proxy_sequence()', new_window=False):
+                          command_name='create_proxy_sequence()', new_window=False, ext='jpg'):
     """
     Create a proxy jpeg sequence in sRGB color space from the given input sequence.
     :param input_sequence: input sequence string, formatted with (#, %04d, *)
@@ -36,9 +36,14 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     :param dependent_job: job_id of any dependencies
     :param copy_input_padding: if True use the same padding as the input file,  if False, use studio wide padding setting
     :param command_name: this is the command name that will be sent to the render farm
+    :param new_window: Puts the processing of the job into a new shell
+    :param ext: extension to create, default is jpg
     :return:
     """
     from cgl.core.path import Sequence
+    print input_sequence
+    if ' ' in input_sequence:
+        input_sequence, frange = input_sequence.split(' ')
     input_sequence.replace('/', '\\')
     input_ = Sequence(input_sequence)
     if not input_.is_valid_sequence():
@@ -67,8 +72,8 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
 
     if processing_method == 'smedge':
         pyfile = '%s.py' % os.path.splitext(__file__)[0]
-        command = r'python %s -i %s -o %s -w %s -h %s -ft sequence -t proxy' % (pyfile, filein, fileout,
-                                                                                width, height)
+        command = r'python %s -i %s -o %s -w %s -h %s -ft sequence -t proxy -ext %s' % (pyfile, filein, fileout,
+                                                                                        width, height, ext)
         # probably good to write a custom imagemagick command for smedge for this.
         process_info = cgl_execute(command, command_name=command_name, methodology='smedge', WaitForJobID=dependent_job)
     elif processing_method == 'local':
@@ -80,7 +85,7 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
                 SEQ_SPLIT = "\d{3,}\.\w{2,4}$"
                 frange = re.search(SEQ_SPLIT, each)
                 num = os.path.splitext(frange.group(0))[0]
-                file_out = '%s%s.jpg' % (fileout.split('%')[0], num)
+                file_out = '%s%s.%s' % (fileout.split('%')[0], num, ext)
                 command = '%s %s -resize %s %s' % (config['magick'], file_, res, file_out)
                 process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
                                            new_window=new_window)
@@ -234,11 +239,12 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
 @click.option('--height', '-h', default=1080, help='height in pixels')
 @click.option('--file_type', '-ft', default='sequence', help='options: sequence, image, movie, ppt, pdf')
 @click.option('--conversion_type', '-t', default='proxy', help='Type of Conversion - sequence, movie, image, gif')
-def main(input_file, output_file, height, width, file_type, conversion_type):
+@click.option('--extension', '-ext', default='jpg', help='extension of the file in question')
+def main(input_file, output_file, height, width, file_type, conversion_type, ext):
     run_dict = {}
     if file_type == 'sequence':
         if conversion_type == 'proxy':
-            create_proxy_sequence(input_file, output_sequence=output_file, width=width, height=height)
+            create_proxy_sequence(input_file, output_sequence=output_file, width=width, height=height, ext=ext)
         elif conversion_type == 'web_preview':
             create_web_mov(input_file, output=output_file)
     if file_type == 'movie':
