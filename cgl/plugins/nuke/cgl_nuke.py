@@ -1,6 +1,6 @@
 import os
 import logging
-from cgl.plugins.Qt import QtGui
+from cgl.plugins.Qt import QtGui, QtWidgets
 import time
 import nuke
 from cgl.core.util import cgl_execute, write_to_cgl_data

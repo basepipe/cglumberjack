@@ -85,8 +85,8 @@ class AssetCreator(LJDialog):
         self.task_row = QtWidgets.QHBoxLayout(self)
         self.task_combo = AdvComboBox()
         self.clear_selection_button = QtWidgets.QPushButton('Clear Selection')
-        self.defaults_radio = QtGui.QRadioButton('Select Defaults')
-        self.none_radio = QtGui.QRadioButton('Select None')
+        self.defaults_radio = QtWidgets.QRadioButton('Select Defaults')
+        self.none_radio = QtWidgets.QRadioButton('Select None')
         self.radio_layout = QtWidgets.QHBoxLayout()
         self.radio_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
                                                         QtWidgets.QSizePolicy.Minimum))
@@ -109,7 +109,7 @@ class AssetCreator(LJDialog):
         # task stuff
         self.task_layout = QtWidgets.QVBoxLayout(self)
         for each in self.proj_man_tasks:
-            checkbox = QtGui.QCheckBox('%s (%s)' % (each, self.proj_man_tasks[each]))
+            checkbox = QtWidgets.QCheckBox('%s (%s)' % (each, self.proj_man_tasks[each]))
             checkbox.stateChanged.connect(self.on_checkbox_clicked)
             self.task_layout.addWidget(checkbox)
 

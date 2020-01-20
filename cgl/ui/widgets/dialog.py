@@ -121,7 +121,7 @@ class TimeTracker(LJDialog):
         self.get_projects_from_ftrack()
         self.button_add_task.setEnabled(False)
 
-        # self.task_table.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        # self.task_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
     def set_date(self, new_date):
         self.today = new_date
@@ -459,7 +459,7 @@ class FrameRange(LJDialog):
 
     def __init__(self, parent=None, title="Frame Range", sframe=None, eframe=None, camera=None):
         LJDialog.__init__(self, parent)
-        layout = QtGui.QFormLayout()
+        layout = QtWidgets.QFormLayout()
         hlayout = QtWidgets.QHBoxLayout()
         blayout = QtWidgets.QHBoxLayout()
         self.sframe = sframe
@@ -528,7 +528,7 @@ class InputDialog(LJDialog):
         self.original_message = message
         if buttons is None:
             buttons = ['Cancel', 'Ok', '']
-        layout = QtGui.QFormLayout()
+        layout = QtWidgets.QFormLayout()
         button_box = QtWidgets.QHBoxLayout()
         self.name_example = name_example
         self.regex = regex
@@ -745,9 +745,9 @@ class ProjectCreator(LJDialog):
         self.data_frame = None
         self.setWindowTitle('Import .csv')
         self.scope = 'shots'
-        self.shots_radio = QtGui.QRadioButton('Shots')
+        self.shots_radio = QtWidgets.QRadioButton('Shots')
         self.shots_radio.setChecked(True)
-        self.assets_radio = QtGui.QRadioButton('Assets')
+        self.assets_radio = QtWidgets.QRadioButton('Assets')
         radio_row = QtWidgets.QHBoxLayout()
         radio_row.addWidget(self.shots_radio)
         radio_row.addWidget(self.assets_radio)

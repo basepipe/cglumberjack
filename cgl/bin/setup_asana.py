@@ -35,7 +35,7 @@ class SetupGUI(LJDialog):
         num = self.project_combo.findText("")
         self.project_combo.setCurrentIndex(num)
 
-        layout = QtGui.QFormLayout()
+        layout = QtWidgets.QFormLayout()
 
         user_id = QtWidgets.QHBoxLayout()
         user_id.addWidget(self.edit_label)

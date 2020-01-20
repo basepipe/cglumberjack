@@ -216,13 +216,13 @@ class FilesWidget(QtWidgets.QFrame):
         # self.work_files_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.work_files_table.set_draggable(True)
         self.work_files_table.title = 'work_files'
-        self.work_files_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.work_files_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.export_files_table = FileTableWidget(self, hide_header=False)
         self.export_files_table.horizontalHeader().setProperty('class', 'output')
         self.export_files_table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
         self.export_files_table.set_draggable(True)
         self.export_files_table.title = 'outputs'
-        self.export_files_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.export_files_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.open_button = LJButton()
         self.open_button.setText('Open')
         self.import_button = LJButton()
@@ -540,7 +540,7 @@ class ProjectWidget(QtWidgets.QSplashScreen):
         self.add_button.setProperty('class', 'add_button')
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
-        self.data_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
         if pixmap:
             self.icon = QtWidgets.QLabel()
@@ -634,15 +634,15 @@ class AssetWidget(QtWidgets.QSplashScreen):
         self.add_button.setProperty('class', 'add_button')
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
-        self.data_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.data_table.setMinimumWidth(min_width)
         # self.setProperty('class', 'basic')
 
 
         # build the filter options row
-        self.assets_radio = QtGui.QRadioButton('Assets')
-        self.shots_radio = QtGui.QRadioButton('Shots')
-        self.tasks_radio = QtGui.QRadioButton('My Tasks')
+        self.assets_radio = QtWidgets.QRadioButton('Assets')
+        self.shots_radio = QtWidgets.QRadioButton('Shots')
+        self.tasks_radio = QtWidgets.QRadioButton('My Tasks')
         self.radio_group_scope = QtGui.QButtonGroup(self)
         self.radio_group_scope.addButton(self.shots_radio)
         self.radio_group_scope.addButton(self.assets_radio)

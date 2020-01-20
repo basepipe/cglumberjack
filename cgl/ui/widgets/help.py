@@ -780,7 +780,7 @@ class ReportBugDialog(LJDialog):
     def add_attachments(self, file_paths=None):
         if not file_paths:
             default_folder = os.path.expanduser(r'~/Desktop')
-            file_paths = QtGui.QFileDialog.getOpenFileName(self, 'Choose a File to Attach', default_folder, "*")
+            file_paths = QtWidgets.QFileDialog.getOpenFileName(self, 'Choose a File to Attach', default_folder, "*")
         for each in file_paths:
             if os.path.isfile(each):
                 filename = os.path.split(each)

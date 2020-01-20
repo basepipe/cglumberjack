@@ -154,7 +154,7 @@ class CGLMenuButton(QtWidgets.QSplashScreen):
 
     def on_icon_button_clicked(self):
         default_folder = os.path.join(get_cgl_tools(), self.software, self.menu_type, self.preflight_name)
-        file_paths = QtGui.QFileDialog.getOpenFileName(self, 'Choose a File to Attach', default_folder, "*")
+        file_paths = QtWidgets.QFileDialog.getOpenFileName(self, 'Choose a File to Attach', default_folder, "*")
         from_path = file_paths[0].replace('\\', '/')
         _, file_ = os.path.split(from_path)
         to_path = os.path.join(default_folder, file_).replace('\\', '/')

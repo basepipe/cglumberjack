@@ -1,6 +1,5 @@
 import os
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
-from PySide2 import QtWidgets
 from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import nuke
 from cgl.ui.widgets.dialog import InputDialog

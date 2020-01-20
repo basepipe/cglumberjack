@@ -49,7 +49,7 @@ class PublishDialog(LJDialog):
         cancel_button.setText('Cancel')
         self.publish_button = QtWidgets.QPushButton()
         self.publish_button.setText('Publish')
-        self.submit_review_checkbox = QtGui.QCheckBox('Submit Review with Publish')
+        self.submit_review_checkbox = QtWidgets.QCheckBox('Submit Review with Publish')
         if render_files:
             self.render_files_widget.setCurrentItem(self.render_files_widget.item(0))
             self.submit_review_checkbox.setChecked(True)

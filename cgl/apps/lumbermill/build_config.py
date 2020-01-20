@@ -145,7 +145,7 @@ class PathItemWidget(QtWidgets.QSplashScreen):
             folder_button.hide()
 
     def on_path_chosen(self):
-        folder = QtGui.QFileDialog.getExistingDirectory()
+        folder = QtWidgets.QFileDialog.getExistingDirectory()
         self.sender().line_edit.setText(folder)
         self.check_path(folder, self.sender().label, self.sender().line_edit, self.sender().message, self.sender(),
                         hide_on_find=True)
