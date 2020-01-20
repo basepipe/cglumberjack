@@ -94,8 +94,8 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
                 num = os.path.splitext(frange.group(0))[0]
                 filename, ext_ = fileout.split('%')
                 if not ext:
-                    ext = ext_
-                file_out = '%s%s.%s' % (fileout.split('%')[0], num, ext)
+                    ext = os.path.splitext(ext_)[-1]
+                file_out = '%s%s.%s' % (filename, num, ext)
                 command = '%s %s -resize %s %s' % (config['magick'], file_, res, file_out)
                 process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
                                            new_window=new_window)

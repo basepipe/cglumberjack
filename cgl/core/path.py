@@ -1417,7 +1417,9 @@ def main(path_string, upload_review):
 
 
 if __name__ == '__main__':
-    main()
+    dir_ = r'Z:\COMPANIES\loneCoconut\render\menudo_testd\shots\VFX_MDO_103\0040\comp\guillermo\004.000\1920x1080'
+    print lj_list_dir(dir_)
+
 
 
 
