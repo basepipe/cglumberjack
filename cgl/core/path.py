@@ -729,7 +729,6 @@ class PathObject(object):
         proc_meth = PROCESSING_METHOD
         if job_id:
             proc_meth = 'smedge'
-
         proxy_info = convert.create_proxy_sequence(self.path_root, output_sequence=output_sequence, width=width,
                                                    height=height, copy_input_padding=copy_input_padding,
                                                    processing_method=proc_meth, dependent_job=job_id,

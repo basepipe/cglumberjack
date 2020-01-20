@@ -357,6 +357,7 @@ class TaskWidget(QtWidgets.QWidget):
         self.users.name = 'users'
         self.resolutions_label = QtWidgets.QLabel("Resolution:")
         self.resolutions = AdvComboBox()
+        self.resolutions.name = 'resolutions'
         self.start_task_button = LJButton()
         self.start_task_button.setText("Start Task")
 

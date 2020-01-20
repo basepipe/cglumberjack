@@ -40,7 +40,7 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     :param ext: extension to create, default is jpg
     :return:
     """
-    from cgl.core.path import Sequence
+    from cgl.core.path import Sequence, PathObject
     print input_sequence
     if ' ' in input_sequence:
         input_sequence, frange = input_sequence.split(' ')
@@ -60,8 +60,15 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
         logging.error('%s is not a valid sequence' % output_sequence)
     fileout = output_.num_sequence
     out_dir = os.path.dirname(fileout)
+    out_obj = PathObject(out_dir)
+    if out_obj.context == 'source':
+        out_obj.set_attr(context='render')
+    else:
+        out_obj.set_attr(context='source')
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
+    if not os.path.exists(out_obj.path_root):
+        os.makedirs(out_obj.path_root)
     process_info = None
 
     if do_height:

@@ -338,7 +338,6 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         else:
             smedge_command = r'%s Script -Type Generic Script -Name %s -Range %s ' \
                              r'-Command "%s"' % (app_config()['paths']['smedge'], command_name, range, command)
-        print '-----------------'
         for k in kwargs:
             value = kwargs[k]
             smedge_command = '%s -%s %s' % (smedge_command, k, value)
