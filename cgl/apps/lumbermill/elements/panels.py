@@ -226,7 +226,10 @@ class TaskPanel(QtGui.QWidget):
         self.panel.addLayout(self.title_layout)
         self.task_button.clicked.connect(self.add_button_clicked)
         for each in elements:
-            task = self.proj_man_tasks_short_to_long[each]
+            if 'elem' in each:
+                task = each
+            else:
+                task = self.proj_man_tasks_short_to_long[each]
             button = LJButton(str(task))
             # button.setIcon(QtGui.QIcon(QtGui.QPixmap(os.path.join(icon_path(), image_name))))
             # button.setIconSize(QtCore.QSize(50, 50))
@@ -241,7 +244,10 @@ class TaskPanel(QtGui.QWidget):
     def on_button_clicked(self):
         text = self.sender().text()
         if text:
-            short = self.proj_man_tasks[text]
+            if 'elem' in text:
+                short = text
+            else:
+                short = self.proj_man_tasks[text]
             self.path_object.__dict__[self.element] = short
             self.path_object.data[self.element] = short
             self.path_object.set_path()

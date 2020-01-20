@@ -29,6 +29,8 @@ class FilesPanel(QtGui.QWidget):
         self.high_files = []
         self.render_files = []
         self.version_obj = None
+        print 1, path_object.path_root
+        print path_object.task
         self.task = path_object.task
         self.task_widgets_dict = {}
         self.show_import = show_import
@@ -77,7 +79,11 @@ class FilesPanel(QtGui.QWidget):
 
             self.panel.tasks = []
             try:
-                title = self.proj_man_tasks_short_to_long[self.task]
+                if 'elem' in self.task:
+                    print 34, self.task
+                    title = self.task
+                else:
+                    title = self.proj_man_tasks_short_to_long[self.task]
             except KeyError:
                 return
             task_widget = TaskWidget(parent=self,

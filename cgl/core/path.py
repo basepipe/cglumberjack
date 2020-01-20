@@ -1107,7 +1107,6 @@ class Sequence(object):
             glob_string = '%s*%s' % (self.sequence.split('%')[0], self.ext)
         elif '*' in self.sequence:
             glob_string = self.sequence
-        print glob_string
         frames = glob.glob(glob_string)
         if frames:
             try:

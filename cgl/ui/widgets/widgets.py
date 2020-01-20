@@ -748,7 +748,7 @@ class FileTableWidget(LJTableWidget):
 
     def add_custom_task_items(self):
         # get the current task
-        if self.task:
+        if self.task and 'elem' not in self.task:
             menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
             if os.path.exists(menu_file):
                 menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())

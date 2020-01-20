@@ -1,3 +1,4 @@
+import os
 from PySide import QtCore, QtGui
 from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import nuke
@@ -24,6 +25,8 @@ class NukeBrowserWidget(CGLumberjackWidget):
                 print selection, '-------------------'
                 import_media(selection)
             print 'nuke import'
+        print self.parent()
+        self.parent().close()
 
 
 class CGLNuke(CGLumberjack):
@@ -144,27 +147,49 @@ def render_selected_write_nodes():
     return render_paths
 
 
+def getMainWindow():
+    app = QtGui.QApplication.instance()
+    for widget in app.topLevelWidgets():
+        if widget.metaObject().className() == 'Foundry::UI::DockMainWindow':
+            return widget
+
+
 def create_write_node():
     """
     Pops up a gui that allows you to create a custom write node or a default write node if left blank
     :return:
     """
+    import sys
     write_nodes = ['']
+    try:
+        app = QtGui.QApplication(sys.argv)
+    except RuntimeError:
+        app = None
+        print 'app already exists'
     for n in nuke.allNodes('Write'):
         write_nodes.append(n.name())
     dialog = InputDialog(title='Create Write Node',
                          message='Type a Name for an Element (Leave blank for default write node)',
                          combo_box_items=write_nodes)
-    dialog.exec_()
+    dialog.setAttribute(QtCore.Qt.WA_QuitOnClose)
+    dialog.show()
+    if app:
+        app.exec_()
     if dialog.button == 'Ok':
-        print 1
         if dialog.combo_box.currentText():
-            print dialog.combo_box.currentText(), 2
+            elem_name = 'elem%s' % dialog.combo_box.currentText().title()
             padding = '#' * cgl_nuke.get_biggest_read_padding()
+            if not padding:
+                padding = '####'
             path_object = cgl_nuke.NukePathObject(cgl_nuke.get_file_name())
-            path_object.set_attr(task='elem')
+            path_object.set_attr(task=elem_name)
             path_object.set_attr(context='render')
-            path_object.set_attr(ext='%s.dpx' % padding)
+            path_object.set_attr(version='000.001')
+            path_object.set_attr(filename='%s.%s.exr' % (elem_name, padding))
             write_node = nuke.createNode('Write')
-            write_node.knob('file').fromUserText(path_object.path_root)
-            write_node.knob('name').setValue(dialog.combo_box.currentText())
+            file_path = os.path.join(path_object.path_root)
+            write_node.knob('file').fromUserText(file_path)
+            write_node.knob('name').setValue(elem_name)
+        else:
+            cgl_nuke.create_scene_write_node()
+

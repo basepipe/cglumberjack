@@ -120,12 +120,10 @@ class NukePathObject(PathObject):
                 if s.Class() == 'Write':
                     file_name = s['file'].value()
                     dir_ = os.path.dirname(file_name)
-                    if not os.path.exists(dir_):
-                        os.makedirs(dir_)
+                    CreateProductionData(dir_, project_management='lumbermill')
                     sequence = Sequence(file_name)
                     if sequence.is_valid_sequence():
                         file_name = sequence.hash_sequence
-                    print file_name, 2222
                     if processing_method == 'gui':
                         from gui import render_node
                         render_node(s)
@@ -281,13 +279,14 @@ def check_write_node_version(selected=True):
     if selected:
         for s in nuke.selectedNodes():
             if s.Class() == 'Write':
-                path = s['file'].value()
-                path_object = NukePathObject(path)
-                if scene_object.version != path_object.version:
-                    print 'scene %s, render %s, versions do not match' % (scene_object.version, path_object.version)
-                    return False
-                else:
-                    return True
+                if 'elem' not in s.name():
+                    path = s['file'].value()
+                    path_object = NukePathObject(path)
+                    if scene_object.version != path_object.version:
+                        print 'scene %s, render %s, versions do not match' % (scene_object.version, path_object.version)
+                        return False
+                    else:
+                        return True
 
 
 def write_node_selected():
@@ -341,3 +340,4 @@ def version_up(write_nodes=True):
     nuke.scriptSaveAs(next_minor.path_root)
     if write_nodes:
         match_scene_version()
+
