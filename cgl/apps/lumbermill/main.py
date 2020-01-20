@@ -438,11 +438,9 @@ class CGLumberjackWidget(QtGui.QWidget):
                 self.panel = IoP.IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
-                print 25, path_object.task
                 self.panel = TaskPanel(path_object=path_object, element='task')
                 self.panel.add_button.connect(self.add_task)
             else:
-                print 2, path_object.path_root
                 self.load_files_panel(path_object)
         elif last == 'company':
             self.panel = CompanyPanel(path_object=path_object, search_box=self.nav_widget.search_box)

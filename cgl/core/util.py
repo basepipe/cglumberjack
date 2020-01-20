@@ -406,26 +406,19 @@ def write_to_cgl_data(process_info):
 
 
 def edit_cgl_data(job_id, key, value=None, user=None):
-    print 1
     if not job_id:
-        print 3
         logging.info('No Job ID Defined')
         click.echo('No Job ID Defined')
         return
     if not key:
-        print 2
         logging.info('No Key Defined')
         click.echo('No Key Defined')
     if not value:
-        print 4
         value = time.time()
     if not user:
-        print 5
         user = current_user()
     cgl_data = os.path.join(os.path.dirname(app_config()['paths']['globals']), 'cgl_data.json')
     if os.path.exists(cgl_data):
-        print 6
-        print cgl_data
         data = load_json(cgl_data)
         print user, job_id, key, value
         data[user][job_id][key] = value

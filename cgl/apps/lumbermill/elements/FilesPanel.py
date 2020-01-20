@@ -29,8 +29,6 @@ class FilesPanel(QtGui.QWidget):
         self.high_files = []
         self.render_files = []
         self.version_obj = None
-        print 1, path_object.path_root
-        print path_object.task
         self.task = path_object.task
         self.task_widgets_dict = {}
         self.show_import = show_import
@@ -80,7 +78,6 @@ class FilesPanel(QtGui.QWidget):
             self.panel.tasks = []
             try:
                 if 'elem' in self.task:
-                    print 34, self.task
                     title = self.task
                 else:
                     title = self.proj_man_tasks_short_to_long[self.task]
@@ -97,6 +94,10 @@ class FilesPanel(QtGui.QWidget):
             user = self.populate_users_combo(task_widget, current, self.task)
             version = self.populate_versions_combo(task_widget, current, self.task)
             resolution = self.populate_resolutions_combo(task_widget, current, self.task)
+            self.current_location['user'] = user
+            self.current_location['version'] = version
+            self.current_location['resolution'] = resolution
+            self.update_location(self.current_location)
             self.panel.addWidget(task_widget)
             self.panel.tasks.append(self.task)
             self.version_obj = current.copy(task=self.task, user=user, version=version,
@@ -188,6 +189,8 @@ class FilesPanel(QtGui.QWidget):
         :return:
         """
         if path_object:
+            if isinstance(path_object, dict):
+                path_object = PathObject(path_object)
             self.current_location = path_object.data
             self.path_object = path_object.copy()
             self.location_changed.emit(path_object)
@@ -348,9 +351,10 @@ class FilesPanel(QtGui.QWidget):
         # current location needs to have the version in it.
         next_minor = current.new_minor_version_object()
         next_minor.set_attr(filename='')
+        next_minor.set_attr(resolution=self.current_location['resolution'])
         next_minor.set_attr(ext='')
-        cgl_copy(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
         CreateProductionData(next_minor)
+        cgl_copy(os.path.dirname(current.path_root), next_minor.path_root)
         # reselect the original asset.
         self.on_task_selected(next_minor)
 

@@ -351,7 +351,6 @@ class ProductionPanel(QtGui.QWidget):
             if self.path_object.project in company_json:
                 project_tasks = company_json[self.path_object.project]
                 if project_tasks:
-                    print 1
                     for task in project_tasks:
                         data.append([project_tasks[task]['seq'],
                                      project_tasks[task]['shot_name'],
