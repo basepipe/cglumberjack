@@ -1,5 +1,8 @@
 # noinspection PyUnresolvedReferences
-from PySide.QtCore import QAbstractTableModel, Qt
+import os
+from cgl.plugins.Qt.QtCore import QAbstractTableModel, Qt, QAbstractItemModel
+from cgl.plugins.Qt.QtGui import QIcon
+from cgl.core.path import icon_path
 
 
 # noinspection PyUnusedLocal
@@ -150,3 +153,47 @@ class FileTableModel(ListItemModel):
         #    print("Decoration Role", self.data_[row][col])
             # keeping this here for reference
             # data = self.data_[row][col]
+
+
+class FilesModel(QAbstractTableModel):
+    def __init__(self, data_list, header_titles=None, data_filter=False):
+        QAbstractTableModel.__init__(self)
+        # self.setHeaderData(Qt.Horizontal, Qt.AlignLeft, Qt.TextAlignmentRole)
+        # self.setHeaderData(Qt.Horizontal, Qt.AlignLeft, Qt.TextAlignmentRole)
+        self.data_ = data_list
+        self.headers = header_titles
+        self.data_filter = data_filter
+
+    def data(self, index, role):
+        row = index.row()
+        col = index.column()
+        if role == Qt.DisplayRole:
+
+            try:
+                data = self.data_[row][col]
+                if data is None:
+                    return ""
+                if "." not in data:
+                    icon_path_ = os.path.join(icon_path(), 'folder2.png')
+                    return QIcon(icon_path)
+                if isinstance(data, dict):
+                    if 'name' in data:
+                        return data['name']
+                    elif 'code' in data:
+                        return data['code']
+                return str(data)
+            except KeyError:
+                return ''
+
+    def headerData(self, section, orientation, role):
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            return self.headers[section]
+
+    def rowCount(self, index):
+        if self.data_:
+            return len(self.data_)
+        else:
+            return None
+
+    def columnCount(self, index):
+        return len(self.headers)

@@ -12,8 +12,7 @@ def launch_(task):
     if current_user() in users:
         user_info = users[current_user()]
         if user_info:
-            nk_window = CGLNuke(parent=cgl_nuke.get_main_window(), path=cgl_nuke.get_file_name(), user_info=user_info)
-            gui = plugins.preflight.main.Preflight(parent=nk_window, software='nuke', preflight=task)
+            gui = plugins.preflight.main.Preflight(parent=None, software='nuke', preflight=task)
             gui.setWindowFlags(QtCore.Qt.Window)
             gui.setWindowTitle('Preflight')
             gui.setAttribute(QtCore.Qt.WA_DeleteOnClose)

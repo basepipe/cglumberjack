@@ -45,13 +45,10 @@ class LJTableWidget(QtWidgets.QTableView):
     def set_item_model(self, mdl, proxy=None):
         if proxy is None:
             proxy = LJTableSearchProxy()
-        print 2, proxy
         self.setModel(proxy)
-        print self.model()
-        print self.model().rowCount()
+        # if isinstance(mdl, )
         proxy.setSourceModel(mdl)
         self.setSortingEnabled(True)
-
         self.horizontalHeader().customContextMenuRequested.connect(self.header_right_click)
         self.alphabet_header = sorted(mdl.headers)
         settings = UISettings.settings()

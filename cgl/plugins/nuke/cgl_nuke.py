@@ -118,6 +118,7 @@ class NukePathObject(PathObject):
                 return
             for s in nuke.selectedNodes():
                 if s.Class() == 'Write':
+                    node_name = s.name()
                     file_name = s['file'].value()
                     dir_ = os.path.dirname(file_name)
                     CreateProductionData(dir_, project_management='lumbermill')
@@ -133,16 +134,19 @@ class NukePathObject(PathObject):
                         write_to_cgl_data(process_info)
                         process_info_list.append(process_info)
                     else:
-                        command = '%s -F %s -sro -x %s' % (app_config()['paths']['nuke'], self.frame_range,
-                                                           self.path_root)
+                        # add write node to the command
+                        command = '%s -F %s -sro -x %s %s' % (app_config()['paths']['nuke'], self.frame_range,
+                                                           node_name, self.path_root)
                         command_name = '"%s: NukePathObject.render()"' % self.command_base
                         if processing_method == 'local':
                             process_info = cgl_execute(command, methodology=processing_method,
                                                        command_name=command_name,
                                                        new_window=True)
                         elif processing_method == 'smedge':
-                            command = "-Type Nuke -Name %s -Range %s -Scene %s" % (command_name,
-                                                                                   self.frame_range, self.path_root)
+                            command = "-Type Nuke -Name %s -Range %s -Scene %s -WriteNode %s" % (command_name,
+                                                                                                 self.frame_range,
+                                                                                                 self.path_root,
+                                                                                                 node_name)
                             process_info = cgl_execute(command, methodology=processing_method,
                                                        command_name=command_name)
                         process_info['file_out'] = file_name
@@ -317,9 +321,11 @@ def match_scene_version():
         if write_output.version == path_object.version:
             print('Write Node version %s matches scene version' % write_output.version)
         else:
-            print('Changing Write Version %s to %s') % (write_output.version, path_object.version)
-            write_output.set_attr(version=path_object.version)
-            n.knob('file').fromUserText(write_output.path_root)
+            print n.name()
+            if not 'elem' in n.name():
+                print('Changing Write Version %s to %s') % (write_output.version, path_object.version)
+                write_output.set_attr(version=path_object.version)
+                n.knob('file').fromUserText(write_output.path_root)
     nuke.scriptSave()
 
 
@@ -332,12 +338,17 @@ def version_up(write_nodes=True):
     if write_nodes:
         match_scene_version()
 
+
 def version_up(write_nodes=True):
+    from cgl.ui.widgets.dialog import InputDialog
     path_object = PathObject(nuke.Root().name())
     next_minor = path_object.new_minor_version_object()
-    print('Versioning Up %s: %s' % (next_minor.version, next_minor.path_root))
-    CreateProductionData(next_minor, project_management='lumbermill')
-    nuke.scriptSaveAs(next_minor.path_root)
-    if write_nodes:
-        match_scene_version()
+    message = ('Versioning Up From v%s ->  v%s' % (path_object.version, next_minor.version))
+    dialog = InputDialog(title='Version Up', message=message)
+    dialog.exec_()
+    if dialog.button == 'Ok':
+        CreateProductionData(next_minor, project_management='lumbermill')
+        nuke.scriptSaveAs(next_minor.path_root)
+        if write_nodes:
+            match_scene_version()
 

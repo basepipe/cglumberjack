@@ -3,7 +3,7 @@ from cgl.plugins.Qt import QtGui, QtCore, QtWidgets
 from cgl.core import path
 from cgl.ui.util import drop_handler, define_palettes
 from cgl.ui.widgets.containers.table import LJTableWidget
-from cgl.ui.widgets.containers.model import ListItemModel
+from cgl.ui.widgets.containers.model import ListItemModel, FilesModel
 from cgl.ui.widgets.containers.menu import LJMenu
 from cgl.core.config import app_config
 from cgl.core.project import get_task_info, get_cgl_tools
@@ -359,10 +359,10 @@ class TaskWidget(QtWidgets.QWidget):
         self.start_task_button.setText("Start Task")
 
         self.info_layout = QtWidgets.QHBoxLayout()
-        self.info_layout.addWidget(self.versions_label)
-        self.info_layout.addWidget(self.versions)
         self.info_layout.addWidget(self.users_label)
         self.info_layout.addWidget(self.users)
+        self.info_layout.addWidget(self.versions_label)
+        self.info_layout.addWidget(self.versions)
         self.info_layout.addWidget(self.resolutions_label)
         self.info_layout.addWidget(self.resolutions)
         self.info_layout.addWidget(self.start_task_button)
@@ -490,7 +490,25 @@ class TaskWidget(QtWidgets.QWidget):
         self.resolutions_label.hide()
 
     def setup(self, table, mdl):
-        if isinstance(mdl, FileTableModel) or isinstance(mdl, ListItemModel):
+
+        if isinstance(mdl, FileTableModel):
+            print 'FileTableModel'
+            table.set_item_model(mdl)
+            self.empty_state.hide()
+            if not table.model().rowCount():
+                table.hide()
+                if not self.start_task_button.isVisible():
+                    self.empty_state.show()
+        elif isinstance(mdl, ListItemModel):
+            print 'ListItemModel'
+            table.set_item_model(mdl)
+            self.empty_state.hide()
+            if not table.model().rowCount():
+                table.hide()
+                if not self.start_task_button.isVisible():
+                    self.empty_state.show()
+        elif isinstance(mdl, FilesModel):
+            print 'FilesModel'
             table.set_item_model(mdl)
             self.empty_state.hide()
             if not table.model().rowCount():
@@ -982,6 +1000,8 @@ class AdvComboBox(QtWidgets.QComboBox):
         self.completer.setCompletionMode(QtWidgets.QCompleter.UnfilteredPopupCompletion)
         self.setCompleter(self.completer)
         self.setProperty('class', 'basic')
+        self.setMinimumWidth(130)
+
 
         def filter_(text):
             self.pFilterModel.setFilterFixedString(str(text))

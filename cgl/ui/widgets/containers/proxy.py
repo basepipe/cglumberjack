@@ -1,4 +1,4 @@
-from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
+from cgl.plugins.Qt import QtCore
 
 
 class LJTableSearchProxy(QtCore.QSortFilterProxyModel):

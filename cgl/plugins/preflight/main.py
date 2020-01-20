@@ -10,7 +10,14 @@ from cgl.ui.widgets.widgets import GifWidget
 from preflight_check import PreflightCheck
 
 
-class FileTableModel(ListItemModel):
+class PreflightModel(QtCore.QAbstractTableModel):
+    def __init__(self, data_list, header_titles=None, data_filter=False):
+        QtCore.QAbstractTableModel.__init__(self)
+        # self.setHeaderData(Qt.Horizontal, Qt.AlignLeft, Qt.TextAlignmentRole)
+        self.data_ = data_list
+        self.headers = header_titles
+        self.data_filter = data_filter
+
     def data(self, index, role):
         row = index.row()
         col = index.column()
@@ -27,6 +34,38 @@ class FileTableModel(ListItemModel):
             if data == 'Fail':
                 ip = icon_path('checkbox_unchecked.png')
                 return QtGui.QIcon(ip)
+
+    def headerData(self, section, orientation, role):
+        if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
+            return self.headers[section]
+
+    def rowCount(self, index):
+        if self.data_:
+            return len(self.data_)
+        else:
+            return None
+
+    def columnCount(self, index):
+        return len(self.headers)
+
+#
+# class FileTableModel(ListItemModel):
+#     def data(self, index, role):
+#         row = index.row()
+#         col = index.column()
+#         if role == QtCore.Qt.DisplayRole:
+#             return self.data_[row][col]
+#         if role == QtCore.Qt.DecorationRole:
+#             data = self.data_[row][col]
+#             if data == 'Untested':
+#                 ip = icon_path('checkbox_unchecked.png')
+#                 return QtGui.QIcon(ip)
+#             if data == 'Pass':
+#                 ip = icon_path('checkbox_checked.png')
+#                 return QtGui.QIcon(ip)
+#             if data == 'Fail':
+#                 ip = icon_path('checkbox_unchecked.png')
+#                 return QtGui.QIcon(ip)
 
 
 class ItemTable(LJTableWidget):
@@ -161,7 +200,7 @@ class Preflight(QtWidgets.QDialog):
                              self.modules[item]['order'],
                              self.modules[item]['required']])
         self.table_data = data
-        self.preflights.set_item_model(FileTableModel(data, ["Check", "Status", "Path", "Order", "Required"]))
+        self.preflights.set_item_model(PreflightModel(data, ["Check", "Status", "Path", "Order", "Required"]))
         self.preflights.sortByColumn(3, QtCore.Qt.SortOrder(0))
         self.preflights.hideColumn(2)
         self.preflights.hideColumn(3)
@@ -223,7 +262,7 @@ class Preflight(QtWidgets.QDialog):
             if each[0] == check:
                 self.table_data[row][1] = status
         # refresh the table with self.table_data
-        self.preflights.set_item_model(FileTableModel(self.table_data,
+        self.preflights.set_item_model(PreflightModel(self.table_data,
                                                       ["Check", "Status", "Path", "Order", "Required"]))
         self.preflights.hideColumn(2)
         self.preflights.hideColumn(3)

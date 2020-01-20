@@ -3,13 +3,13 @@ import logging
 import glob
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.config import app_config
-from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.util import current_user, cgl_copy
 from cgl.ui.widgets.progress_gif import process_method
-from cgl.core.path import PathObject, CreateProductionData, lj_list_dir
+from cgl.core.path import PathObject, CreateProductionData, lj_list_dir, icon_path
 from cgl.core.path import replace_illegal_filename_characters, show_in_folder
 from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
+from cgl.ui.widgets.containers.model import FilesModel
 from panels import clear_layout
 
 
@@ -164,7 +164,6 @@ class FilesPanel(QtWidgets.QWidget):
         self.panel.addStretch(1)
 
     def new_files_dragged(self, files):
-        print '1'
         to_object = PathObject(self.sender().to_object)
         to_folder = to_object.path_root
 
@@ -192,8 +191,8 @@ class FilesPanel(QtWidgets.QWidget):
             if isinstance(path_object, dict):
                 path_object = PathObject(path_object)
             self.current_location = path_object.data
-            self.path_object = path_object.copy()
-            self.location_changed.emit(path_object)
+            self.path_object = path_object.copy(latest=True)
+            self.location_changed.emit(self.path_object)
 
     def on_create_asset(self):
         if self.current_location['scope'] == 'IO':
@@ -233,14 +232,21 @@ class FilesPanel(QtWidgets.QWidget):
         return widget.users.currentText()
 
     @staticmethod
-    def populate_versions_combo(task_widget, path_object, task):
+    def populate_versions_combo(task_widget, path_object, task, set_to_latest=False):
         version = path_object.version
         task_widget.versions.show()
         task_widget.versions.clear()
         object_ = path_object.copy(user=task_widget.users.currentText(), task=task, version='*')
         items = object_.glob_project_element('version')
+        latest = items[-1]
+        if set_to_latest:
+            version = latest
+        if not version:
+            print items
+            print 'version not set, %s' % latest
+            version = latest
         for each in items:
-            task_widget.versions.insertItem(0, each)
+            task_widget.versions.addItem(each)
         task_widget.versions.setEnabled(True)
         index_ = task_widget.versions.findText(version)
         if index_ != -1:
@@ -373,7 +379,8 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_task_info_changed(self):
         """
-        This method runs whenever version, user, or resolution is changed in the TaskWidget
+        This method runs whenever version, user, or resolution is changed in the TaskWidget.
+        It essentially refreshes the task window.
         :return:
         """
         files_widget = self.sender().parent().parent()
@@ -540,7 +547,7 @@ class FilesPanel(QtWidgets.QWidget):
                 widget.files_area.publish_button.show()
                 render_files_label = 'Ready to Review/Publish'
             logging.debug('Published Files for %s' % current.path_root)
-            widget.setup(render_table, ListItemModel(self.prep_list_for_table(files_, basename=True),
+            widget.setup(render_table, FilesModel(self.prep_list_for_table(files_, basename=True),
                                                      [render_files_label]))
             render_table.show()
             widget.files_area.open_button.show()

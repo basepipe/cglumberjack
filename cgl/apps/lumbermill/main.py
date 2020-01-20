@@ -54,6 +54,7 @@ class NavigationWidget(QtWidgets.QFrame):
     location_changed = QtCore.Signal(object)
     my_tasks_clicked = QtCore.Signal()
     ingest_button_clicked = QtCore.Signal()
+    refresh_button_clicked = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None):
         QtWidgets.QFrame.__init__(self, parent)
@@ -68,6 +69,13 @@ class NavigationWidget(QtWidgets.QFrame):
         self.my_tasks_button.setProperty('class', 'grey_border')
         self.my_tasks_button.setIcon(QtGui.QIcon(tasks_icon))
         self.my_tasks_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
+
+        self.refresh_button = QtWidgets.QPushButton()
+        self.refresh_button.setToolTip('Refresh')
+        refresh_icon = os.path.join(cglpath.icon_path(), 'spinner11.png')
+        self.refresh_button.setProperty('class', 'grey_border')
+        self.refresh_button.setIcon(QtGui.QIcon(refresh_icon))
+        self.refresh_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
 
         self.ingest_button = QtWidgets.QPushButton()
         self.ingest_button.setToolTip('My Tasks')
@@ -109,6 +117,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.cl_row.addWidget(self.companies_button)
         self.cl_row.addWidget(self.projects_button)
         self.cl_row.addWidget(self.my_tasks_button)
+        self.cl_row.addWidget(self.refresh_button)
         self.cl_row.addWidget(self.search_box)
 
         self.cl_row.addWidget(self.ingest_button)
@@ -118,10 +127,15 @@ class NavigationWidget(QtWidgets.QFrame):
 
         self.my_tasks_button.clicked.connect(self.my_tasks_pressed)
         self.ingest_button.clicked.connect(self.ingest_clicked)
+        self.refresh_button.clicked.connect(self.refresh_clicked)
         self.back_button.clicked.connect(self.back_button_pressed)
         self.companies_button.clicked.connect(self.buttons_pressed)
         self.projects_button.clicked.connect(self.buttons_pressed)
         self.set_text(self.path_object.path_root)
+
+    def refresh_clicked(self):
+        print 'Refresh clicked'
+        self.refresh_button_clicked.emit(self.path_object)
 
     def text(self):
         return self.current_location_line_edit.text()
@@ -280,8 +294,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.panel = None
         self.radio_filter = radio_filter
         self.source_selection = []
-        self.setMinimumWidth(700)
-        self.setMinimumHeight(600)
+        self.setMinimumWidth(840)
+        self.setMinimumHeight(800)
         self.frame_range = None
 
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -330,6 +344,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path_widget.update_path(path_object=self.path_object)
 
         self.nav_widget.location_changed.connect(self.update_location)
+        self.nav_widget.refresh_button_clicked.connect(self.update_location_to_latest)
         self.nav_widget.my_tasks_clicked.connect(self.show_my_tasks)
         self.nav_widget.location_changed.connect(self.path_widget.update_path)
         self.layout.addWidget(self.nav_widget)
@@ -342,6 +357,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.path_object.data['my_tasks'] = True
         self.path_widget.update_path(path_object=self.path_object)
         self.update_location(self.path_object)
+
+    def update_location_to_latest(self, data):
+        path_object = data.copy(latest=True)
+        self.update_location(path_object)
 
     def update_location(self, data):
         try:

@@ -7,6 +7,7 @@ from cgl.plugins.nuke import cgl_nuke
 from cgl.core.path import PathObject
 from cgl.core.config import app_config
 from cgl.core.util import current_user
+from cgl.plugins.preflight.main import Preflight
 
 
 def get_nuke_main_window():
@@ -39,13 +40,13 @@ class NukeBrowserWidget(CGLumberjackWidget):
                 print selection, '-------------------'
                 import_media(selection)
             print 'nuke import'
-        print self.parent()
-        self.parent().close()
+        self.parent().parent().accept()
 
 
 class CGLNukeWidget(QtWidgets.QDialog):
     def __init__(self, parent=None):
         QtWidgets.QDialog.__init__(self, parent)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         scene_name = cgl_nuke.get_file_name()
         scene = PathObject(scene_name)
         self.setWindowTitle('Nuke - Lumbermill')
@@ -162,7 +163,7 @@ def render_node(n):
         print '%s is not a Write node' % n
 
 
-def render_selected_write_nodes():
+def render_selected_local():
     """
     renders selected write nodes through the GUI
     :return:
@@ -174,15 +175,6 @@ def render_selected_write_nodes():
             dialog.exec_()
             render_paths.append(dialog.render_path)
     return render_paths
-
-
-def render_selected_to_smedge():
-    import plugins.nuke.bin.preflight as preflight
-    if nuke.selectedNodes():
-        print 'found selected'
-        if nuke.selectedNodes()[0].Class() == 'Write':
-            print 'launching preflight'
-            preflight.launch_('render')
 
 
 def getMainWindow():
@@ -223,6 +215,17 @@ def create_write_node():
             cgl_nuke.create_scene_write_node()
 
 
+def render_selected():
+    if nuke.selectedNodes():
+        project_management = app_config()['account_info']['project_management']
+        users = app_config()['project_management'][project_management]['users']
+        if current_user() in users:
+            user_info = users[current_user()]
+            if user_info:
+                dialog = Preflight(parent=None, software='nuke', preflight='render')
+                #gui.setWindowFlags(QtCore.Qt.Window)
+                dialog.setWindowTitle('Preflight')
+                dialog.exec_()
 
 
 def launch_lumbermill():
