@@ -584,8 +584,9 @@ class FilesPanel(QtWidgets.QWidget):
                 widget.files_area.publish_button.show()
                 render_files_label = 'Ready to Review/Publish'
             logging.debug('Published Files for %s' % current.path_root)
-            widget.setup(render_table, FilesModel(self.prep_list_for_table(files_, basename=True),
-                                                     [render_files_label]))
+            data_ = self.prep_list_for_table(files_, basename=True, length=1)
+            model = FilesModel(data_, [render_files_label])
+            widget.setup(render_table, model)
             render_table.show()
             widget.files_area.open_button.show()
             widget.empty_state.hide()
@@ -603,7 +604,7 @@ class FilesPanel(QtWidgets.QWidget):
         clear_layout(self, layout)
 
     @staticmethod
-    def prep_list_for_table(list_, path_filter=None, basename=False):
+    def prep_list_for_table(list_, path_filter=None, basename=False, length=None):
         """
         Allows us to prepare lists for display in LJTables.
         :param list_: list to put into the table.
@@ -617,6 +618,9 @@ class FilesPanel(QtWidgets.QWidget):
         list_.sort()
         output_ = []
         dirname = os.path.dirname(list_[0])
-        output_.append(lj_list_dir(dirname, path_filter=path_filter, basename=basename))
+        files = lj_list_dir(dirname, path_filter=path_filter, basename=basename)
+        for each in files:
+            output_.append([each])
+        print 'adding files %s' % output_
         return output_
 

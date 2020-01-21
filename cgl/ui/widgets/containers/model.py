@@ -165,12 +165,9 @@ class FilesModel(QAbstractTableModel):
         self.data_filter = data_filter
 
     def data(self, index, role):
-        row = index.row()
-        col = index.column()
         if role == Qt.DisplayRole:
-
             try:
-                data = self.data_[row][col]
+                data = self.data_[index.row()][index.column()]
                 if data is None:
                     return ""
                 if "." not in data:
@@ -181,7 +178,7 @@ class FilesModel(QAbstractTableModel):
                         return data['name']
                     elif 'code' in data:
                         return data['code']
-                return str(data)
+                return data
             except KeyError:
                 return ''
 
