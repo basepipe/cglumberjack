@@ -243,7 +243,10 @@ class FilesPanel(QtWidgets.QWidget):
         task_widget.versions.clear()
         object_ = path_object.copy(user=task_widget.users.currentText(), task=task, version='*')
         items = object_.glob_project_element('version')
-        latest = items[-1]
+        try:
+            latest = items[-1]
+        except IndexError:
+            latest = '000.000'
         if set_to_latest:
             version = latest
         if not version:

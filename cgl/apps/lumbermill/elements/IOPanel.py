@@ -230,9 +230,9 @@ class IOPanel(QtWidgets.QWidget):
             os.rename(os.path.join(to_folder, 'publish_data.csv'), os.path.join(to_folder, 'publish_data.old.csv'))
         path = self.path_object.ingest_source
         self.progress_bar.show()
-        QtGui.qApp.processEvents()
+        #QtWidgets.qApp.processEvents()
         file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
-        QtGui.qApp.processEvents()
+        #QtWidgets.qApp.processEvents()
         file_process.start()
 
     def load_companies(self):

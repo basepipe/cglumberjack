@@ -179,7 +179,9 @@ def open_file(filepath):
     return nuke.scriptOpen(filepath)
 
 
-def save_file(filepath):
+def save_file(filepath=None):
+    if not filepath:
+        filepath = get_file_name()
     return nuke.scriptSave(filepath)
 
 
