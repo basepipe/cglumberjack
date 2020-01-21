@@ -21,7 +21,7 @@ EXT_MAP = app_config()['ext_map']
 ROOT = app_config()['paths']['root']
 SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
 SEQ_REGEX = re.compile("[0-9]{4,}\\.")
-SPLIT_SEQ_REGEX = re.compile("\\ [0-9]{4,}-[0-9]{4,}$")
+SPLIT_SEQ_REGEX = re.compile(" \d{3,}-\d{3,}$")
 SEQ_SPLIT = re.compile("\\#{4,}")
 SEQ2_SPLIT = re.compile("[%0-9]{2,}d")
 SEQ = re.compile('[0-9]{3,}-[0-9]{3,}')
@@ -1417,7 +1417,7 @@ def main(path_string, upload_review):
 
 
 if __name__ == '__main__':
-    dir_ = r'Z:\COMPANIES\loneCoconut\render\menudo_testd\shots\VFX_MDO_103\0040\comp\guillermo\004.000\1920x1080'
+    dir_ = r'Z:/COMPANIES/loneCoconut/source/Menudo_testX/IO/CLIENT/001.000'
     print lj_list_dir(dir_)
 
 

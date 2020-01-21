@@ -78,7 +78,6 @@ class FilesPanel(QtWidgets.QWidget):
             self.panel.seq = current.seq
             self.panel.shot = current.shot
             self.update_task_location(path_object=current)
-
             self.panel.tasks = []
             try:
                 if 'elem' in self.task:

@@ -289,6 +289,8 @@ class IOPanel(QtWidgets.QWidget):
             self.empty_state.setText('Drag Files To Add To Ingest %s' % self.version)
             self.file_tree.show()
             self.file_tree.directory = self.path_object.path_root
+            print 'showing this ------------'
+            print self.data_frame
             self.file_tree.populate_from_data_frame(self.path_object, self.data_frame,
                                                     app_config()['definitions']['ingest_browser_header'])
             self.tags_title.show()
@@ -310,11 +312,19 @@ class IOPanel(QtWidgets.QWidget):
         self.save_data_frame()
 
     def append_data_children(self, data, directory, parent='self'):
+        print '------------- adding this to the data frame'
+        regex = r"#{3,}.[aA-zZ]{2,} \d{3,}-\d{3,}$"
         for filename in lj_list_dir(directory, basename=True):
-            file_ = filename
-            frange = ' '
-            fullpath = os.path.join(os.path.abspath(directory), filename)
             type_ = get_file_type(filename)
+            split_frange = split_sequence_frange(filename)
+            if split_frange:
+                file_, frange = split_frange
+            else:
+                file_ = filename
+                frange = ' '
+            print file_
+            print '\t', frange
+            fullpath = os.path.join(os.path.abspath(directory), file_)
             data.append((file_, fullpath, type_, frange, ' ', False, ' ', ' ', ' ', ' ', ' ', ' ',
                          self.io_statuses[0], parent))
             if type_ == 'folder':
