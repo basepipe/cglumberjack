@@ -186,14 +186,20 @@ def user_init():
     """
     from cgl.core.config import app_config
     from cgl.core.util import current_user
+    from cgl.ui.widgets.dialog import LoginDialog
+    current = current_user().lower()
     proj_man = app_config()['account_info']['project_management']
     users = app_config()['project_management'][proj_man]['users']
-    current = current_user().lower()
-    if current in users:
-        print 'Found user: %s in company globals' % current
-        return proj_man, users[current]
+    if users:
+        if current in users.keys():
+            print 'Found user: %s in company globals' % current
+            return proj_man, users[current]
     else:
         print 'ERROR: %s not found in company globals file' % current
+        dialog = LoginDialog()
+        dialog.exec_()
+        if dialog.button == 'Ok':
+            return proj_man, dialog.user_info
         return False
 
 

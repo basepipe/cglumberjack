@@ -35,5 +35,5 @@ if __name__ == "__main__":
             load_lumbermill(app, splash)
     else:
         from cgl.bin.login_dialog import load_login_dialog
-        load_login_dialog(app, splash)
+        load_login_dialog(app)
 
