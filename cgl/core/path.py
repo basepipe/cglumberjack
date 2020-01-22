@@ -21,7 +21,7 @@ EXT_MAP = app_config()['ext_map']
 ROOT = app_config()['paths']['root']
 SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
 SEQ_REGEX = re.compile("[0-9]{4,}\\.")
-SPLIT_SEQ_REGEX = re.compile("\\ [0-9]{4,}-[0-9]{4,}$")
+SPLIT_SEQ_REGEX = re.compile(" \d{3,}-\d{3,}$")
 SEQ_SPLIT = re.compile("\\#{4,}")
 SEQ2_SPLIT = re.compile("[%0-9]{2,}d")
 SEQ = re.compile('[0-9]{3,}-[0-9]{3,}')
@@ -670,7 +670,7 @@ class PathObject(object):
         if job_id:
             command = r'python %s -p %s -r True' % (__file__, self.path_root)
             process_info = cgl_execute(command, command_name='%s: upload_review()' % self.command_base,
-                                       methodology='smedge', Wait=job_id)
+                                       methodology='smedge', WaitForJobID=job_id)
             return process_info
         else:
             if os.path.exists(self.preview_path):
@@ -691,14 +691,13 @@ class PathObject(object):
         """
         if self.file_type == 'sequence':
             # make sure that an hd_proxy exists:
-            if job_id:
-                proxy_info = self.make_proxy(job_id=job_id)
-            else:
-                proxy_info = self.make_proxy(job_id=job_id)
+            proxy_info = self.make_proxy(job_id=job_id)
+            print 'proxy id %s' % proxy_info['job_id']
             mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
                                               command_name='%s: create_web_mov()' % self.command_base,
                                               dependent_job=proxy_info['job_id'], processing_method=PROCESSING_METHOD,
                                               new_window=new_window)
+            print 'mov info id %s' % mov_info['job_id']
             thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
                                                     command_name='%s: create_movie_thumb()' % self.command_base,
                                                     dependent_job=mov_info['job_id'],
@@ -730,13 +729,46 @@ class PathObject(object):
         proc_meth = PROCESSING_METHOD
         if job_id:
             proc_meth = 'smedge'
-
         proxy_info = convert.create_proxy_sequence(self.path_root, output_sequence=output_sequence, width=width,
                                                    height=height, copy_input_padding=copy_input_padding,
                                                    processing_method=proc_meth, dependent_job=job_id,
                                                    new_window=new_window,
                                                    command_name='%s: create_proxy_sequence()' % self.command_base)
         return proxy_info
+
+    def publish(self):
+        """
+        This will create a publish version from the current pathObject.   Essentially that means:
+        we will create the next major version for this user and copy all elements into the new version
+        we will create a "publish" version of it as well to
+        :param source:
+        :param render:
+        :return:
+        """
+        if self.user == 'publish':
+            print "This is a publish user already, traditionally you'll be publishing from a user context."
+        if not self.resolution:
+            print('You must have resolution in order to publish')
+        # current folders to be copied
+        current_source = self.copy(filename=None, ext=None).path_root
+        current_render = self.copy(context='render', filename=None, ext=None).path_root
+        # create the next major version folders to copy to
+        next_major = self.copy(filename=None, ext=None)
+        next_major = next_major.next_major_version()
+        next_major_render = next_major.copy(context='render').path_root
+        next_major_source = next_major.path_root
+        publish = next_major.copy(user='publish')
+        publish_source = publish.path_root
+        publish_render = publish.copy(context='render').path_root
+        print 'Copying %s to %s' % (current_source, next_major_source)
+        cgl_copy(current_source, next_major_source)
+        print 'Copying %s to %s' % (current_source, publish_source)
+        cgl_copy(current_source, publish_source)
+        print 'Copying %s to %s' % (current_render, next_major_render)
+        cgl_copy(current_render, next_major_render)
+        print 'Copying %s to %s' % (current_render, publish_render)
+        cgl_copy(current_render, publish_render)
+        print 'Finished Copying'
 
     def show_in_folder(self):
         """
@@ -1301,7 +1333,7 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
                     output_.append(each)
     for each in output_:
         if '#' in each:
-            sequence = Sequence(each)
+            sequence = Sequence(os.path.join(directory, each))
             frange = sequence.frame_range
             if frange:
                 index = output_.index(each)
@@ -1385,7 +1417,9 @@ def main(path_string, upload_review):
 
 
 if __name__ == '__main__':
-    main()
+    dir_ = r'Z:/COMPANIES/loneCoconut/source/Menudo_testX/IO/CLIENT/001.000'
+    print lj_list_dir(dir_)
+
 
 
 

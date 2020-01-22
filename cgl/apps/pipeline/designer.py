@@ -1,6 +1,6 @@
 import os
 import json
-from PySide import QtGui
+from cgl.plugins.Qt import QtWidgets
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.util import load_style_sheet
@@ -34,34 +34,34 @@ class Designer(LJDialog):
         self.task_list.insert(0, '')
 
         # create layouts
-        layout = QtGui.QVBoxLayout(self)
-        tool_bar = QtGui.QHBoxLayout()
-        self.title_widget = QtGui.QWidget()
-        title_widget_layout = QtGui.QHBoxLayout()
+        layout = QtWidgets.QVBoxLayout(self)
+        tool_bar = QtWidgets.QHBoxLayout()
+        self.title_widget = QtWidgets.QWidget()
+        title_widget_layout = QtWidgets.QHBoxLayout()
         self.title_widget.setLayout(title_widget_layout)
-        grid_layout = QtGui.QGridLayout()
-        menu_type_row = QtGui.QHBoxLayout()
+        grid_layout = QtWidgets.QGridLayout()
+        menu_type_row = QtWidgets.QHBoxLayout()
         # create widgets
-        self.software_label = QtGui.QLabel('Software:')
+        self.software_label = QtWidgets.QLabel('Software:')
         self.software_label.setProperty('class', 'title')
-        self.software_combo = QtGui.QComboBox()
-        self.menu_type_label = QtGui.QLabel('Menu Type:')
+        self.software_combo = QtWidgets.QComboBox()
+        self.menu_type_label = QtWidgets.QLabel('Menu Type:')
         self.menu_type_label.setProperty('class', 'title')
-        self.menu_type_combo = QtGui.QComboBox()
+        self.menu_type_combo = QtWidgets.QComboBox()
         self.menu_type_combo.addItems(['', 'menus', 'context-menus', 'shelves', 'preflights'])
 
-        self.new_software_button = QtGui.QPushButton('Add Software')
+        self.new_software_button = QtWidgets.QPushButton('Add Software')
         self.new_software_button.setProperty('class', 'add_button')
-        self.menus = QtGui.QTabWidget()
+        self.menus = QtWidgets.QTabWidget()
         self.menus.setMovable(True)
-        self.title_label = QtGui.QLabel()
+        self.title_label = QtWidgets.QLabel()
         self.title_label.setProperty('class', 'ultra_title')
-        self.add_menu_button = QtGui.QPushButton('add')
-        self.delete_menu_button = QtGui.QPushButton('delete')
+        self.add_menu_button = QtWidgets.QPushButton('add')
+        self.delete_menu_button = QtWidgets.QPushButton('delete')
         self.add_menu_button.setProperty('class', 'add_button')
         self.delete_menu_button.setProperty('class', 'add_button')
 
-        # self.save_menu_button = QtGui.QPushButton('save menu')
+        # self.save_menu_button = QtWidgets.QPushButton('save menu')
         # self.save_menu_button.setProperty('class', 'add_button')
         self.title_widget.hide()
         # layout the GUI

@@ -292,7 +292,6 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
     output_file = ''
     input_file = ''
     if output:
-        print 1, path_object.file_type
         if path_object.file_type == 'sequence':
             input_file = prep_seq_delimiter(sequence, replace_with='%')
             output_file = output

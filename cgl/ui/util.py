@@ -1,5 +1,5 @@
 import logging
-from PySide import QtGui, QtCore
+from cgl.plugins.Qt import QtGui, QtCore
 from cgl.core.util import app_name
 
 

@@ -1,4 +1,4 @@
-from PySide import QtCore
+from cgl.plugins.Qt import QtCore
 from plugins.preflight.main import Preflight
 
 

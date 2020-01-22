@@ -1,6 +1,6 @@
 import os
 from cgl.core.util import cgl_copy
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.path import start, icon_path
 from cgl.core.project import get_cgl_tools
@@ -12,21 +12,21 @@ GUI_DICT = {'shelves.yaml': ['button name', 'command', 'icon', 'order', 'annotat
             'menus.yaml': ['order', 'name']}
 
 
-class CGLTabBar(QtGui.QTabBar):
+class CGLTabBar(QtWidgets.QTabBar):
 
     def tabSizeHint(self, index):
-        s = QtGui.QTabBar.tabSizeHint(self, index)
+        s = QtWidgets.QTabBar.tabSizeHint(self, index)
         s.transpose()
         return s
 
     # noinspection PyUnusedLocal
     def paintEvent(self, event):
-        painter = QtGui.QStylePainter(self)
-        opt = QtGui.QStyleOptionTab()
+        painter = QtWidgets.QStylePainter(self)
+        opt = QtWidgets.QStyleOptionTab()
 
         for i in range(self.count()):
             self.initStyleOption(opt, i)
-            painter.drawControl(QtGui.QStyle.CE_TabBarTabShape, opt)
+            painter.drawControl(QtWidgets.QStyle.CE_TabBarTabShape, opt)
             painter.save()
 
             s = opt.rect.size()
@@ -39,18 +39,18 @@ class CGLTabBar(QtGui.QTabBar):
             painter.translate(c)
             painter.rotate(90)
             painter.translate(-c)
-            painter.drawControl(QtGui.QStyle.CE_TabBarTabLabel, opt)
+            painter.drawControl(QtWidgets.QStyle.CE_TabBarTabLabel, opt)
             painter.restore()
 
 
-class LJTabWidget(QtGui.QTabWidget):
+class LJTabWidget(QtWidgets.QTabWidget):
     def __init__(self, *args, **kwargs):
-        QtGui.QTabWidget.__init__(self, *args, **kwargs)
+        QtWidgets.QTabWidget.__init__(self, *args, **kwargs)
         self.setTabBar(CGLTabBar(self))
-        self.setTabPosition(QtGui.QTabWidget.West)
+        self.setTabPosition(QtWidgets.QTabWidget.West)
 
 
-class CGLMenuButton(QtGui.QWidget):
+class CGLMenuButton(QtWidgets.QWidget):
     """
     Represents the "Button" within the parent "Menu".
     """
@@ -59,7 +59,7 @@ class CGLMenuButton(QtGui.QWidget):
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path='',
                  menu_type='preflights'):
         # TODO - we need to choose better variable names, this is obviously "preflight" specific.
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
         try:
             dialog = self.parent().parent().parent()
@@ -75,41 +75,41 @@ class CGLMenuButton(QtGui.QWidget):
         self.preflight_path = preflight_path
         self.do_save = True
         # Create the Layouts
-        layout = QtGui.QVBoxLayout(self)
-        grid_layout = QtGui.QGridLayout()
-        tool_row = QtGui.QHBoxLayout()
+        layout = QtWidgets.QVBoxLayout(self)
+        grid_layout = QtWidgets.QGridLayout()
+        tool_row = QtWidgets.QHBoxLayout()
 
         # labels
-        module_label = QtGui.QLabel('module')
-        required_label = QtGui.QLabel('required')
-        label_label = QtGui.QLabel('label')
-        icon_button = QtGui.QToolButton()
+        module_label = QtWidgets.QLabel('module')
+        required_label = QtWidgets.QLabel('required')
+        label_label = QtWidgets.QLabel('label')
+        icon_button = QtWidgets.QToolButton()
         icon_button.setIcon(QtGui.QIcon(os.path.join(icon_path(), 'folder24px.png')))
-        self.icon_label = QtGui.QLabel('icon')
+        self.icon_label = QtWidgets.QLabel('icon')
 
         # line edits
-        self.command_line_edit = QtGui.QLineEdit()
+        self.command_line_edit = QtWidgets.QLineEdit()
         self.command_line_edit.setEnabled(False)
-        self.required_line_edit = QtGui.QLineEdit()
+        self.required_line_edit = QtWidgets.QLineEdit()
         self.required_line_edit.setText('True')
-        self.icon_path_line_edit = QtGui.QLineEdit()
+        self.icon_path_line_edit = QtWidgets.QLineEdit()
         # self.required_line_edit.setEnabled(False)
-        self.label_line_edit = QtGui.QLineEdit()
+        self.label_line_edit = QtWidgets.QLineEdit()
         self.attrs_dict = {'module': self.command_line_edit,
                            'required': self.required_line_edit,
                            'label': self.label_line_edit,
                            'icon': self.icon_path_line_edit}
 
         # tool buttons
-        delete_button = QtGui.QPushButton('Delete')
+        delete_button = QtWidgets.QPushButton('Delete')
         delete_button.setProperty('class', 'basic')
-        open_button = QtGui.QPushButton('Open in Editor')
+        open_button = QtWidgets.QPushButton('Open in Editor')
         open_button.setProperty('class', 'basic')
-        self.save_button = QtGui.QPushButton('Save All')
+        self.save_button = QtWidgets.QPushButton('Save All')
         self.save_button.setProperty('class', 'basic')
 
         # Text Edit
-        self.code_text_edit = QtGui.QPlainTextEdit()
+        self.code_text_edit = QtWidgets.QPlainTextEdit()
         metrics = QtGui.QFontMetrics(self.code_text_edit.font())
         self.code_text_edit.setTabStopWidth(4 * metrics.width(' '))
         Highlighter(self.code_text_edit.document())
@@ -154,7 +154,7 @@ class CGLMenuButton(QtGui.QWidget):
 
     def on_icon_button_clicked(self):
         default_folder = os.path.join(get_cgl_tools(), self.software, self.menu_type, self.preflight_name)
-        file_paths = QtGui.QFileDialog.getOpenFileName(self, 'Choose a File to Attach', default_folder, "*")
+        file_paths = QtWidgets.QFileDialog.getOpenFileName(self, 'Choose a File to Attach', default_folder, "*")
         from_path = file_paths[0].replace('\\', '/')
         _, file_ = os.path.split(from_path)
         to_path = os.path.join(default_folder, file_).replace('\\', '/')
@@ -231,7 +231,7 @@ class CGLMenuButton(QtGui.QWidget):
         self.parent().parent().removeTab(self.parent().parent().currentIndex())
 
 
-class CGLMenu(QtGui.QWidget):
+class CGLMenu(QtWidgets.QWidget):
     """
     This creates the top level "Menu" Tab with the "buttons" within it.  Menu is a catch all for "Menus", "Shelves",
     "Preflights", "Context-menus" and anything else in the future that fits the structure we've got here.
@@ -240,7 +240,7 @@ class CGLMenu(QtGui.QWidget):
     save_clicked = QtCore.Signal()
 
     def __init__(self, parent=None, software=None, menu_type='menus', menu_name='', menu=None, menu_path=''):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         # initialize variables
         self.menu_type = menu_type
         if self.menu_type == 'shelves':
@@ -260,35 +260,35 @@ class CGLMenu(QtGui.QWidget):
         self.new_button_widget = None
 
         # create layouts
-        layout = QtGui.QVBoxLayout(self)
-        title_layout = QtGui.QHBoxLayout()
+        layout = QtWidgets.QVBoxLayout(self)
+        title_layout = QtWidgets.QHBoxLayout()
         if menu_type != 'shelves':
             self.buttons_tab_widget = LJTabWidget()
             self.buttons_tab_widget.setProperty('class', 'vertical')
             self.buttons_tab_widget.tabBar().setProperty('class', 'vertical')
         else:
-            self.buttons_tab_widget = QtGui.QTabWidget()
+            self.buttons_tab_widget = QtWidgets.QTabWidget()
 
         self.title = ''
         if self.menu_type == 'menus':
-            self.title = QtGui.QLabel('%s %s Buttons: (Drag to Reorder)' % (self.menu_name, self.menu_type.title()))
+            self.title = QtWidgets.QLabel('%s %s Buttons: (Drag to Reorder)' % (self.menu_name, self.menu_type.title()))
         elif self.menu_type == 'preflights':
-            self.title = QtGui.QLabel('%s %s Steps: (Drag to Reorder)' % (self.menu_name, self.menu_type.title()))
+            self.title = QtWidgets.QLabel('%s %s Steps: (Drag to Reorder)' % (self.menu_name, self.menu_type.title()))
         elif self.menu_type == 'shelves':
-            self.title = QtGui.QLabel('%s Shelf Buttons: (Drag to Reorder)' % self.menu_name)
+            self.title = QtWidgets.QLabel('%s Shelf Buttons: (Drag to Reorder)' % self.menu_name)
         elif self.menu_type == 'context-menus':
-            self.title = QtGui.QLabel('Context Menu Buttons: (Drag to Reorder)')
+            self.title = QtWidgets.QLabel('Context Menu Buttons: (Drag to Reorder)')
         self.title.setProperty('class', 'title')
         if self.menu_type == 'shelves':
-            self.add_button = QtGui.QPushButton('add shelf button')
-            self.import_menu_button = QtGui.QPushButton('import shelf button')
+            self.add_button = QtWidgets.QPushButton('add shelf button')
+            self.import_menu_button = QtWidgets.QPushButton('import shelf button')
         elif self.menu_type == 'preflights':
-            self.add_button = QtGui.QPushButton('add preflight step')
-            self.import_menu_button = QtGui.QPushButton('import preflight step')
+            self.add_button = QtWidgets.QPushButton('add preflight step')
+            self.import_menu_button = QtWidgets.QPushButton('import preflight step')
         else:
-            self.add_button = QtGui.QPushButton('add %s button' % self.singular)
-            self.import_menu_button = QtGui.QPushButton('import %s button' % self.singular)
-        self.add_submenu_button = QtGui.QPushButton('add submenu')
+            self.add_button = QtWidgets.QPushButton('add %s button' % self.singular)
+            self.import_menu_button = QtWidgets.QPushButton('import %s button' % self.singular)
+        self.add_submenu_button = QtWidgets.QPushButton('add submenu')
         self.add_submenu_button.hide()
         self.import_menu_button.hide()
         self.add_button.setProperty('class', 'add_button')

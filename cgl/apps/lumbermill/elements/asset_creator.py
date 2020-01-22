@@ -2,21 +2,21 @@ import re
 import os
 import glob
 from cgl.core.path import CreateProductionData, PathObject
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.util import define_palettes
 from cgl.core.config import app_config
 from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.combo import AdvComboBox, LabelComboRow
 
 
-class AssetWidget(QtGui.QWidget):
+class AssetWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
 
     def __init__(self, parent, title, scope):
-        QtGui.QWidget.__init__(self, parent)
-        v_layout = QtGui.QVBoxLayout(self)
-        h_layout = QtGui.QHBoxLayout(self)
+        QtWidgets.QWidget.__init__(self, parent)
+        v_layout = QtWidgets.QVBoxLayout(self)
+        h_layout = QtWidgets.QHBoxLayout(self)
         if scope == 'assets':
             self.category_row = LabelComboRow('%s Category' % scope.title(), button=False, bold=False)
             self.name_row = LabelComboRow('%s Name(s)' % scope.title(), button=False, bold=False)
@@ -24,16 +24,16 @@ class AssetWidget(QtGui.QWidget):
             self.category_row = LabelComboRow('Sequence', button=False, bold=False)
             self.name_row = LabelComboRow('Shot Name(s)', button=False, bold=False)
         self.label = title
-        self.project_label = QtGui.QLabel("<b>Create %s For: %s</b>" % (scope.title(), title))
-        self.message = QtGui.QLabel("")
+        self.project_label = QtWidgets.QLabel("<b>Create %s For: %s</b>" % (scope.title(), title))
+        self.message = QtWidgets.QLabel("")
 
         h_layout.addWidget(self.project_label)
-        h_layout.addItem(QtGui.QSpacerItem(0, 0, QtGui.QSizePolicy.Expanding,
-                                               QtGui.QSizePolicy.Minimum))
+        h_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                               QtWidgets.QSizePolicy.Minimum))
 
         v_layout.addLayout(h_layout)
-        v_layout.addItem(QtGui.QSpacerItem(0, 10, QtGui.QSizePolicy.Minimum,
-                                               QtGui.QSizePolicy.Minimum))
+        v_layout.addItem(QtWidgets.QSpacerItem(0, 10, QtWidgets.QSizePolicy.Minimum,
+                                               QtWidgets.QSizePolicy.Minimum))
         v_layout.addLayout(self.category_row)
         v_layout.addLayout(self.name_row)
         v_layout.addWidget(self.message)
@@ -78,18 +78,18 @@ class AssetCreator(LJDialog):
         schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
         self.proj_man_tasks = schema['long_to_short'][self.scope.lower()]
         self.proj_man_tasks_short_to_long = schema['short_to_long'][self.scope.lower()]
-        self.v_layout = QtGui.QVBoxLayout(self)
-        self.scope_row = QtGui.QHBoxLayout()
-        self.asset_row = QtGui.QHBoxLayout(self)
+        self.v_layout = QtWidgets.QVBoxLayout(self)
+        self.scope_row = QtWidgets.QHBoxLayout()
+        self.asset_row = QtWidgets.QHBoxLayout(self)
         self.tasks = []
-        self.task_row = QtGui.QHBoxLayout(self)
+        self.task_row = QtWidgets.QHBoxLayout(self)
         self.task_combo = AdvComboBox()
-        self.clear_selection_button = QtGui.QPushButton('Clear Selection')
-        self.defaults_radio = QtGui.QRadioButton('Select Defaults')
-        self.none_radio = QtGui.QRadioButton('Select None')
-        self.radio_layout = QtGui.QHBoxLayout()
-        self.radio_layout.addItem(QtGui.QSpacerItem(0, 0, QtGui.QSizePolicy.Expanding,
-                                                        QtGui.QSizePolicy.Minimum))
+        self.clear_selection_button = QtWidgets.QPushButton('Clear Selection')
+        self.defaults_radio = QtWidgets.QRadioButton('Select Defaults')
+        self.none_radio = QtWidgets.QRadioButton('Select None')
+        self.radio_layout = QtWidgets.QHBoxLayout()
+        self.radio_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                        QtWidgets.QSizePolicy.Minimum))
         self.radio_layout.addWidget(self.defaults_radio)
         self.radio_layout.addWidget(self.none_radio)
         self.defaults_radio.setChecked(True)
@@ -97,9 +97,9 @@ class AssetCreator(LJDialog):
         self.none_radio.hide()
 
         if self.task_mode:
-            self.create_button = QtGui.QPushButton('Create %s' % 'Task(s)')
+            self.create_button = QtWidgets.QPushButton('Create %s' % 'Task(s)')
         else:
-            self.create_button = QtGui.QPushButton('Create %s' % self.scope.title())
+            self.create_button = QtWidgets.QPushButton('Create %s' % self.scope.title())
         self.create_button.setEnabled(False)
 
         # asset & shot stuff
@@ -107,9 +107,9 @@ class AssetCreator(LJDialog):
         self.asset_widget.name_row.combo.setEnabled(False)
         self.asset_row.addWidget(self.asset_widget)
         # task stuff
-        self.task_layout = QtGui.QVBoxLayout(self)
+        self.task_layout = QtWidgets.QVBoxLayout(self)
         for each in self.proj_man_tasks:
-            checkbox = QtGui.QCheckBox('%s (%s)' % (each, self.proj_man_tasks[each]))
+            checkbox = QtWidgets.QCheckBox('%s (%s)' % (each, self.proj_man_tasks[each]))
             checkbox.stateChanged.connect(self.on_checkbox_clicked)
             self.task_layout.addWidget(checkbox)
 
@@ -117,8 +117,8 @@ class AssetCreator(LJDialog):
         self.v_layout.addLayout(self.radio_layout)
         self.v_layout.addLayout(self.task_layout)
         self.v_layout.addWidget(self.create_button)
-        self.v_layout.addItem(QtGui.QSpacerItem(0, 0, QtGui.QSizePolicy.Minimum,
-                                                    QtGui.QSizePolicy.Expanding))
+        self.v_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum,
+                                                    QtWidgets.QSizePolicy.Expanding))
         self.asset_widget.message.hide()
         # self.asset_widget.message.setPalette(self.red_palette)
         self.load_categories()
