@@ -337,7 +337,8 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
             smedge_command = r'%s Script %s' % (app_config()['paths']['smedge'], command)
         else:
             environment_overrides = "CGL_PYTHON=C:\Python27;C:\Python27\Scripts;C:\Python27\Lib\site-packages;"
-            command = '$(:CGL_PYTHON)\\%s' % command
+            if command.startswith('python'):
+                command = '$(:CGL_PYTHON)\\%s' % command
             smedge_command = r'%s Script -Type Generic Script -Name %s -Range %s ' \
                              r'-Command "%s" -EnvironmentOverrides "%s"' % (app_config()['paths']['smedge'],
                                                                             command_name, range, command,
