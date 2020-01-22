@@ -637,12 +637,19 @@ class LoginDialog(LJDialog):
         self.user_info = {}
         self.line_edit_dict = {}
         self.login_line_edit = None
+        self.button = ''
         self.project_management = app_config()['account_info']['project_management']
-        self.user_details = app_config()['project_management'][self.project_management]['user_details']
+        try:
+            self.user_details = app_config()['project_management'][self.project_management]['user_details']
+        except KeyError:
+            self.user_details = {}
+
         self.grid_layout = QtWidgets.QGridLayout()
         self.proj_management_label = QtWidgets.QLabel('Project Management:')
-        self.uname_label = QtWidgets.QLabel('%s User Name:' % self.project_management)
-        self.email_label = QtWidgets.QLabel('%s Email:' % self.project_management)
+        self.uname_label = QtWidgets.QLabel('Login')
+        self.first_label = QtWidgets.QLabel('First')
+        self.last_label = QtWidgets.QLabel('Last')
+        self.email_label = QtWidgets.QLabel('Email')
         self.local_user_label = QtWidgets.QLabel('Local User:')
 
         self.local_user_line_edit = QtWidgets.QLineEdit()
@@ -651,11 +658,20 @@ class LoginDialog(LJDialog):
         self.proj_management_line_edit = QtWidgets.QLineEdit()
         self.proj_management_line_edit.setText(self.project_management)
         self.proj_management_line_edit.setEnabled(False)
+        self.first_line_edit = QtWidgets.QLineEdit()
+        self.last_line_edit = QtWidgets.QLineEdit()
+        self.email_line_edit = QtWidgets.QLineEdit()
 
         self.grid_layout.addWidget(self.proj_management_label, 0, 0)
         self.grid_layout.addWidget(self.proj_management_line_edit, 0, 1)
         self.grid_layout.addWidget(self.local_user_label, 1, 0)
         self.grid_layout.addWidget(self.local_user_line_edit, 1, 1)
+        self.grid_layout.addWidget(self.first_label, 2, 0)
+        self.grid_layout.addWidget(self.first_line_edit, 2, 1)
+        self.grid_layout.addWidget(self.last_label, 3, 0)
+        self.grid_layout.addWidget(self.last_line_edit, 3, 1)
+        self.grid_layout.addWidget(self.email_label, 4, 0)
+        self.grid_layout.addWidget(self.email_line_edit, 4, 1)
 
         buttons_layout = QtWidgets.QHBoxLayout()
         self.ok_button = QtWidgets.QPushButton('Ok')
@@ -675,6 +691,7 @@ class LoginDialog(LJDialog):
 
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.ok_button.clicked.connect(self.on_ok_clicked)
+        self.email_line_edit.textChanged.connect(self.on_text_changed)
         if current_user() in app_config()['project_management'][self.project_management]['users']:
             self.user_info = app_config()['project_management'][self.project_management]['users'][current_user()]
         self.load_user_details()
@@ -697,7 +714,7 @@ class LoginDialog(LJDialog):
 
     def on_text_changed(self):
         # I'll want to be updating some kind of dictionary here that i can use for saving info later.
-        email = self.login_line_edit.text()
+        email = self.email_line_edit.text()
         if email:
             if '@' in email:
                 self.ok_button.setEnabled(True)
@@ -705,25 +722,26 @@ class LoginDialog(LJDialog):
             self.ok_button.setEnabled(False)
 
     def on_ok_clicked(self):
+        self.button = self.sender().text()
         self.save_user_defaults()
         self.accept()
 
     def on_cancel_clicked(self):
+        self.button = self.sender().text()
         self.accept()
 
     def create_user_info_dict(self):
-        d = {}
-        for key in self.line_edit_dict:
-            d[key] = self.line_edit_dict[key].text()
-        return d
+        self.line_edit_dict[self.first_label.text().lower()] = self.first_line_edit.text()
+        self.line_edit_dict[self.last_label.text().lower()] = self.last_line_edit.text()
+        self.line_edit_dict['login'] = self.email_line_edit.text()
+        return self.line_edit_dict
 
     def save_user_defaults(self):
-        print 'Need to Create a method for saving new users to the company globals'
-        globals_location = UserConfig().d['globals']
         import json
-        user_info = self.create_user_info_dict()
+        globals_location = UserConfig().d['globals']
+        self.user_info = self.create_user_info_dict()
         app_config_dict = app_config()
-        app_config_dict['project_management'][self.project_management]['users'][current_user()] = user_info
+        app_config_dict['project_management'][self.project_management]['users'][current_user()] = self.user_info
         with open(globals_location, 'w') as fileout:
             json.dump(app_config_dict, fileout, indent=4, sort_keys=True)
         self.accept()
