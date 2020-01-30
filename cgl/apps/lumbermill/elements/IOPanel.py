@@ -246,9 +246,9 @@ class IOPanel(QtWidgets.QWidget):
         self.load_data_frame()
         self.populate_tree()
         self.empty_state.hide()
-        num = self.ingest_widget.list.count()
-        item = self.ingest_widget.list.item(num - 1)
-        # No idea why this isn't working.
+        # TODO - No idea why none of these are working for selecting the version.
+        # num = self.ingest_widget.list.count()
+        # item = self.ingest_widget.list.item(num - 1)
         # item.setSelected(True)
         # self.ingest_widget.list.setCurrentItem(item)
         # self.ingest_widget.list.setCurrentRow(-1)
