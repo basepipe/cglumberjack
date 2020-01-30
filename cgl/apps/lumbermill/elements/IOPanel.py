@@ -241,19 +241,17 @@ class IOPanel(QtWidgets.QWidget):
         file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
         #QtWidgets.qApp.processEvents()
         file_process.start()
-        # refresh the thing (this should keep the current source)
-        self.parent().parent().centralWidget().update_location_to_latest(self.path_object)
-        # Select The Version Number Programatically
-        items = self.ingest_widget.list.findItems(str(version), QtCore.Qt.MatchExactly)
-        index = self.ingest_widget.list.indexFromItem(items[0])
-        self.ingest_widget.list.setFocus()
-        self.ingest_widget.list.setCurrentItem(items[0])
-        # model = self.ingest_widget.list.selectionModel()
-        # This should technically work!
-        # from PySide import QtGui
-        # this row needs to be an index
-        # model.select(index, QtGui.QItemSelectionModel.Select)
-        # print 'apparently i selected something'
+        self.location_changed.emit(self.path_object)
+        # self.parent().parent().centralWidget().update_location_to_latest(self.path_object)
+        self.load_data_frame()
+        self.populate_tree()
+        self.empty_state.hide()
+        num = self.ingest_widget.list.count()
+        item = self.ingest_widget.list.item(num - 1)
+        # No idea why this isn't working.
+        # item.setSelected(True)
+        # self.ingest_widget.list.setCurrentItem(item)
+        # self.ingest_widget.list.setCurrentRow(-1)
 
     def load_companies(self):
         self.source_widget.list.clear()
@@ -309,8 +307,6 @@ class IOPanel(QtWidgets.QWidget):
             self.empty_state.setText('Drag Files To Add To Ingest %s' % self.version)
             self.file_tree.show()
             self.file_tree.directory = self.path_object.path_root
-            print 'showing this ------------'
-            print self.data_frame
             self.file_tree.populate_from_data_frame(self.path_object, self.data_frame,
                                                     app_config()['definitions']['ingest_browser_header'])
             self.tags_title.show()
