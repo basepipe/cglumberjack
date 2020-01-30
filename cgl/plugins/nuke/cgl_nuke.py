@@ -304,8 +304,9 @@ def write_node_selected():
     write_nodes = []
     for s in nuke.selectedNodes():
         if s.Class() == 'Write':
-            print 'yup'
             write_nodes.append(s)
+        else:
+            return False
     return write_nodes
 
 
@@ -331,7 +332,7 @@ def match_scene_version():
                 n.knob('file').fromUserText(write_output.path_root)
     nuke.scriptSave()
 
-
+"""
 def version_up(write_nodes=True):
     path_object = PathObject(nuke.Root().name())
     next_minor = path_object.new_minor_version_object()
@@ -340,6 +341,7 @@ def version_up(write_nodes=True):
     nuke.scriptSaveAs(next_minor.path_root)
     if write_nodes:
         match_scene_version()
+"""
 
 
 def version_up(write_nodes=True):
@@ -355,3 +357,33 @@ def version_up(write_nodes=True):
         if write_nodes:
             match_scene_version()
 
+
+def version_up_selected_write_node():
+    """
+    Versions Up the Output path in the selected Write Node
+    :return:
+    """
+    if nuke.selectedNodes():
+        s = nuke.selectedNodes()[0]
+        if s.Class() == 'Write':
+            path = s['file'].value()
+            path_object = NukePathObject(path)
+            next_minor = path_object.new_minor_version_object()
+            print 'Setting File to %s' % next_minor.path_root
+            s.knob('file').fromUserText(next_minor.path_root)
+
+
+def get_write_paths_as_path_objects():
+    """
+    returns a list of pathObject items for the selected write nodes.
+    :return:
+    """
+    write_objects = []
+    if nuke.selectedNodes():
+        for s in nuke.selectedNodes():
+            if s.Class() == 'Write':
+                if 'elem' not in s.name():
+                    path = s['file'].value()
+                    path_object = NukePathObject(path)
+                    write_objects.append(path_object)
+    return write_objects

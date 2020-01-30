@@ -95,6 +95,8 @@ class PathObject(object):
         self.priority = None
         self.ingest_source = '*'
         self.processing_method = PROCESSING_METHOD
+        self.publish_source = None
+        self.publish_render = None
 
         if isinstance(path_object, unicode):
             path_object = str(path_object)
@@ -484,9 +486,12 @@ class PathObject(object):
         versions up the minor version part of the version number.
         :return:
         """
+
         latest_version = self.latest_version()
         major = latest_version.major_version
         minor = latest_version.minor_version
+        if self.minor_version >= minor:
+            minor = self.minor_version
         next_minor = '%03d' % (int(minor) + 1)
         return '%s.%s' % (major, next_minor)
 
@@ -676,12 +681,16 @@ class PathObject(object):
             if os.path.exists(self.preview_path):
                 if PROJ_MANAGEMENT == 'ftrack':
                     CreateProductionData(path_object=self)
+                    return True
                 elif PROJ_MANAGEMENT == 'lumbermill':
                     print 'no review process defined for default lumbermill'
                 elif PROJ_MANAGEMENT == 'shotgun':
                     print 'shotgun not yet set up in lumbermill'
             else:
                 print 'No preview file found for uploading: %s' % self.preview_path
+                info = self.make_preview()
+                self.upload_review(job_id=info['job_id'])
+                return False
             
     def make_preview(self, job_id=None, new_window=False):
         """
@@ -759,7 +768,9 @@ class PathObject(object):
         next_major_source = next_major.path_root
         publish = next_major.copy(user='publish')
         publish_source = publish.path_root
+        self.publish_source = publish_source
         publish_render = publish.copy(context='render').path_root
+        self.publish_render = publish_render
         print 'Copying %s to %s' % (current_source, next_major_source)
         cgl_copy(current_source, next_major_source)
         print 'Copying %s to %s' % (current_source, publish_source)

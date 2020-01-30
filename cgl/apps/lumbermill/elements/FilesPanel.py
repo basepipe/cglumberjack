@@ -407,6 +407,8 @@ class FilesPanel(QtWidgets.QWidget):
         print 'Publishing stuff now'
         current = PathObject(self.current_location)
         current.publish()
+        dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
+        dialog.exec_()
 
     def on_task_info_changed(self):
         """

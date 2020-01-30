@@ -199,14 +199,20 @@ class IOPanel(QtWidgets.QWidget):
         logging.info('Testing the popup')
         self.on_scope_changed()
 
-    @staticmethod
-    def on_source_add_clicked():
+    def on_source_add_clicked(self):
+        print self.path_object.scope
         dialog = InputDialog(title='Add Source Company or Gear', message='Add an Import Source:', line_edit=True,
                              buttons=['Cancel', 'Add Source'])
         dialog.exec_()
 
         if dialog.button == 'Add Source':
-            print "I'm creating a new source for you"
+            root_ = self.path_object.path_root.split(self.path_object.scope)[0]
+            new_source = os.path.join(root_, 'IO', dialog.line_edit.text())
+            if not os.path.exists(new_source):
+                os.makedirs(new_source)
+                self.parent().parent().centralWidget().update_location_to_latest(self.path_object)
+            else:
+                print 'Source %s already exists!' % new_source
 
     def file_interaction(self, files, path, to_folder):
         # TODO - ultimately we want to figure out how to handle the progress bar through the cgl_execute function.
@@ -224,6 +230,7 @@ class IOPanel(QtWidgets.QWidget):
 
     def new_files_dragged(self, files):
         to_folder = self.path_object_next.path_root
+        version = os.path.basename(to_folder)
         if os.path.exists(os.path.join(to_folder, 'publish_data.old.csv')):
             os.remove(os.path.join(to_folder, 'publish_data.old.csv'))
         if os.path.exists(os.path.join(to_folder, 'publish_data.csv')):
@@ -234,6 +241,19 @@ class IOPanel(QtWidgets.QWidget):
         file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
         #QtWidgets.qApp.processEvents()
         file_process.start()
+        # refresh the thing (this should keep the current source)
+        self.parent().parent().centralWidget().update_location_to_latest(self.path_object)
+        # Select The Version Number Programatically
+        items = self.ingest_widget.list.findItems(str(version), QtCore.Qt.MatchExactly)
+        index = self.ingest_widget.list.indexFromItem(items[0])
+        self.ingest_widget.list.setFocus()
+        self.ingest_widget.list.setCurrentItem(items[0])
+        # model = self.ingest_widget.list.selectionModel()
+        # This should technically work!
+        # from PySide import QtGui
+        # this row needs to be an index
+        # model.select(index, QtGui.QItemSelectionModel.Select)
+        # print 'apparently i selected something'
 
     def load_companies(self):
         self.source_widget.list.clear()

@@ -214,6 +214,29 @@ def create_write_node():
             cgl_nuke.create_scene_write_node()
 
 
+def review_selected():
+    """
+    Request a review of the selected write node.
+    :return:
+    """
+    import glob
+    path_objects = cgl_nuke.get_write_paths_as_path_objects()
+    for each in path_objects:
+        glob_string = '%s*' % each.path_root.split('#')[0]
+        files = glob.glob(glob_string)
+        if files:
+            each.upload_review()
+            print 'reviewing %s' % each.path_root
+        else:
+            dialog = InputDialog(title='No Rendered Files', message='No Renders Found!  Can not Submit Review',
+                                 buttons=['Render', 'Ok'])
+            dialog.exec_()
+            if dialog.button == 'Render':
+                print 'Clicking the Render Selected Button'
+            else:
+                dialog.accept()
+
+
 def render_selected():
     if nuke.selectedNodes():
         project_management = app_config()['account_info']['project_management']

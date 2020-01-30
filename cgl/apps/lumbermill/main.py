@@ -541,6 +541,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             # launch_(self, task, selection)
 
 
+
 class CGLumberjack(LJMainWindow):
     def __init__(self, show_import=False, user_info=None, start_time=None, previous_path=None):
         LJMainWindow.__init__(self)
