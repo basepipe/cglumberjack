@@ -673,7 +673,8 @@ class PathObject(object):
         :return:
         """
         if job_id:
-            command = r'python %s -p %s -r True' % (__file__, self.path_root)
+            pyfile = '%s.py' % os.path.splitext(__file__)[0]
+            command = r'python %s -p %s -r True' % (pyfile, self.path_root)
             process_info = cgl_execute(command, command_name='%s: upload_review()' % self.command_base,
                                        methodology='smedge', WaitForJobID=job_id)
             return process_info
@@ -1426,10 +1427,6 @@ def main(path_string, upload_review):
     else:
         click.echo('No Path Provided, aborting cgl.core.path command line operation')
 
-
-if __name__ == '__main__':
-    dir_ = r'Z:/COMPANIES/loneCoconut/source/Menudo_testX/IO/CLIENT/001.000'
-    print lj_list_dir(dir_)
 
 
 

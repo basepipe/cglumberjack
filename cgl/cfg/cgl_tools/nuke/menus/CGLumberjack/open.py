@@ -1,8 +1,6 @@
-import sys
+from cgl.plugins.nuke import gui
 
 
 def run():
-	import plugins.nuke.gui as gui
-
-	gui.launch()
-	print 'test'
+	dialog = gui.CGLNukeWidget()
+	dialog.exec_()
