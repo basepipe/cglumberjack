@@ -226,7 +226,10 @@ def get_biggest_read_padding():
     biggest_padding = 0
     for n in nuke.allNodes('Read'):
         temp = os.path.splitext(n['file'].value())[0]
-        padding = int(temp.split('%')[1].replace('d', ''))
+        if '%' in temp:
+            padding = int(temp.split('%')[1].replace('d', ''))
+        else:
+            padding = 0
         if padding > biggest_padding:
             biggest_padding = padding
     return biggest_padding
