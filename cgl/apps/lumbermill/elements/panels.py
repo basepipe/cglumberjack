@@ -31,7 +31,7 @@ class CompanyPanel(QtWidgets.QWidget):
         self.project_management = 'lumbermill'
 
         self.company_widget.add_button.clicked.connect(self.on_create_company)
-        self.company_widget.list.clicked.connect(self.on_company_changed)
+        self.company_widget.list.itemDoubleClicked.connect(self.on_company_changed)
 
     def on_company_changed(self):
         self.path_object.set_attr(company=self.company_widget.list.selectedItems()[0].text())
@@ -116,10 +116,11 @@ class ProjectPanel(QtWidgets.QWidget):
         self.panel.addWidget(self.project_filter)
         self.load_projects()
 
-        self.project_filter.data_table.selected.connect(self.on_project_changed)
+        self.project_filter.data_table.doubleClicked.connect(self.on_project_changed)
         self.project_filter.add_button.clicked.connect(self.on_create_project)
 
     def on_project_changed(self, data):
+        data = self.project_filter.data_table.items_
         self.path_object.set_attr(project=data[0][0])
         self.path_object.set_attr(scope='*')
         self.update_location(self.path_object)

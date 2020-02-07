@@ -217,7 +217,7 @@ def create_scene_write_node():
     padding = '#'*get_biggest_read_padding()
     path_object = PathObject(get_file_name())
     path_object.set_attr(context='render')
-    path_object.set_attr(ext='%s.dpx' % padding)
+    path_object.set_attr(ext='%s.exr' % padding)
     write_node = nuke.createNode('Write')
     write_node.knob('file').fromUserText(path_object.path_root)
 
