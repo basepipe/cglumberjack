@@ -220,6 +220,7 @@ def create_scene_write_node():
     path_object.set_attr(ext='%s.exr' % padding)
     write_node = nuke.createNode('Write')
     write_node.knob('file').fromUserText(path_object.path_root)
+    return write_node
 
 
 def get_biggest_read_padding():

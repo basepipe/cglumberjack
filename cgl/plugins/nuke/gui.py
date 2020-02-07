@@ -213,9 +213,10 @@ def create_write_node():
             file_path = os.path.join(path_object.path_root)
             write_node.knob('file').fromUserText(file_path)
             write_node.knob('name').setValue(elem_name)
-            print 4
+            return write_node
         else:
-            cgl_nuke.create_scene_write_node()
+            this = cgl_nuke.create_scene_write_node()
+            return this
 
 
 def review_selected():
