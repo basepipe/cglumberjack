@@ -36,6 +36,44 @@ def get_meta_data(filein):
     return metadata[0]
 
 
+def get_meta_data2(filein, tool='exiftool'):
+    """
+    Due to issues with the exiftool module this is provided as a way to parse output directly
+    from exiftool through the system commands and cglexecute. For the moment it's only designed
+    to get the metadata for a single file.
+    :param filein:
+    :return: dictionary containing metadata from exiftool
+    """
+    d = {}
+    if tool == 'exiftool':
+        command = r'exiftool %s' % filein
+        output = cgl_execute(command=command, verbose=False)
+        for each in output['printout']:
+            key, value = re.split("\s+:\s+", each)
+            d[key] = value
+        return d
+    elif tool == 'ffprobe':
+        command = r'%s %s' % ('ffprobe', filein)
+        output = cgl_execute(command=command)
+        for each in output['printout']:
+            try:
+                values = re.split(":\s+", each)
+                key = values[0]
+                values.pop(0)
+                if 'Stream' in key:
+                    split_v = values[1].split(',')
+                    d['Image Size'] = split_v[2].split()[0]
+                    d['Source Image Width'], d['Source Image Height'] = d['Image Size'].split('x')
+                    d['Video Frame Rate'] = split_v[4].split(' fps')[0].replace(' ', '')
+                if 'Duration' in key:
+                    d['Track Duration'] = '%s s' % values[0].split(',')[0]
+                value = ' '.join(values)
+                d[key] = value
+            except ValueError:
+                print 'skipping %s' % each
+        return d
+
+
 def get_red_data(filein):
     """
     method for pulling metadata from r3d files.  REDLINE is a command line interface from RED that is required
