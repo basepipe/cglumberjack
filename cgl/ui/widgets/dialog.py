@@ -1,4 +1,4 @@
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 import re
 import datetime
 from cgl.core.config import app_config, UserConfig
@@ -39,64 +39,64 @@ class TimeTracker(LJDialog):
         self.day_name = self.weekdays[self.today.weekday()]
         self.date = self.today.date()
         self.total_hrs = 0
-        self.calendar_tool_button = QtGui.QToolButton()
+        self.calendar_tool_button = QtWidgets.QToolButton()
         calendar_icon_path = icon_path('calendar24px.png')
         self.calendar_tool_button.setIcon(QtGui.QIcon(calendar_icon_path))
         self.calendar_tool_button.setMinimumWidth(24)
         self.calendar_tool_button.setMinimumHeight(24)
         self.calendar_tool_button.setProperty('class', 'border')
-        time_for_date_label = QtGui.QLabel('Time Card')
+        time_for_date_label = QtWidgets.QLabel('Time Card')
         time_for_date_label.setProperty('class', 'ultra_title')
-        layout = QtGui.QVBoxLayout()
-        label_user_name = QtGui.QLabel('%s %s' % (user_info['first'], user_info['last']))
-        label_user_login = QtGui.QLabel('(%s)' % user_info['login'])
+        layout = QtWidgets.QVBoxLayout()
+        label_user_name = QtWidgets.QLabel('%s %s' % (user_info['first'], user_info['last']))
+        label_user_login = QtWidgets.QLabel('(%s)' % user_info['login'])
         label_user_login.setProperty('class', 'large')
         label_user_name.setProperty('class', 'ultra_title')
-        self.label_time_recorded = QtGui.QLabel('<b>Time Recorded:</b>')
+        self.label_time_recorded = QtWidgets.QLabel('<b>Time Recorded:</b>')
         self.label_time_recorded.setProperty('class', 'large')
-        self.total_time_label = QtGui.QLabel('Total Time Today:')
+        self.total_time_label = QtWidgets.QLabel('Total Time Today:')
         self.total_time_label.setProperty('class', 'large')
-        button_submit_time_card = QtGui.QPushButton('Submit Time Card')
+        button_submit_time_card = QtWidgets.QPushButton('Submit Time Card')
         button_submit_time_card.setProperty('class', 'add_button')
-        self.button_add_task = QtGui.QPushButton('Add Task')
+        self.button_add_task = QtWidgets.QPushButton('Add Task')
         self.button_add_task.setProperty('class', 'basic')
-        project_label = QtGui.QLabel('Project')
+        project_label = QtWidgets.QLabel('Project')
         self.project_combo = AdvComboBox()
-        task_label = QtGui.QLabel('Task')
+        task_label = QtWidgets.QLabel('Task')
         self.task_combo = AdvComboBox()
 
-        self.calendar = QtGui.QCalendarWidget()
-        self.task_table = QtGui.QTableWidget()
+        self.calendar = QtWidgets.QCalendarWidget()
+        self.task_table = QtWidgets.QTableWidget()
         self.task_table.setColumnCount(7)
         self.task_table.setColumnHidden(4, True)
         self.task_table.setHorizontalHeaderLabels(['Project', 'Shot/Asset', 'Task', 'Hours', 'Task ID',
                                                    'Hours Worked', 'Bid Hours'])
         header = self.task_table.horizontalHeader()
-        header.setResizeMode(0, QtGui.QHeaderView.ResizeToContents)
-        header.setResizeMode(1, QtGui.QHeaderView.Stretch)
-        header.setResizeMode(2, QtGui.QHeaderView.ResizeToContents)
-        header.setResizeMode(3, QtGui.QHeaderView.Stretch)
-        header.setResizeMode(5, QtGui.QHeaderView.Stretch)
-        header.setResizeMode(6, QtGui.QHeaderView.Stretch)
+        header.setResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
+        header.setResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        header.setResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
+        header.setResizeMode(3, QtWidgets.QHeaderView.Stretch)
+        header.setResizeMode(5, QtWidgets.QHeaderView.Stretch)
+        header.setResizeMode(6, QtWidgets.QHeaderView.Stretch)
         self.task_table.setMinimumHeight(250)
         self.task_table.setMinimumWidth(400)
 
-        button_row = QtGui.QHBoxLayout()
+        button_row = QtWidgets.QHBoxLayout()
         button_row.addWidget(project_label)
         button_row.addWidget(self.project_combo)
         button_row.addWidget(task_label)
         button_row.addWidget(self.task_combo)
         button_row.addWidget(self.button_add_task)
-        submit_row = QtGui.QHBoxLayout()
+        submit_row = QtWidgets.QHBoxLayout()
         submit_row.addStretch(1)
         submit_row.addWidget(button_submit_time_card)
 
-        user_row = QtGui.QHBoxLayout()
+        user_row = QtWidgets.QHBoxLayout()
         user_row.addWidget(label_user_name)
         user_row.addWidget(label_user_login)
         user_row.addStretch(1)
         user_row.addWidget(time_for_date_label)
-        time_row = QtGui.QHBoxLayout()
+        time_row = QtWidgets.QHBoxLayout()
         time_row.addWidget(self.calendar_tool_button)
         time_row.addWidget(self.label_time_recorded)
         time_row.addWidget(self.total_time_label)
@@ -121,7 +121,7 @@ class TimeTracker(LJDialog):
         self.get_projects_from_ftrack()
         self.button_add_task.setEnabled(False)
 
-        # self.task_table.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        # self.task_table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
 
     def set_date(self, new_date):
         self.today = new_date
@@ -143,7 +143,7 @@ class TimeTracker(LJDialog):
         """
         self.calendar_popup_window = LJDialog(self)
         self.calendar_popup_window.setWindowTitle("Select Date")
-        self.calendar_popup = QtGui.QCalendarWidget(self.calendar_popup_window)
+        self.calendar_popup = QtWidgets.QCalendarWidget(self.calendar_popup_window)
         self.calendar_popup.resize(300, 160)
         self.calendar_popup_window.resize(303,170)
         self.calendar_popup.setGridVisible(True)
@@ -240,13 +240,13 @@ class TimeTracker(LJDialog):
         task_short_name = app_config()['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][task_data['type']['name']]
         pos = self.task_table.rowCount()
         self.task_table.insertRow(pos)
-        self.task_table.setItem(pos, 0, QtGui.QTableWidgetItem(project))
-        self.task_table.setItem(pos, 1, QtGui.QTableWidgetItem(asset))
-        self.task_table.setItem(pos, 2, QtGui.QTableWidgetItem(task_short_name))
-        self.task_table.setItem(pos, 3, QtGui.QTableWidgetItem(0))
-        self.task_table.setItem(pos, 4, QtGui.QTableWidgetItem(task))
-        self.task_table.setItem(pos, 5, QtGui.QTableWidgetItem(str(total_hours)))
-        self.task_table.setItem(pos, 6, QtGui.QTableWidgetItem(str(bid)))
+        self.task_table.setItem(pos, 0, QtWidgets.QTableWidgetItem(project))
+        self.task_table.setItem(pos, 1, QtWidgets.QTableWidgetItem(asset))
+        self.task_table.setItem(pos, 2, QtWidgets.QTableWidgetItem(task_short_name))
+        self.task_table.setItem(pos, 3, QtWidgets.QTableWidgetItem(0))
+        self.task_table.setItem(pos, 4, QtWidgets.QTableWidgetItem(task))
+        self.task_table.setItem(pos, 5, QtWidgets.QTableWidgetItem(str(total_hours)))
+        self.task_table.setItem(pos, 6, QtWidgets.QTableWidgetItem(str(bid)))
         self.new_logs.append(task)
         # add the task to the array
         self.lock_table()
@@ -295,13 +295,13 @@ class TimeTracker(LJDialog):
                 if tasks[i]:
                     row = self.task_table.rowCount()
                     self.task_table.insertRow(row)
-                    self.task_table.setItem(row, 0, QtGui.QTableWidgetItem(tasks[i][0]))
-                    self.task_table.setItem(row, 1, QtGui.QTableWidgetItem(tasks[i][1]))
-                    self.task_table.setItem(row, 2, QtGui.QTableWidgetItem(tasks[i][2]))
-                    self.task_table.setItem(row, 3, QtGui.QTableWidgetItem(str(tasks[i][3])))
-                    self.task_table.setItem(row, 4, QtGui.QTableWidgetItem(tasks[i][4]))
-                    self.task_table.setItem(row, 5, QtGui.QTableWidgetItem(str(tasks[i][5])))
-                    self.task_table.setItem(row, 6, QtGui.QTableWidgetItem(str(tasks[i][6])))
+                    self.task_table.setItem(row, 0, QtWidgets.QTableWidgetItem(tasks[i][0]))
+                    self.task_table.setItem(row, 1, QtWidgets.QTableWidgetItem(tasks[i][1]))
+                    self.task_table.setItem(row, 2, QtWidgets.QTableWidgetItem(tasks[i][2]))
+                    self.task_table.setItem(row, 3, QtWidgets.QTableWidgetItem(str(tasks[i][3])))
+                    self.task_table.setItem(row, 4, QtWidgets.QTableWidgetItem(tasks[i][4]))
+                    self.task_table.setItem(row, 5, QtWidgets.QTableWidgetItem(str(tasks[i][5])))
+                    self.task_table.setItem(row, 6, QtWidgets.QTableWidgetItem(str(tasks[i][6])))
                     total = float(each[3])+total
         label_text = '%s, %s %s:' % (self.day_name, self.today.strftime("%B"), self.today.day)
         self.label_time_recorded.setText(label_text)
@@ -374,21 +374,21 @@ class MagicList(LJDialog):
         self.user_buttons = buttons
         self.combo_defaults = combo_box
         self.root_path = app_config()['paths']['root']
-        self.v_layout = QtGui.QVBoxLayout(self)
-        self.combo_row = QtGui.QHBoxLayout(self)
-        self.combo_label = QtGui.QLabel("<b>%s</b>" % combo_label)
-        self.message = QtGui.QLabel("\n\n%s\n\n" % message)
+        self.v_layout = QtWidgets.QVBoxLayout(self)
+        self.combo_row = QtWidgets.QHBoxLayout(self)
+        self.combo_label = QtWidgets.QLabel("<b>%s</b>" % combo_label)
+        self.message = QtWidgets.QLabel("\n\n%s\n\n" % message)
         self.combo = AdvComboBox(self)
         self.combo_row.addWidget(self.combo_label)
         self.combo_row.addWidget(self.combo)
         if not combo:
             self.combo_label.hide()
             self.combo.hide()
-        self.buttons = QtGui.QHBoxLayout(self)
-        self.button1 = QtGui.QPushButton('Button1')
-        self.button2 = QtGui.QPushButton('Button2')
-        self.button3 = QtGui.QPushButton('Button3')
-        self.button4 = QtGui.QPushButton('Button4')
+        self.buttons = QtWidgets.QHBoxLayout(self)
+        self.button1 = QtWidgets.QPushButton('Button1')
+        self.button2 = QtWidgets.QPushButton('Button2')
+        self.button3 = QtWidgets.QPushButton('Button3')
+        self.button4 = QtWidgets.QPushButton('Button4')
         button_list = [self.button1, self.button2, self.button3, self.button4]
         for i in range(len(buttons)):
             button_list[i].setText(buttons[i])
@@ -459,19 +459,19 @@ class FrameRange(LJDialog):
 
     def __init__(self, parent=None, title="Frame Range", sframe=None, eframe=None, camera=None):
         LJDialog.__init__(self, parent)
-        layout = QtGui.QFormLayout()
-        hlayout = QtGui.QHBoxLayout()
-        blayout = QtGui.QHBoxLayout()
+        layout = QtWidgets.QFormLayout()
+        hlayout = QtWidgets.QHBoxLayout()
+        blayout = QtWidgets.QHBoxLayout()
         self.sframe = sframe
         self.eframe = eframe
         if camera:
             self.title = '%s for: %s' % (title, camera)
         else:
             self.title = title
-        self.sframe_label = QtGui.QLabel('Start Frame')
-        self.eframe_label = QtGui.QLabel('End Frame')
-        self.sframe_line_edit = QtGui.QLineEdit()
-        self.eframe_line_edit = QtGui.QLineEdit()
+        self.sframe_label = QtWidgets.QLabel('Start Frame')
+        self.eframe_label = QtWidgets.QLabel('End Frame')
+        self.sframe_line_edit = QtWidgets.QLineEdit()
+        self.eframe_line_edit = QtWidgets.QLineEdit()
         if sframe:
             print sframe, 'yup'
             self.sframe_line_edit.setText(str(sframe))
@@ -481,8 +481,8 @@ class FrameRange(LJDialog):
         hlayout.addWidget(self.sframe_line_edit)
         hlayout.addWidget(self.eframe_label)
         hlayout.addWidget(self.eframe_line_edit)
-        self.button_cancel = QtGui.QPushButton('Cancel')
-        self.button = QtGui.QPushButton('Confirm Frame Range')
+        self.button_cancel = QtWidgets.QPushButton('Cancel')
+        self.button = QtWidgets.QPushButton('Confirm Frame Range')
         blayout.addWidget(self.button_cancel)
         blayout.addWidget(self.button)
         layout.addRow(hlayout)
@@ -524,21 +524,21 @@ class InputDialog(LJDialog):
         :param parent:
         :param message:
         """
-        self.original_message = message
         LJDialog.__init__(self, parent)
+        self.original_message = message
         if buttons is None:
             buttons = ['Cancel', 'Ok', '']
-        layout = QtGui.QFormLayout()
-        button_box = QtGui.QHBoxLayout()
+        layout = QtWidgets.QFormLayout()
+        button_box = QtWidgets.QHBoxLayout()
         self.name_example = name_example
         self.regex = regex
         self.values = ''
         self.button = ''
         self.input_text = ''
-        self.message = QtGui.QLabel(message)
+        self.message = QtWidgets.QLabel(message)
         self.combo_box = AdvComboBox(self)
         self.combo_box2 = AdvComboBox(self)
-        self.line_edit = QtGui.QLineEdit()
+        self.line_edit = QtWidgets.QLineEdit()
         if line_edit_text:
             self.line_edit.setText(line_edit_text)
         layout.addRow(self.message)
@@ -559,11 +559,11 @@ class InputDialog(LJDialog):
             while i < 3:
                 buttons.append('')
                 i += 1
-            self.btn1 = QtGui.QPushButton(buttons[0])
-            self.btn2 = QtGui.QPushButton(buttons[1])
-            self.btn3 = QtGui.QPushButton(buttons[2])
-            button_box.addItem(QtGui.QSpacerItem(0, 0, QtGui.QSizePolicy.Expanding,
-                                                     QtGui.QSizePolicy.Minimum))
+            self.btn1 = QtWidgets.QPushButton(buttons[0])
+            self.btn2 = QtWidgets.QPushButton(buttons[1])
+            self.btn3 = QtWidgets.QPushButton(buttons[2])
+            button_box.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                     QtWidgets.QSizePolicy.Minimum))
 
             button_box.addWidget(self.btn1)
             if buttons[1]:
@@ -637,36 +637,52 @@ class LoginDialog(LJDialog):
         self.user_info = {}
         self.line_edit_dict = {}
         self.login_line_edit = None
+        self.button = ''
         self.project_management = app_config()['account_info']['project_management']
-        self.user_details = app_config()['project_management'][self.project_management]['user_details']
-        self.grid_layout = QtGui.QGridLayout()
-        self.proj_management_label = QtGui.QLabel('Project Management:')
-        self.uname_label = QtGui.QLabel('%s User Name:' % self.project_management)
-        self.email_label = QtGui.QLabel('%s Email:' % self.project_management)
-        self.local_user_label = QtGui.QLabel('Local User:')
+        try:
+            self.user_details = app_config()['project_management'][self.project_management]['user_details']
+        except KeyError:
+            self.user_details = {}
 
-        self.local_user_line_edit = QtGui.QLineEdit()
+        self.grid_layout = QtWidgets.QGridLayout()
+        self.proj_management_label = QtWidgets.QLabel('Project Management:')
+        self.uname_label = QtWidgets.QLabel('Login')
+        self.first_label = QtWidgets.QLabel('First')
+        self.last_label = QtWidgets.QLabel('Last')
+        self.email_label = QtWidgets.QLabel('Email')
+        self.local_user_label = QtWidgets.QLabel('Local User:')
+
+        self.local_user_line_edit = QtWidgets.QLineEdit()
         self.local_user_line_edit.setText(current_user())
         self.local_user_line_edit.setEnabled(False)
-        self.proj_management_line_edit = QtGui.QLineEdit()
+        self.proj_management_line_edit = QtWidgets.QLineEdit()
         self.proj_management_line_edit.setText(self.project_management)
         self.proj_management_line_edit.setEnabled(False)
+        self.first_line_edit = QtWidgets.QLineEdit()
+        self.last_line_edit = QtWidgets.QLineEdit()
+        self.email_line_edit = QtWidgets.QLineEdit()
 
         self.grid_layout.addWidget(self.proj_management_label, 0, 0)
         self.grid_layout.addWidget(self.proj_management_line_edit, 0, 1)
         self.grid_layout.addWidget(self.local_user_label, 1, 0)
         self.grid_layout.addWidget(self.local_user_line_edit, 1, 1)
+        self.grid_layout.addWidget(self.first_label, 2, 0)
+        self.grid_layout.addWidget(self.first_line_edit, 2, 1)
+        self.grid_layout.addWidget(self.last_label, 3, 0)
+        self.grid_layout.addWidget(self.last_line_edit, 3, 1)
+        self.grid_layout.addWidget(self.email_label, 4, 0)
+        self.grid_layout.addWidget(self.email_line_edit, 4, 1)
 
-        buttons_layout = QtGui.QHBoxLayout()
-        self.ok_button = QtGui.QPushButton('Ok')
-        self.cancel_button = QtGui.QPushButton('Cancel')
-        buttons_layout.addItem(QtGui.QSpacerItem(0, 0, QtGui.QSizePolicy.Expanding,
-                                                     QtGui.QSizePolicy.Minimum))
+        buttons_layout = QtWidgets.QHBoxLayout()
+        self.ok_button = QtWidgets.QPushButton('Ok')
+        self.cancel_button = QtWidgets.QPushButton('Cancel')
+        buttons_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
+                                                     QtWidgets.QSizePolicy.Minimum))
         buttons_layout.addWidget(self.cancel_button)
         buttons_layout.addWidget(self.ok_button)
         self.ok_button.setEnabled(False)
 
-        layout = QtGui.QVBoxLayout()
+        layout = QtWidgets.QVBoxLayout()
         layout.addLayout(self.grid_layout)
         layout.addLayout(buttons_layout)
         self.setLayout(layout)
@@ -675,6 +691,7 @@ class LoginDialog(LJDialog):
 
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.ok_button.clicked.connect(self.on_ok_clicked)
+        self.email_line_edit.textChanged.connect(self.on_text_changed)
         if current_user() in app_config()['project_management'][self.project_management]['users']:
             self.user_info = app_config()['project_management'][self.project_management]['users'][current_user()]
         self.load_user_details()
@@ -682,8 +699,8 @@ class LoginDialog(LJDialog):
     def load_user_details(self):
         row_number = 2
         for key in self.user_details:
-            label = QtGui.QLabel(key.title())
-            line_edit = QtGui.QLineEdit()
+            label = QtWidgets.QLabel(key.title())
+            line_edit = QtWidgets.QLineEdit()
             self.line_edit_dict[key] = line_edit
             self.grid_layout.addWidget(label, row_number, 0)
             self.grid_layout.addWidget(line_edit, row_number, 1)
@@ -697,7 +714,7 @@ class LoginDialog(LJDialog):
 
     def on_text_changed(self):
         # I'll want to be updating some kind of dictionary here that i can use for saving info later.
-        email = self.login_line_edit.text()
+        email = self.email_line_edit.text()
         if email:
             if '@' in email:
                 self.ok_button.setEnabled(True)
@@ -705,25 +722,26 @@ class LoginDialog(LJDialog):
             self.ok_button.setEnabled(False)
 
     def on_ok_clicked(self):
+        self.button = self.sender().text()
         self.save_user_defaults()
         self.accept()
 
     def on_cancel_clicked(self):
+        self.button = self.sender().text()
         self.accept()
 
     def create_user_info_dict(self):
-        d = {}
-        for key in self.line_edit_dict:
-            d[key] = self.line_edit_dict[key].text()
-        return d
+        self.line_edit_dict[self.first_label.text().lower()] = self.first_line_edit.text()
+        self.line_edit_dict[self.last_label.text().lower()] = self.last_line_edit.text()
+        self.line_edit_dict['login'] = self.email_line_edit.text()
+        return self.line_edit_dict
 
     def save_user_defaults(self):
-        print 'Need to Create a method for saving new users to the company globals'
-        globals_location = UserConfig().d['globals']
         import json
-        user_info = self.create_user_info_dict()
+        globals_location = UserConfig().d['globals']
+        self.user_info = self.create_user_info_dict()
         app_config_dict = app_config()
-        app_config_dict['project_management'][self.project_management]['users'][current_user()] = user_info
+        app_config_dict['project_management'][self.project_management]['users'][current_user()] = self.user_info
         with open(globals_location, 'w') as fileout:
             json.dump(app_config_dict, fileout, indent=4, sort_keys=True)
         self.accept()
@@ -740,33 +758,33 @@ class ProjectCreator(LJDialog):
         self.project_name_regex = app_config()['rules']['path_variables']['project']['regex']
         self.project_name_example = app_config()['rules']['path_variables']['project']['example']
         self.daily_hours = float(self.project_management['api']['daily_hours'])
-        layout = QtGui.QVBoxLayout(self)
+        layout = QtWidgets.QVBoxLayout(self)
         self.model = None
         self.data_frame = None
         self.setWindowTitle('Import .csv')
         self.scope = 'shots'
-        self.shots_radio = QtGui.QRadioButton('Shots')
+        self.shots_radio = QtWidgets.QRadioButton('Shots')
         self.shots_radio.setChecked(True)
-        self.assets_radio = QtGui.QRadioButton('Assets')
-        radio_row = QtGui.QHBoxLayout()
+        self.assets_radio = QtWidgets.QRadioButton('Assets')
+        radio_row = QtWidgets.QHBoxLayout()
         radio_row.addWidget(self.shots_radio)
         radio_row.addWidget(self.assets_radio)
         radio_row.addStretch(1)
         self.empty_state = EmptyStateWidget(text='Drag .csv to \nCreate Project', files=True)
-        self.task_template_label = QtGui.QLabel('Task Template')
+        self.task_template_label = QtWidgets.QLabel('Task Template')
         self.task_template_combo = AdvComboBox()
-        self.shot_task_label = QtGui.QLabel("Valid Shot Tasks:")
-        self.shot_task_line_edit = QtGui.QLineEdit()
-        self.asset_task_label = QtGui.QLabel("Valid Asset Tasks:")
-        self.asset_task_line_edit = QtGui.QLineEdit()
-        self.message = QtGui.QLabel()
-        self.headers_label = QtGui.QLabel('Headers:')
-        self.headers_line_edit = QtGui.QLineEdit()
-        self.project_label = QtGui.QLabel('Project Name')
-        self.project_line_edit = QtGui.QLineEdit()
-        self.company_label = QtGui.QLabel('Company Name')
+        self.shot_task_label = QtWidgets.QLabel("Valid Shot Tasks:")
+        self.shot_task_line_edit = QtWidgets.QLineEdit()
+        self.asset_task_label = QtWidgets.QLabel("Valid Asset Tasks:")
+        self.asset_task_line_edit = QtWidgets.QLineEdit()
+        self.message = QtWidgets.QLabel()
+        self.headers_label = QtWidgets.QLabel('Headers:')
+        self.headers_line_edit = QtWidgets.QLineEdit()
+        self.project_label = QtWidgets.QLabel('Project Name')
+        self.project_line_edit = QtWidgets.QLineEdit()
+        self.company_label = QtWidgets.QLabel('Company Name')
         self.company_combo = AdvComboBox()
-        self.grid = QtGui.QGridLayout()
+        self.grid = QtWidgets.QGridLayout()
         self.grid.addWidget(self.company_label, 0, 0)
         self.grid.addWidget(self.company_combo, 0, 1)
         self.grid.addWidget(self.project_label, 1, 0)
@@ -782,8 +800,8 @@ class ProjectCreator(LJDialog):
         self.grid.addWidget(self.asset_task_line_edit, 6, 1)
         self.table = LJTableWidget(self)
         self.table.hide()
-        self.create_project_button = QtGui.QPushButton('Create Project')
-        self.create_row = QtGui.QHBoxLayout()
+        self.create_project_button = QtWidgets.QPushButton('Create Project')
+        self.create_row = QtWidgets.QHBoxLayout()
         self.create_row.addStretch(1)
         self.create_row.addWidget(self.create_project_button)
 
@@ -930,7 +948,9 @@ class ProjectCreator(LJDialog):
         import pandas as pd
         from cgl.ui.widgets.containers.pandas_model import PandasModel
         df = pd.read_csv(filepath)
+
         df.columns = [x.lower() for x in df.columns]
+        df['shot'] = df['shot'].apply('{:0>4}'.format)
         df = self.parse_tasks(df)
         drop_these = []
         for c in df.columns:
@@ -962,7 +982,8 @@ class ProjectCreator(LJDialog):
             else:
                 for _, row in df.iterrows():
                     if row[c] and str(row[c]) != 'nan':
-                        df = df.append({'shot': row['shot'], 'ftrack_task': c, 'bid days': row[c],
+                        print '%04d' % int(row['shot'])
+                        df = df.append({'shot': row['shot'], 'ftrack_task': c, 'bid hours': row[c],
                                         'description': row['description']}, ignore_index=True)
         return df
 
@@ -971,8 +992,12 @@ class ProjectCreator(LJDialog):
         for index, row in df.iterrows():
             if str(row['ftrack_task']).lower() == 'nan':
                 df.at[index, 'ftrack_task'] = ''
-            if str(row['bid days']).lower() == 'nan':
-                df.at[index, 'bid days'] = 0
+            if 'bid days' in row.keys():
+                if str(row['bid days']).lower() == 'nan':
+                    df.at[index, 'bid days'] = 0
+            if 'bid hours' in row.keys():
+                if str(row['bid hours']).lower() == 'nan':
+                    df.at[index, 'bid hours'] = 0
 
     def on_create_project_clicked(self):
         from cgl.core.path import PathObject, CreateProductionData, show_in_project_management
@@ -985,6 +1010,10 @@ class ProjectCreator(LJDialog):
             for icol in xrange(self.model.columnCount()):
                 cell = self.model.data(self.model.createIndex(irow, icol))
                 row_dict[self.model._df.columns[icol]] = cell
+                if self.model._df.columns[icol] == 'bid hours':
+                    print 'found bid hours'
+                    print 'cell value is %s' % cell
+                    row_dict['bid'] = float(cell)*60 * 60
                 if self.model._df.columns[icol] == 'bid days':
                     # ftrack wants bids in seconds.
                     total_hours = self.daily_hours*float(cell)
@@ -993,13 +1022,14 @@ class ProjectCreator(LJDialog):
                 if self.model._df.columns[icol] == 'ftrack_task':
                     if cell:
                         d_ = self.project_management['tasks'][self.task_template_combo.currentText()]['long_to_short']
+                        print d_[self.scope].keys()
                         sn = d_[self.scope][cell.title()]
                         row_dict['task'] = sn
                 if self.model._df.columns[icol] == 'shot':
                     if '_' in cell:
                         seq, shot = cell.split('_')
                         row_dict['seq'] = seq
-                        row_dict['shot'] = shot
+                        row_dict['shot'] = '%04d' % int(shot)
             path_object = PathObject(row_dict)
             CreateProductionData(path_object=path_object, force_pm_creation=True)
         # open up Ftrack to the project page

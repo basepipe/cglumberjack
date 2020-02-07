@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import click
 from cgl.core.config import app_config
 from cgl.core.util import cgl_execute, write_to_cgl_data
@@ -22,7 +23,7 @@ OPTIONS = {'320p': ['180k', '360k', '-1:320'],
 
 def create_proxy_sequence(input_sequence, output_sequence, width='1920', height='1080', do_height=False,
                           processing_method='local', dependent_job=None, copy_input_padding=True,
-                          command_name='create_proxy_sequence()', new_window=False):
+                          command_name='create_proxy_sequence()', new_window=False, ext=None):
     """
     Create a proxy jpeg sequence in sRGB color space from the given input sequence.
     :param input_sequence: input sequence string, formatted with (#, %04d, *)
@@ -35,9 +36,15 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     :param dependent_job: job_id of any dependencies
     :param copy_input_padding: if True use the same padding as the input file,  if False, use studio wide padding setting
     :param command_name: this is the command name that will be sent to the render farm
+    :param new_window: Puts the processing of the job into a new shell
+    :param ext: if none i'll use what's in the output.
     :return:
     """
-    from cgl.core.path import Sequence
+    from cgl.core.path import Sequence, PathObject
+    print input_sequence
+    if ' ' in input_sequence:
+        input_sequence, frange = input_sequence.split(' ')
+    input_sequence.replace('/', '\\')
     input_ = Sequence(input_sequence)
     if not input_.is_valid_sequence():
         logging.error('%s is not a valid sequence' % input_sequence)
@@ -46,14 +53,22 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
         padding = input_.padding
     else:
         padding = PADDING
-
+    output_sequence = output_sequence.replace('/', '\\')
     output_ = Sequence(output_sequence, padding=padding)
+
     if not output_.is_valid_sequence():
         logging.error('%s is not a valid sequence' % output_sequence)
     fileout = output_.num_sequence
     out_dir = os.path.dirname(fileout)
+    out_obj = PathObject(out_dir)
+    if out_obj.context == 'source':
+        out_obj.set_attr(context='render')
+    else:
+        out_obj.set_attr(context='source')
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
+    if not os.path.exists(out_obj.path_root):
+        os.makedirs(out_obj.path_root)
     process_info = None
 
     if do_height:
@@ -63,13 +78,27 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     start_frame = input_.start_frame
 
     if processing_method == 'smedge':
-        command = r'python %s -i %s -o %s -w %s -h %s -ft sequence -t proxy' % (__file__, filein, fileout,
-                                                                                width, height)
-        process_info = cgl_execute(command, command_name=command_name, methodology='smedge', Wait=dependent_job)
+        pyfile = '%s.py' % os.path.splitext(__file__)[0]
+        command = r'python %s -i %s -o %s -w %s -h %s -ft sequence -t proxy' % (pyfile, filein, fileout,
+                                                                                        width, height)
+        # probably good to write a custom imagemagick command for smedge for this.
+        process_info = cgl_execute(command, command_name=command_name, methodology='smedge', WaitForJobID=dependent_job)
     elif processing_method == 'local':
-        command = '%s %s -scene %s -resize %s %s' % (config['magick'], filein, start_frame, res, fileout)
-        process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
-                                   new_window=new_window)
+        dirname, filename = os.path.split(filein)
+        match = filename.split('*')[0]
+        for each in os.listdir(os.path.dirname(filein)):
+            if match in each:
+                file_ = os.path.join(os.path.dirname(filein), each)
+                SEQ_SPLIT = "\d{3,}\.\w{2,4}$"
+                frange = re.search(SEQ_SPLIT, each)
+                num = os.path.splitext(frange.group(0))[0]
+                filename, ext_ = fileout.split('%')
+                if not ext:
+                    ext = os.path.splitext(ext_)[-1].replace('.', '')
+                file_out = '%s%s.%s' % (filename, num, ext)
+                command = '%s %s -resize %s %s' % (config['magick'], file_, res, file_out)
+                process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
+                                           new_window=new_window)
 
     if process_info:
         process_info['file_out'] = fileout
@@ -123,8 +152,9 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
     process_info = None
 
     if processing_method == 'smedge':
-        command = r'python %s -i %s -o %s -t web_preview -ft sequence' % (__file__, filein, fileout)
-        process_info = cgl_execute(command, command_name=command_name, methodology='smedge', Wait=dependent_job)
+        filename = "%s.py" % os.path.splitext(__file__)[0]
+        command = r'python %s -i %s -o %s -t web_preview -ft sequence' % (filename, filein, fileout)
+        process_info = cgl_execute(command, command_name=command_name, methodology='smedge', WaitForJobID=dependent_job)
         process_info['file_out'] = fileout
         write_to_cgl_data(process_info)
         return process_info
@@ -157,7 +187,7 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
                                                             output_frame_rate, filter_arg, fileout)
     if ffmpeg_cmd:
         process_info = cgl_execute(ffmpeg_cmd, verbose=True,
-                                   command_name=command_name, Wait=dependent_job, new_window=new_window)
+                                   command_name=command_name, WaitForJobID=dependent_job, new_window=new_window)
 
         process_info['file_out'] = fileout
         write_to_cgl_data(process_info)
@@ -192,8 +222,9 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
     prep_for_output(output_file)
 
     if processing_method == 'smedge':
-        command = r'python %s -i %s -o %s -t thumb -ft movie' % (__file__, input_file, output_file)
-        process_info = cgl_execute(command, command_name=command_name, methodology='smedge', Wait=dependent_job)
+        pyfile = '%s.py' % os.path.splitext(__file__)[0]
+        command = r'python %s -i %s -o %s -t thumb -ft movie' % (pyfile, input_file, output_file)
+        process_info = cgl_execute(command, command_name=command_name, methodology='smedge', WaitForJobID=dependent_job)
         process_info['file_out'] = output_file
         write_to_cgl_data(process_info)
         return process_info
@@ -203,7 +234,7 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
                   '-frames:v 1 %s' % (config['ffmpeg'], input_file, res, output_file)
         process_info = cgl_execute(command, verbose=True, methodology=processing_method,
                                    command_name=command_name, new_window=new_window,
-                                   Wait=dependent_job)
+                                   WaitForJobID=dependent_job)
         process_info['file_out'] = output_file
         write_to_cgl_data(process_info)
         return process_info

@@ -1,11 +1,11 @@
 from cgl.core.path import PathObject
 
 # hdri sequence conversion
-exr_sequence_hash = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/high/03_2a_#####.exr'
-exr_sequence_percentage = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/high/03_2a_%05d.exr'
-exr_sequence_star = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/high/03_2a_*.exr'
+exr_sequence_hash = r'Z:/COMPANIES/loneCoconut/render/cgl_unitTestC/shots/CDL/0700/plate/publish/000.000/high/A065C007_120101_R2GR.########.exr'
+# exr_sequence_percentage = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/high/03_2a_%05d.exr'
+# exr_sequence_star = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/high/03_2a_*.exr'
 
-non_exist = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/1920x1080/03_2a_#####.exr'
+# non_exist = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/1920x1080/03_2a_#####.exr'
 
 
 # sequence = Sequence(non_exist)
@@ -16,10 +16,11 @@ non_exist = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/
 # sequence.print_info()
 
 # print '00000000000000000000'
-# path_object = PathObject(exr_sequence_hash)
-# print path_object.preview_path
-# print path_object.thumb_path
-# path_object.make_preview()
+path_object = PathObject(exr_sequence_hash)
+print path_object.preview_path
+print path_object.thumb_path
+path_object.make_preview()
+
 # path_object.upload_review()
 # path_object.make_proxy()
 #path_object.make_quicktime()
@@ -52,3 +53,6 @@ non_exist = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/
 #         output_values.append(output.strip())
 # print output_values
 # # cgl_execute(command, new_window=True)
+
+# C:\PROGRA~1\ImageMagick-7.0.8-Q16\magick.exe Z:/COMPANIES/loneCoconut/render/cgl_unitTestC/shots/CDL/0700/plate/publish/000.000/high/A065C007_120101_R2GR.00193328.exr -resize 1920 Z:\COMPANIES\loneCoconut\render\cgl_unitTestC\shots\CDL\0700\plate\publish\000.000\1920x1080\A065C007_120101_R2GR.00193328.jpg
+

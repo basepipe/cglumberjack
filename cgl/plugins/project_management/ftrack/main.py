@@ -87,6 +87,8 @@ class ProjectManagementData(object):
         if self.task == '*':
             self.task = None
         if self.task:
+            if 'elem' in self.task:
+                self.task = 'elem'
             if self.scope == 'assets':
                 self.task_name = '%s_%s' % (self.asset, self.task)
             elif self.scope == 'shots':

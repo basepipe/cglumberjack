@@ -1,4 +1,4 @@
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.util import UISettings
 from cgl.ui.widgets.base import StateSavers
 from cgl.ui.widgets.combo import AdvComboBox
@@ -20,11 +20,11 @@ STATUS = 12
 PARENT = 13
 
 
-class ProductionComboDelegate(QtGui.QItemDelegate):
+class ProductionComboDelegate(QtWidgets.QItemDelegate):
     index_changed = QtCore.Signal(object)
 
     def __init__(self, parent, items):
-        QtGui.QItemDelegate.__init__(self, parent)
+        QtWidgets.QItemDelegate.__init__(self, parent)
         self.items = items
 
     def createEditor(self, parent):
@@ -54,14 +54,14 @@ class LJTreeModel(QtGui.QStandardItemModel):
         QtGui.QStandardItemModel.__init__(self)
 
 
-class LJTreeWidget(QtGui.QTreeView):
+class LJTreeWidget(QtWidgets.QTreeView):
     nothing_selected = QtCore.Signal()
     selected = QtCore.Signal(object)
     files_added = QtCore.Signal(object)
     header_labels = []
 
     def __init__(self, parent=None, parents=None):
-        QtGui.QTreeView.__init__(self, parent)
+        QtWidgets.QTreeView.__init__(self, parent)
         StateSavers.remember_me(self)
 
         self.items_ = []
@@ -112,7 +112,7 @@ class LJTreeWidget(QtGui.QTreeView):
                     parent = items[-1]
                     parent.appendRow(row_list)
         self.model.setHorizontalHeaderLabels(header)
-        self.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
+        self.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.header().setMinimumSectionSize(140)
         # scopes_del = ProductionComboDelegate(self, scopes)
         # scopes_del.index_changed.connect(self.scope_changed)
@@ -212,9 +212,9 @@ class LJTreeWidget(QtGui.QTreeView):
     #     total_width = 0
     #     for column in range(header.count()):
     #         try:
-    #             header.setResizeMode(column, QtGui.QHeaderView.ResizeToContents)
+    #             header.setResizeMode(column, QtWidgets.QHeaderView.ResizeToContents)
     #             width = header.sectionSize(column)
-    #             header.setResizeMode(column, QtGui.QHeaderView.Interactive)
+    #             header.setResizeMode(column, QtWidgets.QHeaderView.Interactive)
     #             header.resizeSection(column, width)
     #             total_width += width
     #         except AttributeError:

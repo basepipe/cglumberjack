@@ -1,9 +1,9 @@
 import os
-from PySide import QtGui, QtCore
+from cgl.plugins.Qt import QtGui, QtCore, QtWidgets
 from cgl.core import path
 from cgl.ui.util import drop_handler, define_palettes
 from cgl.ui.widgets.containers.table import LJTableWidget
-from cgl.ui.widgets.containers.model import ListItemModel
+from cgl.ui.widgets.containers.model import ListItemModel, FilesModel
 from cgl.ui.widgets.containers.menu import LJMenu
 from cgl.core.config import app_config
 from cgl.core.project import get_task_info, get_cgl_tools
@@ -12,27 +12,27 @@ from cgl.core.util import load_json
 PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
 
 
-class LJButton(QtGui.QPushButton):
+class LJButton(QtWidgets.QPushButton):
 
     def __init__(self, parent=None):
-        QtGui.QPushButton.__init__(self, parent)
+        QtWidgets.QPushButton.__init__(self, parent)
         self.setProperty('class', 'basic')
 
 
-class LJTag(QtGui.QFrame):
+class LJTag(QtWidgets.QFrame):
     close_clicked = QtCore.Signal()
 
     def __init__(self, parent=None, text='Tab Text', height=30):
-        QtGui.QFrame.__init__(self, parent)
+        QtWidgets.QFrame.__init__(self, parent)
         self.setProperty('class', 'tag_red')
         self.setMaximumHeight(height)
         self.text = text
         close_width = height/2
-        layout = QtGui.QHBoxLayout(self)
+        layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        label = QtGui.QLabel(text)
+        label = QtWidgets.QLabel(text)
         label.setProperty('class', 'tag_text')
-        close_button = QtGui.QToolButton()
+        close_button = QtWidgets.QToolButton()
         close_button.setText('x')
         close_button.setProperty('class', 'tag')
         close_button.setMaximumWidth(close_width)
@@ -49,31 +49,31 @@ class LJTag(QtGui.QFrame):
         self.close_clicked.emit()
 
 
-class TagWidget(QtGui.QWidget):
+class TagWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         # TODO - add the tag icon to this
         # TODO - add the hide/show functionality to pushing the tag icon
         # TODO - add the abililty to choose the color of the tag
         # TODO - add the ability to have a list of commonly used tags.
-        layout = QtGui.QVBoxLayout(self)
+        layout = QtWidgets.QVBoxLayout(self)
         self.frame = TagFrame()
         layout.addWidget(self.frame)
 
 
-class TagFrame(QtGui.QFrame):
+class TagFrame(QtWidgets.QFrame):
 
     def __init__(self, parent=None, tag_height=30):
-        QtGui.QFrame.__init__(self, parent)
+        QtWidgets.QFrame.__init__(self, parent)
         self.tag_height = tag_height
         self.setProperty('class', 'tag_widget')
         self.setMinimumHeight(tag_height+4)
-        self.layout = QtGui.QHBoxLayout(self)
+        self.layout = QtWidgets.QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.tags_layout = QtGui.QHBoxLayout()
+        self.tags_layout = QtWidgets.QHBoxLayout()
         self.tags_layout.setContentsMargins(0, 0, 0, 0)
-        self.text_entry = QtGui.QLineEdit()
+        self.text_entry = QtWidgets.QLineEdit()
         self.text_entry.setProperty('class', 'tag_entry')
         self.tag_dict = {}
         self.tags = []
@@ -105,7 +105,7 @@ class VersionButton(LJButton):
 
     def __init__(self, parent):
         LJButton.__init__(self, parent)
-        self.menu = QtGui.QMenu()
+        self.menu = QtWidgets.QMenu()
         self.setText(self.tr("Version Up"))
         self.empty_act = self.menu.addAction(self.tr("New Empty Version"))
         self.empty_act.setToolTip(self.tr("Create a new empty version"))
@@ -129,11 +129,11 @@ class VersionButton(LJButton):
         self.setEnabled(True)
 
 
-class EmptyStateWidget(QtGui.QPushButton):
+class EmptyStateWidget(QtWidgets.QPushButton):
     files_added = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, text='Drag/Drop to Add Files', files=False):
-        QtGui.QPushButton.__init__(self, parent)
+        QtWidgets.QPushButton.__init__(self, parent)
         self.files = files
         self.path_object = path_object
         self.setAcceptDrops(True)
@@ -189,7 +189,7 @@ class FileTableModel(ListItemModel):
         #     return "hello tom"
 
 
-class FilesWidget(QtGui.QFrame):
+class FilesWidget(QtWidgets.QFrame):
     open_button_clicked = QtCore.Signal()
     import_button_clicked = QtCore.Signal()
     new_version_clicked = QtCore.Signal()
@@ -200,12 +200,12 @@ class FilesWidget(QtGui.QFrame):
     copy_selected_version = QtCore.Signal()
 
     def __init__(self, parent, show_import=False):
-        QtGui.QFrame.__init__(self, parent)
+        QtWidgets.QFrame.__init__(self, parent)
         self.show_import = show_import
-        layout = QtGui.QVBoxLayout(self)
-        table_layout = QtGui.QVBoxLayout()
+        layout = QtWidgets.QVBoxLayout(self)
+        table_layout = QtWidgets.QVBoxLayout()
         table_layout.setSpacing(0)
-        tool_button_layout = QtGui.QHBoxLayout()
+        tool_button_layout = QtWidgets.QHBoxLayout()
 
         layout.addLayout(table_layout)
         layout.addLayout(tool_button_layout)
@@ -213,16 +213,16 @@ class FilesWidget(QtGui.QFrame):
         # The Files Area
         self.work_files_table = FileTableWidget(self, hide_header=False)
         self.work_files_table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
-        # self.work_files_table.horizontalHeader().setSectionResizeMode(QtGui.QHeaderView.ResizeToContents)
+        # self.work_files_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.work_files_table.set_draggable(True)
         self.work_files_table.title = 'work_files'
-        self.work_files_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.work_files_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.export_files_table = FileTableWidget(self, hide_header=False)
         self.export_files_table.horizontalHeader().setProperty('class', 'output')
         self.export_files_table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
         self.export_files_table.set_draggable(True)
         self.export_files_table.title = 'outputs'
-        self.export_files_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.export_files_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.open_button = LJButton()
         self.open_button.setText('Open')
         self.import_button = LJButton()
@@ -301,21 +301,21 @@ class FilesWidget(QtGui.QFrame):
         self.open_button_clicked.emit()
 
 
-class QHLine(QtGui.QFrame):
+class QHLine(QtWidgets.QFrame):
     def __init__(self):
         super(QHLine, self).__init__()
-        self.setFrameShape(QtGui.QFrame.HLine)
-        self.setFrameShadow(QtGui.QFrame.Sunken)
+        self.setFrameShape(QtWidgets.QFrame.HLine)
+        self.setFrameShadow(QtWidgets.QFrame.Sunken)
 
 
-class QVLine(QtGui.QFrame):
+class QVLine(QtWidgets.QFrame):
     def __init__(self):
         super(QVLine, self).__init__()
-        self.setFrameShape(QtGui.QFrame.VLine)
-        self.setFrameShadow(QtGui.QFrame.Sunken)
+        self.setFrameShape(QtWidgets.QFrame.VLine)
+        self.setFrameShadow(QtWidgets.QFrame.Sunken)
 
 
-class TaskWidget(QtGui.QWidget):
+class TaskWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
@@ -330,52 +330,55 @@ class TaskWidget(QtGui.QWidget):
     copy_selected_version = QtCore.Signal()
 
     def __init__(self, parent, title, filter_string=None, path_object=None, show_import=False):
-        QtGui.QWidget.__init__(self, parent)
-        v_layout = QtGui.QVBoxLayout(self)
-        task_row = QtGui.QHBoxLayout()
+        QtWidgets.QWidget.__init__(self, parent)
+        v_layout = QtWidgets.QVBoxLayout(self)
+        task_row = QtWidgets.QHBoxLayout()
         self.show_import = show_import
         self.path_object = path_object
-        self.tool_button_layout = QtGui.QHBoxLayout()
-        self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.tool_button_layout = QtWidgets.QHBoxLayout()
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
-        self.title = QtGui.QLabel("<b>%s</b>" % title.title())
+        self.title = QtWidgets.QLabel("<b>%s</b>" % title.title())
         self.title.setProperty('class', 'title_text')
-        self.status_button = QtGui.QPushButton('Get Status')
+        self.status_button = QtWidgets.QPushButton('Get Status')
         self.status_button.setProperty('class', 'status_button')
 
         self.task = None
         self.user = None
         self.in_file_tree = None
-        self.versions_label = QtGui.QLabel("Version:")
+        self.versions_label = QtWidgets.QLabel("Version:")
         self.versions = AdvComboBox()
+        self.versions.name = 'versions'
 
-        self.users_label = QtGui.QLabel("User:")
+        self.users_label = QtWidgets.QLabel("User:")
         self.users = AdvComboBox()
-        self.resolutions_label = QtGui.QLabel("Resolution:")
+        self.users.name = 'users'
+        self.resolutions_label = QtWidgets.QLabel("Resolution:")
         self.resolutions = AdvComboBox()
+        self.resolutions.name = 'resolutions'
         self.start_task_button = LJButton()
         self.start_task_button.setText("Start Task")
 
-        self.info_layout = QtGui.QHBoxLayout()
-        self.info_layout.addWidget(self.versions_label)
-        self.info_layout.addWidget(self.versions)
+        self.info_layout = QtWidgets.QHBoxLayout()
         self.info_layout.addWidget(self.users_label)
         self.info_layout.addWidget(self.users)
+        self.info_layout.addWidget(self.versions_label)
+        self.info_layout.addWidget(self.versions)
         self.info_layout.addWidget(self.resolutions_label)
         self.info_layout.addWidget(self.resolutions)
         self.info_layout.addWidget(self.start_task_button)
         # self.info_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.export_label = QtGui.QLabel('   Ready to Review/Publish')
+        self.export_label = QtWidgets.QLabel('   Ready to Review/Publish')
         self.export_label.setProperty('class', 'basic')
-        self.export_label_row = QtGui.QHBoxLayout()
+        self.export_label_row = QtWidgets.QHBoxLayout()
         self.export_label_row.addWidget(self.export_label)
         self.export_label.hide()
 
-        self.title_row = QtGui.QHBoxLayout()
-        self.create_assignment = QtGui.QPushButton("Create Assignment")
+        self.title_row = QtWidgets.QHBoxLayout()
+        self.create_assignment = QtWidgets.QPushButton("Create Assignment")
         self.create_assignment.setProperty('class', 'add_button')
         self.title_row.addWidget(self.title)
         self.title_row.addWidget(self.status_button)
@@ -490,9 +493,32 @@ class TaskWidget(QtGui.QWidget):
         self.resolutions_label.hide()
 
     def setup(self, table, mdl):
-        if isinstance(mdl, FileTableModel) or isinstance(mdl, ListItemModel):
+        """
+        Sets up the File Tables in the Task Widget
+        :param table:
+        :param mdl:
+        :return:
+        """
+
+        if isinstance(mdl, FileTableModel):
             table.set_item_model(mdl)
             self.empty_state.hide()
+            if not table.model().rowCount():
+                table.hide()
+                if not self.start_task_button.isVisible():
+                    self.empty_state.show()
+        elif isinstance(mdl, ListItemModel):
+            table.set_item_model(mdl)
+            self.empty_state.hide()
+            if not table.model().rowCount():
+                table.hide()
+                if not self.start_task_button.isVisible():
+                    self.empty_state.show()
+        elif isinstance(mdl, FilesModel):
+            print 'loading a FilesModel'
+            table.set_item_model(mdl)
+            self.empty_state.hide()
+            print 'this many rows', table.model().rowCount()
             if not table.model().rowCount():
                 table.hide()
                 if not self.start_task_button.isVisible():
@@ -510,40 +536,40 @@ class TaskWidget(QtGui.QWidget):
         self.title.setText('<b>%s</b>' % new_title.title())
 
 
-class ProjectWidget(QtGui.QWidget):
+class ProjectWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
     assign_clicked = QtCore.Signal(object)
 
     def __init__(self, parent=None, title='', filter_string=None, path_object=None, pixmap=None, search_box=None):
-        QtGui.QWidget.__init__(self, parent)
-        v_layout = QtGui.QVBoxLayout(self)
-        h_layout = QtGui.QHBoxLayout()
+        QtWidgets.QWidget.__init__(self, parent)
+        v_layout = QtWidgets.QVBoxLayout(self)
+        h_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
-        self.tool_button_layout = QtGui.QHBoxLayout()
-        self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding,
-                                                QtGui.QSizePolicy.MinimumExpanding)
+        self.tool_button_layout = QtWidgets.QHBoxLayout()
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
-        self.title = QtGui.QLabel("%s" % title)
+        self.title = QtWidgets.QLabel("%s" % title)
         self.title.setProperty('class', 'ultra_title')
         self.task = None
         self.user = None
         self.search_box = search_box
 
-        self.message = QtGui.QLabel("")
+        self.message = QtWidgets.QLabel("")
         self.message.setProperty('class', 'basic')
-        self.add_button = QtGui.QToolButton()
+        self.add_button = QtWidgets.QToolButton()
         self.add_button.setText("add project")
         self.add_button.setProperty('class', 'add_button')
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
-        self.data_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
         if pixmap:
-            self.icon = QtGui.QLabel()
+            self.icon = QtWidgets.QLabel()
             self.icon.setPixmap(pixmap)
             h_layout.addWidget(self.icon)
         h_layout.addWidget(self.title)
@@ -595,25 +621,25 @@ class ProjectWidget(QtGui.QWidget):
         self.title.show()
 
 
-class AssetWidget(QtGui.QWidget):
+class AssetWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
     assign_clicked = QtCore.Signal(object)
 
     def __init__(self, parent, title, filter_string=None, path_object=None, search_box=None):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         self.right_click = False
         self.shots_icon = QtGui.QPixmap(path.icon_path('shots24px.png'))
         self.assets_icon = QtGui.QPixmap(path.icon_path('assets24px.png'))
 
-        self.v_layout = QtGui.QVBoxLayout(self)
-        v_list = QtGui.QVBoxLayout()
-        self.scope_layout = QtGui.QHBoxLayout()
+        self.v_layout = QtWidgets.QVBoxLayout(self)
+        v_list = QtWidgets.QVBoxLayout()
+        self.scope_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
-        self.tool_button_layout = QtGui.QHBoxLayout()
-        self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding,
-                                                QtGui.QSizePolicy.MinimumExpanding)
+        self.tool_button_layout = QtWidgets.QHBoxLayout()
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(self.sizePolicy)
         self.filter_string = filter_string
         self.label = title
@@ -621,35 +647,35 @@ class AssetWidget(QtGui.QWidget):
         self.user = None
         min_width = 340
 
-        self.message = QtGui.QLabel("")
+        self.message = QtWidgets.QLabel("")
         self.message.setMinimumWidth(min_width)
         try:
-            self.message.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+            self.message.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         except AttributeError:
-            print 'PySide2 Natively does not have QtGui.QSizePolicy'
+            print 'PySide2 Natively does not have QtWidgets.QSizePolicy'
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.search_box = search_box
-        self.add_button = QtGui.QToolButton()
+        self.add_button = QtWidgets.QToolButton()
         self.add_button.setText("add")
         self.add_button.setProperty('class', 'add_button')
         self.data_table = LJTableWidget(self)
         self.data_table.title = title
-        self.data_table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.data_table.setMinimumWidth(min_width)
         # self.setProperty('class', 'basic')
 
 
         # build the filter options row
-        self.assets_radio = QtGui.QRadioButton('Assets')
-        self.shots_radio = QtGui.QRadioButton('Shots')
-        self.tasks_radio = QtGui.QRadioButton('My Tasks')
-        self.radio_group_scope = QtGui.QButtonGroup(self)
+        self.assets_radio = QtWidgets.QRadioButton('Assets')
+        self.shots_radio = QtWidgets.QRadioButton('Shots')
+        self.tasks_radio = QtWidgets.QRadioButton('My Tasks')
+        self.radio_group_scope = QtWidgets.QButtonGroup(self)
         self.radio_group_scope.addButton(self.shots_radio)
         self.radio_group_scope.addButton(self.assets_radio)
         self.radio_group_scope.addButton(self.tasks_radio)
-        self.shot_icon = QtGui.QLabel()
+        self.shot_icon = QtWidgets.QLabel()
         self.shot_icon.setPixmap(self.shots_icon)
-        self.asset_icon = QtGui.QLabel()
+        self.asset_icon = QtWidgets.QLabel()
         self.asset_icon.setPixmap(self.assets_icon)
 
         self.scope_layout.addWidget(self.tasks_radio)
@@ -661,7 +687,7 @@ class AssetWidget(QtGui.QWidget):
         self.scope_layout.addStretch(1)
         self.scope_layout.addWidget(self.add_button)
 
-        v_list.addItem(QtGui.QSpacerItem(0, 3, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum))
+        v_list.addItem(QtWidgets.QSpacerItem(0, 3, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
         # v_list.addWidget(self.search_box)
         v_list.addWidget(self.data_table, 1)
         self.v_layout.addLayout(self.scope_layout)
@@ -709,15 +735,13 @@ class FileTableWidget(LJTableWidget):
     copy_file_path = QtCore.Signal()
     import_version_from = QtCore.Signal()
     share_download_link = QtCore.Signal()
-    render_nuke_command_line = QtCore.Signal()
-    render_nuke_farm = QtCore.Signal()
 
     def __init__(self, parent, hide_header=True):
         LJTableWidget.__init__(self, parent)
         self.path_object = parent.parent().path_object
         self.task = self.path_object.task
-        self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding,
-                                                QtGui.QSizePolicy.MinimumExpanding)
+        self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSortingEnabled(False)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.item_right_click_menu = LJMenu(self)
@@ -729,7 +753,7 @@ class FileTableWidget(LJTableWidget):
         self.item_right_click_menu.addSeparator()
         self.item_right_click_menu.create_action("Import Version From...", self.import_version_from)
         self.item_right_click_menu.addSeparator()
-        self.add_custom_task_items()
+        # self.add_custom_task_items()
         self.item_right_click_menu.addSeparator()
         self.customContextMenuRequested.connect(self.item_right_click)
 
@@ -740,37 +764,27 @@ class FileTableWidget(LJTableWidget):
         # self.item_right_click_menu.create_action("Create Dailies Template", self.create_dailies_template_signal)
         # self.item_right_click_menu.addSeparator()
         self.setAcceptDrops(True)
-        self.selected.connect(self.on_row_selected)
 
     def show_in_proj(self):
         from cgl.core.path import show_in_project_management
         show_in_project_management(self.path_object)
 
-    def add_custom_task_items(self):
-        # get the current task
-        if self.task:
-            menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
-            if os.path.exists(menu_file):
-                menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())
-                if self.task in menu_items['lumbermill']:
-                    for item in menu_items['lumbermill'][self.task]:
-                        if item != 'order':
-                            button_label = menu_items['lumbermill'][self.task][item]['label']
-                            button_command = menu_items['lumbermill'][self.task][item]['module']
-                            module = button_command.split()[1]
-                            loaded_module = __import__(module, globals(), locals(), item, -1)
-                            self.item_right_click_menu.create_action(button_label, loaded_module.run)
+    # def add_custom_task_items(self):
+    #     # get the current task
+    #     if self.task and 'elem' not in self.task:
+    #         menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
+    #         if os.path.exists(menu_file):
+    #             menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())
+    #             if self.task in menu_items['lumbermill']:
+    #                 for item in menu_items['lumbermill'][self.task]:
+    #                     if item != 'order':
+    #                         button_label = menu_items['lumbermill'][self.task][item]['label']
+    #                         button_command = menu_items['lumbermill'][self.task][item]['module']
+    #                         module = button_command.split()[1]
+    #                         loaded_module = __import__(module, globals(), locals(), item, -1)
+    #                         self.item_right_click_menu.create_action(button_label,
+    #                                                                  lambda: loaded_module.run(''))
         # see if there are custom menu items required for this task.
-
-    def on_row_selected(self, data):
-        dict_ = {'.nk': 'nuke'}
-        if data:
-            file_name = data[-1][0]
-            file_name, ext = os.path.splitext(file_name)
-            if ext in dict_:
-                self.add_custom_menu(self.item_right_click_menu, dict_[ext])
-        else:
-            print ' No data in table'
 
     def item_right_click(self, position):
         self.item_right_click_menu.exec_(self.mapToGlobal(position))
@@ -778,47 +792,32 @@ class FileTableWidget(LJTableWidget):
     def sizeHint(self):
         return QtCore.QSize(350, 150)
 
-    def add_custom_menu(self, menu, software):
-        # For this to really work i need to be able to connect these signals to slots from another script entirely.
-        # i would want to pass the file name for instance to a script within the nuke plugins directory.
-        # That's the holy grail in terms of flexibility.
 
-        add = True
-        if software == 'nuke':
-            print 0
-            for each in menu.actions():
-                if each.text() == 'Render Local' or each.text() == 'Render on Farm':
-                    add = False
-        if add:
-            menu.create_action('Render Local', self.render_nuke_command_line)
-            menu.create_action('Render on Farm', self.render_nuke_farm)
-
-
-class LJListWidget(QtGui.QWidget):
+class LJListWidget(QtWidgets.QWidget):
     def __init__(self, label, pixmap, empty_state_text='', empty_state_icon=None):
-        QtGui.QWidget.__init__(self)
-        self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
-        layout = QtGui.QVBoxLayout(self)
-        self.label = QtGui.QLabel(label)
+        QtWidgets.QWidget.__init__(self)
+        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
+        layout = QtWidgets.QVBoxLayout(self)
+        self.label = QtWidgets.QLabel(label)
         self.label.setProperty('class', 'ultra_title')
-        self.add_button = QtGui.QToolButton()
+        self.add_button = QtWidgets.QToolButton()
         self.add_button.setText('+')
         self.add_button.setProperty('class', 'add_button')
-        self.h_layout = QtGui.QHBoxLayout()
+        self.h_layout = QtWidgets.QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         if pixmap:
-            self.icon = QtGui.QLabel()
+            self.icon = QtWidgets.QLabel()
             self.icon.setPixmap(pixmap)
             self.h_layout.addWidget(self.icon)
         self.h_layout.addWidget(self.label)
         self.h_layout.addStretch(1)
         self.h_layout.addWidget(self.add_button)
-        self.list = QtGui.QListWidget()
+        self.list = QtWidgets.QListWidget()
         self.list.setProperty('class', 'basic')
-        self.empty_state = QtGui.QPushButton(empty_state_text)
+        self.empty_state = QtWidgets.QPushButton(empty_state_text)
         if empty_state_icon:
             self.set_icon(empty_state_icon)
-        self.empty_state.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
+        self.empty_state.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.empty_state.setProperty('class', 'empty_state2')
         self.empty_state.hide()
         layout.addLayout(self.h_layout)
@@ -840,38 +839,38 @@ class LJListWidget(QtGui.QWidget):
         self.list.show()
 
 
-class CreateProjectDialog(QtGui.QDialog):
+class CreateProjectDialog(QtWidgets.QDialog):
 
     def __init__(self, parent, variable):
-        QtGui.QDialog.__init__(self, parent=parent)
+        QtWidgets.QDialog.__init__(self, parent=parent)
         self.variable = variable
-        self.proj_management_label = QtGui.QLabel('Project Management')
-        layout = QtGui.QVBoxLayout(self)
-        self.proj_management_combo = QtGui.QComboBox()
+        self.proj_management_label = QtWidgets.QLabel('Project Management')
+        layout = QtWidgets.QVBoxLayout(self)
+        self.proj_management_combo = QtWidgets.QComboBox()
         self.proj_management_combo.addItems(['lumbermill', 'ftrack', 'shotgun', 'google_docs'])
         self.red_palette, self.green_palette, self.black_palette = define_palettes()
 
-        self.server_label = QtGui.QLabel('server url:')
-        self.api_key_label = QtGui.QLabel('api key:')
-        self.api_user = QtGui.QLabel('api user:')
-        self.server_line_edit = QtGui.QLineEdit()
-        self.api_key_line_edit = QtGui.QLineEdit()
-        self.api_user_line_edit = QtGui.QLineEdit()
+        self.server_label = QtWidgets.QLabel('server url:')
+        self.api_key_label = QtWidgets.QLabel('api key:')
+        self.api_user = QtWidgets.QLabel('api user:')
+        self.server_line_edit = QtWidgets.QLineEdit()
+        self.api_key_line_edit = QtWidgets.QLineEdit()
+        self.api_user_line_edit = QtWidgets.QLineEdit()
 
-        self.cancel_button = QtGui.QPushButton('Cancel')
-        self.ok_button = QtGui.QPushButton('Ok')
+        self.cancel_button = QtWidgets.QPushButton('Cancel')
+        self.ok_button = QtWidgets.QPushButton('Ok')
         self.button = ''
 
-        button_layout = QtGui.QHBoxLayout()
+        button_layout = QtWidgets.QHBoxLayout()
         button_layout.addStretch(1)
         button_layout.addWidget(self.cancel_button)
         button_layout.addWidget(self.ok_button)
 
-        proj_label = QtGui.QLabel('%s Name' % self.variable.title())
-        self.proj_line_edit = QtGui.QLineEdit('')
-        self.message = QtGui.QLabel()
+        proj_label = QtWidgets.QLabel('%s Name' % self.variable.title())
+        self.proj_line_edit = QtWidgets.QLineEdit('')
+        self.message = QtWidgets.QLabel()
 
-        self.grid_layout = QtGui.QGridLayout()
+        self.grid_layout = QtWidgets.QGridLayout()
         self.grid_layout.addWidget(proj_label, 0, 0)
         self.grid_layout.addWidget(self.proj_line_edit, 0, 1)
         self.grid_layout.addWidget(self.proj_management_label, 2, 0)
@@ -954,34 +953,36 @@ class CreateProjectDialog(QtGui.QDialog):
         self.accept()
 
 
-class AdvComboBoxLabeled(QtGui.QVBoxLayout):
+class AdvComboBoxLabeled(QtWidgets.QVBoxLayout):
     def __init__(self, label):
-        QtGui.QVBoxLayout.__init__(self)
-        self.label = QtGui.QLabel("<b>%s</b>" % label)
+        QtWidgets.QVBoxLayout.__init__(self)
+        self.label = QtWidgets.QLabel("<b>%s</b>" % label)
 
 
-class AdvComboBox(QtGui.QComboBox):
+class AdvComboBox(QtWidgets.QComboBox):
     def __init__(self, parent=None):
         super(AdvComboBox, self).__init__(parent)
 
         self.user_selected = False
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setEditable(True)
-        self.SizeAdjustPolicy(QtGui.QComboBox.AdjustToContents)
-        self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
+        self.SizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
         # add a filter model to filter matching items
-        self.pFilterModel = QtGui.QSortFilterProxyModel(self)
+        self.pFilterModel = QtCore.QSortFilterProxyModel(self)
         self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
         self.pFilterModel.setSourceModel(self.model())
         # add a completer
-        self.completer = QtGui.QCompleter(self)
+        self.completer = QtWidgets.QCompleter(self)
         # Set the model that the QCompleter uses
         # - in PySide doing this as a separate step worked better
         self.completer.setModel(self.pFilterModel)
         # always show all (filtered) completions
-        self.completer.setCompletionMode(QtGui.QCompleter.UnfilteredPopupCompletion)
+        self.completer.setCompletionMode(QtWidgets.QCompleter.UnfilteredPopupCompletion)
         self.setCompleter(self.completer)
         self.setProperty('class', 'basic')
+        self.setMinimumWidth(130)
+
 
         def filter_(text):
             self.pFilterModel.setFilterFixedString(str(text))
@@ -1019,19 +1020,19 @@ class AdvComboBox(QtGui.QComboBox):
             self.addItem(item)
 
 
-class GifWidget(QtGui.QWidget):
+class GifWidget(QtWidgets.QWidget):
     def __init__(self, parent=None, gif_path=None, animated=True):
-        QtGui.QWidget.__init__(self, parent=parent)
+        QtWidgets.QWidget.__init__(self, parent=parent)
         self.setProperty('class', 'gif_widget')
         self.animated = animated
-        layout = QtGui.QHBoxLayout()
-        self.image = QtGui.QLabel()
-        self.label_1 = QtGui.QLabel('Working...')
-        self.label_2 = QtGui.QLabel('Working...')
+        layout = QtWidgets.QHBoxLayout()
+        self.image = QtWidgets.QLabel()
+        self.label_1 = QtWidgets.QLabel('Working...')
+        self.label_2 = QtWidgets.QLabel('Working...')
         self.label_1.setProperty('class', 'feedback')
         self.label_2.setProperty('class', 'feedback')
-        self.label_1.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
-        self.label_2.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
+        self.label_1.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
+        self.label_2.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 

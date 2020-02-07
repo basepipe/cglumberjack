@@ -1,4 +1,4 @@
-from PySide import QtGui
+from cgl.plugins.Qt import QtGui, QtWidgets
 import cgl.core.startup as startup
 
 
@@ -7,7 +7,7 @@ def load_lumbermill(app, splash=None):
     import time
     start_time = time.time()
     print 'Loading Lumbermill'
-    QtGui.qApp.processEvents()
+    # QtWidgets.QApplication.processEvents()
     gui = CGLumberjack(show_import=False, user_info=user_info, start_time=start_time)
     gui.show()
     gui.raise_()
@@ -35,5 +35,5 @@ if __name__ == "__main__":
             load_lumbermill(app, splash)
     else:
         from cgl.bin.login_dialog import load_login_dialog
-        load_login_dialog(app, splash)
+        load_login_dialog(app)
 

@@ -1,19 +1,19 @@
 import os
 import logging
 import glob
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.config import app_config
-from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.util import current_user, cgl_copy
 from cgl.ui.widgets.progress_gif import process_method
-from cgl.core.path import PathObject, CreateProductionData, lj_list_dir
+from cgl.core.path import PathObject, CreateProductionData, lj_list_dir, icon_path
 from cgl.core.path import replace_illegal_filename_characters, show_in_folder
 from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
+from cgl.ui.widgets.containers.model import FilesModel
 from panels import clear_layout
 
 
-class FilesPanel(QtGui.QWidget):
+class FilesPanel(QtWidgets.QWidget):
     source_selection_changed = QtCore.Signal(object)
     location_changed = QtCore.Signal(object)
     open_signal = QtCore.Signal()
@@ -23,7 +23,7 @@ class FilesPanel(QtGui.QWidget):
     publish_signal = QtCore.Signal()
 
     def __init__(self, parent=None, path_object=None, user_email='', machine_user=None, show_import=False):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
         self.work_files = []
         self.high_files = []
@@ -41,8 +41,8 @@ class FilesPanel(QtGui.QWidget):
         self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
 
         self.current_location = path_object.data
-        self.panel = QtGui.QVBoxLayout(self)
-        self.tasks = QtGui.QHBoxLayout()
+        self.panel = QtWidgets.QVBoxLayout(self)
+        self.tasks = QtWidgets.QHBoxLayout()
         self.in_file_tree = None
         self.user_changed_versions = False
         self.user_email = user_email
@@ -51,7 +51,7 @@ class FilesPanel(QtGui.QWidget):
         else:
             self.user = current_user()
         self.project_management = app_config()['account_info']['project_management']
-        self.on_task_selected(self.path_object.data)
+        self.on_task_selected(self.path_object)
         self.panel.addLayout(self.tasks)
         self.panel.addStretch(1)
 
@@ -60,7 +60,11 @@ class FilesPanel(QtGui.QWidget):
 
     def on_task_selected(self, data):
         try:
-            current = PathObject(data)
+            if isinstance(data, PathObject):
+                current = data.copy()
+            elif isinstance(data, dict):
+                'its a dict, this sucks'
+                current = PathObject(data)
         except IndexError:
             print 'Nothing Selected'
             return
@@ -73,17 +77,20 @@ class FilesPanel(QtGui.QWidget):
             # current.set_attr(user_email=self.user_email)
             self.panel.seq = current.seq
             self.panel.shot = current.shot
-            self.update_location(path_object=current)
-
+            self.update_task_location(path_object=current)
             self.panel.tasks = []
             try:
-                title = self.proj_man_tasks_short_to_long[self.task]
+                if 'elem' in self.task:
+                    title = self.task
+                else:
+                    title = self.proj_man_tasks_short_to_long[self.task]
             except KeyError:
                 return
             task_widget = TaskWidget(parent=self,
                                      title=title,
                                      path_object=current, show_import=self.show_import)
             task_widget.task = self.task
+            self.render_files_widget = task_widget.files_area.export_files_table
             task_widget.files_area.export_files_table.hide()
             self.task_widgets_dict[self.task] = task_widget
 
@@ -91,6 +98,10 @@ class FilesPanel(QtGui.QWidget):
             user = self.populate_users_combo(task_widget, current, self.task)
             version = self.populate_versions_combo(task_widget, current, self.task)
             resolution = self.populate_resolutions_combo(task_widget, current, self.task)
+            self.current_location['user'] = user
+            self.current_location['version'] = version
+            self.current_location['resolution'] = resolution
+            self.update_task_location(self.current_location)
             self.panel.addWidget(task_widget)
             self.panel.tasks.append(self.task)
             self.version_obj = current.copy(task=self.task, user=user, version=version,
@@ -157,7 +168,6 @@ class FilesPanel(QtGui.QWidget):
         self.panel.addStretch(1)
 
     def new_files_dragged(self, files):
-        print '1'
         to_object = PathObject(self.sender().to_object)
         to_folder = to_object.path_root
 
@@ -175,16 +185,18 @@ class FilesPanel(QtGui.QWidget):
                 CreateProductionData(path_object=to_object)
                 self.on_task_selected(self.version_obj)
 
-    def update_location(self, path_object):
+    def update_task_location(self, path_object):
         """
         Method that sends the path object dictionary for anything happening within the Tasks Panel.
         :param path_object:
         :return:
         """
         if path_object:
+            if isinstance(path_object, dict):
+                path_object = PathObject(path_object)
             self.current_location = path_object.data
             self.path_object = path_object.copy()
-            self.location_changed.emit(path_object)
+            self.location_changed.emit(self.path_object)
 
     def on_create_asset(self):
         if self.current_location['scope'] == 'IO':
@@ -224,14 +236,22 @@ class FilesPanel(QtGui.QWidget):
         return widget.users.currentText()
 
     @staticmethod
-    def populate_versions_combo(task_widget, path_object, task):
+    def populate_versions_combo(task_widget, path_object, task, set_to_latest=False):
         version = path_object.version
         task_widget.versions.show()
         task_widget.versions.clear()
         object_ = path_object.copy(user=task_widget.users.currentText(), task=task, version='*')
         items = object_.glob_project_element('version')
+        try:
+            latest = items[-1]
+        except IndexError:
+            latest = '000.000'
+        if set_to_latest:
+            version = latest
+        if not version:
+            version = latest
         for each in items:
-            task_widget.versions.insertItem(0, each)
+            task_widget.versions.addItem(each)
         task_widget.versions.setEnabled(True)
         index_ = task_widget.versions.findText(version)
         if index_ != -1:
@@ -282,7 +302,7 @@ class FilesPanel(QtGui.QWidget):
         except IndexError:
             # this indicates a selection within the module, but not a specific selected files
             pass
-        self.update_location(object_)
+        self.update_task_location(object_)
         for each in data:
             dir_ = os.path.dirname(object_.path_root)
             new_data.append(os.path.join(dir_, each[0]))
@@ -309,7 +329,7 @@ class FilesPanel(QtGui.QWidget):
             except IndexError:
                 # this indicates a selection within the module, but not a specific selected files
                 pass
-            self.update_location(object_)
+            self.update_task_location(object_)
             for each in data:
                 dir_ = os.path.dirname(object_.path_root)
                 new_data.append(os.path.join(dir_, each[0]))
@@ -318,8 +338,33 @@ class FilesPanel(QtGui.QWidget):
             self.sender().parent().show_tool_buttons(user=self.user)
             self.sender().parent().review_button.setEnabled(True)
             self.sender().parent().publish_button.setEnabled(True)
+            self.add_context_menu()
         else:
             logging.debug('No render Files, Drag/Drop them to interface, or create them through software.')
+
+    def add_context_menu(self):
+        """
+
+        :return:
+        """
+        from cgl.core.util import load_json
+        from cgl.core.project import get_cgl_tools
+        # get the current task
+        if self.task and 'elem' not in self.task:
+            menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
+            if os.path.exists(menu_file):
+                menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())
+                if self.task in menu_items['lumbermill']:
+                    for item in menu_items['lumbermill'][self.task]:
+                        if item != 'order':
+                            button_label = menu_items['lumbermill'][self.task][item]['label']
+                            button_command = menu_items['lumbermill'][self.task][item]['module']
+                            module = button_command.split()[1]
+                            loaded_module = __import__(module, globals(), locals(), item, -1)
+                            widget = self.render_files_widget
+                            if widget.item_right_click_menu.action_exists(button_label):
+                                widget.item_right_click_menu.create_action(button_label,
+                                                                           lambda: loaded_module.run(self.path_object))
 
     @staticmethod
     def new_version_from_latest():
@@ -342,9 +387,10 @@ class FilesPanel(QtGui.QWidget):
         # current location needs to have the version in it.
         next_minor = current.new_minor_version_object()
         next_minor.set_attr(filename='')
+        next_minor.set_attr(resolution=self.current_location['resolution'])
         next_minor.set_attr(ext='')
-        cgl_copy(os.path.dirname(current.path_root), os.path.dirname(next_minor.path_root))
         CreateProductionData(next_minor)
+        cgl_copy(os.path.dirname(current.path_root), next_minor.path_root)
         # reselect the original asset.
         self.on_task_selected(next_minor)
 
@@ -358,22 +404,33 @@ class FilesPanel(QtGui.QWidget):
         self.review_signal.emit()
 
     def on_publish_clicked(self):
-        self.publish_signal.emit()
+        print 'Publishing stuff now'
+        current = PathObject(self.current_location)
+        current.publish()
 
     def on_task_info_changed(self):
         """
-        This method runs whenever version, user, or resolution is changed in the TaskWidget
+        This method runs whenever version, user, or resolution is changed in the TaskWidget.
+        It essentially refreshes the task window.
         :return:
         """
-        files_widget = self.sender().parent().parent()
+
+        version = None
+        user = self.sender().parent().users.currentText()
         version = self.sender().parent().versions.currentText()
         resolution = self.sender().parent().resolutions.currentText()
-        user = self.sender().parent().users.currentText()
-        self.path_object.set_attr(version=version)
-        self.path_object.set_attr(user=user)
-        self.path_object.set_attr(resolution=resolution)
-        self.current_location = self.path_object.data
-        files_widget.on_task_selected(self.path_object.data)
+        name = None
+        if self.sender().name:
+            name = self.sender().name
+        if name == 'users':
+            self.path_object = self.path_object.copy(user=user, latest=True, resolution='high')
+        elif name == 'versions':
+            self.path_object = self.path_object.copy(user=user, version=version, resolution='high')
+        else:
+            self.path_object = self.path_object.copy(user=user, version=version, resolution=resolution)
+        files_widget = self.sender().parent().parent()
+        # self.current_location = self.path_object.data
+        files_widget.on_task_selected(self.path_object)
 
     def on_assign_button_clicked(self, data):
         task = self.sender().task
@@ -400,22 +457,22 @@ class FilesPanel(QtGui.QWidget):
             self.path_object.set_attr(filename=None)
             self.path_object.set_attr(ext=None)
             self.path_object.set_attr(filename_base=None)
-            # self.update_location(self.path_object)
+            # self.update_task_location(self.path_object)
             CreateProductionData(path_object=self.path_object,
                                  project_management=self.project_management,
                                  user_login=self.user_info['login'],
                                  force_pm_creation=True)
-        self.update_location(path_object=self.path_object)
+        self.update_task_location(path_object=self.path_object)
 
     def show_selected_in_folder(self):
         show_in_folder(self.path_object.path_root)
 
     def copy_folder_path(self):
-        clipboard = QtGui.QApplication.clipboard()
+        clipboard = QtWidgets.QApplication.clipboard()
         clipboard.setText(os.path.dirname(self.path_object.path_root))
 
     def copy_file_path(self):
-        clipboard = QtGui.QApplication.clipboard()
+        clipboard = QtWidgets.QApplication.clipboard()
         clipboard.setText(self.path_object.path_root)
 
     @staticmethod
@@ -450,7 +507,7 @@ class FilesPanel(QtGui.QWidget):
 
     def on_file_dragged(self, path_object, data):
         logging.debug('Path: %s has files added to it' % path_object.path_root)
-        self.update_location(path_object)
+        self.update_task_location(path_object)
         self.clear_task_selection_except(path_object.task)
         to_path = path_object.path_root
         if os.path.isfile(to_path):
@@ -480,7 +537,7 @@ class FilesPanel(QtGui.QWidget):
             path_obj.set_attr(version=widget.versions.currentText())
             path_obj.set_attr(resolution=widget.resolutions.currentText())
         path_obj.set_attr(task=widget.task)
-        self.update_location(path_obj)
+        self.update_task_location(path_obj)
         list_ = []
         files_ = glob.glob('%s/*' % path_obj.path_root)
         for each in files_:
@@ -529,8 +586,9 @@ class FilesPanel(QtGui.QWidget):
                 widget.files_area.publish_button.show()
                 render_files_label = 'Ready to Review/Publish'
             logging.debug('Published Files for %s' % current.path_root)
-            widget.setup(render_table, ListItemModel(self.prep_list_for_table(files_, basename=True),
-                                                     [render_files_label]))
+            data_ = self.prep_list_for_table(files_, basename=True, length=1)
+            model = FilesModel(data_, [render_files_label])
+            widget.setup(render_table, model)
             render_table.show()
             widget.files_area.open_button.show()
             widget.empty_state.hide()
@@ -548,7 +606,7 @@ class FilesPanel(QtGui.QWidget):
         clear_layout(self, layout)
 
     @staticmethod
-    def prep_list_for_table(list_, path_filter=None, basename=False):
+    def prep_list_for_table(list_, path_filter=None, basename=False, length=None):
         """
         Allows us to prepare lists for display in LJTables.
         :param list_: list to put into the table.
@@ -562,6 +620,9 @@ class FilesPanel(QtGui.QWidget):
         list_.sort()
         output_ = []
         dirname = os.path.dirname(list_[0])
-        output_.append(lj_list_dir(dirname, path_filter=path_filter, basename=basename))
+        files = lj_list_dir(dirname, path_filter=path_filter, basename=basename)
+        for each in files:
+            output_.append([each])
+        print 'adding files %s' % output_
         return output_
 

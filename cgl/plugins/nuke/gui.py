@@ -1,10 +1,24 @@
-from PySide import QtCore, QtGui
+import os
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import nuke
-import cgl.ui.startup as startup
+from cgl.ui.widgets.dialog import InputDialog
+from cgl.plugins.nuke import cgl_nuke
 from cgl.core.path import PathObject
 from cgl.core.config import app_config
 from cgl.core.util import current_user
+from cgl.plugins.preflight.main import Preflight
+
+
+def get_nuke_main_window():
+    """Returns Nuke's main window"""
+
+    app = QtWidgets.QApplication.instance()
+    for obj in app.topLevelWidgets():
+        if obj.inherits('QMainWindow') and obj.metaObject().className() == 'Foundry::UI::DockMainWindow':
+            return obj
+    else:
+        raise RuntimeError('Could not find DockMainWindow instance')
 
 
 class NukeBrowserWidget(CGLumberjackWidget):
@@ -23,23 +37,39 @@ class NukeBrowserWidget(CGLumberjackWidget):
             if selection.endswith('.nk'):
                 import_script(selection)
             else:
-                print selection, '-------------------'
                 import_media(selection)
             print 'nuke import'
+        self.parent().parent().accept()
+
+
+class CGLNukeWidget(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        QtWidgets.QDialog.__init__(self, parent)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        scene_name = cgl_nuke.get_file_name()
+        scene = PathObject(scene_name)
+        self.setWindowTitle('Nuke - Lumbermill')
+        location = '%s/*' % scene.split_after('shot')
+        project_management = app_config()['account_info']['project_management']
+        users = app_config()['project_management'][project_management]['users']
+        user_info = users[current_user()]
+        layout = QtWidgets.QVBoxLayout(self)
+        main = CGLNuke(path=location, user_info=user_info)
+        layout.addWidget(main)
 
 
 class CGLNuke(CGLumberjack):
-    def __init__(self, parent, path=None, user_info=None):
-        CGLumberjack.__init__(self, parent, user_info=user_info)
+    def __init__(self, parent=None, path=None, user_info=None):
+        CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path)
         print 'CGLNuke path is %s' % path
-        self.setCentralWidget(NukeBrowserWidget(self, show_import=True))
+        self.setCentralWidget(NukeBrowserWidget(self, show_import=True, path=path))
 
 
-class RenderDialog(QtGui.QDialog):
+class RenderDialog(QtWidgets.QDialog):
     from cgl_nuke import get_main_window
 
     def __init__(self, parent=get_main_window(), write_node=''):
-        QtGui.QDialog.__init__(self, parent)
+        QtWidgets.QDialog.__init__(self, parent)
 
         self.write_node = write_node
         self.render_path = ''
@@ -49,21 +79,21 @@ class RenderDialog(QtGui.QDialog):
         self.setWindowTitle("Render %s" % self.write_node)
 
         # define the layouts
-        layout = QtGui.QVBoxLayout(self)
-        grid_layout = QtGui.QGridLayout()
-        button_row = QtGui.QHBoxLayout()
+        layout = QtWidgets.QVBoxLayout(self)
+        grid_layout = QtWidgets.QGridLayout()
+        button_row = QtWidgets.QHBoxLayout()
 
         # define the widgets
-        # self.title = QtGui.QLabel('Render Write Node:')
-        frange_label = QtGui.QLabel('Frame Range')
-        render_by_label = QtGui.QLabel('Render By')
+        # self.title = QtWidgets.QLabel('Render Write Node:')
+        frange_label = QtWidgets.QLabel('Frame Range')
+        render_by_label = QtWidgets.QLabel('Render By')
 
-        self.frange_line_edit = QtGui.QLineEdit()
-        self.render_by_line_edit = QtGui.QLineEdit()
+        self.frange_line_edit = QtWidgets.QLineEdit()
+        self.render_by_line_edit = QtWidgets.QLineEdit()
         self.render_by_line_edit.setText("1")
 
-        self.cancel_button = QtGui.QPushButton('Cancel')
-        self.render_button = QtGui.QPushButton('Render')
+        self.cancel_button = QtWidgets.QPushButton('Cancel')
+        self.render_button = QtWidgets.QPushButton('Render')
 
         # add stuff to layouts
         grid_layout.addWidget(frange_label, 0, 0)
@@ -132,7 +162,7 @@ def render_node(n):
         print '%s is not a Write node' % n
 
 
-def render_selected_write_nodes():
+def render_selected_local():
     """
     renders selected write nodes through the GUI
     :return:
@@ -146,30 +176,70 @@ def render_selected_write_nodes():
     return render_paths
 
 
-def launch():
-    from cgl_nuke import get_file_name, get_main_window
-    scene_name = get_file_name()
-    if scene_name == 'Root':
-        print 'Lumbermill can not determine project, please launch files from the lumbermill browser'
-        location = ''
-    else:
-        scene = PathObject(scene_name)
-        location = '%s/*' % scene.split_after('shot')
-        new_object = PathObject(location)
+def getMainWindow():
+    app = QtWidgets.QApplication.instance()
+    for widget in app.topLevelWidgets():
+        if widget.metaObject().className() == 'Foundry::UI::DockMainWindow':
+            return widget
+
+
+def create_write_node():
+    """
+    Pops up a gui that allows you to create a custom write node or a default write node if left blank
+    :return:
+    """
+    import sys
+    write_nodes = ['']
+    dialog = InputDialog(title='Create Write Node',
+                         message='Type a Name for an Element (Leave blank for default write node)',
+                         combo_box_items=write_nodes)
+    dialog.setAttribute(QtCore.Qt.WA_QuitOnClose)
+    dialog.exec_()
+    if dialog.button == 'Ok':
+        if dialog.combo_box.currentText():
+            elem_name = 'elem%s' % dialog.combo_box.currentText().title()
+            padding = '#' * cgl_nuke.get_biggest_read_padding()
+            if not padding:
+                padding = '####'
+            path_object = cgl_nuke.NukePathObject(cgl_nuke.get_file_name())
+            path_object.set_attr(task=elem_name)
+            path_object.set_attr(context='render')
+            path_object.set_attr(version='000.001')
+            path_object.set_attr(filename='%s.%s.exr' % (elem_name, padding))
+            write_node = nuke.createNode('Write')
+            file_path = os.path.join(path_object.path_root)
+            write_node.knob('file').fromUserText(file_path)
+            write_node.knob('name').setValue(elem_name)
+        else:
+            cgl_nuke.create_scene_write_node()
+
+
+def render_selected():
+    if nuke.selectedNodes():
+        project_management = app_config()['account_info']['project_management']
+        users = app_config()['project_management'][project_management]['users']
+        if current_user() in users:
+            user_info = users[current_user()]
+            if user_info:
+                dialog = Preflight(parent=None, software='nuke', preflight='render')
+                #gui.setWindowFlags(QtCore.Qt.Window)
+                dialog.setWindowTitle('Preflight')
+                dialog.exec_()
+
+
+def launch_lumbermill():
+    import sys
+    scene_name = cgl_nuke.get_file_name()
+    scene = PathObject(scene_name)
+    location = '%s/*' % scene.split_after('shot')
     project_management = app_config()['account_info']['project_management']
     users = app_config()['project_management'][project_management]['users']
     if current_user() in users:
         user_info = users[current_user()]
-        if user_info:
-            gui = CGLNuke(parent=get_main_window(), path=location, user_info=user_info)
-            app = startup.do_nuke_gui_init(gui)
-            gui.setWindowFlags(QtCore.Qt.Window)
-            gui.setWindowTitle('CG Lumberjack')
-            if scene_name != 'Root':
-                gui.centralWidget().update_location(new_object)
-            gui.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-            gui.show()
-            gui.raise_()
-            app.exec_()  # this is required to work, yet i get this error: "NoneType" object has no attribute 'exec_',
-        else:
-            print 'Cant find user info in lumbermill for %s' % current_user()
+        app = QtWidgets.QApplication.instance()
+        main_window = CGLNuke(user_info=user_info, path=location)
+        main_window.setWindowTitle('CG Lumberjack: Nuke')
+        main_window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        main_window.show()
+        main_window.raise_()
+    app.exec_()

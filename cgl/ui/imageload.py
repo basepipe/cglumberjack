@@ -1,6 +1,6 @@
 import Queue
 import os
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 
 
 class ImageLoadThread(QtCore.QThread):

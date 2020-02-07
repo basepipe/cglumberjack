@@ -3,7 +3,7 @@ import os
 import time
 import signal
 from os.path import dirname, join
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 # from cgl.core.startup import do_app_init
 from cgl.ui.util import UISettings
 
@@ -30,7 +30,7 @@ def _do_qt_init():
     Returns: QtGui.Application
 
     """
-    app = QtGui.QApplication([])
+    app = QtWidgets.QApplication([])
     return app
 
 
@@ -64,7 +64,7 @@ def _load_ui_themes(gui=None):
         rsc_dir = join(dirname(dirname(dirname(__file__))), "resources")
         if os.path.isdir(rsc_dir):
             theme = join(rsc_dir, "theme.css")
-            app = QtGui.QApplication.instance()
+            app = QtWidgets.QApplication.instance()
             # need to stash this some where so it doesnt get GCC'd
             app.theme_watcher = ThemeFileWatcher(theme)
 
@@ -95,7 +95,7 @@ def _read_theme_file(theme, gui=None):
         theme_data += line
     css_f.close()
 
-    app = QtGui.QApplication.instance()
+    app = QtWidgets.QApplication.instance()
     logging.info('setting theme: %s' % gui)
     if gui:
         gui.setStyleSheet(theme_data)
@@ -107,9 +107,9 @@ def do_freeze_fix():
     import sys
     if getattr(sys, 'frozen', False) and sys.platform == "darwin":
         os.environ["QT_PLUGIN_PATH"] = "."
-        QtGui.QApplication.setLibraryPaths([os.path.dirname(sys.executable)+"/plugins",
+        QtWidgets.QApplication.setLibraryPaths([os.path.dirname(sys.executable)+"/plugins",
                                                 os.path.dirname(sys.executable)])
-        # print QtGui.QApplication.libraryPaths()
+        # print QtWidgets.QApplication.libraryPaths()
 
 
 def _load_ui_settings():
@@ -142,10 +142,10 @@ def _load_lang():
             logging.debug("falling back to english")
             return
     logging.debug("found lang file %s " % lang_file.fileName())
-    app = QtGui.QApplication.instance()
+    app = QtWidgets.QApplication.instance()
     trans = QtCore.QTranslator(app)
     trans.load(lang_file.fileName())
-    app = QtGui.QApplication.instance()
+    app = QtWidgets.QApplication.instance()
     app.installTranslator(trans)
 
 

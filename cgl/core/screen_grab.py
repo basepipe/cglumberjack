@@ -1,9 +1,9 @@
 import os
-from PySide import QtCore, QtGui
+from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from datetime import datetime
 
 
-class ScreenCapture(QtGui.QDialog):
+class ScreenCapture(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         """
@@ -22,7 +22,7 @@ class ScreenCapture(QtGui.QDialog):
         self.setMouseTracking(True)
         self.set_screen_area()
 
-        desktop = QtGui.QApplication.instance().desktop()
+        desktop = QtWidgets.QApplication.instance().desktop()
         desktop.resized.connect(self.set_screen_area)
         desktop.screenCountChanged.connect(self.set_screen_area)
 
@@ -35,7 +35,7 @@ class ScreenCapture(QtGui.QDialog):
         return self.rectangle
 
     def set_screen_area(self):
-        desktop = QtGui.QApplication.instance().desktop()
+        desktop = QtWidgets.QApplication.instance().desktop()
         total_desktop = QtCore.QRect()
         for r in range(desktop.screenCount()):
             total_desktop = total_desktop.united(desktop.screenGeometry(r))
@@ -90,7 +90,7 @@ class ScreenCapture(QtGui.QDialog):
 
 
 def capture_area(rect, output_path):
-    desktop = QtGui.QApplication.instance().desktop()
+    desktop = QtWidgets.QApplication.instance().desktop()
     print desktop.winId()
     pixmap = QtGui.QPixmap.grabWindow(desktop.winId(), rect.x()+2, rect.y()+2, rect.width()-4, rect.height()-4)
     pixmap.save(output_path)
