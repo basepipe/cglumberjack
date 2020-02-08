@@ -13,6 +13,7 @@ from cgl.core.config import app_config
 from cgl.core.path import PathObject, icon_path, lj_list_dir, split_sequence_frange, get_file_type
 from plugins.preflight.main import Preflight
 from panels import clear_layout
+import time
 
 FILEPATH = 1
 FILENAME = 0
@@ -220,13 +221,25 @@ class IOPanel(QtWidgets.QWidget):
             print 'Please Select An Ingest Source Before Dragging Files'
             return
         from cgl.core.util import cgl_copy
+        publish_data_csv = os.path.join(to_folder, 'publish_data.csv').replace('\\', '/')
+        if os.path.exists(to_folder):
+            create_new = False
+        else:
+            create_new = True
         cgl_copy(files, to_folder, verbose=False, dest_is_folder=True)
         self.progress_bar.hide()
-        self.load_import_events()
-        num = self.ingest_widget.list.count()
-        item = self.ingest_widget.list.item(num - 1)
-        item.setSelected(True)
-        # self.on_ingest_selected()
+        if create_new:
+            self.load_import_events(new=True)
+            num = self.ingest_widget.list.count()
+            item = self.ingest_widget.list.item(num - 1)
+            item.setSelected(True)
+            self.parent().parent().centralWidget().update_location_to_latest(self.path_object)
+            # self.empty_state.hide()
+        if os.path.exists(publish_data_csv):
+            os.remove(publish_data_csv)
+            time.sleep(.5)  # seems like on the network i have to force it to sleep so it has time to delete.
+        self.load_data_frame()
+        self.populate_tree()
 
     def new_files_dragged(self, files):
         """
@@ -234,23 +247,21 @@ class IOPanel(QtWidgets.QWidget):
         :param files:
         :return:
         """
-        version = self.path_object.version
-
-        if os.path.exists(os.path.join(to_folder, 'publish_data.old.csv')):
-            os.remove(os.path.join(to_folder, 'publish_data.old.csv'))
-        if os.path.exists(os.path.join(to_folder, 'publish_data.csv')):
-            os.rename(os.path.join(to_folder, 'publish_data.csv'), os.path.join(to_folder, 'publish_data.old.csv'))
+        to_folder = self.path_object.path_root
         path = self.path_object.ingest_source
         self.progress_bar.show()
         #QtWidgets.qApp.processEvents()
         file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
         #QtWidgets.qApp.processEvents()
         file_process.start()
-        self.location_changed.emit(self.path_object)
-        # self.parent().parent().centralWidget().update_location_to_latest(self.path_object)
-        self.load_data_frame()
-        self.populate_tree()
-        self.empty_state.hide()
+
+        # TODO - how do i know if the location changed?
+        # if os.path.exists(to_folder):
+        #     print 'dragging to exsting folder'
+        # else:
+        #     print 'dragging to new folder'
+        #     self.location_changed.emit(self.path_object)
+        # self.empty_state.hide()
         # TODO - No idea why none of these are working for selecting the version.
         # num = self.ingest_widget.list.count()
         # item = self.ingest_widget.list.item(num - 1)
@@ -274,7 +285,7 @@ class IOPanel(QtWidgets.QWidget):
         self.path_object.set_attr(ingest_source=self.source_widget.list.selectedItems()[-1].text())
         self.load_import_events()
 
-    def load_import_events(self):
+    def load_import_events(self, new=False):
         latest = '-001.000'
         self.ingest_widget.list.clear()
         events = glob.glob('%s/%s' % (self.path_object.split_after('ingest_source'), '*'))
@@ -291,7 +302,8 @@ class IOPanel(QtWidgets.QWidget):
             icon = QtGui.QIcon(pixmap)
             self.ingest_widget.set_icon(icon)
         self.path_object.set_attr(version=latest)
-        self.path_object = self.path_object.next_major_version()
+        if not new:
+            self.path_object = self.path_object.next_major_version()
         self.empty_state.setText('Drag Files Here to Create Ingest %s' % self.path_object.version)
 
     def on_ingest_selected(self):
@@ -323,7 +335,7 @@ class IOPanel(QtWidgets.QWidget):
 
     def load_data_frame(self):
         dir_ = self.path_object.path_root
-        print 'dir is %s' % dir_
+        print 'loading %s' % dir_
         self.pandas_path = os.path.join(dir_, 'publish_data.csv')
         if os.path.exists(self.pandas_path):
             self.data_frame = pd.read_csv(self.pandas_path)
@@ -334,24 +346,25 @@ class IOPanel(QtWidgets.QWidget):
         self.save_data_frame()
 
     def append_data_children(self, data, directory, parent='self'):
-        print '------------- adding this to the data frame'
-        regex = r"#{3,}.[aA-zZ]{2,} \d{3,}-\d{3,}$"
-        for filename in lj_list_dir(directory, basename=True):
-            type_ = get_file_type(filename)
-            split_frange = split_sequence_frange(filename)
-            if split_frange:
-                file_, frange = split_frange
-            else:
-                file_ = filename
-                frange = ' '
-            print file_
-            print '\t', frange
-            fullpath = os.path.join(os.path.abspath(directory), file_)
-            data.append((file_, fullpath, type_, frange, ' ', False, ' ', ' ', ' ', ' ', ' ', ' ',
-                         self.io_statuses[0], parent))
-            if type_ == 'folder':
-                self.append_data_children(data, fullpath, file_)
-        return data
+        # regex = r"#{3,}.[aA-zZ]{2,} \d{3,}-\d{3,}$"
+        files = lj_list_dir(directory, basename=True)
+        if files:
+            for filename in files:
+                type_ = get_file_type(filename)
+                split_frange = split_sequence_frange(filename)
+                if split_frange:
+                    file_, frange = split_frange
+                else:
+                    file_ = filename
+                    frange = ' '
+                print file_
+                print '\t', frange
+                fullpath = os.path.join(os.path.abspath(directory), file_)
+                data.append((file_, fullpath, type_, frange, ' ', False, ' ', ' ', ' ', ' ', ' ', ' ',
+                             self.io_statuses[0], parent))
+                if type_ == 'folder':
+                    self.append_data_children(data, fullpath, file_)
+            return data
 
     def save_data_frame(self):
         self.data_frame.to_csv(self.pandas_path, index=False)
@@ -640,8 +653,8 @@ class IOPanel(QtWidgets.QWidget):
     def on_add_ingest_event(self):
         # deselect everything in the event
         # change the file path to reflect no selection
-        self.version = self.path_object_next.version
-        self.empty_state.setText('Drag Media Here to Create Ingest %s' % self.version)
+        self.path_object = self.path_object.next_major_version()
+        self.empty_state.setText('Drag Media Here to Create Ingest %s' % self.path_object.version)
         self.hide_tags()
         self.file_tree.hide()
         self.empty_state.show()

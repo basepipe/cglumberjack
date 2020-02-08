@@ -479,6 +479,13 @@ class PathObject(object):
                 return new_obj
             else:
                 new_obj.set_attr(version='000.000')
+        elif new_obj.scope == 'IO':
+            latest_version = new_obj.glob_project_element('version')
+            if latest_version:
+                new_obj.set_attr(version=latest_version[-1])
+                return new_obj
+            else:
+                new_obj.set_attr(version='000.000')
         return new_obj
 
     def next_minor_version_number(self):
