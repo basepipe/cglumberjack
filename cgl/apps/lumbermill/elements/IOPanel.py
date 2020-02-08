@@ -494,7 +494,7 @@ class IOPanel(QtWidgets.QWidget):
                 return
             scope = self.data_frame.loc[row, 'Scope']
             seq = self.data_frame.loc[row, 'Seq']
-            shot = self.data_frame.loc[row, 'Shot']
+            shot = int(self.data_frame.loc[row, 'Shot'])
             task = self.data_frame.loc[row, 'Task']
             if type(scope) != float:
                 if scope:
@@ -517,6 +517,8 @@ class IOPanel(QtWidgets.QWidget):
                                 shot = '%03d' % int(shot)
                             elif length == 4:
                                 shot = '%04d' % int(shot)
+                            elif length == 5:
+                                shot = '%05d' % int(shot)
                             self.set_combo_to_text(self.shot_combo, shot)
                         except ValueError:
                             self.set_combo_to_text(self.shot_combo, shot)
