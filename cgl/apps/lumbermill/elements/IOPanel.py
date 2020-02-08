@@ -229,8 +229,13 @@ class IOPanel(QtWidgets.QWidget):
         # self.on_ingest_selected()
 
     def new_files_dragged(self, files):
-        to_folder = self.path_object_next.path_root
-        version = os.path.basename(to_folder)
+        """
+        What happens when i drag something to new files.
+        :param files:
+        :return:
+        """
+        version = self.path_object.version
+
         if os.path.exists(os.path.join(to_folder, 'publish_data.old.csv')):
             os.remove(os.path.join(to_folder, 'publish_data.old.csv'))
         if os.path.exists(os.path.join(to_folder, 'publish_data.csv')):
@@ -286,8 +291,8 @@ class IOPanel(QtWidgets.QWidget):
             icon = QtGui.QIcon(pixmap)
             self.ingest_widget.set_icon(icon)
         self.path_object.set_attr(version=latest)
-        self.path_object_next = self.path_object.next_major_version()
-        self.empty_state.setText('Drag Files Here to Create Ingest %s' % self.path_object_next.version)
+        self.path_object = self.path_object.next_major_version()
+        self.empty_state.setText('Drag Files Here to Create Ingest %s' % self.path_object.version)
 
     def on_ingest_selected(self):
         self.ingest_widget.empty_state.hide()
@@ -318,6 +323,7 @@ class IOPanel(QtWidgets.QWidget):
 
     def load_data_frame(self):
         dir_ = self.path_object.path_root
+        print 'dir is %s' % dir_
         self.pandas_path = os.path.join(dir_, 'publish_data.csv')
         if os.path.exists(self.pandas_path):
             self.data_frame = pd.read_csv(self.pandas_path)
