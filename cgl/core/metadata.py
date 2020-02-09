@@ -1,6 +1,8 @@
 # noinspection PyUnresolvedReferences
 import exiftool
 import os
+from cgl.core.util import cgl_execute
+import re
 
 # TODO I'm going to need to make a dictionary for my big list of stuff i care about and what's needed for
 #  every file type....
