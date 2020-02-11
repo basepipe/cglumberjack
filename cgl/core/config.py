@@ -18,10 +18,11 @@ class Configuration(object):
         cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
     user_config = os.path.join(cg_lumberjack_dir, 'user_globals.json')
 
-    def __init__(self, company=None, proj_management=None):
+    def __init__(self, company=None, project=None, proj_management=None):
         if not os.path.exists(self.user_config):
             logging.info('User Config Not Found: %s' % self.user_config)
         self.globals = self._load_json(self.user_config)['globals']
+        print 'Company Globals: ', self.globals
         if not os.path.exists(self.globals):
             logging.info('No Globals Found at %s' % self.globals)
             return
@@ -43,6 +44,8 @@ class Configuration(object):
             cfg = {'cg_lumberjack_dir': os.path.dirname(self.globals)}
             if os.path.isfile(global_cfg):
                 cfg.update(self._load_json(global_cfg))
+                # load the company config if any
+                # load project config if any
             if os.path.isfile(app_cfg):
                 cfg.update(self._load_json(app_cfg))
             Configuration.LOADED_CONFIG['app'] = cfg

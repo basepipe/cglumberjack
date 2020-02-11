@@ -7,9 +7,9 @@ from cgl.core.util import cgl_execute, write_to_cgl_data
 from cgl.core.path import PathObject, Sequence, CreateProductionData
 from cgl.core.config import app_config, UserConfig
 
-
-PROJ_MANAGEMENT = app_config()['account_info']['project_management']
-PADDING = app_config()['default']['padding']
+CONFIG = app_config()
+PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
+PADDING = CONFIG['default']['padding']
 PROCESSING_METHOD = UserConfig().d['methodology']
 
 
@@ -19,7 +19,7 @@ class NukePathObject(PathObject):
         if not path_object:
             path_object = get_scene_name()
         self.data = {}
-        self.root = app_config()['paths']['root'].replace('\\', '/')
+        self.root = CONFIG['paths']['root'].replace('\\', '/')
         self.company = None
         self.project = None
         self.scope = None
@@ -44,9 +44,9 @@ class NukePathObject(PathObject):
         self.task = None
         self.cam = None
         self.file_type = None
-        self.frame_padding = app_config()
-        self.scope_list = app_config()['rules']['scope_list']
-        self.context_list = app_config()['rules']['context_list']
+        self.frame_padding = CONFIG['default']['padding']
+        self.scope_list = CONFIG['rules']['scope_list']
+        self.context_list = CONFIG['rules']['context_list']
         self.path = None  # string of the properly formatted path
         self.path_root = None  # this gives the full path with the root
         self.thumb_path = None
@@ -135,7 +135,7 @@ class NukePathObject(PathObject):
                         process_info_list.append(process_info)
                     else:
                         # add write node to the command
-                        command = '%s -F %s -sro -x %s %s' % (app_config()['paths']['nuke'], self.frame_range,
+                        command = '%s -F %s -sro -x %s %s' % (CONFIG['paths']['nuke'], self.frame_range,
                                                            node_name, self.path_root)
                         command_name = '"%s: NukePathObject.render()"' % self.command_base
                         if processing_method == 'local':

@@ -11,15 +11,16 @@ from cgl.core.util import split_all, cgl_copy, cgl_execute
 from cgl.core.config import app_config, UserConfig
 import convert
 
-PROJ_MANAGEMENT = app_config()['account_info']['project_management']
-PADDING = app_config()['default']['padding']
+CONFIG = app_config()
+PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
+PADDING = CONFIG['default']['padding']
 try:
     PROCESSING_METHOD = UserConfig().d['methodology']
 except AttributeError:
     PROCESSING_METHOD = 'local'
-EXT_MAP = app_config()['ext_map']
-ROOT = app_config()['paths']['root']
-SEQ_RULES = app_config()['rules']['general']['file_sequence']['regex']
+EXT_MAP = CONFIG['ext_map']
+ROOT = CONFIG['paths']['root']
+SEQ_RULES = CONFIG['rules']['general']['file_sequence']['regex']
 SEQ_REGEX = re.compile("[0-9]{4,}\\.")
 SPLIT_SEQ_REGEX = re.compile(" \d{3,}-\d{3,}$")
 SEQ_SPLIT = re.compile("\\#{4,}")
@@ -39,7 +40,7 @@ class PathObject(object):
             logging.error('No Path Object supplied')
             return
         self.data = {}
-        self.root = app_config()['paths']['root'].replace('\\', '/')
+        self.root = CONFIG['paths']['root'].replace('\\', '/')
         self.company = None
         self.project = None
         self.scope = None
@@ -64,9 +65,9 @@ class PathObject(object):
         self.task = None
         self.cam = None
         self.file_type = None
-        self.frame_padding = app_config()
-        self.scope_list = app_config()['rules']['scope_list']
-        self.context_list = app_config()['rules']['context_list']
+        self.frame_padding = CONFIG
+        self.scope_list = CONFIG['rules']['scope_list']
+        self.context_list = CONFIG['rules']['context_list']
         self.path = None  # string of the properly formatted path
         self.path_root = None  # this gives the full path with the root
         self.thumb_path = None
@@ -139,7 +140,7 @@ class PathObject(object):
     @staticmethod
     def get_attrs_from_config():
         attrs = []
-        for key in app_config()['rules']['path_variables']:
+        for key in CONFIG['rules']['path_variables']:
             attrs.append(key)
         return attrs
 
@@ -163,7 +164,7 @@ class PathObject(object):
             if t in self.data:
                 if self.data[t]:
                     current_ = t
-            elif t in app_config()['rules']['scope_list']:
+            elif t in CONFIG['rules']['scope_list']:
                 current_ = 'scope'
         return current_
 
@@ -175,10 +176,10 @@ class PathObject(object):
                     self.template = ['company', 'context', 'project', 'scope']
                     return
                 try:
-                    path_template = app_config()['templates'][self.scope][self.context]['path'].split('/')
+                    path_template = CONFIG['templates'][self.scope][self.context]['path'].split('/')
                     if path_template[-1] == '':
                         path_template.pop(-1)
-                    version_template = app_config()['templates'][self.scope][self.context]['version'].split('/')
+                    version_template = CONFIG['templates'][self.scope][self.context]['version'].split('/')
                     template = path_template + version_template
                     for each in template:
                         each = each.replace('{', '').replace('}', '')
@@ -196,14 +197,14 @@ class PathObject(object):
             self.template = ['company']
 
     def set_scope_list(self):
-        self.scope_list = app_config()['rules']['scope_list']
+        self.scope_list = CONFIG['rules']['scope_list']
 
     def set_context_list(self):
-        self.context_list = app_config()['rules']['context_list']
-        for key in app_config()['templates']:
+        self.context_list = CONFIG['rules']['context_list']
+        for key in CONFIG['templates']:
             if key not in self.context_list:
                 self.context_list.append(key)
-                for scope in app_config()['templates'][key]:
+                for scope in CONFIG['templates'][key]:
                     if scope not in self.scope_list:
                         self.scope_list.append(scope)
 
@@ -327,7 +328,7 @@ class PathObject(object):
         for attr in kwargs:
             value = kwargs[attr]
             try:
-                app_config()['rules']['path_variables'][attr]['regex']
+                CONFIG['rules']['path_variables'][attr]['regex']
             except KeyError:
                 logging.debug('Could not find regex for %s: %s in config, skipping' % (attr, value))
             if value == '*':
@@ -579,9 +580,10 @@ class PathObject(object):
         :return:
         """
         if self.path_root and self.resolution:
+            resolution = CONFIG['default']['resolution']['video_review']
             name_ = os.path.splitext(self.filename)[0]
             filename = '%s.jpg' % name_
-            dir_ = os.path.dirname(self.path_root.replace(self.resolution, '1920x1080'))
+            dir_ = os.path.dirname(self.path_root.replace(self.resolution, resolution))
             self.hd_proxy_path = os.path.join(dir_, filename)
             self.data['hd_proxy_path'] = self.hd_proxy_path
 
@@ -651,8 +653,8 @@ class PathObject(object):
         sets the .company_config and .project_config values
         :return:
         """
-        self.company_config = os.path.join(app_config()['account_info']['globals_path'], 'globals.json')
-        self.project_config = os.path.join(app_config()['account_info']['globals_path'], 'globals.json')
+        self.company_config = os.path.join(CONFIG['account_info']['globals_path'], 'globals.json')
+        self.project_config = os.path.join(CONFIG['account_info']['globals_path'], 'globals.json')
 
     def set_json(self):
         json_obj = self.copy(latest=True, context='render', ext='json', task='lay', set_proper_filename=True)
@@ -729,16 +731,20 @@ class PathObject(object):
         elif self.file_type == 'pdf':
             print 'making pdf preview not supported'
     
-    def make_proxy(self, width=1920, height=1080, copy_input_padding=True, ext='jpg', new_window=False, job_id=None):
+    def make_proxy(self, copy_input_padding=True, ext='jpg', new_window=False, job_id=None):
         """
-        :param width: width in pixels
-        :param height: height in pixels
+        :param resolution: HEIGHTxWIDTH ex: (1920x1080)
         :param copy_input_padding: if True use padding from input sequence, if False use padding from Globals
         :param ext: extension for the proxy file.  Default is jpg
         :param new_window: start process in a new command window
         :param job_id: job_id of dependent job.
         :return:
         """
+        if self.project.lower() in CONFIG['default']['proxy_resolution'].keys():
+            proxy_resolution = CONFIG['default']['proxy_resolution'][self.project]
+        else:
+            proxy_resolution = CONFIG['default']['proxy_resolution']['default']
+        width, height = proxy_resolution.split('x')
         name_ = os.path.splitext(self.filename)[0]
         filename = '%s.%s' % (name_, ext)
         dir_ = os.path.dirname(self.path_root.replace(self.resolution, '%sx%s' % (width, height)))
@@ -968,7 +974,7 @@ class CreateProductionData(object):
 
     def create_other_scope(self, path_object):
         if path_object.scope:
-            for each in app_config()['rules']['scope_list']:
+            for each in CONFIG['rules']['scope_list']:
                 if each != path_object.scope:
                     new_obj = path_object.copy(scope=each)
                     self.safe_makedirs(new_obj, test=self.test)
@@ -1180,7 +1186,7 @@ class Sequence(object):
                 logging.error('problem with filepath: %s and frames: '
                               '%s in get_frange_from_seq, skipping.' % (self.sequence, frames))
         else:
-            self.start_frame = app_config()['default']['start_frame']
+            self.start_frame = CONFIG['default']['start_frame']
             self.hash = '#' * self.padding
             if self.padding < 10:
                 self.num = '%0' + str(self.padding) + 'd'
@@ -1220,20 +1226,20 @@ class Sequence(object):
 
 def image_path(image=None):
     if image:
-        return os.path.join(app_config()['paths']['code_root'], 'resources', 'images', image)
+        return os.path.join(CONFIG['paths']['code_root'], 'resources', 'images', image)
     else:
-        return os.path.join(app_config()['paths']['code_root'], 'resources', 'images')
+        return os.path.join(CONFIG['paths']['code_root'], 'resources', 'images')
 
 
 def icon_path(icon=None):
     if icon:
-        return os.path.join(app_config()['paths']['code_root'], 'resources', 'icons', icon)
+        return os.path.join(CONFIG['paths']['code_root'], 'resources', 'icons', icon)
     else:
-        return os.path.join(app_config()['paths']['code_root'], 'resources', 'icons')
+        return os.path.join(CONFIG['paths']['code_root'], 'resources', 'icons')
 
 
 def font_path():
-    return os.path.join(app_config()['paths']['code_root'], 'resources', 'fonts')
+    return os.path.join(CONFIG['paths']['code_root'], 'resources', 'fonts')
 
 
 def start(filepath):
@@ -1308,8 +1314,8 @@ def seq_from_file(basename):
 
 
 def test_string_against_path_rules(variable, string):
-    regex = app_config()['rules']['path_variables'][variable]['regex']
-    example = app_config()['rules']['path_variables'][variable]['example']
+    regex = CONFIG['rules']['path_variables'][variable]['regex']
+    example = CONFIG['rules']['path_variables'][variable]['example']
     compiled_regex = re.compile(r'%s' % regex)
     if re.match(compiled_regex, string):
         return ''

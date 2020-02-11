@@ -1,13 +1,17 @@
 import os
+import copy
 from Qt import QtWidgets, QtCore, QtGui
 from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.combo import AdvComboBox
-from cgl.core.config import app_config
+from cgl.core.util import load_json, save_json
 
 # TODO - I should be pulling globals from an environment variable, this current method is a bit to much
 # TODO - Save out to a globals file in the right place for
 # TODO - Load Company global edits and change colors accordingly
 # TODO - Load Project global edits and change colors accordingly
+CGL_CONFIG = os.environ['CGL_CONFIG']
+CGL_HOME = os.environ['CGL_HOME']
+CGL_ROOT = os.environ['CGL_ROOT']
 
 
 class EditGlobals(LJDialog):
@@ -20,6 +24,10 @@ class EditGlobals(LJDialog):
 
         label_project = QtWidgets.QLabel('Project')
         label_project.setStyleSheet('color: green')
+        self.globals_dict = load_json(os.path.join(CGL_CONFIG, 'globals.json'))
+        self.edited_globals_dict = copy.deepcopy(self.globals_dict)
+
+        self.temp_dict = {}
         self.company = None
         self.project = None
         self.combo_company = AdvComboBox()
@@ -64,15 +72,14 @@ class EditGlobals(LJDialog):
         return item
 
     def load_default_globals(self):
-        globals = app_config()
-        for key in globals:
-            if isinstance(globals[key], dict):
+        for key in self.globals_dict:
+            if isinstance(self.globals_dict[key], dict):
                 # add it as a top level thingy
-                self.create_tree_widget_item(globals, key)
-            elif isinstance(globals[key], list):
-                self.create_tree_widget_item(globals, key, value=str(globals[key]))
-            elif isinstance(globals[key], unicode):
-                print 'unicode:', key, globals[key]
+                self.create_tree_widget_item(self.globals_dict, key)
+            elif isinstance(self.globals_dict[key], list):
+                self.create_tree_widget_item(self.globals_dict, key, value=str(self.globals_dict[key]))
+            elif isinstance(self.globals_dict[key], unicode):
+                print 'unicode:', key, self.globals_dict[key]
 
     def add_children(self, parent_item, children):
         if isinstance(children, dict):
@@ -94,8 +101,6 @@ class EditGlobals(LJDialog):
         load available projects
         :return:
         """
-
-        directory = r'C:\cgl_root\companies'
         company = self.combo_company.currentText()
         if company == 'All':
             self.company = None
@@ -103,7 +108,7 @@ class EditGlobals(LJDialog):
             self.company = company
         self.combo_project.clear()
         if company != 'All':
-            proj_dir = os.path.join(directory, company, 'source')
+            proj_dir = os.path.join(CGL_ROOT, company, 'source')
             projects = os.listdir(proj_dir)
             projects.insert(0, 'All')
             self.combo_project.addItems(projects)
@@ -116,8 +121,7 @@ class EditGlobals(LJDialog):
         load available compaines
         :return:
         """
-        directory = r'C:\cgl_root\companies'
-        companies = os.listdir(directory)
+        companies = os.listdir(CGL_ROOT)
         companies.insert(0, 'All')
         self.combo_company.addItems(companies)
         pass
@@ -158,6 +162,7 @@ class EditGlobals(LJDialog):
         item = self.tree_widget.selectedItems()[0]
         if self.key != item.text(0):
             dict_ = self.get_dictionary(item, item.text(0), item.text(1))
+            self.set_value(item, item.text(0), item.text(1))
             if self.project:
                 self.save_globals(dict_)
                 item.setForeground(0, QtGui.QBrush(QtGui.QColor(0, 255, 0)))
@@ -171,6 +176,7 @@ class EditGlobals(LJDialog):
             return
         if self.value != item.text(1):
             dict_ = self.get_dictionary(item, item.text(0), item.text(1))
+            self.set_value(item, item.text(0), item.text(1))
             if self.project:
                 self.save_globals(dict_)
                 item.setForeground(1, QtGui.QBrush(QtGui.QColor(0, 255, 0)))
@@ -187,23 +193,43 @@ class EditGlobals(LJDialog):
 
         :return:
         """
-        globals_path = r'C:\Users\tmikota\Documents\config_\user_globals.json'
         if self.project:
-            globals_path = os.path.join(os.path.dirname(globals_path), self.company, self.project, 'globals.json')
+            globals_path = os.path.join(CGL_CONFIG, self.company, self.project, 'globals.json')
         elif self.company:
-            globals_path = os.path.join(os.path.dirname(globals_path), self.company, 'globals.json')
+            globals_path = os.path.join(CGL_CONFIG, self.company, 'globals.json')
+        else:
+            globals_path = os.path.join(CGL_CONFIG, 'globals.json')
+        if os.path.exists(globals_path):
+            gbals = load_json(globals_path)
+            # gbals.update(dict_)
+            # save_json(globals_path, gbals)
+        else:
+            os.makedirs(os.path.dirname(globals_path))
+            # save_json(globals_path, dict_)
         print globals_path
 
-    def get_dictionary(self, item, key=False, value=False, previous_dict=False):
+    def get_dictionary(self, item, key=False, value=False):
         dict_ = {}
         dict_[key] = value
         parent_item = item.parent()
         if parent_item:
             parent_text = parent_item.text(0)
             dict_ = self.get_dictionary(parent_item, key=parent_text, value=dict_)
+            self.temp_dict = dict_
             return dict_
         else:
+            self.temp_dict = dict_
             return dict_
+
+    def set_value(self, item, key=False, value=False):
+        previous_keys = [key]
+        parent_item = item.parent()
+        while parent_item:
+            parent_key = parent_item.text(0)
+            previous_keys.append(parent_key)
+        else:
+            print 'Editing value on the copied dict'
+            print 'keys:', previous_keys, 'value:', value
 
     def get_parentage(self, item, prev_text=None, dict_=None):
         if not dict_:

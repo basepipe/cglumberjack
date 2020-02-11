@@ -9,7 +9,8 @@ from cgl.core.config import app_config
 from cgl.core.project import get_task_info, get_cgl_tools
 from cgl.core.util import load_json
 
-PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
+CONFIG = app_config()
+PROJECT_MANAGEMENT = CONFIG['account_info']['project_management']
 
 
 class LJButton(QtWidgets.QPushButton):

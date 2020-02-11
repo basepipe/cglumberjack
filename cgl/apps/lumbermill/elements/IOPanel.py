@@ -15,6 +15,7 @@ from plugins.preflight.main import Preflight
 from panels import clear_layout
 import time
 
+CONFIG = app_config()
 FILEPATH = 1
 FILENAME = 0
 FILETYPE = 2
@@ -61,9 +62,9 @@ class IOPanel(QtWidgets.QWidget):
         else:
             print 'No Path Object found, exiting'
             return
-        self.project_management = app_config()['account_info']['project_management']
-        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
-        self.schema_dict = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        self.project_management = CONFIG['account_info']['project_management']
+        self.schema = CONFIG['project_management'][self.project_management]['api']['default_schema']
+        self.schema_dict = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
         self.path_object_next = None
         self.panel = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout()
@@ -325,7 +326,7 @@ class IOPanel(QtWidgets.QWidget):
             self.file_tree.show()
             self.file_tree.directory = self.path_object.path_root
             self.file_tree.populate_from_data_frame(self.path_object, self.data_frame,
-                                                    app_config()['definitions']['ingest_browser_header'])
+                                                    CONFIG['definitions']['ingest_browser_header'])
             self.tags_title.show()
             return
         else:
@@ -342,7 +343,7 @@ class IOPanel(QtWidgets.QWidget):
         else:
             data = []
             data = self.append_data_children(data, dir_)
-            self.data_frame = pd.DataFrame(data, columns=app_config()['definitions']['ingest_browser_header'])
+            self.data_frame = pd.DataFrame(data, columns=CONFIG['definitions']['ingest_browser_header'])
         self.save_data_frame()
 
     def append_data_children(self, data, directory, parent='self'):
@@ -387,7 +388,7 @@ class IOPanel(QtWidgets.QWidget):
             self.tags_title.setText('CGL:> Choose a %s Name or Type to Create a New One' %
                                     self.shot_label.text().title())
             if self.shot_combo.currentText():
-                schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+                schema = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
                 if self.scope_combo.currentText():
                     proj_man_tasks = schema['long_to_short'][self.scope_combo.currentText()]
                 else:
@@ -512,7 +513,7 @@ class IOPanel(QtWidgets.QWidget):
                 if shot:
                     if shot != ' ':
                         try:
-                            length = app_config()['rules']['path_variables']['shot']['length']
+                            length = CONFIG['rules']['path_variables']['shot']['length']
                             if length == 3:
                                 shot = '%03d' % int(shot)
                             elif length == 4:
@@ -561,7 +562,7 @@ class IOPanel(QtWidgets.QWidget):
     def populate_tasks(self):
         self.task_combo.clear()
         ignore = ['default_steps', '']
-        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        schema = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
         tasks = schema['long_to_short'][self.scope_combo.currentText()]
         self.populate_seq()
         task_names = ['']
@@ -581,7 +582,7 @@ class IOPanel(QtWidgets.QWidget):
         if self.scope_combo.currentText() == 'shots':
             seqs = self.path_object.copy(seq='*', scope=self.scope_combo.currentText()).glob_project_element(element)
         elif self.scope_combo.currentText() == 'assets':
-            seqs = app_config()['asset_category_long_list']
+            seqs = CONFIG['asset_category_long_list']
         if not seqs:
             seqs = ['']
         self.seq_combo.addItems(seqs)
@@ -670,13 +671,13 @@ class IOPanel(QtWidgets.QWidget):
                                file_tree=self.file_tree, pandas_path=self.pandas_path,
                                current_selection=self.current_selection,
                                selected_rows=self.file_tree.selectionModel().selectedRows(),
-                               ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
+                               ingest_browser_header=CONFIG['definitions']['ingest_browser_header'])
         except KeyError:
             dialog = Preflight(self, software='ingest', preflight='default', data_frame=self.data_frame,
                                file_tree=self.file_tree, pandas_path=self.pandas_path,
                                current_selection=self.current_selection,
                                selected_rows=self.file_tree.selectionModel().selectedRows(),
-                               ingest_browser_header=app_config()['definitions']['ingest_browser_header'])
+                               ingest_browser_header=CONFIG['definitions']['ingest_browser_header'])
         dialog.show()
 
     # noinspection PyListCreation
@@ -692,7 +693,7 @@ class IOPanel(QtWidgets.QWidget):
         data.append((row["Filepath"], row["Filename"], row["Filetype"], row["Frame_Range"], row["Tags"],
                      row["Keep_Client_Naming"], row["Scope"], row["Seq"], row["Shot"], row["Task"],
                      row["Publish_Filepath"], row["Publish_Date"], row["Status"]))
-        df = pd.DataFrame(data, columns=app_config()['definitions']['ingest_browser_header'])
+        df = pd.DataFrame(data, columns=CONFIG['definitions']['ingest_browser_header'])
         df.to_csv(source_path.path_root, index=False)
 
     def clear_layout(self, layout=None):

@@ -3,9 +3,9 @@ import os
 from cgl.core.config import app_config, UserConfig
 from cgl.core.path import PathObject, CreateProductionData
 
-
-PROJ_MANAGEMENT = app_config()['account_info']['project_management']
-ROOT = app_config()['paths']['root']
+CONFIG = app_config()
+PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
+ROOT = CONFIG['paths']['root']
 
 
 def get_projects(company):
@@ -66,7 +66,7 @@ def pull_task_info(path_object):
     from cgl.core.util import current_user
     if PROJ_MANAGEMENT == 'ftrack':
         from plugins.project_management.ftrack.main import find_user_assignments
-        login = app_config()['project_management']['ftrack']['users'][current_user()]
+        login = CONFIG['project_management']['ftrack']['users'][current_user()]
         project_tasks = find_user_assignments(path_object, login, force=True)
         task_info = project_tasks[path_object.task_name]
         return task_info
@@ -115,7 +115,7 @@ def get_cgl_config():
 
 
 def get_cgl_tools():
-    return app_config()['paths']['cgl_tools']
+    return CONFIG['paths']['cgl_tools']
 
 
 def publish(path_obj):

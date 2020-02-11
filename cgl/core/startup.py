@@ -189,9 +189,10 @@ def user_init():
     from cgl.ui.widgets.dialog import LoginDialog
     current = current_user().lower()
     print current
-    proj_man = app_config()['account_info']['project_management']
+    CONFIG = app_config()
+    proj_man = CONFIG['account_info']['project_management']
     print proj_man
-    users = app_config()['project_management'][proj_man]['users']
+    users = CONFIG['project_management'][proj_man]['users']
     print users
     if users:
         print 1

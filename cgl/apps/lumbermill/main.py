@@ -20,6 +20,7 @@ except ImportError:
     DO_IOP = False
 
 ICON_WIDTH = 24
+CONFIG = app_config()
 
 
 class PathWidget(QtWidgets.QFrame):
@@ -287,8 +288,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.user_email = user_email
         self.company = company
         self.project_management = project_management
-        self.root = app_config()['paths']['root']  # Company Specific
-        self.user_root = app_config()['cg_lumberjack_dir']
+        self.root = CONFIG['paths']['root']  # Company Specific
+        self.user_root = CONFIG['cg_lumberjack_dir']
         self.context = 'source'
         self.path_object = None
         self.panel = None
@@ -556,7 +557,7 @@ class CGLumberjack(LJMainWindow):
             self.previous_path = self.user_config['previous_path']
             self.previous_paths = self.user_config['previous_paths']
         self.filter = 'Everything'
-        self.project_management = app_config()['account_info']['project_management']
+        self.project_management = CONFIG['account_info']['project_management']
         self.user_info = ''
         self.user_email = ''
         self.user_name = ''
@@ -669,7 +670,7 @@ class CGLumberjack(LJMainWindow):
         dialog.exec_()
 
     def on_proj_man_menu_clicked(self):
-        link = app_config()['project_management'][self.project_management]['api']['server_url']
+        link = CONFIG['project_management'][self.project_management]['api']['server_url']
         cglpath.start_url(link)
 
     @staticmethod
@@ -678,13 +679,13 @@ class CGLumberjack(LJMainWindow):
 
     @staticmethod
     def open_company_globals():
-        logging.info(os.path.dirname(app_config()['paths']['globals']))
-        cglpath.start(os.path.dirname(app_config()['paths']['globals']))
+        logging.info(os.path.dirname(CONFIG['paths']['globals']))
+        cglpath.start(os.path.dirname(CONFIG['paths']['globals']))
 
     @staticmethod
     def open_user_globals():
-        logging.info(os.path.dirname(app_config()['paths']['user_globals']))
-        cglpath.start(os.path.dirname(app_config()['paths']['user_globals']))
+        logging.info(os.path.dirname(CONFIG['paths']['user_globals']))
+        cglpath.start(os.path.dirname(CONFIG['paths']['user_globals']))
 
     def load_user_config(self):
         user_config = UserConfig()
@@ -696,7 +697,7 @@ class CGLumberjack(LJMainWindow):
             try:
                 self.previous_path = str(config['previous_path'])
             except KeyError:
-                self.previous_path = '%s%s/source' % (app_config()['paths']['root'], self.company)
+                self.previous_path = '%s%s/source' % (CONFIG['paths']['root'], self.company)
             if self.user_name in self.previous_path:
                 self.filter = 'My Assignments'
             elif 'publish' in self.previous_path:
@@ -713,9 +714,9 @@ class CGLumberjack(LJMainWindow):
         print 'settings clicked'
 
     def on_designer_clicked(self):
-        pm = app_config()['account_info']['project_management']
-        def_schema = app_config()['project_management'][pm]['api']['default_schema']
-        schema = app_config()['project_management'][pm]['tasks'][def_schema]
+        pm = CONFIG['account_info']['project_management']
+        def_schema = CONFIG['project_management'][pm]['api']['default_schema']
+        schema = CONFIG['project_management'][pm]['tasks'][def_schema]
         from apps.pipeline.designer import Designer
         dialog = Designer(self, pm_tasks=schema)
         dialog.setMinimumWidth(1200)
@@ -739,8 +740,8 @@ def sleeper():
 
 if __name__ == "__main__":
     import sys
-    project_management = app_config()['account_info']['project_management']
-    users = app_config()['project_management'][project_management]['users']
+    project_management = CONFIG['account_info']['project_management']
+    users = CONFIG['project_management'][project_management]['users']
     app = QtWidgets.QApplication(sys.argv)
     main_window = CGLumberjack(user_info=users[current_user()])
     main_window.setWindowTitle('CG Lumberjack: Nuke')

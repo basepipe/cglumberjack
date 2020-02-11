@@ -5,13 +5,14 @@ import click
 from cgl.core.config import app_config
 from cgl.core.util import cgl_execute, write_to_cgl_data
 
-config = app_config()['paths']
-PADDING = app_config()['default']['padding']
-settings = app_config()['default']
+CONFIG = app_config()
+PATHS = CONFIG['paths']
+PADDING = CONFIG['default']['padding']
+settings = CONFIG['default']
 thumb_res = settings['resolution']['thumb']
 frame_rate = settings['frame_rate']
-ext_map = app_config()['ext_map']
-PROJ_MANAGEMENT = app_config()['account_info']['project_management']
+ext_map = CONFIG['ext_map']
+PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
 
 OPTIONS = {'320p': ['180k', '360k', '-1:320'],
            '360p': ['300k', '600k', '-1:360'],
@@ -96,7 +97,7 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
                 if not ext:
                     ext = os.path.splitext(ext_)[-1].replace('.', '')
                 file_out = '%s%s.%s' % (filename, num, ext)
-                command = '%s %s -resize %s %s' % (config['magick'], file_, res, file_out)
+                command = '%s %s -resize %s %s' % (PATHS['magick'], file_, res, file_out)
                 process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
                                            new_window=new_window)
 
@@ -176,13 +177,13 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
 
     if file_type == 'sequence':
         ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
-                     r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'],
+                     r' -crf %s -pix_fmt %s -r %s %s %s' % (PATHS['ffmpeg'],
                                                             start_frame, framerate, gamma, filein, res, encoder,
                                                             profile, constant_rate_factor, pixel_format,
                                                             output_frame_rate, filter_arg, fileout)
     elif file_type == 'movie':
         ffmpeg_cmd = r'%s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
-                     r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'], gamma, filein, res,
+                     r' -crf %s -pix_fmt %s -r %s %s %s' % (PATHS['ffmpeg'], gamma, filein, res,
                                                             encoder, profile, constant_rate_factor, pixel_format,
                                                             output_frame_rate, filter_arg, fileout)
     if ffmpeg_cmd:
@@ -231,7 +232,7 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
 
     if processing_method == 'local':
         command = '%s -i %s -vf "thumbnail,scale=%s" ' \
-                  '-frames:v 1 %s' % (config['ffmpeg'], input_file, res, output_file)
+                  '-frames:v 1 %s' % (PATHS['ffmpeg'], input_file, res, output_file)
         process_info = cgl_execute(command, verbose=True, methodology=processing_method,
                                    command_name=command_name, new_window=new_window,
                                    WaitForJobID=dependent_job)

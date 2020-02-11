@@ -6,12 +6,12 @@ from cgl.core.path import PathObject, CreateProductionData, split_sequence, numb
 from cgl.core.path import prep_seq_delimiter, lj_list_dir, get_start_frame
 from cgl.core.util import cgl_execute, write_to_cgl_data
 
-config = app_config()['paths']
-settings = app_config()['default']
+CONFIG = app_config()['paths']
+settings = CONFIG['default']
 thumb_res = settings['resolution']['thumb']
 frame_rate = settings['frame_rate']
-ext_map = app_config()['ext_map']
-PROJ_MANAGEMENT = app_config()['account_info']['project_management']
+ext_map = CONFIG['ext_map']
+PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
 
 OPTIONS = {'320p': ['180k', '360k', '-1:320'],
            '360p': ['300k', '600k', '-1:360'],
@@ -69,7 +69,7 @@ def get_first_frame(sequence, return_type='string'):
 def get_info(input_file):
     if get_file_type(input_file) == 'movie':
         ffprobe_cmd = "%s -v error -show_format -show_streams -of default=noprint_wrappers=1 %s"\
-                      % (config['ffprobe'], input_file)
+                      % (CONFIG['ffprobe'], input_file)
         return cgl_execute(ffprobe_cmd, verbose=True)
 
     elif get_file_type(input_file) == 'sequence':
@@ -79,7 +79,7 @@ def get_info(input_file):
 
 def get_image_info(input_file):
     # TODO - can we replace this with the metadata module i created?
-    command = "%s --info %s" % (config['oiiotool'], input_file)
+    command = "%s --info %s" % (CONFIG['oiiotool'], input_file)
     return cgl_execute(command, verbose=True)
 
 
@@ -150,7 +150,7 @@ def create_proxy(sequence, ext='jpg', verbose=True, methodology='local'):
         number = hash_to_number(sequence)[-1]
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s.%s' % (output_dir, os.path.basename(split_sequence(sequence)), number, ext)
-        command = '%s %s -scene %s %s' % (config['magick'], in_seq, start_frame, out_seq)
+        command = '%s %s -scene %s %s' % (CONFIG['magick'], in_seq, start_frame, out_seq)
         run_dict = cgl_execute(command, methodology=methodology, verbose=verbose)
         run_dict['file_out'] = out_seq
         write_to_cgl_data(run_dict)
@@ -208,7 +208,7 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
         except AttributeError:
             this_ = os.path.splitext(output)[0]
             fileout = this_+'.jpg'
-        command = '%s %s -resize %s %s' % (config['magick'], sequence, res, fileout)
+        command = '%s %s -resize %s %s' % (CONFIG['magick'], sequence, res, fileout)
 
     if methodology == 'smedge':
         print "I'm sending this to smedge to start after %s" % dependent_job
@@ -227,7 +227,7 @@ def create_hd_proxy(sequence, output=None, mov=None, ext='jpg', width='1920', he
         start_frame = get_start_frame(sequence)
 
     if path_object.file_type == 'sequence':
-        command = '%s %s -scene %s -resize %s %s' % (config['magick'], in_seq, start_frame, res, out_seq)
+        command = '%s %s -scene %s -resize %s %s' % (CONFIG['magick'], in_seq, start_frame, res, out_seq)
     if not os.path.exists(output_dir):
         CreateProductionData(path_object=output_dir, project_management='lumbermill')
     run_dict = cgl_execute(command, verbose=verbose, methodology=methodology,
@@ -255,7 +255,7 @@ def create_gif_proxy(sequence, ext='gif', width='480', height='x100', do_height=
     if '####' in sequence:
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%s%s' % (output_dir, os.path.basename(split_sequence(sequence)), ext)
-        command = '%s %s -resize %s %s' % (config['magick'], in_seq, res, out_seq)
+        command = '%s %s -resize %s %s' % (CONFIG['magick'], in_seq, res, out_seq)
 
     if command:
         cgl_execute(command, verbose=verbose)
@@ -278,7 +278,7 @@ def create_gif_thumb(sequence, ext='gif', width='100', height='x100', do_height=
     if '####' in sequence:
         in_seq = '%s*.%s' % (split_sequence(sequence), path_object.ext)
         out_seq = '%s/%sthumb.%s' % (output_dir, os.path.basename(split_sequence(sequence)), ext)
-        command = '%s %s -resize %s %s' % (config['magick'], in_seq, res, out_seq)
+        command = '%s %s -resize %s %s' % (CONFIG['magick'], in_seq, res, out_seq)
 
     if command:
         cgl_execute(command, verbose=verbose)
@@ -354,14 +354,14 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
         print 3
         start_frame = get_first_frame(sequence)[0]
         ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
-                     r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'],
+                     r' -crf %s -pix_fmt %s -r %s %s %s' % (CONFIG['ffmpeg'],
                                                             start_frame, framerate, gamma, input_file, res, encoder,
                                                             profile, constant_rate_factor, pixel_format,
                                                             output_frame_rate, filter_arg, output_file)
     elif path_object.file_type == 'movie':
         print 4
         ffmpeg_cmd = r'%s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
-                     r' -crf %s -pix_fmt %s -r %s %s %s' % (config['ffmpeg'], gamma, input_file, res,
+                     r' -crf %s -pix_fmt %s -r %s %s %s' % (CONFIG['ffmpeg'], gamma, input_file, res,
                                                             encoder, profile, constant_rate_factor, pixel_format,
                                                             output_frame_rate, filter_arg, output_file)
     if ffmpeg_cmd:
@@ -414,7 +414,7 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True,
             res = settings['resolution']['image_review'].replace('x', ':')
         # This command will just use ffmpeg's default thumbnail generator
         command = '%s -i %s -vf "thumbnail,scale=%s" ' \
-                  '-frames:v 1 %s' % (config['ffmpeg'], input_file, res, output_file)
+                  '-frames:v 1 %s' % (CONFIG['ffmpeg'], input_file, res, output_file)
         if command:
             run_dict = cgl_execute(command, verbose=True, methodology=methodology,
                                    command_name='%s_%s: create_mov_thumb' % (path_object.seq, path_object.shot),
@@ -438,8 +438,8 @@ def create_movie_thumb(input_file, output_file=None, frame='middle', thumb=True,
             res = thumb_res
         else:
             res = settings['resolution']['image_review']
-        # command = r"%s %s --fit %s --ch R,G,B -o %s" % (config['oiiotool'], input_file, res, output_file)
-        command = '%s %s -resize %s %s' % (config['magick'], input_file, res, output_file)
+        # command = r"%s %s --fit %s --ch R,G,B -o %s" % (CONFIG['oiiotool'], input_file, res, output_file)
+        command = '%s %s -resize %s %s' % (CONFIG['magick'], input_file, res, output_file)
         run_dict = cgl_execute(command, verbose=True, methodology=methodology, Wait=dependent_job)
         run_dict['file_out'] = output_file
         write_to_cgl_data(run_dict)
@@ -452,7 +452,7 @@ def make_full_res_jpg(input_file, preview_path=None):
         preview_path = PathObject(path_object=input_file).preview_path
         if not os.path.isdir(os.path.split(preview_path)[0]):
             os.makedirs(os.path.split(preview_path)[0])
-    command = r"%s %s --ch R,G,B -o %s" % (config['magick'], input_file, preview_path)
+    command = r"%s %s --ch R,G,B -o %s" % (CONFIG['magick'], input_file, preview_path)
     if command:
         cgl_execute(command, verbose=True)
     return preview_path
@@ -473,7 +473,7 @@ def make_images_from_pdf(input_file, preview_path=None):
             os.makedirs(os.path.split(preview_path)[0])
     name = os.path.splitext(os.path.split(input_file)[-1])[0]
     output_file = name + '.%04d.jpg'
-    command = r"%s -density 300 %s %s/%s" % (config['imagemagick'], input_file,
+    command = r"%s -density 300 %s %s/%s" % (CONFIG['imagemagick'], input_file,
                                              os.path.split(input_file)[0], output_file)
     if command:
         cgl_execute(command, verbose=True)
@@ -534,9 +534,9 @@ def make_animated_gif(input_file):
         if os.path.exists(output_file):
             os.remove(output_file)
     filters = "fps=15,scale=%s:-1:flags=lanczos" % h
-    command = '%s -i %s -vf "%s,palettegen" -y %s' % (config['ffmpeg'], input_file, filters, palette)
+    command = '%s -i %s -vf "%s,palettegen" -y %s' % (CONFIG['ffmpeg'], input_file, filters, palette)
     print 'command 1', command
-    p = subprocess.Popen([config['ffmpeg'], '-i', input_file, '-vf', "%s,palettegen" % filters, '-y', palette],
+    p = subprocess.Popen([CONFIG['ffmpeg'], '-i', input_file, '-vf', "%s,palettegen" % filters, '-y', palette],
                          stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
     print p.stdout.readline()  # read the first line
     for i in range(10):  # repeat several times to show that it works
@@ -547,9 +547,9 @@ def make_animated_gif(input_file):
     p.wait()
 
     command2 = '%s -i %s -i %s -lavfi "%s [x]; [x][1:v] paletteuse" -y %s' \
-               % (config['ffmpeg'], input_file, palette, filters, output_file.replace('palette.', ''))
+               % (CONFIG['ffmpeg'], input_file, palette, filters, output_file.replace('palette.', ''))
     print 'command 2', command2
-    p2 = subprocess.Popen([config['ffmpeg'], '-i', input_file, '-i', palette, '-lavfi',
+    p2 = subprocess.Popen([CONFIG['ffmpeg'], '-i', input_file, '-i', palette, '-lavfi',
                            "%s [x]; [x][1:v] paletteuse" % filters, '-y', output_file.replace('palette.', '')],
                           stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
     print p2.stdout.readline(),  # read the first line

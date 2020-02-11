@@ -4,12 +4,14 @@ from cgl.core.config import app_config
 
 # this works but will have to be made more universal in the way that CreateProjectData is.
 
+CONFIG = app_config()
+
 
 class FTrackReader:
     def __init__(self):
-        self.session = ftrack_api.Session(server_url=app_config()['project_management']['ftrack']['api']['server_url'],
-                                          api_key=app_config()['project_management']['ftrack']['api']['api_key'],
-                                          api_user=app_config()['project_management']['ftrack']['api']['api_user']
+        self.session = ftrack_api.Session(server_url=CONFIG['project_management']['ftrack']['api']['server_url'],
+                                          api_key=CONFIG['project_management']['ftrack']['api']['api_key'],
+                                          api_user=CONFIG['project_management']['ftrack']['api']['api_user']
                                           )
 
     def list_projects(self):
