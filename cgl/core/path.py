@@ -710,7 +710,8 @@ class PathObject(object):
         """
         if self.file_type == 'sequence':
             # make sure that an hd_proxy exists:
-            proxy_info = self.make_proxy(job_id=job_id)
+            review_res = CONFIG['default']['resolution']['video_review']
+            proxy_info = self.make_proxy(resolution=review_res, ext='jpg', job_id=job_id)
             print 'proxy id %s' % proxy_info['job_id']
             mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
                                               command_name='%s: create_web_mov()' % self.command_base,
@@ -731,7 +732,7 @@ class PathObject(object):
         elif self.file_type == 'pdf':
             print 'making pdf preview not supported'
     
-    def make_proxy(self, copy_input_padding=True, ext='jpg', new_window=False, job_id=None):
+    def make_proxy(self, resolution=None, copy_input_padding=True, ext='jpg', new_window=False, job_id=None):
         """
         :param resolution: HEIGHTxWIDTH ex: (1920x1080)
         :param copy_input_padding: if True use padding from input sequence, if False use padding from Globals
@@ -740,11 +741,18 @@ class PathObject(object):
         :param job_id: job_id of dependent job.
         :return:
         """
-        if self.project.lower() in CONFIG['default']['proxy_resolution'].keys():
-            proxy_resolution = CONFIG['default']['proxy_resolution'][self.project]
+        print '-----------'
+        print CONFIG['default']['proxy_resolution'].keys()
+        print self.project
+        print self.project.lower()
+        if resolution:
+            width, height = resolution.split('x')
         else:
-            proxy_resolution = CONFIG['default']['proxy_resolution']['default']
-        width, height = proxy_resolution.split('x')
+            if self.project.lower() in CONFIG['default']['proxy_resolution'].keys():
+                proxy_resolution = CONFIG['default']['proxy_resolution'][self.project.lower()]
+            else:
+                proxy_resolution = CONFIG['default']['proxy_resolution']['default']
+            width, height = proxy_resolution.split('x')
         name_ = os.path.splitext(self.filename)[0]
         filename = '%s.%s' % (name_, ext)
         dir_ = os.path.dirname(self.path_root.replace(self.resolution, '%sx%s' % (width, height)))

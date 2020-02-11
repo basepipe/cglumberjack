@@ -75,6 +75,7 @@ class NukePathObject(PathObject):
         self.priority = None
         self.ingest_source = '*'
         self.processing_method = PROCESSING_METHOD
+        self.proxy_resolution = '1920x1080'
 
         if isinstance(path_object, unicode):
             path_object = str(path_object)
@@ -87,6 +88,18 @@ class NukePathObject(PathObject):
         else:
             logging.error('type: %s not expected' % type(path_object))
         self.set_frame_range()
+        self.set_proxy_resolution()
+
+    def set_proxy_resolution(self):
+        """
+        sets nuke proxy resolution according to project globals
+        :return:
+        """
+        if self.project.lower() in CONFIG['default']['proxy_resolution'].keys():
+            proxy_resolution = CONFIG['default']['proxy_resolution'][self.project.lower()]
+        else:
+            proxy_resolution = CONFIG['default']['proxy_resolution']['default']
+        self.proxy_resolution = proxy_resolution
 
     def set_frame_range(self):
         """
@@ -202,7 +215,8 @@ def import_media(filepath):
     """
     readNode = nuke.createNode('Read')
     readNode.knob('file').fromUserText(filepath)
-    proxy_object = PathObject(filepath).copy(resolution='1920x1080', ext='jpg')
+    path_object = NukePathObject(filepath)
+    proxy_object = PathObject(filepath).copy(resolution=path_object.proxy_resolution, ext='exr')
     dir_ = os.path.dirname(proxy_object.path_root)
     if os.path.exists(dir_):
         readNode.knob('proxy').fromUserText(proxy_object.path_root)

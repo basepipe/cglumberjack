@@ -26,7 +26,7 @@ class AssetWidget(QtWidgets.QWidget):
             self.category_row = LabelComboRow('Sequence', button=False, bold=False)
             self.name_row = LabelComboRow('Shot Name(s)', button=False, bold=False)
         self.label = title
-        self.project_label = QtWidgets.QLabel("<b>Create %s For: %s</b>" % (scope.title(), title))
+        self.project_label = QtWidgets.QLabel("<b>Create %s tasks For: %s</b>" % (scope.title(), title))
         self.message = QtWidgets.QLabel("")
 
         h_layout.addWidget(self.project_label)

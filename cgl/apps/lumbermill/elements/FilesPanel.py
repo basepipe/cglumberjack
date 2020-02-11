@@ -461,7 +461,6 @@ class FilesPanel(QtWidgets.QWidget):
             self.path_object.set_attr(filename=None)
             self.path_object.set_attr(ext=None)
             self.path_object.set_attr(filename_base=None)
-            # self.update_task_location(self.path_object)
             CreateProductionData(path_object=self.path_object,
                                  project_management=self.project_management,
                                  user_login=self.user_info['login'],
