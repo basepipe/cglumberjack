@@ -7,9 +7,9 @@ from cgl.core.util import cgl_execute, write_to_cgl_data
 from cgl.core.path import PathObject, Sequence, CreateProductionData
 from cgl.core.config import app_config, UserConfig
 
-
-PROJ_MANAGEMENT = app_config()['account_info']['project_management']
-PADDING = app_config()['default']['padding']
+CONFIG = app_config()
+PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
+PADDING = CONFIG['default']['padding']
 PROCESSING_METHOD = UserConfig().d['methodology']
 
 
@@ -19,7 +19,7 @@ class NukePathObject(PathObject):
         if not path_object:
             path_object = get_scene_name()
         self.data = {}
-        self.root = app_config()['paths']['root'].replace('\\', '/')
+        self.root = CONFIG['paths']['root'].replace('\\', '/')
         self.company = None
         self.project = None
         self.scope = None
@@ -44,9 +44,9 @@ class NukePathObject(PathObject):
         self.task = None
         self.cam = None
         self.file_type = None
-        self.frame_padding = app_config()
-        self.scope_list = app_config()['rules']['scope_list']
-        self.context_list = app_config()['rules']['context_list']
+        self.frame_padding = CONFIG['default']['padding']
+        self.scope_list = CONFIG['rules']['scope_list']
+        self.context_list = CONFIG['rules']['context_list']
         self.path = None  # string of the properly formatted path
         self.path_root = None  # this gives the full path with the root
         self.thumb_path = None
@@ -75,6 +75,7 @@ class NukePathObject(PathObject):
         self.priority = None
         self.ingest_source = '*'
         self.processing_method = PROCESSING_METHOD
+        self.proxy_resolution = '1920x1080'
 
         if isinstance(path_object, unicode):
             path_object = str(path_object)
@@ -87,6 +88,18 @@ class NukePathObject(PathObject):
         else:
             logging.error('type: %s not expected' % type(path_object))
         self.set_frame_range()
+        self.set_proxy_resolution()
+
+    def set_proxy_resolution(self):
+        """
+        sets nuke proxy resolution according to project globals
+        :return:
+        """
+        if self.project.lower() in CONFIG['default']['proxy_resolution'].keys():
+            proxy_resolution = CONFIG['default']['proxy_resolution'][self.project.lower()]
+        else:
+            proxy_resolution = CONFIG['default']['proxy_resolution']['default']
+        self.proxy_resolution = proxy_resolution
 
     def set_frame_range(self):
         """
@@ -135,7 +148,7 @@ class NukePathObject(PathObject):
                         process_info_list.append(process_info)
                     else:
                         # add write node to the command
-                        command = '%s -F %s -sro -x %s %s' % (app_config()['paths']['nuke'], self.frame_range,
+                        command = '%s -F %s -sro -x %s %s' % (CONFIG['paths']['nuke'], self.frame_range,
                                                            node_name, self.path_root)
                         command_name = '"%s: NukePathObject.render()"' % self.command_base
                         if processing_method == 'local':
@@ -202,7 +215,8 @@ def import_media(filepath):
     """
     readNode = nuke.createNode('Read')
     readNode.knob('file').fromUserText(filepath)
-    proxy_object = PathObject(filepath).copy(resolution='1920x1080', ext='jpg')
+    path_object = NukePathObject(filepath)
+    proxy_object = PathObject(filepath).copy(resolution=path_object.proxy_resolution, ext='exr')
     dir_ = os.path.dirname(proxy_object.path_root)
     if os.path.exists(dir_):
         readNode.knob('proxy').fromUserText(proxy_object.path_root)
@@ -217,16 +231,20 @@ def create_scene_write_node():
     padding = '#'*get_biggest_read_padding()
     path_object = PathObject(get_file_name())
     path_object.set_attr(context='render')
-    path_object.set_attr(ext='%s.dpx' % padding)
+    path_object.set_attr(ext='%s.exr' % padding)
     write_node = nuke.createNode('Write')
     write_node.knob('file').fromUserText(path_object.path_root)
+    return write_node
 
 
 def get_biggest_read_padding():
     biggest_padding = 0
     for n in nuke.allNodes('Read'):
         temp = os.path.splitext(n['file'].value())[0]
-        padding = int(temp.split('%')[1].replace('d', ''))
+        if '%' in temp:
+            padding = int(temp.split('%')[1].replace('d', ''))
+        else:
+            padding = 0
         if padding > biggest_padding:
             biggest_padding = padding
     return biggest_padding
@@ -304,8 +322,9 @@ def write_node_selected():
     write_nodes = []
     for s in nuke.selectedNodes():
         if s.Class() == 'Write':
-            print 'yup'
             write_nodes.append(s)
+        else:
+            return False
     return write_nodes
 
 
@@ -331,7 +350,7 @@ def match_scene_version():
                 n.knob('file').fromUserText(write_output.path_root)
     nuke.scriptSave()
 
-
+"""
 def version_up(write_nodes=True):
     path_object = PathObject(nuke.Root().name())
     next_minor = path_object.new_minor_version_object()
@@ -340,6 +359,7 @@ def version_up(write_nodes=True):
     nuke.scriptSaveAs(next_minor.path_root)
     if write_nodes:
         match_scene_version()
+"""
 
 
 def version_up(write_nodes=True):
@@ -355,3 +375,33 @@ def version_up(write_nodes=True):
         if write_nodes:
             match_scene_version()
 
+
+def version_up_selected_write_node():
+    """
+    Versions Up the Output path in the selected Write Node
+    :return:
+    """
+    if nuke.selectedNodes():
+        s = nuke.selectedNodes()[0]
+        if s.Class() == 'Write':
+            path = s['file'].value()
+            path_object = NukePathObject(path)
+            next_minor = path_object.new_minor_version_object()
+            print 'Setting File to %s' % next_minor.path_root
+            s.knob('file').fromUserText(next_minor.path_root)
+
+
+def get_write_paths_as_path_objects():
+    """
+    returns a list of pathObject items for the selected write nodes.
+    :return:
+    """
+    write_objects = []
+    if nuke.selectedNodes():
+        for s in nuke.selectedNodes():
+            if s.Class() == 'Write':
+                if 'elem' not in s.name():
+                    path = s['file'].value()
+                    path_object = NukePathObject(path)
+                    write_objects.append(path_object)
+    return write_objects

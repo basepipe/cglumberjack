@@ -11,6 +11,8 @@ from cgl.core.util import current_user
 from cgl.core.path import icon_path
 import plugins.project_management.ftrack.util as ftrack_util
 
+CONFIG = app_config()
+
 
 class TimeTracker(LJDialog):
 
@@ -19,7 +21,7 @@ class TimeTracker(LJDialog):
         user = current_user()
         user_info = {}
         try:
-            users = app_config()['project_management']['ftrack']['users']
+            users = CONFIG['project_management']['ftrack']['users']
         except KeyError:
             print 'No Ftrack User Found - check Ftrack Globals'
             return
@@ -205,7 +207,7 @@ class TimeTracker(LJDialog):
             row = []
             project = log['context']['parent']['project']['name']
             asset = log['context']['parent']['name']
-            task = app_config()['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][log['context']['type']['name']]
+            task = CONFIG['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][log['context']['type']['name']]
             hours = log['duration']
             hours = hours/60/60
             bid = log['context']['bid']
@@ -237,7 +239,7 @@ class TimeTracker(LJDialog):
         bid = task_data['bid']
         bid = bid/60/60
         total_hours = ftrack_util.get_total_time(task_data)
-        task_short_name = app_config()['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][task_data['type']['name']]
+        task_short_name = CONFIG['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][task_data['type']['name']]
         pos = self.task_table.rowCount()
         self.task_table.insertRow(pos)
         self.task_table.setItem(pos, 0, QtWidgets.QTableWidgetItem(project))
@@ -373,7 +375,7 @@ class MagicList(LJDialog):
         self.button_functions = button_functions
         self.user_buttons = buttons
         self.combo_defaults = combo_box
-        self.root_path = app_config()['paths']['root']
+        self.root_path = CONFIG['paths']['root']
         self.v_layout = QtWidgets.QVBoxLayout(self)
         self.combo_row = QtWidgets.QHBoxLayout(self)
         self.combo_label = QtWidgets.QLabel("<b>%s</b>" % combo_label)
@@ -638,9 +640,9 @@ class LoginDialog(LJDialog):
         self.line_edit_dict = {}
         self.login_line_edit = None
         self.button = ''
-        self.project_management = app_config()['account_info']['project_management']
+        self.project_management = CONFIG['account_info']['project_management']
         try:
-            self.user_details = app_config()['project_management'][self.project_management]['user_details']
+            self.user_details = CONFIG['project_management'][self.project_management]['user_details']
         except KeyError:
             self.user_details = {}
 
@@ -692,8 +694,8 @@ class LoginDialog(LJDialog):
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.ok_button.clicked.connect(self.on_ok_clicked)
         self.email_line_edit.textChanged.connect(self.on_text_changed)
-        if current_user() in app_config()['project_management'][self.project_management]['users']:
-            self.user_info = app_config()['project_management'][self.project_management]['users'][current_user()]
+        if current_user() in CONFIG['project_management'][self.project_management]['users']:
+            self.user_info = CONFIG['project_management'][self.project_management]['users'][current_user()]
         self.load_user_details()
 
     def load_user_details(self):
@@ -740,7 +742,7 @@ class LoginDialog(LJDialog):
         import json
         globals_location = UserConfig().d['globals']
         self.user_info = self.create_user_info_dict()
-        app_config_dict = app_config()
+        app_config_dict = CONFIG
         app_config_dict['project_management'][self.project_management]['users'][current_user()] = self.user_info
         with open(globals_location, 'w') as fileout:
             json.dump(app_config_dict, fileout, indent=4, sort_keys=True)
@@ -751,12 +753,12 @@ class ProjectCreator(LJDialog):
     def __init__(self, parent=None):
         LJDialog.__init__(self, parent)
         self.setMinimumWidth(1000)
-        proj_man = app_config()['account_info']['project_management']
-        self.project_management = app_config()['project_management'][proj_man]
+        proj_man = CONFIG['account_info']['project_management']
+        self.project_management = CONFIG['project_management'][proj_man]
         self.headers = self.project_management['api']['project_creation_headers']
         self.default_task_type = self.project_management['api']['default_schema']
-        self.project_name_regex = app_config()['rules']['path_variables']['project']['regex']
-        self.project_name_example = app_config()['rules']['path_variables']['project']['example']
+        self.project_name_regex = CONFIG['rules']['path_variables']['project']['regex']
+        self.project_name_example = CONFIG['rules']['path_variables']['project']['example']
         self.daily_hours = float(self.project_management['api']['daily_hours'])
         layout = QtWidgets.QVBoxLayout(self)
         self.model = None

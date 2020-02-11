@@ -4,6 +4,8 @@ import os
 from cgl.core.config import app_config
 import ftrack_api
 
+CONFIG = CONFIG
+
 
 class TaskSetupGUI(QtWidgets.QDialog):
     def __init__(self, parent=None):
@@ -25,7 +27,7 @@ class TaskSetupGUI(QtWidgets.QDialog):
         #self.task_table.itemActivated.connect(self.on_table_edited)
         self.schemas = self.get_schemas()
         self.load_schemas()
-        self.temp_globals = self._load_json(os.path.join(app_config()['paths']['root'], '_config', 'globals.json'))
+        self.temp_globals = self._load_json(os.path.join(CONFIG['paths']['root'], '_config', 'globals.json'))
 
     # def on_item_clicked(self):
     #     print self.task_table.currentItem().text()
@@ -78,13 +80,13 @@ class TaskSetupGUI(QtWidgets.QDialog):
         self.task_table.setHorizontalHeaderLabels(self.headers)
 
     def get_schemas(self):
-        if os.path.exists(os.path.join(app_config()['paths']['root'], '_config', 'lc_schemas.json')):
-            return self._load_json(os.path.join(app_config()['paths']['root'], '_config', 'lc_schemas.json'))
+        if os.path.exists(os.path.join(CONFIG['paths']['root'], '_config', 'lc_schemas.json')):
+            return self._load_json(os.path.join(CONFIG['paths']['root'], '_config', 'lc_schemas.json'))
         else:
             print 'Starting FTrack Session'
-            session = ftrack_api.Session(server_url=app_config()['project_management']['ftrack']['api']['server_url'],
-                                         api_key=app_config()['project_management']['ftrack']['api']['api_key'],
-                                         api_user=app_config()['project_management']['ftrack']['api']['api_user'])
+            session = ftrack_api.Session(server_url=CONFIG['project_management']['ftrack']['api']['server_url'],
+                                         api_key=CONFIG['project_management']['ftrack']['api']['api_key'],
+                                         api_user=CONFIG['project_management']['ftrack']['api']['api_user'])
             print 'Querying Ftrack for Schemas & Tasks'
             schemas = session.query('ProjectSchema').all()
             all_tasks = {}
@@ -99,7 +101,7 @@ class TaskSetupGUI(QtWidgets.QDialog):
                     else:
                         all_tasks[task['name']]['schema'].append(s['name'])
             session.close()
-            self._write_json(os.path.join(app_config()['paths']['root'], '_config', 'lc_schemas.json'), all_tasks)
+            self._write_json(os.path.join(CONFIG['paths']['root'], '_config', 'lc_schemas.json'), all_tasks)
             return all_tasks
 
     @staticmethod
@@ -168,9 +170,9 @@ class TaskSetupGUI(QtWidgets.QDialog):
         self.iterate_over_table()
         formatted_tasks = self.format_schemas()
         self.temp_globals['project_management']['ftrack']['tasks'] = formatted_tasks
-        print os.path.join(app_config()['paths']['root'], '_config', 'ftrack_tasks.json')
-        self._write_json(os.path.join(app_config()['paths']['root'], '_config', 'globals.json'), self.temp_globals)
-        #self._write_json(os.path.join(app_config()['paths']['root'], '_config', 'ftrack_tasks.json'), formatted_tasks)
+        print os.path.join(CONFIG['paths']['root'], '_config', 'ftrack_tasks.json')
+        self._write_json(os.path.join(CONFIG['paths']['root'], '_config', 'globals.json'), self.temp_globals)
+        #self._write_json(os.path.join(CONFIG['paths']['root'], '_config', 'ftrack_tasks.json'), formatted_tasks)
 
 
 if __name__ == "__main__":

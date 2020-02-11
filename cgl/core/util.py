@@ -11,6 +11,8 @@ import re
 import xmltodict
 from cgl.core.config import app_config
 
+CONFIG = app_config()
+
 
 def pretty(obj):
     """
@@ -89,7 +91,7 @@ def test_string_against_rules(test_string, rule, effected_label=None):
     :param effected_label: PySide Label Object to effect color of.
     :return:
     """
-    regex = re.compile(r'%s' % app_config()['paths']['rules'][rule])
+    regex = re.compile(r'%s' % CONFIG['paths']['rules'][rule])
     if re.findall(regex, test_string):
         if effected_label:
             effected_label.setStyleSheet("color: rgb(255, 255, 255);")
@@ -97,7 +99,7 @@ def test_string_against_rules(test_string, rule, effected_label=None):
     else:
         if effected_label:
             effected_label.setStyleSheet("color: rgb(255, 50, 50);")
-        return app_config()['paths']['rules']['%s_example' % rule]
+        return CONFIG['paths']['rules']['%s_example' % rule]
 
 
 def cgl_copy(source, destination, methodology='local', verbose=False, dest_is_folder=False, test=False, job_name=''):
@@ -334,13 +336,13 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
     elif methodology == 'smedge':
         range = '1'
         if '-Type Nuke' in command:
-            smedge_command = r'%s Script %s' % (app_config()['paths']['smedge'], command)
+            smedge_command = r'%s Script %s' % (CONFIG['paths']['smedge'], command)
         else:
             environment_overrides = "CGL_PYTHON=C:\Python27;C:\Python27\Scripts;C:\Python27\Lib\site-packages;"
             if command.startswith('python'):
                 command = '$(:CGL_PYTHON)\\%s' % command
             smedge_command = r'%s Script -Type Generic Script -Name %s -Range %s ' \
-                             r'-Command "%s" -EnvironmentOverrides "%s"' % (app_config()['paths']['smedge'],
+                             r'-Command "%s" -EnvironmentOverrides "%s"' % (CONFIG['paths']['smedge'],
                                                                             command_name, range, command,
                                                                             environment_overrides)
         for k in kwargs:
@@ -356,7 +358,7 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
 
 def check_for_latest_master(return_output=True, print_output=False):
     # TODO - probably need something in place to check if git is installed.
-    code_root = app_config()['paths']['code_root']
+    code_root = CONFIG['paths']['code_root']
     command = 'git remote show origin'
     os.chdir(code_root)
     output = cgl_execute(command, return_output=return_output, print_output=print_output)
@@ -372,7 +374,7 @@ def check_for_latest_master(return_output=True, print_output=False):
 
 
 def update_master():
-    code_root = app_config()['paths']['code_root']
+    code_root = CONFIG['paths']['code_root']
     command = 'git pull'
     os.chdir(code_root)
     cgl_execute(command)
@@ -394,7 +396,7 @@ def write_to_cgl_data(process_info):
         else:
             process_info['job_id'] = get_job_id()
     user = current_user()
-    cgl_data = os.path.join(os.path.dirname(app_config()['paths']['globals']), 'cgl_data.json')
+    cgl_data = os.path.join(os.path.dirname(CONFIG['paths']['globals']), 'cgl_data.json')
     if os.path.exists(cgl_data):
         data = load_json(cgl_data)
     else:
@@ -421,7 +423,7 @@ def edit_cgl_data(job_id, key, value=None, user=None):
         value = time.time()
     if not user:
         user = current_user()
-    cgl_data = os.path.join(os.path.dirname(app_config()['paths']['globals']), 'cgl_data.json')
+    cgl_data = os.path.join(os.path.dirname(CONFIG['paths']['globals']), 'cgl_data.json')
     if os.path.exists(cgl_data):
         data = load_json(cgl_data)
         print user, job_id, key, value

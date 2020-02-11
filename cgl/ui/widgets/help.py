@@ -9,7 +9,8 @@ import cgl.core.path as cglpath
 from cgl.ui.widgets.widgets import AdvComboBox, TagWidget
 from plugins.project_management.asana.basic import AsanaJack
 
-PROJECT_MANAGEMENT = app_config()['account_info']['project_management']
+CONFIG = app_config()
+PROJECT_MANAGEMENT = CONFIG['account_info']['project_management']
 
 
 class RequestFeatureDialog(LJDialog):
@@ -717,7 +718,7 @@ class ReportBugDialog(LJDialog):
         layout = QtWidgets.QVBoxLayout()
         grid_layout = QtWidgets.QGridLayout()
         self.attachments = []
-        icon_path = os.path.join(app_config()['paths']['code_root'], 'resources', 'images')
+        icon_path = os.path.join(CONFIG['paths']['code_root'], 'resources', 'images')
         # define the user name area
         self.label_username = QtWidgets.QLabel('Username')
         self.lineEdit_username = QtWidgets.QLineEdit()
@@ -791,7 +792,7 @@ class ReportBugDialog(LJDialog):
         return self.lineEdit_username.text()
 
     def get_email(self):
-        email = app_config()['project_management'][PROJECT_MANAGEMENT]['users'][self.lineEdit_username.text()]['email']
+        email = CONFIG['project_management'][PROJECT_MANAGEMENT]['users'][self.lineEdit_username.text()]['email']
         self.lineEdit_email.setText(email)
         return self.lineEdit_email.text()
 

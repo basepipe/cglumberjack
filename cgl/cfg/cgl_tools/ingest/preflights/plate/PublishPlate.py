@@ -78,7 +78,10 @@ class PublishPlate(PreflightCheck):
         from_filename = os.path.split(from_file)[-1]
         self.shared_data['publish_path_object'] = PathObject(os.path.join(to_dir, from_filename))
         print 'Copying sequence %s to %s' % (from_file, to_dir)
-        cgl_copy(from_file, to_dir, methodology=METHODOLOGY)
+        seq = self.shared_data['publish_path_object'].seq
+        shot = self.shared_data['publish_path_object'].shot
+        info_ = cgl_copy(from_file, to_dir, methodology=METHODOLOGY, job_name='%s_%s' % (seq, shot))
+        self.shared_data['copy_job_id'] = info_['job_id']
         self.data_frame.at[index, 'Status'] = 'Published'
         self.data_frame.at[index, 'Publish_Date'] = current_date
         row['Publish_Date'] = current_date

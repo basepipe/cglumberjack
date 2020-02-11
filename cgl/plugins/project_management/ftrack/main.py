@@ -7,6 +7,8 @@ import ftrack_api
 from cgl.core.config import app_config, UserConfig
 from cgl.core.util import current_user
 
+CONFIG = app_config()
+
 
 class ProjectManagementData(object):
     create = False
@@ -29,7 +31,7 @@ class ProjectManagementData(object):
     user_data = None
     time_entry = None
     note = None
-    schema = app_config()['project_management']['ftrack']['api']['default_schema']
+    schema = CONFIG['project_management']['ftrack']['api']['default_schema']
     schema_data = None
     version = None
     version_data = None
@@ -55,10 +57,10 @@ class ProjectManagementData(object):
     preview_path = None
     thumb_path = None
     task_asset = None
-    user_info = app_config()['project_management']['ftrack']['users']
-    server_url = app_config()['project_management']['ftrack']['api']['server_url']
-    api_key = app_config()['project_management']['ftrack']['api']['api_key']
-    api_user = app_config()['project_management']['ftrack']['api']['api_user']
+    user_info = CONFIG['project_management']['ftrack']['users']
+    server_url = CONFIG['project_management']['ftrack']['api']['server_url']
+    api_key = CONFIG['project_management']['ftrack']['api']['api_key']
+    api_user = CONFIG['project_management']['ftrack']['api']['api_user']
     resolution = 'high'
     auto_close = True
 
@@ -113,7 +115,7 @@ class ProjectManagementData(object):
             self.default_task_status = self.project_schema.get_statuses('Task', self.task_type['id'])[0]
 
     def get_current_task_type(self):
-        schema = app_config()['project_management']['ftrack']['tasks'][self.schema]
+        schema = CONFIG['project_management']['ftrack']['tasks'][self.schema]
         full_name = schema['short_to_long'][self.scope.lower()][self.task]
         for task in self.task_types:
             if task['name'] == full_name:
@@ -619,11 +621,11 @@ def find_user_assignments(path_object, user_email, force=False):
             continue_parse = True
         if continue_parse:
             print 'GATHERING TASK DATA FROM FTRACK'
-            server_url = app_config()['project_management']['ftrack']['api']['server_url']
-            api_key = app_config()['project_management']['ftrack']['api']['api_key']
-            api_user = app_config()['project_management']['ftrack']['api']['api_user']
-            schema = app_config()['project_management']['ftrack']['api']['default_schema']
-            long_to_short = app_config()['project_management']['ftrack']['tasks'][schema]['long_to_short']
+            server_url = CONFIG['project_management']['ftrack']['api']['server_url']
+            api_key = CONFIG['project_management']['ftrack']['api']['api_key']
+            api_user = CONFIG['project_management']['ftrack']['api']['api_user']
+            schema = CONFIG['project_management']['ftrack']['api']['default_schema']
+            long_to_short = CONFIG['project_management']['ftrack']['tasks'][schema]['long_to_short']
             session = ftrack_api.Session(server_url=server_url, api_key=api_key, api_user=api_user)
             project_name = project
             user = user_email

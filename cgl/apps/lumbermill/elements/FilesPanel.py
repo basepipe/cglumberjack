@@ -13,6 +13,8 @@ from cgl.ui.widgets.containers.model import FilesModel
 from panels import clear_layout
 
 
+CONFIG = app_config()
+
 class FilesPanel(QtWidgets.QWidget):
     source_selection_changed = QtCore.Signal(object)
     location_changed = QtCore.Signal(object)
@@ -33,10 +35,10 @@ class FilesPanel(QtWidgets.QWidget):
         self.task_widgets_dict = {}
         self.show_import = show_import
         self.path_object = path_object
-        self.project_management = app_config()['account_info']['project_management']
-        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
-        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
-        self.user_info = app_config()['project_management'][self.project_management]['users'][current_user()]
+        self.project_management = CONFIG['account_info']['project_management']
+        self.schema = CONFIG['project_management'][self.project_management]['api']['default_schema']
+        schema = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
+        self.user_info = CONFIG['project_management'][self.project_management]['users'][current_user()]
         self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
         self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
 
@@ -50,7 +52,7 @@ class FilesPanel(QtWidgets.QWidget):
             self.user = machine_user
         else:
             self.user = current_user()
-        self.project_management = app_config()['account_info']['project_management']
+        self.project_management = CONFIG['account_info']['project_management']
         self.on_task_selected(self.path_object)
         self.panel.addLayout(self.tasks)
         self.panel.addStretch(1)
@@ -407,6 +409,8 @@ class FilesPanel(QtWidgets.QWidget):
         print 'Publishing stuff now'
         current = PathObject(self.current_location)
         current.publish()
+        dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
+        dialog.exec_()
 
     def on_task_info_changed(self):
         """
@@ -434,7 +438,7 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_assign_button_clicked(self, data):
         task = self.sender().task
-        users_dict = app_config()['project_management'][self.project_management]['users']
+        users_dict = CONFIG['project_management'][self.project_management]['users']
         all_users = []
         for each in users_dict.keys():
             all_users.append(each.lower())
@@ -457,7 +461,6 @@ class FilesPanel(QtWidgets.QWidget):
             self.path_object.set_attr(filename=None)
             self.path_object.set_attr(ext=None)
             self.path_object.set_attr(filename_base=None)
-            # self.update_task_location(self.path_object)
             CreateProductionData(path_object=self.path_object,
                                  project_management=self.project_management,
                                  user_login=self.user_info['login'],

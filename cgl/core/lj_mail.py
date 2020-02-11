@@ -3,7 +3,8 @@ import os
 import logging
 from cgl.core.config import app_config
 
-email = app_config()['email']
+CONFIG = app_config()
+email = CONFIG['email']
 
 
 def slack_notification_email(type_='reviews', subject='Generic Subject', message='This is a message', attachments=None):

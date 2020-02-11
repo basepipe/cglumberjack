@@ -9,7 +9,8 @@ from cgl.ui.widgets.widgets import AdvComboBox
 from core.util import load_xml, save_xml
 
 workspace = "1145700648005039"
-ROOT = app_config()['paths']['code_root']
+CONFIG = app_config()
+ROOT = CONFIG['paths']['code_root']
 
 
 class SetupGUI(LJDialog):

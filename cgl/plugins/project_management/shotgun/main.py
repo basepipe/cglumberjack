@@ -2,8 +2,8 @@ import logging
 from plugins.project_management.shotgun.tracking_internal.shotgun_specific import ShotgunQuery
 from cgl.core.config import app_config
 
-
-PROJECTSHORTNAME = app_config()['project_management']['shotgun']['api']['project_short_name']
+CONFIG = app_config()
+PROJECTSHORTNAME = CONFIG['project_management']['shotgun']['api']['project_short_name']
 PROJECTFIELDS = ['code', 'name', 'sg_status', 'sg_description', PROJECTSHORTNAME]
 HUMANUSERFIELDS = ['code', 'name', 'email', 'department', 'login']
 TASKFIELDS = ['content', 'sg_status_list', 'step', 'step.Step.short_name',

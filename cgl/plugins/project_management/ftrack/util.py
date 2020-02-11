@@ -2,6 +2,8 @@ from cgl.core.config import app_config
 import ftrack_api
 import datetime
 
+CONFIG = app_config()
+
 
 def setup():
     """
@@ -12,9 +14,9 @@ def setup():
     :return: Query Session object
     """
     # TODO Figure out the delay when using this function in lumbermill
-    server_url = app_config()['project_management']['ftrack']['api']['server_url']
-    api_key = app_config()['project_management']['ftrack']['api']['api_key']
-    api_user = app_config()['project_management']['ftrack']['api']['api_user']
+    server_url = CONFIG['project_management']['ftrack']['api']['server_url']
+    api_key = CONFIG['project_management']['ftrack']['api']['api_key']
+    api_user = CONFIG['project_management']['ftrack']['api']['api_user']
 
     ftrack = ftrack_api.Session(server_url=server_url, api_key=api_key, api_user=api_user)
     return ftrack

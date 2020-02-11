@@ -8,6 +8,8 @@ from cgl.core.config import app_config
 from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.combo import AdvComboBox, LabelComboRow
 
+CONFIG = app_config()
+
 
 class AssetWidget(QtWidgets.QWidget):
     button_clicked = QtCore.Signal(object)
@@ -24,7 +26,7 @@ class AssetWidget(QtWidgets.QWidget):
             self.category_row = LabelComboRow('Sequence', button=False, bold=False)
             self.name_row = LabelComboRow('Shot Name(s)', button=False, bold=False)
         self.label = title
-        self.project_label = QtWidgets.QLabel("<b>Create %s For: %s</b>" % (scope.title(), title))
+        self.project_label = QtWidgets.QLabel("<b>Create %s tasks For: %s</b>" % (scope.title(), title))
         self.message = QtWidgets.QLabel("")
 
         h_layout.addWidget(self.project_label)
@@ -68,14 +70,14 @@ class AssetCreator(LJDialog):
         self.valid_categories = []
         self.get_valid_categories()
         # Environment Stuff
-        self.root = app_config()['paths']['root']
-        self.project_management = app_config()['account_info']['project_management']
-        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
+        self.root = CONFIG['paths']['root']
+        self.project_management = CONFIG['account_info']['project_management']
+        self.schema = CONFIG['project_management'][self.project_management]['api']['default_schema']
         if self.scope == 'assets':
-            self.asset_string_example = app_config()['rules']['path_variables']['asset']['example']
+            self.asset_string_example = CONFIG['rules']['path_variables']['asset']['example']
         elif self.scope == 'shots':
-            self.asset_string_example = app_config()['rules']['path_variables']['shotname']['example']
-        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+            self.asset_string_example = CONFIG['rules']['path_variables']['shotname']['example']
+        schema = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
         self.proj_man_tasks = schema['long_to_short'][self.scope.lower()]
         self.proj_man_tasks_short_to_long = schema['short_to_long'][self.scope.lower()]
         self.v_layout = QtWidgets.QVBoxLayout(self)
@@ -181,8 +183,8 @@ class AssetCreator(LJDialog):
 
     def on_seq_text_changed(self):
         self.seq = self.asset_widget.category_row.combo.currentText()
-        seq_rules = app_config()['rules']['path_variables']['seq']['regex']
-        example = app_config()['rules']['path_variables']['seq']['example']
+        seq_rules = CONFIG['rules']['path_variables']['seq']['regex']
+        example = CONFIG['rules']['path_variables']['seq']['example']
         self.regex = re.compile(r'%s' % seq_rules)
         if re.match(self.regex, self.seq):
             self.asset_widget.name_row.combo.setEnabled(True)
@@ -195,7 +197,7 @@ class AssetCreator(LJDialog):
 
     def load_categories(self):
         if self.path_object.scope == 'assets':
-            categories = app_config()['asset_categories']
+            categories = CONFIG['asset_categories']
             cats = ['']
             for c in categories:
                 cats.append(categories[c])
@@ -211,9 +213,9 @@ class AssetCreator(LJDialog):
         asset_string = self.asset_widget.name_row.combo.currentText()
         if self.scope == 'assets':
             asset_rules = r'^([a-zA-Z]{3,},\s*)*([a-zA-Z]{3,}$)|^([a-zA-Z]{3,},\s*)*([a-zA-Z]{3,}$)'
-            # example = app_config()['rules']['path_variables']['shot']['regex']
+            # example = CONFIG['rules']['path_variables']['shot']['regex']
         if self.scope == 'shots':
-            asset_rules = app_config()['rules']['path_variables']['shot']['regex']
+            asset_rules = CONFIG['rules']['path_variables']['shot']['regex']
         self.regex = re.compile(r'%s' % asset_rules)
         if re.match(self.regex, asset_string):
             self.asset_message_string = '%s is a valid %s name' % (asset_string, self.scope)
@@ -242,7 +244,7 @@ class AssetCreator(LJDialog):
             self.create_button.setEnabled(False)
 
     def get_valid_categories(self):
-        categories = app_config()['asset_categories']
+        categories = CONFIG['asset_categories']
         for each in categories:
             self.valid_categories.append(each)
             self.valid_categories_string = '%s, %s' % (self.valid_categories_string, each)

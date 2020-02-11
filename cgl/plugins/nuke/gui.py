@@ -10,6 +10,8 @@ from cgl.core.util import current_user
 from cgl.plugins.preflight.main import Preflight
 
 
+CONFIG = app_config()
+
 def get_nuke_main_window():
     """Returns Nuke's main window"""
 
@@ -50,8 +52,8 @@ class CGLNukeWidget(QtWidgets.QDialog):
         scene = PathObject(scene_name)
         self.setWindowTitle('Nuke - Lumbermill')
         location = '%s/*' % scene.split_after('shot')
-        project_management = app_config()['account_info']['project_management']
-        users = app_config()['project_management'][project_management]['users']
+        project_management = CONFIG['account_info']['project_management']
+        users = CONFIG['project_management'][project_management]['users']
         user_info = users[current_user()]
         layout = QtWidgets.QVBoxLayout(self)
         main = CGLNuke(path=location, user_info=user_info)
@@ -196,11 +198,14 @@ def create_write_node():
     dialog.setAttribute(QtCore.Qt.WA_QuitOnClose)
     dialog.exec_()
     if dialog.button == 'Ok':
+        print 12
         if dialog.combo_box.currentText():
+            print 2
             elem_name = 'elem%s' % dialog.combo_box.currentText().title()
             padding = '#' * cgl_nuke.get_biggest_read_padding()
             if not padding:
                 padding = '####'
+            print 3
             path_object = cgl_nuke.NukePathObject(cgl_nuke.get_file_name())
             path_object.set_attr(task=elem_name)
             path_object.set_attr(context='render')
@@ -210,14 +215,39 @@ def create_write_node():
             file_path = os.path.join(path_object.path_root)
             write_node.knob('file').fromUserText(file_path)
             write_node.knob('name').setValue(elem_name)
+            return write_node
         else:
-            cgl_nuke.create_scene_write_node()
+            this = cgl_nuke.create_scene_write_node()
+            return this
+
+
+def review_selected():
+    """
+    Request a review of the selected write node.
+    :return:
+    """
+    import glob
+    path_objects = cgl_nuke.get_write_paths_as_path_objects()
+    for each in path_objects:
+        glob_string = '%s*' % each.path_root.split('#')[0]
+        files = glob.glob(glob_string)
+        if files:
+            each.upload_review()
+            print 'reviewing %s' % each.path_root
+        else:
+            dialog = InputDialog(title='No Rendered Files', message='No Renders Found!  Can not Submit Review',
+                                 buttons=['Render', 'Ok'])
+            dialog.exec_()
+            if dialog.button == 'Render':
+                print 'Clicking the Render Selected Button'
+            else:
+                dialog.accept()
 
 
 def render_selected():
     if nuke.selectedNodes():
-        project_management = app_config()['account_info']['project_management']
-        users = app_config()['project_management'][project_management]['users']
+        project_management = CONFIG['account_info']['project_management']
+        users = CONFIG['project_management'][project_management]['users']
         if current_user() in users:
             user_info = users[current_user()]
             if user_info:
@@ -232,8 +262,8 @@ def launch_lumbermill():
     scene_name = cgl_nuke.get_file_name()
     scene = PathObject(scene_name)
     location = '%s/*' % scene.split_after('shot')
-    project_management = app_config()['account_info']['project_management']
-    users = app_config()['project_management'][project_management]['users']
+    project_management = CONFIG['account_info']['project_management']
+    users = CONFIG['project_management'][project_management]['users']
     if current_user() in users:
         user_info = users[current_user()]
         app = QtWidgets.QApplication.instance()

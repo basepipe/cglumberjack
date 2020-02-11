@@ -11,6 +11,8 @@ from cgl.ui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDial
 from cgl.core.util import current_user
 from cgl.ui.widgets.progress_gif import process_method
 
+CONFIG = app_config()
+
 
 class CompanyPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
@@ -24,20 +26,20 @@ class CompanyPanel(QtWidgets.QWidget):
         self.company_widget = LJListWidget('Companies', pixmap=pixmap)
         self.company_widget.add_button.setText('add company')
         self.company_widget.list.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Expanding)
-        self.user_root = app_config()['cg_lumberjack_dir']
+        self.user_root = CONFIG['cg_lumberjack_dir']
         self.panel.addWidget(self.company_widget)
         self.panel.addStretch(0)
         self.load_companies()
         self.project_management = 'lumbermill'
 
         self.company_widget.add_button.clicked.connect(self.on_create_company)
-        self.company_widget.list.clicked.connect(self.on_company_changed)
+        self.company_widget.list.itemDoubleClicked.connect(self.on_company_changed)
 
     def on_company_changed(self):
         self.path_object.set_attr(company=self.company_widget.list.selectedItems()[0].text())
         if self.path_object.company:
             if self.path_object.company != '*':
-                self.project_management = app_config()['account_info']['project_management']
+                self.project_management = CONFIG['account_info']['project_management']
                 self.check_default_company_globals()
         self.update_location()
 
@@ -101,10 +103,10 @@ class ProjectPanel(QtWidgets.QWidget):
     def __init__(self, parent=None, path_object=None, search_box=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.path_object = path_object
-        self.project_management = app_config()['account_info']['project_management']
-        self.user_email = app_config()['project_management'][self.project_management]['users'][current_user()]
-        self.root = app_config()['paths']['root']  # Company Specific
-        self.user_root = app_config()['cg_lumberjack_dir']
+        self.project_management = CONFIG['account_info']['project_management']
+        self.user_email = CONFIG['project_management'][self.project_management]['users'][current_user()]
+        self.root = CONFIG['paths']['root']  # Company Specific
+        self.user_root = CONFIG['cg_lumberjack_dir']
         self.left_column_visibility = True
 
         # Create the Left Panel
@@ -116,10 +118,11 @@ class ProjectPanel(QtWidgets.QWidget):
         self.panel.addWidget(self.project_filter)
         self.load_projects()
 
-        self.project_filter.data_table.selected.connect(self.on_project_changed)
+        self.project_filter.data_table.doubleClicked.connect(self.on_project_changed)
         self.project_filter.add_button.clicked.connect(self.on_create_project)
 
     def on_project_changed(self, data):
+        data = self.project_filter.data_table.items_
         self.path_object.set_attr(project=data[0][0])
         self.path_object.set_attr(scope='*')
         self.update_location(self.path_object)
@@ -202,9 +205,9 @@ class TaskPanel(QtWidgets.QWidget):
             elements = self.path_object.glob_project_element(element)
         else:
             return
-        self.project_management = app_config()['account_info']['project_management']
-        self.schema = app_config()['project_management'][self.project_management]['api']['default_schema']
-        schema = app_config()['project_management'][self.project_management]['tasks'][self.schema]
+        self.project_management = CONFIG['account_info']['project_management']
+        self.schema = CONFIG['project_management'][self.project_management]['api']['default_schema']
+        schema = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
         self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
         self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
         self.panel = QtWidgets.QVBoxLayout(self)
@@ -315,7 +318,7 @@ class ProductionPanel(QtWidgets.QWidget):
         self.panel = QtWidgets.QVBoxLayout(self)
         self.assets = None
         self.assets_filter_default = filter
-        self.root = app_config()['paths']['root']
+        self.root = CONFIG['paths']['root']
         self.radio_filter = 'Everything'
         self.clear_layout()
         self.assets = AssetWidget(self, title="", search_box=search_box)
@@ -335,8 +338,8 @@ class ProductionPanel(QtWidgets.QWidget):
         self.assets.add_button.setEnabled(False)
         self.assets.data_table.clearSpans()
         data = []
-        proj_man = app_config()['account_info']['project_management']
-        login = app_config()['project_management'][proj_man]['users'][current_user()]['login']
+        proj_man = CONFIG['account_info']['project_management']
+        login = CONFIG['project_management'][proj_man]['users'][current_user()]['login']
         if proj_man == 'ftrack':
             # ideally we load from a .csv file and run this in the background only to update the .csv file.
             from plugins.project_management.ftrack.main import find_user_assignments

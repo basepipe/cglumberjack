@@ -9,6 +9,8 @@ from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.ui.widgets.widgets import GifWidget
 from preflight_check import PreflightCheck
 
+CONFIG = app_config()
+
 
 class PreflightModel(QtCore.QAbstractTableModel):
     def __init__(self, data_list, header_titles=None, data_filter=False):
@@ -108,7 +110,7 @@ class Preflight(QtWidgets.QDialog):
         QtWidgets.QDialog.__init__(self, parent)
         self.software = software
         self.preflight = preflight
-        self.software_dir = os.path.join(app_config()['paths']['cgl_tools'], software)
+        self.software_dir = os.path.join(CONFIG['paths']['cgl_tools'], software)
         self.preflight_dir = os.path.join(self.software_dir, 'preflights')
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.json_file = os.path.join(self.software_dir, 'preflights.cgl')
@@ -182,7 +184,7 @@ class Preflight(QtWidgets.QDialog):
 
     def populate_table(self):
         import sys
-        source_dir = os.path.join(app_config()['paths']['cgl_tools'])
+        source_dir = os.path.join(CONFIG['paths']['cgl_tools'])
         source_dir = os.path.dirname(source_dir)
         sys.path.insert(0, source_dir)
         data = []
