@@ -741,10 +741,7 @@ class PathObject(object):
         :param job_id: job_id of dependent job.
         :return:
         """
-        print '-----------'
-        print CONFIG['default']['proxy_resolution'].keys()
-        print self.project
-        print self.project.lower()
+
         if resolution:
             width, height = resolution.split('x')
         else:
