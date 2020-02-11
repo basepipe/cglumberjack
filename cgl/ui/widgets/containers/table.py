@@ -14,10 +14,11 @@ class LJTableWidget(QtWidgets.QTableView):
     right_clicked = QtCore.Signal(object)
     dropped = QtCore.Signal(object)
 
-    def __init__(self, parent):
+    def __init__(self, parent, path_object=None):
         QtWidgets.QTableView.__init__(self, parent)
         self.verticalHeader().hide()
         self.horizontalHeader().setStretchLastSection(True)
+        self.path_object = path_object
         # self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         # self.horizontalHeader().setMovable(True)
         self.menu = None
@@ -128,7 +129,9 @@ class LJTableWidget(QtWidgets.QTableView):
         mdl = self.model().sourceModel()
         row = mdl_index.row()
         sel = mdl.data_[row]
-        path_object = PathObject(sel[2])
+        print sel
+        path_object = self.path_object.copy(project=sel[0])
+        print path_object.path_root
         show_in_project_management(path_object)
 
     def select_row_by_text(self, text, column=0):

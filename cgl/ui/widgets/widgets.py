@@ -566,7 +566,7 @@ class ProjectWidget(QtWidgets.QWidget):
         self.add_button = QtWidgets.QToolButton()
         self.add_button.setText("add project")
         self.add_button.setProperty('class', 'add_button')
-        self.data_table = LJTableWidget(self)
+        self.data_table = LJTableWidget(self, path_object=self.path_object)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
@@ -660,7 +660,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.add_button = QtWidgets.QToolButton()
         self.add_button.setText("add")
         self.add_button.setProperty('class', 'add_button')
-        self.data_table = LJTableWidget(self)
+        self.data_table = LJTableWidget(self, path_object=self.path_object)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.data_table.setMinimumWidth(min_width)
@@ -796,7 +796,7 @@ class FileTableWidget(LJTableWidget):
 
 
 class LJListWidget(QtWidgets.QWidget):
-    def __init__(self, label, pixmap, empty_state_text='', empty_state_icon=None):
+    def __init__(self, label, pixmap, empty_state_text='', empty_state_icon=None, search_box=None):
         QtWidgets.QWidget.__init__(self)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Minimum)
         layout = QtWidgets.QVBoxLayout(self)
@@ -806,6 +806,7 @@ class LJListWidget(QtWidgets.QWidget):
         self.add_button.setText('+')
         self.add_button.setProperty('class', 'add_button')
         self.h_layout = QtWidgets.QHBoxLayout()
+        self.search_box = search_box
         layout.setContentsMargins(0, 0, 0, 0)
         if pixmap:
             self.icon = QtWidgets.QLabel()

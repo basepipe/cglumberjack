@@ -165,22 +165,26 @@ class FilesModel(QAbstractTableModel):
         self.data_filter = data_filter
 
     def data(self, index, role):
-        if role == Qt.DisplayRole:
-            try:
+        try:
+            data = self.data_[index.row()][index.column()]
+            if role == Qt.DisplayRole:
                 data = self.data_[index.row()][index.column()]
                 if data is None:
                     return ""
+                if role == Qt.DisplayRole:
+                    if isinstance(data, dict):
+                        if 'name' in data:
+                            return data['name']
+                        elif 'code' in data:
+                            return data['code']
+                    return data
+            if role == Qt.DecorationRole:
+                data = self.data_[index.row()][index.column()]
                 if "." not in data:
-                    icon_path_ = os.path.join(icon_path(), 'folder2.png')
-                    return QIcon(icon_path)
-                if isinstance(data, dict):
-                    if 'name' in data:
-                        return data['name']
-                    elif 'code' in data:
-                        return data['code']
-                return data
-            except KeyError:
-                return ''
+                    icon_path_ = os.path.join(icon_path(), 'folder24px.png')
+                    return QIcon(icon_path_)
+        except KeyError:
+            return ''
 
     def headerData(self, section, orientation, role):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:

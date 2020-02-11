@@ -437,6 +437,7 @@ class FilesPanel(QtWidgets.QWidget):
         files_widget.on_task_selected(self.path_object)
 
     def on_assign_button_clicked(self, data):
+        print data
         task = self.sender().task
         users_dict = CONFIG['project_management'][self.project_management]['users']
         all_users = []

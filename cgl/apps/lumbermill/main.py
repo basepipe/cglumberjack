@@ -364,6 +364,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(path_object)
 
     def update_location(self, data):
+        self.nav_widget.search_box.setText('')
+        # TODO - if we're in the project set the search box to the default project
+        # TODO - if we're in the companies set the search box to the default company
         try:
             if self.sender().force_clear:
                 if self.panel:
@@ -462,7 +465,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             else:
                 self.load_files_panel(path_object)
         elif last == 'company':
-            self.panel = CompanyPanel(path_object=path_object, search_box=self.nav_widget.search_box)
+            self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box, title='Companies')
         if self.panel:
             self.update_panel()
         self.layout.addWidget(self.progress_bar)

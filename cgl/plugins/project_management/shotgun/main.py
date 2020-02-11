@@ -1,4 +1,8 @@
 import logging
+import webbrowser
+import datetime
+import os
+import json
 from plugins.project_management.shotgun.tracking_internal.shotgun_specific import ShotgunQuery
 from cgl.core.config import app_config
 
@@ -44,6 +48,7 @@ class ProjectManagementData(object):
     version_data = None
     entity_data = None
     status = None
+    server_url = CONFIG['project_management']['shotgun']['api']['server_url']
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
@@ -93,8 +98,10 @@ class ProjectManagementData(object):
                 self.set_status()
 
     def create_project_management_data(self):
+        print 1
         self.project_data = self.entity_exists('project')
         if not self.project_data:
+            print 'creating project'
             self.project_data = self.create_project()
         if self.scope == 'assets':
             if self.type:
@@ -410,6 +417,65 @@ class ProjectManagementData(object):
             return long_to_short[asset_status]
         else:
             print 'Didnt find %s in keys' % asset_status
+
+    def get_status(self):
+        self.project_data = self.entity_exists('project')
+        self.find_task()
+        if self.task_data:
+            data = self.task_data.first()
+            return data['status']['name']
+            #return self.task_data['status']['name']
+        else:
+            print 'No Task Data found!'
+            return None
+
+    def get_url(self):
+        self.get_project_management_data()
+        if self.version:
+            print 'version'
+            return self.get_version_url()
+        if self.task:
+            print 'task'
+            return self.get_task_url()
+        if self.shot:
+            print 'shot'
+            return self.get_shot_url()
+        elif self.asset:
+            print 'asset not defined yet'
+        if self.project:
+            print 'project'
+            return self.get_proj_url()
+
+    def get_proj_url(self):
+        return r'%s/page/project_overview?project_id=%s' % (self.server_url, self.project_data['id'])
+
+    def get_shot_url(self):
+        return r'%s/detail/Shot/%s' % (self.server_url, str(self.shot_data['id']))
+
+    def get_asset_url(self):
+        return r'%s/detail/Asset/%s' % (self.server_url, str(self.asset_data['id']))
+
+    def get_task_url(self):
+        return r'%s/detail/Task/%s' % (self.server_url, str(self.task_data['id']))
+
+    def get_version_url(self):
+        if self.version_data:
+            url = r'%s/detail/Version/%s' % (self.server_url, str(self.version_data['id']))
+            return url
+        else:
+            logging.info('No version found in Shotgun - Submit Review to Create a Version')
+            return self.get_task_url()
+
+    def go_to_dailies(self, playlist=None):
+        if not playlist:
+            list_name = 'Dailies: %s' % datetime.date.today()
+            version_list = self.ftrack.query('AssetVersionList where name is "%s" and project.id is "%s"'
+                                             % (list_name, self.project_data['id'])).first()
+            playlist = version_list['id']
+        url_string = r'%s/widget/#view=freview_webplayer_v1&itemId=freview&entityType=list&entityId=' \
+                     r'%s&controller=widget' % (self.server_url, playlist)
+        webbrowser.open(url_string)
+        print url_string
 
 
 
