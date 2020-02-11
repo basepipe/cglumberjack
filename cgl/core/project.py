@@ -44,7 +44,17 @@ def get_task_info(path_object, force=False):
     :param force:
     :return:
     """
-    all_tasks = UserConfig().d['my_tasks'][path_object.company][path_object.project]
+    print 11
+    print UserConfig().d
+    print path_object.company, path_object.project
+    print path_object.path_root
+    if path_object.company in UserConfig().d['my_tasks'].keys():
+        if path_object.project in UserConfig().d['my_tasks'].keys():
+            all_tasks = UserConfig().d['my_tasks'][path_object.company][path_object.project]
+        else:
+            return
+    else:
+        return
     if path_object.task:
         if path_object.scope == 'assets':
             path_object.task_name = '%s_%s_%s' % (path_object.category, path_object.asset, path_object.task)

@@ -4,5 +4,5 @@ import nuke
 from cgl.plugins.nuke.gui import create_write_node
 
 def run():
-    create_write_node()
-
+    write_node = create_write_node()
+    write_node['channels'].setValue('rgba')

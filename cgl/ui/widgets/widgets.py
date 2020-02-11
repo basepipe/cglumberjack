@@ -422,10 +422,11 @@ class TaskWidget(QtWidgets.QWidget):
                       "ommitted": "#808080",
                       "completed": "#4BA42F"}
         task_info = get_task_info(self.path_object, force=force)
-        status = task_info['status']
-        self.status_button.setText(status)
-        status_color = color_dict[status.lower()]
-        self.status_button.setStyleSheet("QPushButton.status_button { background-color: %s }" % status_color)
+        if task_info:
+            status = task_info['status']
+            self.status_button.setText(status)
+            status_color = color_dict[status.lower()]
+            self.status_button.setStyleSheet("QPushButton.status_button { background-color: %s }" % status_color)
 
     def force_refresh_task_info(self):
         self.refresh_task_info(force=False)
