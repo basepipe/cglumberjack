@@ -277,8 +277,9 @@ def import_script(filepath):
     return nuke.nodePaste(filepath)
 
 
-def import_read_geo(filepath):
-    n = nuke.createNode("ReadGeo2")
+def import_geo(filepath):
+    print filepath
+    n = nuke.createNode("ReadGeo")
     n.knob('file').setText(filepath)
 
 
