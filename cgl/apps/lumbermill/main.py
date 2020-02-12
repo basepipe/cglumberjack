@@ -363,6 +363,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         path_object = data.copy(latest=True, filename=None, ext=None)
         self.update_location(path_object)
 
+    def update_render_location(self, data):
+        print 'updating the render location'
+
     def update_location(self, data):
         self.nav_widget.search_box.setText('')
         # TODO - if we're in the project set the search box to the default project
@@ -396,6 +399,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         self.setMinimumHeight(700)
                         self.panel.location_changed.connect(self.update_location)
                         self.panel.location_changed.connect(self.path_widget.update_path)
+                        self.panel.render_location_changed.connect(self.render_location)
                         self.layout.addWidget(self.panel)
                         self.layout.addWidget(self.path_widget)
                     return

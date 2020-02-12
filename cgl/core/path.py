@@ -63,7 +63,8 @@ class PathObject(object):
         self.render_pass = None
         self.shotname = None
         self.task = None
-        self.cam = None
+        self.camera = None
+        self.aov = None
         self.file_type = None
         self.frame_padding = CONFIG
         self.scope_list = CONFIG['rules']['scope_list']
@@ -98,6 +99,8 @@ class PathObject(object):
         self.processing_method = PROCESSING_METHOD
         self.publish_source = None
         self.publish_render = None
+        self.parts_length = 0
+        self.template_type = 'version'
 
         if isinstance(path_object, unicode):
             path_object = str(path_object)
@@ -127,6 +130,7 @@ class PathObject(object):
         path_object = path_object.replace('\\', '/')
         self.get_company(path_object)
         self.unpack_path(path_object)
+        self.get_parts_length()
         self.set_data_from_attrs()
         self.set_project_config()
         # self.set_json()
@@ -168,25 +172,36 @@ class PathObject(object):
                 current_ = 'scope'
         return current_
 
-    def get_template(self):
+    def get_template(self, last_is_dir=False):
         self.template = []
+        version_render_template = None
         if self.context:
             if self.scope:
                 if self.scope == '*':
                     self.template = ['company', 'context', 'project', 'scope']
                     return
+                pattern = 'version_render'
+                default_pattern = 'version'
+                version_render_template = self.get_default_template(pattern=pattern)
                 try:
-                    path_template = CONFIG['templates'][self.scope][self.context]['path'].split('/')
-                    if path_template[-1] == '':
-                        path_template.pop(-1)
-                    version_template = CONFIG['templates'][self.scope][self.context]['version'].split('/')
-                    template = path_template + version_template
-                    for each in template:
-                        each = each.replace('{', '').replace('}', '')
-                        if each == 'filename.ext':
-                            each = 'filename'
-                        self.template.append(each)
-                    return self.template
+                    if last_is_dir:
+                        template = version_render_template
+                        self.template_type = 'version_render'
+                    else:
+                        template = self.get_default_template()
+                        self.template_type = default_pattern
+                        if self.__dict__[template[-2]]:
+                            if not self.filename:
+                                template = self.get_default_template(pattern=pattern)
+                                self.template_type = pattern
+                    if self.parts_length > len(template):
+                        template = version_render_template
+                        self.template_type = pattern
+                    elif self.camera or self.aov:
+                        template = version_render_template
+                        self.template_type = pattern
+                    self.template = template
+                    return
                 except KeyError:
                     logging.info("Config ERROR: Can't find either %s or %s within app config 'templates'"
                                  % (self.scope, self.context))
@@ -241,7 +256,13 @@ class PathObject(object):
         self.set_attr(context=path_parts[1].lower())
         if len(path_parts) > 3:
             self.set_attr(scope=path_parts[3].lower())
-        self.get_template()
+        self.parts_length = len(path_parts)
+        # TODO - this would be more solid as a regix
+        if os.path.splitext(path_string)[1]:
+            is_dir = False
+        else:
+            is_dir = True
+        self.get_template(last_is_dir=is_dir)
         self.data = {}
         for i, attr in enumerate(self.template):
             if attr:
@@ -275,6 +296,60 @@ class PathObject(object):
             self.set_attr(minor_version=minor_version.replace('.', ''))
         self.set_shotname()
 
+    def get_default_template(self, pattern='version'):
+        final_template = []
+        path_template = CONFIG['templates'][self.scope][self.context]['path'].split('/')
+        if path_template[-1] == '':
+            path_template.pop(-1)
+        if pattern == 'version_render' and self.scope == 'shots':
+            version_template = CONFIG['templates'][self.scope][self.context][pattern].split('/')
+        else:
+            version_template = CONFIG['templates'][self.scope][self.context]['version'].split('/')
+        template = path_template + version_template
+        for each in template:
+            each = each.replace('{', '').replace('}', '')
+            if each == 'filename.ext':
+                each = 'filename'
+            final_template.append(each)
+        return final_template
+
+    def get_parts_length(self):
+        i = 0
+        template = []
+        if self.scope:
+            if self.scope == '*':
+                scope = 'shots'
+            else:
+                scope = self.scope
+            if self.context:
+                if self.context == '*':
+                    context = 'source'
+                else:
+                    context = self.context
+                pieces = CONFIG['templates'][scope][context]['path'].split('/')
+                if self.scope == 'shots':
+                    pieces += CONFIG['templates'][scope][context]['version_render'].split('/')
+                pieces += CONFIG['templates'][scope][context]['version'].split('/')
+                for each in pieces:
+                    each = each.replace('{', '').replace('}', '')
+                    if each == 'render':
+                        each = 'scope'
+                    if each == 'source':
+                        each = 'scope'
+                    if each == 'shots':
+                        each = 'context'
+                    if each == 'assets':
+                        each = 'context'
+                    if each == 'filename.ext':
+                        each = 'filename'
+                    if each not in template:
+                        template.append(each)
+                for a in self.__dict__:
+                    if a in template:
+                        if self.__dict__[a]:
+                            i += 1
+                self.parts_length = i
+
     def set_path(self):
         """
         set's self.path_root, self.path, self.filename, self.command_base, self.hd_proxy_path, self.thumb_path, and
@@ -295,6 +370,8 @@ class PathObject(object):
                     if self.__dict__[attr]:
                         path_string = os.path.join(path_string, self.__dict__[attr])
         path_string = path_string.replace('\\', '/')
+        if path_string.endswith('.'):
+            path_string = path_string[:-1]
         if sys.platform == 'win32':
             self.path_root = '%s/%s' % (self.root, path_string)
         else:
@@ -374,11 +451,6 @@ class PathObject(object):
                 self.__dict__['seq'] = value
                 self.data['seq'] = value
                 self.set_path()
-            elif attr == 'ext':
-                if self.filename:
-                    base, ext = os.path.splitext(self.filename)
-                    self.filename = '%s.%s' % (base, self.ext)
-                    self.set_path()
             elif attr == 'filename':
                 if value:
                     self.__dict__['filename'] = value
@@ -389,6 +461,12 @@ class PathObject(object):
                     self.__dict__['filename_base'] = base
                     self.data['filename_base'] = base
                     self.set_path()
+            elif attr == 'ext':
+                if self.ext:
+                    if self.filename:
+                        base, ext = os.path.splitext(self.filename)
+                        self.filename = '%s.%s' % (base, self.ext)
+                        self.set_path()
             elif attr == 'version':
                 if value:
                     if value is not '*' and value is not '.':
@@ -741,10 +819,6 @@ class PathObject(object):
         :param job_id: job_id of dependent job.
         :return:
         """
-        print '-----------'
-        print CONFIG['default']['proxy_resolution'].keys()
-        print self.project
-        print self.project.lower()
         if resolution:
             width, height = resolution.split('x')
         else:

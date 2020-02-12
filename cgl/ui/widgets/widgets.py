@@ -517,7 +517,6 @@ class TaskWidget(QtWidgets.QWidget):
                 if not self.start_task_button.isVisible():
                     self.empty_state.show()
         elif isinstance(mdl, FilesModel):
-            print 'loading a FilesModel'
             table.set_item_model(mdl)
             self.empty_state.hide()
             print 'this many rows', table.model().rowCount()

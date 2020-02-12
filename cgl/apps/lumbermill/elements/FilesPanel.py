@@ -18,6 +18,7 @@ CONFIG = app_config()
 class FilesPanel(QtWidgets.QWidget):
     source_selection_changed = QtCore.Signal(object)
     location_changed = QtCore.Signal(object)
+    render_location_changed = QtCore.Signal(object)
     open_signal = QtCore.Signal()
     import_signal = QtCore.Signal()
     new_version_signal = QtCore.Signal()
@@ -28,6 +29,7 @@ class FilesPanel(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
         self.work_files = []
+        self.render_files_widget = None
         self.high_files = []
         self.render_files = []
         self.version_obj = None
@@ -135,6 +137,7 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.copy_selected_version.connect(self.version_up_selected_clicked)
             task_widget.files_area.work_files_table.selected.connect(self.on_source_selected)
             task_widget.files_area.export_files_table.selected.connect(self.on_render_selected)
+            task_widget.files_area.export_files_table.double_clicked.connect(self.on_render_double_clicked)
             task_widget.files_area.export_files_table.show_in_folder.connect(self.show_selected_in_folder)
             task_widget.files_area.work_files_table.doubleClicked.connect(self.on_open_clicked)
             task_widget.files_area.open_button.clicked.connect(self.on_open_clicked)
@@ -311,6 +314,13 @@ class FilesPanel(QtWidgets.QWidget):
         self.source_selection_changed.emit(new_data)
         self.clear_task_selection_except(self.sender().task)
         self.sender().parent().show_tool_buttons(user=object_.user)
+
+    def on_render_double_clicked(self, data):
+        if data:
+            if os.path.isdir(self.path_object.path_root):
+                print '%s is a directory, diving in' % data[0][0]
+                self.enter_render_folder()
+                # reload ONLY the render area with this as the directory
 
     def on_render_selected(self, data):
         if data:
@@ -569,6 +579,19 @@ class FilesPanel(QtWidgets.QWidget):
                             child.widget().files_area.work_files_table.clearSelection()
         return
 
+    def enter_render_folder(self):
+        """
+
+        :param path_object:
+        :return:
+        """
+        print self.path_object.path_root
+        files_ = glob.glob('%s/*' % self.path_object.path_root)
+        data_ = self.prep_list_for_table(files_, basename=True, length=1, back=True)
+        model = FilesModel(data_, ['Ready to Review/Publish'])
+        self.render_files_widget.set_item_model(model)
+
+
     def load_render_files(self, widget):
         logging.debug('loading render files')
         widget.files_area.work_files_table.show()
@@ -610,7 +633,7 @@ class FilesPanel(QtWidgets.QWidget):
         clear_layout(self, layout)
 
     @staticmethod
-    def prep_list_for_table(list_, path_filter=None, basename=False, length=None):
+    def prep_list_for_table(list_, path_filter=None, basename=False, length=None, back=False):
         """
         Allows us to prepare lists for display in LJTables.
         :param list_: list to put into the table.
@@ -622,11 +645,14 @@ class FilesPanel(QtWidgets.QWidget):
         if not list_:
             return
         list_.sort()
+
         output_ = []
         dirname = os.path.dirname(list_[0])
         files = lj_list_dir(dirname, path_filter=path_filter, basename=basename)
         for each in files:
             output_.append([each])
+        if back:
+            output_.insert(0, '..')
         print 'adding files %s' % output_
         return output_
 

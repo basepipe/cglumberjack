@@ -13,6 +13,7 @@ class LJTableWidget(QtWidgets.QTableView):
     selected = QtCore.Signal(object)
     right_clicked = QtCore.Signal(object)
     dropped = QtCore.Signal(object)
+    double_clicked = QtCore.Signal(object)
 
     def __init__(self, parent, path_object=None):
         QtWidgets.QTableView.__init__(self, parent)
@@ -33,6 +34,25 @@ class LJTableWidget(QtWidgets.QTableView):
         # self.activated.connect(self.row_selected)
         self.height_hint = 0
         self.width_hint = 0
+        self.doubleClicked.connect(self.send_double_click_signal)
+
+    def send_double_click_signal(self):
+        items = []
+        if self.selectionModel():
+            for each in self.selectionModel().selectedRows():
+                mdl_index = self.model().mapToSource(each)
+                mdl = self.model().sourceModel()
+                row = mdl_index.row()
+                sel = mdl.data_[row]
+                items.append(sel)
+        else:
+            print 'No data to select'
+        self.items_ = items
+        try:
+            self.double_clicked.emit(items)
+        except IndexError:
+            print 'nothing selected'
+            self.nothing_selected.emit()
 
     def row_count(self):
         return self.model().rowCount()
