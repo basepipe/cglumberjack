@@ -23,7 +23,7 @@ filepath15 = r'Z:/Projects'
 
 # filepath = r'Z:/Projects/VFX/render/16BTH_2020_Arena/shots/020/0600/comp/tmikota/000.000/high/filename.txt'
 # TODO need a way on path to figure out if i'm given a folder that's part of a longer thing.
-path_object = PathObject(filepath14)
+path_object = PathObject(filepath)
 print path_object.render_pass, path_object.camera, path_object.aov, path_object.filename
 print path_object.path_root
 # path_object2 = PathObject(filepath2)

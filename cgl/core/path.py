@@ -174,13 +174,16 @@ class PathObject(object):
         return current_
 
     def get_version_template(self):
-        self.version_template = []
-        version = 'version_%s' % self.task
-        if version in CONFIG['templates'][self.scope][self.context].keys():
-            version_template = CONFIG['templates'][self.scope][self.context][version].split('/')
+        if self.scope and self.context and self.user:
+            self.version_template = []
+            version = 'version_%s' % self.task
+            if version in CONFIG['templates'][self.scope][self.context].keys():
+                version_template = CONFIG['templates'][self.scope][self.context][version].split('/')
+            else:
+                version_template = CONFIG['templates'][self.scope][self.context]['version'].split('/')
+            self.version_template = self.clean_template(version_template)
         else:
-            version_template = CONFIG['templates'][self.scope][self.context]['version'].split('/')
-        self.version_template = self.clean_template(version_template)
+            self.version_template = []
         # self.template = self.template + self.version_template
 
     def clean_template(self, template):
@@ -198,19 +201,18 @@ class PathObject(object):
             if self.scope:
                 if self.scope == '*':
                     self.path_template = ['company', 'context', 'project', 'scope']
-                    self.template = self.path_template
                     return
                 path_template = CONFIG['templates'][self.scope][self.context]['path'].split('/')
                 self.path_template = self.clean_template(path_template)
                 return
             else:
                 self.path_template = ['company', 'context', 'project', 'scope']
-                self.template = self.path_template
         else:
             self.path_template = ['company']
-            self.template = self.path_template
 
     def get_template(self):
+        self.get_path_template()
+        self.get_version_template()
         self.template = self.path_template + self.version_template
 
     def set_scope_list(self):
@@ -249,7 +251,6 @@ class PathObject(object):
         :param path_string:
         :return:
         """
-        print 2
         self.get_version_template()
         for i, attr in enumerate(self.version_template):
             if attr:
@@ -259,13 +260,40 @@ class PathObject(object):
                     pass
         pass
 
+    def get_template_old(self):
+        self.template = []
+        if self.context:
+            if self.scope:
+                if self.scope == '*':
+                    self.template = ['company', 'context', 'project', 'scope']
+                    return
+                try:
+                    path_template = CONFIG['templates'][self.scope][self.context]['path'].split('/')
+                    if path_template[-1] == '':
+                        path_template.pop(-1)
+                    version_template = CONFIG['templates'][self.scope][self.context]['version'].split('/')
+                    template = path_template + version_template
+                    for each in template:
+                        each = each.replace('{', '').replace('}', '')
+                        if each == 'filename.ext':
+                            each = 'filename'
+                        self.template.append(each)
+                    return self.template
+                except KeyError:
+                    logging.info("Config ERROR: Can't find either %s or %s within app config 'templates'"
+                                 % (self.scope, self.context))
+                    return
+            else:
+                self.template = ['company', 'context', 'project', 'scope']
+        else:
+            self.template = ['company']
+
     def unpack_path(self, path_string):
         """
         parse a path_string and unpack it into the various values within a pathObject.
         :param path_string: string value representing a path.
         :return:
         """
-        print 1
         path_string = os.path.normpath(path_string.split(self.company)[-1])
         path_ = os.path.normpath(path_string)
         path_parts = path_.split(os.sep)
@@ -276,8 +304,7 @@ class PathObject(object):
         if len(path_parts) > 3:
             self.set_attr(scope=path_parts[3].lower(), do_set_path=False)
         split_at = -1
-        path_template = CONFIG['templates'][self.scope][self.context]['path'].split('/')
-        self.path_template = self.clean_template(path_template)
+        self.get_path_template()
         self.data = {}
         for i, attr in enumerate(self.path_template):
             if attr:
@@ -316,24 +343,19 @@ class PathObject(object):
         self.set_shotname()
         self.set_path()
 
-    def get_path_template(self):
-        path_template = CONFIG['templates'][self.scope][self.context]['path'].split('/')
-        final_template = []
-        for each in path_template:
-            each = each.replace('{', '').replace('}', '')
-            if each == 'filename.ext':
-                each = 'filename'
-            final_template.append(each)
-        return final_template
-
-    def set_path(self):
+    def set_path(self, bob=False):
         """
         set's self.path_root, self.path, self.filename, self.command_base, self.hd_proxy_path, self.thumb_path, and
         self.preview_path
         :return:
         """
-        print 'set path'
-        self.get_template()
+
+        if bob:
+            print self.template, self.company, self.context, self.project
+            self.get_template()
+            print self.template
+        else:
+            self.get_template()
         keep_if = self.context_list + self.scope_list
         path_string = ''
         for attr in self.template:
@@ -385,15 +407,18 @@ class PathObject(object):
                 CONFIG['rules']['path_variables'][attr]['regex']
             except KeyError:
                 logging.debug('Could not find regex for %s: %s in config, skipping' % (attr, value))
+                return
             if value == '*':
                 self.__dict__[attr] = value
                 self.data[attr] = value
+                # self.set_path()
             else:
                 if attr == 'scope':
                     if value:
                         if value in self.scope_list:
                             self.__dict__[attr] = value
                             self.data[attr] = value
+                            # self.set_path()
                         else:
                             logging.debug('Scope %s not found in globals: %s' % (value, self.scope_list))
                             return
@@ -405,21 +430,27 @@ class PathObject(object):
                         else:
                             self.__dict__[attr] = value
                             self.data[attr] = value
+                            # self.set_path()
                 else:
                     self.__dict__[attr] = value
                     self.data[attr] = value
+                    # self.set_path()
             if attr == 'shot':
                 self.__dict__['asset'] = value
                 self.data['asset'] = value
+                # self.set_path()
             elif attr == 'asset':
                 self.__dict__['shot'] = value
                 self.data['shot'] = value
+                # self.set_path()
             elif attr == 'seq':
                 self.__dict__['type'] = value
                 self.data['type'] = value
+                # self.set_path()
             elif attr == 'type':
                 self.__dict__['seq'] = value
                 self.data['seq'] = value
+                # self.set_path()
             elif attr == 'filename':
                 if value:
                     self.__dict__['filename'] = value
@@ -429,11 +460,13 @@ class PathObject(object):
                     self.data['ext'] = ext.replace('.', '')
                     self.__dict__['filename_base'] = base
                     self.data['filename_base'] = base
+                    # self.set_path()
             elif attr == 'ext':
                 if self.ext:
                     if self.filename:
                         base, ext = os.path.splitext(self.filename)
                         self.filename = '%s.%s' % (base, self.ext)
+                        # self.set_path()
             elif attr == 'version':
                 if value:
                     if value is not '*' and value is not '.':
@@ -445,9 +478,11 @@ class PathObject(object):
                     self.data['major_version'] = major
                     self.__dict__['minor_version'] = minor
                     self.data['minor_version'] = minor
+                    # self.set_path()
         if do_set_path:
             self.set_path()
-            print 'setting path for kwargs: %s' % kwargs
+
+            # print 'setting path for kwargs: %s' % kwargs
 
     def glob_project_element(self, attr, full_path=False):
         """

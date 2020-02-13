@@ -12,8 +12,10 @@ from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 from cgl.ui.widgets.containers.model import FilesModel
 from panels import clear_layout
 
+# TODO - this appears to be the main offender when it comes to calling the globals through app_config()
 
 CONFIG = app_config()
+
 
 class FilesPanel(QtWidgets.QWidget):
     source_selection_changed = QtCore.Signal(object)
@@ -317,17 +319,15 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_render_double_clicked(self, data):
         if data:
-            if os.path.isdir(self.path_object.path_root):
-                if self.path_object.render_pass:
-                    print 'render pass:', self.path_object.render_pass
-                    if self.path_object.camera:
-                        print 'camera:', self.path_object.camera
-                        if self.path_object.aov:
-                            print 'aov:', self.path_object.aov
-                print '%s is a directory, diving in' % data[0][0]
-                if not self.path_object.path_root.endswith(data[0][0]):
-                    print os.path.join(self.path_object.path_root, data[0][0])
-                    self.enter_render_folder()
+            selected = data[0][0]
+            print self.path_object.render_pass
+            if not self.path_object.render_pass:
+                self.path_object.set_attr(render_pass=selected, filename=None, ext=None)
+                self.enter_render_folder()
+            if not self.path_object.camera:
+                self.path_object.set_attr(camera=selected)
+            if not self.path_object.aov:
+                self.path_object.set_attr(aov=selected)
 
     def on_render_selected(self, data):
         if data:

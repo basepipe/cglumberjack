@@ -130,14 +130,14 @@ class ProjectPanel(QtWidgets.QWidget):
 
     def on_project_changed(self, data):
         data = self.project_filter.data_table.items_
+        print data
         if self.title == 'Projects':
             self.path_object.set_attr(project=data[0][0])
             self.path_object.set_attr(scope='*')
             self.update_location(self.path_object)
         elif self.title == 'Companies':
-            self.path_object.set_attr(company=data[0][0])
-            self.path_object.set_attr(context='source')
-            self.path_object.set_attr(project='*')
+            self.path_object.set_attr(company=data[0][0], context='source', project='*')
+            # self.path_object.set_path(bob=True)
             self.update_location(self.path_object)
 
     def toggle_visibility(self):
