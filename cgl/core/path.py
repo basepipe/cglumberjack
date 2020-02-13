@@ -66,7 +66,7 @@ class PathObject(object):
         self.camera = None
         self.aov = None
         self.file_type = None
-        self.frame_padding = CONFIG
+        self.frame_padding = CONFIG['default']['padding']
         self.scope_list = CONFIG['rules']['scope_list']
         self.context_list = CONFIG['rules']['context_list']
         self.path = None  # string of the properly formatted path
@@ -101,6 +101,8 @@ class PathObject(object):
         self.publish_render = None
         self.parts_length = 0
         self.template_type = 'version'
+        self.path_template = []
+        self.version_template = []
 
         if isinstance(path_object, unicode):
             path_object = str(path_object)
@@ -130,7 +132,6 @@ class PathObject(object):
         path_object = path_object.replace('\\', '/')
         self.get_company(path_object)
         self.unpack_path(path_object)
-        self.get_parts_length()
         self.set_data_from_attrs()
         self.set_project_config()
         # self.set_json()
@@ -172,44 +173,45 @@ class PathObject(object):
                 current_ = 'scope'
         return current_
 
-    def get_template(self, last_is_dir=False):
-        self.template = []
-        version_render_template = None
+    def get_version_template(self):
+        self.version_template = []
+        version = 'version_%s' % self.task
+        if version in CONFIG['templates'][self.scope][self.context].keys():
+            version_template = CONFIG['templates'][self.scope][self.context][version].split('/')
+        else:
+            version_template = CONFIG['templates'][self.scope][self.context]['version'].split('/')
+        self.version_template = self.clean_template(version_template)
+        # self.template = self.template + self.version_template
+
+    def clean_template(self, template):
+        clean_template = []
+        for each in template:
+            each = each.replace('{', '').replace('}', '')
+            if each == 'filename.ext':
+                each = 'filename'
+            clean_template.append(each)
+        return clean_template
+
+    def get_path_template(self):
+        self.path_template = []
         if self.context:
             if self.scope:
                 if self.scope == '*':
-                    self.template = ['company', 'context', 'project', 'scope']
+                    self.path_template = ['company', 'context', 'project', 'scope']
+                    self.template = self.path_template
                     return
-                pattern = 'version_render'
-                default_pattern = 'version'
-                version_render_template = self.get_default_template(pattern=pattern)
-                try:
-                    if last_is_dir:
-                        template = version_render_template
-                        self.template_type = 'version_render'
-                    else:
-                        template = self.get_default_template()
-                        self.template_type = default_pattern
-                        if self.__dict__[template[-2]]:
-                            if not self.filename:
-                                template = self.get_default_template(pattern=pattern)
-                                self.template_type = pattern
-                    if self.parts_length > len(template):
-                        template = version_render_template
-                        self.template_type = pattern
-                    elif self.camera or self.aov:
-                        template = version_render_template
-                        self.template_type = pattern
-                    self.template = template
-                    return
-                except KeyError:
-                    logging.info("Config ERROR: Can't find either %s or %s within app config 'templates'"
-                                 % (self.scope, self.context))
-                    return
+                path_template = CONFIG['templates'][self.scope][self.context]['path'].split('/')
+                self.path_template = self.clean_template(path_template)
+                return
             else:
-                self.template = ['company', 'context', 'project', 'scope']
+                self.path_template = ['company', 'context', 'project', 'scope']
+                self.template = self.path_template
         else:
-            self.template = ['company']
+            self.path_template = ['company']
+            self.template = self.path_template
+
+    def get_template(self):
+        self.template = self.path_template + self.version_template
 
     def set_scope_list(self):
         self.scope_list = CONFIG['rules']['scope_list']
@@ -237,9 +239,25 @@ class PathObject(object):
             temp_ = path_string.split(self.root)[-1]
             temp_ = temp_.replace('\\', '/')
             c = split_all(temp_)[1]
-            self.set_attr(company=c)
+            self.set_attr(company=c, do_set_path=False)
         except IndexError:
-            self.set_attr(company='*')
+            self.set_attr(company='*', do_set_path=False)
+
+    def unpack_version(self, path_parts):
+        """
+        unpacks the "version" part of the path.
+        :param path_string:
+        :return:
+        """
+        print 2
+        self.get_version_template()
+        for i, attr in enumerate(self.version_template):
+            if attr:
+                try:
+                    self.set_attr(attr=attr, value=path_parts[i], do_set_path=False)
+                except IndexError:
+                    pass
+        pass
 
     def unpack_path(self, path_string):
         """
@@ -247,24 +265,21 @@ class PathObject(object):
         :param path_string: string value representing a path.
         :return:
         """
+        print 1
         path_string = os.path.normpath(path_string.split(self.company)[-1])
         path_ = os.path.normpath(path_string)
         path_parts = path_.split(os.sep)
         if path_parts[0] == '':
             path_parts.pop(0)
         path_parts.insert(0, self.company)
-        self.set_attr(context=path_parts[1].lower())
+        self.set_attr(context=path_parts[1].lower(), do_set_path=False)
         if len(path_parts) > 3:
-            self.set_attr(scope=path_parts[3].lower())
-        self.parts_length = len(path_parts)
-        # TODO - this would be more solid as a regix
-        if os.path.splitext(path_string)[1]:
-            is_dir = False
-        else:
-            is_dir = True
-        self.get_template(last_is_dir=is_dir)
+            self.set_attr(scope=path_parts[3].lower(), do_set_path=False)
+        split_at = -1
+        path_template = CONFIG['templates'][self.scope][self.context]['path'].split('/')
+        self.path_template = self.clean_template(path_template)
         self.data = {}
-        for i, attr in enumerate(self.template):
+        for i, attr in enumerate(self.path_template):
             if attr:
                 attr = attr.replace('{', '').replace('}', '')
                 try:
@@ -273,82 +288,43 @@ class PathObject(object):
                     elif attr == self.scope:
                         pass
                     elif attr == 'filename':
-                        self.set_attr(filename=path_parts[i])
+                        self.set_attr(filename=path_parts[i], do_set_path=False)
                         filename_base, ext = os.path.splitext(path_parts[i])
-                        self.set_attr(filename_base=filename_base)
-                        self.set_attr(ext=ext.replace('.', ''))
+                        self.set_attr(filename_base=filename_base, do_set_path=False)
+                        self.set_attr(ext=ext.replace('.', ''), do_set_path=False)
                     else:
-                        self.set_attr(attr=attr, value=path_parts[i])
+                        self.set_attr(attr=attr, value=path_parts[i], do_set_path=False)
+                        if attr == 'user':
+                            split_at = i
                 except IndexError:
                     pass
-
         if not self.seq:
-            self.set_attr(seq=self.type)
+            self.set_attr(seq=self.type, do_set_path=False)
         if not self.shot:
-            self.set_attr(shot=self.asset)
+            self.set_attr(shot=self.asset, do_set_path=False)
         if not self.asset:
-            self.set_attr(asset=self.shot)
+            self.set_attr(asset=self.shot, do_set_path=False)
         if not self.type:
-            self.set_attr(type=self.seq)
+            self.set_attr(type=self.seq, do_set_path=False)
+        if self.user:
+            del path_parts[0:split_at+1]
+            self.unpack_version(path_parts)
         if self.version:
             major_version, minor_version = self.version.split('.')
-            self.set_attr(major_version=major_version.replace('.', ''))
-            self.set_attr(minor_version=minor_version.replace('.', ''))
+            self.set_attr(major_version=major_version.replace('.', ''), do_set_path=False)
+            self.set_attr(minor_version=minor_version.replace('.', ''), do_set_path=False)
         self.set_shotname()
+        self.set_path()
 
-    def get_default_template(self, pattern='version'):
-        final_template = []
+    def get_path_template(self):
         path_template = CONFIG['templates'][self.scope][self.context]['path'].split('/')
-        if path_template[-1] == '':
-            path_template.pop(-1)
-        if pattern == 'version_render' and self.scope == 'shots':
-            version_template = CONFIG['templates'][self.scope][self.context][pattern].split('/')
-        else:
-            version_template = CONFIG['templates'][self.scope][self.context]['version'].split('/')
-        template = path_template + version_template
-        for each in template:
+        final_template = []
+        for each in path_template:
             each = each.replace('{', '').replace('}', '')
             if each == 'filename.ext':
                 each = 'filename'
             final_template.append(each)
         return final_template
-
-    def get_parts_length(self):
-        i = 0
-        template = []
-        if self.scope:
-            if self.scope == '*':
-                scope = 'shots'
-            else:
-                scope = self.scope
-            if self.context:
-                if self.context == '*':
-                    context = 'source'
-                else:
-                    context = self.context
-                pieces = CONFIG['templates'][scope][context]['path'].split('/')
-                if self.scope == 'shots':
-                    pieces += CONFIG['templates'][scope][context]['version_render'].split('/')
-                pieces += CONFIG['templates'][scope][context]['version'].split('/')
-                for each in pieces:
-                    each = each.replace('{', '').replace('}', '')
-                    if each == 'render':
-                        each = 'scope'
-                    if each == 'source':
-                        each = 'scope'
-                    if each == 'shots':
-                        each = 'context'
-                    if each == 'assets':
-                        each = 'context'
-                    if each == 'filename.ext':
-                        each = 'filename'
-                    if each not in template:
-                        template.append(each)
-                for a in self.__dict__:
-                    if a in template:
-                        if self.__dict__[a]:
-                            i += 1
-                self.parts_length = i
 
     def set_path(self):
         """
@@ -356,6 +332,7 @@ class PathObject(object):
         self.preview_path
         :return:
         """
+        print 'set path'
         self.get_template()
         keep_if = self.context_list + self.scope_list
         path_string = ''
@@ -392,7 +369,7 @@ class PathObject(object):
                         self.data['thumb_path'] = self.thumb_path
         return self.path
 
-    def set_attr(self, attr=None, value=None, **kwargs):
+    def set_attr(self, attr=None, value=None, do_set_path=True, **kwargs):
         """
         sets attribute on the path object.  You can use "attr"/"value" or simply put attr=value into the function
         :param attr: attribute name
@@ -411,14 +388,12 @@ class PathObject(object):
             if value == '*':
                 self.__dict__[attr] = value
                 self.data[attr] = value
-                self.set_path()
             else:
                 if attr == 'scope':
                     if value:
                         if value in self.scope_list:
                             self.__dict__[attr] = value
                             self.data[attr] = value
-                            self.set_path()
                         else:
                             logging.debug('Scope %s not found in globals: %s' % (value, self.scope_list))
                             return
@@ -430,27 +405,21 @@ class PathObject(object):
                         else:
                             self.__dict__[attr] = value
                             self.data[attr] = value
-                            self.set_path()
                 else:
                     self.__dict__[attr] = value
                     self.data[attr] = value
-                    self.set_path()
             if attr == 'shot':
                 self.__dict__['asset'] = value
                 self.data['asset'] = value
-                self.set_path()
             elif attr == 'asset':
                 self.__dict__['shot'] = value
                 self.data['shot'] = value
-                self.set_path()
             elif attr == 'seq':
                 self.__dict__['type'] = value
                 self.data['type'] = value
-                self.set_path()
             elif attr == 'type':
                 self.__dict__['seq'] = value
                 self.data['seq'] = value
-                self.set_path()
             elif attr == 'filename':
                 if value:
                     self.__dict__['filename'] = value
@@ -460,13 +429,11 @@ class PathObject(object):
                     self.data['ext'] = ext.replace('.', '')
                     self.__dict__['filename_base'] = base
                     self.data['filename_base'] = base
-                    self.set_path()
             elif attr == 'ext':
                 if self.ext:
                     if self.filename:
                         base, ext = os.path.splitext(self.filename)
                         self.filename = '%s.%s' % (base, self.ext)
-                        self.set_path()
             elif attr == 'version':
                 if value:
                     if value is not '*' and value is not '.':
@@ -478,7 +445,9 @@ class PathObject(object):
                     self.data['major_version'] = major
                     self.__dict__['minor_version'] = minor
                     self.data['minor_version'] = minor
-                    self.set_path()
+        if do_set_path:
+            self.set_path()
+            print 'setting path for kwargs: %s' % kwargs
 
     def glob_project_element(self, attr, full_path=False):
         """
@@ -723,8 +692,8 @@ class PathObject(object):
         sets shot name and asset name if seq is 010 and shot is 0100 shot name is 010_0100
         :return:
         """
-        self.set_attr(shotname='%s_%s' % (self.seq, self.shot))
-        self.set_attr(assetname='%s_%s' % (self.seq, self.shot))
+        self.set_attr(shotname='%s_%s' % (self.seq, self.shot), do_set_path=False)
+        self.set_attr(assetname='%s_%s' % (self.seq, self.shot), do_set_path=False)
 
     def set_project_config(self):
         """

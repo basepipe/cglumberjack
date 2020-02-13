@@ -318,9 +318,16 @@ class FilesPanel(QtWidgets.QWidget):
     def on_render_double_clicked(self, data):
         if data:
             if os.path.isdir(self.path_object.path_root):
+                if self.path_object.render_pass:
+                    print 'render pass:', self.path_object.render_pass
+                    if self.path_object.camera:
+                        print 'camera:', self.path_object.camera
+                        if self.path_object.aov:
+                            print 'aov:', self.path_object.aov
                 print '%s is a directory, diving in' % data[0][0]
-                self.enter_render_folder()
-                # reload ONLY the render area with this as the directory
+                if not self.path_object.path_root.endswith(data[0][0]):
+                    print os.path.join(self.path_object.path_root, data[0][0])
+                    self.enter_render_folder()
 
     def on_render_selected(self, data):
         if data:

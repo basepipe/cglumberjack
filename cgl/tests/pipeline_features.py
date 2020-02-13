@@ -11,10 +11,19 @@ filepath4 = r'Z:\Projects\VFX\render\16BTH_2020_Arena\shots\010\0400\lite\tmikot
 # if it's the default template
 filepath5 = r'Z:/Projects/VFX/render/16BTH_2020_Arena/shots/020/0600/comp/tmikota/000.000/high/filename.txt'
 filepath6 = r'Z:/Projects/VFX/render/16BTH_2020_Arena/shots/020/0600/comp/tmikota/000.000'
+filepath7 = r'Z:/Projects/VFX/render/16BTH_2020_Arena/shots/020/0600/comp/tmikota'
+filepath8 = r'Z:/Projects/VFX/render/16BTH_2020_Arena/shots/020/0600/comp'
+filepath9 = r'Z:/Projects/VFX/render/16BTH_2020_Arena/shots/020/0600'
+filepath10 = r'Z:/Projects/VFX/render/16BTH_2020_Arena/shots/020'
+filepath11 = r'Z:/Projects/VFX/render/16BTH_2020_Arena/shots'
+filepath12 = r'Z:/Projects/VFX/render/16BTH_2020_Arena'
+filepath13 = r'Z:/Projects/VFX/render'
+filepath14 = r'Z:/Projects/VFX'
+filepath15 = r'Z:/Projects'
 
 # filepath = r'Z:/Projects/VFX/render/16BTH_2020_Arena/shots/020/0600/comp/tmikota/000.000/high/filename.txt'
 # TODO need a way on path to figure out if i'm given a folder that's part of a longer thing.
-path_object = PathObject(filepath2)
+path_object = PathObject(filepath14)
 print path_object.render_pass, path_object.camera, path_object.aov, path_object.filename
 print path_object.path_root
 # path_object2 = PathObject(filepath2)
