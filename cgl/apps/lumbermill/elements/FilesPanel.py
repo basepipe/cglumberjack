@@ -682,6 +682,5 @@ class FilesPanel(QtWidgets.QWidget):
             output_.append([each])
         if back:
             output_.insert(0, '.')
-        print 'adding files %s' % output_
         return output_
 

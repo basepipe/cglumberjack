@@ -3,7 +3,7 @@ import logging
 from cgl.plugins.Qt import QtGui, QtWidgets
 import time
 import random
-import nuke
+import nuke, nukescripts
 from cgl.core.util import cgl_execute, write_to_cgl_data
 from cgl.core.path import PathObject, Sequence, CreateProductionData, lj_list_dir
 from cgl.core.config import app_config, UserConfig
@@ -42,6 +42,7 @@ class NukePathObject(PathObject):
         self.aov = None
         self.render_pass = None
         self.shotname = None
+        self.assetname = None
         self.task = None
         self.camera = None
         self.file_type = None
@@ -205,6 +206,27 @@ def save_file_as(filepath):
     return nuke.scriptSaveAs(filepath)
 
 
+def import_directory(filepath):
+    print 'importing directory'
+    path_object = NukePathObject(filepath)
+    if path_object.task == 'lite':
+        import_lighting_renders(filepath)
+    else:
+        for root, dirs, files in os.walk(filepath):
+            for name in dirs:
+                for sequence in lj_list_dir(os.path.join(root, name)):
+                    node_path = os.path.join(root, name, sequence)
+                    if not os.path.isdir(node_path):
+                        temp_object = NukePathObject(node_path)
+                        if temp_object.aov:
+                            name = temp_object.aov
+                        elif temp_object.shotname:
+                            name = temp_object.shotname
+                        else:
+                            name = None
+                        import_media(node_path, temp_object.aov)
+
+
 def import_lighting_renders(filepath):
     utilities = ['N', 'P', 'Z', 'cputime']
     shaders = ['diffuse_direct', 'diffuse_indirect', 'specular_direct', 'specular_indirect', 'sss', 'transmission']
@@ -214,6 +236,7 @@ def import_lighting_renders(filepath):
     light_nodes = []
     utility_nodes = []
     shader_nodes = []
+    z_node = None
     for root, dirs, files in os.walk(filepath):
         for name in dirs:
             for sequence in lj_list_dir(os.path.join(root, name)):
@@ -224,28 +247,36 @@ def import_lighting_renders(filepath):
                     if lights_contain in temp_object.aov:
                         light_nodes.append(node)
                     if temp_object.aov == z_depth:
-                        print 'creating z depth node'
+                        z_node = node
                     if temp_object.aov in utilities:
                         utility_nodes.append(node)
                     if temp_object.aov == beauty:
                         print 'creating beauty node'
                     if temp_object.aov in shaders:
                         shader_nodes.append(node)
+    if z_node:
+        print 1
+        z_nodes = setup_z_node(z_node)
+        for each in z_nodes:
+            utility_nodes.append(each)
     nuke.selectAll()
     auto_place()
     select(d=True)
     light_merge = create_merge(nodes=light_nodes, operation='plus')
     light_nodes.append(light_merge)
     select(light_nodes)
-    autoBackdrop('Lights')
+    auto_place(light_nodes)
+    auto_backdrop('Lights')
     select(d=True)
     select(utility_nodes)
-    autoBackdrop('Utilities')
+    auto_place(utility_nodes)
+    auto_backdrop('Utilities')
     select(d=True)
     shader_merge = create_merge(nodes=shader_nodes, operation='plus')
     shader_nodes.append(shader_merge)
     select(shader_nodes)
-    autoBackdrop('Shading')
+    auto_place(shader_nodes)
+    auto_backdrop('Shading')
     select(d=True)
 
 
@@ -278,8 +309,54 @@ def import_media(filepath, name=None):
         read_node.knob('proxy').fromUserText(proxy_object.path_root)
     return read_node
 
-def create_z_network(node):
-    pass
+
+def find_node(name):
+    nodes = nuke.allNodes()
+    for n in nodes:
+        if name in n['name'].value():
+            print 'found name'
+            return n
+    return None
+
+
+def setup_z_node(z_node):
+    """
+    This assumes we're using arnold AOVs when setting up this z network
+    :param node:
+    :param z_channel:
+    :return:
+    """
+    nodes = []
+    beauty = find_node('beauty')
+    min, max = get_min_max(z_node)
+    mult_node = nuke.createNode('Multiply')
+    mult_node['value'].setValue(1 / max)
+    mult_node['name'].setValue('Z Preview')
+    nodes.append(mult_node)
+
+    select([z_node])
+    sc = nuke.createNode('ShuffleCopy')
+    sc['in2'].setValue('depth')
+    sc['out'].setValue('depth')
+    sc['red'].setValue('red')
+    if beauty:
+        sc.setInput(0, beauty)
+    sc.setInput(1, z_node)
+    nodes.append(sc)
+
+    z_defocus = nuke.createNode('ZDefocus2')
+    z_defocus['z_channel'].setValue('depth.Z')
+    z_defocus['math'].setValue('depth')
+    z_defocus['output'].setValue('focal_plane_setup')
+    z_defocus['size'].setValue(20)
+    z_defocus['max_size'].setExpression('size')
+    nodes.append(z_defocus)
+    select()
+    mult_node.setInput(0, z_node)
+
+    return nodes
+
+
 
 def create_scene_write_node():
     """
@@ -471,72 +548,10 @@ def get_write_paths_as_path_objects():
     return write_objects
 
 
-def nodeIsInside(node, backdropNode):
-    """Returns true if node geometry is inside backdropNode otherwise returns false"""
-    topLeftNode = [node.xpos(), node.ypos()]
-    topLeftBackDrop = [backdropNode.xpos(), backdropNode.ypos()]
-    bottomRightNode = [node.xpos() + node.screenWidth(), node.ypos() + node.screenHeight()]
-    bottomRightBackdrop = [backdropNode.xpos() + backdropNode.screenWidth(), backdropNode.ypos() + backdropNode.screenHeight()]
-
-    topLeft = ( topLeftNode[0] >= topLeftBackDrop[0] ) and ( topLeftNode[1] >= topLeftBackDrop[1] )
-    bottomRight = ( bottomRightNode[0] <= bottomRightBackdrop[0] ) and ( bottomRightNode[1] <= bottomRightBackdrop[1] )
-
-    return topLeft and bottomRight
-
-
-def autoBackdrop(label=None):
-    '''
-    Automatically puts a backdrop behind the selected nodes.
-
-    The backdrop will be just big enough to fit all the select nodes in, with room
-    at the top for some text in a large font.
-    '''
-    selNodes = nuke.selectedNodes()
-    if not selNodes:
-        return nuke.nodes.BackdropNode()
-
-    # Calculate bounds for the backdrop node.
-    bdX = min([node.xpos() for node in selNodes])
-    bdY = min([node.ypos() for node in selNodes])
-    bdW = max([node.xpos() + node.screenWidth() for node in selNodes]) - bdX
-    bdH = max([node.ypos() + node.screenHeight() for node in selNodes]) - bdY
-
-    zOrder = 0
-    selectedBackdropNodes = nuke.selectedNodes( "BackdropNode" )
-    #if there are backdropNodes selected put the new one immediately behind the farthest one
-    if len(selectedBackdropNodes):
-        zOrder = min([node.knob("z_order").value() for node in selectedBackdropNodes] ) - 1
-    else:
-        #otherwise (no backdrop in selection) find the nearest backdrop if exists and set the new one in front of it
-        nonSelectedBackdropNodes = nuke.allNodes("BackdropNode")
-        for nonBackdrop in selNodes:
-            for backdrop in nonSelectedBackdropNodes:
-                if nodeIsInside( nonBackdrop, backdrop ):
-                    zOrder = max( zOrder, backdrop.knob( "z_order" ).value() + 1 )
-
-    # Expand the bounds to leave a little border. Elements are offsets for left, top, right and bottom edges respectively
-    left, top, right, bottom = (-10, -80, 10, 10)
-    bdX += left
-    bdY += top
-    bdW += (right - left)
-    bdH += (bottom - top)
-
-    n = nuke.nodes.BackdropNode(xpos = bdX,
-                                  bdwidth = bdW,
-                                  ypos = bdY,
-                                  bdheight = bdH,
-                                  tile_color = int((random.random()*(16 - 10))) + 10,
-                                  note_font_size=42,
-                                  z_order = zOrder )
-
-    # revert to previous selection
-    n['selected'].setValue(False)
+def auto_backdrop(label=None):
+    n = nukescripts.autoBackdrop()
     if label:
         n['label'].setValue(label)
-    for node in selNodes:
-        node['selected'].setValue(True)
-    select(d=True)
-    return n
 
 
 def create_merge(nodes=None, operation='over'):
@@ -545,13 +560,29 @@ def create_merge(nodes=None, operation='over'):
         nodes = nuke.selectedNodes()
     if nodes:
         x = 0
-        for i in nodes:
-            if x == 2:
-                x += 1
-                continue
-            a.setInput(x, i)
+        for n in nodes:
+            a.setInput(x, n)
             x += 1
         a['operation'].setValue(operation)
     nuke.autoplace(a)
     return a
+
+
+def get_min_max(node=None):
+    if not node:
+        node = nuke.selectedNodes()[0]
+    min_color = nuke.nodes.MinColor(target=0, inputs=[node])
+    inv = nuke.nodes.Invert(inputs=[node])
+    max_color = nuke.nodes.MinColor(target=0, inputs=[inv])
+
+    cur_frame = nuke.frame()
+    nuke.execute(min_color, cur_frame, cur_frame)
+    min_ = -min_color['pixeldelta'].value()
+
+    nuke.execute(max_color, cur_frame, cur_frame)
+    max_ = max_color['pixeldelta'].value() + 1
+
+    for n in (min_color, max_color, inv):
+        nuke.delete(n)
+    return min_, max_
 

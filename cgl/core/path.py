@@ -62,6 +62,7 @@ class PathObject(object):
         self.aov = None
         self.render_pass = None
         self.shotname = None
+        self.assetname = None
         self.task = None
         self.camera = None
         self.aov = None
