@@ -389,7 +389,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         last = path_object.get_last_attr()
         seq_attrs = ['seq', 'type']
         shot_attrs = ['shot', 'asset']
-
+        version_template = path_object.version_template
+        del version_template[0:2]
         if DO_IOP:
             if path_object.scope == 'IO':
                 if path_object.version:
@@ -424,7 +425,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         return
                     else:
                         self.panel = None
-        if last == 'filename':
+
+        if last in version_template:
             if self.panel:
                 # if we already have a panel, and we're getting a filename it means it's a currently selected file
                 # and we don't want to reload the panel or it gets into a loop and won't select the file

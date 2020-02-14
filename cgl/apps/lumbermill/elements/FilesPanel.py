@@ -318,22 +318,40 @@ class FilesPanel(QtWidgets.QWidget):
         self.sender().parent().show_tool_buttons(user=object_.user)
 
     def on_render_double_clicked(self, data):
+        print self.path_object.path_root
+        print
         if data:
-            selected = data[0][0]
+            print self.path_object.path_root
             print self.path_object.render_pass
-            if not self.path_object.render_pass:
-                self.path_object.set_attr(render_pass=selected, filename=None, ext=None)
+            print self.path_object.camera
+            print self.path_object.aov
+            print '----------------------------'
+            selected = data[0][0]
+            if selected == '.':
+                print 'going back a folder'
+                last = self.path_object.get_last_attr()
+                self.path_object.set_attr(last, None)
+                print self.path_object.path_root
+                self.update_task_location(self.path_object)
                 self.enter_render_folder()
-            if not self.path_object.camera:
-                self.path_object.set_attr(camera=selected)
-            if not self.path_object.aov:
-                self.path_object.set_attr(aov=selected)
+                return
+            if os.path.splitext(selected)[1]:
+                print selected, 'is a file'
+            else:
+                print self.path_object.path_root
+                self.enter_render_folder()
 
     def on_render_selected(self, data):
         if data:
             new_data = []
+            self.current_location['context'] = 'render'
             object_ = PathObject(self.current_location)
+            current_path = os.path.join(object_.path_root, data[0][0]).replace('\\', '/')
+            new_path_object = PathObject(current_path)
+
+            # print self.parent().parent().parent().path_widget.path_line_edit()
             parent = self.sender().parent()
+            # TODO - this seems vastly overcomplicated for what it's doing
             object_.set_attr(root=self.path_object.root)
             object_.set_attr(version=parent.parent().versions.currentText())
             object_.set_attr(context='render')
@@ -348,7 +366,7 @@ class FilesPanel(QtWidgets.QWidget):
             except IndexError:
                 # this indicates a selection within the module, but not a specific selected files
                 pass
-            self.update_task_location(object_)
+            self.update_task_location(new_path_object)
             for each in data:
                 dir_ = os.path.dirname(object_.path_root)
                 new_data.append(os.path.join(dir_, each[0]))
@@ -444,11 +462,15 @@ class FilesPanel(QtWidgets.QWidget):
         if self.sender().name:
             name = self.sender().name
         if name == 'users':
-            self.path_object = self.path_object.copy(user=user, latest=True, resolution='high')
+            self.path_object = self.path_object.copy(user=user, latest=True, resolution='high', render_pass=None,
+                                                     camera=None, aov=None, filename=None, context='source')
         elif name == 'versions':
-            self.path_object = self.path_object.copy(user=user, version=version, resolution='high')
+            self.path_object = self.path_object.copy(user=user, version=version, resolution='high', render_pass=None,
+                                                     camera=None, aov=None, filename=None, context='source')
         else:
-            self.path_object = self.path_object.copy(user=user, version=version, resolution=resolution)
+            self.path_object = self.path_object.copy(user=user, version=version, resolution=resolution,
+                                                     render_pass=None, camera=None, aov=None, filename=None,
+                                                     context='source')
         files_widget = self.sender().parent().parent()
         # self.current_location = self.path_object.data
         files_widget.on_task_selected(self.path_object)
@@ -586,14 +608,14 @@ class FilesPanel(QtWidgets.QWidget):
                             child.widget().files_area.work_files_table.clearSelection()
         return
 
-    def enter_render_folder(self):
+    def enter_render_folder(self, force_path=None):
         """
 
         :param path_object:
         :return:
         """
-        print self.path_object.path_root
-        files_ = glob.glob('%s/*' % self.path_object.path_root)
+        glob_path = self.path_object.path_root
+        files_ = glob.glob('%s/*' % glob_path)
         data_ = self.prep_list_for_table(files_, basename=True, length=1, back=True)
         model = FilesModel(data_, ['Ready to Review/Publish'])
         self.render_files_widget.set_item_model(model)
@@ -659,7 +681,7 @@ class FilesPanel(QtWidgets.QWidget):
         for each in files:
             output_.append([each])
         if back:
-            output_.insert(0, '..')
+            output_.insert(0, '.')
         print 'adding files %s' % output_
         return output_
 

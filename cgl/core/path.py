@@ -349,13 +349,7 @@ class PathObject(object):
         self.preview_path
         :return:
         """
-
-        if bob:
-            print self.template, self.company, self.context, self.project
-            self.get_template()
-            print self.template
-        else:
-            self.get_template()
+        self.get_template()
         keep_if = self.context_list + self.scope_list
         path_string = ''
         for attr in self.template:
@@ -481,7 +475,6 @@ class PathObject(object):
                     # self.set_path()
         if do_set_path:
             self.set_path()
-
             # print 'setting path for kwargs: %s' % kwargs
 
     def glob_project_element(self, attr, full_path=False):
@@ -523,6 +516,9 @@ class PathObject(object):
         :return:
         """
         value = self.data[attr]
+        split_after_thing = os.path.join(self.path_root.split(value)[0], value)
+        print split_after_thing
+        print split_after_thing.replace('\\', '/')
         return os.path.join(self.path_root.split(value)[0], value).replace('\\', '/')
 
     def eliminate_wild_cards(self):
