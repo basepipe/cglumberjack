@@ -207,7 +207,6 @@ def save_file_as(filepath):
 
 
 def import_directory(filepath):
-    print 'importing directory'
     path_object = NukePathObject(filepath)
     if path_object.task == 'lite':
         import_lighting_renders(filepath)
@@ -239,21 +238,27 @@ def import_lighting_renders(filepath):
     z_node = None
     for root, dirs, files in os.walk(filepath):
         for name in dirs:
-            for sequence in lj_list_dir(os.path.join(root, name)):
-                node_path = os.path.join(root, name, sequence)
-                if not os.path.isdir(node_path):
-                    temp_object = NukePathObject(node_path)
-                    node = import_media(node_path, temp_object.aov)
-                    if lights_contain in temp_object.aov:
-                        light_nodes.append(node)
-                    if temp_object.aov == z_depth:
-                        z_node = node
-                    if temp_object.aov in utilities:
-                        utility_nodes.append(node)
-                    if temp_object.aov == beauty:
-                        print 'creating beauty node'
-                    if temp_object.aov in shaders:
-                        shader_nodes.append(node)
+            stuff = lj_list_dir(os.path.join(root, name))
+            if stuff:
+                print '\t', stuff
+                for sequence in stuff:
+
+                    node_path = os.path.join(root, name, sequence)
+                    if not os.path.isdir(node_path):
+                        temp_object = NukePathObject(node_path)
+                        node = import_media(node_path, temp_object.aov)
+                        if lights_contain in temp_object.aov:
+                            light_nodes.append(node)
+                        if temp_object.aov == z_depth:
+                            z_node = node
+                        if temp_object.aov in utilities:
+                            utility_nodes.append(node)
+                        if temp_object.aov == beauty:
+                            print 'creating beauty node'
+                        if temp_object.aov in shaders:
+                            shader_nodes.append(node)
+            else:
+                pass
     if z_node:
         print 1
         z_nodes = setup_z_node(z_node)

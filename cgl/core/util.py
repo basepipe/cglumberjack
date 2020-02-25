@@ -202,7 +202,7 @@ def cgl_copy_single(source, destination, test=False, methodology='local', verbos
         if os.path.isdir(source):
             # what to do if we're copying a directory to another directory
             run_dict['command_type'] = 'directory to directory'
-            command = 'robocopy "%s" "%s" /NFL /NDL /NJH /NJS /nc /ns /np /MT:8' % (source, destination)
+            command = 'robocopy "%s" "%s" /NFL /NDL /NJH /NJS /nc /ns /np /MT:8 /E' % (source, destination)
         else:
             dir_, file_ = os.path.split(source)
             # We are dealing with a single file.

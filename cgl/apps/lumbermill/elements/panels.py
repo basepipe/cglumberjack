@@ -268,7 +268,11 @@ class TaskPanel(QtWidgets.QWidget):
             if 'elem' in each:
                 task = each
             else:
-                task = self.proj_man_tasks_short_to_long[each]
+                try:
+                    task = self.proj_man_tasks_short_to_long[each]
+                except KeyError:
+                    print('%s not found in short_to_long' % each)
+                    task = each
             button = LJButton(str(task))
             # button.setIcon(QtGui.QIcon(QtGui.QPixmap(os.path.join(icon_path(), image_name))))
             # button.setIconSize(QtCore.QSize(50, 50))
