@@ -2,7 +2,6 @@ import os
 import logging
 from cgl.plugins.Qt import QtGui, QtWidgets
 import time
-import random
 import nuke, nukescripts
 from cgl.core.util import cgl_execute, write_to_cgl_data
 from cgl.core.path import PathObject, Sequence, CreateProductionData, lj_list_dir
@@ -240,9 +239,7 @@ def import_lighting_renders(filepath):
         for name in dirs:
             stuff = lj_list_dir(os.path.join(root, name))
             if stuff:
-                print '\t', stuff
                 for sequence in stuff:
-
                     node_path = os.path.join(root, name, sequence)
                     if not os.path.isdir(node_path):
                         temp_object = NukePathObject(node_path)
