@@ -102,10 +102,10 @@ class FilesPanel(QtWidgets.QWidget):
 
             # find the version information for the task:
             user = self.populate_users_combo(task_widget, current, self.task)
-            version = self.populate_versions_combo(task_widget, current, self.task)
-            resolution = self.populate_resolutions_combo(task_widget, current, self.task)
             self.current_location['user'] = user
+            version = self.populate_versions_combo(task_widget, current, self.task)
             self.current_location['version'] = version
+            resolution = self.populate_resolutions_combo(task_widget, current, self.task)
             self.current_location['resolution'] = resolution
             self.update_task_location(self.current_location)
             self.panel.addWidget(task_widget)
@@ -116,9 +116,14 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.files_area.work_files_table.user = self.version_obj.user
             task_widget.files_area.work_files_table.version = self.version_obj.version
             task_widget.files_area.work_files_table.resolution = self.version_obj.resolution
-            self.work_files = self.version_obj.glob_project_element('filename', full_path=True)
+            try:
+                self.work_files = self.version_obj.glob_project_element('filename', full_path=True)
+                self.high_files = self.version_obj.copy(resolution='high').glob_project_element('filename',
+                                                                                                full_path=True)
+            except ValueError:
+                self.work_files = []
+                self.high_files = []
             # check to see if there are work files for the 'high' version
-            self.high_files = self.version_obj.copy(resolution='high').glob_project_element('filename', full_path=True)
             self.render_files = []
             if user != 'publish':
                 my_files_label = 'My Work Files'
@@ -248,7 +253,10 @@ class FilesPanel(QtWidgets.QWidget):
         task_widget.versions.show()
         task_widget.versions.clear()
         object_ = path_object.copy(user=task_widget.users.currentText(), task=task, version='*')
-        items = object_.glob_project_element('version')
+        try:
+            items = object_.glob_project_element('version')
+        except ValueError:
+            items = ['000.000']
         try:
             latest = items[-1]
         except IndexError:
@@ -269,10 +277,15 @@ class FilesPanel(QtWidgets.QWidget):
 
     @staticmethod
     def populate_resolutions_combo(task_widget, path_object, task):
+        print task_widget.versions.currentText()
+        print '00000000000000'
         object_ = path_object.copy(user=task_widget.users.currentText(), task=task,
                                    version=task_widget.versions.currentText(),
                                    resolution='*')
-        items = object_.glob_project_element('resolution')
+        try:
+            items = object_.glob_project_element('resolution')
+        except ValueError:
+            items = ['high']
         for each in items:
             task_widget.resolutions.addItem(each)
         if path_object.resolution:

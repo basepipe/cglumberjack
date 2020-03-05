@@ -52,6 +52,7 @@ class ProjectManagementData(object):
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
+            self.path_object = path_object
             for key in path_object.__dict__:
                 self.__dict__[key] = path_object.__dict__[key]
         for key in kwargs:
@@ -98,7 +99,6 @@ class ProjectManagementData(object):
                 self.set_status()
 
     def create_project_management_data(self):
-        print 1
         self.project_data = self.entity_exists('project')
         if not self.project_data:
             print 'creating project'
@@ -151,6 +151,8 @@ class ProjectManagementData(object):
                             self.version_data = self.create_version()
             if self.status:
                 self.set_status()
+            if self.filename:
+                self.create_version()
 
     def entity_exists(self, data_type):
         """
@@ -172,6 +174,9 @@ class ProjectManagementData(object):
             data = self.find_user()
         elif data_type == 'task':
             data = self.find_task()
+        elif data_type == 'version':
+            print 'found version'
+            data = self.create_version()
         return data
 
     def create_version(self):
@@ -179,14 +184,20 @@ class ProjectManagementData(object):
         Creates a Version within the Project Management system based off information passed through the PathObject
         :return: Version Data Object
         """
-        data = {'project': self.project_data,
-                'entity': self.entity_data,
-                'sg_task': self.task_data,
-                'code': self.version_name,
-                'user': self.user_data}
-        print('Creating Version: %s' % self.version)
-        sg_data = ShotgunQuery.create('Version', data)
-        return sg_data['id']
+        print 'Do i need to see if the version already exists?'
+        if self.filename:
+            data = {'project': self.project_data,
+                    'entity': self.entity_data,
+                    'sg_task': self.task_data,
+                    'code': self.version_name,
+                    'user': self.user_data}
+            print('Creating Version: %s' % self.version)
+            self.version_data = ShotgunQuery.create('Version', data)
+            print self.version_data
+            self.upload_media()
+            return self.version_data
+        else:
+            print('No File Defined, skipping version creation')
 
     def create_project(self, short_name=None):
         """
@@ -259,6 +270,57 @@ class ProjectManagementData(object):
                     }
         logging.info('Creating Shotgun Task: %s, %s' % (self.task, self.task_name))
         return ShotgunQuery.create('Task', data)
+
+    def upload_media(self):
+        """
+
+        :return:
+        """
+        print 2
+        if not self.file_type:
+            print 'Cannot Determine File Type - skipping Shotgun Upload'
+            return
+        if not os.path.exists(self.path_object.preview_path):
+            print self.path_object.preview_path, 'Does Not Exist'
+            return
+        else:
+            preview = self.path_object.preview_path
+            thumb = self.path_object.thumb_path
+        data = {'sg_path_to_frames': self.path_object.path_root,
+                'sg_path_to_movie': preview}
+        if self.file_type == 'movie' or self.file_type == 'sequence':
+            id_ = int(self.version_data['id'])
+            print id_
+            print preview
+            print self.version_data
+            print self.get_url()
+            ShotgunQuery.upload('Version', id_, preview, field_name='sg_uploaded_movie')
+            # ShotgunQuery.upload_thumbnail('Version', id_, thumb)
+            # ShotgunQuery.upload('Version', id_, preview, field_name='sg_latest_quicktime')
+            ShotgunQuery.update('Version', entity_id=id_, data=data)
+            logging.info('movie uploaded to %s' % self.version_data['code'])
+            pass
+        elif self.file_type == 'image':
+            ShotgunQuery.upload('Version', self.version_data['id'], preview, 'sg_uploaded_movie')
+            ShotgunQuery.update('Version', entity_id=int(self.version_data['id']), data=data)
+            logging.info('image uploaded to %s' % self.version_data['code'])
+        logging.info('Committing Media to Shotgun')
+        self.add_to_dailies()
+
+    def create_review_session(self):
+        """
+
+        :return:
+        """
+        pass
+
+    def add_to_dailies(self):
+        """
+
+        :return:
+        """
+        print 'Adding to Dailies'
+        pass
 
     def add_project_to_user(self):
         ShotgunQuery.update("HumanUser", self.user_data['id'], {'projects': [self.project_data]},
@@ -432,7 +494,6 @@ class ProjectManagementData(object):
     def get_url(self):
         self.get_project_management_data()
         if self.version:
-            print 'version'
             return self.get_version_url()
         if self.task:
             print 'task'

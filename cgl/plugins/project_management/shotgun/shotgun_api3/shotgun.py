@@ -2155,7 +2155,6 @@ class Shotgun(object):
             "entity_type" : entity_type,
             "entity_id" : entity_id,
         }
-
         params.update(self._auth_params())
 
         if is_thumbnail:
@@ -2182,7 +2181,6 @@ class Shotgun(object):
 
         # Create opener with extended form post support
         opener = self._build_opener(FormPostHandler)
-
         # Perform the request
         try:
             result = opener.open(url, params).read()
@@ -2198,7 +2196,6 @@ class Shotgun(object):
                 raise ShotgunError("Could not upload file successfully, but "\
                     "not sure why.\nPath: %s\nUrl: %s\nError: %s" % (
                     path, url, str(result)))
-
         attachment_id = int(str(result).split(":")[1].split("\n")[0])
         return attachment_id
 

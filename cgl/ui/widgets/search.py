@@ -2,6 +2,7 @@ from cgl.plugins.Qt import QtGui, QtWidgets
 from PySide import QtCore
 # noinspection PyUnresolvedReferences
 
+
 class LJSearchEdit(QtWidgets.QLineEdit):
     def __init__(self, parent, button=False):
         QtWidgets.QLineEdit.__init__(self, parent)
@@ -11,7 +12,10 @@ class LJSearchEdit(QtWidgets.QLineEdit):
         self.button.setObjectName("search_cancel_button")
         self.layout = QtWidgets.QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.addWidget(self.button, 0, QtCore.Qt.AlignRight)
+        try:
+            self.layout.addWidget(self.button, 0, QtCore.Qt.AlignRight)
+        except TypeError:
+            print ("Lumbermill is skipping adding this button for some reason:\n\t%s" % self.button)
         self.button.clicked.connect(self.cancel_clicked)
         self.button.hide()
         if button:

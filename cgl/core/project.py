@@ -222,7 +222,27 @@ def do_review(progress_bar=None, path_object=None):
                 print('Select file for Review')
 
         elif PROJ_MANAGEMENT == 'shotgun':
-            print 'Shotgun Reviews not connected yet'
+            if selection.filename:
+                if selection.file_type == 'folder' or not selection.file_type:
+                    dialog = InputDialog(title='Error: unsupported folder or file_type',
+                                         message="%s is a folder or undefined file_type\nunsure how to proceed" %
+                                         selection.filename)
+                    dialog.exec_()
+                    if dialog.button == 'Ok' or dialog.button == 'Cancel':
+                        dialog.accept()
+                        return
+                else:
+                    if os.path.exists(selection.preview_path):
+                        print 1
+                        CreateProductionData(path_object=selection)
+                    else:
+                        selection.upload_review(job_id=job_id)
+            else:
+                print('Select file for Review')
+
+        else:
+            print('%s is an unknown project management type' % PROJ_MANAGEMENT)
+
         selection.set_attr(filename='')
         selection.set_attr(ext='')
     else:

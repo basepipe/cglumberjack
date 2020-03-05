@@ -112,6 +112,7 @@ class PathObject(object):
         elif isinstance(path_object, str):
             self.process_string(path_object)
         elif isinstance(path_object, PathObject):
+            print 3
             self.process_dict(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
@@ -141,6 +142,7 @@ class PathObject(object):
         self.set_attrs_from_dict(path_object)
         self.set_path()
         self.set_project_config()
+        self.set_preview_path()
         # self.set_json()
 
     @staticmethod
@@ -683,30 +685,31 @@ class PathObject(object):
             ext = '.jpg'
         else:
             ext = '.jpg'
-        if '#' in self.filename:
-            name_ = self.filename.split('#')[0]
-            if name_.endswith('.'):
-                name_ = name_[:-1]
-                # ext.replace('.', '')
-            name_ = '%s%s' % (name_, ext)
-        elif '%' in self.filename:
-            name_ = self.filename.split('%')[0]
-            if name_.endswith('.'):
-                ext.replace('.', '')
-            name_ = '%s%s' % (name_, ext)
-        else:
-            name_, o_ext = os.path.splitext(self.filename)
-            if o_ext != ext:
-                name_ = self.filename.replace(o_ext, ext)
+        if self.filename:
+            if '#' in self.filename:
+                name_ = self.filename.split('#')[0]
+                if name_.endswith('.'):
+                    name_ = name_[:-1]
+                    # ext.replace('.', '')
+                name_ = '%s%s' % (name_, ext)
+            elif '%' in self.filename:
+                name_ = self.filename.split('%')[0]
+                if name_.endswith('.'):
+                    ext.replace('.', '')
+                name_ = '%s%s' % (name_, ext)
             else:
-                name_ = self.filename
-        path_ = os.path.split(self.path_root)[0]
-        if sys.platform == 'win32':
-            self.preview_path = '%s/%s/%s' % (path_, '.preview', name_)
-            self.data['preview_path'] = self.preview_path
-        else:
-            self.preview_path = os.path.join(self.root, '.preview', name_)
-            self.data['preview_path'] = self.preview_path
+                name_, o_ext = os.path.splitext(self.filename)
+                if o_ext != ext:
+                    name_ = self.filename.replace(o_ext, ext)
+                else:
+                    name_ = self.filename
+            path_ = os.path.split(self.path_root)[0]
+            if sys.platform == 'win32':
+                self.preview_path = '%s/%s/%s' % (path_, '.preview', name_)
+                self.data['preview_path'] = self.preview_path
+            else:
+                self.preview_path = os.path.join(self.root, '.preview', name_)
+                self.data['preview_path'] = self.preview_path
 
     def set_proper_filename(self):
         """
@@ -773,8 +776,6 @@ class PathObject(object):
                     return True
                 elif PROJ_MANAGEMENT == 'lumbermill':
                     print 'no review process defined for default lumbermill'
-                elif PROJ_MANAGEMENT == 'shotgun':
-                    print 'shotgun not yet set up in lumbermill'
             else:
                 print 'No preview file found for uploading: %s' % self.preview_path
                 info = self.make_preview()
@@ -791,6 +792,7 @@ class PathObject(object):
             # make sure that an hd_proxy exists:
             review_res = CONFIG['default']['resolution']['video_review']
             proxy_info = self.make_proxy(resolution=review_res, ext='jpg', job_id=job_id)
+            print proxy_info
             print 'proxy id %s' % proxy_info['job_id']
             mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
                                               command_name='%s: create_web_mov()' % self.command_base,
@@ -928,6 +930,9 @@ class CreateProductionData(object):
         self.user_login = user_login
         self.test = test
         self.path_object = PathObject(path_object)
+        print self.path_object.path_root
+        print self.path_object.preview_path
+        print self.path_object.thumb_path
         self.do_scope = do_scope
         if file_system:
             self.create_folders()

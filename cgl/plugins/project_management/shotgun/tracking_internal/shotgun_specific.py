@@ -18,13 +18,13 @@ class ShotgunQuery(object):
         self.args = args
         self.kwargs = kwargs
 
-
     def __str__(self):
         return """== Shotgun Query ==
 %s
 %s
 %s
 ==================""" % (self.type, self.args, self.kwargs)
+
     @staticmethod
     def base_shotgun_query(type_, *args, **kwargs):
         config = app_config()['project_management']['shotgun']['api']
@@ -95,8 +95,8 @@ class ShotgunProcess(object):
 
             if not self.connection:
                 import plugins.project_management.shotgun.shotgun_api3 as sg_api
-                config = app_config()['shotgun']
-                self.connection = sg_api.Shotgun(base_url=config['url'],
+                config = app_config()['project_management']['shotgun']['api']
+                self.connection = sg_api.Shotgun(base_url=config['server_url'],
                                                  script_name=config['api_script'],
                                                  api_key=config['api_key'])
 
