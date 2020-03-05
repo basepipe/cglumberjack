@@ -34,8 +34,10 @@ class NukeBrowserWidget(CGLumberjackWidget):
         print 'open nuke'
 
     def import_clicked(self):
-        from cgl_nuke import import_media, import_script
+        from cgl_nuke import import_media, import_script, import_directory
         for selection in self.source_selection:
+            if os.path.isdir(selection):
+                import_directory(selection)
             if selection.endswith('.nk'):
                 import_script(selection)
             else:
@@ -198,14 +200,11 @@ def create_write_node():
     dialog.setAttribute(QtCore.Qt.WA_QuitOnClose)
     dialog.exec_()
     if dialog.button == 'Ok':
-        print 12
         if dialog.combo_box.currentText():
-            print 2
             elem_name = 'elem%s' % dialog.combo_box.currentText().title()
             padding = '#' * cgl_nuke.get_biggest_read_padding()
             if not padding:
                 padding = '####'
-            print 3
             path_object = cgl_nuke.NukePathObject(cgl_nuke.get_file_name())
             path_object.set_attr(task=elem_name)
             path_object.set_attr(context='render')

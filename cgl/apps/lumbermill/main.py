@@ -363,7 +363,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         path_object = data.copy(latest=True, filename=None, ext=None)
         self.update_location(path_object)
 
+    def update_render_location(self, data):
+        print 'updating the render location'
+
     def update_location(self, data):
+        self.nav_widget.search_box.setText('')
+        # TODO - if we're in the project set the search box to the default project
+        # TODO - if we're in the companies set the search box to the default company
         try:
             if self.sender().force_clear:
                 if self.panel:
@@ -383,7 +389,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         last = path_object.get_last_attr()
         seq_attrs = ['seq', 'type']
         shot_attrs = ['shot', 'asset']
-
+        version_template = path_object.version_template
+        del version_template[0:2]
         if DO_IOP:
             if path_object.scope == 'IO':
                 if path_object.version:
@@ -393,6 +400,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         self.setMinimumHeight(700)
                         self.panel.location_changed.connect(self.update_location)
                         self.panel.location_changed.connect(self.path_widget.update_path)
+                        self.panel.render_location_changed.connect(self.render_location)
                         self.layout.addWidget(self.panel)
                         self.layout.addWidget(self.path_widget)
                     return
@@ -417,7 +425,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                         return
                     else:
                         self.panel = None
-        if last == 'filename':
+
+        if last in version_template:
             if self.panel:
                 # if we already have a panel, and we're getting a filename it means it's a currently selected file
                 # and we don't want to reload the panel or it gets into a loop and won't select the file
@@ -462,7 +471,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             else:
                 self.load_files_panel(path_object)
         elif last == 'company':
-            self.panel = CompanyPanel(path_object=path_object, search_box=self.nav_widget.search_box)
+            self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box, title='Companies')
         if self.panel:
             self.update_panel()
         self.layout.addWidget(self.progress_bar)

@@ -120,8 +120,8 @@
         "level": "info"
     }, 
     "lumberjack_sync": {
-        "AWS_ACCESS_KEY_ID": "AKIAJ4HU6QEBIGKH7DRQ", 
-        "AWS_SECRET_ACCESS_KEY": "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"
+        "AWS_ACCESS_KEY_ID": "",
+        "AWS_SECRET_ACCESS_KEY": ""
     }, 
     "paths": {
         "cgl_tools": "",
@@ -729,16 +729,16 @@
         }, 
         "shots": {
             "render": {
-                "file": "{cam}/{render_pass}/{aov}/{seq}_{shot}_{aov}{frame_padding}.{ext}", 
-                "path": "{company}/render/{project}/shots/{seq}/{shot}/{task}/{user}", 
-                "version": "{version}/{resolution}/{filename}.{ext}"
-            }, 
+                "path": "{company}/render/{project}/shots/{seq}/{shot}/{task}/{user}",
+                "version": "{version}/{resolution}/{filename}.{ext}",
+                "version_lite": "{version}/{resolution}/{render_pass}/{camera}/{aov}/{filename}.{ext}"
+            },
             "source": {
-                "path": "{company}/source/{project}/shots/{seq}/{shot}/{task}/{user}", 
+                "path": "{company}/source/{project}/shots/{seq}/{shot}/{task}/{user}",
                 "version": "{version}/{resolution}/{filename}.{ext}"
-            }, 
+            },
             "unity": {
-                "path": "{company}/unity/{project}/Assets/{seq}/{shot}/{task}", 
+                "path": "{company}/unity/{project}/Assets/{seq}/{shot}/{task}",
                 "version": "{filename}.{ext}"
             }
         }

@@ -12,12 +12,15 @@ from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 from cgl.ui.widgets.containers.model import FilesModel
 from panels import clear_layout
 
+# TODO - this appears to be the main offender when it comes to calling the globals through app_config()
 
 CONFIG = app_config()
+
 
 class FilesPanel(QtWidgets.QWidget):
     source_selection_changed = QtCore.Signal(object)
     location_changed = QtCore.Signal(object)
+    render_location_changed = QtCore.Signal(object)
     open_signal = QtCore.Signal()
     import_signal = QtCore.Signal()
     new_version_signal = QtCore.Signal()
@@ -28,6 +31,7 @@ class FilesPanel(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
         self.work_files = []
+        self.render_files_widget = None
         self.high_files = []
         self.render_files = []
         self.version_obj = None
@@ -98,10 +102,10 @@ class FilesPanel(QtWidgets.QWidget):
 
             # find the version information for the task:
             user = self.populate_users_combo(task_widget, current, self.task)
-            version = self.populate_versions_combo(task_widget, current, self.task)
-            resolution = self.populate_resolutions_combo(task_widget, current, self.task)
             self.current_location['user'] = user
+            version = self.populate_versions_combo(task_widget, current, self.task)
             self.current_location['version'] = version
+            resolution = self.populate_resolutions_combo(task_widget, current, self.task)
             self.current_location['resolution'] = resolution
             self.update_task_location(self.current_location)
             self.panel.addWidget(task_widget)
@@ -112,9 +116,14 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.files_area.work_files_table.user = self.version_obj.user
             task_widget.files_area.work_files_table.version = self.version_obj.version
             task_widget.files_area.work_files_table.resolution = self.version_obj.resolution
-            self.work_files = self.version_obj.glob_project_element('filename', full_path=True)
+            try:
+                self.work_files = self.version_obj.glob_project_element('filename', full_path=True)
+                self.high_files = self.version_obj.copy(resolution='high').glob_project_element('filename',
+                                                                                                full_path=True)
+            except ValueError:
+                self.work_files = []
+                self.high_files = []
             # check to see if there are work files for the 'high' version
-            self.high_files = self.version_obj.copy(resolution='high').glob_project_element('filename', full_path=True)
             self.render_files = []
             if user != 'publish':
                 my_files_label = 'My Work Files'
@@ -135,6 +144,7 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.copy_selected_version.connect(self.version_up_selected_clicked)
             task_widget.files_area.work_files_table.selected.connect(self.on_source_selected)
             task_widget.files_area.export_files_table.selected.connect(self.on_render_selected)
+            task_widget.files_area.export_files_table.double_clicked.connect(self.on_render_double_clicked)
             task_widget.files_area.export_files_table.show_in_folder.connect(self.show_selected_in_folder)
             task_widget.files_area.work_files_table.doubleClicked.connect(self.on_open_clicked)
             task_widget.files_area.open_button.clicked.connect(self.on_open_clicked)
@@ -243,7 +253,10 @@ class FilesPanel(QtWidgets.QWidget):
         task_widget.versions.show()
         task_widget.versions.clear()
         object_ = path_object.copy(user=task_widget.users.currentText(), task=task, version='*')
-        items = object_.glob_project_element('version')
+        try:
+            items = object_.glob_project_element('version')
+        except ValueError:
+            items = ['000.000']
         try:
             latest = items[-1]
         except IndexError:
@@ -264,10 +277,15 @@ class FilesPanel(QtWidgets.QWidget):
 
     @staticmethod
     def populate_resolutions_combo(task_widget, path_object, task):
+        print task_widget.versions.currentText()
+        print '00000000000000'
         object_ = path_object.copy(user=task_widget.users.currentText(), task=task,
                                    version=task_widget.versions.currentText(),
                                    resolution='*')
-        items = object_.glob_project_element('resolution')
+        try:
+            items = object_.glob_project_element('resolution')
+        except ValueError:
+            items = ['high']
         for each in items:
             task_widget.resolutions.addItem(each)
         if path_object.resolution:
@@ -312,11 +330,41 @@ class FilesPanel(QtWidgets.QWidget):
         self.clear_task_selection_except(self.sender().task)
         self.sender().parent().show_tool_buttons(user=object_.user)
 
+    def on_render_double_clicked(self, data):
+        print self.path_object.path_root
+        print
+        if data:
+            print self.path_object.path_root
+            print self.path_object.render_pass
+            print self.path_object.camera
+            print self.path_object.aov
+            print '----------------------------'
+            selected = data[0][0]
+            if selected == '.':
+                print 'going back a folder'
+                last = self.path_object.get_last_attr()
+                self.path_object.set_attr(last, None)
+                print self.path_object.path_root
+                self.update_task_location(self.path_object)
+                self.enter_render_folder()
+                return
+            if os.path.splitext(selected)[1]:
+                print selected, 'is a file'
+            else:
+                print self.path_object.path_root
+                self.enter_render_folder()
+
     def on_render_selected(self, data):
         if data:
             new_data = []
+            self.current_location['context'] = 'render'
             object_ = PathObject(self.current_location)
+            current_path = os.path.join(object_.path_root, data[0][0]).replace('\\', '/')
+            new_path_object = PathObject(current_path)
+
+            # print self.parent().parent().parent().path_widget.path_line_edit()
             parent = self.sender().parent()
+            # TODO - this seems vastly overcomplicated for what it's doing
             object_.set_attr(root=self.path_object.root)
             object_.set_attr(version=parent.parent().versions.currentText())
             object_.set_attr(context='render')
@@ -331,7 +379,7 @@ class FilesPanel(QtWidgets.QWidget):
             except IndexError:
                 # this indicates a selection within the module, but not a specific selected files
                 pass
-            self.update_task_location(object_)
+            self.update_task_location(new_path_object)
             for each in data:
                 dir_ = os.path.dirname(object_.path_root)
                 new_data.append(os.path.join(dir_, each[0]))
@@ -427,16 +475,21 @@ class FilesPanel(QtWidgets.QWidget):
         if self.sender().name:
             name = self.sender().name
         if name == 'users':
-            self.path_object = self.path_object.copy(user=user, latest=True, resolution='high')
+            self.path_object = self.path_object.copy(user=user, latest=True, resolution='high', render_pass=None,
+                                                     camera=None, aov=None, filename=None, context='source')
         elif name == 'versions':
-            self.path_object = self.path_object.copy(user=user, version=version, resolution='high')
+            self.path_object = self.path_object.copy(user=user, version=version, resolution='high', render_pass=None,
+                                                     camera=None, aov=None, filename=None, context='source')
         else:
-            self.path_object = self.path_object.copy(user=user, version=version, resolution=resolution)
+            self.path_object = self.path_object.copy(user=user, version=version, resolution=resolution,
+                                                     render_pass=None, camera=None, aov=None, filename=None,
+                                                     context='source')
         files_widget = self.sender().parent().parent()
         # self.current_location = self.path_object.data
         files_widget.on_task_selected(self.path_object)
 
     def on_assign_button_clicked(self, data):
+        print data
         task = self.sender().task
         users_dict = CONFIG['project_management'][self.project_management]['users']
         all_users = []
@@ -568,6 +621,19 @@ class FilesPanel(QtWidgets.QWidget):
                             child.widget().files_area.work_files_table.clearSelection()
         return
 
+    def enter_render_folder(self, force_path=None):
+        """
+
+        :param path_object:
+        :return:
+        """
+        glob_path = self.path_object.path_root
+        files_ = glob.glob('%s/*' % glob_path)
+        data_ = self.prep_list_for_table(files_, basename=True, length=1, back=True)
+        model = FilesModel(data_, ['Ready to Review/Publish'])
+        self.render_files_widget.set_item_model(model)
+
+
     def load_render_files(self, widget):
         logging.debug('loading render files')
         widget.files_area.work_files_table.show()
@@ -609,7 +675,7 @@ class FilesPanel(QtWidgets.QWidget):
         clear_layout(self, layout)
 
     @staticmethod
-    def prep_list_for_table(list_, path_filter=None, basename=False, length=None):
+    def prep_list_for_table(list_, path_filter=None, basename=False, length=None, back=False):
         """
         Allows us to prepare lists for display in LJTables.
         :param list_: list to put into the table.
@@ -621,11 +687,13 @@ class FilesPanel(QtWidgets.QWidget):
         if not list_:
             return
         list_.sort()
+
         output_ = []
         dirname = os.path.dirname(list_[0])
         files = lj_list_dir(dirname, path_filter=path_filter, basename=basename)
         for each in files:
             output_.append([each])
-        print 'adding files %s' % output_
+        if back:
+            output_.insert(0, '.')
         return output_
 

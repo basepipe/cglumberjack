@@ -107,8 +107,8 @@
         "level": "info"
     }, 
     "lumberjack_sync": {
-        "AWS_ACCESS_KEY_ID": "AKIAJ4HU6QEBIGKH7DRQ", 
-        "AWS_SECRET_ACCESS_KEY": "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"
+        "AWS_ACCESS_KEY_ID": "",
+        "AWS_SECRET_ACCESS_KEY": ""
     }, 
     "paths": {
         "code_root": "",

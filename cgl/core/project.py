@@ -44,7 +44,17 @@ def get_task_info(path_object, force=False):
     :param force:
     :return:
     """
-    all_tasks = UserConfig().d['my_tasks'][path_object.company][path_object.project]
+    print 11
+    print UserConfig().d
+    print path_object.company, path_object.project
+    print path_object.path_root
+    if path_object.company in UserConfig().d['my_tasks'].keys():
+        if path_object.project in UserConfig().d['my_tasks'].keys():
+            all_tasks = UserConfig().d['my_tasks'][path_object.company][path_object.project]
+        else:
+            return
+    else:
+        return
     if path_object.task:
         if path_object.scope == 'assets':
             path_object.task_name = '%s_%s_%s' % (path_object.category, path_object.asset, path_object.task)
@@ -212,7 +222,27 @@ def do_review(progress_bar=None, path_object=None):
                 print('Select file for Review')
 
         elif PROJ_MANAGEMENT == 'shotgun':
-            print 'Shotgun Reviews not connected yet'
+            if selection.filename:
+                if selection.file_type == 'folder' or not selection.file_type:
+                    dialog = InputDialog(title='Error: unsupported folder or file_type',
+                                         message="%s is a folder or undefined file_type\nunsure how to proceed" %
+                                         selection.filename)
+                    dialog.exec_()
+                    if dialog.button == 'Ok' or dialog.button == 'Cancel':
+                        dialog.accept()
+                        return
+                else:
+                    if os.path.exists(selection.preview_path):
+                        print 1
+                        CreateProductionData(path_object=selection)
+                    else:
+                        selection.upload_review(job_id=job_id)
+            else:
+                print('Select file for Review')
+
+        else:
+            print('%s is an unknown project management type' % PROJ_MANAGEMENT)
+
         selection.set_attr(filename='')
         selection.set_attr(ext='')
     else:

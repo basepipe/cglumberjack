@@ -200,7 +200,10 @@ class AssetCreator(LJDialog):
             categories = CONFIG['asset_categories']
             cats = ['']
             for c in categories:
-                cats.append(categories[c])
+                if CONFIG['account_info']['project_management'] == 'shotgun':
+                    cats.append(c)
+                else:
+                    cats.append(categories[c])
             self.asset_widget.category_row.combo.addItems(cats)
         elif self.path_object.scope == 'shots':
             seqs = self.path_object.glob_project_element('seq')

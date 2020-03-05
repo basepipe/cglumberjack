@@ -175,4 +175,7 @@ class AsanaJack(object):
     def delete_section(self, project_name, section_name):
         section_data = self.find_section_data(project_name, section_name)
         if section_data:
-            self.client.sections.delete(section_data['id'])
+            self.client.sections.delete(section_data['gid'])
+
+
+# AsanaJack().create_project('lumbermill nuke')

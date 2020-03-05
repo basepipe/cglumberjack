@@ -22,7 +22,7 @@ class Configuration(object):
         if not os.path.exists(self.user_config):
             logging.info('User Config Not Found: %s' % self.user_config)
         self.globals = self._load_json(self.user_config)['globals']
-        print 'Company Globals: ', self.globals
+        # print 'Company Globals: ', self.globals
         if not os.path.exists(self.globals):
             logging.info('No Globals Found at %s' % self.globals)
             return

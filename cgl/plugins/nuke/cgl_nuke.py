@@ -2,9 +2,9 @@ import os
 import logging
 from cgl.plugins.Qt import QtGui, QtWidgets
 import time
-import nuke
+import nuke, nukescripts
 from cgl.core.util import cgl_execute, write_to_cgl_data
-from cgl.core.path import PathObject, Sequence, CreateProductionData
+from cgl.core.path import PathObject, Sequence, CreateProductionData, lj_list_dir
 from cgl.core.config import app_config, UserConfig
 
 CONFIG = app_config()
@@ -41,8 +41,9 @@ class NukePathObject(PathObject):
         self.aov = None
         self.render_pass = None
         self.shotname = None
+        self.assetname = None
         self.task = None
-        self.cam = None
+        self.camera = None
         self.file_type = None
         self.frame_padding = CONFIG['default']['padding']
         self.scope_list = CONFIG['rules']['scope_list']
@@ -76,6 +77,8 @@ class NukePathObject(PathObject):
         self.ingest_source = '*'
         self.processing_method = PROCESSING_METHOD
         self.proxy_resolution = '1920x1080'
+        self.path_template = []
+        self.version_template = []
 
         if isinstance(path_object, unicode):
             path_object = str(path_object)
@@ -202,7 +205,91 @@ def save_file_as(filepath):
     return nuke.scriptSaveAs(filepath)
 
 
-def import_media(filepath):
+def import_directory(filepath):
+    path_object = NukePathObject(filepath)
+    if path_object.task == 'lite':
+        import_lighting_renders(filepath)
+    else:
+        for root, dirs, files in os.walk(filepath):
+            for name in dirs:
+                for sequence in lj_list_dir(os.path.join(root, name)):
+                    node_path = os.path.join(root, name, sequence)
+                    if not os.path.isdir(node_path):
+                        temp_object = NukePathObject(node_path)
+                        if temp_object.aov:
+                            name = temp_object.aov
+                        elif temp_object.shotname:
+                            name = temp_object.shotname
+                        else:
+                            name = None
+                        import_media(node_path, temp_object.aov)
+
+
+def import_lighting_renders(filepath):
+    utilities = ['N', 'P', 'Z', 'cputime']
+    shaders = ['diffuse_direct', 'diffuse_indirect', 'specular_direct', 'specular_indirect', 'sss', 'transmission']
+    z_depth = 'Z'
+    lights_contain = 'RGBA'
+    beauty = 'beauty'
+    light_nodes = []
+    utility_nodes = []
+    shader_nodes = []
+    z_node = None
+    for root, dirs, files in os.walk(filepath):
+        for name in dirs:
+            stuff = lj_list_dir(os.path.join(root, name))
+            if stuff:
+                for sequence in stuff:
+                    node_path = os.path.join(root, name, sequence)
+                    if not os.path.isdir(node_path):
+                        temp_object = NukePathObject(node_path)
+                        node = import_media(node_path, temp_object.aov)
+                        if lights_contain in temp_object.aov:
+                            light_nodes.append(node)
+                        if temp_object.aov == z_depth:
+                            z_node = node
+                        if temp_object.aov in utilities:
+                            utility_nodes.append(node)
+                        if temp_object.aov == beauty:
+                            print 'creating beauty node'
+                        if temp_object.aov in shaders:
+                            shader_nodes.append(node)
+            else:
+                pass
+    if z_node:
+        print 1
+        z_nodes = setup_z_node(z_node)
+        for each in z_nodes:
+            utility_nodes.append(each)
+    nuke.selectAll()
+    auto_place()
+    select(d=True)
+    light_merge = create_merge(nodes=light_nodes, operation='plus')
+    light_nodes.append(light_merge)
+    select(light_nodes)
+    auto_place(light_nodes)
+    auto_backdrop('Lights')
+    select(d=True)
+    select(utility_nodes)
+    auto_place(utility_nodes)
+    auto_backdrop('Utilities')
+    select(d=True)
+    shader_merge = create_merge(nodes=shader_nodes, operation='plus')
+    shader_nodes.append(shader_merge)
+    select(shader_nodes)
+    auto_place(shader_nodes)
+    auto_backdrop('Shading')
+    select(d=True)
+
+
+def auto_place(nodes=False):
+    if not nodes:
+        nodes = nuke.selectedNodes()
+    for n in nodes:
+        nuke.autoplace(n)
+
+
+def import_media(filepath, name=None):
     """
     imports the filepath.  This assumes that sequences are formated as follows:
     [sequence] [sframe]-[eframe]
@@ -213,13 +300,64 @@ def import_media(filepath):
     :param filepath:
     :return:
     """
-    readNode = nuke.createNode('Read')
-    readNode.knob('file').fromUserText(filepath)
+    read_node = nuke.createNode('Read')
+    if name:
+        read_node.knob('name').setValue(name)
+    read_node.knob('file').fromUserText(filepath)
     path_object = NukePathObject(filepath)
     proxy_object = PathObject(filepath).copy(resolution=path_object.proxy_resolution, ext='exr')
     dir_ = os.path.dirname(proxy_object.path_root)
     if os.path.exists(dir_):
-        readNode.knob('proxy').fromUserText(proxy_object.path_root)
+        read_node.knob('proxy').fromUserText(proxy_object.path_root)
+    return read_node
+
+
+def find_node(name):
+    nodes = nuke.allNodes()
+    for n in nodes:
+        if name in n['name'].value():
+            print 'found name'
+            return n
+    return None
+
+
+def setup_z_node(z_node):
+    """
+    This assumes we're using arnold AOVs when setting up this z network
+    :param node:
+    :param z_channel:
+    :return:
+    """
+    nodes = []
+    beauty = find_node('beauty')
+    min, max = get_min_max(z_node)
+    mult_node = nuke.createNode('Multiply')
+    mult_node['value'].setValue(1 / max)
+    mult_node['name'].setValue('Z Preview')
+    nodes.append(mult_node)
+
+    select([z_node])
+    sc = nuke.createNode('ShuffleCopy')
+    sc['in2'].setValue('depth')
+    sc['out'].setValue('depth')
+    sc['red'].setValue('red')
+    if beauty:
+        sc.setInput(0, beauty)
+    sc.setInput(1, z_node)
+    nodes.append(sc)
+
+    z_defocus = nuke.createNode('ZDefocus2')
+    z_defocus['z_channel'].setValue('depth.Z')
+    z_defocus['math'].setValue('depth')
+    z_defocus['output'].setValue('focal_plane_setup')
+    z_defocus['size'].setValue(20)
+    z_defocus['max_size'].setExpression('size')
+    nodes.append(z_defocus)
+    select()
+    mult_node.setInput(0, z_node)
+
+    return nodes
+
 
 
 def create_scene_write_node():
@@ -294,9 +432,14 @@ def confirm_prompt(title='title', message='message', button=None):
     return p.show()
 
 
-def deselected():
-    nuke.selectAll()
-    nuke.invertSelection()
+def select(nodes=None, d=True):
+    if d:
+        nuke.selectAll()
+        nuke.invertSelection()
+    if nodes:
+        nuke.selectAll()
+        nuke.invertSelection()
+        [x['selected'].setValue(True) for x in nodes]
 
 
 def check_write_node_version(selected=True):
@@ -405,3 +548,43 @@ def get_write_paths_as_path_objects():
                     path_object = NukePathObject(path)
                     write_objects.append(path_object)
     return write_objects
+
+
+def auto_backdrop(label=None):
+    n = nukescripts.autoBackdrop()
+    if label:
+        n['label'].setValue(label)
+
+
+def create_merge(nodes=None, operation='over'):
+    a = nuke.createNode('Merge2')
+    if not nodes:
+        nodes = nuke.selectedNodes()
+    if nodes:
+        x = 0
+        for n in nodes:
+            a.setInput(x, n)
+            x += 1
+        a['operation'].setValue(operation)
+    nuke.autoplace(a)
+    return a
+
+
+def get_min_max(node=None):
+    if not node:
+        node = nuke.selectedNodes()[0]
+    min_color = nuke.nodes.MinColor(target=0, inputs=[node])
+    inv = nuke.nodes.Invert(inputs=[node])
+    max_color = nuke.nodes.MinColor(target=0, inputs=[inv])
+
+    cur_frame = nuke.frame()
+    nuke.execute(min_color, cur_frame, cur_frame)
+    min_ = -min_color['pixeldelta'].value()
+
+    nuke.execute(max_color, cur_frame, cur_frame)
+    max_ = max_color['pixeldelta'].value() + 1
+
+    for n in (min_color, max_color, inv):
+        nuke.delete(n)
+    return min_, max_
+

@@ -2,7 +2,7 @@ import glob
 import os
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.config import app_config
-from cgl.ui.widgets.widgets import LJListWidget, LJButton
+from cgl.ui.widgets.widgets import LJListWidget, LJButton, LJTableWidget
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.core.path import PathObject, CreateProductionData, icon_path
@@ -23,7 +23,8 @@ class CompanyPanel(QtWidgets.QWidget):
         self.path_object = path_object
         self.panel = QtWidgets.QVBoxLayout(self)
         pixmap = QtGui.QPixmap(icon_path('company24px.png'))
-        self.company_widget = LJListWidget('Companies', pixmap=pixmap)
+        #self.company_widget = LJListWidget('Companies', pixmap=pixmap, search_box=search_box)
+        self.data_table = LJTableWidget(self, path_object=self.path_object)
         self.company_widget.add_button.setText('add company')
         self.company_widget.list.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Expanding)
         self.user_root = CONFIG['cg_lumberjack_dir']
@@ -100,7 +101,7 @@ class CompanyPanel(QtWidgets.QWidget):
 class ProjectPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None, search_box=None):
+    def __init__(self, parent=None, path_object=None, search_box=None, title='Projects'):
         QtWidgets.QWidget.__init__(self, parent)
         self.path_object = path_object
         self.project_management = CONFIG['account_info']['project_management']
@@ -108,24 +109,36 @@ class ProjectPanel(QtWidgets.QWidget):
         self.root = CONFIG['paths']['root']  # Company Specific
         self.user_root = CONFIG['cg_lumberjack_dir']
         self.left_column_visibility = True
-
+        self.title = title
         # Create the Left Panel
         self.panel = QtWidgets.QVBoxLayout(self)
-
-        self.project_filter = ProjectWidget(title="Projects", pixmap=QtGui.QPixmap(icon_path('project24px.png')),
-                                            search_box=search_box)
+        if title == 'Projects':
+            pixmap = QtGui.QPixmap(icon_path('project24px.png'))
+        elif title == 'Companies':
+            pixmap = QtGui.QPixmap(icon_path('company24px.png'))
+        self.project_filter = ProjectWidget(title=title, pixmap=pixmap,
+                                            search_box=search_box, path_object=self.path_object)
 
         self.panel.addWidget(self.project_filter)
-        self.load_projects()
+        if title == 'Projects':
+            self.load_projects()
+        elif title == 'Companies':
+            self.load_companies()
 
         self.project_filter.data_table.doubleClicked.connect(self.on_project_changed)
         self.project_filter.add_button.clicked.connect(self.on_create_project)
 
     def on_project_changed(self, data):
         data = self.project_filter.data_table.items_
-        self.path_object.set_attr(project=data[0][0])
-        self.path_object.set_attr(scope='*')
-        self.update_location(self.path_object)
+        print data
+        if self.title == 'Projects':
+            self.path_object.set_attr(project=data[0][0])
+            self.path_object.set_attr(scope='*')
+            self.update_location(self.path_object)
+        elif self.title == 'Companies':
+            self.path_object.set_attr(company=data[0][0], context='source', project='*')
+            # self.path_object.set_path(bob=True)
+            self.update_location(self.path_object)
 
     def toggle_visibility(self):
         if self.left_column_visibility:
@@ -156,28 +169,51 @@ class ProjectPanel(QtWidgets.QWidget):
 
         self.update_location(self.path_object)
 
+    def load_companies(self):
+        companies_loc = '%s/*' % self.path_object.root
+        companies = glob.glob(companies_loc)
+        if not companies:
+            print 'no companies'
+            self.project_filter.data_table.setEnabled(False)
+            self.project_filter.add_button.setText('Create First Company')
+        else:
+            self.project_filter.data_table.setEnabled(True)
+            self.project_filter.add_button.setText('Add Company')
+        self.project_filter.setup(ListItemModel(prep_list_for_table(companies, split_for_file=True), ['Name']))
+        self.update_location(self.path_object)
+
     def update_location(self, path_object=None):
         if not path_object:
             path_object = self.path_object
         self.location_changed.emit(path_object.data)
 
     def on_create_project(self):
+        if self.title == 'Projects':
+            progress_bar = self.parent().progress_bar
+            dialog = CreateProjectDialog(parent=None, variable='project')
+            dialog.exec_()
+            if dialog.button == 'Ok':
+                project_name = dialog.proj_line_edit.text()
+                self.path_object.set_attr(project=project_name)
+                production_management = dialog.proj_management_combo.currentText()
+                print self.path_object.path_root
+                print production_management
+                process_method(progress_bar,
+                               self.do_create_project,
+                               args=(progress_bar, self.path_object, production_management),
+                               text='Creating Project')
+                self.path_object.set_attr(project='*')
+                self.update_location()
+        elif self.title == 'Companies':
+            dialog = InputDialog(title='Create Company', message='Enter the name for the company:', line_edit=True)
+            dialog.exec_()
 
-        progress_bar = self.parent().progress_bar
-        dialog = CreateProjectDialog(parent=None, variable='project')
-        dialog.exec_()
-        if dialog.button == 'Ok':
-            project_name = dialog.proj_line_edit.text()
-            self.path_object.set_attr(project=project_name)
-            production_management = dialog.proj_management_combo.currentText()
-            print self.path_object.path_root
-            print production_management
-            process_method(progress_bar,
-                           self.do_create_project,
-                           args=(progress_bar, self.path_object, production_management),
-                           text='Creating Project')
-            self.path_object.set_attr(project='*')
-            self.update_location()
+            if dialog.button == 'Ok':
+                company = dialog.line_edit.text()
+                self.path_object.set_attr(company=company)
+                CreateProductionData(self.path_object, project_management='lumbermill')
+                self.load_companies()
+
 
     @staticmethod
     def do_create_project(progress_bar, path_object, production_management):
@@ -232,7 +268,11 @@ class TaskPanel(QtWidgets.QWidget):
             if 'elem' in each:
                 task = each
             else:
-                task = self.proj_man_tasks_short_to_long[each]
+                try:
+                    task = self.proj_man_tasks_short_to_long[each]
+                except KeyError:
+                    print('%s not found in short_to_long' % each)
+                    task = each
             button = LJButton(str(task))
             # button.setIcon(QtGui.QIcon(QtGui.QPixmap(os.path.join(icon_path(), image_name))))
             # button.setIconSize(QtCore.QSize(50, 50))
