@@ -729,16 +729,16 @@
         }, 
         "shots": {
             "render": {
-                "file": "{cam}/{render_pass}/{aov}/{seq}_{shot}_{aov}{frame_padding}.{ext}", 
-                "path": "{company}/render/{project}/shots/{seq}/{shot}/{task}/{user}", 
-                "version": "{version}/{resolution}/{filename}.{ext}"
-            }, 
+                "path": "{company}/render/{project}/shots/{seq}/{shot}/{task}/{user}",
+                "version": "{version}/{resolution}/{filename}.{ext}",
+                "version_lite": "{version}/{resolution}/{render_pass}/{camera}/{aov}/{filename}.{ext}"
+            },
             "source": {
-                "path": "{company}/source/{project}/shots/{seq}/{shot}/{task}/{user}", 
+                "path": "{company}/source/{project}/shots/{seq}/{shot}/{task}/{user}",
                 "version": "{version}/{resolution}/{filename}.{ext}"
-            }, 
+            },
             "unity": {
-                "path": "{company}/unity/{project}/Assets/{seq}/{shot}/{task}", 
+                "path": "{company}/unity/{project}/Assets/{seq}/{shot}/{task}",
                 "version": "{filename}.{ext}"
             }
         }
