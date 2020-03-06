@@ -822,6 +822,7 @@ class PathObject(object):
         :param job_id: job_id of dependent job.
         :return:
         """
+
         if resolution:
             width, height = resolution.split('x')
         else:

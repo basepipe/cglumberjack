@@ -504,9 +504,11 @@ class FilesPanel(QtWidgets.QWidget):
             dialog.combo_box.setCurrentIndex(index)
         dialog.exec_()
         if dialog.button == 'Start':
-            local_user = dialog.combo_box.currentText()  # this denotes the OS login name of the user
+            selected_user = dialog.combo_box.currentText()  # this denotes the OS login name of the user
+            print selected_user
+            user_info = CONFIG['project_management'][self.project_management]['users'][selected_user]
             self.path_object.set_attr(task=task)
-            self.path_object.set_attr(user=local_user)
+            self.path_object.set_attr(user=selected_user)
             self.path_object.set_attr(version='000.000')
             self.path_object.set_attr(resolution='high')
             self.path_object.set_attr(shot=data.shot)
@@ -516,7 +518,7 @@ class FilesPanel(QtWidgets.QWidget):
             self.path_object.set_attr(filename_base=None)
             CreateProductionData(path_object=self.path_object,
                                  project_management=self.project_management,
-                                 user_login=self.user_info['login'],
+                                 user_login=user_info['login'],
                                  force_pm_creation=True)
         self.update_task_location(path_object=self.path_object)
 
