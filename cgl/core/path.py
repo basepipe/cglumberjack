@@ -185,6 +185,9 @@ class PathObject(object):
             else:
                 version_template = CONFIG['templates'][self.scope][self.context]['version'].split('/')
             self.version_template = self.clean_template(version_template)
+        elif self.scope == "IO":
+            version_template = CONFIG['templates'][self.scope]['source']['version'].split('/')
+            self.version_template = self.clean_template(version_template)
         else:
             self.version_template = []
         # self.template = self.template + self.version_template
@@ -392,6 +395,7 @@ class PathObject(object):
         """
         sets attribute on the path object.  You can use "attr"/"value" or simply put attr=value into the function
         :param attr: attribute name
+        :param do_set_path: True if you want to set the path and path_root after setting attr.
         :param value: value for corresponding attribute name
         :param kwargs: expecting any number of key value pairs.
         :return:
@@ -477,6 +481,7 @@ class PathObject(object):
                     self.data['minor_version'] = minor
                     # self.set_path()
         if do_set_path:
+            print 'setting path for %s' % attr
             self.set_path()
             # print 'setting path for kwargs: %s' % kwargs
 
@@ -491,7 +496,11 @@ class PathObject(object):
         """
 
         list_ = []
-        index = self.template.index(attr)
+        try:
+            index = self.template.index(attr)
+        except ValueError:
+            print('%s not found in template, skipping')
+            return []
         parts = self.path.split('/')
         i = 0
         path_ = ''
@@ -1392,13 +1401,21 @@ def seq_from_file(basename):
     :return:
     """
     numbers = re.search(SEQ_REGEX, basename)
-    if numbers:
-        numbers = numbers.group(0).replace('.', '')
-        string = '#' * int(len(numbers))
-        string = '%s.' % string
-        this = re.sub(SEQ_REGEX, string, basename)
-        return this
+    name_, ext_ = os.path.splitext(basename)
+    if ext_ in EXT_MAP.keys():
+        if EXT_MAP[ext_] == 'image':
+            if numbers:
+                numbers = numbers.group(0).replace('.', '')
+                string = '#' * int(len(numbers))
+                string = '%s.' % string
+                this = re.sub(SEQ_REGEX, string, basename)
+                return this
+            else:
+                return basename
+        else:
+            return basename
     else:
+        print('%s not found in extension map in in globals, please add it' % ext_)
         return basename
 
 

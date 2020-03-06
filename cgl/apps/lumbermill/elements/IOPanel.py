@@ -305,7 +305,7 @@ class IOPanel(QtWidgets.QWidget):
         self.path_object.set_attr(version=latest)
         if not new:
             self.path_object = self.path_object.next_major_version()
-        self.empty_state.setText('Drag Files Here to Create Ingest %s' % self.path_object.version)
+        self.empty_state.setText('Drag Files Here to  %s' % self.path_object.version)
 
     def on_ingest_selected(self):
         self.ingest_widget.empty_state.hide()
@@ -657,7 +657,7 @@ class IOPanel(QtWidgets.QWidget):
         # deselect everything in the event
         # change the file path to reflect no selection
         self.path_object = self.path_object.next_major_version()
-        self.empty_state.setText('Drag Media Here to Create Ingest %s' % self.path_object.version)
+        self.empty_state.setText('Drag Media Here to  %s' % self.path_object.version)
         self.hide_tags()
         self.file_tree.hide()
         self.empty_state.show()
