@@ -112,7 +112,6 @@ class PathObject(object):
         elif isinstance(path_object, str):
             self.process_string(path_object)
         elif isinstance(path_object, PathObject):
-            print 3
             self.process_dict(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
@@ -481,7 +480,6 @@ class PathObject(object):
                     self.data['minor_version'] = minor
                     # self.set_path()
         if do_set_path:
-            print 'setting path for %s' % attr
             self.set_path()
             # print 'setting path for kwargs: %s' % kwargs
 

@@ -351,7 +351,6 @@ def create_mov(sequence, output=None, framerate=settings['frame_rate'], output_f
                                                                                                      height)
     ffmpeg_cmd = ''
     if path_object.file_type == 'sequence':
-        print 3
         start_frame = get_first_frame(sequence)[0]
         ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
                      r' -crf %s -pix_fmt %s -r %s %s %s' % (CONFIG['ffmpeg'],
