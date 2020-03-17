@@ -13,9 +13,9 @@ def run(session):
     :param session:
     :return:
     """
-
-    print("hello world: ExportToDrive")
-    dialog = ExportDialog(path_object=session.path_object)
+    print session.path_object.path_root
+    path_object = PathObject(session.path_widget.text.replace('/*', ''))
+    dialog = ExportDialog(path_object=path_object)
     dialog.exec_()
 
 
