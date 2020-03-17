@@ -19,7 +19,6 @@ def run(session):
     dialog.exec_()
 
 
-
 class ExportDialog(LJDialog):
     def __init__(self, path_object):
         LJDialog.__init__(self)
