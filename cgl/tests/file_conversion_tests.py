@@ -1,7 +1,7 @@
 from cgl.core.path import PathObject
 
 # hdri sequence conversion
-exr_sequence_hash = r'Z:/COMPANIES/loneCoconut/render/cgl_unitTestC/shots/CDL/0700/plate/publish/000.000/high/A065C007_120101_R2GR.########.exr'
+exr_sequence_hash = r'Z:/COMPANIES/loneCoconut/render/CGL_TESTPROJECT/shots/010/0200/plate/publish/000.000/high/VFX_MDO_103_0040_####.exr'
 # exr_sequence_percentage = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/high/03_2a_%05d.exr'
 # exr_sequence_star = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/high/03_2a_*.exr'
 
@@ -19,7 +19,9 @@ exr_sequence_hash = r'Z:/COMPANIES/loneCoconut/render/cgl_unitTestC/shots/CDL/07
 path_object = PathObject(exr_sequence_hash)
 print path_object.preview_path
 print path_object.thumb_path
-path_object.make_preview()
+# job_info = path_object.make_proxy()
+# job_info = path_object.make_preview(job_id=job_info['job_id'])
+job_info = path_object.upload_review()
 
 # path_object.upload_review()
 # path_object.make_proxy()

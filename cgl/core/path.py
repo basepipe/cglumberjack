@@ -379,15 +379,15 @@ class PathObject(object):
         if self.filename:
             if self.filename != '*':
                 self.set_file_type()
+                # TODO - probably can get rid of all the if not statements
                 if not self.hd_proxy_path:
                     self.set_hd_proxy_path()
                 if not self.preview_path:
                     self.set_preview_path()
-                if not self.thumb_path:
-                    if sys.platform == 'win32':
-                        p_path = os.path.splitext(self.preview_path)[0]
-                        self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
-                        self.data['thumb_path'] = self.thumb_path
+                if sys.platform == 'win32':
+                    p_path = os.path.splitext(self.preview_path)[0]
+                    self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
+                    self.data['thumb_path'] = self.thumb_path
         return self.path
 
     def set_attr(self, attr=None, value=None, do_set_path=True, **kwargs):
@@ -938,6 +938,7 @@ class CreateProductionData(object):
         self.user_login = user_login
         self.test = test
         self.path_object = PathObject(path_object)
+        self.path_object.set_path()
         print self.path_object.path_root
         print self.path_object.preview_path
         print self.path_object.thumb_path
