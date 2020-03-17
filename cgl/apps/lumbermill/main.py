@@ -551,7 +551,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             # launch_(self, task, selection)
 
 
-
 class CGLumberjack(LJMainWindow):
     def __init__(self, show_import=False, user_info=None, start_time=None, previous_path=None):
         LJMainWindow.__init__(self)
@@ -571,6 +570,9 @@ class CGLumberjack(LJMainWindow):
         self.user_email = ''
         self.user_name = ''
         self.company = ''
+        self.pd_menus = {}
+        self.menu_dict = {}
+        self.menus = {}
         self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
                                                  user_email=user_info['login'],
                                                  company=self.company,
@@ -589,8 +591,8 @@ class CGLumberjack(LJMainWindow):
         h = 500
 
         self.resize(w, h)
-        menu_bar = self.menuBar()
-        two_bar = self.menuBar()
+        self.menu_bar = self.menuBar()
+        self.two_bar = self.menuBar()
         icon = QtGui.QPixmap(":/images/lumberjack.24px.png").scaled(24, 24)
         self.setWindowIcon(icon)
         login = QtWidgets.QAction('login', self)
@@ -599,11 +601,11 @@ class CGLumberjack(LJMainWindow):
         update_button = QtWidgets.QAction('Check For Updates', self)
         report_bug_button = QtWidgets.QAction('Report Bug', self)
         request_feature_button = QtWidgets.QAction('Request Feature', self)
-        tools_menu = menu_bar.addMenu('&Tools')
+        tools_menu = self.menu_bar.addMenu('&Tools')
         if self.project_management != 'lumbermill':
-            self.proj_man_link = two_bar.addAction(proj_man)
-        self.login_menu = two_bar.addAction(login)
-        two_bar.addAction(time_tracking)
+            self.proj_man_link = self.two_bar.addAction(proj_man)
+        self.login_menu = self.two_bar.addAction(login)
+        self.two_bar.addAction(time_tracking)
         settings = QtWidgets.QAction('Settings', self)
         open_globals = QtWidgets.QAction('Go to Company Globals', self)
         open_user_globals = QtWidgets.QAction('Go to User Globals', self)
@@ -634,6 +636,123 @@ class CGLumberjack(LJMainWindow):
         report_bug_button.triggered.connect(self.report_bug_clicked)
         request_feature_button.triggered.connect(self.feature_request_clicked)
         time_tracking.triggered.connect(self.time_tracking_clicked)
+        # Load any custom menus that the user has defined
+        self.load_pipeline_designer_menus()
+
+    def load_pipeline_designer_menus(self):
+        import json
+        #
+        print '0-0---------00000000000000000000000000000'
+        menus_json = os.path.join(CONFIG['paths']['cgl_tools'], 'lumbermill', 'menus.cgl')
+        print menus_json
+        if os.path.exists(menus_json):
+            with open(menus_json, 'r') as stream:
+                self.pd_menus = json.load(stream)['lumbermill']
+                software_menus = self.order_menus(self.pd_menus)
+                for menu in software_menus:
+                    _menu = self.create_menu(menu)
+                    self.menu_dict[menu] = _menu
+                    buttons = self.order_buttons(menu)
+                    self.add_menu_buttons(menu, buttons)
+        else:
+            print 'No menu file found!'
+        pass
+
+    @staticmethod
+    def order_menus(menus):
+        """
+        Orders the Menus from the json file correctly.  This is necessary for the menus to show up in the correct
+        order within the interface.
+        :return:
+        """
+        for menu in menus:
+            menus[menu]['order'] = menus[menu].get('order', 10)
+        if menus:
+            return sorted(menus, key=lambda key: menus[key]['order'])
+
+    def create_menu(self, menu):
+        print menu
+        menu_object = self.menu_bar.addMenu(menu)
+        print menu_object
+        return menu_object
+
+    def order_buttons(self, menu):
+        """
+        orders the buttons correctly within a menu.
+        :param menu:
+        :return:
+        """
+        print 'menus, %s, menu_dict %s' % (menu, self.menu_dict)
+        buttons = self.pd_menus[menu]
+        buttons.pop('order')
+        try:
+            # there is something weird about this - as soon as these are removed "shelves" never reinitializes
+            buttons.pop('active')
+        except KeyError:
+            pass
+        for button in buttons:
+            if button:
+                buttons[button]['order'] = buttons[button].get('order', 10)
+        if buttons:
+            return sorted(buttons, key=lambda key: buttons[key]['order'])
+        else:
+            return {}
+
+    def add_menu_buttons(self, menu, buttons):
+        for button in buttons:
+            label = self.pd_menus[menu][button]['label']
+            if 'icon' in self.pd_menus[menu][button].keys():
+                icon_file = self.pd_menus[menu][button]['icon']
+                if icon_file:
+                    label = ''
+            else:
+                icon_file = ''
+
+            if 'annotation' in self.pd_menus[menu][button].keys():
+                annotation = self.pd_menus[menu][button]['annotation']
+            else:
+                annotation = ''
+            print icon_file
+            self.add_button(menu, label=self.pd_menus[menu][button]['label'],
+                            annotation=annotation,
+                            command=self.pd_menus[menu][button]['module'],
+                            icon=icon_file,
+                            image_overlay_label=label)
+
+    def add_button(self, menu, label='', annotation='', command='', icon='', image_overlay_label='', hot_key=''):
+        action = QtWidgets.QAction(label, self)
+        self.menu_dict[menu].addAction(action)
+        module = command.split()[1]
+        module_name = module.split('.')[-1]
+        loaded_module = __import__(module, globals(), locals(), module_name, -1)
+        function = getattr(loaded_module, 'run')
+        action.triggered.connect(lambda: function(self.centralWidget()))
+        # action.triggered.connect(command)
+        pass
+
+    def order_buttons(self, menu):
+        """
+        orders the buttons correctly within a menu.
+        :param menu:
+        :return:
+        """
+        print self.pd_menus.keys()
+        print menu
+        buttons = self.pd_menus[menu]
+        buttons.pop('order')
+        try:
+            # there is something weird about this - as soon as these are removed "shelves" never reinitializes
+            buttons.pop('active')
+        except KeyError:
+            pass
+        for button in buttons:
+            if button:
+                buttons[button]['order'] = buttons[button].get('order', 10)
+        if buttons:
+            return sorted(buttons, key=lambda key: buttons[key]['order'])
+        else:
+            return {}
+
 
     @staticmethod
     def time_tracking_clicked():
