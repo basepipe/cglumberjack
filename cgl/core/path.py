@@ -380,10 +380,8 @@ class PathObject(object):
             if self.filename != '*':
                 self.set_file_type()
                 # TODO - probably can get rid of all the if not statements
-                if not self.hd_proxy_path:
-                    self.set_hd_proxy_path()
-                if not self.preview_path:
-                    self.set_preview_path()
+                self.set_hd_proxy_path()
+                self.set_preview_path()
                 if sys.platform == 'win32':
                     p_path = os.path.splitext(self.preview_path)[0]
                     self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
