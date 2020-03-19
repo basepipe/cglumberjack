@@ -1,6 +1,6 @@
 import sys
 import os
-from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
+from cgl.plugins.Qt import QtWidgets
 from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.combo import AdvComboBox
 from cgl.core.path import PathObject
@@ -13,7 +13,6 @@ def run(session):
     :param session:
     :return:
     """
-    print session.path_object.path_root
     path_object = PathObject(session.path_widget.text.replace('/*', ''))
     dialog = ExportDialog(path_object=path_object)
     dialog.exec_()
@@ -33,8 +32,8 @@ class ExportDialog(LJDialog):
         shot = path_object.shot
         self.to_object = None
         self.root = ''
-        all = r'%s/%s/%s' % (seq, shot, task)
-        self.setWindowTitle('Export %s to drive' % all)
+        all_ = r'%s/%s/%s' % (seq, shot, task)
+        self.setWindowTitle('Export %s to drive' % all_)
         v_layout = QtWidgets.QVBoxLayout(self)
         grid_layout = QtWidgets.QGridLayout()
         button_layout = QtWidgets.QHBoxLayout()
@@ -49,7 +48,6 @@ class ExportDialog(LJDialog):
         self.message = QtWidgets.QLabel('')
         self.cancel_button = QtWidgets.QPushButton('Cancel')
         self.ok_button = QtWidgets.QPushButton('Copy Task')
-
 
         grid_layout.addWidget(drive_label, 0, 0)
         grid_layout.addWidget(self.drive_combo, 0, 1)

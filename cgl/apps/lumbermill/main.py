@@ -642,9 +642,7 @@ class CGLumberjack(LJMainWindow):
     def load_pipeline_designer_menus(self):
         import json
         #
-        print '0-0---------00000000000000000000000000000'
         menus_json = os.path.join(CONFIG['paths']['cgl_tools'], 'lumbermill', 'menus.cgl')
-        print menus_json
         if os.path.exists(menus_json):
             with open(menus_json, 'r') as stream:
                 self.pd_menus = json.load(stream)['lumbermill']
@@ -671,32 +669,8 @@ class CGLumberjack(LJMainWindow):
             return sorted(menus, key=lambda key: menus[key]['order'])
 
     def create_menu(self, menu):
-        print menu
         menu_object = self.menu_bar.addMenu(menu)
-        print menu_object
         return menu_object
-
-    def order_buttons(self, menu):
-        """
-        orders the buttons correctly within a menu.
-        :param menu:
-        :return:
-        """
-        print 'menus, %s, menu_dict %s' % (menu, self.menu_dict)
-        buttons = self.pd_menus[menu]
-        buttons.pop('order')
-        try:
-            # there is something weird about this - as soon as these are removed "shelves" never reinitializes
-            buttons.pop('active')
-        except KeyError:
-            pass
-        for button in buttons:
-            if button:
-                buttons[button]['order'] = buttons[button].get('order', 10)
-        if buttons:
-            return sorted(buttons, key=lambda key: buttons[key]['order'])
-        else:
-            return {}
 
     def add_menu_buttons(self, menu, buttons):
         for button in buttons:
@@ -736,8 +710,6 @@ class CGLumberjack(LJMainWindow):
         :param menu:
         :return:
         """
-        print self.pd_menus.keys()
-        print menu
         buttons = self.pd_menus[menu]
         buttons.pop('order')
         try:
