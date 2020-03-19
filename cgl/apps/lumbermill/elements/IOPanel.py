@@ -305,7 +305,7 @@ class IOPanel(QtWidgets.QWidget):
         self.path_object.set_attr(version=latest)
         if not new:
             self.path_object = self.path_object.next_major_version()
-        self.empty_state.setText('Drag Files Here to Create Ingest %s' % self.path_object.version)
+        self.empty_state.setText('Drag Files Here to  %s' % self.path_object.version)
 
     def on_ingest_selected(self):
         self.ingest_widget.empty_state.hide()
@@ -398,7 +398,6 @@ class IOPanel(QtWidgets.QWidget):
                 if self.task_combo.currentText():
                     try:
                         task = proj_man_tasks[str(self.task_combo.currentText())]
-                        print seq, 'is sequence before it goes into the path object'
                         to_object = self.path_object.copy(scope=self.scope_combo.currentText(),
                                                           seq=seq,
                                                           shot=shot,
@@ -407,7 +406,6 @@ class IOPanel(QtWidgets.QWidget):
                                                           version='000.000',
                                                           user='publish',
                                                           resolution='high')
-                        print to_object.seq, 'is sequence after the path object.'
                         status = ''
                         for f in self.current_selection:
                             row = self.data_frame.loc[(self.data_frame['Filename'] == f[FILENAME]) &
@@ -495,7 +493,7 @@ class IOPanel(QtWidgets.QWidget):
                 return
             scope = self.data_frame.loc[row, 'Scope']
             seq = self.data_frame.loc[row, 'Seq']
-            shot = int(self.data_frame.loc[row, 'Shot'])
+            shot = self.data_frame.loc[row, 'Shot']
             task = self.data_frame.loc[row, 'Task']
             if type(scope) != float:
                 if scope:
@@ -619,6 +617,7 @@ class IOPanel(QtWidgets.QWidget):
 
     def on_file_selected(self, data):
         self.tags_title.setText("<b>CGL:></b>  Choose 'Assets' or 'Shots' for your scope")
+        print 'file selected, showing gui'
         self.show_tags_gui()
         self.current_selection = data
         self.scope_combo.setCurrentIndex(0)
@@ -657,7 +656,7 @@ class IOPanel(QtWidgets.QWidget):
         # deselect everything in the event
         # change the file path to reflect no selection
         self.path_object = self.path_object.next_major_version()
-        self.empty_state.setText('Drag Media Here to Create Ingest %s' % self.path_object.version)
+        self.empty_state.setText('Drag Media Here to  %s' % self.path_object.version)
         self.hide_tags()
         self.file_tree.hide()
         self.empty_state.show()

@@ -343,6 +343,8 @@ class ProjectManagementData(object):
                 'frameOut': 150,
                 'frameRate': 25
             })
+            print self.version_data
+            print server_location
             thumb_component = self.version_data.create_component(
                 path=thumb,
                 data={'name': 'thumbnail'},

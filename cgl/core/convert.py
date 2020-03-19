@@ -60,6 +60,7 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     if not output_.is_valid_sequence():
         logging.error('%s is not a valid sequence' % output_sequence)
     fileout = output_.num_sequence
+    print fileout
     out_dir = os.path.dirname(fileout)
     out_obj = PathObject(out_dir)
     if out_obj.context == 'source':
@@ -103,7 +104,13 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
 
     if process_info:
         process_info['file_out'] = fileout
-        write_to_cgl_data(process_info)
+        print fileout
+        print '-----------'
+        print process_info
+        try:
+            write_to_cgl_data(process_info)
+        except ValueError:
+            print('Skipping write to cgl_data: %s' % process_info)
         return process_info
 
 
@@ -157,7 +164,10 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
         command = r'python %s -i %s -o %s -t web_preview -ft sequence' % (filename, filein, fileout)
         process_info = cgl_execute(command, command_name=command_name, methodology='smedge', WaitForJobID=dependent_job)
         process_info['file_out'] = fileout
-        write_to_cgl_data(process_info)
+        try:
+            write_to_cgl_data(process_info)
+        except ValueError:
+            print('Skipping creation of cgl_data for %s:' % process_info)
         return process_info
 
     ffmpeg_cmd = ''
@@ -191,7 +201,10 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
                                    command_name=command_name, WaitForJobID=dependent_job, new_window=new_window)
 
         process_info['file_out'] = fileout
-        write_to_cgl_data(process_info)
+        try:
+            write_to_cgl_data(process_info)
+        except ValueError:
+            print('Skipping creation of cgl_data for %s' % fileout)
         return process_info
 
 
@@ -227,7 +240,10 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
         command = r'python %s -i %s -o %s -t thumb -ft movie' % (pyfile, input_file, output_file)
         process_info = cgl_execute(command, command_name=command_name, methodology='smedge', WaitForJobID=dependent_job)
         process_info['file_out'] = output_file
-        write_to_cgl_data(process_info)
+        try:
+            write_to_cgl_data(process_info)
+        except ValueError:
+            print('Error writing to cgl_data for: %s' % output_file)
         return process_info
 
     if processing_method == 'local':
@@ -237,7 +253,10 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
                                    command_name=command_name, new_window=new_window,
                                    WaitForJobID=dependent_job)
         process_info['file_out'] = output_file
-        write_to_cgl_data(process_info)
+        try:
+            write_to_cgl_data(process_info)
+        except ValueError:
+            print('Error writing to cgl_data for: %s' % output_file)
         return process_info
 
 

@@ -34,12 +34,15 @@ class NukeBrowserWidget(CGLumberjackWidget):
         print 'open nuke'
 
     def import_clicked(self):
-        from cgl_nuke import import_media, import_script, import_directory
+        from cgl_nuke import import_media, import_script, import_directory, import_geo
         for selection in self.source_selection:
+            base_, ext = os.path.splitext(selection)
             if os.path.isdir(selection):
                 import_directory(selection)
             if selection.endswith('.nk'):
                 import_script(selection)
+            elif ext.lower() == '.obj' or ext.lower() == '.fbx':
+                import_geo(selection.replace('\\', '/'))
             else:
                 import_media(selection)
             print 'nuke import'

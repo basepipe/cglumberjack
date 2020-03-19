@@ -112,7 +112,6 @@ class PathObject(object):
         elif isinstance(path_object, str):
             self.process_string(path_object)
         elif isinstance(path_object, PathObject):
-            print 3
             self.process_dict(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
@@ -184,6 +183,9 @@ class PathObject(object):
                 version_template = CONFIG['templates'][self.scope][self.context][version].split('/')
             else:
                 version_template = CONFIG['templates'][self.scope][self.context]['version'].split('/')
+            self.version_template = self.clean_template(version_template)
+        elif self.scope == "IO":
+            version_template = CONFIG['templates'][self.scope]['source']['version'].split('/')
             self.version_template = self.clean_template(version_template)
         else:
             self.version_template = []
@@ -377,21 +379,20 @@ class PathObject(object):
         if self.filename:
             if self.filename != '*':
                 self.set_file_type()
-                if not self.hd_proxy_path:
-                    self.set_hd_proxy_path()
-                if not self.preview_path:
-                    self.set_preview_path()
-                if not self.thumb_path:
-                    if sys.platform == 'win32':
-                        p_path = os.path.splitext(self.preview_path)[0]
-                        self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
-                        self.data['thumb_path'] = self.thumb_path
+                # TODO - probably can get rid of all the if not statements
+                self.set_hd_proxy_path()
+                self.set_preview_path()
+                if sys.platform == 'win32':
+                    p_path = os.path.splitext(self.preview_path)[0]
+                    self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
+                    self.data['thumb_path'] = self.thumb_path
         return self.path
 
     def set_attr(self, attr=None, value=None, do_set_path=True, **kwargs):
         """
         sets attribute on the path object.  You can use "attr"/"value" or simply put attr=value into the function
         :param attr: attribute name
+        :param do_set_path: True if you want to set the path and path_root after setting attr.
         :param value: value for corresponding attribute name
         :param kwargs: expecting any number of key value pairs.
         :return:
@@ -491,7 +492,11 @@ class PathObject(object):
         """
 
         list_ = []
-        index = self.template.index(attr)
+        try:
+            index = self.template.index(attr)
+        except ValueError:
+            print('%s not found in template, skipping')
+            return []
         parts = self.path.split('/')
         i = 0
         path_ = ''
@@ -822,6 +827,7 @@ class PathObject(object):
         :param job_id: job_id of dependent job.
         :return:
         """
+
         if resolution:
             width, height = resolution.split('x')
         else:
@@ -930,6 +936,7 @@ class CreateProductionData(object):
         self.user_login = user_login
         self.test = test
         self.path_object = PathObject(path_object)
+        self.path_object.set_path()
         print self.path_object.path_root
         print self.path_object.preview_path
         print self.path_object.thumb_path
@@ -1391,13 +1398,21 @@ def seq_from_file(basename):
     :return:
     """
     numbers = re.search(SEQ_REGEX, basename)
-    if numbers:
-        numbers = numbers.group(0).replace('.', '')
-        string = '#' * int(len(numbers))
-        string = '%s.' % string
-        this = re.sub(SEQ_REGEX, string, basename)
-        return this
+    name_, ext_ = os.path.splitext(basename)
+    if ext_ in EXT_MAP.keys():
+        if EXT_MAP[ext_] == 'image':
+            if numbers:
+                numbers = numbers.group(0).replace('.', '')
+                string = '#' * int(len(numbers))
+                string = '%s.' % string
+                this = re.sub(SEQ_REGEX, string, basename)
+                return this
+            else:
+                return basename
+        else:
+            return basename
     else:
+        print('%s not found in extension map in in globals, please add it' % ext_)
         return basename
 
 

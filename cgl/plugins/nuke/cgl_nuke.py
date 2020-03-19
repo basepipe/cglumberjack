@@ -168,7 +168,10 @@ class NukePathObject(PathObject):
                         process_info['file_out'] = file_name
                         process_info['artist_time'] = time.time() - process_info['start_time']
                         process_info['end_time'] = time.time()
-                        write_to_cgl_data(process_info)
+                        try:
+                            write_to_cgl_data(process_info)
+                        except ValueError:
+                            print('CGL_data file too big, skipping for now')
                         process_info_list.append(process_info)
             return process_info_list
         else:
@@ -415,8 +418,8 @@ def import_script(filepath):
     return nuke.nodePaste(filepath)
 
 
-def import_read_geo(filepath):
-    n = nuke.createNode("ReadGeo2")
+def import_geo(filepath):
+    n = nuke.createNode("ReadGeo") # should maybe be readGeo2
     n.knob('file').setText(filepath)
 
 
