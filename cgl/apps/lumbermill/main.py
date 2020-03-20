@@ -725,7 +725,6 @@ class CGLumberjack(LJMainWindow):
         else:
             return {}
 
-
     @staticmethod
     def time_tracking_clicked():
         from cgl.ui.widgets.dialog import TimeTracker

@@ -12,6 +12,7 @@ from cgl.plugins.preflight.main import Preflight
 
 CONFIG = app_config()
 
+
 def get_nuke_main_window():
     """Returns Nuke's main window"""
 
@@ -275,3 +276,13 @@ def launch_lumbermill():
         main_window.show()
         main_window.raise_()
     app.exec_()
+
+
+def fix_paths():
+    import cgl.ui.widgets.path_fixer as path_fixer
+    reload(path_fixer)
+    write_nodes = nuke.allNodes('Write')
+    read_nodes = nuke.allNodes('Read')
+    all_nodes = write_nodes + read_nodes
+    dialog = path_fixer.PathFixer(nodes=all_nodes)
+    dialog.show()
