@@ -362,7 +362,6 @@ def setup_z_node(z_node):
     return nodes
 
 
-
 def create_scene_write_node():
     """
     This function specifically assumes the current file is in the pipeline and that you want to make a write node for
@@ -590,4 +589,34 @@ def get_min_max(node=None):
     for n in (min_color, max_color, inv):
         nuke.delete(n)
     return min_, max_
+
+
+def find_nodes(node_class, top_node=nuke.root()):
+    if top_node.Class() == node_class:
+        yield top_node
+    elif isinstance(top_node, nuke.Group):
+        for child in top_node.nodes():
+            for found_node in find_nodes(node_class, child):
+                yield found_node
+
+
+def replace_in_path(input_script=None, find_pattern=None, replace_pattern=None, output_script=None, type_='Write'):
+    """
+
+    :param input_script:
+    :param output_script:
+    :param type_: This can be "Write" or "Read" for this current implementation as designed
+    :param find_pattern:
+    :param new_pattern:
+    :return:
+    """
+    if input_script:
+        nuke.scriptOpen(input_script)
+    nodes_ = [w for w in find_nodes(type_)]
+    for n in nodes_:
+        path = n['file'].value()
+        print n.name(), path
+        #path = path.replace(find_pattern, replace_pattern)
+        #n['file'].setValue(path)
+    # nuke.scriptSave(output_script)
 
