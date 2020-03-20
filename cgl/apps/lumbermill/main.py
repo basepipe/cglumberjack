@@ -699,8 +699,8 @@ class CGLumberjack(LJMainWindow):
         module_name = module.split('.')[-1]
         loaded_module = __import__(module, globals(), locals(), module_name, -1)
         function = getattr(loaded_module, 'run')
-        path_object = cglpath.PathObject(self.centralWidget().path_widget.text.replace('/*', ''))
-        action.triggered.connect(lambda: function(path_object))
+
+        action.triggered.connect(lambda: function(self.centralWidget()))
         # action.triggered.connect(command)
         pass
 

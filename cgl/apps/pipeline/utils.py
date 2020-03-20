@@ -223,7 +223,7 @@ class CGLMenuButton(QtWidgets.QWidget):
             return preflight
 
         elif self.menu_type == 'menus' and self.software == 'lumbermill':
-            return "\n\ndef run(path_object):\n    print(\"hello world: %s\")" % self.name
+            return "\n\ndef run(lumbermill):\n    print(\"hello world: %s\")" % self.name
         else:
             return "\n\ndef run():\n    print(\"hello world: %s\")" % self.name
 
