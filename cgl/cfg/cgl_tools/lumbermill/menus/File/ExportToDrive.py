@@ -7,13 +7,13 @@ from cgl.core.path import PathObject
 from cgl.core.util import cgl_copy
 
 
-def run(path_object):
+def run(lumbermill):
     """
     Copies Entire Folder Structures to an external Drive
     :param session:
     :return:
     """
-    # path_object = PathObject(session.path_widget.text.replace('/*', ''))
+    path_object = PathObject(lumbermill.path_widget.text.replace('/*', ''))
     dialog = ExportDialog(path_object=path_object)
     dialog.exec_()
 
