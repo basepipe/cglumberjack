@@ -5,6 +5,7 @@ import time
 import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from core.utils import read_write, web
+import plugins.syncthing.utils as syncthing
 
 DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
 DEFAULT_CODE_ROOT = os.path.join(os.path.expanduser("~"), 'PycharmProjects', 'cglumberjack')
@@ -789,7 +790,6 @@ class QuickSync(QtWidgets.QDialog):
             self.import_button.hide()
             self.import_project_hint.hide()
 
-
     def on_company_name_changed(self):
         self.company_name = self.company_line_edit.text()
         if self.company_name:
@@ -848,6 +848,17 @@ class QuickSync(QtWidgets.QDialog):
         # TODO - it'd be nice to double check all the sofwtare paths and see if there are newer versions on disk, this will help a ton.
         read_write.save_json(globals["paths"]["globals"], globals)
 
+    def setup_syncthing(self):
+        """
+
+        :return:
+        """
+        cgl_tools_folder = os.path.join(self.default_root, '_config', 'cgl_tools')
+        if not os.path.exists(cgl_tools_folder):
+            os.makedirs(cgl_tools_folder)
+        sync_folders = [os.path.join(cgl_tools_folder)]
+        syncthing.setup(self.company_name_s3, 'LONE_COCONUT_SYNC_THING', sync_folders)
+
     def set_up_lumbermill(self):
         """
         checks s3 for the existance of a globals file and pipeline_designer files.
@@ -863,6 +874,9 @@ class QuickSync(QtWidgets.QDialog):
         # Step 4: Copy the published CGL_TOOLS to the default location
         # Step 5: Import any Projects
         # Step 6: Set up Syncthing
+        self.setup_syncthing()
+
+        # set_up_syncthing(folders=[os.path.join(self.default_root, '_config', 'cgl_tools')])
 
 
 def create_user_globals(user_globals, globals_path):

@@ -13,6 +13,7 @@ google-auth-oauthlib
 gspread
 PyWin32
 xmltodict
+oauth2client
 
 #  http://aka.ms/vcpython27
 # https://s3.amazonaws.com/aws-cli/AWSCLI64.msi

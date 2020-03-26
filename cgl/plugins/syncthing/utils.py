@@ -1,7 +1,38 @@
 import xml.etree.ElementTree as ET
 import getpass
+import os
+from random import randint
 import subprocess
-import cgl.plugins.google.sheets as G
+import cgl.plugins.google.sheets as sheets
+
+
+def setup(company, sheet_name, folders=[]):
+    """
+    setups up everything needed for syncthing to run in the production environment, adds folders to the config.
+    :param folders:
+    :return:
+    """
+    if folders:
+        config_path = get_config_path()
+        if not os.path.exists(config_path):
+            print 'launching syncthing'
+        sheet_obj = get_sheet(company, sheet_name)
+        add_device_info_to_sheet(sheet_obj)
+        add_all_devices_to_config(sheet_obj)
+        for each in folders:
+            folder_id = str(randint(100000, 999999))
+            add_folder_to_config(folder_id, each)
+        share_files_to_devices()
+    else:
+        print('Please provide a list of folders before attempting to set up syncthing')
+
+
+def get_sheet(company, sheet_name):
+    from cgl.core.config import app_config
+    client_file = os.path.join(app_config()['paths']['root'], 'client.json')
+    sheets.get_sheets_authentication(client_file, company)
+    sheet_obj = sheets.authorize_sheets(sheet_name, client_file)
+    return sheet_obj
 
 
 def get_config_path():
@@ -61,7 +92,7 @@ def add_device_info_to_sheet(sheet):
     :param sheet: The sheet object to be edited
     :return:
     """
-    new_row = G.find_empty_row_in_sheet(sheet)
+    new_row = sheets.find_empty_row_in_sheet(sheet)
     device_dictionary = get_my_device_info()
     sheet.update_cell(new_row, 1, device_dictionary['id'])
     sheet.update_cell(new_row, 2, device_dictionary['name'])
@@ -74,7 +105,7 @@ def get_all_device_info(sheet):
     :return: Array of dictionaries containing necessary device information
     """
     device_list = []
-    num_of_rows = G.find_empty_row_in_sheet(sheet)
+    num_of_rows = sheets.find_empty_row_in_sheet(sheet)
     for row in range(2, num_of_rows):
         if sheet.cell(row,1).value != get_my_device_info()['id']:
             entry = {"id": sheet.cell(row, 1).value, "name": sheet.cell(row,2).value, "user": sheet.cell(row,3).value}
@@ -124,7 +155,7 @@ def add_folder_to_config(folder_id, filepath):
     :param filepath: The path to the file being added to syncthing
     :return:
     """
-
+    # TODO - check to see if the folder exists
     config_path = get_config_path()
     tree = ET.parse(config_path)
     root = tree.getroot()
