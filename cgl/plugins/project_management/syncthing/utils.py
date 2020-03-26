@@ -7,34 +7,46 @@ import getpass
 import subprocess
 from oauth2client.service_account import ServiceAccountCredentials
 
-scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
-filepath = 'C:\\Users\\Molta\\Desktop\\client.json'
-creds = ServiceAccountCredentials.from_json_keyfile_name(filepath, scope)
-
-client = gspread.authorize(creds)
-
-sheet = client.open('LONE_COCONUT_SYNC_THING').sheet1
-
-
-def does_id_exist(value):
+def authorize_sheets(sheet_name):
     """
-
-    :param value:
-    :return:
+    Authorizes api calls to the google sheet
+    :param sheet_name: Title of the sheet being accessed
+    :return: A google sheet object
     """
+    scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/spreadsheets',
+             'https://www.googleapis.com/auth/drive']
+
+    filepath = 'C:\\Users\\Molta\\Desktop\\client.json'
+    creds = ServiceAccountCredentials.from_json_keyfile_name(filepath, scope)
+
+    client = gspread.authorize(creds)
+
+    sheet = client.open(sheet_name).sheet1
+    return sheet
+
+
+def does_id_exist(id, sheet):
+    """
+    Checks to see if ID is already entered into the google sheet
+    :param id: ID to look for in sheet
+    :param sheet: Title of google sheet to search in
+    :return: True if the value is already entered in the sheet, false if the value has no entry yet
+    """
+    sheet = authorize_sheets(sheet)
     data = sheet.col_values(1)
     for i in data:
-        if i == value:
+        if i == id:
             return True
     return False
 
 
 def find_empty_row_in_sheet():
     """
-
-    :return:
+    Finds the first empty row in the google sheet
+    :return: Integer representation of the first empty row
     """
+    sheet = authorize_sheets('LONE_COCONUT_SYNC_THING')
     count = 1
     data = sheet.col_values(1)
     for i in data:
@@ -46,10 +58,10 @@ def find_empty_row_in_sheet():
 
 def get_sheets_authentication(filepath, client='lone-coconut'):
     """
-
-    :param client:
-    :param filepath:
-    :return:
+    Gets the json authentication file from amazon s3 and saves it on the local machine at the filepath
+    :param client: The name of the client for the sheet
+    :param filepath: The filepath where the authentication json will be saved
+    :return: Returns the filepath to the local copy of the authentication file
     """
     url = 'https://%s.s3.amazonaws.com/sync_thing/lone-coconut-syncthing-0853eb66e60e.json' % client
     r = requests.get(url, allow_redirects=True)
@@ -57,10 +69,11 @@ def get_sheets_authentication(filepath, client='lone-coconut'):
         f.write(r.content)
     return filepath
 
+
 def get_config_path():
     """
-
-    :return:
+    Gets the full path to the syncthing config file
+    :return: A string containing the full path to the config file
     """
     command = "syncthing -paths"
     return_output = False
@@ -77,10 +90,11 @@ def get_config_path():
     print output_values[1]
     return output_values[1]
 
+
 def get_my_device_info():
     """
-
-    :return:
+    Retreives current device's information from the syncthing config file
+    :return: A dictionary with the device ID and device name
     """
     filepath = get_config_path()
     tree = ET.parse(filepath)
@@ -94,22 +108,24 @@ def get_my_device_info():
 
     return {'id': my_id, 'name': machine_name}
 
-def add_device_info_to_sheet(cred_path):
+def add_device_info_to_sheet(sheet_name):
     """
-
+    Adds current device information to google sheet
     :return:
     """
+    sheet = authorize_sheets(sheet_name)
     new_row = find_empty_row_in_sheet()
     device_dictionary = get_my_device_info()
     sheet.update_cell(new_row, 1, device_dictionary['id'])
     sheet.update_cell(new_row, 2, device_dictionary['name'])
     sheet.update_cell(new_row, 3, getpass.getuser().lower())
 
-def get_all_device_id():
+def get_all_device_info():
     """
-
-    :return:
+    Gets all devices currently entered into syncthing
+    :return: Array of dictionaries containing necessary device information
     """
+    sheet = authorize_sheets('LONE_COCONUT_SYNC_THING')
     device_list = []
     num_of_rows = find_empty_row_in_sheet()
     print num_of_rows
@@ -123,10 +139,10 @@ def get_all_device_id():
 
 def add_all_device_id_to_config():
     """
-
+    Add a new device to be synched with in syncthing
     :return:
     """
-    device_list = get_all_device_id()
+    device_list = get_all_device_info()
     filepath = get_config_path()
     tree = ET.parse(filepath)
     root = tree.getroot()
@@ -157,10 +173,28 @@ def add_all_device_id_to_config():
     tree.write(filepath)
 
 
+def add_folder_to_config(folder_id, filepath):
+    """
+    Function to add a new folder to be synched through syncthing
+    :param folder_id: The ID label for the folder being added to syncthing
+    :param filepath: The path to the file being added to syncthing
+    :return:
+    """
+
+    config_path = get_config_path()
+    tree = ET.parse(config_path)
+    root = tree.getroot()
+
+    new_node = ET.SubElement(root, 'folder')
+    new_node.set('id', folder_id)
+    new_node.set('path', filepath)
+    tree.write(config_path)
+
 
 
 
 if __name__ =="__main__":
     # get_sheets_authentication(filepath)
     # add_device_info_to_sheet(filepath)
-    add_all_device_id_to_config()
+    # add_all_device_id_to_config()
+    # add_folder_to_config('kyls_new_file', 'C:\\Users\\Molta\\test')
