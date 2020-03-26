@@ -2,6 +2,12 @@ import gspread
 import requests
 from oauth2client.service_account import ServiceAccountCredentials
 
+"""
+TODO:
+1. Check if device id already exists in google doc, dont add it again
+2. If file id already exists, dont add it to xml
+"""
+
 
 def authorize_sheets(sheet_name, filepath):
     """

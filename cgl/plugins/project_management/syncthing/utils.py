@@ -30,16 +30,27 @@ def get_my_device_info():
     Retreives current device's information from the syncthing config file
     :return: A dictionary with the device ID and device name
     """
+    machine_name = ''
+    return_output = False
+    print_output = True
+    output_values = []
+    p = subprocess.Popen('syncthing -device-id', stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    if return_output or print_output:
+        while True:
+            output = p.stdout.readline()
+            if output == '' and p.poll() is not None:
+                break
+            if output:
+                output_values.append(output.strip())
+
+    device_id = output_values[0]
     filepath = get_config_path()
     tree = ET.parse(filepath)
     root = tree.getroot()
-    device_id = root[0][1].get('id')
-    machine_name = ''
 
     for child in root:
         if child.tag == 'device' and child.get('id') == device_id:
             machine_name = child.get('name')
-            print machine_name
 
     return {'id': device_id, 'name': machine_name}
 
@@ -95,7 +106,7 @@ def add_all_devices_to_config(sheet):
         paused = ET.SubElement(new_node, 'paused')
         paused.text = "false"
         autoAcceptFolders = ET.SubElement(new_node, 'autoAcceptFolders')
-        autoAcceptFolders.text = "false"
+        autoAcceptFolders.text = "true"
         maxSendKbps = ET.SubElement(new_node, 'maxSendKbps')
         maxSendKbps.text = 0
         maxRecvKbps = ET.SubElement(new_node, 'maxRecvKbps')
@@ -130,9 +141,39 @@ def add_folder_to_config(folder_id, filepath):
     tree.write(config_path)
 
 
+def share_files_to_devices():
+    """
+    Makes all files shareable to all devices found in the config file
+    :return:
+    """
+    config_path = get_config_path()
+    tree = ET.parse(config_path)
+    root = tree.getroot()
+
+    all_device_id = []
+
+    for child in root:
+        if child.tag == 'device':
+            all_device_id.append(child.get('id'))
+
+    for child in root:
+        shared = []
+        if child.tag == 'folder':
+            for sub_element in child:
+                if sub_element.tag == 'device':
+                    shared.append(sub_element.get('id'))
+            for id in all_device_id:
+                if id not in shared:
+                    new_node = ET.SubElement(child, 'device')
+                    new_node.set('id', id)
+    tree.write(config_path)
+
+
 if __name__ =="__main__":
-    # file_location = G.get_sheets_authentication('C:\\Users\\Molta\\Desktop')
-    sheet1 = G.authorize_sheets('LONE_COCONUT_SYNC_THING', 'C:\\Users\\Molta\\Desktop\\client.json')
-    # add_device_info_to_sheet(sheet1)
-    #add_all_devices_to_config(sheet1)
-    add_folder_to_config('kyls_new_file', 'C:\\Users\\Molta\\test')
+    # # file_location = G.get_sheets_authentication('C:\\Users\\Molta\\Desktop')
+    # sheet1 = G.authorize_sheets('LONE_COCONUT_SYNC_THING', 'C:\\Users\\Molta\\Desktop\\client.json')
+    # # add_device_info_to_sheet(sheet1)
+    # #add_all_devices_to_config(sheet1)
+    # add_folder_to_config('kyls_new_file', 'C:\\Users\\Molta\\test')
+    # get_my_device_info()
+    share_files_to_devices()
