@@ -3,7 +3,7 @@ import os
 import re
 import click
 from cgl.core.config import app_config
-from cgl.core.util import cgl_execute, write_to_cgl_data
+from core.utils.general import cgl_execute, write_to_cgl_data
 
 CONFIG = app_config()
 PATHS = CONFIG['paths']

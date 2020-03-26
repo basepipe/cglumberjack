@@ -7,9 +7,9 @@ from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
-from cgl.core.util import current_user, check_for_latest_master, update_master
+from core.utils.general import current_user, check_for_latest_master, update_master
 from cgl.core.config import app_config, UserConfig
-from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, CompanyPanel, TaskPanel
+from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
 from cgl.ui.widgets.help import ReportBugDialog, RequestFeatureDialog
 try:
@@ -693,15 +693,16 @@ class CGLumberjack(LJMainWindow):
                             image_overlay_label=label)
 
     def add_button(self, menu, label='', annotation='', command='', icon='', image_overlay_label='', hot_key=''):
-        action = QtWidgets.QAction(label, self)
-        self.menu_dict[menu].addAction(action)
         module = command.split()[1]
         module_name = module.split('.')[-1]
-        loaded_module = __import__(module, globals(), locals(), module_name, -1)
-        function = getattr(loaded_module, 'run')
-
-        action.triggered.connect(lambda: function(self.centralWidget()))
-        # action.triggered.connect(command)
+        try:
+            loaded_module = __import__(module, globals(), locals(), module_name, -1)
+            action = QtWidgets.QAction(label, self)
+            self.menu_dict[menu].addAction(action)
+            function = getattr(loaded_module, 'run')
+            action.triggered.connect(lambda: function(self.centralWidget()))
+        except ImportError:
+            pass
         pass
 
     def order_buttons(self, menu):

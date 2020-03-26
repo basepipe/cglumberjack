@@ -3,7 +3,7 @@ import json
 from cgl.plugins.Qt import QtWidgets
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
-from cgl.core.util import load_style_sheet
+from core.utils.general import load_style_sheet
 from cgl.core.project import get_cgl_tools
 from utils import CGLMenu
 

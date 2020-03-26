@@ -1,6 +1,6 @@
 import logging
 from cgl.plugins.Qt import QtGui, QtCore
-from cgl.core.util import app_name
+from core.utils.general import app_name
 
 
 class UISettings(object):

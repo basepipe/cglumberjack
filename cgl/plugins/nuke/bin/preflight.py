@@ -1,9 +1,7 @@
 from PySide import QtCore
-import plugins.nuke.cgl_nuke as cgl_nuke
-from plugins.nuke.gui import CGLNuke
 import plugins.preflight.main
 from cgl.core.config import app_config
-from cgl.core.util import current_user
+from core.utils.general import current_user
 
 CONFIG = app_config()
 

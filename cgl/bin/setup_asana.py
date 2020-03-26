@@ -2,11 +2,11 @@ import requests
 import shutil
 import os
 import sys
-from cgl.plugins.Qt import QtGui
+from cgl.plugins.Qt import QtWidgets
 from cgl.core.config import app_config
 from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.widgets import AdvComboBox
-from core.util import load_xml, save_xml
+from core.utils.general import load_xml, save_xml
 
 workspace = "1145700648005039"
 CONFIG = app_config()

@@ -1,6 +1,6 @@
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.base import LJDialog
-from cgl.core.util import load_json
+from core.utils.general import load_json
 from cgl.core.path import icon_path
 import os
 

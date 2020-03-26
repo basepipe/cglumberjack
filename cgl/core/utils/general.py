@@ -10,7 +10,6 @@ import logging
 import re
 import xmltodict
 from cgl.core.config import app_config
-
 CONFIG = app_config()
 
 
@@ -381,7 +380,7 @@ def update_master():
 
 
 def get_end_time(start_time):
-    return time.time()-start_time
+    return time.time() - start_time
 
 
 def get_job_id():
@@ -451,6 +450,12 @@ def main(edit_cgl, user, job_id, key, value):
 
 if __name__ == '__main__':
     main()
+
+
+
+
+
+
 
 
 
