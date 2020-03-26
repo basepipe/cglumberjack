@@ -1,8 +1,16 @@
 import getpass
 import os
 import json
+import time
+import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
-from cgl.core.util import cgl_copy
+from core.utils import read_write, web
+
+DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
+DEFAULT_CODE_ROOT = os.path.join(os.path.expanduser("~"), 'PycharmProjects', 'cglumberjack')
+DEFAULT_HOME = os.path.join(os.path.expanduser("~"), 'cglumberjack')
+DEFAULT_USER_GLOBALS = os.path.join(DEFAULT_HOME, 'user_globals.json')
+DEFAULT_GLOBALS = os.path.join(DEFAULT_ROOT, '_config', 'globals.json')
 
 
 class PathItemWidget(QtWidgets.QWidget):
@@ -182,7 +190,7 @@ class PathItemWidget(QtWidgets.QWidget):
 
 class ConfigDialog(QtWidgets.QDialog):
 
-    def __init__(self, parent=None, company='', config_dict=None, root="C:\CGLUMBERJACK"):
+    def __init__(self, parent=None, company='', config_dict=None, root=r"C:\CGLUMBERJACK\COMPANIES"):
         QtWidgets.QDialog.__init__(self, parent)
         self.app_config = config_dict
         self.proj_management_label = QtWidgets.QLabel('Project Management')
@@ -266,7 +274,19 @@ class ConfigDialog(QtWidgets.QDialog):
 
         # self.globals_tree_widget = DictionaryTreeWidget({})
         this = __file__.split('cglumberjack')[0]
-        dict_ = self._load_json(os.path.join(this, 'cglumberjack', 'cgl', 'cfg', 'globals_template.json'))
+        if not self.app_config:
+            dialog = QuickSync()
+            dialog.exec_()
+            globals_path = dialog.globals_path
+            cgl_tools_path = dialog.cgl_tools_path
+            if globals_path:
+                dict_ = read_write.load_json(globals_path)
+                self.inherited_globals = True
+            else:
+                self.inherited_globals = False
+                this = __file__.split('cglumberjack')[0]
+                dict_ = read_write.load_json(os.path.join(this, 'cglumberjack', 'cgl', 'cfg', 'globals_template.json'))
+        self.proj_man_dict = dict_['project_management']
         self.path_item_widget = PathItemWidget(paths_dict=dict_['paths'], hide_on_find=True)
 
         if self.path_item_widget.widget_dict['root']['line_edit'].text():
@@ -298,7 +318,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.get_input()
 
         self.hide_api_info()
-        self.on_pm_changed()
+        self.set_proj_man()
         self.check_user_config()
         # self.globals_tree_widget.hide()
         self.on_globals_changed()
@@ -375,12 +395,14 @@ class ConfigDialog(QtWidgets.QDialog):
         self.create_user_globals()
         self.copy_cgl_tools()
         if self.project_management == 'ftrack':
-            import plugins.project_management.ftrack.setup_tasks as setup_tasks
-            form_ = setup_tasks.TaskSetupGUI()
-            form_.exec_()
+            if not self.inherited_globals:
+                import plugins.project_management.ftrack.setup_tasks as setup_tasks
+                form_ = setup_tasks.TaskSetupGUI()
+                form_.exec_()
         self.accept()
 
     def copy_cgl_tools(self):
+        from core.utils.general import cgl_copy
         src = os.path.join(self.widget_dict['code_root']['line_edit'].text(), 'cgl', 'cfg', 'cgl_tools')
         dst = os.path.join(self.widget_dict['cgl_tools']['line_edit'].text())
         if not os.path.exists(dst):
@@ -414,7 +436,7 @@ class ConfigDialog(QtWidgets.QDialog):
                 os.makedirs(os.path.dirname(self.widget_dict['root']['line_edit'].text()))
             if not os.path.exists(os.path.dirname(self.widget_dict['globals']['line_edit'].text())):
                 os.makedirs(os.path.dirname(self.widget_dict['globals']['line_edit'].text()))
-            self._write_json(self.widget_dict['globals']['line_edit'].text(), self.global_config)
+            read_write.save_json(self.widget_dict['globals']['line_edit'].text(), self.global_config)
         else:
             print 'No Dictionary Loaded for Global Config'
 
@@ -441,7 +463,7 @@ class ConfigDialog(QtWidgets.QDialog):
                  "methodology": "local",
                  "my_tasks": {}
                  }
-            self._write_json(user_globals, d)
+            read_write.save_json(user_globals, d)
         else:
             print 'No Root Defined, cannot save user globals'
 
@@ -452,7 +474,7 @@ class ConfigDialog(QtWidgets.QDialog):
         globals_line_edit = self.widget_dict['globals']['line_edit']
         if globals_line_edit.text():
             globals_ = globals_line_edit.text()
-            self.global_config = self._load_json(globals_)
+            self.global_config = read_write.load_json(globals_)
             # self.globals_tree_widget.load_dictionary(self.global_config)
             # self.globals_tree_widget.show()
         return self.global_config
@@ -461,7 +483,7 @@ class ConfigDialog(QtWidgets.QDialog):
         code_root_line_edit = self.widget_dict['code_root']['line_edit']
         if code_root_line_edit.text():
             globals_ = os.path.join(code_root_line_edit.text(), 'cgl', 'cfg', 'globals_template.json')
-            self.global_config = self._load_json(globals_)
+            self.global_config = read_write.load_json(globals_)
             # elf.globals_tree_widget.load_dictionary(self.global_config)
             # self.globals_tree_widget.show()
             return self.global_config
@@ -511,12 +533,34 @@ class ConfigDialog(QtWidgets.QDialog):
         self.api_key_line_edit.show()
         self.api_user_line_edit.show()
 
+    def set_proj_man(self):
+        for software in self.proj_man_dict.keys():
+            print software
+            print self.proj_man_dict[software]['api']
+            try:
+                if self.proj_man_dict[software]['api']['server_url']:
+                    print 'setting project management to %s' % software
+                    index = self.proj_management_combo.findText(software)
+                    if index != -1:
+                        self.proj_management_combo.setCurrentIndex(index)
+                        self.on_pm_changed()
+            except KeyError:
+                pass
+
     def on_pm_changed(self):
-        self.api_key_line_edit.setText('')
-        self.api_script_line_edit.setText('')
-        self.api_user_line_edit.setText('')
-        self.server_line_edit.setText('')
         self.project_management = self.proj_management_combo.currentText()
+        api_key = self.proj_man_dict[self.project_management]['api']['api_key']
+        api_user = self.proj_man_dict[self.project_management]['api']['api_user']
+        server_url = self.proj_man_dict[self.project_management]['api']['server_url']
+        try:
+            api_script = self.proj_man_dict[self.project_management]['api']['api_script']
+            self.api_script_line_edit.setText(api_script)
+        except KeyError:
+            print('No Api script found, skipping')
+            self.api_script_line_edit.setText('')
+        self.api_key_line_edit.setText(api_key)
+        self.api_user_line_edit.setText(api_user)
+        self.server_line_edit.setText(server_url)
         if self.project_management == 'lumbermill':
             self.hide_api_info()
         elif self.project_management == 'ftrack':
@@ -577,27 +621,271 @@ class ConfigDialog(QtWidgets.QDialog):
         self.accept()
         return self.contents
 
-    @staticmethod
-    def _write_json(filepath, data):
-        print 'writing json to %s' % filepath
-        with open(filepath, 'w') as outfile:
-            json.dump(data, outfile, indent=4, sort_keys=True)
-
-    @staticmethod
-    def _load_json(filepath):
-        with open(filepath) as jsonfile:
-            data = json.load(jsonfile)
-        return data
-
     def closeEvent(self, event):
         pass
 
 
+class QuickSync(QtWidgets.QDialog):
+
+    def __init__(self, parent=None):
+        QtWidgets.QDialog.__init__(self, parent)
+        self.setMinimumWidth(1200)
+        self.setMinimumHeight(800)
+        self.setWindowTitle('Lumbermill Quick Setup')
+        self.default_globals = DEFAULT_GLOBALS
+        self.default_user_globals = DEFAULT_USER_GLOBALS
+        self.default_root = DEFAULT_ROOT
+        self.default_code_root = DEFAULT_CODE_ROOT
+        size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        size_policy.setVerticalStretch(1)
+        layout = QtWidgets.QVBoxLayout(self)
+        #layout.setSizePolicy(size_policy)
+        grid_layout = QtWidgets.QGridLayout()
+        button_layout = QtWidgets.QHBoxLayout()
+
+        company_label = QtWidgets.QLabel('Company Name')
+        root_label = QtWidgets.QLabel('CGL Root')
+        code_root_label = QtWidgets.QLabel('Code Root')
+        self.sync_options_label = QtWidgets.QLabel('<b>Sync Folders:</b>')
+        self.sync_folder_label = QtWidgets.QLabel('Production Folder')
+        self.sync_folder_message = QtWidgets.QLabel("<i>Don't worry you can edit this later</i>")
+        self.sync_cgl_tools_label = QtWidgets.QLabel('CGL_TOOLS Folder')
+        self.import_project_hint = QtWidgets.QLabel('<i>hint: Z:\COMPANIES\loneCoconut\source\CGL_TESTPROJECT - copies one project,'
+                                                    '     Z:\COMPANIES\loneCoconut\source - copies all projects<\i>')
+        self.import_project_hint.setSizePolicy(size_policy)
+        self.import_project_hint.setWordWrap(True)
+
+        self.company_line_edit = QtWidgets.QLineEdit()
+        self.root_line_edit = QtWidgets.QLineEdit()
+        self.code_root_line_edit = QtWidgets.QLineEdit()
+        self.sync_folder_line_edit = QtWidgets.QLineEdit()
+        self.sync_cgl_tools_line_edit = QtWidgets.QLineEdit()
+
+        self.code_root_line_edit.setText(DEFAULT_CODE_ROOT)
+        self.root_line_edit.setText(self.default_root)
+        self.sync_cgl_tools_line_edit.setText(os.path.join(self.default_root, '_config', 'cgl_tools'))
+        self.company_line_edit.setText('lone coconut')
+
+        self.code_root_line_edit.setEnabled(False)
+        self.root_line_edit.setEnabled(False)
+        self.sync_cgl_tools_line_edit.setEnabled(False)
+        self.sync_folder_line_edit.setEnabled(False)
+
+        self.aws_globals_label = QtWidgets.QLabel()
+        self.projects_checkbox = QtWidgets.QCheckBox('Import a Project')
+        self.sync_thing_checkbox = QtWidgets.QCheckBox('Set up Remote Syncing')
+        self.import_label = QtWidgets.QLabel('Import Project From:')
+        self.import_line_edit = QtWidgets.QLineEdit()
+        self.import_button = QtWidgets.QToolButton()
+        self.import_button.setText('...')
+        self.sync_thing_checkbox.setChecked(True)
+        self.projects_checkbox.setChecked(True)
+
+        self.company_name = 'Lone Coconut'
+        self.company_name_s3 = ''
+        self.company_name_disk = ''
+        self.cgl_tools_path = os.path.join(DEFAULT_HOME, 'downloads', 'cgl_tools.zip')
+        self.globals_path = os.path.join(DEFAULT_HOME, 'downloads', 'globals.json')
+        self.aws_globals = ''
+        self.aws_cgl_tools = ''
+        self.check_for_globals_button = QtWidgets.QPushButton('Check for Globals')
+        self.download_globals_button = QtWidgets.QPushButton('Set Up Lumbermill')
+
+        button_layout.addStretch(1)
+        button_layout.addWidget(self.download_globals_button)
+
+        grid_layout.addWidget(root_label, 2, 0)
+        grid_layout.addWidget(self.root_line_edit, 2, 1)
+        grid_layout.addWidget(code_root_label, 3, 0)
+        grid_layout.addWidget(self.code_root_line_edit, 3, 1)
+        grid_layout.addWidget(self.import_label, 4, 0)
+        grid_layout.addWidget(self.import_line_edit, 4, 1)
+        grid_layout.addWidget(self.import_button, 4, 2)
+        grid_layout.addWidget(self.import_project_hint, 5, 1)
+        grid_layout.addWidget(self.sync_options_label, 6, 0)
+        grid_layout.addWidget(self.sync_folder_label, 7, 0)
+        grid_layout.addWidget(self.sync_folder_line_edit, 7, 1)
+        grid_layout.addWidget(self.sync_folder_message, 8, 1)
+        grid_layout.addWidget(self.sync_cgl_tools_label, 9, 0)
+        grid_layout.addWidget(self.sync_cgl_tools_line_edit, 9, 1)
+
+        layout.addWidget(company_label)
+        layout.addWidget(self.company_line_edit)
+        layout.addWidget(self.aws_globals_label)
+        layout.addWidget(self.projects_checkbox)
+        layout.addWidget(self.sync_thing_checkbox)
+        layout.addLayout(grid_layout)
+        layout.addLayout(button_layout)
+        layout.addStretch(1)
+        self.aws_globals_label.hide()
+        self.on_projects_checkbox_clicked()
+        self.on_sync_thing_checkbox_clicked()
+        self.on_company_name_changed()
+
+        self.company_line_edit.editingFinished.connect(self.on_company_name_changed)
+        self.download_globals_button.clicked.connect(self.set_up_lumbermill)
+        self.projects_checkbox.clicked.connect(self.on_projects_checkbox_clicked)
+        self.sync_thing_checkbox.clicked.connect(self.on_sync_thing_checkbox_clicked)
+        self.import_line_edit.editingFinished.connect(self.on_import_line_edit_changed)
+
+    def on_import_line_edit_changed(self):
+        import re
+        import_folder = self.import_line_edit.text()
+        if 'source' in import_folder:
+            context = 'source'
+        elif 'render' in import_folder:
+            context = 'render'
+        else:
+            print 'Not a valid folder to import'
+            return
+        first, second = import_folder.split(context)
+        print first, second, 2
+        company = os.path.split(os.path.dirname(first))[-1]
+        if second:
+            print 'second is', second
+            splitty = os.path.split(second)
+            print splitty, 0
+            if re.search('\w', splitty[0]):
+                project = splitty[0]
+                print 'match'
+            else:
+                print 'no match'
+                project = splitty[1]
+            if not project:
+                project = second.replace('\\', '').replace('/', '')
+            project = project.replace('\\', '').replace('/', '')
+            print project, 1
+            sync_folder = os.path.join(self.default_root, company, 'source', project)
+        else:
+            sync_folder = os.path.join(self.default_root, company, 'source')
+        self.sync_folder_line_edit.setText(sync_folder)
+
+    def on_sync_thing_checkbox_clicked(self):
+        if self.sync_thing_checkbox.checkState():
+            self.sync_options_label.show()
+            self.sync_folder_label.show()
+            # self.sync_folder_message.show()
+            self.sync_cgl_tools_label.show()
+            self.sync_folder_line_edit.show()
+            self.sync_cgl_tools_line_edit.show()
+        else:
+            self.sync_options_label.hide()
+            self.sync_folder_label.hide()
+            self.sync_folder_message.hide()
+            self.sync_cgl_tools_label.hide()
+            self.sync_folder_line_edit.hide()
+            self.sync_cgl_tools_line_edit.hide()
+
+    def on_projects_checkbox_clicked(self):
+        state = self.projects_checkbox.checkState()
+        if state:
+            self.import_label.show()
+            self.import_line_edit.show()
+            self.import_button.show()
+            self.import_project_hint.show()
+        else:
+            self.import_line_edit.hide()
+            self.import_label.hide()
+            self.import_button.hide()
+            self.import_project_hint.hide()
+
+
+    def on_company_name_changed(self):
+        self.company_name = self.company_line_edit.text()
+        if self.company_name:
+            self.company_name_s3 = self.company_name.replace(' ', '-').replace('_', '-')
+            self.company_name_disk = self.company_name_s3.replace('-', '_')
+            self.aws_globals = r'https://%s.s3.amazonaws.com/globals.json' % self.company_name_s3
+            self.aws_cgl_tools = r'https://%s.s3.amazonaws.com/cgl_tools.zip' % self.company_name_s3
+            if web.url_exists(self.aws_globals):
+                self.aws_globals_label.setText('Found Shared Company Globals on Cloud')
+                self.aws_globals_label.setStyleSheet("color: rgb(0, 255, 0);")
+            else:
+                self.aws_globals_label.setText('No Shared Globals Found - skipping')
+            self.aws_globals_label.show()
+
+    def download_globals_from_cloud(self):
+        if self.aws_globals_label.text() == 'Found Shared Company Globals on Cloud':
+            globals_path = os.path.join(DEFAULT_HOME, 'downloads', 'globals.json')
+            cgl_tools_path = os.path.join(DEFAULT_HOME, 'downloads', 'cgl_tools.zip')
+            self.globals_path = globals_path
+            self.cgl_tools_path = cgl_tools_path
+            if not os.path.exists(os.path.dirname(globals_path)):
+                os.makedirs(os.path.dirname(globals_path))
+            if os.path.exists(globals_path):
+                os.remove(globals_path)
+            g_url = self.aws_globals
+            pd_url = self.aws_cgl_tools
+            dict_ = {g_url: globals_path,
+                     pd_url: cgl_tools_path}
+            for url in dict_:
+                filepath = dict_[url]
+                r = requests.get(url, allow_redirects=True)
+                if '<Error>' in r.content:
+                    print('No File %s for company: %s' % (url, self.company_name))
+                else:
+                    print('Saving Globals file to: %s' % filepath)
+                    with open(filepath, 'w+') as f:
+                        f.write(r.content)
+            self.accept()
+        else:
+            print('No Globals Found - Get your Studio to publish their globals, or Create new ones?')
+
+    def edit_globals_paths(self):
+        globals = read_write.load_json(self.globals_path)
+        # change the stuff
+        globals["paths"]["code_root"] = self.default_code_root
+        globals["paths"]["root"] = self.default_root
+        globals["paths"]["cgl_tools"] = os.path.join(self.default_root, '_config', 'cgl_tools')
+        # TODO this shouldn't be used
+        globals["paths"]["globals"] = os.path.join(self.default_root, '_config', 'globals.json')
+        # TODO this should be a env_variable
+        globals["paths"]["user_globals"] = self.default_user_globals
+        # TODO this should exist
+        globals["account_info"]["globals_path"] = os.path.join(self.default_root, '_config', 'globals.json')
+        # TODO - This shouldn't exist
+        globals["cg_lumberjack_dir"] = os.path.join(self.default_root, '_config')
+        # TODO - it'd be nice to double check all the sofwtare paths and see if there are newer versions on disk, this will help a ton.
+        read_write.save_json(globals["paths"]["globals"], globals)
+
+    def set_up_lumbermill(self):
+        """
+        checks s3 for the existance of a globals file and pipeline_designer files.
+        :return:
+        """
+        # step 1 - download the globals
+        self.download_globals_from_cloud()
+        # Step 2: replace ROOT, and CODEROOT instances in the globals file
+        # Step 3: Copy the edited globals file to the default location
+        self.edit_globals_paths()
+        # Step 3b: Create Default User Globals
+        create_user_globals(self.default_user_globals, self.default_globals)
+        # Step 4: Copy the published CGL_TOOLS to the default location
+        # Step 5: Import any Projects
+        # Step 6: Set up Syncthing
+
+
+def create_user_globals(user_globals, globals_path):
+    if user_globals:
+        if not os.path.exists(os.path.dirname(user_globals)):
+            os.makedirs(os.path.dirname(user_globals))
+        d = {
+             "globals": globals_path,
+             "previous_path": "",
+             "previous_paths": {},
+             "methodology": "local",
+             "my_tasks": {}
+             }
+        read_write.save_json(user_globals, d)
+    else:
+        print 'No Root Defined, cannot save user globals'
+
+
+
 if __name__ == "__main__":
-    # from cgl.core.util import load_style_sheet
+    # from cgl.core.utils import load_style_sheet
     app = QtWidgets.QApplication([])
-    form = ConfigDialog()
+    #app = QtWidgets.QApplication([])
+    form = QuickSync()
     form.show()
-    # style_sheet = load_style_sheet()
-    # app.setStyleSheet(style_sheet)
     app.exec_()

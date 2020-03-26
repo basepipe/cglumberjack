@@ -73,7 +73,7 @@ def get_task_info(path_object, force=False):
 
 
 def pull_task_info(path_object):
-    from cgl.core.util import current_user
+    from core.utils.general import current_user
     if PROJ_MANAGEMENT == 'ftrack':
         from plugins.project_management.ftrack.main import find_user_assignments
         login = CONFIG['project_management']['ftrack']['users'][current_user()]
@@ -89,7 +89,7 @@ def create_project_config(company, project):
     :param project:
     :return:
     """
-    from cgl.core.util import cgl_copy
+    from core.utils.general import cgl_copy
     config_dir = os.path.dirname(UserConfig().user_config_path)
     company_config = os.path.join(config_dir, 'companies', company, 'global.yaml')
     project_dir = os.path.join(config_dir, 'companies', company, project)
@@ -139,7 +139,7 @@ def publish(path_obj):
     """
     # TODO this could be integrated with PathObject more elegantly
     import logging
-    from cgl.core.util import cgl_copy
+    from core.utils.general import cgl_copy
     path_object = PathObject(path_obj)
     filename = path_object.filename
     resolution = path_object.resolution
@@ -186,7 +186,7 @@ def publish(path_obj):
 def do_review(progress_bar=None, path_object=None):
     import shutil
     import logging
-    from cgl.core.util import cgl_copy
+    from core.utils.general import cgl_copy
     from cgl.ui.widgets.dialog import InputDialog
     job_id = None
     if not path_object:

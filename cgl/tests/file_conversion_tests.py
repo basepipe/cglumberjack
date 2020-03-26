@@ -43,7 +43,7 @@ job_info = path_object.upload_review()
 # os.system(command)
 # list = ['copy', r'C:\\Users\\tmiko\\PycharmProjects\\cglumberjack\\cgl\\plugins\\nuke\\templates\\default.nk', r'D:\\VFX\\FRIDAY_ROOT\\cglumberjack\\source\\cgl_testProjectJ\\shots\\080\\0200\\comp\\tmiko\\000.000\\high\\080_0200_comp.nk', '/Y >nul']
 # import subprocess
-# from cgl.core.util import cgl_execute
+# from cgl.core.utils import cgl_execute
 # command = r'C:\PROGRA~1\Nuke10.0v3\Nuke10.0.exe -F 1-6 -sro -x Z:/Projects/VFX/COMPANIES/cglumberjack/source/cgl_satProjA/shots/010/001/comp/tmikota/000.000/high/010_001_comp.nk'
 # p = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_CONSOLE)
 # output_values = []

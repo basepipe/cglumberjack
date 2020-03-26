@@ -1,12 +1,12 @@
 import os
-from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
+from cgl.plugins.Qt import QtCore, QtWidgets
 from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import nuke
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.plugins.nuke import cgl_nuke
 from cgl.core.path import PathObject
 from cgl.core.config import app_config
-from cgl.core.util import current_user
+from core.utils.general import current_user
 from cgl.plugins.preflight.main import Preflight
 
 
@@ -196,7 +196,6 @@ def create_write_node():
     Pops up a gui that allows you to create a custom write node or a default write node if left blank
     :return:
     """
-    import sys
     write_nodes = ['']
     dialog = InputDialog(title='Create Write Node',
                          message='Type a Name for an Element (Leave blank for default write node)',
@@ -261,7 +260,6 @@ def render_selected():
 
 
 def launch_lumbermill():
-    import sys
     scene_name = cgl_nuke.get_file_name()
     scene = PathObject(scene_name)
     location = '%s/*' % scene.split_after('shot')

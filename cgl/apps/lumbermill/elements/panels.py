@@ -2,13 +2,13 @@ import glob
 import os
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.config import app_config
-from cgl.ui.widgets.widgets import LJListWidget, LJButton, LJTableWidget
+from cgl.ui.widgets.widgets import LJButton, LJTableWidget
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.core.path import PathObject, CreateProductionData, icon_path
 from cgl.core.project import create_project_config
 from cgl.ui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
-from cgl.core.util import current_user
+from core.utils.general import current_user
 from cgl.ui.widgets.progress_gif import process_method
 
 CONFIG = app_config()
