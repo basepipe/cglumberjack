@@ -1,6 +1,5 @@
-import os
-from cgl.core.path import PathObject, CreateProductionData, lj_list_dir
-from cgl.core.util import cgl_execute
+from cgl.core.path import PathObject, CreateProductionData
+from core.utils.general import cgl_execute
 
 
 

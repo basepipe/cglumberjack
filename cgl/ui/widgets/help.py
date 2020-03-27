@@ -3,7 +3,7 @@ import os
 from cgl.core import lj_mail
 from cgl.core.config import app_config
 from cgl.ui.widgets.base import LJDialog
-from cgl.core.util import current_user
+from core.utils.general import current_user
 from cgl.core import screen_grab
 import cgl.core.path as cglpath
 from cgl.ui.widgets.widgets import AdvComboBox, TagWidget

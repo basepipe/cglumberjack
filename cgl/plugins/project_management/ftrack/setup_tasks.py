@@ -4,7 +4,7 @@ import os
 from cgl.core.config import app_config
 import ftrack_api
 
-CONFIG = CONFIG
+CONFIG = app_config()
 
 
 class TaskSetupGUI(QtWidgets.QDialog):

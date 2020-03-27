@@ -221,7 +221,7 @@ class IOPanel(QtWidgets.QWidget):
         if path == '*':
             print 'Please Select An Ingest Source Before Dragging Files'
             return
-        from cgl.core.util import cgl_copy
+        from core.utils.general import cgl_copy
         publish_data_csv = os.path.join(to_folder, 'publish_data.csv').replace('\\', '/')
         if os.path.exists(to_folder):
             create_new = False

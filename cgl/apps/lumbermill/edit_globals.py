@@ -3,7 +3,7 @@ import copy
 from Qt import QtWidgets, QtCore, QtGui
 from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.combo import AdvComboBox
-from cgl.core.util import load_json, save_json
+from core.utils.general import load_json
 
 # TODO - I should be pulling globals from an environment variable, this current method is a bit to much
 # TODO - Save out to a globals file in the right place for
