@@ -301,7 +301,5 @@ def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodr
 
 
 if __name__ == "__main__":
-    kill_syncthing()
-    share_files_to_devices()
-    launch_syncthing()
+    update_machines()
 
