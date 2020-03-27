@@ -6,22 +6,21 @@ import subprocess
 import cgl.plugins.google.sheets as sheets
 
 
-def setup(company, sheet_name, folders=[]):
+def setup(company, sheet_name, folder_dict=[]):
     """
     setups up everything needed for syncthing to run in the production environment, adds folders to the config.
-    :param folders:
+    :param folder_dict: dictionary of pairs of {folder_id: full_path}
     :return:
     """
-    if folders:
+    if folder_dict:
         config_path = get_config_path()
         if not os.path.exists(config_path):
             print 'launching syncthing'
         sheet_obj = get_sheet(company, sheet_name)
         add_device_info_to_sheet(sheet_obj)
         add_all_devices_to_config(sheet_obj)
-        for each in folders:
-            folder_id = str(randint(100000, 999999))
-            add_folder_to_config(folder_id, each)
+        for folder_id in folder_dict:
+            add_folder_to_config(folder_id, folder_dict[folder_id])
         share_files_to_devices()
     else:
         print('Please provide a list of folders before attempting to set up syncthing')
@@ -52,7 +51,6 @@ def get_config_path():
                 break
             if output:
                 output_values.append(output.strip())
-    print output_values[1]
     return output_values[1]
 
 
@@ -110,7 +108,6 @@ def get_all_device_info(sheet):
         if sheet.cell(row,1).value != get_my_device_info()['id']:
             entry = {"id": sheet.cell(row, 1).value, "name": sheet.cell(row,2).value, "user": sheet.cell(row,3).value}
             device_list.append(entry)
-    print device_list
     return device_list
 
 
