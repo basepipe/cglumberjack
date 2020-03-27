@@ -6,7 +6,7 @@ import subprocess
 import cgl.plugins.google.sheets as sheets
 
 
-def setup(company, sheet_name, folder_dict=[]):
+def setup(company, sheet_name, folder_dict=[], setup_studio=False):
     """
     setups up everything needed for syncthing to run in the production environment, adds folders to the config.
     :param folder_dict: dictionary of pairs of {folder_id: full_path}
@@ -22,10 +22,19 @@ def setup(company, sheet_name, folder_dict=[]):
         for folder_id in folder_dict:
             if not folder_id_exists(folder_id):
                 add_folder_to_config(folder_id, folder_dict[folder_id])
-        share_files_to_devices()
+        if setup_studio:
+            share_files_to_devices() # only if you're setting up main folders
+        else:
+            pull_from_studio()
     else:
         print('Please provide a list of folders before attempting to set up syncthing')
 
+def pull_from_studio():
+    """
+    map shared folders to the correct location on local drive
+    :return:
+    """
+    pass
 
 def folder_id_exists(folder_id, folder_path=''):
     config_path = get_config_path()
@@ -217,6 +226,7 @@ def share_files_to_devices():
 
 
 if __name__ =="__main__":
+    print 'hi'
     # # file_location = G.get_sheets_authentication('C:\\Users\\Molta\\Desktop')
     # sheet1 = sheets.authorize_sheets('LONE_COCONUT_SYNC_THING', 'C:\\Users\\Molta\\Desktop\\client.json')
     # # add_device_info_to_sheet(sheet1)

@@ -145,8 +145,12 @@ class PathFixer(LJDialog):
             self.path_table.item(row, NEW_PATH_EXISTS).setText('True')
             self.path_table.item(row, NEW_PATH).setForeground(QtGui.QBrush(QtGui.QColor(0, 255, 0)))
         else:
-            self.path_table.item(row, NEW_PATH_EXISTS).setText('False')
+            try:
+                self.path_table.item(row, NEW_PATH_EXISTS).setText('False')
+            except AttributeError:
+                self.path_table.setItem(row, NEW_PATH_EXISTS, QtWidgets.QTableWidgetItem('False'))
             self.path_table.item(row, NEW_PATH).setForeground(QtGui.QBrush(QtGui.QColor(255, 0, 0)))
+
         if os.path.exists(os.path.dirname(current_path)):
             # what we really need is a check box saying that a current path exists, this is the goal of this gui.
             self.path_table.item(row, CURRENT_PATH).setForeground(QtGui.QBrush(QtGui.QColor(0, 255, 0)))
