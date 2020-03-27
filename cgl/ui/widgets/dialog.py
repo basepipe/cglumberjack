@@ -650,7 +650,7 @@ class LoginDialog(LJDialog):
                                  'last': '',
                                  'login': ''}
         try:
-            self.user_info = CONFIG['project_management'][self.project_management]['user_details'][current_user()]
+            self.user_info = CONFIG['project_management'][self.project_management]['users'][current_user()]
             return
         except KeyError:
             print('No user info found for %s, setting it up' % current_user())
