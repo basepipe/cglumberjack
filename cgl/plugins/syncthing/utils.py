@@ -35,8 +35,7 @@ def pull_from_studio():
     :return:
     """
     from cgl.core.config import app_config
-    # folders_dict = get_syncthing_folders()
-    folders_dict = {'[root]\_config\cgl_tools': 'Z:\cocodrive\COMPANIES\_config\cgl_tools'}
+    folders_dict = get_syncthing_folders()
     for folder_id in folders_dict:
         variable, the_rest = folder_id.split(']')
         variable = variable.replace('[', '')
@@ -51,6 +50,8 @@ def get_syncthing_folders():
     createsw a dictionary of {folder_id: path} for all the folders in syncthing.
     :return:
     """
+    folders_dict = {'[root]\_config\cgl_tools': 'Z:\cocodrive\COMPANIES\_config\cgl_tools'}
+    return folders_dict
 
 
 def edit_syncthing_folder(folder_id, new_local_path):
