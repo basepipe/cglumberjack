@@ -6,6 +6,23 @@ import subprocess
 import cgl.plugins.google.sheets as sheets
 
 
+def folder_id_exists(folder_id, folder_path=''):
+    config_path = get_config_path()
+    tree = ET.parse(config_path)
+    root = tree.getroot()
+    existing_folders = []
+
+    for child in root:
+        if child.tag == 'folder':
+            entry = {'id': child.get('id'), 'path': child.get('path')}
+            existing_folders.append(entry)
+
+    for entry in existing_folders:
+        if folder_id == entry['id'] or folder_path == entry['path']:
+            return True
+    return False
+
+
 def setup(company, sheet_name, folder_dict=[]):
     """
     setups up everything needed for syncthing to run in the production environment, adds folders to the config.
@@ -204,4 +221,6 @@ if __name__ =="__main__":
     # #add_all_devices_to_config(sheet1)
     # add_folder_to_config('kyls_new_file', 'C:\\Users\\Molta\\test')
     # get_my_device_info()
-    share_files_to_devices()
+    # share_files_to_devices()
+    # k = folder_id_exists('kyul', 'C:\\Users\\Molta\\Default Folder')
+    # print k

@@ -41,6 +41,20 @@ def does_id_exist(id, sheet):
     return False
 
 
+def does_name_exist(name, sheet):
+    """
+    Checks to see if name is already entered into the google sheet
+    :param name: Name to look for in sheet
+    :param sheet: Title of google sheet to search in
+    :return: True if the value is already entered in the sheet, false if the value has no entry yet
+    """
+    data = sheet.col_values(2)
+    for n in data:
+        if n == name:
+            return True
+    return False
+
+
 def find_empty_row_in_sheet(sheet):
     """
     Finds the first empty row in the google sheet
@@ -67,3 +81,11 @@ def get_sheets_authentication(filepath, client='lone-coconut'):
     with open(filepath, 'w+') as f:
         f.write(r.content)
     return filepath
+
+
+if __name__ == '__main__':
+    # sheet = authorize_sheets('LONE_COCONUT_SYNC_THING', 'C:\\Users\\Molta\\Desktop\\client.json')
+    # k = does_id_exist('2SB5KDS-FHJ5MEH-RJKY2QR-FLJ6S3R-4KQHBCW-2YZCRJJ-LULS7LQ-NUGWDAB', sheet)
+    # print k
+    # l = does_name_exist('DESKTOP-CEDFLDG', sheet)
+    # print l
