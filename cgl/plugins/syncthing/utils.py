@@ -110,7 +110,7 @@ def add_device_info_to_sheet(sheet):
     """
     new_row = sheets.find_empty_row_in_sheet(sheet)
     device_dictionary = get_my_device_info()
-    if not sheets.does_id_exist(device_dictionary['id'], sheet) and not sheets.does_name_exist(device_dictionary['name'],sheet):
+    if not sheets.id_exists(device_dictionary['id'], sheet) and not sheets.name_exists(device_dictionary['name'],sheet):
         sheet.update_cell(new_row, 1, device_dictionary['id'])
         sheet.update_cell(new_row, 2, device_dictionary['name'])
         sheet.update_cell(new_row, 3, getpass.getuser().lower())
