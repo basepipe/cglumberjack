@@ -55,13 +55,10 @@ def get_syncthing_folders():
     tree = ET.parse(config_path)
     root = tree.getroot()
     folders_dict = {}
-    folders_array = []
 
     for child in root:
         if child.tag == 'folder':
             folders_dict[child.get('id')] = child.get('path')
-            #temp_dict = {'id' : child.get('id'), 'path': child.get('path')}
-            #folders_array.append(temp_dict)
 
     return folders_dict
 
@@ -292,4 +289,5 @@ if __name__ =="__main__":
     # k = folder_id_exists('kyul', 'C:\\Users\\Molta\\Default Folder')
     # print k
     # add_device_info_to_sheet(sheet1)
+    # print get_syncthing_folders()
 
