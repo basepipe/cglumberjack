@@ -28,6 +28,7 @@ def setup(company, sheet_name, folder_dict=[], setup_studio=False):
             share_files_to_devices() # only if you're setting up main folders
         else:
             pull_from_studio()
+            # notify_of_machine_add()
     else:
         print('Please provide a list of folders before attempting to set up syncthing')
     launch_syncthing()
