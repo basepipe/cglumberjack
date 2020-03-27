@@ -649,6 +649,11 @@ class LoginDialog(LJDialog):
                                  'first': '',
                                  'last': '',
                                  'login': ''}
+        try:
+            self.user_info = CONFIG['project_management'][self.project_management]['user_details'][current_user()]
+            return
+        except KeyError:
+            print('No user info found for %s, setting it up' % current_user())
 
         self.grid_layout = QtWidgets.QGridLayout()
         self.proj_management_label = QtWidgets.QLabel('Project Management:')
