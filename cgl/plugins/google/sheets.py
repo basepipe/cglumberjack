@@ -83,9 +83,9 @@ def get_sheets_authentication(filepath, client='lone-coconut'):
     return filepath
 
 
-if __name__ == '__main__':
-    # sheet = authorize_sheets('LONE_COCONUT_SYNC_THING', 'C:\\Users\\Molta\\Desktop\\client.json')
-    # k = does_id_exist('2SB5KDS-FHJ5MEH-RJKY2QR-FLJ6S3R-4KQHBCW-2YZCRJJ-LULS7LQ-NUGWDAB', sheet)
-    # print k
-    # l = does_name_exist('DESKTOP-CEDFLDG', sheet)
-    # print l
+# if __name__ == '__main__':
+#     # sheet = authorize_sheets('LONE_COCONUT_SYNC_THING', 'C:\\Users\\Molta\\Desktop\\client.json')
+#     # k = does_id_exist('2SB5KDS-FHJ5MEH-RJKY2QR-FLJ6S3R-4KQHBCW-2YZCRJJ-LULS7LQ-NUGWDAB', sheet)
+#     # print k
+#     # l = does_name_exist('DESKTOP-CEDFLDG', sheet)
+#     # print l
