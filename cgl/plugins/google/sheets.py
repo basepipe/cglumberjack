@@ -27,7 +27,7 @@ def authorize_sheets(sheet_name, filepath):
     return sheet
 
 
-def does_id_exist(id, sheet):
+def id_exists(id, sheet):
     """
     Checks to see if ID is already entered into the google sheet
     :param id: ID to look for in sheet
@@ -41,7 +41,7 @@ def does_id_exist(id, sheet):
     return False
 
 
-def does_name_exist(name, sheet):
+def name_exists(name, sheet):
     """
     Checks to see if name is already entered into the google sheet
     :param name: Name to look for in sheet
