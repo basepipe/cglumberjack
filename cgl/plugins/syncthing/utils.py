@@ -34,7 +34,29 @@ def pull_from_studio():
     map shared folders to the correct location on local drive
     :return:
     """
+    from cgl.core.config import app_config
+    # folders_dict = get_syncthing_folders()
+    folders_dict = {'[root]\_config\cgl_tools': 'Z:\cocodrive\COMPANIES\_config\cgl_tools'}
+    for folder_id in folders_dict:
+        variable, the_rest = folder_id.split(']')
+        variable = variable.replace('[', '')
+        value = app_config()['paths'][variable]
+        local_path = '%s%s' % (value, the_rest)
+        edit_syncthing_folder(folder_id, local_path)
+        print local_path
+
+
+def get_syncthing_folders():
+    """
+    createsw a dictionary of {folder_id: path} for all the folders in syncthing.
+    :return:
+    """
+
+
+def edit_syncthing_folder(folder_id, new_local_path):
+    print('setting %s to %s' % folder_id, new_local_path)
     pass
+
 
 def folder_id_exists(folder_id, folder_path=''):
     config_path = get_config_path()
@@ -227,6 +249,7 @@ def share_files_to_devices():
 
 if __name__ =="__main__":
     print 'hi'
+    pull_from_studio()
     # # file_location = G.get_sheets_authentication('C:\\Users\\Molta\\Desktop')
     # sheet1 = sheets.authorize_sheets('LONE_COCONUT_SYNC_THING', 'C:\\Users\\Molta\\Desktop\\client.json')
     # # add_device_info_to_sheet(sheet1)
