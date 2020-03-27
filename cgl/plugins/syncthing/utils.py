@@ -4,14 +4,16 @@ import os
 from random import randint
 import subprocess
 import cgl.plugins.google.sheets as sheets
+import psutil
 
 
-def setup(company, sheet_name, folder_dict=[]):
+def setup(company, sheet_name, folder_dict=[], setup_studio=False):
     """
     setups up everything needed for syncthing to run in the production environment, adds folders to the config.
     :param folder_dict: dictionary of pairs of {folder_id: full_path}
     :return:
     """
+    kill_syncthing()
     if folder_dict:
         config_path = get_config_path()
         if not os.path.exists(config_path):
@@ -22,9 +24,64 @@ def setup(company, sheet_name, folder_dict=[]):
         for folder_id in folder_dict:
             if not folder_id_exists(folder_id):
                 add_folder_to_config(folder_id, folder_dict[folder_id])
-        share_files_to_devices()
+        if setup_studio:
+            share_files_to_devices() # only if you're setting up main folders
+        else:
+            pull_from_studio()
     else:
         print('Please provide a list of folders before attempting to set up syncthing')
+    launch_syncthing()
+
+
+def pull_from_studio():
+    """
+    map shared folders to the correct location on local drive
+    :return:
+    """
+    from cgl.core.config import app_config
+    folders_dict = get_syncthing_folders()
+    for folder_id in folders_dict:
+        variable, the_rest = folder_id.split(']')
+        variable = variable.replace('[', '')
+        value = app_config()['paths'][variable]
+        local_path = '%s%s' % (value, the_rest)
+        edit_syncthing_folder(folder_id, local_path)
+        print local_path
+
+
+def get_syncthing_folders():
+    """
+    creates a dictionary of {folder_id: path} for all the folders in syncthing.
+    :return: Dictionary of folder ID's mapped to folder paths
+    """
+    config_path = get_config_path()
+    tree = ET.parse(config_path)
+    root = tree.getroot()
+    folders_dict = {}
+
+    for child in root:
+        if child.tag == 'folder':
+            folders_dict[child.get('id')] = child.get('path')
+
+    return folders_dict
+
+
+def edit_syncthing_folder(folder_id, new_local_path):
+    """
+    Changes the path variable of the specified folder into the new path
+    :param folder_id: ID of the folder to be changed
+    :param new_local_path: New path value for folder
+    :return:
+    """
+    config_path = get_config_path()
+    tree = ET.parse(config_path)
+    root = tree.getroot()
+
+    for child in root:
+        if child.tag == 'folder' and child.get('id') == folder_id:
+            child.set('path', new_local_path)
+
+    tree.write(config_path)
 
 
 def folder_id_exists(folder_id, folder_path=''):
@@ -45,6 +102,12 @@ def folder_id_exists(folder_id, folder_path=''):
 
 
 def get_sheet(company, sheet_name):
+    """
+    Gets the sheet object for a company
+    :param company: Company name in the s3 database
+    :param sheet_name: Name of the google sheet being accessed
+    :return: Sheet object
+    """
     from cgl.core.config import app_config
     client_file = os.path.join(app_config()['paths']['root'], '_config', 'client.json')
     sheets.get_sheets_authentication(client_file, company)
@@ -160,13 +223,12 @@ def add_all_devices_to_config(sheet):
         maxRecvKbps.text = 0
         maxRequestKiB = ET.SubElement(new_node, 'maxRequestKiB')
         maxRequestKiB.text = 0
-
     tree.write(filepath)
 
 
 def add_folder_to_config(folder_id, filepath):
     """
-    Function to add a new folder to be synched through syncthing
+    Function to add a new folder to config.xml file
     :param folder_id: The ID label for the folder being added to syncthing
     :param filepath: The path to the file being added to syncthing
     :return:
@@ -216,14 +278,19 @@ def share_files_to_devices():
     tree.write(config_path)
 
 
+def launch_syncthing():
+    command = "syncthing"
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    return p
+
+
+def kill_syncthing():
+    for proc in psutil.process_iter():
+        if proc.name() == 'syncthing.exe':
+            proc.terminate()
+            print "Process Ended"
+
+
 if __name__ =="__main__":
-    # # file_location = G.get_sheets_authentication('C:\\Users\\Molta\\Desktop')
-    # sheet1 = sheets.authorize_sheets('LONE_COCONUT_SYNC_THING', 'C:\\Users\\Molta\\Desktop\\client.json')
-    # # add_device_info_to_sheet(sheet1)
-    # #add_all_devices_to_config(sheet1)
-    # add_folder_to_config('kyls_new_file', 'C:\\Users\\Molta\\test')
-    # get_my_device_info()
-    # share_files_to_devices()
-    # k = folder_id_exists('kyul', 'C:\\Users\\Molta\\Default Folder')
-    # print k
-    # add_device_info_to_sheet(sheet1)
+    print 'main'
+
