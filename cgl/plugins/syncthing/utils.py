@@ -28,6 +28,7 @@ def setup(company, sheet_name, folder_dict=[], setup_studio=False):
             share_files_to_devices() # only if you're setting up main folders
         else:
             pull_from_studio()
+            # notify_of_machine_add()
     else:
         print('Please provide a list of folders before attempting to set up syncthing')
     launch_syncthing()
@@ -291,6 +292,14 @@ def kill_syncthing():
             print "Process Ended"
 
 
-if __name__ =="__main__":
-    print 'main'
+def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodrive\COMPANIES\_config\client.json'):
+    kill_syncthing()
+    sheet = sheets.authorize_sheets('LONE_COCONUT_SYNC_THING', 'Z:\cocodrive\COMPANIES\_config\client.json')
+    add_all_devices_to_config(sheet)
+    share_files_to_devices()
+    launch_syncthing()
+
+
+if __name__ == "__main__":
+    update_machines()
 
