@@ -131,7 +131,7 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
     create a web optimized h264 mp4 from an specified input_sequence to a specified output.mov.
     This assumes an sRGB jpg sequence as input
     :param input_sequence: input sequence string, formatted with (#, %04d, *)
-    :param output: output mov string
+    :param output: output mp4 string
     :param framerate: frame rate for input sequence
     :param output_frame_rate: if None frame rate for input movie is used, if defined this frame rate is used for output movie
     :param res: resolution 1920x1080
@@ -179,6 +179,8 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
     pixel_format = 'yuv420p'
     gamma = 1
     width, height = res.split('x')
+    vcodec = "-vcodec libx264 -pix_fmt yuv420p -vf 'scale=trunc((a*oh)/2)*2:720' -g 30 -b:v 2000k -vprofile high -bf 0"
+    acodec = "-strict experimental -acodec aac -ab 160k -ac 2"
 
     filter_arg = r' -filter:v "scale=iw*min($width/iw\,$height/ih):ih*min($width/iw\,$height/ih),' \
                  r' pad=$width:$height:($width-iw*min($width/iw\,$height/ih))/2:' \
@@ -186,6 +188,9 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
                                                                                                  height)
 
     if file_type == 'sequence':
+        ffmpeg_cmd_new = "%s -start_number %s -r %s -i %s %s %s -f mp4 %s" % (PATHS['ffmpeg'], start_frame, frame_rate,
+                                                                          filein, acodec,
+                                                                          vcodec, fileout)
         ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
                      r' -crf %s -pix_fmt %s -r %s %s %s' % (PATHS['ffmpeg'],
                                                             start_frame, framerate, gamma, filein, res, encoder,

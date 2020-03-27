@@ -1,5 +1,6 @@
 from plugins.project_management.shotgun.tracking_internal.shotgun_specific import ShotgunQuery
 from cgl.core.config import app_config
+from cgl.core.path import PathObject
 
 CONFIG = app_config()
 SG_CONFIG = app_config()['project_management']['shotgun']['api']
@@ -16,11 +17,21 @@ VERSIONFIELDS = ['code', 'name', 'sg_sequence', 'status', 'updated_at', 'descrip
                  'sg_task', 'sg_status_list', 'project', 'versions']
 STEPFIELDS = ['code', 'short_name', 'id', ]
 
-path_ = r'Z:/Projects/VFX/render/16BTH_2020_Arena/assets/Environment/Tongs/shd/tmikota/000.002/high/.preview/010_0500_comp.mov'
-id_ = r'13759'
+path_ = r'Z:/Projects/VFX/render/16BTH_2020_Arena/assets/Environment/Tongs/shd/tmikota/000.002/high/010_0500_comp.mp4'.replace('/', '\\')
+exr_path = r'Z:\Projects\VFX\render\16BTH_2020_Arena\assets\Environment\Tongs\shd\tmikota\000.002\high\010_0500_comp.####.exr'
+path_object = PathObject(exr_path)
+#print path_object.preview_path
+# path_object.make_proxy()
+#path_object.make_preview()
+id_ = 13759
 filters = [['id', 'is', id_],
           ]
-id_ = id_.encode('utf-8')
-path_ = path_.encode('utf-8')
-# print ShotgunQuery.find_one('Version', filters, fields=VERSIONFIELDS)
-print ShotgunQuery.upload('Version', id_, path_, "sg_uploaded_movie")
+version = ShotgunQuery.find_one('Version', filters, fields=VERSIONFIELDS)
+print version
+#version = find_version_info_from_path(full_path)
+id_ = str(version['id'])
+print id_, type(id_)
+print path_, type(path_)
+ShotgunQuery.upload("Version", id_, path_object.preview_path, "sg_uploaded_movie")
+#ShotgunQuery.upload('Version', id_, path_object.preview_path, "sg_uploaded_movie")
+

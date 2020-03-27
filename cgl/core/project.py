@@ -44,7 +44,6 @@ def get_task_info(path_object, force=False):
     :param force:
     :return:
     """
-    print 11
     print UserConfig().d
     print path_object.company, path_object.project
     print path_object.path_root
@@ -194,6 +193,12 @@ def do_review(progress_bar=None, path_object=None):
         return None
     else:
         selection = path_object
+        selection.set_preview_path()
+        selection.set_hd_proxy_path()
+        # selection.set_path()
+    if os.path.isdir(selection.path_root):
+        print 'Choose a sequence or file'
+        return
     if not os.path.exists(selection.preview_path):
         print('No Web Preview Found, creating one')
         job_info = selection.make_preview()

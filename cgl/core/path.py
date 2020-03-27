@@ -382,10 +382,7 @@ class PathObject(object):
                 # TODO - probably can get rid of all the if not statements
                 self.set_hd_proxy_path()
                 self.set_preview_path()
-                if sys.platform == 'win32':
-                    p_path = os.path.splitext(self.preview_path)[0]
-                    self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
-                    self.data['thumb_path'] = self.thumb_path
+                self.set_thumb_path()
         return self.path
 
     def set_attr(self, attr=None, value=None, do_set_path=True, **kwargs):
@@ -673,6 +670,12 @@ class PathObject(object):
             self.hd_proxy_path = os.path.join(dir_, filename)
             self.data['hd_proxy_path'] = self.hd_proxy_path
 
+    def set_thumb_path(self):
+        if sys.platform == 'win32':
+            p_path = os.path.splitext(self.preview_path)[0]
+            self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
+            self.data['thumb_path'] = self.thumb_path
+
     def set_preview_path(self):
         """
         sets the .preview_path variable to a standard location
@@ -712,8 +715,10 @@ class PathObject(object):
             if sys.platform == 'win32':
                 self.preview_path = '%s/%s/%s' % (path_, '.preview', name_)
                 self.data['preview_path'] = self.preview_path
+                self.set_thumb_path()
             else:
                 self.preview_path = os.path.join(self.root, '.preview', name_)
+                self.set_thumb_path()
                 self.data['preview_path'] = self.preview_path
 
     def set_proper_filename(self):
@@ -1099,12 +1104,21 @@ class CreateProductionData(object):
     def create_project_management_data(self, path_object, project_management, user_login=None, status=None):
 
         if project_management != 'lumbermill':
+            print path_object
+            print path_object.filename
+            print path_object.path_root
             if path_object.filename or self.force_pm_creation:
                 session = None
                 if self.session:
                     session = self.session
                 module = "cgl.plugins.project_management.%s.main" % project_management
                 # noinspection PyTypeChecker
+                print '1111111111111'
+                print path_object
+                print path_object.filename
+                print session
+                print user_login
+                print status
                 loaded_module = __import__(module, globals(), locals(), 'main', -1)
                 loaded_module.ProjectManagementData(path_object,
                                                     session=session,

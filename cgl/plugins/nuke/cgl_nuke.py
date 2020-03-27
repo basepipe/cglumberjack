@@ -229,6 +229,9 @@ def import_directory(filepath):
 
 
 def import_lighting_renders(filepath):
+    # change backdrop name to include render pass
+    # fix the problem with my merge nodes.
+    #
     utilities = ['N', 'P', 'Z', 'cputime']
     shaders = ['diffuse_direct', 'diffuse_indirect', 'specular_direct', 'specular_indirect', 'sss', 'transmission']
     z_depth = 'Z'
@@ -238,6 +241,7 @@ def import_lighting_renders(filepath):
     utility_nodes = []
     shader_nodes = []
     z_node = None
+    render_pass = PathObject(filepath).render_pass
     for root, dirs, files in os.walk(filepath):
         for name in dirs:
             stuff = lj_list_dir(os.path.join(root, name))
@@ -246,17 +250,19 @@ def import_lighting_renders(filepath):
                     node_path = os.path.join(root, name, sequence)
                     if not os.path.isdir(node_path):
                         temp_object = NukePathObject(node_path)
-                        node = import_media(node_path, temp_object.aov)
-                        if lights_contain in temp_object.aov:
-                            light_nodes.append(node)
-                        if temp_object.aov == z_depth:
-                            z_node = node
-                        if temp_object.aov in utilities:
-                            utility_nodes.append(node)
-                        if temp_object.aov == beauty:
-                            print 'creating beauty node'
-                        if temp_object.aov in shaders:
-                            shader_nodes.append(node)
+                        if temp_object.filename:
+                            node_name = '%s %s' % (temp_object.render_pass[0:3], temp_object.aov)
+                            node = import_media(node_path, node_name)
+                            if lights_contain in temp_object.aov:
+                                light_nodes.append(node)
+                            if temp_object.aov == z_depth:
+                                z_node = node
+                            if temp_object.aov in utilities:
+                                utility_nodes.append(node)
+                            if temp_object.aov == beauty:
+                                print 'creating beauty node'
+                            if temp_object.aov in shaders:
+                                shader_nodes.append(node)
             else:
                 pass
     if z_node:
@@ -264,25 +270,35 @@ def import_lighting_renders(filepath):
         z_nodes = setup_z_node(z_node)
         for each in z_nodes:
             utility_nodes.append(each)
-    nuke.selectAll()
+    all_nodes = light_nodes+utility_nodes+shader_nodes
+    select(all_nodes)
     auto_place()
     select(d=True)
-    light_merge = create_merge(nodes=light_nodes, operation='plus')
-    light_nodes.append(light_merge)
+    #light_merge = create_merge(nodes=light_nodes, operation='plus')
+    #light_nodes.append(light_merge)
     select(light_nodes)
+
     auto_place(light_nodes)
-    auto_backdrop('Lights')
+    y_offset = biggest_y()
+    x_offset = biggest_x()
+    print x_offset
+    print y_offset
+    # move_nodes(plus_x=0, plus_y=100, start_x=x_offset, start_y=y_offset, nodes=light_nodes)
+    backdrop(name='%s Lights' % render_pass[0:3], nodes=light_nodes, move=(0, -300))
     select(d=True)
     select(utility_nodes)
     auto_place(utility_nodes)
-    auto_backdrop('Utilities')
+    x_offset = biggest_x(light_nodes)
+    backdrop(name='%s Utilities' % render_pass[0:3], nodes=utility_nodes, move_offset=(x_offset, 0))
     select(d=True)
-    shader_merge = create_merge(nodes=shader_nodes, operation='plus')
-    shader_nodes.append(shader_merge)
+    """
+    #shader_merge = create_merge(nodes=shader_nodes, operation='plus')
+    #shader_nodes.append(shader_merge)
     select(shader_nodes)
     auto_place(shader_nodes)
-    auto_backdrop('Shading')
+    backdrop(name='%s Shading' % render_pass[0:3], move=(300, 0))
     select(d=True)
+    """
 
 
 def auto_place(nodes=False):
@@ -290,6 +306,60 @@ def auto_place(nodes=False):
         nodes = nuke.selectedNodes()
     for n in nodes:
         nuke.autoplace(n)
+
+
+def move_nodes(plus_x=0, plus_y=0, start_x=0, start_y=0, nodes=None, padding=True):
+    if start_x:
+        x_multiplier = 120
+        if padding:
+            x_padding = x_multiplier*3
+    else:
+        x_multiplier = 0
+        x_padding = 0
+    if start_y:
+        y_multiplier = 120
+        if padding:
+            y_padding = 120
+    else:
+        y_multiplier = 0
+        y_padding = 0
+
+    print 'made it'
+    if not nodes:
+        nodes = nuke.selectedNodes()
+    for i, n in enumerate(nodes):
+        print n['name'].value, i
+        if not start_x:
+            start_x = n['xpos'].value()
+            print start_x
+        if not start_y:
+            start_y = n['ypos'].value()
+        n.setXpos(int(start_x + (x_multiplier*i+1) + x_padding + plus_x))
+        n.setYpos(int(start_y + (y_multiplier*i+1) + y_padding + plus_y))
+
+
+def biggest_x(nodes=None):
+    if not nodes:
+        nodes = nuke.allNodes()
+    x_val = 0
+    for n in nodes:
+        if x_val == 0:
+            x_val = n['xpos'].value()
+        elif x_val < n['xpos'].value():
+            x_val = n['xpos'].value()
+    return x_val
+
+
+def biggest_y(nodes=None):
+    if not nodes:
+        nodes = nuke.allNodes()
+    y_val = 0
+    for n in nodes:
+        if y_val == 0:
+            y_val = n['ypos'].value()
+        elif y_val < n['ypos'].value():
+            y_val = n['ypos'].value()
+    return y_val
 
 
 def import_media(filepath, name=None):
@@ -328,15 +398,15 @@ def setup_z_node(z_node):
     """
     This assumes we're using arnold AOVs when setting up this z network
     :param node:
-    :param z_channel:
     :return:
     """
     nodes = []
+    z_object = PathObject(z_node['file'].value())
     beauty = find_node('beauty')
     min, max = get_min_max(z_node)
     mult_node = nuke.createNode('Multiply')
     mult_node['value'].setValue(1 / max)
-    mult_node['name'].setValue('Z Preview')
+    mult_node['name'].setValue('%s Z Preview' % z_object.render_pass[0:3])
     nodes.append(mult_node)
 
     select([z_node])
@@ -557,6 +627,75 @@ def auto_backdrop(label=None):
     n = nukescripts.autoBackdrop()
     if label:
         n['label'].setValue(label)
+    # change the padding on the backdrop node
+
+
+def backdrop(name, bg_color=(.267, .267, .267), text_color=(.498, .498, .498), nodes=None, move=(0, 0),
+             move_offset=(0, 0)):
+
+    z_index = get_highest_z_index()+1
+    bg_r, bg_g, bg_b = bg_color
+    t_r, t_g, t_b = text_color
+
+    # Define Colors. The numbers have to be integers, so there's some math to convert them.
+    bg_color_int = int('%02x%02x%02x%02x' % (bg_r * 255, bg_g * 255, bg_b * 255, 255), 16)
+    text_color_int = int('%02x%02x%02x%02x' % (t_r * 255, t_g * 255, t_b * 255, 255), 16)
+
+    if nodes is None:
+        nodes = nuke.selectedNodes()
+        # move_nodes(plus_x=move[0], plus_y=move[1], start_x=move_offset[0], start_y=move_offset[1])
+    if len(nodes) == 0:
+        n = nuke.createNode("BackdropNode")
+        return n
+
+
+    # Calculate bounds for the backdrop node.
+    bd_x = min([node.xpos() for node in nodes])
+    bd_y = min([node.ypos() for node in nodes])
+    bd_w = max([node.xpos() + node.screenWidth() for node in nodes]) - bd_x
+    bd_h = max([node.ypos() + node.screenHeight() for node in nodes]) - bd_y
+
+    # Expand the bounds to leave a little border.
+    # Elements are offsets for left, top, right and bottom edges respectively
+    left, top, right, bottom = (-70, -140, 70, 70)
+    bd_x += left
+    bd_y += top
+    bd_w += (right - left)
+    bd_h += (bottom - top)
+
+    # Set backdrop parameters
+    n = nuke.nodes.BackdropNode(xpos=bd_x,
+                                bdwidth=bd_w,
+                                ypos=bd_y,
+                                bdheight=bd_h,
+                                z_order=int(z_index),
+                                tile_color=bg_color_int,
+                                note_font_color=text_color_int,
+                                note_font_size=100,
+                                label=name,
+                                name=name,
+                                note_font='Courrier New')
+
+    # Revert to previous selection
+    for node in nodes:
+        node['selected'].setValue(True)
+
+    # Ensure backdrop is selected, to make moving easier
+    n['selected'].setValue(True)
+    move_nodes(plus_x=move[0], plus_y=move[1], start_x=move_offset[0], start_y=move_offset[1])
+    nuke.show(n)
+
+    return n
+
+
+def get_highest_z_index():
+    z_index = -10
+    bd_nodes = nuke.allNodes('BackdropNode')
+    for node in bd_nodes:
+        print node['label'].value()
+        if node['z_order'].value() > z_index:
+            z_index = node['z_order'].value()
+    return int(z_index)
 
 
 def create_merge(nodes=None, operation='over'):
