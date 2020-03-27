@@ -4,6 +4,7 @@ import os
 from random import randint
 import subprocess
 import cgl.plugins.google.sheets as sheets
+import psutil
 
 
 def setup(company, sheet_name, folder_dict=[], setup_studio=False):
@@ -12,6 +13,7 @@ def setup(company, sheet_name, folder_dict=[], setup_studio=False):
     :param folder_dict: dictionary of pairs of {folder_id: full_path}
     :return:
     """
+    kill_syncthing()
     if folder_dict:
         config_path = get_config_path()
         if not os.path.exists(config_path):
@@ -28,6 +30,7 @@ def setup(company, sheet_name, folder_dict=[], setup_studio=False):
             pull_from_studio()
     else:
         print('Please provide a list of folders before attempting to set up syncthing')
+    launch_syncthing()
 
 
 def pull_from_studio():
@@ -220,13 +223,12 @@ def add_all_devices_to_config(sheet):
         maxRecvKbps.text = 0
         maxRequestKiB = ET.SubElement(new_node, 'maxRequestKiB')
         maxRequestKiB.text = 0
-
     tree.write(filepath)
 
 
 def add_folder_to_config(folder_id, filepath):
     """
-    Function to add a new folder to be synched through syncthing
+    Function to add a new folder to config.xml file
     :param folder_id: The ID label for the folder being added to syncthing
     :param filepath: The path to the file being added to syncthing
     :return:
@@ -276,18 +278,19 @@ def share_files_to_devices():
     tree.write(config_path)
 
 
+def launch_syncthing():
+    command = "syncthing"
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    return p
+
+
+def kill_syncthing():
+    for proc in psutil.process_iter():
+        if proc.name() == 'syncthing.exe':
+            proc.terminate()
+            print "Process Ended"
+
+
 if __name__ =="__main__":
-    print 'hi'
-    # pull_from_studio()
-    # # file_location = G.get_sheets_authentication('C:\\Users\\Molta\\Desktop')
-    # sheet1 = sheets.authorize_sheets('LONE_COCONUT_SYNC_THING', 'C:\\Users\\Molta\\Desktop\\client.json')
-    # # add_device_info_to_sheet(sheet1)
-    # #add_all_devices_to_config(sheet1)
-    # add_folder_to_config('kyls_new_file', 'C:\\Users\\Molta\\test')
-    # get_my_device_info()
-    # share_files_to_devices()
-    # k = folder_id_exists('kyul', 'C:\\Users\\Molta\\Default Folder')
-    # print k
-    # add_device_info_to_sheet(sheet1)
-    # print get_syncthing_folders()
+    print 'main'
 
