@@ -636,44 +636,49 @@ class LoginDialog(LJDialog):
     def __init__(self, parent=None):
         LJDialog.__init__(self, parent)
         self.parent = parent
-        self.user_info = {}
+        self.project_management = CONFIG['account_info']['project_management']
+        self.email_line_edit = None
         self.line_edit_dict = {}
         self.login_line_edit = None
         self.button = ''
-        self.project_management = CONFIG['account_info']['project_management']
+
         try:
             self.user_details = CONFIG['project_management'][self.project_management]['user_details']
         except KeyError:
-            self.user_details = {}
+            self.user_details = {'email': '',
+                                 'first': '',
+                                 'last': '',
+                                 'login': ''}
 
         self.grid_layout = QtWidgets.QGridLayout()
         self.proj_management_label = QtWidgets.QLabel('Project Management:')
-        self.uname_label = QtWidgets.QLabel('Login')
-        self.first_label = QtWidgets.QLabel('First')
-        self.last_label = QtWidgets.QLabel('Last')
-        self.email_label = QtWidgets.QLabel('Email')
+        # self.uname_label = QtWidgets.QLabel('Login')
+        # self.first_label = QtWidgets.QLabel('First')
+        # self.last_label = QtWidgets.QLabel('Last')
+        # self.email_label = QtWidgets.QLabel('Email')
         self.local_user_label = QtWidgets.QLabel('Local User:')
 
         self.local_user_line_edit = QtWidgets.QLineEdit()
+        self.proj_management_line_edit = QtWidgets.QLineEdit()
+        # self.first_line_edit = QtWidgets.QLineEdit()
+        # self.last_line_edit = QtWidgets.QLineEdit()
+        # self.email_line_edit = QtWidgets.QLineEdit()
+
         self.local_user_line_edit.setText(current_user())
         self.local_user_line_edit.setEnabled(False)
-        self.proj_management_line_edit = QtWidgets.QLineEdit()
         self.proj_management_line_edit.setText(self.project_management)
         self.proj_management_line_edit.setEnabled(False)
-        self.first_line_edit = QtWidgets.QLineEdit()
-        self.last_line_edit = QtWidgets.QLineEdit()
-        self.email_line_edit = QtWidgets.QLineEdit()
 
         self.grid_layout.addWidget(self.proj_management_label, 0, 0)
         self.grid_layout.addWidget(self.proj_management_line_edit, 0, 1)
         self.grid_layout.addWidget(self.local_user_label, 1, 0)
         self.grid_layout.addWidget(self.local_user_line_edit, 1, 1)
-        self.grid_layout.addWidget(self.first_label, 2, 0)
-        self.grid_layout.addWidget(self.first_line_edit, 2, 1)
-        self.grid_layout.addWidget(self.last_label, 3, 0)
-        self.grid_layout.addWidget(self.last_line_edit, 3, 1)
-        self.grid_layout.addWidget(self.email_label, 4, 0)
-        self.grid_layout.addWidget(self.email_line_edit, 4, 1)
+        # self.grid_layout.addWidget(self.first_label, 2, 0)
+        # self.grid_layout.addWidget(self.first_line_edit, 2, 1)
+        # self.grid_layout.addWidget(self.last_label, 3, 0)
+        # self.grid_layout.addWidget(self.last_line_edit, 3, 1)
+        # self.grid_layout.addWidget(self.email_label, 4, 0)
+        # self.grid_layout.addWidget(self.email_line_edit, 4, 1)
 
         buttons_layout = QtWidgets.QHBoxLayout()
         self.ok_button = QtWidgets.QPushButton('Ok')
@@ -693,9 +698,8 @@ class LoginDialog(LJDialog):
 
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.ok_button.clicked.connect(self.on_ok_clicked)
-        self.email_line_edit.textChanged.connect(self.on_text_changed)
-        if current_user() in CONFIG['project_management'][self.project_management]['users']:
-            self.user_info = CONFIG['project_management'][self.project_management]['users'][current_user()]
+        # self.email_line_edit.textChanged.connect(self.on_text_changed)
+
         self.load_user_details()
 
     def load_user_details(self):
@@ -703,15 +707,17 @@ class LoginDialog(LJDialog):
         for key in self.user_details:
             label = QtWidgets.QLabel(key.title())
             line_edit = QtWidgets.QLineEdit()
+            line_edit.textChanged.connect(self.on_text_changed)
             self.line_edit_dict[key] = line_edit
             self.grid_layout.addWidget(label, row_number, 0)
             self.grid_layout.addWidget(line_edit, row_number, 1)
+            if key == 'email':
+                self.email_line_edit = line_edit
+                line_edit.setPlaceholderText('email (if different than login)')
             if key == 'login':
-                line_edit.setPlaceholderText('required')
+                line_edit.setPlaceholderText('%s login email' % self.project_management)
                 line_edit.textEdited.connect(self.on_text_changed)
                 self.login_line_edit = line_edit
-            if self.user_info:
-                line_edit.setText(self.user_info[key])
             row_number += 1
 
     def on_text_changed(self):
@@ -733,17 +739,19 @@ class LoginDialog(LJDialog):
         self.accept()
 
     def create_user_info_dict(self):
-        self.line_edit_dict[self.first_label.text().lower()] = self.first_line_edit.text()
-        self.line_edit_dict[self.last_label.text().lower()] = self.last_line_edit.text()
-        self.line_edit_dict['login'] = self.email_line_edit.text()
-        return self.line_edit_dict
+        print self.line_edit_dict
+        d_ = {}
+        for key in self.line_edit_dict:
+            print key, self.line_edit_dict[key].text()
+            d_[key] = self.line_edit_dict[key].text()
+        return d_
 
     def save_user_defaults(self):
         import json
         globals_location = UserConfig().d['globals']
-        self.user_info = self.create_user_info_dict()
+        user_info = self.create_user_info_dict()
         app_config_dict = CONFIG
-        app_config_dict['project_management'][self.project_management]['users'][current_user()] = self.user_info
+        app_config_dict['project_management'][self.project_management]['users'][current_user()] = user_info
         with open(globals_location, 'w') as fileout:
             json.dump(app_config_dict, fileout, indent=4, sort_keys=True)
         self.accept()

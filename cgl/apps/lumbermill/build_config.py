@@ -9,7 +9,7 @@ import plugins.syncthing.utils as syncthing
 
 DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
 DEFAULT_CODE_ROOT = os.path.join(os.path.expanduser("~"), 'PycharmProjects', 'cglumberjack')
-DEFAULT_HOME = os.path.join(os.path.expanduser("~"), 'cglumberjack')
+DEFAULT_HOME = os.path.join(os.path.expanduser("~"), 'Documents', 'cglumberjack')
 DEFAULT_USER_GLOBALS = os.path.join(DEFAULT_HOME, 'user_globals.json')
 DEFAULT_GLOBALS = os.path.join(DEFAULT_ROOT, '_config', 'globals.json')
 
@@ -845,6 +845,9 @@ class QuickSync(QtWidgets.QDialog):
         # TODO - This shouldn't exist
         globals["cg_lumberjack_dir"] = os.path.join(self.default_root, '_config')
         # TODO - it'd be nice to double check all the sofwtare paths and see if there are newer versions on disk, this will help a ton.
+        globals_dir = os.path.dirname(globals["paths"]["globals"])
+        if not os.path.exists(globals_dir):
+            os.makedirs(globals_dir)
         read_write.save_json(globals["paths"]["globals"], globals)
 
     def setup_syncthing(self):
@@ -890,6 +893,7 @@ def create_user_globals(user_globals, globals_path):
              "methodology": "local",
              "my_tasks": {}
              }
+        print "saving user_globals to %s" % user_globals
         read_write.save_json(user_globals, d)
     else:
         print 'No Root Defined, cannot save user globals'

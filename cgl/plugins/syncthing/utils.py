@@ -28,7 +28,7 @@ def setup(company, sheet_name, folder_dict=[]):
 
 def get_sheet(company, sheet_name):
     from cgl.core.config import app_config
-    client_file = os.path.join(app_config()['paths']['root'], 'client.json')
+    client_file = os.path.join(app_config()['paths']['root'], '_config', 'client.json')
     sheets.get_sheets_authentication(client_file, company)
     sheet_obj = sheets.authorize_sheets(sheet_name, client_file)
     return sheet_obj
