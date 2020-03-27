@@ -292,6 +292,16 @@ def kill_syncthing():
             print "Process Ended"
 
 
-if __name__ =="__main__":
-    print 'main'
+def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodrive\COMPANIES\_config\client.json'):
+    kill_syncthing()
+    sheet = sheets.authorize_sheets('LONE_COCONUT_SYNC_THING', 'Z:\cocodrive\COMPANIES\_config\client.json')
+    add_all_devices_to_config(sheet)
+    share_files_to_devices()
+    launch_syncthing()
+
+
+if __name__ == "__main__":
+    kill_syncthing()
+    share_files_to_devices()
+    launch_syncthing()
 
