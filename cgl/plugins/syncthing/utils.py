@@ -29,6 +29,7 @@ def setup(company, sheet_name, folder_dict=[], setup_studio=False):
     else:
         print('Please provide a list of folders before attempting to set up syncthing')
 
+
 def pull_from_studio():
     """
     map shared folders to the correct location on local drive
@@ -47,16 +48,40 @@ def pull_from_studio():
 
 def get_syncthing_folders():
     """
-    createsw a dictionary of {folder_id: path} for all the folders in syncthing.
-    :return:
+    creates a dictionary of {folder_id: path} for all the folders in syncthing.
+    :return: Dictionary of folder ID's mapped to folder paths
     """
-    folders_dict = {'[root]\_config\cgl_tools': 'Z:\cocodrive\COMPANIES\_config\cgl_tools'}
+    config_path = get_config_path()
+    tree = ET.parse(config_path)
+    root = tree.getroot()
+    folders_dict = {}
+    folders_array = []
+
+    for child in root:
+        if child.tag == 'folder':
+            folders_dict[child.get('id')] = child.get('path')
+            #temp_dict = {'id' : child.get('id'), 'path': child.get('path')}
+            #folders_array.append(temp_dict)
+
     return folders_dict
 
 
 def edit_syncthing_folder(folder_id, new_local_path):
-    print('setting %s to %s' % folder_id, new_local_path)
-    pass
+    """
+    Changes the path variable of the specified folder into the new path
+    :param folder_id: ID of the folder to be changed
+    :param new_local_path: New path value for folder
+    :return:
+    """
+    config_path = get_config_path()
+    tree = ET.parse(config_path)
+    root = tree.getroot()
+
+    for child in root:
+        if child.tag == 'folder' and child.get('id') == folder_id:
+            child.set('path', new_local_path)
+
+    tree.write(config_path)
 
 
 def folder_id_exists(folder_id, folder_path=''):
@@ -77,6 +102,12 @@ def folder_id_exists(folder_id, folder_path=''):
 
 
 def get_sheet(company, sheet_name):
+    """
+    Gets the sheet object for a company
+    :param company: Company name in the s3 database
+    :param sheet_name: Name of the google sheet being accessed
+    :return: Sheet object
+    """
     from cgl.core.config import app_config
     client_file = os.path.join(app_config()['paths']['root'], '_config', 'client.json')
     sheets.get_sheets_authentication(client_file, company)
@@ -250,7 +281,7 @@ def share_files_to_devices():
 
 if __name__ =="__main__":
     print 'hi'
-    pull_from_studio()
+    # pull_from_studio()
     # # file_location = G.get_sheets_authentication('C:\\Users\\Molta\\Desktop')
     # sheet1 = sheets.authorize_sheets('LONE_COCONUT_SYNC_THING', 'C:\\Users\\Molta\\Desktop\\client.json')
     # # add_device_info_to_sheet(sheet1)
@@ -261,3 +292,4 @@ if __name__ =="__main__":
     # k = folder_id_exists('kyul', 'C:\\Users\\Molta\\Default Folder')
     # print k
     # add_device_info_to_sheet(sheet1)
+
