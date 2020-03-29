@@ -4,7 +4,7 @@ import json
 import time
 import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
-from core.utils import read_write, web
+from cgl.core.utils import read_write, web
 import plugins.syncthing.utils as syncthing
 
 DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
@@ -403,7 +403,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.accept()
 
     def copy_cgl_tools(self):
-        from core.utils.general import cgl_copy
+        from cgl.core.utils.general import cgl_copy
         src = os.path.join(self.widget_dict['code_root']['line_edit'].text(), 'cgl', 'cfg', 'cgl_tools')
         dst = os.path.join(self.widget_dict['cgl_tools']['line_edit'].text())
         if not os.path.exists(dst):
@@ -723,10 +723,15 @@ class QuickSync(QtWidgets.QDialog):
         self.on_company_name_changed()
 
         self.company_line_edit.editingFinished.connect(self.on_company_name_changed)
+        self.root_line_edit.textChanged.connect(self.on_root_changed)
         self.download_globals_button.clicked.connect(self.set_up_lumbermill)
         self.projects_checkbox.clicked.connect(self.on_projects_checkbox_clicked)
         self.sync_thing_checkbox.clicked.connect(self.on_sync_thing_checkbox_clicked)
         self.import_line_edit.editingFinished.connect(self.on_import_line_edit_changed)
+
+    def on_root_changed(self):
+        self.default_root = self.root_line_edit.text()
+        print 'Changing Default Root to: %s' % self.default_root
 
     def on_import_line_edit_changed(self):
         import re
@@ -848,6 +853,7 @@ class QuickSync(QtWidgets.QDialog):
         globals_dir = os.path.dirname(globals["paths"]["globals"])
         if not os.path.exists(globals_dir):
             os.makedirs(globals_dir)
+        print 'Saving Globals To: %s' % globals["paths"]["globals"]
         read_write.save_json(globals["paths"]["globals"], globals)
 
     def setup_syncthing(self):
@@ -868,12 +874,12 @@ class QuickSync(QtWidgets.QDialog):
         :return:
         """
         # step 1 - download the globals
-        self.download_globals_from_cloud()
+        # self.download_globals_from_cloud()
         # Step 2: replace ROOT, and CODEROOT instances in the globals file
         # Step 3: Copy the edited globals file to the default location
-        self.edit_globals_paths()
+        # self.edit_globals_paths()
         # Step 3b: Create Default User Globals
-        create_user_globals(self.default_user_globals, self.default_globals)
+        # create_user_globals(self.default_user_globals, self.default_globals)
         # Step 4: Copy the published CGL_TOOLS to the default location
         # Step 5: Import any Projects
         # Step 6: Set up Syncthing

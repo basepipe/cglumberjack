@@ -112,8 +112,9 @@ class CustomMenu(object):
             return {}
 
     def delete_menus(self):
-        for menu in self.menus:
-            self.delete_menu(menu)
+        if self.menus:
+            for menu in self.menus:
+                self.delete_menu(menu)
 
     def delete_menu(self, menu_name):
         pass

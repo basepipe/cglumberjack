@@ -26,6 +26,7 @@ def setup(company, sheet_name, folder_dict=[], setup_studio=False):
         if setup_studio:
             share_files_to_devices() # only if you're setting up main folders
         else:
+            print 'pulling from studio'
             pull_from_studio()
             # notify_of_machine_add()
     else:
@@ -41,12 +42,16 @@ def pull_from_studio():
     from cgl.core.config import app_config
     folders_dict = get_syncthing_folders()
     for folder_id in folders_dict:
-        variable, the_rest = folder_id.split(']')
-        variable = variable.replace('[', '')
-        value = app_config()['paths'][variable]
-        local_path = '%s%s' % (value, the_rest)
-        edit_syncthing_folder(folder_id, local_path)
-        print local_path
+        print folder_id
+        try:
+            variable, the_rest = folder_id.split(']')
+            variable = variable.replace('[', '')
+            value = app_config()['paths'][variable]
+            local_path = '%s%s' % (value, the_rest)
+            edit_syncthing_folder(folder_id, local_path)
+            print local_path
+        except ValueError:
+            print('Skipping %s, only handling lumbermill created folders for now' % folder_id)
 
 
 def get_syncthing_folders():
@@ -303,11 +308,16 @@ def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodr
 if __name__ == "__main__":
     # before we have a GUI implementation within lumbermill Run this to add new machines
     # to ALL folders for syncing.
-    update_machines()
+    #update_machines()
     # Stop Syncthing
     # kill_syncthing()
     # start syncthing
     # kill_syncthing()
     # share_files_to_devices()
-    # launch_syncthing()
+    launch_syncthing()
+    # cgl_tools_folder = os.path.join(r'D:\COMPANIES', '_config', 'cgl_tools')
+    # if not os.path.exists(cgl_tools_folder):
+    #    os.makedirs(cgl_tools_folder)
+    # sync_folders = {r'[root]\_config\cgl_tools': os.path.join(cgl_tools_folder)}
+    # setup('lone-coconut', 'LONE_COCONUT_SYNC_THING', sync_folders)
 

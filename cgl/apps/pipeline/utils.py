@@ -1,5 +1,5 @@
 import os
-from core.utils.general import cgl_copy
+from cgl.core.utils.general import cgl_copy
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.path import start, icon_path

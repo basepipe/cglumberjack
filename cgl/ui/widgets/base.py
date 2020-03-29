@@ -1,6 +1,6 @@
 from cgl.plugins.Qt import QtCore, QtWidgets
 from cgl.ui.util import UISettings, widget_name
-from core.utils.general import app_name
+from cgl.core.utils.general import app_name
 
 
 class StateSavers(QtCore.QObject):
