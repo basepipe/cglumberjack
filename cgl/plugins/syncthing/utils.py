@@ -1,7 +1,6 @@
 import xml.etree.ElementTree as ET
 import getpass
 import os
-from random import randint
 import subprocess
 import cgl.plugins.google.sheets as sheets
 import psutil
@@ -280,6 +279,7 @@ def share_files_to_devices():
 
 
 def launch_syncthing():
+    kill_syncthing()
     command = "syncthing"
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
     return p
@@ -301,5 +301,13 @@ def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodr
 
 
 if __name__ == "__main__":
+    # before we have a GUI implementation within lumbermill Run this to add new machines
+    # to ALL folders for syncing.
     update_machines()
+    # Stop Syncthing
+    # kill_syncthing()
+    # start syncthing
+    # kill_syncthing()
+    # share_files_to_devices()
+    # launch_syncthing()
 
