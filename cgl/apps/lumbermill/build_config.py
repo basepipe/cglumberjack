@@ -667,7 +667,7 @@ class QuickSync(QtWidgets.QDialog):
         self.company_line_edit.setText('lone coconut')
 
         self.code_root_line_edit.setEnabled(False)
-        self.root_line_edit.setEnabled(False)
+        # self.root_line_edit.setEnabled(False)
         self.sync_cgl_tools_line_edit.setEnabled(False)
         self.sync_folder_line_edit.setEnabled(False)
 
