@@ -4,7 +4,7 @@ import glob
 from cgl.plugins.Qt import QtCore, QtWidgets
 from cgl.core.config import app_config
 from cgl.ui.widgets.dialog import InputDialog
-from core.utils.general import current_user, cgl_copy
+from cgl.core.utils.general import current_user, cgl_copy
 from cgl.ui.widgets.progress_gif import process_method
 from cgl.core.path import PathObject, CreateProductionData, lj_list_dir
 from cgl.core.path import replace_illegal_filename_characters, show_in_folder
@@ -397,7 +397,7 @@ class FilesPanel(QtWidgets.QWidget):
 
         :return:
         """
-        from core.utils.general import load_json
+        from cgl.core.utils.general import load_json
         from cgl.core.project import get_cgl_tools
         # get the current task
         if self.task and 'elem' not in self.task:

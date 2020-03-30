@@ -4,7 +4,7 @@ import json
 import time
 import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
-from core.utils import read_write, web
+from cgl.core.utils import read_write, web
 import plugins.syncthing.utils as syncthing
 
 DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
@@ -403,7 +403,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.accept()
 
     def copy_cgl_tools(self):
-        from core.utils.general import cgl_copy
+        from cgl.core.utils.general import cgl_copy
         src = os.path.join(self.widget_dict['code_root']['line_edit'].text(), 'cgl', 'cfg', 'cgl_tools')
         dst = os.path.join(self.widget_dict['cgl_tools']['line_edit'].text())
         if not os.path.exists(dst):

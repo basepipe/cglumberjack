@@ -7,7 +7,7 @@ from cgl.ui.widgets.widgets import AdvComboBox, EmptyStateWidget
 from cgl.ui.widgets.containers.table import LJTableWidget
 from cgl.ui.widgets.containers.menu import LJMenu
 from cgl.ui.widgets.base import LJDialog
-from core.utils.general import current_user
+from cgl.core.utils.general import current_user
 from cgl.core.path import icon_path
 import plugins.project_management.ftrack.util as ftrack_util
 
