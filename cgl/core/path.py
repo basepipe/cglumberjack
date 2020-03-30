@@ -7,7 +7,7 @@ import os
 import sys
 import re
 import copy
-from cgl.core.util import split_all, cgl_copy, cgl_execute
+from core.utils.general import split_all, cgl_copy, cgl_execute
 from cgl.core.config import app_config, UserConfig
 import convert
 
@@ -1366,7 +1366,7 @@ def start(filepath):
     cgl_execute(command, methodology='local')
 
 
-# TODO - this seems more like a "util" than a "Path"
+# TODO - this seems more like a "utils" than a "Path"
 def start_url(url):
     import webbrowser
     webbrowser.open(url)

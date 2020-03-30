@@ -1,5 +1,5 @@
 import os
-from cgl.core.util import cgl_copy
+from core.utils.general import cgl_copy
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.path import start, icon_path
@@ -63,11 +63,12 @@ class CGLMenuButton(QtWidgets.QWidget):
 
         try:
             dialog = self.parent().parent().parent()
+            print dialog
             self.software = dialog.software_combo.currentText()
         except AttributeError:
             # TODO - look into this a bit deeper, this is a fairly generic catch right now.
-            print 'getting a wierd error on %s ' % dialog
-            self.software = ''
+            dialog = self.parent().parent().parent().parent().parent()
+            self.software = dialog.software_combo.currentText()
         self.menu_type = menu_type
         self.attrs = attrs
         self.name = preflight_step_name
@@ -206,6 +207,7 @@ class CGLMenuButton(QtWidgets.QWidget):
             return None
 
     def load_default_text(self):
+        print self.menu_type, self.software, 11111111111
         if self.menu_type == 'preflights':
             preflight = "from plugins.preflight.preflight_check import PreflightCheck\n" \
                         "\n\n" \
@@ -219,8 +221,11 @@ class CGLMenuButton(QtWidgets.QWidget):
                         "        # self.pass_check('Check Passed')\n" \
                         "        # self.fail_check('Check Failed')\n\n" % (self.name, self.name)
             return preflight
+
+        elif self.menu_type == 'menus' and self.software == 'lumbermill':
+            return "\n\ndef run(lumbermill):\n    print(\"hello world: %s\")" % self.name
         else:
-            return "def run():\n    print(\"hello world: %s\")" % self.name
+            return "\n\ndef run():\n    print(\"hello world: %s\")" % self.name
 
     def on_delete_clicked(self):
         print self

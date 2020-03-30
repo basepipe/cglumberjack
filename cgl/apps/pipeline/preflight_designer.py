@@ -9,7 +9,7 @@ class PreflightDesigner(Designer):
 
 if __name__ == "__main__":
     from cgl.ui.startup import do_gui_init
-    from cgl.core.util import load_style_sheet
+    from core.utils.general import load_style_sheet
     app = do_gui_init()
     mw = PreflightDesigner()
     mw.setWindowTitle('Preflight Designer')

@@ -185,7 +185,7 @@ def user_init():
     :return:
     """
     from cgl.core.config import app_config
-    from cgl.core.util import current_user
+    from core.utils.general import current_user
     from cgl.ui.widgets.dialog import LoginDialog
     current = current_user().lower()
     print current

@@ -1,7 +1,7 @@
 import os
 from plugins.preflight.preflight_check import PreflightCheck
 from cgl.core.path import PathObject
-from cgl.core.util import cgl_copy
+from core.utils.general import cgl_copy
 
 
 # noinspection PyPep8Naming

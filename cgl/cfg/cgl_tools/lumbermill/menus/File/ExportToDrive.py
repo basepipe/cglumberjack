@@ -4,16 +4,16 @@ from cgl.plugins.Qt import QtWidgets
 from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.combo import AdvComboBox
 from cgl.core.path import PathObject
-from cgl.core.util import cgl_copy
+from core.utils.general import cgl_copy
 
 
-def run(session):
+def run(lumbermill):
     """
     Copies Entire Folder Structures to an external Drive
     :param session:
     :return:
     """
-    path_object = PathObject(session.path_widget.text.replace('/*', ''))
+    path_object = PathObject(lumbermill.path_widget.text.replace('/*', ''))
     dialog = ExportDialog(path_object=path_object)
     dialog.exec_()
 
@@ -71,7 +71,6 @@ class ExportDialog(LJDialog):
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.ok_button.clicked.connect(self.on_copy_clicked)
         self.get_available_drives()
-
 
     def get_available_drives(self):
         ignore = ['C:\\']

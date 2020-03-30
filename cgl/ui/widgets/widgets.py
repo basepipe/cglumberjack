@@ -6,8 +6,7 @@ from cgl.ui.widgets.containers.table import LJTableWidget
 from cgl.ui.widgets.containers.model import ListItemModel, FilesModel
 from cgl.ui.widgets.containers.menu import LJMenu
 from cgl.core.config import app_config
-from cgl.core.project import get_task_info, get_cgl_tools
-from cgl.core.util import load_json
+from cgl.core.project import get_task_info
 
 CONFIG = app_config()
 PROJECT_MANAGEMENT = CONFIG['account_info']['project_management']
