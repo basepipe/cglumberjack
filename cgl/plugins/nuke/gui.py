@@ -6,7 +6,7 @@ from cgl.ui.widgets.dialog import InputDialog
 from cgl.plugins.nuke import cgl_nuke
 from cgl.core.path import PathObject
 from cgl.core.config import app_config
-from core.utils.general import current_user
+from cgl.core.utils.general import current_user
 from cgl.plugins.preflight.main import Preflight
 
 

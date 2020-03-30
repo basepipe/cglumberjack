@@ -1,7 +1,7 @@
 import os
 import shutil
 import stat
-from core.utils.general import cgl_copy
+from cgl.core.utils.general import cgl_copy
 from core.config import app_config
 
 CONFIG = app_config()

@@ -5,7 +5,7 @@ import os
 import json
 import ftrack_api
 from cgl.core.config import app_config, UserConfig
-from core.utils.general import current_user
+from cgl.core.utils.general import current_user
 
 CONFIG = app_config()
 

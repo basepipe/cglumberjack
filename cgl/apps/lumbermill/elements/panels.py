@@ -8,7 +8,7 @@ from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.core.path import PathObject, CreateProductionData, icon_path
 from cgl.core.project import create_project_config
 from cgl.ui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
-from core.utils.general import current_user
+from cgl.core.utils.general import current_user
 from cgl.ui.widgets.progress_gif import process_method
 
 CONFIG = app_config()

@@ -4,7 +4,7 @@ import logging
 from cgl.core.config import app_config
 from cgl.core.path import PathObject, CreateProductionData, split_sequence, number_to_hash, hash_to_number
 from cgl.core.path import prep_seq_delimiter, lj_list_dir, get_start_frame
-from core.utils.general import cgl_execute, write_to_cgl_data
+from cgl.core.utils.general import cgl_execute, write_to_cgl_data
 
 CONFIG = app_config()['paths']
 settings = CONFIG['default']

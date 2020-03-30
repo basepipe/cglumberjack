@@ -7,7 +7,7 @@ import os
 import sys
 import re
 import copy
-from core.utils.general import split_all, cgl_copy, cgl_execute
+from cgl.core.utils.general import split_all, cgl_copy, cgl_execute
 from cgl.core.config import app_config, UserConfig
 import convert
 
