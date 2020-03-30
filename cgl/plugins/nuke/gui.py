@@ -57,13 +57,18 @@ class CGLNukeWidget(QtWidgets.QDialog):
         scene_name = cgl_nuke.get_file_name()
         scene = PathObject(scene_name)
         self.setWindowTitle('Nuke - Lumbermill')
-        location = '%s/*' % scene.split_after('shot')
-        project_management = CONFIG['account_info']['project_management']
-        users = CONFIG['project_management'][project_management]['users']
-        user_info = users[current_user()]
-        layout = QtWidgets.QVBoxLayout(self)
-        main = CGLNuke(path=location, user_info=user_info)
-        layout.addWidget(main)
+        if scene.shot:
+            location = '%s/*' % scene.split_after('shot')
+            project_management = CONFIG['account_info']['project_management']
+            users = CONFIG['project_management'][project_management]['users']
+            user_info = users[current_user()]
+            layout = QtWidgets.QVBoxLayout(self)
+            main = CGLNuke(path=location, user_info=user_info)
+            layout.addWidget(main)
+        else:
+            dialog = InputDialog(title='Not In Pipeline', message='Current Scene is not in the Pipeline, \n'
+                                                                  'open files from lumbermill')
+            dialog.exec_()
 
 
 class CGLNuke(CGLumberjack):
