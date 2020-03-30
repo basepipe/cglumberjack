@@ -11,6 +11,8 @@ CONFIG = app_config()
 PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
 PADDING = CONFIG['default']['padding']
 PROCESSING_METHOD = UserConfig().d['methodology']
+X_SPACE = 120
+Y_SPACE = 120
 
 
 class NukePathObject(PathObject):
@@ -211,8 +213,10 @@ def save_file_as(filepath):
 def import_directory(filepath):
     path_object = NukePathObject(filepath)
     if path_object.task == 'lite':
+        print 1
         import_lighting_renders(filepath)
     else:
+        print 2
         for root, dirs, files in os.walk(filepath):
             for name in dirs:
                 for sequence in lj_list_dir(os.path.join(root, name)):
@@ -240,6 +244,7 @@ def import_lighting_renders(filepath):
     light_nodes = []
     utility_nodes = []
     shader_nodes = []
+    beauty_nodes = []
     z_node = None
     render_pass = PathObject(filepath).render_pass
     for root, dirs, files in os.walk(filepath):
@@ -260,6 +265,7 @@ def import_lighting_renders(filepath):
                             if temp_object.aov in utilities:
                                 utility_nodes.append(node)
                             if temp_object.aov == beauty:
+                                beauty_nodes.append(node)
                                 print 'creating beauty node'
                             if temp_object.aov in shaders:
                                 shader_nodes.append(node)
@@ -274,31 +280,37 @@ def import_lighting_renders(filepath):
     select(all_nodes)
     auto_place()
     select(d=True)
+    backdrop(name='%s Lights' % render_pass[0:3], nodes=light_nodes, move_offset=(biggest_x(), 0))
+    util_biggest = biggest_x()
+    backdrop(name='%s Utilities' % render_pass[0:3], nodes=utility_nodes, move_offset=(util_biggest, 0))
+    backdrop(name='%s Beauty' % render_pass[0:3], nodes=beauty_nodes, move_offset=(util_biggest, 0),
+             move=(0, 400))
+    backdrop(name='%s Shading' % render_pass[0:3], nodes=shader_nodes, move_offset=(biggest_x(), 0))
+
+
+    return light_nodes, utility_nodes, shader_nodes, beauty_nodes
     #light_merge = create_merge(nodes=light_nodes, operation='plus')
     #light_nodes.append(light_merge)
     select(light_nodes)
 
     auto_place(light_nodes)
-    y_offset = biggest_y()
     x_offset = biggest_x()
-    print x_offset
-    print y_offset
     # move_nodes(plus_x=0, plus_y=100, start_x=x_offset, start_y=y_offset, nodes=light_nodes)
-    backdrop(name='%s Lights' % render_pass[0:3], nodes=light_nodes, move=(0, -300))
+
     select(d=True)
     select(utility_nodes)
     auto_place(utility_nodes)
-    x_offset = biggest_x(light_nodes)
-    backdrop(name='%s Utilities' % render_pass[0:3], nodes=utility_nodes, move_offset=(x_offset, 0))
+    x_offset = biggest_x()
+    move_nodes(start_x=x_offset, nodes=utility_nodes)
+
     select(d=True)
-    """
     #shader_merge = create_merge(nodes=shader_nodes, operation='plus')
     #shader_nodes.append(shader_merge)
     select(shader_nodes)
     auto_place(shader_nodes)
-    backdrop(name='%s Shading' % render_pass[0:3], move=(300, 0))
+    x_offset = biggest_x()
+
     select(d=True)
-    """
 
 
 def auto_place(nodes=False):
@@ -310,32 +322,39 @@ def auto_place(nodes=False):
 
 def move_nodes(plus_x=0, plus_y=0, start_x=0, start_y=0, nodes=None, padding=True):
     if start_x:
-        x_multiplier = 120
+        x_multiplier = X_SPACE
         if padding:
             x_padding = x_multiplier*3
     else:
         x_multiplier = 0
         x_padding = 0
     if start_y:
-        y_multiplier = 120
+        y_multiplier = Y_SPACE
         if padding:
-            y_padding = 120
+            y_padding = y_multiplier*2.25
     else:
         y_multiplier = 0
         y_padding = 0
-
-    print 'made it'
     if not nodes:
         nodes = nuke.selectedNodes()
     for i, n in enumerate(nodes):
-        print n['name'].value, i
+        print type(n)
+        print n['name'].value()
         if not start_x:
-            start_x = n['xpos'].value()
-            print start_x
+            start_x2 = n['xpos'].value()
+        else:
+            start_x2 = start_x
         if not start_y:
-            start_y = n['ypos'].value()
-        n.setXpos(int(start_x + (x_multiplier*i+1) + x_padding + plus_x))
-        n.setYpos(int(start_y + (y_multiplier*i+1) + y_padding + plus_y))
+            start_y2 = n['ypos'].value()
+        else:
+            start_y2 = start_y
+        new_x = (int(start_x2 + (x_multiplier*(i+1)) + x_padding + plus_x))
+        new_y = (int(start_y2 - (y_multiplier*(i+1)) - y_padding - plus_y))
+        print 'moving x:%s to %s' % (n['xpos'].value(), new_x)
+        print 'moving y:%s to %s' % (n['ypos'].value(), new_y)
+        n.setXpos(new_x)
+        if start_y or plus_y:
+            n.setYpos(new_y)
 
 
 def biggest_x(nodes=None):
@@ -351,13 +370,14 @@ def biggest_x(nodes=None):
 
 
 def biggest_y(nodes=None):
+
     if not nodes:
         nodes = nuke.allNodes()
     y_val = 0
     for n in nodes:
         if y_val == 0:
             y_val = n['ypos'].value()
-        elif y_val < n['ypos'].value():
+        elif y_val > n['ypos'].value():
             y_val = n['ypos'].value()
     return y_val
 
@@ -681,8 +701,17 @@ def backdrop(name, bg_color=(.267, .267, .267), text_color=(.498, .498, .498), n
         node['selected'].setValue(True)
 
     # Ensure backdrop is selected, to make moving easier
+    select(d=True)
     n['selected'].setValue(True)
-    move_nodes(plus_x=move[0], plus_y=move[1], start_x=move_offset[0], start_y=move_offset[1])
+    all_ = nodes+[n]
+    select(all_)
+    if move_offset != (0, 0):
+        move_nodes(plus_x=move[0], plus_y=move[1], start_x=move_offset[0], start_y=move_offset[1])
+        select(d=True)
+        move_nodes(plus_x=X_SPACE, nodes=[n])
+    else:
+        move_nodes(plus_x=move[0], plus_y=move[1], start_x=move_offset[0], start_y=move_offset[1])
+        select(d=True)
     nuke.show(n)
 
     return n

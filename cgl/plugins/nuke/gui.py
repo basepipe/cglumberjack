@@ -39,14 +39,17 @@ class NukeBrowserWidget(CGLumberjackWidget):
         for selection in self.source_selection:
             base_, ext = os.path.splitext(selection)
             if os.path.isdir(selection):
+                print('Importing Directory: %s' % selection)
                 import_directory(selection)
             if selection.endswith('.nk'):
+                print 'Importing Nuke Script'
                 import_script(selection)
             elif ext.lower() == '.obj' or ext.lower() == '.fbx':
+                print "importing geo"
                 import_geo(selection.replace('\\', '/'))
             else:
+                print 'importing media'
                 import_media(selection)
-            print 'nuke import'
             z_index = z_index-1
         self.parent().parent().accept()
 
