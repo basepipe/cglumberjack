@@ -24,7 +24,7 @@ def setup_studio(folder_dict={}):
     launch_syncthing()
 
 
-def setup_workstation(company, sheet_name):
+def setup_workstation():
     """
     sets up local workstation to talk to the studio side server.
     :param company:
@@ -32,6 +32,8 @@ def setup_workstation(company, sheet_name):
     :return:
     """
     kill_syncthing()
+    company = 'lone-coconut'
+    sheet_name = 'LONE_COCONUT_SYNC_THING'
     sheet_obj = get_sheet(company, sheet_name)
     add_device_info_to_sheet(sheet_obj)
     add_all_devices_to_config(sheet_obj)

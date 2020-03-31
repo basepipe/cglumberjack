@@ -866,7 +866,8 @@ class QuickSync(QtWidgets.QDialog):
             os.makedirs(cgl_tools_folder)
         sync_folders = {r'[root]\_config\cgl_tools': os.path.join(cgl_tools_folder)}
         # TODO - need to set 2nd value here as a global in globals. sync_sheet: LONE_COCONUT_SYNC_THING
-        syncthing.setup(self.company_name_s3, 'LONE_COCONUT_SYNC_THING', sync_folders)
+        syncthing.setup_workstation()
+        # syncthing.setup(self.company_name_s3, 'LONE_COCONUT_SYNC_THING', sync_folders)
 
     def set_up_lumbermill(self):
         """

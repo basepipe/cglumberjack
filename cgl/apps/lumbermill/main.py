@@ -693,9 +693,7 @@ class CGLumberjack(LJMainWindow):
     @staticmethod
     def set_up_st_workstation_clicked():
         # TODO - these need to be in the globals!!!
-        company = 'lone-coconut'
-        sheets_name = 'LONE_COCONUT_SYNC_THING'
-        st_utils.setup_workstation(company=company, sheet_name=sheets_name)
+        st_utils.setup_workstation()
 
     def load_pipeline_designer_menus(self):
         import json
