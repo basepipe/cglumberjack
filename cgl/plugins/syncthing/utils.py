@@ -4,13 +4,15 @@ import os
 import subprocess
 import cgl.plugins.google.sheets as sheets
 import psutil
+from cgl.core.utils.read_write import load_json
 
 
 def setup_studio(folder_dict={}):
     kill_syncthing()
-    # TODO - this needs to pull from globals
-    company = 'lone-coconut'
-    sheet_name = 'LONE_COCONUT_SYNC_THING'
+    USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
+    GLOBALS = load_json(USER_GLOBALS['globals'])
+    company = GLOBALS['account_info']['aws_company_name']
+    sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
     if folder_dict:
         sheet_obj = get_sheet(company, sheet_name)
         add_device_info_to_sheet(sheet_obj)
@@ -31,12 +33,18 @@ def setup_workstation():
     :param sheet_name:
     :return:
     """
+    USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
+    GLOBALS = load_json(USER_GLOBALS['globals'])
     kill_syncthing()
-    company = 'lone-coconut'
-    sheet_name = 'LONE_COCONUT_SYNC_THING'
+    print('Setting Up Workstation for Syncing')
+    company = GLOBALS['account_info']['aws_company_name']
+    sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
+    folder_id = r'[root]\_config\cgl_tools'
+    folder_path = GLOBALS['paths']['cgl_tools']
     sheet_obj = get_sheet(company, sheet_name)
     add_device_info_to_sheet(sheet_obj)
     add_all_devices_to_config(sheet_obj)
+    add_folder_to_config(folder_id, folder_path)
     launch_syncthing()
 
 
@@ -324,6 +332,7 @@ def sync_with_server():
     :return:
     """
     # TODO - this is temp - company-aws, and sheet_name must be in globals.
+    kill_syncthing()
     company = 'lone-coconut'
     sheet_name = 'LONE_COCONUT_SYNC_THING'
     sheet = get_sheet(company, sheet_name)
@@ -346,6 +355,7 @@ def sync_with_server():
         tree.write(config_path)
     else:
         print "Error finding server device in sheet"
+    launch_syncthing()
 
 
 def launch_syncthing():
@@ -372,4 +382,5 @@ def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodr
 
 
 if __name__ == "__main__":
-    print "syncthing"
+    # setup_workstation()
+    kill_syncthing()
