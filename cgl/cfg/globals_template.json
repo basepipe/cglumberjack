@@ -1,9 +1,16 @@
 {
     "account_info": {
         "default_company": "", 
-        "globals_path": "",
-        "project_management": "lumbermill"
-    }, 
+        "project_management": "lumbermill",
+        "aws_company_name": "",
+        "aws_bucket_url": ""
+    },
+    "sync": {
+        "syncthing": {
+            "sheets_name": "",
+            "sheets_config_path": ""
+        }
+    },
     "asset_categories": {
         "Character": "char", 
         "Environment": "env", 

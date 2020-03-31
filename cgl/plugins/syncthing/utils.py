@@ -6,6 +6,38 @@ import cgl.plugins.google.sheets as sheets
 import psutil
 
 
+def setup_studio(folder_dict={}):
+    kill_syncthing()
+    # TODO - this needs to pull from globals
+    company = 'lone-coconut'
+    sheet_name = 'LONE_COCONUT_SYNC_THING'
+    if folder_dict:
+        sheet_obj = get_sheet(company, sheet_name)
+        add_device_info_to_sheet(sheet_obj)
+        add_all_devices_to_config(sheet_obj)
+        for folder_id in folder_dict:
+            if not folder_id_exists(folder_id):
+                add_folder_to_config(folder_id, folder_dict[folder_id])
+        share_files_to_devices() # only if you're setting up main folders
+    else:
+        print('Please provide a list of folders before attempting to set up syncthing')
+    launch_syncthing()
+
+
+def setup_workstation(company, sheet_name):
+    """
+    sets up local workstation to talk to the studio side server.
+    :param company:
+    :param sheet_name:
+    :return:
+    """
+    kill_syncthing()
+    sheet_obj = get_sheet(company, sheet_name)
+    add_device_info_to_sheet(sheet_obj)
+    add_all_devices_to_config(sheet_obj)
+    launch_syncthing()
+
+
 def setup(company, sheet_name, folder_dict=[], setup_studio=False):
     """
     setups up everything needed for syncthing to run in the production environment, adds folders to the config.
@@ -283,12 +315,16 @@ def share_files_to_devices():
     tree.write(config_path)
 
 
-def share_with_server(sheet, files = ['']):
+def sync_with_server():
     """
     Shares all local files with the server machine
     :param sheet: Google sheet object for the device sheet
     :return:
     """
+    # TODO - this is temp - company-aws, and sheet_name must be in globals.
+    company = 'lone-coconut'
+    sheet_name = 'LONE_COCONUT_SYNC_THING'
+    sheet = get_sheet(company, sheet_name)
     device_id = ''
     num_rows = sheets.find_empty_row_in_sheet(sheet)
 
@@ -302,7 +338,7 @@ def share_with_server(sheet, files = ['']):
 
     if device_id != '':
         for child in root:
-            if child.tag == 'folder' and child.get('id') in files:
+            if child.tag == 'folder' and '[' in child.get('id'):
                 new_node = ET.SubElement(child, 'device')
                 new_node.set('id', device_id)
         tree.write(config_path)
@@ -325,6 +361,7 @@ def kill_syncthing():
 
 
 def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodrive\COMPANIES\_config\client.json'):
+    # TODO - sheet_name and client_json need to be globals.
     kill_syncthing()
     sheet = sheets.authorize_sheets('LONE_COCONUT_SYNC_THING', 'Z:\cocodrive\COMPANIES\_config\client.json')
     add_all_devices_to_config(sheet)

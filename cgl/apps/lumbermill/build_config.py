@@ -800,7 +800,7 @@ class QuickSync(QtWidgets.QDialog):
             self.company_name_s3 = self.company_name.replace(' ', '-').replace('_', '-')
             self.company_name_disk = self.company_name_s3.replace('-', '_')
             self.aws_globals = r'https://%s.s3.amazonaws.com/globals.json' % self.company_name_s3
-            self.aws_cgl_tools = r'https://%s.s3.amazonaws.com/cgl_tools.zip' % self.company_name_s3
+            # self.aws_cgl_tools = r'https://%s.s3.amazonaws.com/cgl_tools.zip' % self.company_name_s3
             if web.url_exists(self.aws_globals):
                 self.aws_globals_label.setText('Found Shared Company Globals on Cloud')
                 self.aws_globals_label.setStyleSheet("color: rgb(0, 255, 0);")
