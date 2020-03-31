@@ -3,7 +3,7 @@ import logging
 from cgl.plugins.Qt import QtWidgets
 import time
 import nuke, nukescripts
-from core.utils.general import cgl_execute, write_to_cgl_data
+from cgl.core.utils.general import cgl_execute, write_to_cgl_data
 from cgl.core.path import PathObject, Sequence, CreateProductionData, lj_list_dir
 from cgl.core.config import app_config, UserConfig
 

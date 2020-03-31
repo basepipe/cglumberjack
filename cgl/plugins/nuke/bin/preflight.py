@@ -1,7 +1,7 @@
 from PySide import QtCore
 import plugins.preflight.main
 from cgl.core.config import app_config
-from core.utils.general import current_user
+from cgl.core.utils.general import current_user
 
 CONFIG = app_config()
 

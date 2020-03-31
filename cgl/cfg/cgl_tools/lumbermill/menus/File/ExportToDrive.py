@@ -4,7 +4,7 @@ from cgl.plugins.Qt import QtWidgets
 from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.combo import AdvComboBox
 from cgl.core.path import PathObject
-from core.utils.general import cgl_copy
+from cgl.core.utils.general import cgl_copy
 
 
 def run(lumbermill):
