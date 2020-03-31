@@ -283,6 +283,33 @@ def share_files_to_devices():
     tree.write(config_path)
 
 
+def share_with_server(sheet, files = ['']):
+    """
+    Shares all local files with the server machine
+    :param sheet: Google sheet object for the device sheet
+    :return:
+    """
+    device_id = ''
+    num_rows = sheets.find_empty_row_in_sheet(sheet)
+
+    for entry in range(2, num_rows):
+        if sheet.cell(entry, 4).value == 'Yes':
+            device_id = sheet.cell(entry, 1).value
+
+    config_path = get_config_path()
+    tree = ET.parse(config_path)
+    root = tree.getroot()
+
+    if device_id != '':
+        for child in root:
+            if child.tag == 'folder' and child.get('id') in files:
+                new_node = ET.SubElement(child, 'device')
+                new_node.set('id', device_id)
+        tree.write(config_path)
+    else:
+        print "Error finding server device in sheet"
+
+
 def launch_syncthing():
     kill_syncthing()
     command = "syncthing"
@@ -306,18 +333,4 @@ def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodr
 
 
 if __name__ == "__main__":
-    # before we have a GUI implementation within lumbermill Run this to add new machines
-    # to ALL folders for syncing.
-    #update_machines()
-    # Stop Syncthing
-    # kill_syncthing()
-    # start syncthing
-    # kill_syncthing()
-    # share_files_to_devices()
-    launch_syncthing()
-    # cgl_tools_folder = os.path.join(r'D:\COMPANIES', '_config', 'cgl_tools')
-    # if not os.path.exists(cgl_tools_folder):
-    #    os.makedirs(cgl_tools_folder)
-    # sync_folders = {r'[root]\_config\cgl_tools': os.path.join(cgl_tools_folder)}
-    # setup('lone-coconut', 'LONE_COCONUT_SYNC_THING', sync_folders)
-
+    print "syncthing"
