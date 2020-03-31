@@ -602,6 +602,7 @@ class CGLumberjack(LJMainWindow):
         report_bug_button = QtWidgets.QAction('Report Bug', self)
         request_feature_button = QtWidgets.QAction('Request Feature', self)
         tools_menu = self.menu_bar.addMenu('&Tools')
+        sync_menu = self.menu_bar.addMenu('&Sync')
         if self.project_management != 'lumbermill':
             self.proj_man_link = self.two_bar.addAction(proj_man)
         self.login_menu = self.two_bar.addAction(login)
@@ -612,6 +613,11 @@ class CGLumberjack(LJMainWindow):
         create_project = QtWidgets.QAction('Import .csv', self)
         settings.setShortcut('Ctrl+,')
         pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
+        set_up_sync_thing_server = QtWidgets.QAction('Set up SyncThing Server', self)
+        set_up_sync_thing_workstation = QtWidgets.QAction('Set Up SyncThing Workstation', self)
+        check_machines_action = QtWidgets.QAction('Check for new Machines', self)
+        check_for_folders_action = QtWidgets.QAction('Check for Shared Folders', self)
+        manage_sharing_action = QtWidgets.QAction('Manage Sharing', self)
 
         # add actions to the file menu
         tools_menu.addAction(settings)
@@ -625,6 +631,14 @@ class CGLumberjack(LJMainWindow):
         tools_menu.addAction(report_bug_button)
         tools_menu.addAction(request_feature_button)
         # connect signals and slots
+
+        sync_menu.addAction(check_machines_action)
+        sync_menu.addAction(check_for_folders_action)
+        sync_menu.addAction(manage_sharing_action)
+        sync_menu.addSeparator()
+        sync_menu.addAction(set_up_sync_thing_server)
+        sync_menu.addAction(set_up_sync_thing_workstation)
+
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
         create_project.triggered.connect(self.open_create_project_dialog)
