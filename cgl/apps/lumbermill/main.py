@@ -619,6 +619,9 @@ class CGLumberjack(LJMainWindow):
         check_machines_action = QtWidgets.QAction('Check for new Machines', self)
         enable_server_connection = QtWidgets.QAction('Enable Server Connection', self)
         manage_sharing_action = QtWidgets.QAction('Manage Sharing', self)
+        launch_syncthing = QtWidgets.QAction('Launch Syncthing', self)
+        kill_syncthing = QtWidgets.QAction('Kill Syncthing', self)
+
 
         # add actions to the file menu
         tools_menu.addAction(settings)
@@ -632,7 +635,9 @@ class CGLumberjack(LJMainWindow):
         tools_menu.addAction(report_bug_button)
         tools_menu.addAction(request_feature_button)
         # connect signals and slots
-
+        sync_menu.addAction(kill_syncthing)
+        sync_menu.addAction(launch_syncthing)
+        sync_menu.addSeparator()
         sync_menu.addAction(check_machines_action)
         sync_menu.addAction(enable_server_connection)
         sync_menu.addAction(manage_sharing_action)
@@ -641,6 +646,8 @@ class CGLumberjack(LJMainWindow):
         sync_menu.addAction(set_up_sync_thing_workstation)
 
         # connect signals and slots
+        kill_syncthing.triggered.connect(self.on_kill_syncthing)
+        launch_syncthing.triggered.connect(self.on_launch_syncthing)
         enable_server_connection.triggered.connect(self.enable_server_connection_clicked)
         check_machines_action.triggered.connect(self.check_for_machines_clicked)
         manage_sharing_action.triggered.connect(self.manage_sharing_action_clicked)
@@ -661,11 +668,20 @@ class CGLumberjack(LJMainWindow):
         self.load_pipeline_designer_menus()
 
     @staticmethod
+    def on_kill_syncthing():
+        st_utils.kill_syncthing()
+
+    @staticmethod
+    def on_launch_syncthing():
+        st_utils.launch_syncthing()
+
+    @staticmethod
     def enable_server_connection_clicked():
         """
         connects an artist's machine to the server after the server has added them
         :return:
         """
+
         st_utils.sync_with_server()
         pass
 
