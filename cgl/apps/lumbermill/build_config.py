@@ -800,7 +800,7 @@ class QuickSync(QtWidgets.QDialog):
             self.company_name_s3 = self.company_name.replace(' ', '-').replace('_', '-')
             self.company_name_disk = self.company_name_s3.replace('-', '_')
             self.aws_globals = r'https://%s.s3.amazonaws.com/globals.json' % self.company_name_s3
-            self.aws_cgl_tools = r'https://%s.s3.amazonaws.com/cgl_tools.zip' % self.company_name_s3
+            # self.aws_cgl_tools = r'https://%s.s3.amazonaws.com/cgl_tools.zip' % self.company_name_s3
             if web.url_exists(self.aws_globals):
                 self.aws_globals_label.setText('Found Shared Company Globals on Cloud')
                 self.aws_globals_label.setStyleSheet("color: rgb(0, 255, 0);")
@@ -866,7 +866,8 @@ class QuickSync(QtWidgets.QDialog):
             os.makedirs(cgl_tools_folder)
         sync_folders = {r'[root]\_config\cgl_tools': os.path.join(cgl_tools_folder)}
         # TODO - need to set 2nd value here as a global in globals. sync_sheet: LONE_COCONUT_SYNC_THING
-        syncthing.setup(self.company_name_s3, 'LONE_COCONUT_SYNC_THING', sync_folders)
+        syncthing.setup_workstation()
+        # syncthing.setup(self.company_name_s3, 'LONE_COCONUT_SYNC_THING', sync_folders)
 
     def set_up_lumbermill(self):
         """
