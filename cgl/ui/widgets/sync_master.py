@@ -40,6 +40,8 @@ class SyncMaster(LJDialog):
         else:
             self.assets_radio.setChecked(True)
         self.file_tree = QtWidgets.QTreeView()
+        self.file_tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.file_tree.customContextMenuRequested.connect(self.sync_menu)
         self.file_tree.hide()
 
         self.company_combo = AdvComboBox()
@@ -71,6 +73,28 @@ class SyncMaster(LJDialog):
         self.assets_radio.hide()
         self.shots_radio.hide()
         self.load_companies()
+
+    def sync_menu(self, position):
+        indexes = self.file_tree.selectedIndexes()
+        if len(indexes) > 0:
+            level = 0
+            index = indexes[0]
+            while index.parent().isValid():
+                index = index.parent()
+                level += 1
+                menu = QtWidgets.QMenu()
+                if level == 0:
+                    menu.addAction(self.tr("Edit person"))
+                elif level == 1:
+                    menu.addAction(self.tr("Edit object/container"))
+                elif level == 2:
+                    action_ = QtWidgets.QAction("Sync", self)
+                    menu.addAction(action_)
+                    action_.triggered.connect(self.print_test)
+                    menu.exec_(self.file_tree.viewport().mapToGlobal(position))
+
+    def sync_clicked(self):
+        print 'i just need thge file path of the selected thing.'
 
     def on_scope_changed(self):
         if self.shots_radio.isChecked():
