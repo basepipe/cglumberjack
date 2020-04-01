@@ -18,6 +18,7 @@ class SyncMaster(LJDialog):
         self.company = company
         self.project = project
         self.scope = scope
+        self.current_selection = ''
         self.path_object = PathObject(self.globals['paths']['root'])
 
         layout = QtWidgets.QVBoxLayout(self)
@@ -39,6 +40,8 @@ class SyncMaster(LJDialog):
             self.shots_radio.setChecked(True)
         else:
             self.assets_radio.setChecked(True)
+        self.model = SyncTreeModel()
+        self.model.setRootPath(self.path_object.path_root)
         self.file_tree = QtWidgets.QTreeView()
         self.file_tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.file_tree.customContextMenuRequested.connect(self.sync_menu)
@@ -70,9 +73,16 @@ class SyncMaster(LJDialog):
         self.project_combo.currentIndexChanged.connect(self.on_project_changed)
         self.shots_radio.clicked.connect(self.on_scope_changed)
         self.assets_radio.clicked.connect(self.on_scope_changed)
+        self.file_tree.clicked.connect(self.on_file_tree_clicked)
         self.assets_radio.hide()
         self.shots_radio.hide()
         self.load_companies()
+
+    @QtCore.Slot(QtCore.QModelIndex)
+    def on_file_tree_clicked(self, index):
+        index_ = self.model.index(index.row(), 0, index.parent())
+        file_path = self.model.filePath(index_)
+        self.current_selection = file_path
 
     def sync_menu(self, position):
         indexes = self.file_tree.selectedIndexes()
@@ -90,11 +100,13 @@ class SyncMaster(LJDialog):
                 elif level == 2:
                     action_ = QtWidgets.QAction("Sync", self)
                     menu.addAction(action_)
-                    action_.triggered.connect(self.print_test)
+                    action_.triggered.connect(self.sync_clicked)
                     menu.exec_(self.file_tree.viewport().mapToGlobal(position))
 
     def sync_clicked(self):
-        print 'i just need thge file path of the selected thing.'
+        print self.current_selection
+        print 'adding %s to syncthing server'
+        print 'setting column 4 to "syncing"'
 
     def on_scope_changed(self):
         if self.shots_radio.isChecked():
@@ -117,11 +129,11 @@ class SyncMaster(LJDialog):
             self.assets_radio.hide()
 
     def load_file_tree(self):
-        model = SyncTreeModel()
-        model.setRootPath(self.path_object.path_root)
+        self.model = SyncTreeModel()
+        self.model.setRootPath(self.path_object.path_root)
         self.file_tree.show()
-        self.file_tree.setModel(model)
-        self.file_tree.setRootIndex(model.index(self.path_object.path_root))
+        self.file_tree.setModel(self.model)
+        self.file_tree.setRootIndex(self.model.index(self.path_object.path_root))
         self.file_tree.setColumnHidden(1, True)
         self.file_tree.setColumnHidden(2, True)
         self.file_tree.setColumnHidden(3, True)
