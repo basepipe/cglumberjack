@@ -15,7 +15,7 @@ def setup_studio(folder_dict={}):
     sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
     if folder_dict:
         sheet_obj = get_sheet(company, sheet_name)
-        add_device_info_to_sheet(sheet_obj)
+        add_device_info_to_sheet(sheet_obj, server='true')
         add_all_devices_to_config(sheet_obj)
         for folder_id in folder_dict:
             if not folder_id_exists(folder_id):
@@ -212,7 +212,7 @@ def get_my_device_info():
     return {'id': device_id, 'name': machine_name}
 
 
-def add_device_info_to_sheet(sheet):
+def add_device_info_to_sheet(sheet, server = 'false'):
     """
     Adds current device information to google sheet
     :param sheet: The sheet object to be edited
@@ -224,6 +224,10 @@ def add_device_info_to_sheet(sheet):
         sheet.update_cell(new_row, 1, device_dictionary['id'])
         sheet.update_cell(new_row, 2, device_dictionary['name'])
         sheet.update_cell(new_row, 3, getpass.getuser().lower())
+        if server == 'true':
+            sheet.update_cell(new_row, 4, 'Yes')
+        else:
+            sheet.update_cell(new_row, 4, 'No')
 
 
 def get_all_device_info(sheet):
@@ -383,4 +387,4 @@ def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodr
 
 if __name__ == "__main__":
     # setup_workstation()
-    kill_syncthing()
+    # kill_syncthing()
