@@ -690,8 +690,16 @@ class CGLumberjack(LJMainWindow):
         st_utils.update_machines()
         pass
 
-    @staticmethod
-    def manage_sharing_action_clicked():
+    def manage_sharing_action_clicked(self):
+        from ui.widgets.sync_master import SyncMaster
+        scope = None
+        path_object = cglpath.PathObject(self.centralWidget().path_widget.path_line_edit.text())
+        if path_object.scope:
+            if path_object.scope != '*':
+                scope = path_object.scope
+
+        dialog = SyncMaster(company=path_object.company, project=path_object.project, scope=scope)
+        dialog.exec_()
         print "This produces a gui for managing the sharing of folders and external devices."
         pass
 

@@ -10,14 +10,14 @@ from cgl.core.utils.general import get_globals
 
 class SyncMaster(LJDialog):
 
-    def __init__(self):
+    def __init__(self, company=None, project=None, scope='assets'):
         LJDialog.__init__(self)
         user = current_user()
         self.setWindowTitle('Lumber Sync')
         self.globals = get_globals()
-        self.company = None
-        self.project = None
-        self.scope = 'assets'
+        self.company = company
+        self.project = project
+        self.scope = scope
         self.path_object = PathObject(self.globals['paths']['root'])
 
         layout = QtWidgets.QVBoxLayout(self)
@@ -33,7 +33,12 @@ class SyncMaster(LJDialog):
         self.publish_check_box.setEnabled(False)
         self.assets_radio = QtWidgets.QRadioButton('assets')
         self.shots_radio = QtWidgets.QRadioButton('shots')
-        self.assets_radio.setChecked(True)
+        if self.scope == 'assets':
+            self.assets_radio.setChecked(True)
+        elif self.scope == 'shots':
+            self.shots_radio.setChecked(True)
+        else:
+            self.assets_radio.setChecked(True)
         self.file_tree = QtWidgets.QTreeView()
         self.file_tree.hide()
 
@@ -106,21 +111,33 @@ class SyncMaster(LJDialog):
         self.load_projects()
 
     def load_companies(self):
+        company = self.company
         self.path_object.set_attr(company='*')
         companies = glob.glob(self.path_object.path_root)
         items = ['']
         for c in companies:
             items.append(os.path.basename(c))
         self.company_combo.addItems(items)
-        self.company_combo.setCurrentIndex(0)
+        if company in items:
+            # TODO = i should add this as a function in AdvComboBox
+            i = self.company_combo.findText(company)
+            if i != -1:
+                self.company_combo.setCurrentIndex(i)
+            else:
+                self.company_combo.setCurrentIndex(0)
 
     def load_projects(self):
+        project = self.project
         if self.company:
             projects = glob.glob(self.path_object.path_root)
             items = ['']
             for p in projects:
                 items.append(os.path.basename(p))
             self.project_combo.addItems(items)
+            if project in items:
+                i = self.project_combo.findText(project)
+                if i != -1:
+                    self.project_combo.setCurrentIndex(i)
 
 
 class SyncTreeModel(QtWidgets.QFileSystemModel):
