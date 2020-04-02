@@ -388,3 +388,5 @@ def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodr
 if __name__ == "__main__":
     # setup_workstation()
     # kill_syncthing()
+    pass
+
