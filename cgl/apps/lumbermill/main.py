@@ -617,7 +617,7 @@ class CGLumberjack(LJMainWindow):
         set_up_sync_thing_server = QtWidgets.QAction('Set up SyncThing Server', self)
         set_up_sync_thing_workstation = QtWidgets.QAction('Set Up SyncThing Workstation', self)
         check_machines_action = QtWidgets.QAction('Check for new Machines', self)
-        enable_server_connection = QtWidgets.QAction('Enable Server Connection', self)
+        enable_server_connection = QtWidgets.QAction('Pull from Server', self)
         manage_sharing_action = QtWidgets.QAction('Manage Sharing', self)
         launch_syncthing = QtWidgets.QAction('Launch Syncthing', self)
         kill_syncthing = QtWidgets.QAction('Kill Syncthing', self)
