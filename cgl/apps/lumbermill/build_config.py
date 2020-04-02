@@ -6,7 +6,6 @@ import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.utils import read_write, web
 import plugins.syncthing.utils as syncthing
-from cgl.ui.widgets.dialog import InputDialog
 
 
 DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
@@ -882,6 +881,7 @@ class QuickSync(QtWidgets.QDialog):
         # Step 5: Import any Projects
         # Step 6: Set up Syncthing
         self.setup_syncthing()
+        from cgl.ui.widgets.dialog import InputDialog
         dialog = InputDialog(title='Sync Message', message='Your Machine has be submitted for approval for file sharing\n'
                                                            'After you have been added, click:\n'
                                                            ' Sync> Pull From Server\n'
