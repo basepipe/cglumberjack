@@ -6,6 +6,8 @@ import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.utils import read_write, web
 import plugins.syncthing.utils as syncthing
+from cgl.ui.widgets.dialog import InputDialog
+
 
 DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
 DEFAULT_CODE_ROOT = os.path.join(os.path.expanduser("~"), 'PycharmProjects', 'cglumberjack')
@@ -862,6 +864,11 @@ class QuickSync(QtWidgets.QDialog):
         sync_folders = {r'[root]\_config\cgl_tools': os.path.join(cgl_tools_folder)}
         # TODO - need to set 2nd value here as a global in globals. sync_sheet: LONE_COCONUT_SYNC_THING
         syncthing.setup_workstation()
+        dialog = InputDialog(title='Sync Message', message='Your Machine has be submitted for approval for file sharing\n'
+                                                           'After you have been added, click:\n'
+                                                           ' Sync> Sync From Server\n'
+                                                           'and you will start syncing folders')
+        dialog.exec_()
         # syncthing.setup(self.company_name_s3, 'LONE_COCONUT_SYNC_THING', sync_folders)
 
     def set_up_lumbermill(self):
