@@ -9,6 +9,7 @@ import plugins.syncthing.utils as syncthing
 from cgl.ui.widgets.dialog import InputDialog
 
 
+
 DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
 DEFAULT_CODE_ROOT = os.path.join(os.path.expanduser("~"), 'PycharmProjects', 'cglumberjack')
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), 'Documents', 'cglumberjack')
@@ -887,7 +888,12 @@ class QuickSync(QtWidgets.QDialog):
         # Step 5: Import any Projects
         # Step 6: Set up Syncthing
         self.setup_syncthing()
-
+        from cgl.ui.widgets.dialog import InputDialog
+        dialog = InputDialog(title='Sync Message', message='Your Machine has be submitted for approval for file sharing\n'
+                                                           'After you have been added, click:\n'
+                                                           ' Sync> Pull From Server\n'
+                                                           'and you will start syncing folders')
+        dialog.exec_()
         # set_up_syncthing(folders=[os.path.join(self.default_root, '_config', 'cgl_tools')])
 
 
