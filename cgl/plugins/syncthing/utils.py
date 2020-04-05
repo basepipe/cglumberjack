@@ -9,7 +9,7 @@ from cgl.core.utils.read_write import load_json
 
 def setup_server():
     # do i have a client.json?
-    kill_syncthing()
+    #kill_syncthing()
     USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
     GLOBALS = load_json(USER_GLOBALS['globals'])
     cgl_tools_folder = GLOBALS['paths']['cgl_tools']
@@ -396,5 +396,13 @@ def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodr
 
 
 if __name__ == "__main__":
-    wipe_globals()
+    #wipe_globals()
+    kill_syncthing()
+    USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
+    GLOBALS = load_json(USER_GLOBALS['globals'])
+    cgl_tools_folder = GLOBALS['paths']['cgl_tools']
+    folder_id = r'[root]\_config\cgl_tools'
+    add_folder_to_config(folder_id, cgl_tools_folder)
+    launch_syncthing()
+    # add_all_devices_to_config()
     pass

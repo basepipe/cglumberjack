@@ -118,9 +118,9 @@ class SyncMaster(LJDialog):
         if publishes:
             st.kill_syncthing()
             for p in publishes:
-                # these backslashes are necessary!!!
-                folder_id = '[root]\\%s' % p.path
-                folder = p.path_root
+                folder_id = '[root]\\%s' % p.path.replace('/', '\\')
+                folder = p.path_root.replace('/', '\\')
+                print folder_id, folder
                 st.add_folder_to_config(folder_id, folder)
             st.launch_syncthing()
             # st.share_files_to_devices()
