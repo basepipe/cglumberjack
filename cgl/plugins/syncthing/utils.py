@@ -7,22 +7,18 @@ import psutil
 from cgl.core.utils.read_write import load_json
 
 
-def setup_studio(folder_dict={}):
+def setup_server():
+    # do i have a client.json?
     kill_syncthing()
     USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
     GLOBALS = load_json(USER_GLOBALS['globals'])
-    company = GLOBALS['account_info']['aws_company_name']
-    sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
-    if folder_dict:
-        sheet_obj = get_sheet(company, sheet_name)
-        add_device_info_to_sheet(sheet_obj, server='true')
-        add_all_devices_to_config(sheet_obj)
-        for folder_id in folder_dict:
-            if not folder_id_exists(folder_id):
-                add_folder_to_config(folder_id, folder_dict[folder_id])
-        share_files_to_devices() # only if you're setting up main folders
-    else:
-        print('Please provide a list of folders before attempting to set up syncthing')
+    cgl_tools_folder = GLOBALS['paths']['cgl_tools']
+    sheet_obj = get_sheet()
+    add_device_info_to_sheet(sheet_obj, server='true')
+    add_all_devices_to_config(sheet_obj)
+    folder_id = r'[root]\_config\cgl_tools'
+    add_folder_to_config(folder_id, cgl_tools_folder)
+    share_files_to_devices()  # only if you're setting up main folders
     launch_syncthing()
 
 
@@ -41,7 +37,7 @@ def setup_workstation():
     sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
     folder_id = r'[root]\_config\cgl_tools'
     folder_path = GLOBALS['paths']['cgl_tools']
-    sheet_obj = get_sheet(company, sheet_name)
+    sheet_obj = get_sheet()
     add_device_info_to_sheet(sheet_obj)
     add_all_devices_to_config(sheet_obj)
     add_folder_to_config(folder_id, folder_path)
@@ -59,7 +55,7 @@ def setup(company, sheet_name, folder_dict=[], setup_studio=False):
         config_path = get_config_path()
         if not os.path.exists(config_path):
             print 'launching syncthing'
-        sheet_obj = get_sheet(company, sheet_name)
+        sheet_obj = get_sheet()
         add_device_info_to_sheet(sheet_obj)
         add_all_devices_to_config(sheet_obj)
         for folder_id in folder_dict:
@@ -148,17 +144,21 @@ def folder_id_exists(folder_id, folder_path=''):
     return False
 
 
-def get_sheet(company, sheet_name):
+def get_sheet():
     """
     Gets the sheet object for a company
     :param company: Company name in the s3 database
     :param sheet_name: Name of the google sheet being accessed
     :return: Sheet object
     """
-    from cgl.core.config import app_config
-    client_file = os.path.join(app_config()['paths']['root'], '_config', 'client.json')
-    sheets.get_sheets_authentication(client_file, company)
-    sheet_obj = sheets.authorize_sheets(sheet_name, client_file)
+    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    globals_ = load_json(user_globals['globals'])
+    client_file = globals_['sync']['syncthing']['sheets_config_path']
+    sheet_obj = None
+    if not os.path.exists(client_file):
+        sheets.get_sheets_authentication()
+    else:
+        sheet_obj = sheets.authorize_sheets()
     return sheet_obj
 
 
@@ -379,14 +379,12 @@ def kill_syncthing():
 def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodrive\COMPANIES\_config\client.json'):
     # TODO - sheet_name and client_json need to be globals.
     kill_syncthing()
-    sheet = sheets.authorize_sheets('LONE_COCONUT_SYNC_THING', 'Z:\cocodrive\COMPANIES\_config\client.json')
+    sheet = sheets.authorize_sheets()
     add_all_devices_to_config(sheet)
     share_files_to_devices()
     launch_syncthing()
 
 
 if __name__ == "__main__":
-    # setup_workstation()
-    # kill_syncthing()
+    setup_server()
     pass
-
