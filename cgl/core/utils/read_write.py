@@ -77,3 +77,5 @@ def load_style_sheet(style_file='stylesheet.css'):
     # path = APP_PATH.replace('\\', '/')
     # data = data.replace('<PATH>', path)
     return data
+
+

@@ -127,9 +127,10 @@ def edit_syncthing_folder(folder_id, new_local_path):
     tree.write(config_path)
 
 
-def folder_id_exists(folder_id, folder_path=''):
-    config_path = get_config_path()
-    tree = ET.parse(config_path)
+def folder_id_exists(folder_id, folder_path='', tree=None):
+    if not tree:
+        config_path = get_config_path()
+        tree = ET.parse(config_path)
     root = tree.getroot()
     existing_folders = []
 
@@ -238,7 +239,7 @@ def get_all_device_info(sheet):
     device_list = []
     num_of_rows = sheets.find_empty_row_in_sheet(sheet)
     for row in range(2, num_of_rows):
-        if sheet.cell(row,1).value != get_my_device_info()['id']:
+        if sheet.cell(row, 1).value != get_my_device_info()['id']:
             entry = {"id": sheet.cell(row, 1).value, "name": sheet.cell(row,2).value, "user": sheet.cell(row,3).value}
             device_list.append(entry)
     return device_list
@@ -284,24 +285,26 @@ def add_folder_to_config(folder_id, filepath):
     :param filepath: The path to the file being added to syncthing
     :return:
     """
+    folder_id = folder_id.replace('/', '\\')
+    filepath = filepath.replace('/', '\\')
     # TODO - check to see if the folder exists
     config_path = get_config_path()
     tree = ET.parse(config_path)
     root = tree.getroot()
-
-    new_node = ET.SubElement(root, 'folder')
-    new_node.set('id', folder_id)
-    new_node.set('path', filepath)
-    new_node.set('type', 'sendreceive')
-    new_node.set('rescanIntervalS', '3600')
-    new_node.set('fsWatcherEnabled', "True")
-    new_node.set('fsWatcherDelayS', "10")
-    new_node.set('ignorePerms', "false")
-    new_node.set('autoNormalize', "true")
+    if not folder_id_exists(folder_id, tree=tree):
+        new_node = ET.SubElement(root, 'folder')
+        new_node.set('id', folder_id)
+        new_node.set('path', filepath)
+        new_node.set('type', 'sendreceive')
+        new_node.set('rescanIntervalS', '3600')
+        new_node.set('fsWatcherEnabled', "True")
+        new_node.set('fsWatcherDelayS', "10")
+        new_node.set('ignorePerms', "false")
+        new_node.set('autoNormalize', "true")
     tree.write(config_path)
 
 
-def share_files_to_devices():
+def share_files_to_devices(all_device_id=[]):
     """
     Makes all files shareable to all devices found in the config file
     :return:
@@ -310,11 +313,10 @@ def share_files_to_devices():
     tree = ET.parse(config_path)
     root = tree.getroot()
 
-    all_device_id = []
-
-    for child in root:
-        if child.tag == 'device':
-            all_device_id.append(child.get('id'))
+    if not all_device_id:
+        for child in root:
+            if child.tag == 'device':
+                all_device_id.append(child.get('id'))
 
     for child in root:
         shared = []
@@ -362,6 +364,14 @@ def sync_with_server():
     launch_syncthing()
 
 
+def wipe_globals():
+    kill_syncthing()
+    config_path = get_config_path()
+    os.remove(config_path)
+    launch_syncthing()
+    # remove_default_folder()
+
+
 def launch_syncthing():
     kill_syncthing()
     command = "syncthing"
@@ -386,5 +396,5 @@ def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodr
 
 
 if __name__ == "__main__":
-    setup_server()
+    wipe_globals()
     pass

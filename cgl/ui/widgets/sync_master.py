@@ -4,8 +4,9 @@ from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import current_user
 from cgl.ui.widgets.widgets import AdvComboBox
-from cgl.core.path import PathObject
+from cgl.core.path import PathObject, show_in_folder, get_folder_size, find_latest_publish_objects
 from cgl.core.utils.general import get_globals
+import cgl.plugins.syncthing.utils as st
 
 
 class SyncMaster(LJDialog):
@@ -98,15 +99,31 @@ class SyncMaster(LJDialog):
                 elif level == 1:
                     menu.addAction(self.tr("Edit object/container"))
                 elif level == 2:
+                    action_1 = QtWidgets.QAction("Show in Folder", self)
                     action_ = QtWidgets.QAction("Sync", self)
+                    menu.addAction(action_1)
                     menu.addAction(action_)
+                    action_1.triggered.connect(self.show_in_folder)
                     action_.triggered.connect(self.sync_clicked)
                     menu.exec_(self.file_tree.viewport().mapToGlobal(position))
 
+    def show_in_folder(self):
+        show_in_folder(self.current_selection)
+        print 'Total Folder Size:', get_folder_size(self.current_selection)
+
     def sync_clicked(self):
         print self.current_selection
-        print 'adding %s to syncthing server'
-        print 'setting column 4 to "syncing"'
+        publishes = find_latest_publish_objects(self.current_selection, source=self.source_check_box.isChecked(),
+                                                render=self.render_check_box.isChecked())
+        if publishes:
+            st.kill_syncthing()
+            for p in publishes:
+                # these backslashes are necessary!!!
+                folder_id = '[root]\\%s' % p.path
+                folder = p.path_root
+                st.add_folder_to_config(folder_id, folder)
+            st.launch_syncthing()
+            # st.share_files_to_devices()
 
     def on_scope_changed(self):
         if self.shots_radio.isChecked():
