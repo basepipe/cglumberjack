@@ -46,7 +46,9 @@ def setup_workstation():
 def fix_folder_paths():
     kill_syncthing()
     config_path = get_config_path()
+    print config_path
     tree = ElemTree.parse(config_path)
+    print tree
     root = tree.getroot()
     print('Fixing Folder Paths')
     for child in root:
@@ -59,6 +61,8 @@ def fix_folder_paths():
                 print('Changing path to %s' % cgl_folder)
             else:
                 print('Folder Passes')
+    print '------------------------------'
+    print tree
     tree.write(config_path)
     launch_syncthing()
 
@@ -398,5 +402,9 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    # fix_folder_paths()
+    # wipe_globals()
+    # setup_workstation()
+    ## accept_folders()
+    #print get_config_path()
+
     pass
