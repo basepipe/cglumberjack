@@ -683,7 +683,7 @@ class CGLumberjack(LJMainWindow):
         connects an artist's machine to the server after the server has added them
         :return:
         """
-        st_utils.pull_from_studio()
+        st_utils.accept_folders()
         pass
 
     @staticmethod

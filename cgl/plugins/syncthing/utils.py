@@ -44,34 +44,6 @@ def setup_workstation():
     launch_syncthing()
 
 
-def setup(company, sheet_name, folder_dict=[], setup_studio=False):
-    """
-    setups up everything needed for syncthing to run in the production environment, adds folders to the config.
-    :param folder_dict: dictionary of pairs of {folder_id: full_path}
-    :return:
-    """
-    kill_syncthing()
-    if folder_dict:
-        config_path = get_config_path()
-        if not os.path.exists(config_path):
-            print 'launching syncthing'
-        sheet_obj = get_sheet()
-        add_device_info_to_sheet(sheet_obj)
-        add_all_devices_to_config(sheet_obj)
-        for folder_id in folder_dict:
-            if not folder_id_exists(folder_id):
-                add_folder_to_config(folder_id, folder_dict[folder_id])
-        if setup_studio:
-            share_files_to_devices() # only if you're setting up main folders
-        else:
-            print 'pulling from studio'
-            pull_from_studio()
-            # notify_of_machine_add()
-    else:
-        print('Please provide a list of folders before attempting to set up syncthing')
-    launch_syncthing()
-
-
 def accept_folders():
     kill_syncthing()
     # parse the xml
@@ -87,8 +59,6 @@ def accept_folders():
                     id_ = c.get('id')
                     folder = get_folder_from_id(id_)
                     add_folder_to_config(id_, folder)
-    # find all the stuff tagged "pendingFolder"
-    # add folder to config for each folder_id
     launch_syncthing()
 
 
@@ -98,7 +68,6 @@ def pull_from_studio():
     :return:
     """
     from cgl.core.config import app_config
-    # accept all the folders if there are any.
     folders_dict = get_syncthing_folders()
     for folder_id in folders_dict:
         try:
@@ -426,16 +395,4 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    # wipe_globals()
-    # kill_syncthing()
-    # USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
-    # GLOBALS = load_json(USER_GLOBALS['globals'])
-    # cgl_tools_folder = GLOBALS['paths']['cgl_tools']
-    # folder_id = r'[root]\_config\cgl_tools'
-    # add_folder_to_config(folder_id, cgl_tools_folder)
-    # launch_syncthing()
-    # # add_all_devices_to_config()
-    # print get_config_path()
-    accept_folders()
-    # pull_from_studio()
     pass
