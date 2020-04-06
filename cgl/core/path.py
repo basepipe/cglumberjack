@@ -1362,6 +1362,61 @@ def replace_illegal_filename_characters(filename):
     return re.sub(r'[^A-Za-z0-9\.#]+', '_', filename)
 
 
+def get_folder_size(folder):
+    """
+    returns size of the given folder, including all children.
+    :return:
+    """
+    total_bytes = 0
+    if os.path.isdir(folder):
+        for root, dirs, files in os.walk(folder):
+            total_bytes += sum(os.path.getsize(os.path.join(root, name)) for name in files)
+    elif os.path.isfile(folder):
+        print 'this is a file numskull'
+    return total_bytes
+
+
+def print_file_size(total_bytes, do_print=True):
+    total_mb = float(total_bytes) / 1024 / 1024
+    total_gb = total_mb / 1024
+    size_string = '%s GB(%s bytes)' % (format(total_gb, ".2f"), '{:,}'.format(total_bytes))
+    if do_print:
+        print size_string
+    return size_string
+
+
+def find_latest_publish_objects(folder, source=True, render=False):
+    """
+    returns all the latest published versions of the "folder"
+    :param folder:
+    :return:
+    """
+    path_object = PathObject(folder)
+    path_object.set_attr(task='*', user='publish')
+    folders = glob.glob(path_object.path_root)
+    total_size = 0
+    sync_objects = []
+    for each in folders:
+        f_object = PathObject(each)
+        # TODO - latest version should work without providing a base version.
+        f_object.set_attr(version='000.000')
+        if source:
+            f_object.set_attr(version='000.000', context='source')
+            l_object = f_object.copy(latest=True)
+            sync_objects.append(l_object)
+            size = get_folder_size(l_object.path_root)
+            total_size += size
+        if render:
+            f_object.set_attr(version='000.000', context='render')
+            l_object = f_object.copy(latest=True)
+            sync_objects.append(l_object)
+            size = get_folder_size(l_object.path_root)
+            total_size += size
+    print 'Total Size of Latest Publishes\n\t%s' % print_file_size(total_size, do_print=False)
+    return sync_objects
+
+
+
 def show_in_folder(path_string):
     full_path = os.path.dirname(path_string)
     if sys.platform == "darwin":
