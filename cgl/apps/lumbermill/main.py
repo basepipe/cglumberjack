@@ -614,13 +614,13 @@ class CGLumberjack(LJMainWindow):
         create_project = QtWidgets.QAction('Import .csv', self)
         settings.setShortcut('Ctrl+,')
         pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
-        set_up_sync_thing_server = QtWidgets.QAction('Set up SyncThing Server', self)
-        set_up_sync_thing_workstation = QtWidgets.QAction('Set Up SyncThing Workstation', self)
+        set_up_sync_thing_server = QtWidgets.QAction('Set up Server', self)
+        set_up_sync_thing_workstation = QtWidgets.QAction('Set Up Workstation', self)
         check_machines_action = QtWidgets.QAction('Check for new Machines', self)
         enable_server_connection = QtWidgets.QAction('Pull from Server', self)
         manage_sharing_action = QtWidgets.QAction('Manage Sharing', self)
-        launch_syncthing = QtWidgets.QAction('Launch Syncthing', self)
-        kill_syncthing = QtWidgets.QAction('Kill Syncthing', self)
+        launch_syncthing = QtWidgets.QAction('Relaunch Sync', self)
+        kill_syncthing = QtWidgets.QAction('Kill Sync', self)
 
 
         # add actions to the file menu
@@ -635,15 +635,17 @@ class CGLumberjack(LJMainWindow):
         tools_menu.addAction(report_bug_button)
         tools_menu.addAction(request_feature_button)
         # connect signals and slots
-        sync_menu.addAction(kill_syncthing)
-        sync_menu.addAction(launch_syncthing)
-        sync_menu.addSeparator()
-        sync_menu.addAction(check_machines_action)
-        sync_menu.addAction(enable_server_connection)
+
         sync_menu.addAction(manage_sharing_action)
         sync_menu.addSeparator()
         sync_menu.addAction(set_up_sync_thing_server)
+        sync_menu.addAction(check_machines_action)
+        sync_menu.addSeparator()
         sync_menu.addAction(set_up_sync_thing_workstation)
+        sync_menu.addAction(enable_server_connection)
+        sync_menu.addSeparator()
+        sync_menu.addAction(kill_syncthing)
+        sync_menu.addAction(launch_syncthing)
 
         # connect signals and slots
         kill_syncthing.triggered.connect(self.on_kill_syncthing)
@@ -681,8 +683,7 @@ class CGLumberjack(LJMainWindow):
         connects an artist's machine to the server after the server has added them
         :return:
         """
-
-        st_utils.sync_with_server()
+        st_utils.pull_from_studio()
         pass
 
     @staticmethod
@@ -705,18 +706,19 @@ class CGLumberjack(LJMainWindow):
 
     @staticmethod
     def set_up_st_server_clicked():
-        print('Set up for use with Lone Coconut, other locations wil need testing of commented out code')
         """
-
-        cgl_root = CONFIG['paths']['root']
-        folder_dict = {r'[root]\_config\cgl_tools', '%s\_config\cgl_tools' % cgl_root}
-        st_utils.setup_studio(folder_dict=folder_dict)
-        pass
+        setups up server using client.json file from aws folder of the company's name, and a Google Sheets file that
+        keeps track of all machines being used.
+        :return:
         """
+        st_utils.setup_server()
 
     @staticmethod
     def set_up_st_workstation_clicked():
-        # TODO - these need to be in the globals!!!
+        """
+        Set up the local workstation to work with sync thing and register local workstation to the sheets file.
+        :return:
+        """
         st_utils.setup_workstation()
 
     def load_pipeline_designer_menus(self):
@@ -727,11 +729,14 @@ class CGLumberjack(LJMainWindow):
             with open(menus_json, 'r') as stream:
                 self.pd_menus = json.load(stream)['lumbermill']
                 software_menus = self.order_menus(self.pd_menus)
-                for menu in software_menus:
-                    _menu = self.create_menu(menu)
-                    self.menu_dict[menu] = _menu
-                    buttons = self.order_buttons(menu)
-                    self.add_menu_buttons(menu, buttons)
+                if software_menus:
+                    for menu in software_menus:
+                        _menu = self.create_menu(menu)
+                        self.menu_dict[menu] = _menu
+                        buttons = self.order_buttons(menu)
+                        self.add_menu_buttons(menu, buttons)
+                else:
+                    print 'No Menus Found'
         else:
             print 'No menu file found!'
         pass

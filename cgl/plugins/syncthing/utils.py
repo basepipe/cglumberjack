@@ -72,24 +72,54 @@ def setup(company, sheet_name, folder_dict=[], setup_studio=False):
     launch_syncthing()
 
 
+def accept_folders():
+    kill_syncthing()
+    # parse the xml
+    config_path = get_config_path()
+    tree = ET.parse(config_path)
+    root = tree.getroot()
+    folders_dict = {}
+
+    for child in root:
+        if child.tag == 'device':
+            for c in child:
+                if c.tag == 'pendingFolder':
+                    id_ = c.get('id')
+                    folder = get_folder_from_id(id_)
+                    add_folder_to_config(id_, folder)
+    # find all the stuff tagged "pendingFolder"
+    # add folder to config for each folder_id
+    launch_syncthing()
+
+
 def pull_from_studio():
     """
     map shared folders to the correct location on local drive
     :return:
     """
     from cgl.core.config import app_config
+    # accept all the folders if there are any.
     folders_dict = get_syncthing_folders()
     for folder_id in folders_dict:
-        print folder_id
         try:
             variable, the_rest = folder_id.split(']')
             variable = variable.replace('[', '')
             value = app_config()['paths'][variable]
             local_path = '%s%s' % (value, the_rest)
             edit_syncthing_folder(folder_id, local_path)
-            print local_path
+            print folder_id, local_path
         except ValueError:
             print('Skipping %s, only handling lumbermill created folders for now' % folder_id)
+
+
+def get_folder_from_id(folder_id):
+    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    globals_ = load_json(user_globals['globals'])
+    variable, the_rest = folder_id.split(']')
+    variable = variable.replace('[', '')
+    value = globals_['paths'][variable]
+    local_path = '%s%s' % (value, the_rest)
+    return local_path
 
 
 def get_syncthing_folders():
@@ -341,7 +371,7 @@ def sync_with_server():
     kill_syncthing()
     company = 'lone-coconut'
     sheet_name = 'LONE_COCONUT_SYNC_THING'
-    sheet = get_sheet(company, sheet_name)
+    sheet = get_sheet()
     device_id = ''
     num_rows = sheets.find_empty_row_in_sheet(sheet)
 
@@ -386,7 +416,7 @@ def kill_syncthing():
             print "Process Ended"
 
 
-def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodrive\COMPANIES\_config\client.json'):
+def update_machines():
     # TODO - sheet_name and client_json need to be globals.
     kill_syncthing()
     sheet = sheets.authorize_sheets()
@@ -396,13 +426,16 @@ def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodr
 
 
 if __name__ == "__main__":
-    #wipe_globals()
-    kill_syncthing()
-    USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
-    GLOBALS = load_json(USER_GLOBALS['globals'])
-    cgl_tools_folder = GLOBALS['paths']['cgl_tools']
-    folder_id = r'[root]\_config\cgl_tools'
-    add_folder_to_config(folder_id, cgl_tools_folder)
-    launch_syncthing()
-    # add_all_devices_to_config()
+    # wipe_globals()
+    # kill_syncthing()
+    # USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
+    # GLOBALS = load_json(USER_GLOBALS['globals'])
+    # cgl_tools_folder = GLOBALS['paths']['cgl_tools']
+    # folder_id = r'[root]\_config\cgl_tools'
+    # add_folder_to_config(folder_id, cgl_tools_folder)
+    # launch_syncthing()
+    # # add_all_devices_to_config()
+    # print get_config_path()
+    accept_folders()
+    # pull_from_studio()
     pass

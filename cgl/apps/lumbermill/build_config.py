@@ -683,12 +683,11 @@ class QuickSync(QtWidgets.QDialog):
         self.projects_checkbox.setChecked(True)
 
         self.company_name = 'Lone Coconut'
-        self.company_name_s3 = ''
-        self.company_name_disk = ''
+        self.company_name_s3 = 'lone-coconut'
+        self.company_name_disk = 'loneCoconut'
         self.cgl_tools_path = os.path.join(DEFAULT_HOME, 'downloads', 'cgl_tools.zip')
         self.globals_path = os.path.join(DEFAULT_HOME, 'downloads', 'globals.json')
-        self.aws_globals =  r'https://lone-coconut.s3.amazonaws.com/globals.json'
-        self.aws_cgl_tools = ''
+        self.aws_globals = r'https://%s.s3.amazonaws.com/globals.json' % self.company_name_s3
         self.check_for_globals_button = QtWidgets.QPushButton('Check for Globals')
         self.download_globals_button = QtWidgets.QPushButton('Set Up Lumbermill')
 
@@ -733,6 +732,9 @@ class QuickSync(QtWidgets.QDialog):
     def on_root_changed(self):
         self.default_root = self.root_line_edit.text()
         print 'Changing Default Root to: %s' % self.default_root
+        self.sync_cgl_tools_line_edit.setText(os.path.join(self.default_root, '_config', 'cgl_tools'))
+        self.default_globals = os.path.join(self.default_root, '_config', 'globals.json')
+        print 'Changing cgl_tools dir to: %s' % self.sync_cgl_tools_line_edit.text()
 
     def on_import_line_edit_changed(self):
         import re
@@ -800,12 +802,13 @@ class QuickSync(QtWidgets.QDialog):
         if self.company_name:
             self.company_name_s3 = self.company_name.replace(' ', '-').replace('_', '-')
             self.company_name_disk = self.company_name_s3.replace('-', '_')
-            # self.aws_cgl_tools = r'https://%s.s3.amazonaws.com/cgl_tools.zip' % self.company_name_s3
+            self.aws_globals = r'https://%s.s3.amazonaws.com/globals.json' % self.company_name_s3
             if web.url_exists(self.aws_globals):
                 self.aws_globals_label.setText('Found Shared Company Globals on Cloud')
                 self.aws_globals_label.setStyleSheet("color: rgb(0, 255, 0);")
             else:
                 self.aws_globals_label.setText('No Shared Globals Found - skipping')
+                self.aws_globals_label.setStyleSheet("color: rgb(255, 0, 0);")
             self.aws_globals_label.show()
 
     def download_globals_from_cloud(self):
@@ -905,7 +908,6 @@ def create_user_globals(user_globals, globals_path):
         read_write.save_json(user_globals, d)
     else:
         print 'No Root Defined, cannot save user globals'
-
 
 
 if __name__ == "__main__":

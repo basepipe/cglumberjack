@@ -1,7 +1,6 @@
-import gspread
-import requests
-from oauth2client.service_account import ServiceAccountCredentials
 import os
+from oauth2client.service_account import ServiceAccountCredentials
+import requests
 from cgl.core.utils.read_write import load_json
 
 """
@@ -18,6 +17,7 @@ def authorize_sheets():
     :param sheet_name: Title of the sheet being accessed
     :return: A google sheet object
     """
+    import gspread
     scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/spreadsheets',
              'https://www.googleapis.com/auth/drive']
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))

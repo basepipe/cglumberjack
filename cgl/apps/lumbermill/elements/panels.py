@@ -83,6 +83,7 @@ class CompanyPanel(QtWidgets.QWidget):
         companies = glob.glob(companies_loc)
         if companies:
             for each in companies:
+                print each, 3
                 if '_config' not in each:
                     c = os.path.basename(each)
                     self.company_widget.list.addItem(c)
@@ -172,14 +173,19 @@ class ProjectPanel(QtWidgets.QWidget):
     def load_companies(self):
         companies_loc = '%s/*' % self.path_object.root
         companies = glob.glob(companies_loc)
-        if not companies:
+        print companies
+        clean_companies = []
+        for c in companies:
+            if '_config' not in c:
+                clean_companies.append(c)
+        if not clean_companies:
             print 'no companies'
             self.project_filter.data_table.setEnabled(False)
             self.project_filter.add_button.setText('Create First Company')
         else:
             self.project_filter.data_table.setEnabled(True)
             self.project_filter.add_button.setText('Add Company')
-        self.project_filter.setup(ListItemModel(prep_list_for_table(companies, split_for_file=True), ['Name']))
+        self.project_filter.setup(ListItemModel(prep_list_for_table(clean_companies, split_for_file=True), ['Name']))
         self.update_location(self.path_object)
 
     def update_location(self, path_object=None):
