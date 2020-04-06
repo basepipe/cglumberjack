@@ -9,7 +9,10 @@ def url_exists(url):
     :param url: url address
     :return:
     """
-    u = urllib2.urlopen(url)
+    try:
+        u = urllib2.urlopen(url)
+    except urllib2.HTTPError:
+        return False
     if u.code == 200:
         return True
     else:

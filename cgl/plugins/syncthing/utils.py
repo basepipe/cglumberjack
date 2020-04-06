@@ -1,4 +1,4 @@
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ElemTree
 import getpass
 import os
 import subprocess
@@ -7,22 +7,17 @@ import psutil
 from cgl.core.utils.read_write import load_json
 
 
-def setup_studio(folder_dict={}):
+def setup_server():
     kill_syncthing()
     USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
     GLOBALS = load_json(USER_GLOBALS['globals'])
-    company = GLOBALS['account_info']['aws_company_name']
-    sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
-    if folder_dict:
-        sheet_obj = get_sheet(company, sheet_name)
-        add_device_info_to_sheet(sheet_obj, server='true')
-        add_all_devices_to_config(sheet_obj)
-        for folder_id in folder_dict:
-            if not folder_id_exists(folder_id):
-                add_folder_to_config(folder_id, folder_dict[folder_id])
-        share_files_to_devices() # only if you're setting up main folders
-    else:
-        print('Please provide a list of folders before attempting to set up syncthing')
+    cgl_tools_folder = GLOBALS['paths']['cgl_tools']
+    sheet_obj = get_sheet()
+    add_device_info_to_sheet(sheet_obj, server='true')
+    add_all_devices_to_config(sheet_obj)
+    folder_id = r'[root]\_config\cgl_tools'
+    add_folder_to_config(folder_id, cgl_tools_folder)
+    share_files_to_devices()  # only if you're setting up main folders
     launch_syncthing()
 
 
@@ -41,59 +36,39 @@ def setup_workstation():
     sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
     folder_id = r'[root]\_config\cgl_tools'
     folder_path = GLOBALS['paths']['cgl_tools']
-    sheet_obj = get_sheet(company, sheet_name)
+    sheet_obj = get_sheet()
     add_device_info_to_sheet(sheet_obj)
     add_all_devices_to_config(sheet_obj)
     add_folder_to_config(folder_id, folder_path)
     launch_syncthing()
 
 
-def setup(company, sheet_name, folder_dict=[], setup_studio=False):
-    """
-    setups up everything needed for syncthing to run in the production environment, adds folders to the config.
-    :param folder_dict: dictionary of pairs of {folder_id: full_path}
-    :return:
-    """
+def accept_folders():
     kill_syncthing()
-    if folder_dict:
-        config_path = get_config_path()
-        if not os.path.exists(config_path):
-            print 'launching syncthing'
-        sheet_obj = get_sheet(company, sheet_name)
-        add_device_info_to_sheet(sheet_obj)
-        add_all_devices_to_config(sheet_obj)
-        for folder_id in folder_dict:
-            if not folder_id_exists(folder_id):
-                add_folder_to_config(folder_id, folder_dict[folder_id])
-        if setup_studio:
-            share_files_to_devices() # only if you're setting up main folders
-        else:
-            print 'pulling from studio'
-            pull_from_studio()
-            # notify_of_machine_add()
-    else:
-        print('Please provide a list of folders before attempting to set up syncthing')
+    # parse the xml
+    config_path = get_config_path()
+    tree = ElemTree.parse(config_path)
+    root = tree.getroot()
+    folders_dict = {}
+
+    for child in root:
+        if child.tag == 'device':
+            for c in child:
+                if c.tag == 'pendingFolder':
+                    id_ = c.get('id')
+                    folder = get_folder_from_id(id_)
+                    add_folder_to_config(id_, folder)
     launch_syncthing()
 
 
-def pull_from_studio():
-    """
-    map shared folders to the correct location on local drive
-    :return:
-    """
-    from cgl.core.config import app_config
-    folders_dict = get_syncthing_folders()
-    for folder_id in folders_dict:
-        print folder_id
-        try:
-            variable, the_rest = folder_id.split(']')
-            variable = variable.replace('[', '')
-            value = app_config()['paths'][variable]
-            local_path = '%s%s' % (value, the_rest)
-            edit_syncthing_folder(folder_id, local_path)
-            print local_path
-        except ValueError:
-            print('Skipping %s, only handling lumbermill created folders for now' % folder_id)
+def get_folder_from_id(folder_id):
+    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    globals_ = load_json(user_globals['globals'])
+    variable, the_rest = folder_id.split(']')
+    variable = variable.replace('[', '')
+    value = globals_['paths'][variable]
+    local_path = '%s%s' % (value, the_rest)
+    return local_path
 
 
 def get_syncthing_folders():
@@ -102,7 +77,7 @@ def get_syncthing_folders():
     :return: Dictionary of folder ID's mapped to folder paths
     """
     config_path = get_config_path()
-    tree = ET.parse(config_path)
+    tree = ElemTree.parse(config_path)
     root = tree.getroot()
     folders_dict = {}
 
@@ -121,7 +96,7 @@ def edit_syncthing_folder(folder_id, new_local_path):
     :return:
     """
     config_path = get_config_path()
-    tree = ET.parse(config_path)
+    tree = ElemTree.parse(config_path)
     root = tree.getroot()
 
     for child in root:
@@ -131,9 +106,10 @@ def edit_syncthing_folder(folder_id, new_local_path):
     tree.write(config_path)
 
 
-def folder_id_exists(folder_id, folder_path=''):
-    config_path = get_config_path()
-    tree = ET.parse(config_path)
+def folder_id_exists(folder_id, folder_path='', tree=None):
+    if not tree:
+        config_path = get_config_path()
+        tree = ElemTree.parse(config_path)
     root = tree.getroot()
     existing_folders = []
 
@@ -148,17 +124,21 @@ def folder_id_exists(folder_id, folder_path=''):
     return False
 
 
-def get_sheet(company, sheet_name):
+def get_sheet():
     """
     Gets the sheet object for a company
     :param company: Company name in the s3 database
     :param sheet_name: Name of the google sheet being accessed
     :return: Sheet object
     """
-    from cgl.core.config import app_config
-    client_file = os.path.join(app_config()['paths']['root'], '_config', 'client.json')
-    sheets.get_sheets_authentication(client_file, company)
-    sheet_obj = sheets.authorize_sheets(sheet_name, client_file)
+    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    globals_ = load_json(user_globals['globals'])
+    client_file = globals_['sync']['syncthing']['sheets_config_path']
+    sheet_obj = None
+    if not os.path.exists(client_file):
+        sheets.get_sheets_authentication()
+    else:
+        sheet_obj = sheets.authorize_sheets()
     return sheet_obj
 
 
@@ -202,7 +182,7 @@ def get_my_device_info():
 
     device_id = output_values[0]
     filepath = get_config_path()
-    tree = ET.parse(filepath)
+    tree = ElemTree.parse(filepath)
     root = tree.getroot()
 
     for child in root:
@@ -238,7 +218,7 @@ def get_all_device_info(sheet):
     device_list = []
     num_of_rows = sheets.find_empty_row_in_sheet(sheet)
     for row in range(2, num_of_rows):
-        if sheet.cell(row,1).value != get_my_device_info()['id']:
+        if sheet.cell(row, 1).value != get_my_device_info()['id']:
             entry = {"id": sheet.cell(row, 1).value, "name": sheet.cell(row,2).value, "user": sheet.cell(row,3).value}
             device_list.append(entry)
     return device_list
@@ -251,28 +231,28 @@ def add_all_devices_to_config(sheet):
     """
     device_list = get_all_device_info(sheet)
     filepath = get_config_path()
-    tree = ET.parse(filepath)
+    tree = ElemTree.parse(filepath)
     root = tree.getroot()
 
     for entry in device_list:
-        new_node = ET.SubElement(root, 'device')
+        new_node = ElemTree.SubElement(root, 'device')
         new_node.set('id', entry['id'])
         new_node.set('name', entry['name'])
         new_node.set('compression', "metadata")
         new_node.set("introducer", "false")
         new_node.set("skipIntroductionRemovals", 'false')
         new_node.set("introducedBy", "")
-        address = ET.SubElement(new_node, 'address')
+        address = ElemTree.SubElement(new_node, 'address')
         address.text = 'dynamic'
-        paused = ET.SubElement(new_node, 'paused')
+        paused = ElemTree.SubElement(new_node, 'paused')
         paused.text = "false"
-        autoAcceptFolders = ET.SubElement(new_node, 'autoAcceptFolders')
+        autoAcceptFolders = ElemTree.SubElement(new_node, 'autoAcceptFolders')
         autoAcceptFolders.text = "true"
-        maxSendKbps = ET.SubElement(new_node, 'maxSendKbps')
+        maxSendKbps = ElemTree.SubElement(new_node, 'maxSendKbps')
         maxSendKbps.text = 0
-        maxRecvKbps = ET.SubElement(new_node, 'maxRecvKbps')
+        maxRecvKbps = ElemTree.SubElement(new_node, 'maxRecvKbps')
         maxRecvKbps.text = 0
-        maxRequestKiB = ET.SubElement(new_node, 'maxRequestKiB')
+        maxRequestKiB = ElemTree.SubElement(new_node, 'maxRequestKiB')
         maxRequestKiB.text = 0
     tree.write(filepath)
 
@@ -284,37 +264,38 @@ def add_folder_to_config(folder_id, filepath):
     :param filepath: The path to the file being added to syncthing
     :return:
     """
+    folder_id = folder_id.replace('/', '\\')
+    filepath = filepath.replace('/', '\\')
     # TODO - check to see if the folder exists
     config_path = get_config_path()
-    tree = ET.parse(config_path)
+    tree = ElemTree.parse(config_path)
     root = tree.getroot()
-
-    new_node = ET.SubElement(root, 'folder')
-    new_node.set('id', folder_id)
-    new_node.set('path', filepath)
-    new_node.set('type', 'sendreceive')
-    new_node.set('rescanIntervalS', '3600')
-    new_node.set('fsWatcherEnabled', "True")
-    new_node.set('fsWatcherDelayS', "10")
-    new_node.set('ignorePerms', "false")
-    new_node.set('autoNormalize', "true")
+    if not folder_id_exists(folder_id, tree=tree):
+        new_node = ElemTree.SubElement(root, 'folder')
+        new_node.set('id', folder_id)
+        new_node.set('path', filepath)
+        new_node.set('type', 'sendreceive')
+        new_node.set('rescanIntervalS', '3600')
+        new_node.set('fsWatcherEnabled', "True")
+        new_node.set('fsWatcherDelayS', "10")
+        new_node.set('ignorePerms', "false")
+        new_node.set('autoNormalize', "true")
     tree.write(config_path)
 
 
-def share_files_to_devices():
+def share_files_to_devices(all_device_id=[]):
     """
     Makes all files shareable to all devices found in the config file
     :return:
     """
     config_path = get_config_path()
-    tree = ET.parse(config_path)
+    tree = ElemTree.parse(config_path)
     root = tree.getroot()
 
-    all_device_id = []
-
-    for child in root:
-        if child.tag == 'device':
-            all_device_id.append(child.get('id'))
+    if not all_device_id:
+        for child in root:
+            if child.tag == 'device':
+                all_device_id.append(child.get('id'))
 
     for child in root:
         shared = []
@@ -324,7 +305,7 @@ def share_files_to_devices():
                     shared.append(sub_element.get('id'))
             for id in all_device_id:
                 if id not in shared:
-                    new_node = ET.SubElement(child, 'device')
+                    new_node = ElemTree.SubElement(child, 'device')
                     new_node.set('id', id)
     tree.write(config_path)
 
@@ -339,7 +320,7 @@ def sync_with_server():
     kill_syncthing()
     company = 'lone-coconut'
     sheet_name = 'LONE_COCONUT_SYNC_THING'
-    sheet = get_sheet(company, sheet_name)
+    sheet = get_sheet()
     device_id = ''
     num_rows = sheets.find_empty_row_in_sheet(sheet)
 
@@ -348,18 +329,26 @@ def sync_with_server():
             device_id = sheet.cell(entry, 1).value
 
     config_path = get_config_path()
-    tree = ET.parse(config_path)
+    tree = ElemTree.parse(config_path)
     root = tree.getroot()
 
     if device_id != '':
         for child in root:
             if child.tag == 'folder' and '[' in child.get('id'):
-                new_node = ET.SubElement(child, 'device')
+                new_node = ElemTree.SubElement(child, 'device')
                 new_node.set('id', device_id)
         tree.write(config_path)
     else:
         print "Error finding server device in sheet"
     launch_syncthing()
+
+
+def wipe_globals():
+    kill_syncthing()
+    config_path = get_config_path()
+    os.remove(config_path)
+    launch_syncthing()
+    # remove_default_folder()
 
 
 def launch_syncthing():
@@ -376,17 +365,14 @@ def kill_syncthing():
             print "Process Ended"
 
 
-def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodrive\COMPANIES\_config\client.json'):
+def update_machines():
     # TODO - sheet_name and client_json need to be globals.
     kill_syncthing()
-    sheet = sheets.authorize_sheets('LONE_COCONUT_SYNC_THING', 'Z:\cocodrive\COMPANIES\_config\client.json')
+    sheet = sheets.authorize_sheets()
     add_all_devices_to_config(sheet)
     share_files_to_devices()
     launch_syncthing()
 
 
 if __name__ == "__main__":
-    # setup_workstation()
-    # kill_syncthing()
     pass
-

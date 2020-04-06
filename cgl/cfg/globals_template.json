@@ -3,11 +3,13 @@
         "default_company": "", 
         "project_management": "lumbermill",
         "aws_company_name": "",
-        "aws_bucket_url": ""
+        "aws_globals_path": ""
     },
     "sync": {
         "syncthing": {
             "sheets_name": "",
+            "aws_bucket_url": "",
+            "sync_thing_url": "",
             "sheets_config_path": ""
         }
     },
