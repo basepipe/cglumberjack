@@ -2,6 +2,7 @@ import os
 import logging
 import sys
 import json
+from cgl.core.utils.read_write import load_json
 
 
 class Configuration(object):
@@ -19,57 +20,38 @@ class Configuration(object):
     user_config = os.path.join(cg_lumberjack_dir, 'user_globals.json')
 
     def __init__(self, company=None, project=None, proj_management=None):
+        self.user_config = os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json')
         if not os.path.exists(self.user_config):
             logging.info('User Config Not Found: %s' % self.user_config)
-        self.globals = self._load_json(self.user_config)['globals']
-        # print 'Company Globals: ', self.globals
-        if not os.path.exists(self.globals):
+            return
+        user_globals = load_json(self.user_config)
+        if not os.path.exists(user_globals['globals']):
             logging.info('No Globals Found at %s' % self.globals)
             return
-        else:
-            self.cg_lumberjack_dir = os.path.dirname(self.globals)
-        self.proj_management = None
-        if proj_management:
-            self.proj_management = proj_management
-        if company:
-            Configuration.LOADED_CONFIG = {}
-        if not Configuration.LOADED_CONFIG:
-            self.make_cglumberjack_dir()
-            if company:
-                self.company_global_dir = os.path.join(self.cg_lumberjack_dir, 'companies', company)
-            else:
-                self.company_global_dir = None
-            global_cfg, app_cfg = self._find_config_file()
-            logging.debug('Global Config: %s' % global_cfg)
-            cfg = {'cg_lumberjack_dir': os.path.dirname(self.globals)}
-            if os.path.isfile(global_cfg):
-                cfg.update(self._load_json(global_cfg))
-                # load the company config if any
-                # load project config if any
-            if os.path.isfile(app_cfg):
-                cfg.update(self._load_json(app_cfg))
-            Configuration.LOADED_CONFIG['app'] = cfg
+        self.globals = load_json(user_globals['globals'])
+        Configuration.LOADED_CONFIG['app'] = self.globals
 
-    def make_cglumberjack_dir(self):
-        if not os.path.exists(self.cg_lumberjack_dir):
-            os.makedirs(self.cg_lumberjack_dir)
 
-    def make_company_global_dir(self):
-        from cgl.core.utils.general import cgl_copy
-        default_global = os.path.join(self.cg_lumberjack_dir, 'globals.json')
-        to_path = os.path.join(self.company_global_dir, 'globals.json')
-        if os.path.exists(self.company_global_dir):
-            print 'Copying from %s to %s' % (default_global, to_path)
-            if 'globals.json' not in os.listdir(self.company_global_dir):
-                cgl_copy(default_global, to_path)
-                if self.proj_management:
-                    self.update_proj_management()
-        else:
-            print '%s does not exist' % self.company_global_dir
-            os.makedirs(self.company_global_dir)
-            cgl_copy(default_global, to_path)
-            if self.proj_management:
-                self.update_proj_management()
+    # def make_cglumberjack_dir(self):
+    #     if not os.path.exists(self.cg_lumberjack_dir):
+    #         os.makedirs(self.cg_lumberjack_dir)
+
+    # def make_company_global_dir(self):
+    #     from cgl.core.utils.general import cgl_copy
+    #     default_global = os.path.join(self.cg_lumberjack_dir, 'globals.json')
+    #     to_path = os.path.join(self.company_global_dir, 'globals.json')
+    #     if os.path.exists(self.company_global_dir):
+    #         print 'Copying from %s to %s' % (default_global, to_path)
+    #         if 'globals.json' not in os.listdir(self.company_global_dir):
+    #             cgl_copy(default_global, to_path)
+    #             if self.proj_management:
+    #                 self.update_proj_management()
+    #     else:
+    #         print '%s does not exist' % self.company_global_dir
+    #         os.makedirs(self.company_global_dir)
+    #         cgl_copy(default_global, to_path)
+    #         if self.proj_management:
+    #             self.update_proj_management()
 
     def update_proj_management(self):
         json_file = os.path.join(self.company_global_dir, 'globals.json')
