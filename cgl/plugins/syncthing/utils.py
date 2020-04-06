@@ -4,6 +4,48 @@ import os
 import subprocess
 import cgl.plugins.google.sheets as sheets
 import psutil
+from cgl.core.utils.read_write import load_json
+
+
+def setup_studio(folder_dict={}):
+    kill_syncthing()
+    USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
+    GLOBALS = load_json(USER_GLOBALS['globals'])
+    company = GLOBALS['account_info']['aws_company_name']
+    sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
+    if folder_dict:
+        sheet_obj = get_sheet(company, sheet_name)
+        add_device_info_to_sheet(sheet_obj, server='true')
+        add_all_devices_to_config(sheet_obj)
+        for folder_id in folder_dict:
+            if not folder_id_exists(folder_id):
+                add_folder_to_config(folder_id, folder_dict[folder_id])
+        share_files_to_devices() # only if you're setting up main folders
+    else:
+        print('Please provide a list of folders before attempting to set up syncthing')
+    launch_syncthing()
+
+
+def setup_workstation():
+    """
+    sets up local workstation to talk to the studio side server.
+    :param company:
+    :param sheet_name:
+    :return:
+    """
+    USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
+    GLOBALS = load_json(USER_GLOBALS['globals'])
+    kill_syncthing()
+    print('Setting Up Workstation for Syncing')
+    company = GLOBALS['account_info']['aws_company_name']
+    sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
+    folder_id = r'[root]\_config\cgl_tools'
+    folder_path = GLOBALS['paths']['cgl_tools']
+    sheet_obj = get_sheet(company, sheet_name)
+    add_device_info_to_sheet(sheet_obj)
+    add_all_devices_to_config(sheet_obj)
+    add_folder_to_config(folder_id, folder_path)
+    launch_syncthing()
 
 
 def setup(company, sheet_name, folder_dict=[], setup_studio=False):
@@ -170,7 +212,7 @@ def get_my_device_info():
     return {'id': device_id, 'name': machine_name}
 
 
-def add_device_info_to_sheet(sheet):
+def add_device_info_to_sheet(sheet, server = 'false'):
     """
     Adds current device information to google sheet
     :param sheet: The sheet object to be edited
@@ -182,6 +224,10 @@ def add_device_info_to_sheet(sheet):
         sheet.update_cell(new_row, 1, device_dictionary['id'])
         sheet.update_cell(new_row, 2, device_dictionary['name'])
         sheet.update_cell(new_row, 3, getpass.getuser().lower())
+        if server == 'true':
+            sheet.update_cell(new_row, 4, 'Yes')
+        else:
+            sheet.update_cell(new_row, 4, 'No')
 
 
 def get_all_device_info(sheet):
@@ -283,6 +329,39 @@ def share_files_to_devices():
     tree.write(config_path)
 
 
+def sync_with_server():
+    """
+    Shares all local files with the server machine
+    :param sheet: Google sheet object for the device sheet
+    :return:
+    """
+    # TODO - this is temp - company-aws, and sheet_name must be in globals.
+    kill_syncthing()
+    company = 'lone-coconut'
+    sheet_name = 'LONE_COCONUT_SYNC_THING'
+    sheet = get_sheet(company, sheet_name)
+    device_id = ''
+    num_rows = sheets.find_empty_row_in_sheet(sheet)
+
+    for entry in range(2, num_rows):
+        if sheet.cell(entry, 4).value == 'Yes':
+            device_id = sheet.cell(entry, 1).value
+
+    config_path = get_config_path()
+    tree = ET.parse(config_path)
+    root = tree.getroot()
+
+    if device_id != '':
+        for child in root:
+            if child.tag == 'folder' and '[' in child.get('id'):
+                new_node = ET.SubElement(child, 'device')
+                new_node.set('id', device_id)
+        tree.write(config_path)
+    else:
+        print "Error finding server device in sheet"
+    launch_syncthing()
+
+
 def launch_syncthing():
     kill_syncthing()
     command = "syncthing"
@@ -298,6 +377,7 @@ def kill_syncthing():
 
 
 def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodrive\COMPANIES\_config\client.json'):
+    # TODO - sheet_name and client_json need to be globals.
     kill_syncthing()
     sheet = sheets.authorize_sheets('LONE_COCONUT_SYNC_THING', 'Z:\cocodrive\COMPANIES\_config\client.json')
     add_all_devices_to_config(sheet)
@@ -306,18 +386,7 @@ def update_machines(sheet_name='LONE_COCONUT_SYNC_THING', client_json='Z:\cocodr
 
 
 if __name__ == "__main__":
-    # before we have a GUI implementation within lumbermill Run this to add new machines
-    # to ALL folders for syncing.
-    #update_machines()
-    # Stop Syncthing
+    # setup_workstation()
     # kill_syncthing()
-    # start syncthing
-    # kill_syncthing()
-    # share_files_to_devices()
-    launch_syncthing()
-    # cgl_tools_folder = os.path.join(r'D:\COMPANIES', '_config', 'cgl_tools')
-    # if not os.path.exists(cgl_tools_folder):
-    #    os.makedirs(cgl_tools_folder)
-    # sync_folders = {r'[root]\_config\cgl_tools': os.path.join(cgl_tools_folder)}
-    # setup('lone-coconut', 'LONE_COCONUT_SYNC_THING', sync_folders)
+    pass
 

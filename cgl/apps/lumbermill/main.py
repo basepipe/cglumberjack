@@ -11,6 +11,7 @@ from cgl.core.utils.general import current_user, check_for_latest_master, update
 from cgl.core.config import app_config, UserConfig
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
+import cgl.plugins.syncthing.utils as st_utils
 from cgl.ui.widgets.help import ReportBugDialog, RequestFeatureDialog
 try:
     import apps.lumbermill.elements.IOPanel as IoP
@@ -616,8 +617,11 @@ class CGLumberjack(LJMainWindow):
         set_up_sync_thing_server = QtWidgets.QAction('Set up SyncThing Server', self)
         set_up_sync_thing_workstation = QtWidgets.QAction('Set Up SyncThing Workstation', self)
         check_machines_action = QtWidgets.QAction('Check for new Machines', self)
-        check_for_folders_action = QtWidgets.QAction('Check for Shared Folders', self)
+        enable_server_connection = QtWidgets.QAction('Pull from Server', self)
         manage_sharing_action = QtWidgets.QAction('Manage Sharing', self)
+        launch_syncthing = QtWidgets.QAction('Launch Syncthing', self)
+        kill_syncthing = QtWidgets.QAction('Kill Syncthing', self)
+
 
         # add actions to the file menu
         tools_menu.addAction(settings)
@@ -631,14 +635,24 @@ class CGLumberjack(LJMainWindow):
         tools_menu.addAction(report_bug_button)
         tools_menu.addAction(request_feature_button)
         # connect signals and slots
-
+        sync_menu.addAction(kill_syncthing)
+        sync_menu.addAction(launch_syncthing)
+        sync_menu.addSeparator()
         sync_menu.addAction(check_machines_action)
-        sync_menu.addAction(check_for_folders_action)
+        sync_menu.addAction(enable_server_connection)
         sync_menu.addAction(manage_sharing_action)
         sync_menu.addSeparator()
         sync_menu.addAction(set_up_sync_thing_server)
         sync_menu.addAction(set_up_sync_thing_workstation)
 
+        # connect signals and slots
+        kill_syncthing.triggered.connect(self.on_kill_syncthing)
+        launch_syncthing.triggered.connect(self.on_launch_syncthing)
+        enable_server_connection.triggered.connect(self.enable_server_connection_clicked)
+        check_machines_action.triggered.connect(self.check_for_machines_clicked)
+        manage_sharing_action.triggered.connect(self.manage_sharing_action_clicked)
+        set_up_sync_thing_server.triggered.connect(self.set_up_st_server_clicked)
+        set_up_sync_thing_workstation.triggered.connect(self.set_up_st_workstation_clicked)
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
         create_project.triggered.connect(self.open_create_project_dialog)
@@ -652,6 +666,58 @@ class CGLumberjack(LJMainWindow):
         time_tracking.triggered.connect(self.time_tracking_clicked)
         # Load any custom menus that the user has defined
         self.load_pipeline_designer_menus()
+
+    @staticmethod
+    def on_kill_syncthing():
+        st_utils.kill_syncthing()
+
+    @staticmethod
+    def on_launch_syncthing():
+        st_utils.launch_syncthing()
+
+    @staticmethod
+    def enable_server_connection_clicked():
+        """
+        connects an artist's machine to the server after the server has added them
+        :return:
+        """
+
+        st_utils.sync_with_server()
+        pass
+
+    @staticmethod
+    def check_for_machines_clicked():
+        st_utils.update_machines()
+        pass
+
+    def manage_sharing_action_clicked(self):
+        from ui.widgets.sync_master import SyncMaster
+        scope = None
+        path_object = cglpath.PathObject(self.centralWidget().path_widget.path_line_edit.text())
+        if path_object.scope:
+            if path_object.scope != '*':
+                scope = path_object.scope
+
+        dialog = SyncMaster(company=path_object.company, project=path_object.project, scope=scope)
+        dialog.exec_()
+        print "This produces a gui for managing the sharing of folders and external devices."
+        pass
+
+    @staticmethod
+    def set_up_st_server_clicked():
+        print('Set up for use with Lone Coconut, other locations wil need testing of commented out code')
+        """
+
+        cgl_root = CONFIG['paths']['root']
+        folder_dict = {r'[root]\_config\cgl_tools', '%s\_config\cgl_tools' % cgl_root}
+        st_utils.setup_studio(folder_dict=folder_dict)
+        pass
+        """
+
+    @staticmethod
+    def set_up_st_workstation_clicked():
+        # TODO - these need to be in the globals!!!
+        st_utils.setup_workstation()
 
     def load_pipeline_designer_menus(self):
         import json

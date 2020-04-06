@@ -13,6 +13,21 @@ from cgl.core.config import app_config
 CONFIG = app_config()
 
 
+def get_user_globals():
+    # do they have an env variable
+    user_globals_path = os.getenv('cgl_user_globals')
+    if os.path.exists(user_globals_path):
+        return load_json(user_globals_path)
+
+
+def get_globals():
+    globals_path = get_user_globals()['globals']
+    if globals_path:
+        return load_json(globals_path)
+    else:
+        return app_config()
+
+
 def pretty(obj):
     """
     return a pretty printed representation of an object
@@ -450,6 +465,7 @@ def main(edit_cgl, user, job_id, key, value):
 
 if __name__ == '__main__':
     main()
+    # print get_globals()
 
 
 

@@ -7,6 +7,7 @@ from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.utils import read_write, web
 import plugins.syncthing.utils as syncthing
 
+
 DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
 DEFAULT_CODE_ROOT = os.path.join(os.path.expanduser("~"), 'PycharmProjects', 'cglumberjack')
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), 'Documents', 'cglumberjack')
@@ -686,7 +687,7 @@ class QuickSync(QtWidgets.QDialog):
         self.company_name_disk = ''
         self.cgl_tools_path = os.path.join(DEFAULT_HOME, 'downloads', 'cgl_tools.zip')
         self.globals_path = os.path.join(DEFAULT_HOME, 'downloads', 'globals.json')
-        self.aws_globals = ''
+        self.aws_globals =  r'https://lone-coconut.s3.amazonaws.com/globals.json'
         self.aws_cgl_tools = ''
         self.check_for_globals_button = QtWidgets.QPushButton('Check for Globals')
         self.download_globals_button = QtWidgets.QPushButton('Set Up Lumbermill')
@@ -799,8 +800,7 @@ class QuickSync(QtWidgets.QDialog):
         if self.company_name:
             self.company_name_s3 = self.company_name.replace(' ', '-').replace('_', '-')
             self.company_name_disk = self.company_name_s3.replace('-', '_')
-            self.aws_globals = r'https://%s.s3.amazonaws.com/globals.json' % self.company_name_s3
-            self.aws_cgl_tools = r'https://%s.s3.amazonaws.com/cgl_tools.zip' % self.company_name_s3
+            # self.aws_cgl_tools = r'https://%s.s3.amazonaws.com/cgl_tools.zip' % self.company_name_s3
             if web.url_exists(self.aws_globals):
                 self.aws_globals_label.setText('Found Shared Company Globals on Cloud')
                 self.aws_globals_label.setStyleSheet("color: rgb(0, 255, 0);")
@@ -809,6 +809,7 @@ class QuickSync(QtWidgets.QDialog):
             self.aws_globals_label.show()
 
     def download_globals_from_cloud(self):
+
         if self.aws_globals_label.text() == 'Found Shared Company Globals on Cloud':
             globals_path = os.path.join(DEFAULT_HOME, 'downloads', 'globals.json')
             cgl_tools_path = os.path.join(DEFAULT_HOME, 'downloads', 'cgl_tools.zip')
@@ -818,19 +819,13 @@ class QuickSync(QtWidgets.QDialog):
                 os.makedirs(os.path.dirname(globals_path))
             if os.path.exists(globals_path):
                 os.remove(globals_path)
-            g_url = self.aws_globals
-            pd_url = self.aws_cgl_tools
-            dict_ = {g_url: globals_path,
-                     pd_url: cgl_tools_path}
-            for url in dict_:
-                filepath = dict_[url]
-                r = requests.get(url, allow_redirects=True)
-                if '<Error>' in r.content:
-                    print('No File %s for company: %s' % (url, self.company_name))
-                else:
-                    print('Saving Globals file to: %s' % filepath)
-                    with open(filepath, 'w+') as f:
-                        f.write(r.content)
+            r = requests.get(self.aws_globals, allow_redirects=True)
+            if '<Error>' in r.content:
+                print('No File %s for company: %s' % (self.aws_globals, self.company_name))
+            else:
+                print('Saving Globals file to: %s' % globals_path)
+                with open(globals_path, 'w+') as f:
+                    f.write(r.content)
             self.accept()
         else:
             print('No Globals Found - Get your Studio to publish their globals, or Create new ones?')
@@ -845,6 +840,7 @@ class QuickSync(QtWidgets.QDialog):
         globals["paths"]["globals"] = os.path.join(self.default_root, '_config', 'globals.json')
         # TODO this should be a env_variable
         globals["paths"]["user_globals"] = self.default_user_globals
+        globals["sync"]["syncthing"]["sheets_config_path"] = os.path.join(self.default_root, '_config', 'client.json')
         # TODO this should exist
         globals["account_info"]["globals_path"] = os.path.join(self.default_root, '_config', 'globals.json')
         # TODO - This shouldn't exist
@@ -866,7 +862,8 @@ class QuickSync(QtWidgets.QDialog):
             os.makedirs(cgl_tools_folder)
         sync_folders = {r'[root]\_config\cgl_tools': os.path.join(cgl_tools_folder)}
         # TODO - need to set 2nd value here as a global in globals. sync_sheet: LONE_COCONUT_SYNC_THING
-        syncthing.setup(self.company_name_s3, 'LONE_COCONUT_SYNC_THING', sync_folders)
+        syncthing.setup_workstation()
+        # syncthing.setup(self.company_name_s3, 'LONE_COCONUT_SYNC_THING', sync_folders)
 
     def set_up_lumbermill(self):
         """
@@ -874,17 +871,22 @@ class QuickSync(QtWidgets.QDialog):
         :return:
         """
         # step 1 - download the globals
-        # self.download_globals_from_cloud()
+        self.download_globals_from_cloud()
         # Step 2: replace ROOT, and CODEROOT instances in the globals file
         # Step 3: Copy the edited globals file to the default location
-        # self.edit_globals_paths()
+        self.edit_globals_paths()
         # Step 3b: Create Default User Globals
-        # create_user_globals(self.default_user_globals, self.default_globals)
+        create_user_globals(self.default_user_globals, self.default_globals)
         # Step 4: Copy the published CGL_TOOLS to the default location
         # Step 5: Import any Projects
         # Step 6: Set up Syncthing
         self.setup_syncthing()
-
+        from cgl.ui.widgets.dialog import InputDialog
+        dialog = InputDialog(title='Sync Message', message='Your Machine has be submitted for approval for file sharing\n'
+                                                           'After you have been added, click:\n'
+                                                           ' Sync> Pull From Server\n'
+                                                           'and you will start syncing folders')
+        dialog.exec_()
         # set_up_syncthing(folders=[os.path.join(self.default_root, '_config', 'cgl_tools')])
 
 
