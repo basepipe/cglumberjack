@@ -1,6 +1,7 @@
-import gspread
-import requests
+import os
 from oauth2client.service_account import ServiceAccountCredentials
+import requests
+from cgl.core.utils.read_write import load_json
 
 """
 TODO:
@@ -9,21 +10,24 @@ TODO:
 """
 
 
-def authorize_sheets(sheet_name, filepath):
+def authorize_sheets():
     """
     Authorizes api calls to the google sheet
     :param filepath: Path to the sheets json authentication file
     :param sheet_name: Title of the sheet being accessed
     :return: A google sheet object
     """
+    import gspread
     scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/spreadsheets',
              'https://www.googleapis.com/auth/drive']
-
-    creds = ServiceAccountCredentials.from_json_keyfile_name(filepath, scope)
-
+    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    globals_ = load_json(user_globals['globals'])
+    sheet_name = globals_['sync']['syncthing']['sheets_name']
+    client_file = globals_['sync']['syncthing']['sheets_config_path']
+    creds = ServiceAccountCredentials.from_json_keyfile_name(client_file, scope)
     client = gspread.authorize(creds)
-
     sheet = client.open(sheet_name).sheet1
+
     return sheet
 
 
@@ -69,18 +73,25 @@ def find_empty_row_in_sheet(sheet):
     return count
 
 
-def get_sheets_authentication(filepath, client='lone-coconut'):
+def get_sheets_authentication():
     """
     Gets the json authentication file from amazon s3 and saves it on the local machine at the filepath
     :param client: The name of the client for the sheet
     :param filepath: The filepath where the authentication json will be saved
     :return: Returns the filepath to the local copy of the authentication file
     """
-    url = 'https://%s.s3.amazonaws.com/sync_thing/lone-coconut-syncthing-0853eb66e60e.json' % client
-    r = requests.get(url, allow_redirects=True)
-    with open(filepath, 'w+') as f:
-        f.write(r.content)
-    return filepath
+    # TODO - change this to read the ENV Variable once that's more stable/consistant.
+    USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
+    GLOBALS = load_json(USER_GLOBALS['globals'])
+    filepath = GLOBALS['sync']['syncthing']['sheets_config_path']
+    if filepath.endswith('.json'):
+        url = GLOBALS['sync']['syncthing']['sync_thing_url']
+        r = requests.get(url, allow_redirects=True)
+        with open(filepath, 'w+') as f:
+            f.write(r.content)
+        return filepath
+    else:
+        print('ERROR in sheets_config_path globals, %s does not match client.json format' % filepath)
 
 
 # if __name__ == '__main__':
