@@ -1,4 +1,4 @@
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ElemTree
 import getpass
 import os
 import subprocess
@@ -8,8 +8,7 @@ from cgl.core.utils.read_write import load_json
 
 
 def setup_server():
-    # do i have a client.json?
-    #kill_syncthing()
+    kill_syncthing()
     USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
     GLOBALS = load_json(USER_GLOBALS['globals'])
     cgl_tools_folder = GLOBALS['paths']['cgl_tools']
@@ -48,7 +47,7 @@ def accept_folders():
     kill_syncthing()
     # parse the xml
     config_path = get_config_path()
-    tree = ET.parse(config_path)
+    tree = ElemTree.parse(config_path)
     root = tree.getroot()
     folders_dict = {}
 
@@ -60,25 +59,6 @@ def accept_folders():
                     folder = get_folder_from_id(id_)
                     add_folder_to_config(id_, folder)
     launch_syncthing()
-
-
-def pull_from_studio():
-    """
-    map shared folders to the correct location on local drive
-    :return:
-    """
-    from cgl.core.config import app_config
-    folders_dict = get_syncthing_folders()
-    for folder_id in folders_dict:
-        try:
-            variable, the_rest = folder_id.split(']')
-            variable = variable.replace('[', '')
-            value = app_config()['paths'][variable]
-            local_path = '%s%s' % (value, the_rest)
-            edit_syncthing_folder(folder_id, local_path)
-            print folder_id, local_path
-        except ValueError:
-            print('Skipping %s, only handling lumbermill created folders for now' % folder_id)
 
 
 def get_folder_from_id(folder_id):
@@ -97,7 +77,7 @@ def get_syncthing_folders():
     :return: Dictionary of folder ID's mapped to folder paths
     """
     config_path = get_config_path()
-    tree = ET.parse(config_path)
+    tree = ElemTree.parse(config_path)
     root = tree.getroot()
     folders_dict = {}
 
@@ -116,7 +96,7 @@ def edit_syncthing_folder(folder_id, new_local_path):
     :return:
     """
     config_path = get_config_path()
-    tree = ET.parse(config_path)
+    tree = ElemTree.parse(config_path)
     root = tree.getroot()
 
     for child in root:
@@ -129,7 +109,7 @@ def edit_syncthing_folder(folder_id, new_local_path):
 def folder_id_exists(folder_id, folder_path='', tree=None):
     if not tree:
         config_path = get_config_path()
-        tree = ET.parse(config_path)
+        tree = ElemTree.parse(config_path)
     root = tree.getroot()
     existing_folders = []
 
@@ -202,7 +182,7 @@ def get_my_device_info():
 
     device_id = output_values[0]
     filepath = get_config_path()
-    tree = ET.parse(filepath)
+    tree = ElemTree.parse(filepath)
     root = tree.getroot()
 
     for child in root:
@@ -251,28 +231,28 @@ def add_all_devices_to_config(sheet):
     """
     device_list = get_all_device_info(sheet)
     filepath = get_config_path()
-    tree = ET.parse(filepath)
+    tree = ElemTree.parse(filepath)
     root = tree.getroot()
 
     for entry in device_list:
-        new_node = ET.SubElement(root, 'device')
+        new_node = ElemTree.SubElement(root, 'device')
         new_node.set('id', entry['id'])
         new_node.set('name', entry['name'])
         new_node.set('compression', "metadata")
         new_node.set("introducer", "false")
         new_node.set("skipIntroductionRemovals", 'false')
         new_node.set("introducedBy", "")
-        address = ET.SubElement(new_node, 'address')
+        address = ElemTree.SubElement(new_node, 'address')
         address.text = 'dynamic'
-        paused = ET.SubElement(new_node, 'paused')
+        paused = ElemTree.SubElement(new_node, 'paused')
         paused.text = "false"
-        autoAcceptFolders = ET.SubElement(new_node, 'autoAcceptFolders')
+        autoAcceptFolders = ElemTree.SubElement(new_node, 'autoAcceptFolders')
         autoAcceptFolders.text = "true"
-        maxSendKbps = ET.SubElement(new_node, 'maxSendKbps')
+        maxSendKbps = ElemTree.SubElement(new_node, 'maxSendKbps')
         maxSendKbps.text = 0
-        maxRecvKbps = ET.SubElement(new_node, 'maxRecvKbps')
+        maxRecvKbps = ElemTree.SubElement(new_node, 'maxRecvKbps')
         maxRecvKbps.text = 0
-        maxRequestKiB = ET.SubElement(new_node, 'maxRequestKiB')
+        maxRequestKiB = ElemTree.SubElement(new_node, 'maxRequestKiB')
         maxRequestKiB.text = 0
     tree.write(filepath)
 
@@ -288,10 +268,10 @@ def add_folder_to_config(folder_id, filepath):
     filepath = filepath.replace('/', '\\')
     # TODO - check to see if the folder exists
     config_path = get_config_path()
-    tree = ET.parse(config_path)
+    tree = ElemTree.parse(config_path)
     root = tree.getroot()
     if not folder_id_exists(folder_id, tree=tree):
-        new_node = ET.SubElement(root, 'folder')
+        new_node = ElemTree.SubElement(root, 'folder')
         new_node.set('id', folder_id)
         new_node.set('path', filepath)
         new_node.set('type', 'sendreceive')
@@ -309,7 +289,7 @@ def share_files_to_devices(all_device_id=[]):
     :return:
     """
     config_path = get_config_path()
-    tree = ET.parse(config_path)
+    tree = ElemTree.parse(config_path)
     root = tree.getroot()
 
     if not all_device_id:
@@ -325,7 +305,7 @@ def share_files_to_devices(all_device_id=[]):
                     shared.append(sub_element.get('id'))
             for id in all_device_id:
                 if id not in shared:
-                    new_node = ET.SubElement(child, 'device')
+                    new_node = ElemTree.SubElement(child, 'device')
                     new_node.set('id', id)
     tree.write(config_path)
 
@@ -349,13 +329,13 @@ def sync_with_server():
             device_id = sheet.cell(entry, 1).value
 
     config_path = get_config_path()
-    tree = ET.parse(config_path)
+    tree = ElemTree.parse(config_path)
     root = tree.getroot()
 
     if device_id != '':
         for child in root:
             if child.tag == 'folder' and '[' in child.get('id'):
-                new_node = ET.SubElement(child, 'device')
+                new_node = ElemTree.SubElement(child, 'device')
                 new_node.set('id', device_id)
         tree.write(config_path)
     else:

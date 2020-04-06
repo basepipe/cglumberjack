@@ -173,7 +173,6 @@ class ProjectPanel(QtWidgets.QWidget):
     def load_companies(self):
         companies_loc = '%s/*' % self.path_object.root
         companies = glob.glob(companies_loc)
-        print companies
         clean_companies = []
         for c in companies:
             if '_config' not in c:

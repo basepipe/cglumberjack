@@ -1362,7 +1362,7 @@ def replace_illegal_filename_characters(filename):
     return re.sub(r'[^A-Za-z0-9\.#]+', '_', filename)
 
 
-def get_folder_size(folder, exclude=None):
+def get_folder_size(folder):
     """
     returns size of the given folder, including all children.
     :return:
@@ -1371,11 +1371,6 @@ def get_folder_size(folder, exclude=None):
     if os.path.isdir(folder):
         for root, dirs, files in os.walk(folder):
             total_bytes += sum(os.path.getsize(os.path.join(root, name)) for name in files)
-            # print root, "consumes",
-            # print total_bytes,
-            # print "bytes in", len(files), "non-directory files"
-            # if 'CVS' in dirs:
-            #     dirs.remove('CVS')  # don't visit CVS directories
     elif os.path.isfile(folder):
         print 'this is a file numskull'
     return total_bytes

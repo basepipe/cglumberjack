@@ -4,7 +4,6 @@ import os
 from zipfile import ZipFile
 
 
-
 def unzip(zipped_file, destination, password=None):
     """
 
@@ -74,8 +73,4 @@ def load_style_sheet(style_file='stylesheet.css'):
     f = open(file_, 'r')
     data = f.read()
     data.strip('\n')
-    # path = APP_PATH.replace('\\', '/')
-    # data = data.replace('<PATH>', path)
     return data
-
-

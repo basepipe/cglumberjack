@@ -731,10 +731,8 @@ class QuickSync(QtWidgets.QDialog):
 
     def on_root_changed(self):
         self.default_root = self.root_line_edit.text()
-        print 'Changing Default Root to: %s' % self.default_root
         self.sync_cgl_tools_line_edit.setText(os.path.join(self.default_root, '_config', 'cgl_tools'))
         self.default_globals = os.path.join(self.default_root, '_config', 'globals.json')
-        print 'Changing cgl_tools dir to: %s' % self.sync_cgl_tools_line_edit.text()
 
     def on_import_line_edit_changed(self):
         import re
