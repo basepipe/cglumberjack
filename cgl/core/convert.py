@@ -60,7 +60,6 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     if not output_.is_valid_sequence():
         logging.error('%s is not a valid sequence' % output_sequence)
     fileout = output_.num_sequence
-    print fileout
     out_dir = os.path.dirname(fileout)
     out_obj = PathObject(out_dir)
     if out_obj.context == 'source':
@@ -93,14 +92,15 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
                 file_ = os.path.join(os.path.dirname(filein), each)
                 SEQ_SPLIT = "\d{3,}\.\w{2,4}$"
                 frange = re.search(SEQ_SPLIT, each)
-                num = os.path.splitext(frange.group(0))[0]
-                filename, ext_ = fileout.split('%')
-                if not ext:
-                    ext = os.path.splitext(ext_)[-1].replace('.', '')
-                file_out = '%s%s.%s' % (filename, num, ext)
-                command = '%s %s -resize %s %s' % (PATHS['magick'], file_, res, file_out)
-                process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
-                                           new_window=new_window)
+                if frange:
+                    num = os.path.splitext(frange.group(0))[0]
+                    filename, ext_ = fileout.split('%')
+                    if not ext:
+                        ext = os.path.splitext(ext_)[-1].replace('.', '')
+                    file_out = '%s%s.%s' % (filename, num, ext)
+                    command = '%s %s -resize %s %s' % (PATHS['magick'], file_, res, file_out)
+                    process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
+                                               new_window=new_window)
 
     if process_info:
         process_info['file_out'] = fileout
@@ -112,6 +112,9 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
         except ValueError:
             print('Skipping write to cgl_data: %s' % process_info)
         return process_info
+    else:
+        print('----------------------------')
+        print('process_info not defined')
 
 
 def create_prores_mov(input_sequence, output):
@@ -131,7 +134,7 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
     create a web optimized h264 mp4 from an specified input_sequence to a specified output.mov.
     This assumes an sRGB jpg sequence as input
     :param input_sequence: input sequence string, formatted with (#, %04d, *)
-    :param output: output mov string
+    :param output: output mp4 string
     :param framerate: frame rate for input sequence
     :param output_frame_rate: if None frame rate for input movie is used, if defined this frame rate is used for output movie
     :param res: resolution 1920x1080
@@ -179,6 +182,8 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
     pixel_format = 'yuv420p'
     gamma = 1
     width, height = res.split('x')
+    vcodec = "-vcodec libx264 -pix_fmt yuv420p -vf 'scale=trunc((a*oh)/2)*2:720' -g 30 -b:v 2000k -vprofile high -bf 0"
+    acodec = "-strict experimental -acodec aac -ab 160k -ac 2"
 
     filter_arg = r' -filter:v "scale=iw*min($width/iw\,$height/ih):ih*min($width/iw\,$height/ih),' \
                  r' pad=$width:$height:($width-iw*min($width/iw\,$height/ih))/2:' \
@@ -249,8 +254,8 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
     if processing_method == 'local':
         command = '%s -i %s -vf "thumbnail,scale=%s" ' \
                   '-frames:v 1 %s' % (PATHS['ffmpeg'], input_file, res, output_file)
-        process_info = cgl_execute(command, verbose=True, methodology=processing_method,
-                                   command_name=command_name, new_window=new_window,
+        process_info = cgl_execute(command, verbose=True, methodology='local',
+                                   command_name=command_name, new_window=True,
                                    WaitForJobID=dependent_job)
         process_info['file_out'] = output_file
         try:

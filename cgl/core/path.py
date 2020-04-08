@@ -382,10 +382,7 @@ class PathObject(object):
                 # TODO - probably can get rid of all the if not statements
                 self.set_hd_proxy_path()
                 self.set_preview_path()
-                if sys.platform == 'win32':
-                    p_path = os.path.splitext(self.preview_path)[0]
-                    self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
-                    self.data['thumb_path'] = self.thumb_path
+                self.set_thumb_path()
         return self.path
 
     def set_attr(self, attr=None, value=None, do_set_path=True, **kwargs):
@@ -673,6 +670,12 @@ class PathObject(object):
             self.hd_proxy_path = os.path.join(dir_, filename)
             self.data['hd_proxy_path'] = self.hd_proxy_path
 
+    def set_thumb_path(self):
+        if sys.platform == 'win32':
+            p_path = os.path.splitext(self.preview_path)[0]
+            self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
+            self.data['thumb_path'] = self.thumb_path
+
     def set_preview_path(self):
         """
         sets the .preview_path variable to a standard location
@@ -712,8 +715,10 @@ class PathObject(object):
             if sys.platform == 'win32':
                 self.preview_path = '%s/%s/%s' % (path_, '.preview', name_)
                 self.data['preview_path'] = self.preview_path
+                self.set_thumb_path()
             else:
                 self.preview_path = os.path.join(self.root, '.preview', name_)
+                self.set_thumb_path()
                 self.data['preview_path'] = self.preview_path
 
     def set_proper_filename(self):
@@ -786,7 +791,18 @@ class PathObject(object):
                 info = self.make_preview()
                 self.upload_review(job_id=info['job_id'])
                 return False
-            
+
+    def make_thumbnail(self, job_id=None, new_window=False, type_='movie'):
+        #TODO make this smart enough to know based off the self.thumb_path
+        if os.path.exists(self.preview_path):
+            if type_ == 'movie':
+                print 'Creating Thumbnail %s' % self.thumb_path
+                thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
+                                                        command_name='%s: create_movie_thumb()' % self.command_base,
+                                                        dependent_job=job_id,
+                                                        processing_method=PROCESSING_METHOD, new_window=new_window)
+                return thumb_info
+
     def make_preview(self, job_id=None, new_window=False):
         """
         Creates web optimized preview of PathObject.  For movies and image sequences it's a 1920x1080 quicktime h264,
@@ -804,6 +820,7 @@ class PathObject(object):
                                               dependent_job=proxy_info['job_id'], processing_method=PROCESSING_METHOD,
                                               new_window=new_window)
             print 'mov info id %s' % mov_info['job_id']
+            print 'Creating Thumbnail %s' % self.thumb_path
             thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
                                                     command_name='%s: create_movie_thumb()' % self.command_base,
                                                     dependent_job=mov_info['job_id'],
@@ -840,6 +857,7 @@ class PathObject(object):
         filename = '%s.%s' % (name_, ext)
         dir_ = os.path.dirname(self.path_root.replace(self.resolution, '%sx%s' % (width, height)))
         output_sequence = os.path.join(dir_, filename)
+        self.hd_proxy_path = output_sequence
         proc_meth = PROCESSING_METHOD
         if job_id:
             proc_meth = 'smedge'
@@ -937,9 +955,6 @@ class CreateProductionData(object):
         self.test = test
         self.path_object = PathObject(path_object)
         self.path_object.set_path()
-        print self.path_object.path_root
-        print self.path_object.preview_path
-        print self.path_object.thumb_path
         self.do_scope = do_scope
         if file_system:
             self.create_folders()

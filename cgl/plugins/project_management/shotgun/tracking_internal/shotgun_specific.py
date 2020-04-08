@@ -28,9 +28,9 @@ class ShotgunQuery(object):
     @staticmethod
     def base_shotgun_query(type_, *args, **kwargs):
         config = app_config()['project_management']['shotgun']['api']
-        connection = sg_api.Shotgun(base_url=config['server_url'],
-                                    script_name=config['api_script'],
-                                    api_key=config['api_key'])
+        connection = sg_api.Shotgun(base_url=str(config['server_url']),
+                                    script_name=str(config['api_script']),
+                                    api_key=str(config['api_key']))
         return getattr(connection, type_)(*args, **kwargs)
 
     @classmethod

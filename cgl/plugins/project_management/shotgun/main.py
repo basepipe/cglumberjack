@@ -99,6 +99,7 @@ class ProjectManagementData(object):
                 self.set_status()
 
     def create_project_management_data(self):
+        print 'im in shotgun land'
         self.project_data = self.entity_exists('project')
         if not self.project_data:
             print 'creating project'
