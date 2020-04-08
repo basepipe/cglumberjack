@@ -799,16 +799,20 @@ class PathObject(object):
             proxy_info = self.make_proxy(resolution=review_res, ext='jpg', job_id=job_id)
             print proxy_info
             print 'proxy id %s' % proxy_info['job_id']
-            mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
-                                              command_name='%s: create_web_mov()' % self.command_base,
-                                              dependent_job=proxy_info['job_id'], processing_method=PROCESSING_METHOD,
-                                              new_window=new_window)
-            print 'mov info id %s' % mov_info['job_id']
-            thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
-                                                    command_name='%s: create_movie_thumb()' % self.command_base,
-                                                    dependent_job=mov_info['job_id'],
-                                                    processing_method=PROCESSING_METHOD, new_window=new_window)
-            return thumb_info
+            if self.hd_proxy_path:
+                mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
+                                                  command_name='%s: create_web_mov()' % self.command_base,
+                                                  dependent_job=proxy_info['job_id'], processing_method=PROCESSING_METHOD,
+                                                  new_window=new_window)
+                print 'mov info id %s' % mov_info['job_id']
+                thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
+                                                        command_name='%s: create_movie_thumb()' % self.command_base,
+                                                        dependent_job=mov_info['job_id'],
+                                                        processing_method=PROCESSING_METHOD, new_window=new_window)
+                return thumb_info
+            else:
+                logging.error('No hd_proxy_path found on path object for %s' % self.path_root)
+                return False
         elif self.file_type == 'movie':
             print 'making movie preview not supported'
         elif self.file_type == 'image':
@@ -840,6 +844,7 @@ class PathObject(object):
         filename = '%s.%s' % (name_, ext)
         dir_ = os.path.dirname(self.path_root.replace(self.resolution, '%sx%s' % (width, height)))
         output_sequence = os.path.join(dir_, filename)
+        self.hd_proxy_path = output_sequence
         proc_meth = PROCESSING_METHOD
         if job_id:
             proc_meth = 'smedge'
