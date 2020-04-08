@@ -791,7 +791,18 @@ class PathObject(object):
                 info = self.make_preview()
                 self.upload_review(job_id=info['job_id'])
                 return False
-            
+
+    def make_thumbnail(self, job_id=None, new_window=False, type_='movie'):
+        #TODO make this smart enough to know based off the self.thumb_path
+        if os.path.exists(self.preview_path):
+            if type_ == 'movie':
+                print 'Creating Thumbnail %s' % self.thumb_path
+                thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
+                                                        command_name='%s: create_movie_thumb()' % self.command_base,
+                                                        dependent_job=job_id,
+                                                        processing_method=PROCESSING_METHOD, new_window=new_window)
+                return thumb_info
+
     def make_preview(self, job_id=None, new_window=False):
         """
         Creates web optimized preview of PathObject.  For movies and image sequences it's a 1920x1080 quicktime h264,
@@ -809,6 +820,7 @@ class PathObject(object):
                                               dependent_job=proxy_info['job_id'], processing_method=PROCESSING_METHOD,
                                               new_window=new_window)
             print 'mov info id %s' % mov_info['job_id']
+            print 'Creating Thumbnail %s' % self.thumb_path
             thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
                                                     command_name='%s: create_movie_thumb()' % self.command_base,
                                                     dependent_job=mov_info['job_id'],

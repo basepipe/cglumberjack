@@ -92,14 +92,15 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
                 file_ = os.path.join(os.path.dirname(filein), each)
                 SEQ_SPLIT = "\d{3,}\.\w{2,4}$"
                 frange = re.search(SEQ_SPLIT, each)
-                num = os.path.splitext(frange.group(0))[0]
-                filename, ext_ = fileout.split('%')
-                if not ext:
-                    ext = os.path.splitext(ext_)[-1].replace('.', '')
-                file_out = '%s%s.%s' % (filename, num, ext)
-                command = '%s %s -resize %s %s' % (PATHS['magick'], file_, res, file_out)
-                process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
-                                           new_window=new_window)
+                if frange:
+                    num = os.path.splitext(frange.group(0))[0]
+                    filename, ext_ = fileout.split('%')
+                    if not ext:
+                        ext = os.path.splitext(ext_)[-1].replace('.', '')
+                    file_out = '%s%s.%s' % (filename, num, ext)
+                    command = '%s %s -resize %s %s' % (PATHS['magick'], file_, res, file_out)
+                    process_info = cgl_execute(command, methodology='local', command_name=command_name, verbose=True,
+                                               new_window=new_window)
 
     if process_info:
         process_info['file_out'] = fileout
@@ -256,8 +257,8 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
     if processing_method == 'local':
         command = '%s -i %s -vf "thumbnail,scale=%s" ' \
                   '-frames:v 1 %s' % (PATHS['ffmpeg'], input_file, res, output_file)
-        process_info = cgl_execute(command, verbose=True, methodology=processing_method,
-                                   command_name=command_name, new_window=new_window,
+        process_info = cgl_execute(command, verbose=True, methodology='local',
+                                   command_name=command_name, new_window=True,
                                    WaitForJobID=dependent_job)
         process_info['file_out'] = output_file
         try:
