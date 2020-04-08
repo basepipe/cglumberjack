@@ -99,12 +99,12 @@ class SyncMaster(LJDialog):
                 elif level == 1:
                     menu.addAction(self.tr("Edit object/container"))
                 elif level == 2:
-                    action_1 = QtWidgets.QAction("Show in Folder", self)
-                    action_ = QtWidgets.QAction("Sync", self)
-                    menu.addAction(action_1)
-                    menu.addAction(action_)
-                    action_1.triggered.connect(self.show_in_folder)
-                    action_.triggered.connect(self.sync_clicked)
+                    show_action = QtWidgets.QAction("Show in Folder", self)
+                    sync_action = QtWidgets.QAction("Sync", self)
+                    menu.addAction(show_action)
+                    menu.addAction(sync_action)
+                    show_action.triggered.connect(self.show_in_folder)
+                    sync_action.triggered.connect(self.sync_clicked)
                     menu.exec_(self.file_tree.viewport().mapToGlobal(position))
 
     def show_in_folder(self):
@@ -112,9 +112,9 @@ class SyncMaster(LJDialog):
         print 'Total Folder Size:', get_folder_size(self.current_selection)
 
     def sync_clicked(self):
-        print self.current_selection
         publishes = find_latest_publish_objects(self.current_selection, source=self.source_check_box.isChecked(),
                                                 render=self.render_check_box.isChecked())
+        print publishes, 11111111
         if publishes:
             st.kill_syncthing()
             for p in publishes:

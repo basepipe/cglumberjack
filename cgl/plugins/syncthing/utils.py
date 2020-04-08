@@ -43,6 +43,30 @@ def setup_workstation():
     launch_syncthing()
 
 
+def fix_folder_paths():
+    kill_syncthing()
+    config_path = get_config_path()
+    print config_path
+    tree = ElemTree.parse(config_path)
+    print tree
+    root = tree.getroot()
+    print('Fixing Folder Paths')
+    for child in root:
+        if child.tag == 'folder':
+            id_ = child.get('id')
+            cgl_folder = get_folder_from_id(id_)
+            xml_folder = child.get('path')
+            if xml_folder != cgl_folder:
+                child.set('path', cgl_folder)
+                print('Changing path to %s' % cgl_folder)
+            else:
+                print('Folder Passes')
+    print '------------------------------'
+    print tree
+    tree.write(config_path)
+    launch_syncthing()
+
+
 def accept_folders():
     kill_syncthing()
     # parse the xml
@@ -64,11 +88,14 @@ def accept_folders():
 def get_folder_from_id(folder_id):
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     globals_ = load_json(user_globals['globals'])
-    variable, the_rest = folder_id.split(']')
-    variable = variable.replace('[', '')
-    value = globals_['paths'][variable]
-    local_path = '%s%s' % (value, the_rest)
-    return local_path
+    try:
+        variable, the_rest = folder_id.split(']')
+        variable = variable.replace('[', '')
+        value = globals_['paths'][variable]
+        local_path = '%s%s' % (value, the_rest)
+        return local_path
+    except ValueError:
+        print('Skipping %s, it is not a lumbermill share' % folder_id)
 
 
 def get_syncthing_folders():
@@ -375,4 +402,9 @@ def update_machines():
 
 
 if __name__ == "__main__":
+    # wipe_globals()
+    # setup_workstation()
+    ## accept_folders()
+    #print get_config_path()
+
     pass

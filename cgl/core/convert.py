@@ -60,7 +60,6 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     if not output_.is_valid_sequence():
         logging.error('%s is not a valid sequence' % output_sequence)
     fileout = output_.num_sequence
-    print fileout
     out_dir = os.path.dirname(fileout)
     out_obj = PathObject(out_dir)
     if out_obj.context == 'source':
@@ -112,6 +111,9 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
         except ValueError:
             print('Skipping write to cgl_data: %s' % process_info)
         return process_info
+    else:
+        print('----------------------------')
+        print('process_info not defined')
 
 
 def create_prores_mov(input_sequence, output):

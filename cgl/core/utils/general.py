@@ -15,9 +15,14 @@ CONFIG = app_config()
 
 def get_user_globals():
     # do they have an env variable
-    user_globals_path = os.getenv('cgl_user_globals')
-    if os.path.exists(user_globals_path):
-        return load_json(user_globals_path)
+    try:
+        user_globals_path = os.getenv('cgl_user_globals')
+        print user_globals_path
+        if os.path.exists(user_globals_path):
+            return load_json(user_globals_path)
+    except TypeError:
+        print('No cgl_user_globals ENV variable found. Assuming location.')
+        return load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
 
 
 def get_globals():
