@@ -136,12 +136,13 @@ class NukePathObject(PathObject):
                 if s.Class() == 'Write':
                     node_name = s.name()
                     file_name = s['file'].value()
+                    print file_name
                     dir_ = os.path.dirname(file_name)
                     CreateProductionData(dir_, project_management='lumbermill')
                     sequence = Sequence(file_name)
                     if sequence.is_valid_sequence():
                         file_name = sequence.hash_sequence
-                    if processing_method == 'gui':
+                    if processing_method == 'local':
                         from gui import render_node
                         render_node(s)
                         process_info['file_out'] = file_name

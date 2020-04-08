@@ -840,6 +840,7 @@ class PathObject(object):
         filename = '%s.%s' % (name_, ext)
         dir_ = os.path.dirname(self.path_root.replace(self.resolution, '%sx%s' % (width, height)))
         output_sequence = os.path.join(dir_, filename)
+        self.hd_proxy_path = output_sequence
         proc_meth = PROCESSING_METHOD
         if job_id:
             proc_meth = 'smedge'
