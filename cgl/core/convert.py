@@ -191,9 +191,6 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
                                                                                                  height)
 
     if file_type == 'sequence':
-        ffmpeg_cmd_new = "%s -start_number %s -r %s -i %s %s %s -f mp4 %s" % (PATHS['ffmpeg'], start_frame, frame_rate,
-                                                                          filein, acodec,
-                                                                          vcodec, fileout)
         ffmpeg_cmd = r'%s -start_number %s -framerate %s -gamma %s -i %s -s:v %s -b:v 50M -c:v %s -profile:v %s' \
                      r' -crf %s -pix_fmt %s -r %s %s %s' % (PATHS['ffmpeg'],
                                                             start_frame, framerate, gamma, filein, res, encoder,

@@ -955,9 +955,6 @@ class CreateProductionData(object):
         self.test = test
         self.path_object = PathObject(path_object)
         self.path_object.set_path()
-        print self.path_object.path_root
-        print self.path_object.preview_path
-        print self.path_object.thumb_path
         self.do_scope = do_scope
         if file_system:
             self.create_folders()
@@ -1117,21 +1114,12 @@ class CreateProductionData(object):
     def create_project_management_data(self, path_object, project_management, user_login=None, status=None):
 
         if project_management != 'lumbermill':
-            print path_object
-            print path_object.filename
-            print path_object.path_root
             if path_object.filename or self.force_pm_creation:
                 session = None
                 if self.session:
                     session = self.session
                 module = "cgl.plugins.project_management.%s.main" % project_management
                 # noinspection PyTypeChecker
-                print '1111111111111'
-                print path_object
-                print path_object.filename
-                print session
-                print user_login
-                print status
                 loaded_module = __import__(module, globals(), locals(), 'main', -1)
                 loaded_module.ProjectManagementData(path_object,
                                                     session=session,
