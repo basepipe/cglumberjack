@@ -5,7 +5,7 @@ from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import current_user
 from cgl.ui.widgets.widgets import AdvComboBox
 from cgl.core.path import PathObject, show_in_folder, get_folder_size, find_latest_publish_objects
-from cgl.core.utils.general import get_globals
+from cgl.core.config import get_globals
 import cgl.plugins.syncthing.utils as st
 
 

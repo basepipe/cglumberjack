@@ -179,6 +179,7 @@ class Designer(LJDialog):
         self.menus.setCurrentIndex(index)
 
     def on_save_clicked(self):
+        print 'saving menus 182'
         self.save_menus()
 
     def load_menus(self):
@@ -223,31 +224,48 @@ class Designer(LJDialog):
             menu_dict[menu_name] = {}
             menu_dict[menu_name]['order'] = mi+1
             for bi in range(menu.buttons_tab_widget.count()):
-                button_name = menu.buttons_tab_widget.tabText(bi)
+
                 button_widget = menu.buttons_tab_widget.widget(bi)
+                if button_widget.name_line_edit.text():
+                    button_name = button_widget.name_line_edit.text()
+                else:
+                    split = button_widget.command_line_edit.text().split()
+                    print 'setting name to module name: %s' % split[-1].split('.run()')[0]
+                    button_name = split[-1].split('.run()')[0]
                 if self.type == 'preflights':
                     menu_dict[menu_name][button_name] = {
                         'module': button_widget.command_line_edit.text(),
                         'label': button_widget.label_line_edit.text(),
                         'order': bi + 1,
-                        'required': button_widget.required_line_edit.text()
+                        'required': button_widget.required_line_edit.text(),
+                        'name': button_name
                     }
                 elif self.type == 'shelves':
+                    if button_widget.icon_path_line_edit.text():
+                        icon_text = button_widget.icon_path_line_edit.text()
+                    else:
+                        icon_text = ""
                     menu_dict[menu_name][button_name] = {
-                        'module': button_widget.command_line_edit.text(),
-                        'label': button_widget.label_line_edit.text(),
-                        'order': bi + 1,
-                        'icon': button_widget.icon_path_line_edit.text()
-                    }
+                                                         'module': button_widget.command_line_edit.text(),
+                                                         'label': button_widget.label_line_edit.text(),
+                                                         'order': bi + 1,
+                                                         'icon': icon_text,
+                                                         'name': button_name
+                                                        }
+                    print '\t', button_name
+                    print menu_dict[menu_name][button_name]
                 else:
                     menu_dict[menu_name][button_name] = {
                                                          'module': button_widget.command_line_edit.text(),
                                                          'label': button_widget.label_line_edit.text(),
-                                                         'order': bi+1
+                                                         'order': bi+1,
+                                                         'name': button_name
                                                          }
 
                 self.save_code(menu_name, button_widget)
         json_object = {self.software: menu_dict}
+        print 'saving json', self.menu_path
+        print json_object
         self.save_json(self.menu_path, json_object)
 
     def create_empty_menu(self):
@@ -302,6 +320,7 @@ class Designer(LJDialog):
         return data
 
     def closeEvent(self, event):
+        #TODO - i'd like to save this only if it's actually got problems.
         if event:
             self.save_menus()
 
