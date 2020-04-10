@@ -54,7 +54,7 @@ class CGLMenuButton(QtWidgets.QWidget):
     """
     Represents the "Button" within the parent "Menu".
     """
-    save_clicked = QtCore.Signal()
+    save_all_signal = QtCore.Signal()
 
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path='',
                  menu_type='preflights'):
@@ -87,6 +87,7 @@ class CGLMenuButton(QtWidgets.QWidget):
         icon_button = QtWidgets.QToolButton()
         icon_button.setIcon(QtGui.QIcon(os.path.join(icon_path(), 'folder24px.png')))
         self.icon_label = QtWidgets.QLabel('icon')
+        name_label = QtWidgets.QLabel('name')
 
         # line edits
         self.command_line_edit = QtWidgets.QLineEdit()
@@ -96,10 +97,14 @@ class CGLMenuButton(QtWidgets.QWidget):
         self.icon_path_line_edit = QtWidgets.QLineEdit()
         # self.required_line_edit.setEnabled(False)
         self.label_line_edit = QtWidgets.QLineEdit()
+        self.name_line_edit = QtWidgets.QLineEdit()
         self.attrs_dict = {'module': self.command_line_edit,
                            'required': self.required_line_edit,
                            'label': self.label_line_edit,
+                           'name': self.name_line_edit,
                            'icon': self.icon_path_line_edit}
+
+
 
         # tool buttons
         delete_button = QtWidgets.QPushButton('Delete')
@@ -125,6 +130,12 @@ class CGLMenuButton(QtWidgets.QWidget):
         grid_layout.addWidget(self.icon_label, 3, 0)
         grid_layout.addWidget(self.icon_path_line_edit, 3, 1)
         grid_layout.addWidget(icon_button, 3, 2)
+        grid_layout.addWidget(name_label, 4, 0)
+        grid_layout.addWidget(self.name_line_edit, 4, 1)
+
+        name_label.hide()
+        self.name_line_edit.hide()
+
         if self.menu_type != 'shelves':
             self.icon_label.hide()
             self.icon_path_line_edit.hide()
@@ -165,10 +176,18 @@ class CGLMenuButton(QtWidgets.QWidget):
                 os.makedirs(dirname)
             cgl_copy(from_path, to_path)
         self.icon_path_line_edit.setText(to_path)
-        # copy selected icon to icon folder path
+        icon = QtGui.QIcon(to_path)
+        tab_ = self.parent().parent()
+        index_ = tab_.currentIndex()
+        # print index_
+        tab_.setTabIcon(index_, icon)
+        # # display the icon?
+        self.on_save_clicked()
+
 
     def on_save_clicked(self):
-        self.save_clicked.emit()
+        print 'save_clicked 172, emit.'
+        self.save_all_signal.emit()
 
     def on_open_clicked(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), self.menu_type, self.preflight_name,
@@ -185,7 +204,13 @@ class CGLMenuButton(QtWidgets.QWidget):
         """
         for attr in self.attrs:
             if attr in self.attrs_dict:
-                self.attrs_dict[attr].setText(str(self.attrs[attr]))
+                attr_value = str(self.attrs[attr])
+                if attr == 'name':
+                    if not str(self.attrs[attr]):
+                        split = self.attrs['module'].split()
+                        print 'setting name to module name: %s' % split[-1].split('.run()')[0]
+                        attr_value = split[-1].split('.run()')[0]
+                self.attrs_dict[attr].setText(attr_value)
         # load the python file into the text edit
         code_text = self.load_code_text()
         if code_text:
@@ -358,19 +383,22 @@ class CGLMenu(QtWidgets.QWidget):
             module = self.default_preflight_text(preflight_name)
             if self.menu_type == 'preflights':
                 attrs = {'label': preflight_name,
+                         'name': preflight_name,
                          'required': 'True',
                          'module': module}
             elif self.menu_type == 'menus' or self.menu_type == 'context-menus':
                 attrs = {'label': preflight_name,
+                         'name': preflight_name,
                          'module': command}
             elif self.menu_type == 'shelves':
                 attrs = {'label': preflight_name,
                          'module': command,
+                         'name': preflight_name,
                          'icon': ''}
             self.new_button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
                                                    preflight_step_name=dialog.line_edit.text(),
                                                    attrs=attrs, preflight_path=self.menu_path, menu_type=self.menu_type)
-            self.new_button_widget.save_clicked.connect(self.on_save_clicked)
+            self.new_button_widget.save_all_signal.connect(self.on_save_clicked)
             if 'icon' in attrs.keys():
                 icon = QtGui.QIcon(attrs['icon'])
                 index = self.buttons_tab_widget.addTab(self.new_button_widget, icon, preflight_name)
@@ -379,6 +407,7 @@ class CGLMenu(QtWidgets.QWidget):
             self.buttons_tab_widget.setCurrentIndex(index)
 
     def on_save_clicked(self):
+        print 'save_clicked emit, 1'
         self.save_clicked.emit()
 
     def get_command_text(self, button_name, menu_type):
@@ -402,11 +431,12 @@ class CGLMenu(QtWidgets.QWidget):
                         if 'icon' in self.menu[button].keys():
                             if self.menu[button]['icon']:
                                 icon = QtGui.QIcon(self.menu[button]['icon'])
-                                self.buttons_tab_widget.addTab(button_widget, icon, '')
+                                self.buttons_tab_widget.addTab(button_widget, icon, self.menu[button]['name'])
                             else:
                                 self.buttons_tab_widget.addTab(button_widget, button)
                         else:
                             self.buttons_tab_widget.addTab(button_widget, button)
+
 
 
 
