@@ -12,15 +12,10 @@ class Configuration(object):
 
     """
     LOADED_CONFIG = {}
-    user_dir = os.path.expanduser("~")
-    if 'Documents' in user_dir:
-        cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack')
-    else:
-        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
-    user_config = os.path.join(cg_lumberjack_dir, 'user_globals.json')
 
     def __init__(self, company=None, project=None, proj_management=None):
-        self.user_config = os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json')
+        self.user_config = os.path.join(os.path.expanduser('~'), 'Documents', 'cglumberjack', 'user_globals.json')
+        print self.user_config
         if not os.path.exists(self.user_config):
             logging.info('User Config Not Found: %s' % self.user_config)
             return
@@ -29,6 +24,7 @@ class Configuration(object):
             logging.info('No Globals Found at %s' % self.globals)
             return
         self.globals = load_json(user_globals['globals'])
+        print self.globals
         Configuration.LOADED_CONFIG['app'] = self.globals
 
 
@@ -82,10 +78,8 @@ class Configuration(object):
 class UserConfig(object):
 
     def __init__(self, user_email=None, user_name=None, current_path=None, my_tasks=None):
-        try:
-            self.user_config_path = os.path.join('C:', os.environ['HOMEPATH'], 'Documents', 'cglumberjack', 'user_globals.json')
-        except KeyError:
-            print 'No user Globals found in :\n %s' % app_config()['paths']
+        # TODO - try the ENV VARS before this.
+        self.user_config_path = user_config()
         print self.user_config_path
         if os.path.exists(self.user_config_path):
             self.d = self._load_json(self.user_config_path)
@@ -153,8 +147,7 @@ def app_config(company=None, proj_management=None):
     Returns: dict
 
     """
-
-    return Configuration(company=company, proj_management=proj_management).LOADED_CONFIG['app']
+    return get_globals()
 
 
 def user_config():
@@ -162,7 +155,33 @@ def user_config():
     get the location of the user_config()
     :return: string of path
     """
-    return Configuration().user_config
+    # do they have an env variable
+    try:
+        user_globals_path = os.getenv('cgl_user_globals')
+        if os.path.exists(user_globals_path):
+            return user_globals_path
+    except TypeError:
+        print('No cgl_user_globals ENV variable found. Assuming location.')
+        return os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack', 'user_globals.json')
+
+
+def get_user_globals():
+    # do they have an env variable
+    try:
+        user_globals_path = os.getenv('cgl_user_globals')
+        if os.path.exists(user_globals_path):
+            return load_json(user_globals_path)
+    except TypeError:
+        print('No cgl_user_globals ENV variable found. Assuming location.')
+        return load_json(os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack', 'user_globals.json'))
+
+
+def get_globals():
+    globals_path = get_user_globals()['globals']
+    if globals_path:
+        return load_json(globals_path)
+    else:
+        print('No user_globals found at %s' % user_config())
 
 
 
