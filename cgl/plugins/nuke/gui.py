@@ -35,7 +35,7 @@ class NukeBrowserWidget(CGLumberjackWidget):
         print 'open nuke'
 
     def import_clicked(self):
-        from cgl_nuke import import_media, import_script, import_directory, import_geo
+        from cgl_nuke import import_media, import_script, import_directory, import_geo, connect_z_nodes
         z_index = 0
         for selection in self.source_selection:
             base_, ext = os.path.splitext(selection)
@@ -52,6 +52,7 @@ class NukeBrowserWidget(CGLumberjackWidget):
                 print 'importing media'
                 import_media(selection)
             z_index = z_index-1
+        # connect_z_nodes()
         self.parent().parent().accept()
 
 

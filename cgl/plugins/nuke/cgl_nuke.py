@@ -439,8 +439,9 @@ def setup_z_node(z_node):
         sc.setInput(0, beauty)
     sc.setInput(1, z_node)
     nodes.append(sc)
-
+    layer_name = z_object.render_pass.replace('_LAYER', '')
     z_defocus = nuke.createNode('ZDefocus2')
+    z_defocus['name'].setValue('%s ZDefocus' % layer_name)
     z_defocus['z_channel'].setValue('depth.Z')
     z_defocus['math'].setValue('depth')
     z_defocus['output'].setValue('focal_plane_setup')
@@ -451,6 +452,22 @@ def setup_z_node(z_node):
     mult_node.setInput(0, z_node)
 
     return nodes
+
+
+def connect_z_nodes(connect_from_node='ANIM ZDefocus', connect_to_node='ENV ZDefocus'):
+    """
+    this is a convenience method for connecting z depth nodes from different render layers to each other on an
+    animation import for depth of field purposes.
+    :param connect_from_node:
+    :param connect_to_node:
+    :return:
+    """
+    to_node = find_node(connect_to_node)
+    from_node = find_node(connect_from_node)
+    if to_node and from_node:
+        # Need to step up my game on this - and connect it as a link.
+        to_node['center'].setExpression(str(from_node['center'].value()))
+        to_node['output'].setValue('result')
 
 
 def create_scene_write_node():
