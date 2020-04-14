@@ -1353,7 +1353,20 @@ def font_path():
 
 
 def start(filepath):
-    cmd = "cmd /c start "
+    print 1, filepath
+    if filepath.endswith('.nk'):
+        from cgl.core.utils.general import current_user
+        if current_user() == 'tmikota':
+            path_object = PathObject(filepath)
+            print path_object.company, path_object.project
+            if path_object.company == 'VFX':
+                cmd = r'%s --nukex ' % CONFIG['paths']['nuke']
+                command = (cmd + filepath)
+                print command
+                cgl_execute(command, methodology='local')
+                return
+    else:
+        cmd = "cmd /c start "
     if sys.platform == "darwin":
         cmd = "open "
     elif sys.platform == "linux2":
