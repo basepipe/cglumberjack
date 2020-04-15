@@ -66,5 +66,6 @@ def mark_dev_as_onboarded(github_username):
 
 
 if __name__ == '__main__':
+    pass
     # mark_dev_as_onboarded('kyul')
 
