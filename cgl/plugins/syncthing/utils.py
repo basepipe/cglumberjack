@@ -251,12 +251,29 @@ def get_all_device_info(sheet):
     return device_list
 
 
-def add_all_devices_to_config(sheet):
+def add_device_to_config(device_id, name):
+    """
+    Add Specific Device to the Config
+    :param device_id:
+    :param name:
+    :return:
+    """
+    device_list = [{'id': device_id,
+                    'name': name}]
+    add_all_devices_to_config(sheet=None, device_list=device_list)
+
+
+def add_all_devices_to_config(sheet, device_list=False):
     """
     Add a new device to be synched with in syncthing
     :return:
     """
-    device_list = get_all_device_info(sheet)
+    if not device_list:
+        if not sheet:
+            print('Please Provide a Google Sheet to the function')
+            return
+        device_list = get_all_device_info(sheet)
+
     filepath = get_config_path()
     tree = ElemTree.parse(filepath)
     root = tree.getroot()
