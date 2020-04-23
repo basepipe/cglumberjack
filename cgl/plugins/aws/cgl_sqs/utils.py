@@ -1,5 +1,7 @@
 import os
 import boto3
+import click
+import time
 
 ACCESS_KEY = os.environ['AWS_ACCESS_KEY']
 SECRET_KEY = os.environ['AWS_SECRET_KEY']
@@ -49,7 +51,42 @@ def receive_messages(queue_url='https://sqs.us-east-1.amazonaws.com/044899505732
         AttributeNames=[
             'SentTimestamp'
         ],
-        MaxNumberOfMessages=1,
+        MaxNumberOfMessages=10,
+        MessageAttributeNames=[
+            'All'
+        ],
+        VisibilityTimeout=0,
+        WaitTimeSeconds=0
+    )
+    print '-->>: Recieved %s new events' % len(response['Messages'])
+    if 'Messages' in response.keys():
+        messages = response['Messages']
+        return messages, sqs, queue_url
+    else:
+        return None, None, None
+
+
+def process_messages(max_messages=1,
+                     queue_url='https://sqs.us-east-1.amazonaws.com/044899505732/CGL_SYNC',
+                     test=False, force_delete=False):
+    """
+
+    :param max_messages:
+    :param queue_url:
+    :param test:
+    :param force_delete:
+    :return:
+    """
+    sqs = boto3.client('sqs', aws_access_key_id=ACCESS_KEY,
+                       aws_secret_access_key=SECRET_KEY,
+                       region_name=REGION_NAME)
+
+    response = sqs.receive_message(
+        QueueUrl=queue_url,
+        AttributeNames=[
+            'SentTimestamp'
+        ],
+        MaxNumberOfMessages=max_messages,
         MessageAttributeNames=[
             'All'
         ],
@@ -57,76 +94,63 @@ def receive_messages(queue_url='https://sqs.us-east-1.amazonaws.com/044899505732
         WaitTimeSeconds=0
     )
     if 'Messages' in response.keys():
-        print 'yup'
         messages = response['Messages']
-        return messages, sqs, queue_url
-    else:
-        return None, None, None
 
-
-def delete_message(message, sqs=None, queue_url='https://sqs.us-east-1.amazonaws.com/044899505732/CGL_SYNC'):
-    if not sqs:
-        sqs = boto3.client('sqs', aws_access_key_id=ACCESS_KEY,
-                           aws_secret_access_key=SECRET_KEY,
-                           region_name=REGION_NAME)
-    receipt_handle = message['ReceiptHandle']
-    sqs.delete_message(
-        QueueUrl=queue_url,
-        ReceiptHandle=receipt_handle
-    )
-
-
-def process_messages(messages, sqs, queue_url, test=False, delete=False):
-    """
-    Example of how to
-    :param messages:
-    :return:
-    """
-    for message in messages:
-        print 1
-        if 'message_type' in message['MessageAttributes'].keys():
-            if message['MessageAttributes']['message_type']['StringValue'] == 'Machine Added':
-                print 'Found Machine Added Message'
-                success = add_machine_to_syncthing(message['MessageAttributes'], test=test)
-            elif message['MessageAttributes']['message_type']['StringValue'] == 'Folders Shared':
-                print 'Found Folders Shared Message'
-                success = accept_folders_from_syncthing(message['MessageAttributes'], test=test)
+        for i, message in enumerate(messages):
+            do_delete = False
+            receipt_handle = message['ReceiptHandle']
+            if 'message_type' in message['MessageAttributes'].keys():
+                if message['MessageAttributes']['message_type']['StringValue'] == 'Machine Added':
+                    print 'CGL Event Found: "Machine Added"'
+                    do_delete = add_machine_to_syncthing(message['MessageAttributes'], test=test)
+                elif message['MessageAttributes']['message_type']['StringValue'] == 'Folders Shared':
+                    print 'CGL Event Found: "Folders Shared"'
+                    do_delete = accept_folders_from_syncthing(message['MessageAttributes'], test=test)
+                else:
+                    print 'Unexpected Event: %s' % message['MessageAttributes']['message_type']['StringValue']
+            if do_delete or force_delete:
+                print '\t -->> processing complete, deleting message'
+                sqs.delete_message(
+                    QueueUrl=queue_url,
+                    ReceiptHandle=receipt_handle
+                )
             else:
-                print 'Found Unexpected message %s' % message['MessageAttributes']['message_type']['StringValue']
-        if delete:
-            print 'processing complete, deleting message'
-            delete_message(message, sqs, queue_url)
+                print '\t -->> message not processed, skipping delete'
+    else:
+        print 'CGL Events: No Events To Process'
 
 
 def add_machine_to_syncthing(message_attrs, test=True):
-    for k in message_attrs:
-        print k, message_attrs[k]['StringValue']
     try:
         device_id = message_attrs['device_id']['StringValue']
         name = message_attrs['device_name']['StringValue']
-        print 'Adding device %s:%s to syncthing' % (device_id, name)
+        print '\t -->> Adding device %s:%s to syncthing' % (device_id, name)
         if not test:
-            import plugins.syncthing.utils as st_utils
-            st_utils.kill_syncthing()
-            st_utils.add_device_to_config(device_id=device_id, name=name)
-            st_utils.launch_syncthing()
-        return True
+            import cgl.plugins.syncthing.utils as st_utils
+            try:
+                st_utils.kill_syncthing()
+                st_utils.add_device_to_config(device_id=device_id, name=name)
+                st_utils.launch_syncthing()
+                return True
+            except:
+                print('\t -->> Failed Adding Machine to Syncthing')
+                return False
     except KeyError:
-        print 'Did not find expected key in messageAttrs %s, skipping add machine to syncthing' % message_attrs
+        print '\t -->> Did not find expected key in messageAttrs %s, skipping add machine to syncthing' % message_attrs
         return False
 
 
 def accept_folders_from_syncthing(message_attrs, test=True):
-    import plugins.syncthing.utils as st_utils
+    import cgl.plugins.syncthing.utils as st_utils
     try:
         device_dict = st_utils.get_my_device_info()
     except:
-        print 'No Device ID Found, cannot accept folders.'
+        print '\t -->> No Device ID Found, cannot accept folders.'
         return
     local_device_id = device_dict['id']
     device_id = message_attrs['device_id']['StringValue']
     if local_device_id == device_id or device_id == 'all':
-        print 'Found New Folders for %s' % device_dict['name']
+        print '\t -->> Found New Folders for %s' % device_dict['name']
         if not test:
             st_utils.accept_folders()  # this has kill and launch syncthing built in.
         return True
@@ -180,21 +204,20 @@ def machine_added_message(device_id, device_name, message, **kwargs):
                       message=message, **kwargs)
 
 
-if __name__ == "__main__":
-    # print 'adding new machine to queue'
-    # folders_shared_message('23515616', 'bob_machine', 'adding folders for bob')
+@click.command()
+@click.option('--seconds', '-s', default=60.0,
+              help='Input the time between running designated lumber watch scripts')
+@click.option('--delete', '-d', default=False,
+              help='Forces Deletion of messages no matter what.  Useful in testing.')
+def main(seconds, delete):
+    start_time = time.time()
+    while True:
+        process_messages(force_delete=delete)
+        time.sleep(seconds - ((time.time() - start_time) % seconds))
 
-    # machine_added_message('1515262', 'machine_name', 'hey sucka, you added a machine',
-    #                       username='tmikota',
-    #                       ftrack_user='tmikota@gmail.com',
-    #                       first='Tom',
-    #                       last='Mikota',
-    #                       phone='850-841-0151')
-    messages, sqs, queue_url = receive_messages()
-    if messages:
-        process_messages(messages, sqs, queue_url, delete=False)
-    else:
-        print 'No Messages to Process'
+
+if __name__ == "__main__":
+    main()
 
 
 

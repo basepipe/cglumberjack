@@ -275,30 +275,33 @@ def add_all_devices_to_config(sheet, device_list=False):
         device_list = get_all_device_info(sheet)
 
     filepath = get_config_path()
-    tree = ElemTree.parse(filepath)
-    root = tree.getroot()
+    if os.path.exists(filepath):
+        tree = ElemTree.parse(filepath)
+        root = tree.getroot()
 
-    for entry in device_list:
-        new_node = ElemTree.SubElement(root, 'device')
-        new_node.set('id', entry['id'])
-        new_node.set('name', entry['name'])
-        new_node.set('compression', "metadata")
-        new_node.set("introducer", "false")
-        new_node.set("skipIntroductionRemovals", 'false')
-        new_node.set("introducedBy", "")
-        address = ElemTree.SubElement(new_node, 'address')
-        address.text = 'dynamic'
-        paused = ElemTree.SubElement(new_node, 'paused')
-        paused.text = "false"
-        autoAcceptFolders = ElemTree.SubElement(new_node, 'autoAcceptFolders')
-        autoAcceptFolders.text = "true"
-        maxSendKbps = ElemTree.SubElement(new_node, 'maxSendKbps')
-        maxSendKbps.text = 0
-        maxRecvKbps = ElemTree.SubElement(new_node, 'maxRecvKbps')
-        maxRecvKbps.text = 0
-        maxRequestKiB = ElemTree.SubElement(new_node, 'maxRequestKiB')
-        maxRequestKiB.text = 0
-    tree.write(filepath)
+        for entry in device_list:
+            new_node = ElemTree.SubElement(root, 'device')
+            new_node.set('id', entry['id'])
+            new_node.set('name', entry['name'])
+            new_node.set('compression', "metadata")
+            new_node.set("introducer", "false")
+            new_node.set("skipIntroductionRemovals", 'false')
+            new_node.set("introducedBy", "")
+            address = ElemTree.SubElement(new_node, 'address')
+            address.text = 'dynamic'
+            paused = ElemTree.SubElement(new_node, 'paused')
+            paused.text = "false"
+            autoAcceptFolders = ElemTree.SubElement(new_node, 'autoAcceptFolders')
+            autoAcceptFolders.text = "true"
+            maxSendKbps = ElemTree.SubElement(new_node, 'maxSendKbps')
+            maxSendKbps.text = 0
+            maxRecvKbps = ElemTree.SubElement(new_node, 'maxRecvKbps')
+            maxRecvKbps.text = 0
+            maxRequestKiB = ElemTree.SubElement(new_node, 'maxRequestKiB')
+            maxRequestKiB.text = 0
+        tree.write(filepath)
+    else:
+        print('Config File does not exist: %s' % filepath)
 
 
 def add_folder_to_config(folder_id, filepath):
@@ -409,6 +412,43 @@ def kill_syncthing():
             print "Process Ended"
 
 
+def nuke_syncthing(clean_sheets=False):
+    """
+    Kill's Syncthing
+    Delete's the config.xml
+    Removes all machines from the google sheet related to this Company
+    restarts syncthing
+    starts "Lumber-watch" as a background process.
+    :return:
+    """
+    if clean_sheets:
+        pass
+        # wipe_sheets()
+    wipe_globals()
+
+
+def launch_lumber_watch():
+    from cgl.core.utils.general import cgl_execute
+    folder_, other = __file__.split('plugins')
+    lumber_watch_path = os.path.join(folder_, 'plugins', 'aws', 'cgl_sqs', 'utils.py').replace('\\', '/')
+    if os.path.isfile(lumber_watch_path):
+        command = 'python %s' % lumber_watch_path
+        cgl_execute(command, new_window=True)
+    # cgl_execute()
+
+
+def server_setup_test():
+    wipe_globals()
+    launch_lumber_watch()
+    setup_server()
+
+
+def workstation_setup_test():
+    wipe_globals()
+    launch_lumber_watch()
+    setup_workstation()
+
+
 def update_machines():
     # TODO - sheet_name and client_json need to be globals.
     kill_syncthing()
@@ -419,9 +459,9 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    # wipe_globals()
-    # setup_workstation()
-    ## accept_folders()
-    #print get_config_path()
-
+    # Setting Up a Server
+    # server_setup_test()
+    # Setting up a Workstation
+    # workstation_setup_test()
     pass
+
