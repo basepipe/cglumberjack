@@ -173,13 +173,21 @@ def get_user_globals():
             return load_json(user_globals_path)
     except TypeError:
         print('No cgl_user_globals ENV variable found. Assuming location.')
-        return load_json(os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack', 'user_globals.json'))
+        if os.path.exists(os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack', 'user_globals.json')):
+            return load_json(os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack', 'user_globals.json'))
+        else:
+            print('No Globals Found at %s:' % os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack',
+                                                           'user_globals.json'))
+            return {}
 
 
 def get_globals():
-    globals_path = get_user_globals()['globals']
-    if globals_path:
-        return load_json(globals_path)
+    if 'globals' in get_user_globals().keys():
+        globals_path = get_user_globals()['globals']
+        if globals_path:
+            return load_json(globals_path)
+        else:
+            print('No user_globals found at %s' % user_config())
     else:
         print('No user_globals found at %s' % user_config())
 
