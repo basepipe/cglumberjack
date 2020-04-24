@@ -2,10 +2,14 @@ import os
 import boto3
 import click
 import time
+import cgl.plugins.syncthing.utils as st_utils
 
-ACCESS_KEY = os.environ['AWS_ACCESS_KEY']
-SECRET_KEY = os.environ['AWS_SECRET_KEY']
-REGION_NAME = os.environ['AWS_DEFAULT_REGION']
+try:
+    ACCESS_KEY = os.environ['AWS_ACCESS_KEY']
+    SECRET_KEY = os.environ['AWS_SECRET_KEY']
+    REGION_NAME = os.environ['AWS_DEFAULT_REGION']
+except KeyError:
+    print 'ERROR: You need to define the following env variables: ACCESS_KEY, SECRET_KEY, REGION_NAME'
 
 test_message_body = 'Information about current NY Times fiction bestseller for week of 12/11/2016.'
 test_message_attrs = {
@@ -126,22 +130,17 @@ def add_machine_to_syncthing(message_attrs, test=True):
         name = message_attrs['device_name']['StringValue']
         print '\t -->> Adding device %s:%s to syncthing' % (device_id, name)
         if not test:
-            import cgl.plugins.syncthing.utils as st_utils
-            try:
-                st_utils.kill_syncthing()
-                st_utils.add_device_to_config(device_id=device_id, name=name)
-                st_utils.launch_syncthing()
-                return True
-            except:
-                print('\t -->> Failed Adding Machine to Syncthing')
-                return False
+            st_utils.kill_syncthing()
+            st_utils.add_device_to_config(device_id=device_id, name=name)
+            st_utils.share_files_to_devices(all_device_id=[device_id])
+            st_utils.launch_syncthing()
+            return True
     except KeyError:
         print '\t -->> Did not find expected key in messageAttrs %s, skipping add machine to syncthing' % message_attrs
         return False
 
 
 def accept_folders_from_syncthing(message_attrs, test=True):
-    import cgl.plugins.syncthing.utils as st_utils
     try:
         device_dict = st_utils.get_my_device_info()
     except:

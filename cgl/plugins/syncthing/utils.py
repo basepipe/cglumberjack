@@ -338,7 +338,6 @@ def share_files_to_devices(all_device_id=[]):
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
-
     if not all_device_id:
         for child in root:
             if child.tag == 'device':
@@ -399,6 +398,7 @@ def wipe_globals():
 
 
 def launch_syncthing():
+    # TODO how do i launch syncthing without the gui?
     kill_syncthing()
     command = "syncthing"
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
@@ -439,7 +439,6 @@ def launch_lumber_watch():
 
 def server_setup_test():
     wipe_globals()
-    launch_lumber_watch()
     setup_server()
 
 
@@ -461,6 +460,7 @@ def update_machines():
 if __name__ == "__main__":
     # Setting Up a Server
     # server_setup_test()
+    launch_lumber_watch()
     # Setting up a Workstation
     # workstation_setup_test()
     pass
