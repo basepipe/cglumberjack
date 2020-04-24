@@ -133,6 +133,20 @@ def add_machine_to_syncthing(message_attrs, test=True):
     try:
         device_id = message_attrs['device_id']['StringValue']
         name = message_attrs['device_name']['StringValue']
+        print '\t -->> Adding device %s:%s to syncthing' % (device_id, name)
+        if not test:
+            st_utils.kill_syncthing()
+            print('adding %s to sync' % name)
+            st_utils.add_device_to_config(device_id=device_id, name=name)
+            st_utils.launch_syncthing()
+            st_utils.kill_syncthing()
+            print('sharing files to %s' % name)
+            st_utils.share_files_to_devices(all_device_id=[device_id])
+            print 'Sending Folders Shared Message'
+            folders_shared_message(device_id=device_id, device_name=name,
+                                   message='Shared Files with %s, check config')
+            st_utils.launch_syncthing()
+            return True
         if local_device_id != device_id:
             print '\t -->> Adding device %s:%s to syncthing' % (device_id, name)
             if not test:

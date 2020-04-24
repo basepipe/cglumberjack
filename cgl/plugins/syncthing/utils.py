@@ -465,11 +465,11 @@ def update_machines():
 
 if __name__ == "__main__":
     # Setting Up a Server
-    # server_setup_test()
+    server_setup_test()
     # launch_lumber_watch()
     # Setting up a Workstation
     # workstation_setup_test()
     # launch_syncthing()
-    wipe_globals()
+    # wipe_globals()
     pass
 
