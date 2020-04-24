@@ -38,9 +38,8 @@ def send_message(message_attrs=test_message_attrs, message_body=test_message_bod
         QueueUrl=queue_url,
         DelaySeconds=10,
         MessageAttributes=message_attrs,
-        MessageBody=(message_body)
+        MessageBody=message_body
     )
-
     print(response['MessageId'])
 
 
@@ -131,8 +130,15 @@ def add_machine_to_syncthing(message_attrs, test=True):
         print '\t -->> Adding device %s:%s to syncthing' % (device_id, name)
         if not test:
             st_utils.kill_syncthing()
+            print('adding %s to sync' % name)
             st_utils.add_device_to_config(device_id=device_id, name=name)
+            st_utils.launch_syncthing()
+            st_utils.kill_syncthing()
+            print('sharing files to %s' % name)
             st_utils.share_files_to_devices(all_device_id=[device_id])
+            print 'Sending Folders Shared Message'
+            folders_shared_message(device_id=device_id, device_name=name,
+                                   message='Shared Files with %s, check config')
             st_utils.launch_syncthing()
             return True
     except KeyError:

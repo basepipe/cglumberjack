@@ -440,6 +440,7 @@ def launch_lumber_watch():
 def server_setup_test():
     wipe_globals()
     setup_server()
+    launch_lumber_watch()
 
 
 def workstation_setup_test():
@@ -460,8 +461,10 @@ def update_machines():
 if __name__ == "__main__":
     # Setting Up a Server
     # server_setup_test()
-    launch_lumber_watch()
+    # launch_lumber_watch()
     # Setting up a Workstation
     # workstation_setup_test()
+    # launch_syncthing()
+    wipe_globals()
     pass
 
