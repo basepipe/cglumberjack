@@ -125,22 +125,27 @@ def process_messages(max_messages=1,
 
 def add_machine_to_syncthing(message_attrs, test=True):
     try:
+        device_dict = st_utils.get_my_device_info()
+    except:
+        print '\t -->> No Device ID Found, cannot accept folders.'
+        return
+    local_device_id = device_dict['id']
+    try:
         device_id = message_attrs['device_id']['StringValue']
         name = message_attrs['device_name']['StringValue']
-        print '\t -->> Adding device %s:%s to syncthing' % (device_id, name)
-        if not test:
-            st_utils.kill_syncthing()
-            print('adding %s to sync' % name)
-            st_utils.add_device_to_config(device_id=device_id, name=name)
-            st_utils.launch_syncthing()
-            st_utils.kill_syncthing()
-            print('sharing files to %s' % name)
-            st_utils.share_files_to_devices(all_device_id=[device_id])
-            print 'Sending Folders Shared Message'
-            folders_shared_message(device_id=device_id, device_name=name,
-                                   message='Shared Files with %s, check config')
-            st_utils.launch_syncthing()
-            return True
+        if local_device_id != device_id:
+            print '\t -->> Adding device %s:%s to syncthing' % (device_id, name)
+            if not test:
+                try:
+                    st_utils.kill_syncthing()
+                    st_utils.add_device_to_config(device_id=device_id, name=name)
+                    st_utils.launch_syncthing()
+                    return True
+                except:
+                    print('\t -->> Failed Adding Machine to Syncthing')
+                    return False
+        else:
+            print '\t -->> Skipping message that originated from this machine.'
     except KeyError:
         print '\t -->> Did not find expected key in messageAttrs %s, skipping add machine to syncthing' % message_attrs
         return False
@@ -154,6 +159,7 @@ def accept_folders_from_syncthing(message_attrs, test=True):
         return
     local_device_id = device_dict['id']
     device_id = message_attrs['device_id']['StringValue']
+    # i have to know that this computer is meant to have these folders.
     if local_device_id == device_id or device_id == 'all':
         print '\t -->> Found New Folders for %s' % device_dict['name']
         if not test:

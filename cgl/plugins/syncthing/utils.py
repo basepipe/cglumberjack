@@ -31,6 +31,7 @@ def setup_workstation():
     USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
     GLOBALS = load_json(USER_GLOBALS['globals'])
     kill_syncthing()
+    device_info = get_my_device_info()
     print('Setting Up Workstation for Syncing')
     company = GLOBALS['account_info']['aws_company_name']
     sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
@@ -41,6 +42,10 @@ def setup_workstation():
     add_all_devices_to_config(sheet_obj)
     add_folder_to_config(folder_id, folder_path)
     launch_syncthing()
+    from cgl.plugins.aws.cgl_sqs.utils import machine_added_message
+    machine_added_message(device_id=device_info['id'],
+                          device_name=device_info['name'],
+                          message='%s added machine %s' % ('user', device_info['name']))
 
 
 def fix_folder_paths():
