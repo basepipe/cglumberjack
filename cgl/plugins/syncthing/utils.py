@@ -450,8 +450,8 @@ def server_setup_test():
 
 def workstation_setup_test():
     wipe_globals()
-    launch_lumber_watch()
     setup_workstation()
+    launch_lumber_watch()
 
 
 def update_machines():
