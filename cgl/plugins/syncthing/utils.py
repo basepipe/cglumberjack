@@ -75,8 +75,9 @@ def fix_folder_paths():
 
 
 def accept_folders():
-    kill_syncthing()
+
     # parse the xml
+    relaunch = False
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
@@ -86,10 +87,13 @@ def accept_folders():
         if child.tag == 'device':
             for c in child:
                 if c.tag == 'pendingFolder':
+                    kill_syncthing()
+                    relaunch = True
                     id_ = c.get('id')
                     folder = get_folder_from_id(id_)
                     add_folder_to_config(id_, folder)
-    launch_syncthing()
+    if relaunch:
+        launch_syncthing()
 
 
 def get_folder_from_id(folder_id):
@@ -385,10 +389,7 @@ def share_all_files_to_devices(all_device_id=[], dialog=True):
     :return:
     """
     from cgl.plugins.aws.cgl_sqs.utils import folders_shared_message
-
-
-    folders_shared_message(device_id=id, device_name='test')
-
+    this_device = get_my_device_info()['id']
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
@@ -403,10 +404,12 @@ def share_all_files_to_devices(all_device_id=[], dialog=True):
             for sub_element in child:
                 if sub_element.tag == 'device':
                     shared.append(sub_element.get('id'))
-            for id in all_device_id:
-                if id not in shared:
+            for id_ in all_device_id:
+                if id_ not in shared:
                     new_node = ElemTree.SubElement(child, 'device')
-                    new_node.set('id', id)
+                    new_node.set('id', id_)
+                    if this_device != id_:
+                        folders_shared_message(device_id=id_, device_name='test', message='sharing all folders')
     tree.write(config_path)
 
 
@@ -504,5 +507,5 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    pass
+    server_setup_test()
 
