@@ -709,19 +709,23 @@ class CGLumberjack(LJMainWindow):
         pass
 
     def manage_sharing_action_clicked(self):
-        print 'share clicked'
-        return
-        # from ui.widgets.sync_master import SyncMaster
-        # scope = None
-        # path_object = cglpath.PathObject(self.centralWidget().path_widget.path_line_edit.text())
-        # if path_object.scope:
-        #     if path_object.scope != '*':
-        #         scope = path_object.scope
-        #
-        # dialog = SyncMaster(company=path_object.company, project=path_object.project, scope=scope)
-        # dialog.exec_()
-        # print "This produces a gui for managing the sharing of folders and external devices."
-        # pass
+        """
+        opens a dialog where use chooses who they want to share with
+        and which tasks they want to share.
+        :return:
+        """
+        from cgl.ui.widgets.sync_master import SharingDialog, SyncMaster
+        path_object = self.centralWidget().path_widget.path_object
+        sh_dialog = SharingDialog()
+        sh_dialog.exec_()
+        if sh_dialog.button == 'Ok':
+            all_device_id = sh_dialog.device_list
+        if all_device_id:
+            sm_dialog = SyncMaster(company=path_object.company,
+                                   project=path_object.project,
+                                   scope=path_object.scope,
+                                   device_list=all_device_id)
+
 
     @staticmethod
     def set_up_st_server_clicked():

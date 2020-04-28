@@ -19,7 +19,7 @@ def setup_server():
     add_all_devices_to_config(sheet_obj)
     folder_id = r'[root]\_config\cgl_tools'
     add_folder_to_config(folder_id, cgl_tools_folder)
-    share_files_to_devices()  # only if you're setting up main folders
+    share_all_files_to_devices()  # only if you're setting up main folders
     launch_syncthing()
 
 
@@ -311,11 +311,12 @@ def add_all_devices_to_config(sheet, device_list=False):
         print('Config File does not exist: %s' % filepath)
 
 
-def add_folder_to_config(folder_id, filepath):
+def add_folder_to_config(folder_id, filepath, device_list=None, sqs=True):
     """
     Function to add a new folder to config.xml file
     :param folder_id: The ID label for the folder being added to syncthing
     :param filepath: The path to the file being added to syncthing
+    :param device_list: List of Device IDs to share with the folders.
     :return:
     """
     folder_id = folder_id.replace('/', '\\')
@@ -334,7 +335,17 @@ def add_folder_to_config(folder_id, filepath):
         new_node.set('fsWatcherDelayS', "10")
         new_node.set('ignorePerms', "false")
         new_node.set('autoNormalize', "true")
+        if device_list:
+            for id_ in device_list:
+                device_node = ElemTree.SubElement(new_node, 'device')
+                device_node.set('id', id_)
     tree.write(config_path)
+    if sqs:
+        from cgl.plugins.aws.cgl_sqs.utils import folders_shared_message
+        for id_ in device_list:
+            folders_shared_message(id_,
+                                   device_name='Name Not Defined',
+                                   message='Files Shared to %s' % id_)
 
 
 def get_device_dict():
@@ -355,7 +366,7 @@ def get_device_dict():
     return device_dict
 
 
-def share_files_to_devices(all_device_id=[], dialog=True):
+def share_all_files_to_devices(all_device_id=[], dialog=True):
     """
     Makes all files shareable to all devices found in the config file
     :return:
@@ -370,8 +381,8 @@ def share_files_to_devices(all_device_id=[], dialog=True):
         dialog_sharing = SharingDialog(this_device, device_dict)
         dialog_sharing.exec_()
         if dialog_sharing.button == 'Ok':
-            print dialog_sharing.device_list
-    return
+            all_device_id = dialog_sharing.device_list
+
     folders_shared_message(device_id=id, device_name='test')
 
     config_path = get_config_path()
@@ -393,9 +404,6 @@ def share_files_to_devices(all_device_id=[], dialog=True):
                     new_node = ElemTree.SubElement(child, 'device')
                     new_node.set('id', id)
     tree.write(config_path)
-
-
-
 
 
 def sync_with_server():
@@ -487,7 +495,7 @@ def update_machines():
     kill_syncthing()
     sheet = sheets.authorize_sheets()
     add_all_devices_to_config(sheet)
-    share_files_to_devices()
+    share_all_files_to_devices()
     launch_syncthing()
 
 

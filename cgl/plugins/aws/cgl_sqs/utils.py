@@ -142,7 +142,7 @@ def add_machine_to_syncthing(message_attrs, test=True):
             st_utils.launch_syncthing()
             st_utils.kill_syncthing()
             print('sharing files to %s' % name)
-            st_utils.share_files_to_devices(all_device_id=[device_id], dialog=False)
+            st_utils.share_all_files_to_devices(all_device_id=[device_id], dialog=False)
             print 'Sending Folders Shared Message'
             folders_shared_message(device_id=device_id, device_name=name,
                                    message='Shared Files with %s, check config')
@@ -175,7 +175,7 @@ def accept_folders_from_syncthing(message_attrs, test=True):
     local_device_id = device_dict['id']
     device_id = message_attrs['device_id']['StringValue']
     # i have to know that this computer is meant to have these folders.
-    if local_device_id == device_id or device_id == 'all':
+    if local_device_id == device_id:
         print '\t -->> Found New Folders for %s' % device_dict['name']
         if not test:
             st_utils.accept_folders()  # this has kill and launch syncthing built in.

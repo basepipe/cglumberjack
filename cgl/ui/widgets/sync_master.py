@@ -8,12 +8,12 @@ from cgl.core.path import PathObject, show_in_folder, get_folder_size, find_late
 from cgl.core.config import get_globals
 
 
-
 class SyncMaster(LJDialog):
 
-    def __init__(self, company=None, project=None, scope='assets'):
+    def __init__(self, company=None, project=None, scope='assets', device_list=[]):
         LJDialog.__init__(self)
         user = current_user()
+        self.device_list = device_list
         self.setWindowTitle('Lumber Sync')
         self.globals = get_globals()
         self.company = company
@@ -121,7 +121,7 @@ class SyncMaster(LJDialog):
                 folder_id = '[root]\\%s' % p.path.replace('/', '\\')
                 folder = p.path_root.replace('/', '\\')
                 print folder_id, folder
-                st.add_folder_to_config(folder_id, folder)
+                st.add_folder_to_config(folder_id, folder, self.device_list)
             st.launch_syncthing()
             # st.share_files_to_devices()
 
