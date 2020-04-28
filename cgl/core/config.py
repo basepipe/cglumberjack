@@ -80,7 +80,6 @@ class UserConfig(object):
     def __init__(self, user_email=None, user_name=None, current_path=None, my_tasks=None):
         # TODO - try the ENV VARS before this.
         self.user_config_path = user_config()
-        print self.user_config_path
         if os.path.exists(self.user_config_path):
             self.d = self._load_json(self.user_config_path)
         self.current_path = current_path

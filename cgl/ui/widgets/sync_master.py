@@ -120,7 +120,6 @@ class SyncMaster(LJDialog):
             for p in publishes:
                 folder_id = '[root]\\%s' % p.path.replace('/', '\\')
                 folder = p.path_root.replace('/', '\\')
-                print folder_id, folder
                 st.add_folder_to_config(folder_id, folder, self.device_list)
             st.launch_syncthing()
             # st.share_files_to_devices()

@@ -340,12 +340,6 @@ def add_folder_to_config(folder_id, filepath, device_list=None, sqs=True):
                 device_node = ElemTree.SubElement(new_node, 'device')
                 device_node.set('id', id_)
     tree.write(config_path)
-    if sqs:
-        from cgl.plugins.aws.cgl_sqs.utils import folders_shared_message
-        for id_ in device_list:
-            folders_shared_message(id_,
-                                   device_name='Name Not Defined',
-                                   message='Files Shared to %s' % id_)
 
 
 def get_device_dict():
@@ -366,22 +360,32 @@ def get_device_dict():
     return device_dict
 
 
+def share_files(path_object):
+    from cgl.ui.widgets.sync_master import SharingDialog, SyncMaster
+    device_dict = get_device_dict()
+    this_device = get_my_device_info()['id']
+    dialog_sharing = SharingDialog(this_device, device_dict)
+    dialog_sharing.exec_()
+    if dialog_sharing.button == 'Ok':
+        all_device_id = dialog_sharing.device_list
+    if all_device_id:
+        print path_object.company
+        print path_object.project
+        print path_object.scope
+        sm_dialog = SyncMaster(company=path_object.company,
+                               project=path_object.project,
+                               scope=path_object.scope,
+                               device_list=all_device_id)
+        sm_dialog.exec_()
+
+
 def share_all_files_to_devices(all_device_id=[], dialog=True):
     """
     Makes all files shareable to all devices found in the config file
     :return:
     """
     from cgl.plugins.aws.cgl_sqs.utils import folders_shared_message
-    from cgl.ui.widgets.sync_master import SharingDialog
-    # TODO - need a popup to choose who to share something with.
-    print('running share_files_to_devices')
-    if dialog:
-        device_dict = get_device_dict()
-        this_device = get_my_device_info()['id']
-        dialog_sharing = SharingDialog(this_device, device_dict)
-        dialog_sharing.exec_()
-        if dialog_sharing.button == 'Ok':
-            all_device_id = dialog_sharing.device_list
+
 
     folders_shared_message(device_id=id, device_name='test')
 

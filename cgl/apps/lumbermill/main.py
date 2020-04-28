@@ -714,18 +714,8 @@ class CGLumberjack(LJMainWindow):
         and which tasks they want to share.
         :return:
         """
-        from cgl.ui.widgets.sync_master import SharingDialog, SyncMaster
         path_object = self.centralWidget().path_widget.path_object
-        sh_dialog = SharingDialog()
-        sh_dialog.exec_()
-        if sh_dialog.button == 'Ok':
-            all_device_id = sh_dialog.device_list
-        if all_device_id:
-            sm_dialog = SyncMaster(company=path_object.company,
-                                   project=path_object.project,
-                                   scope=path_object.scope,
-                                   device_list=all_device_id)
-
+        st_utils.share_files(path_object)
 
     @staticmethod
     def set_up_st_server_clicked():

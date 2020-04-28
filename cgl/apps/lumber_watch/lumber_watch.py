@@ -9,10 +9,33 @@ def check_message_queue():
 
 
 def check_syncthing_config():
-    # this may end up being something we just integrate into our pyqt module
+    """
+    checks timestamp of the syncthing config.  If it finds that it's changed since the last time it checked
+    it returns True, if there's no Change returns False, if we haven't tracked the previous time stamp, returns False
+    :return:
+    """
+    from os.path import getmtime
     import cgl.plugins.syncthing.utils as st_utils
+    from cgl.core.config import UserConfig, user_config
+    from cgl.core.utils.general import save_json
+    user_config_path = str(user_config())
     config_file = st_utils.get_config_path()
-    # check for changes in this file
+    user_config_dict = UserConfig().d
+    time_stamp = getmtime(config_file)
+    if 'sync_thing_config_modified' in user_config_dict.keys():
+        previous_time_stamp = user_config_dict['sync_thing_config_modified']
+        if time_stamp != previous_time_stamp:
+            print 'need to update some junk'
+            user_config_dict['sync_thing_config_modified'] = time_stamp
+            save_json(user_config_path, user_config_dict)
+            return True
+        else:
+            print 'No Changes in %s' % config_file
+            return False
+    print('No previous timestamp detected, starting to track')
+    user_config_dict['sync_thing_config_modified'] = time_stamp
+    save_json(user_config_path, user_config_dict)
+    return False
 
 
 @click.command()
@@ -20,7 +43,7 @@ def check_syncthing_config():
               help='Input the time between running designated lumber watch scripts')
 @click.option('--queue', '-q', default=True,
               help='Checks the CG Lumberjack message Queue for notifications every s seconds')
-@click.option('--syncthing', '-st', default=False,
+@click.option('--syncthing', '-st', default=True,
               help='Checks Syncthing config.xml for changes every s seconds.')
 def main(seconds, queue, syncthing):
     start_time = time.time()
@@ -28,9 +51,9 @@ def main(seconds, queue, syncthing):
         if queue:
             check_message_queue()
         if syncthing:
-            check_syncthing_config()
+            st_config_change = check_syncthing_config()
         time.sleep(seconds - ((time.time() - start_time) % seconds))
 
 
 if __name__ == '__main__':
-    main()
+    check_syncthing_config()

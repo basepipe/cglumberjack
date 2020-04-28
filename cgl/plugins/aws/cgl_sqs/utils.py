@@ -11,24 +11,15 @@ try:
 except KeyError:
     print 'ERROR: You need to define the following env variables: ACCESS_KEY, SECRET_KEY, REGION_NAME'
 
-test_message_body = 'Information about current NY Times fiction bestseller for week of 12/11/2016.'
-test_message_attrs = {
-                        'Title': {
-                            'DataType': 'String',
-                            'StringValue': 'The Whistler'
-                        },
-                        'Author': {
-                            'DataType': 'String',
-                            'StringValue': 'John Grisham'
-                        },
-                        'WeeksOn': {
-                            'DataType': 'Number',
-                            'StringValue': '6'
-                        }
-                     }
+
+def check_st_config():
+    import cgl.apps.lumber_watch.lumber_watch as lw
+    if lw.check_syncthing_config():
+        # assuming all we have to do is accept folders.
+        st_utils.accept_folders()
 
 
-def send_message(message_attrs=test_message_attrs, message_body=test_message_body):
+def send_message(message_attrs='', message_body=''):
     sqs = boto3.client('sqs', aws_access_key_id=ACCESS_KEY,
                        aws_secret_access_key=SECRET_KEY,
                        region_name=REGION_NAME)
@@ -239,6 +230,7 @@ def main(seconds, delete):
     start_time = time.time()
     while True:
         process_messages(force_delete=delete)
+        check_st_config()
         time.sleep(seconds - ((time.time() - start_time) % seconds))
 
 
