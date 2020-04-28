@@ -15,7 +15,6 @@ def load_lumbermill(app, splash=None):
     app.exec_()
 
 
-
 if __name__ == "__main__":
     app, splash = startup.app_init()
     project_management, user_info = startup.user_init()

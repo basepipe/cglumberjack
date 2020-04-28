@@ -6,7 +6,7 @@ from cgl.core.utils.general import current_user
 from cgl.ui.widgets.widgets import AdvComboBox
 from cgl.core.path import PathObject, show_in_folder, get_folder_size, find_latest_publish_objects
 from cgl.core.config import get_globals
-import cgl.plugins.syncthing.utils as st
+
 
 
 class SyncMaster(LJDialog):
@@ -112,6 +112,7 @@ class SyncMaster(LJDialog):
         print 'Total Folder Size:', get_folder_size(self.current_selection)
 
     def sync_clicked(self):
+        import cgl.plugins.syncthing.utils as st
         publishes = find_latest_publish_objects(self.current_selection, source=self.source_check_box.isChecked(),
                                                 render=self.render_check_box.isChecked())
         if publishes:

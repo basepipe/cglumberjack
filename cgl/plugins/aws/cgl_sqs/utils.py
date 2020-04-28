@@ -124,6 +124,7 @@ def process_messages(max_messages=1,
 
 
 def add_machine_to_syncthing(message_attrs, test=True):
+    print 'add_machine_to_syncthing'
     try:
         device_dict = st_utils.get_my_device_info()
     except:

@@ -9,6 +9,7 @@ from cgl.core.utils.read_write import load_json
 
 
 def setup_server():
+    print 'running setup_server'
     kill_syncthing()
     USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
     GLOBALS = load_json(USER_GLOBALS['globals'])
@@ -362,6 +363,7 @@ def share_files_to_devices(all_device_id=[], dialog=True):
     from cgl.plugins.aws.cgl_sqs.utils import folders_shared_message
     from cgl.ui.widgets.sync_master import SharingDialog
     # TODO - need a popup to choose who to share something with.
+    print('running share_files_to_devices')
     if dialog:
         device_dict = get_device_dict()
         this_device = get_my_device_info()['id']
@@ -480,6 +482,7 @@ def workstation_setup_test():
 
 
 def update_machines():
+    print 'update_machines'
     # TODO - sheet_name and client_json need to be globals.
     kill_syncthing()
     sheet = sheets.authorize_sheets()

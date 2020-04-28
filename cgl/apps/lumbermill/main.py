@@ -616,13 +616,13 @@ class CGLumberjack(LJMainWindow):
         pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
         set_up_sync_thing_server = QtWidgets.QAction('Set up Server', self)
         set_up_sync_thing_workstation = QtWidgets.QAction('Set Up Workstation', self)
-        check_machines_action = QtWidgets.QAction('Check for new Machines', self)
-        add_machines_to_folders = QtWidgets.QAction('Share Folders With Machines', self)
-        pull_from_server = QtWidgets.QAction('Pull from Server', self)
-        manage_sharing_action = QtWidgets.QAction('Share Tasks', self)
-        launch_syncthing = QtWidgets.QAction('Relaunch Sync', self)
-        kill_syncthing = QtWidgets.QAction('Kill Sync', self)
-        fix_paths = QtWidgets.QAction('Fix File Paths', self)
+        # check_machines_action = QtWidgets.QAction('Check for new Machines', self)
+        # add_machines_to_folders = QtWidgets.QAction('Share Folders With Machines', self)
+        # pull_from_server = QtWidgets.QAction('Pull from Server', self)
+        manage_sharing_action = QtWidgets.QAction('Share Files', self)
+        launch_syncthing = QtWidgets.QAction('Start Syncing', self)
+        kill_syncthing = QtWidgets.QAction('Stop Syncing', self)
+        # fix_paths = QtWidgets.QAction('Fix File Paths', self)
 
         # add actions to the file menu
         tools_menu.addAction(settings)
@@ -640,12 +640,12 @@ class CGLumberjack(LJMainWindow):
         sync_menu.addAction(manage_sharing_action)
         sync_menu.addSeparator()
         sync_menu.addAction(set_up_sync_thing_server)
-        sync_menu.addAction(check_machines_action)
-        sync_menu.addAction(add_machines_to_folders)
+        # sync_menu.addAction(check_machines_action)
+        # sync_menu.addAction(add_machines_to_folders)
         sync_menu.addSeparator()
         sync_menu.addAction(set_up_sync_thing_workstation)
-        sync_menu.addAction(pull_from_server)
-        sync_menu.addAction(fix_paths)
+        # sync_menu.addAction(pull_from_server)
+        # sync_menu.addAction(fix_paths)
         sync_menu.addSeparator()
         sync_menu.addAction(kill_syncthing)
         sync_menu.addAction(launch_syncthing)
@@ -653,13 +653,13 @@ class CGLumberjack(LJMainWindow):
         # connect signals and slots
         kill_syncthing.triggered.connect(self.on_kill_syncthing)
         launch_syncthing.triggered.connect(self.on_launch_syncthing)
-        pull_from_server.triggered.connect(self.enable_server_connection_clicked)
-        check_machines_action.triggered.connect(self.check_for_machines_clicked)
-        sync_menu.triggered.connect(self.add_machines_to_folders_clicked)
+        # pull_from_server.triggered.connect(self.enable_server_connection_clicked)
+        # check_machines_action.triggered.connect(self.check_for_machines_clicked)
+        # add_machines_to_folders.triggered.connect(self.add_machines_to_folders_clicked)
         manage_sharing_action.triggered.connect(self.manage_sharing_action_clicked)
         set_up_sync_thing_server.triggered.connect(self.set_up_st_server_clicked)
         set_up_sync_thing_workstation.triggered.connect(self.set_up_st_workstation_clicked)
-        fix_paths.triggered.connect(self.fix_paths_clicked)
+        # fix_paths.triggered.connect(self.fix_paths_clicked)
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
         create_project.triggered.connect(self.open_create_project_dialog)
@@ -674,7 +674,8 @@ class CGLumberjack(LJMainWindow):
         # Load any custom menus that the user has defined
         self.load_pipeline_designer_menus()
         # TODO how do i run this as a background process, or a parallell process?
-        launch_lumber_watch(new_window=True)
+        # TODO - how do i grab the pid so i can close this when lumbermill closes potentially?
+        self.lumber_watch = launch_lumber_watch(new_window=True)
 
     @staticmethod
     def fix_paths_clicked():
