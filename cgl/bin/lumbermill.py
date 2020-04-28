@@ -1,19 +1,19 @@
-from cgl.plugins.Qt import QtGui, QtWidgets
+import time
+zero_start_time = time.time()
 import cgl.core.startup as startup
+from apps.lumbermill.main import CGLumberjack
+start_time = time.time()
+print 'Loaded initial modules in %s seconds: %s' % ((start_time - zero_start_time), __file__)
 
 
 def load_lumbermill(app, splash=None):
-    from apps.lumbermill.main import CGLumberjack
-    import time
-    start_time = time.time()
-    print 'Loading Lumbermill'
-    # QtWidgets.QApplication.processEvents()
     gui = CGLumberjack(show_import=False, user_info=user_info, start_time=start_time)
     gui.show()
     gui.raise_()
     if splash:
         splash.finish(gui)
     app.exec_()
+
 
 
 if __name__ == "__main__":

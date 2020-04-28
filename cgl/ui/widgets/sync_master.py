@@ -114,7 +114,6 @@ class SyncMaster(LJDialog):
     def sync_clicked(self):
         publishes = find_latest_publish_objects(self.current_selection, source=self.source_check_box.isChecked(),
                                                 render=self.render_check_box.isChecked())
-        print publishes, 11111111
         if publishes:
             st.kill_syncthing()
             for p in publishes:
@@ -224,9 +223,70 @@ class SyncTreeModel(QtWidgets.QFileSystemModel):
         return super(SyncTreeModel, self).data(index, role)
 
 
+class SharingDialog(LJDialog):
+    """
+    Allows someone to choose who they will share a folder with.
+    """
+    def __init__(self, this_device, device_dict):
+        LJDialog.__init__(self)
+        self.setWindowTitle('Sharing Options')
+        layout = QtWidgets.QVBoxLayout(self)
+        grid = QtWidgets.QGridLayout()
+        self.device_dict = device_dict
+        self.device_list = []
+        self.this_device = this_device
+        self.button = ''
+        for i, d in enumerate(device_dict):
+            device_id = d
+            if device_id != self.this_device:
+                device_name = device_dict[d]['device_name']
+                user = device_dict[d]['username']
+                proj_man_user = device_dict[d]['proj_man_user']
+                full_name = device_dict[d]['full_name']
+                label = '%s: (%s)' % (user, device_name)
+                check_box = QtWidgets.QCheckBox(label)
+                check_box.device_id = device_id
+                check_box.proj_man_user = proj_man_user
+                check_box.full_name = full_name
+                check_box.user = user
+                check_box.device_name = device_name
+                grid.addWidget(check_box, i, 0)
+                check_box.clicked.connect(self.on_checkbox_clicked)
+
+        message = QtWidgets.QLabel("Who (which machines) do you want to share with?")
+        button_row = QtWidgets.QHBoxLayout()
+        ok_button = QtWidgets.QPushButton('Ok')
+        cancel_button = QtWidgets.QPushButton('Cancel')
+
+        ok_button.clicked.connect(self.on_ok_clicked)
+        cancel_button.clicked.connect(self.on_cancel_clicked)
+        button_row.addStretch(1)
+        button_row.addWidget(cancel_button)
+        button_row.addWidget(ok_button)
+        layout.addWidget(message)
+        layout.addLayout(grid)
+        layout.addLayout(button_row)
+
+    def on_checkbox_clicked(self):
+        check_box = self.sender()
+        if self.sender().isChecked():
+            self.device_list.append(check_box.device_id)
+            print check_box.device_id
+            print check_box.device_name
+            print check_box.user
+            print check_box.full_name
+
+    def on_ok_clicked(self):
+        self.button = 'Ok'
+        self.accept()
+        return self.device_list
+
+    def on_cancel_clicked(self):
+        self.button = 'Cancel'
+        self.accept()
+        return None
+
+
 if __name__ == "__main__":
     # from cgl.core.utils import load_style_sheet
-    app = QtWidgets.QApplication([])
-    form = SyncMaster()
-    form.show()
-    app.exec_()
+    pass

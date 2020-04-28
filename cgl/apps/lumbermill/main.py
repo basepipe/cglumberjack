@@ -7,7 +7,7 @@ from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
-from cgl.core.utils.general import current_user, check_for_latest_master, update_master
+from cgl.core.utils.general import current_user, check_for_latest_master, update_master, launch_lumber_watch
 from cgl.core.config import app_config, UserConfig
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
@@ -557,7 +557,7 @@ class CGLumberjack(LJMainWindow):
         LJMainWindow.__init__(self)
 
         if start_time:
-            print 'Finished Loading Modules in %s seconds' % (time.time() - start_time)
+            print 'Finished Loading Lumbermill in %s seconds' % (time.time() - start_time)
         self.user_config = UserConfig().d
         if previous_path:
             self.previous_path = previous_path
@@ -619,11 +619,10 @@ class CGLumberjack(LJMainWindow):
         check_machines_action = QtWidgets.QAction('Check for new Machines', self)
         add_machines_to_folders = QtWidgets.QAction('Share Folders With Machines', self)
         pull_from_server = QtWidgets.QAction('Pull from Server', self)
-        manage_sharing_action = QtWidgets.QAction('Manage Sharing', self)
+        manage_sharing_action = QtWidgets.QAction('Share Tasks', self)
         launch_syncthing = QtWidgets.QAction('Relaunch Sync', self)
         kill_syncthing = QtWidgets.QAction('Kill Sync', self)
         fix_paths = QtWidgets.QAction('Fix File Paths', self)
-
 
         # add actions to the file menu
         tools_menu.addAction(settings)
@@ -674,6 +673,8 @@ class CGLumberjack(LJMainWindow):
         time_tracking.triggered.connect(self.time_tracking_clicked)
         # Load any custom menus that the user has defined
         self.load_pipeline_designer_menus()
+        # TODO how do i run this as a background process, or a parallell process?
+        launch_lumber_watch(new_window=True)
 
     @staticmethod
     def fix_paths_clicked():
@@ -707,17 +708,19 @@ class CGLumberjack(LJMainWindow):
         pass
 
     def manage_sharing_action_clicked(self):
-        from ui.widgets.sync_master import SyncMaster
-        scope = None
-        path_object = cglpath.PathObject(self.centralWidget().path_widget.path_line_edit.text())
-        if path_object.scope:
-            if path_object.scope != '*':
-                scope = path_object.scope
-
-        dialog = SyncMaster(company=path_object.company, project=path_object.project, scope=scope)
-        dialog.exec_()
-        print "This produces a gui for managing the sharing of folders and external devices."
-        pass
+        print 'share clicked'
+        return
+        # from ui.widgets.sync_master import SyncMaster
+        # scope = None
+        # path_object = cglpath.PathObject(self.centralWidget().path_widget.path_line_edit.text())
+        # if path_object.scope:
+        #     if path_object.scope != '*':
+        #         scope = path_object.scope
+        #
+        # dialog = SyncMaster(company=path_object.company, project=path_object.project, scope=scope)
+        # dialog.exec_()
+        # print "This produces a gui for managing the sharing of folders and external devices."
+        # pass
 
     @staticmethod
     def set_up_st_server_clicked():

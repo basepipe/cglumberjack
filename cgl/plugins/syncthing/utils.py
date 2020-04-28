@@ -2,8 +2,9 @@ import xml.etree.ElementTree as ElemTree
 import getpass
 import os
 import subprocess
-import cgl.plugins.google.sheets as sheets
 import psutil
+import cgl.plugins.google.sheets as sheets
+from cgl.core.utils.general import launch_lumber_watch
 from cgl.core.utils.read_write import load_json
 
 
@@ -335,11 +336,42 @@ def add_folder_to_config(folder_id, filepath):
     tree.write(config_path)
 
 
-def share_files_to_devices(all_device_id=[]):
+def get_device_dict():
+    sheet = get_sheet()
+    row_count = sheets.find_empty_row_in_sheet(sheet)
+    device_id_col = 0
+    device_name_col = 1
+    user_col = 2
+    server_col = 3
+    device_dict = {}
+    for i in range(2, row_count):
+        data = sheet.row_values(i)
+        device_dict[data[device_id_col]] = {'username': data[user_col],
+                                            'device_name': data[device_name_col],
+                                            'proj_man_user': '',
+                                            'full_name': '',
+                                            'is_server': data[server_col]}
+    return device_dict
+
+
+def share_files_to_devices(all_device_id=[], dialog=True):
     """
     Makes all files shareable to all devices found in the config file
     :return:
     """
+    from cgl.plugins.aws.cgl_sqs.utils import folders_shared_message
+    from cgl.ui.widgets.sync_master import SharingDialog
+    # TODO - need a popup to choose who to share something with.
+    if dialog:
+        device_dict = get_device_dict()
+        this_device = get_my_device_info()['id']
+        dialog_sharing = SharingDialog(this_device, device_dict)
+        dialog_sharing.exec_()
+        if dialog_sharing.button == 'Ok':
+            print dialog_sharing.device_list
+    return
+    folders_shared_message(device_id=id, device_name='test')
+
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
@@ -359,6 +391,9 @@ def share_files_to_devices(all_device_id=[]):
                     new_node = ElemTree.SubElement(child, 'device')
                     new_node.set('id', id)
     tree.write(config_path)
+
+
+
 
 
 def sync_with_server():
@@ -432,16 +467,6 @@ def nuke_syncthing(clean_sheets=False):
     wipe_globals()
 
 
-def launch_lumber_watch():
-    from cgl.core.utils.general import cgl_execute
-    folder_, other = __file__.split('plugins')
-    lumber_watch_path = os.path.join(folder_, 'plugins', 'aws', 'cgl_sqs', 'utils.py').replace('\\', '/')
-    if os.path.isfile(lumber_watch_path):
-        command = 'python %s' % lumber_watch_path
-        cgl_execute(command, new_window=True)
-    # cgl_execute()
-
-
 def server_setup_test():
     wipe_globals()
     setup_server()
@@ -464,12 +489,5 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    # Setting Up a Server
-    server_setup_test()
-    # launch_lumber_watch()
-    # Setting up a Workstation
-    # workstation_setup_test()
-    # launch_syncthing()
-    # wipe_globals()
     pass
 
