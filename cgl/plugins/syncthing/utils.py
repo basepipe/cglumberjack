@@ -372,15 +372,18 @@ def share_files(path_object):
     dialog_sharing.exec_()
     if dialog_sharing.button == 'Ok':
         all_device_id = dialog_sharing.device_list
-    if all_device_id:
-        print path_object.company
-        print path_object.project
-        print path_object.scope
-        sm_dialog = SyncMaster(company=path_object.company,
-                               project=path_object.project,
-                               scope=path_object.scope,
-                               device_list=all_device_id)
-        sm_dialog.exec_()
+        if all_device_id:
+            print path_object.company
+            print path_object.project
+            print path_object.scope
+            sm_dialog = SyncMaster(company=path_object.company,
+                                   project=path_object.project,
+                                   scope=path_object.scope,
+                                   device_list=all_device_id)
+            sm_dialog.exec_()
+    else:
+        return
+
 
 
 def share_all_files_to_devices(all_device_id=[], dialog=True):
