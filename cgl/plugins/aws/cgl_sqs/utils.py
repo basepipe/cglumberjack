@@ -16,6 +16,8 @@ def check_st_config():
     import cgl.apps.lumber_watch.lumber_watch as lw
     if lw.check_syncthing_config():
         # assuming all we have to do is accept folders.
+        print 'config changed, probably going to accept folders'
+        st_utils.launch_syncthing()
         st_utils.accept_folders()
 
 

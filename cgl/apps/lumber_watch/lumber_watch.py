@@ -20,12 +20,14 @@ def check_syncthing_config():
     from cgl.core.utils.general import save_json
     user_config_path = str(user_config())
     config_file = st_utils.get_config_path()
+    print config_file
     user_config_dict = UserConfig().d
     time_stamp = getmtime(config_file)
     if 'sync_thing_config_modified' in user_config_dict.keys():
         previous_time_stamp = user_config_dict['sync_thing_config_modified']
         if time_stamp != previous_time_stamp:
-            print 'need to update some junk'
+            print config_file
+            print 'New Time Stamp for cgl_config, updating'
             user_config_dict['sync_thing_config_modified'] = time_stamp
             save_json(user_config_path, user_config_dict)
             return True

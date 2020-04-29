@@ -77,6 +77,7 @@ def fix_folder_paths():
 def accept_folders():
 
     # parse the xml
+    do_save = False
     relaunch = False
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
@@ -87,11 +88,27 @@ def accept_folders():
         if child.tag == 'device':
             for c in child:
                 if c.tag == 'pendingFolder':
+                    print 'found pendingFolder'
                     kill_syncthing()
                     relaunch = True
                     id_ = c.get('id')
                     folder = get_folder_from_id(id_)
                     add_folder_to_config(id_, folder)
+        if child.tag == 'folder':
+            print child.get('id')
+            print child.get('path')
+            if ' ' in child.get('path'):
+                local_folder = get_folder_from_id(child.get('id'))
+                print 'changing to:', local_folder
+                # might need to create the folders if they don't exist, just to be sure.
+                child.set('path', local_folder)
+                do_save = True
+    if do_save:
+        print 'saving config'
+        kill_syncthing()
+        tree.write(config_path)
+        launch_syncthing()
+        return
     if relaunch:
         launch_syncthing()
 
@@ -99,6 +116,7 @@ def accept_folders():
 def get_folder_from_id(folder_id):
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     globals_ = load_json(user_globals['globals'])
+    print 'get_folder_from_id'
     try:
         variable, the_rest = folder_id.split(']')
         variable = variable.replace('[', '')
@@ -220,14 +238,17 @@ def get_my_device_info():
 
     device_id = output_values[0]
     filepath = get_config_path()
-    tree = ElemTree.parse(filepath)
-    root = tree.getroot()
+    if os.path.exists(filepath):
+        tree = ElemTree.parse(filepath)
+        root = tree.getroot()
 
-    for child in root:
-        if child.tag == 'device' and child.get('id') == device_id:
-            machine_name = child.get('name')
+        for child in root:
+            if child.tag == 'device' and child.get('id') == device_id:
+                machine_name = child.get('name')
 
-    return {'id': device_id, 'name': machine_name}
+        return {'id': device_id, 'name': machine_name}
+    else:
+        return None
 
 
 def add_device_info_to_sheet(sheet, server = 'false'):
@@ -452,16 +473,17 @@ def sync_with_server():
 def wipe_globals():
     kill_syncthing()
     config_path = get_config_path()
-    os.remove(config_path)
+    if os.path.exists(config_path):
+        os.remove(config_path)
     launch_syncthing()
     # remove_default_folder()
 
 
 def launch_syncthing():
-    # TODO how do i launch syncthing without the gui?
     kill_syncthing()
-    command = "syncthing"
+    command = "syncthing -no-browser"
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    # TODO - turn the icon to "syncing"
     return p
 
 
@@ -470,6 +492,7 @@ def kill_syncthing():
         if proc.name() == 'syncthing.exe':
             proc.terminate()
             print "Process Ended"
+    # TODO - turn icon to not syncing
 
 
 def nuke_syncthing(clean_sheets=False):
@@ -510,5 +533,8 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    server_setup_test()
+    # nuke_syncthing()
+    # workstation_setup_test()
+    # accept_folders()
+    kill_syncthing()
 
