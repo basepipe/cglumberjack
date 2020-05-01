@@ -23,6 +23,13 @@ def setup_server():
     launch_syncthing()
 
 
+def get_syncthing_state():
+    """
+    Returns syncthing state.  On, Off, Paused, Syncing
+    :return:
+    """
+    pass
+
 def setup_workstation():
     """
     sets up local workstation to talk to the studio side server.
@@ -404,7 +411,6 @@ def share_files(path_object):
             sm_dialog.exec_()
     else:
         return
-
 
 
 def share_all_files_to_devices(all_device_id=[], dialog=True):
