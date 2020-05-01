@@ -30,6 +30,7 @@ def get_syncthing_state():
     """
     pass
 
+
 def setup_workstation():
     """
     sets up local workstation to talk to the studio side server.
