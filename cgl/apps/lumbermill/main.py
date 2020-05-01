@@ -126,6 +126,19 @@ class NavigationWidget(QtWidgets.QFrame):
         sync_icon = os.path.join(cglpath.icon_path(), 'sync_on24px.png')
         self.sync_button.setIcon(QtGui.QIcon(sync_icon))
         self.sync_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
+        self.sync_button.installEventFilter(self)
+
+        # sync menu
+        self.sync_button.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.sync_button.customContextMenuRequested.connect(self.sync_clicked)
+        self.sync_popup = QtWidgets.QMenu(self)
+        self.sync_popup.addAction(QtWidgets.QAction('Sync Manager', self))
+        self.sync_popup.addSeparator()
+        self.sync_popup.addAction(QtWidgets.QAction('Set up Server', self))
+        self.sync_popup.addAction(QtWidgets.QAction('Set up Workstation', self))
+        self.sync_popup.addSeparator()
+        self.sync_popup.addAction(QtWidgets.QAction('Start Sync', self))
+        self.sync_popup.addAction(QtWidgets.QAction('Stop Sync', self))
 
         self.back_button = QtWidgets.QPushButton()
         self.back_button.setToolTip('Go back')
@@ -171,14 +184,28 @@ class NavigationWidget(QtWidgets.QFrame):
 
         self.my_tasks_button.clicked.connect(self.my_tasks_pressed)
         self.ingest_button.clicked.connect(self.ingest_clicked)
-        self.sync_button.clicked.connect(self.sync_clicked)
+        # self.sync_button.clicked.connect(self.sync_clicked)
         self.refresh_button.clicked.connect(self.refresh_clicked)
         self.back_button.clicked.connect(self.back_button_pressed)
         self.companies_button.clicked.connect(self.buttons_pressed)
         self.projects_button.clicked.connect(self.buttons_pressed)
         self.set_text(self.path_object.path_root)
 
-    def sync_clicked(self):
+    def eventFilter(self, widget, event):
+        if widget == self.sync_button and isinstance(event, QtGui.QMouseEvent) and event.buttons() & QtCore.Qt.LeftButton:
+            self.leftClicked(event.pos())
+            return True
+        return False
+
+    def leftClicked(self, pos):
+        parentPosition = self.sync_button.mapToGlobal(QtCore.QPoint(0, 0))
+        menuPosition = parentPosition + pos
+
+        self.sync_popup.move(menuPosition)
+        self.sync_popup.show()
+
+    def sync_clicked(self, point):
+        self.sync_popup.exec_(self.sync_button.mapToGlobal(point))
         print 'sync clicked'
         # TODO - pick a good icon, green for go, red for not syncing,
         # update the icon instead of the menu name on the other things.
@@ -725,6 +752,16 @@ class CGLumberjack(LJMainWindow):
         # TODO - how do i grab the pid so i can close this when lumbermill closes potentially?
         try:
             if CONFIG['sync']['syncthing']['sync_thing_url']:
+                import psutil
+                sync = False
+                st_utils.kill_syncthing()
+                for proc in psutil.process_iter():
+                    if proc.name() == 'syncthing.exe':
+                        self.change_sync_icon(syncing=True)
+                        sync = True
+                if not sync:
+                    self.change_sync_icon(syncing=False)
+                    # TODO - turn icon to not syncing
                 self.lumber_watch = launch_lumber_watch(new_window=True)
                 # TODO if syncthing is set as a feature in the globals!!!!
                 st_utils.launch_syncthing()
@@ -739,9 +776,13 @@ class CGLumberjack(LJMainWindow):
         # self.sync_menu.setStyleSheet(ss)
         sync_button = self.centralWidget().nav_widget.sync_button
         if syncing:
+            print 'setting sync icon to sync_on'
             sync_icon = os.path.join(cglpath.icon_path(), 'sync_on24px.png')
+            print sync_icon
         else:
+            print 'setting sync icon to sync_off'
             sync_icon = os.path.join(cglpath.icon_path(), 'sync_off24px.png')
+            print sync_icon
         sync_button.setIcon(QtGui.QIcon(sync_icon))
         sync_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
 

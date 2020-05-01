@@ -103,11 +103,9 @@ def accept_folders():
                     folder = get_folder_from_id(id_)
                     add_folder_to_config(id_, folder)
         if child.tag == 'folder':
-            print child.get('id')
-            print child.get('path')
             if ' ' in child.get('path'):
                 local_folder = get_folder_from_id(child.get('id'))
-                print 'changing to:', local_folder
+                print 'changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder)
                 # might need to create the folders if they don't exist, just to be sure.
                 child.set('path', local_folder)
                 do_save = True
@@ -124,7 +122,6 @@ def accept_folders():
 def get_folder_from_id(folder_id):
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     globals_ = load_json(user_globals['globals'])
-    print 'get_folder_from_id'
     try:
         variable, the_rest = folder_id.split(']')
         variable = variable.replace('[', '')
@@ -540,8 +537,5 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    # nuke_syncthing()
-    # workstation_setup_test()
-    # accept_folders()
-    kill_syncthing()
+    server_setup_test()
 
