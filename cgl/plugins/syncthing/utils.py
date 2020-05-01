@@ -94,15 +94,22 @@ def accept_folders():
 
     for child in root:
         if child.tag == 'device':
+            device_id = child.get('id')
+            device_name = child.get('name')
+            print 'device id is', device_name, device_id
             for c in child:
                 if c.tag == 'pendingFolder':
-                    print 'found pendingFolder'
-                    kill_syncthing()
-                    relaunch = True
                     id_ = c.get('id')
-                    folder = get_folder_from_id(id_)
-                    add_folder_to_config(id_, folder)
+                    print 'found pending folder: ', id_
+                    local_folder = get_folder_from_id(id_)
+                    c.set('path', local_folder)
+                    # need a device list here for the add folder to config part to work.
+                    device_list = [device_id]
+                    add_folder_to_config(id_, local_folder, device_list=device_list)
+                return
         if child.tag == 'folder':
+            print child.get('id'), 'ID'
+            print child.get('path'), 'PATH'
             if ' ' in child.get('path'):
                 local_folder = get_folder_from_id(child.get('id'))
                 print 'changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder)
@@ -349,6 +356,7 @@ def add_folder_to_config(folder_id, filepath, device_list=None, sqs=True):
     :param device_list: List of Device IDs to share with the folders.
     :return:
     """
+    do_save = False
     folder_id = folder_id.replace('/', '\\')
     filepath = filepath.replace('/', '\\')
     # TODO - check to see if the folder exists
@@ -356,6 +364,7 @@ def add_folder_to_config(folder_id, filepath, device_list=None, sqs=True):
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
     if not folder_id_exists(folder_id, tree=tree):
+        print folder_id, 'does not exist in config, creating'
         new_node = ElemTree.SubElement(root, 'folder')
         new_node.set('id', folder_id)
         new_node.set('path', filepath)
@@ -369,7 +378,11 @@ def add_folder_to_config(folder_id, filepath, device_list=None, sqs=True):
             for id_ in device_list:
                 device_node = ElemTree.SubElement(new_node, 'device')
                 device_node.set('id', id_)
-    tree.write(config_path)
+        do_save = True
+    else:
+        print folder_id, 'exists in config'
+    if do_save:
+        tree.write(config_path)
 
 
 def get_device_dict():
@@ -485,6 +498,7 @@ def wipe_globals():
 
 def launch_syncthing():
     kill_syncthing()
+    print 'launching syncthing in background'
     command = "syncthing -no-browser"
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
     # TODO - turn the icon to "syncing"
@@ -537,5 +551,8 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    server_setup_test()
+    # nuke_syncthing()
+    # workstation_setup_test()
+    # accept_folders()
+    kill_syncthing()
 

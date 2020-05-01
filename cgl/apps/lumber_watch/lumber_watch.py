@@ -27,7 +27,7 @@ def check_syncthing_config():
         previous_time_stamp = user_config_dict['sync_thing_config_modified']
         if time_stamp != previous_time_stamp:
             print config_file
-            print 'New Time Stamp for cgl_config, updating'
+            print 'New Time Stamp for cgl_config, updating to %s' % time_stamp
             user_config_dict['sync_thing_config_modified'] = time_stamp
             save_json(user_config_path, user_config_dict)
             return True
