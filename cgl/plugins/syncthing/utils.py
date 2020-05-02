@@ -19,7 +19,7 @@ def setup_server():
     add_device_info_to_sheet(sheet_obj, server='true')
     add_all_devices_to_config(sheet_obj)
     folder_id = r'[root]\_config\cgl_tools'
-    add_folder_to_config(folder_id, cgl_tools_folder)
+    add_folder_to_config(folder_id, cgl_tools_folder, type_='sendonly')
     share_all_files_to_devices()  # only if you're setting up main folders
     launch_syncthing()
 
@@ -65,7 +65,7 @@ def setup_workstation():
     sheet_obj = get_sheet()
     add_device_info_to_sheet(sheet_obj)
     add_all_devices_to_config(sheet_obj)
-    add_folder_to_config(folder_id, folder_path)
+    add_folder_to_config(folder_id, folder_path, type_='recieveonly')
     launch_syncthing()
     from cgl.plugins.aws.cgl_sqs.utils import machine_added_message
     machine_added_message(device_id=device_info['id'],
@@ -98,10 +98,8 @@ def fix_folder_paths():
 
 
 def accept_folders():
-
+    kill_syncthing()
     # parse the xml
-    do_save = False
-    relaunch = False
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
@@ -119,8 +117,8 @@ def accept_folders():
                     c.set('path', local_folder)
                     # need a device list here for the add folder to config part to work.
                     device_list = [device_id]
-                    add_folder_to_config(id_, local_folder, device_list=device_list)
-                return
+                    add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
+                    tree.write(config_path)
         if child.tag == 'folder':
             if ' ' in child.get('path'):
                 print 'found spaces in PATH - changing to local path'
@@ -128,20 +126,16 @@ def accept_folders():
                 print child.get('path'), 'PATH'
                 local_folder = get_folder_from_id(child.get('id'))
                 print 'changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder)
+                if not os.path.exists(local_folder):
+                    print 'Creating Local Folder for Sycing: %s' % local_folder
+                    os.makedirs(local_folder)
                 # might need to create the folders if they don't exist, just to be sure.
                 child.set('path', local_folder)
-                do_save = True
+                child.set('type', 'receiveonly')
+                tree.write(config_path)
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
-    if do_save:
-        print 'saving config'
-        kill_syncthing()
-        tree.write(config_path)
         launch_syncthing()
-        return
-    if relaunch:
-        launch_syncthing()
-
 
 def get_folder_from_id(folder_id):
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
@@ -365,7 +359,7 @@ def add_all_devices_to_config(sheet, device_list=False):
         print('Config File does not exist: %s' % filepath)
 
 
-def add_folder_to_config(folder_id, filepath, device_list=None, sqs=True):
+def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonly', sqs=True):
     """
     Function to add a new folder to config.xml file
     :param folder_id: The ID label for the folder being added to syncthing
@@ -385,7 +379,7 @@ def add_folder_to_config(folder_id, filepath, device_list=None, sqs=True):
         new_node = ElemTree.SubElement(root, 'folder')
         new_node.set('id', folder_id)
         new_node.set('path', filepath)
-        new_node.set('type', 'sendreceive')
+        new_node.set('type', type_)
         new_node.set('rescanIntervalS', '3600')
         new_node.set('fsWatcherEnabled', "True")
         new_node.set('fsWatcherDelayS', "10")
@@ -556,5 +550,8 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    workstation_setup_test()
+    # kill_syncthing()
+    print get_config_path()
+    # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
+    # os.makedirs(path_)
 
