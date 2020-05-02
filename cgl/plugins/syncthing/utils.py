@@ -109,16 +109,20 @@ def accept_folders():
         if child.tag == 'device':
             device_id = child.get('id')
             device_name = child.get('name')
+            print device_name
             for c in child:
                 if c.tag == 'pendingFolder':
                     id_ = c.get('id')
                     print 'found pending folder: ', id_
                     local_folder = get_folder_from_id(id_)
+                    if not os.path.exists(local_folder):
+                        print 'Creating Local Folder for Syncing: %s' % local_folder
+                        os.makedirs(local_folder)
                     c.set('path', local_folder)
                     # need a device list here for the add folder to config part to work.
                     device_list = [device_id]
+                    # this one writes the config file.
                     add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
-                    tree.write(config_path)
         if child.tag == 'folder':
             if ' ' in child.get('path'):
                 print 'found spaces in PATH - changing to local path'
@@ -127,7 +131,7 @@ def accept_folders():
                 local_folder = get_folder_from_id(child.get('id'))
                 print 'changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder)
                 if not os.path.exists(local_folder):
-                    print 'Creating Local Folder for Sycing: %s' % local_folder
+                    print 'Creating Local Folder for Syncing: %s' % local_folder
                     os.makedirs(local_folder)
                 # might need to create the folders if they don't exist, just to be sure.
                 child.set('path', local_folder)
@@ -135,7 +139,7 @@ def accept_folders():
                 tree.write(config_path)
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
-        launch_syncthing()
+    launch_syncthing()
 
 def get_folder_from_id(folder_id):
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
@@ -367,7 +371,6 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
     :param device_list: List of Device IDs to share with the folders.
     :return:
     """
-    do_save = False
     folder_id = folder_id.replace('/', '\\')
     filepath = filepath.replace('/', '\\')
     # TODO - check to see if the folder exists
@@ -389,11 +392,11 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
             for id_ in device_list:
                 device_node = ElemTree.SubElement(new_node, 'device')
                 device_node.set('id', id_)
-        do_save = True
+        print('Saving Config: %s' % config_path)
+        tree.write(config_path)
     else:
         print folder_id, 'exists in config'
-    if do_save:
-        tree.write(config_path)
+
 
 
 def get_device_dict():
@@ -551,7 +554,8 @@ def update_machines():
 
 if __name__ == "__main__":
     # kill_syncthing()
-    print get_config_path()
+    launch_lumber_watch()
+    # print get_config_path()
     # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
     # os.makedirs(path_)
 
