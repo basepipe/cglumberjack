@@ -111,7 +111,6 @@ def accept_folders():
         if child.tag == 'device':
             device_id = child.get('id')
             device_name = child.get('name')
-            print 'device id is', device_name, device_id
             for c in child:
                 if c.tag == 'pendingFolder':
                     id_ = c.get('id')
@@ -123,14 +122,17 @@ def accept_folders():
                     add_folder_to_config(id_, local_folder, device_list=device_list)
                 return
         if child.tag == 'folder':
-            print child.get('id'), 'ID'
-            print child.get('path'), 'PATH'
             if ' ' in child.get('path'):
+                print 'found spaces in PATH - changing to local path'
+                print child.get('id'), 'ID'
+                print child.get('path'), 'PATH'
                 local_folder = get_folder_from_id(child.get('id'))
                 print 'changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder)
                 # might need to create the folders if they don't exist, just to be sure.
                 child.set('path', local_folder)
                 do_save = True
+            if child.get('ID') == 'default':
+                print 'Removing "default" folder from syncthing registry'
     if do_save:
         print 'saving config'
         kill_syncthing()
@@ -521,10 +523,13 @@ def launch_syncthing():
 
 
 def kill_syncthing():
+    kill_sthing = False
     for proc in psutil.process_iter():
         if proc.name() == 'syncthing.exe':
             proc.terminate()
-            print "Process Ended"
+            kill_sthing = True
+    if kill_sthing:
+        print 'Killed Syncthing background processes'
     # TODO - turn icon to not syncing
 
 
@@ -551,5 +556,5 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    server_setup_test()
+    workstation_setup_test()
 
