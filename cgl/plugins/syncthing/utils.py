@@ -5,15 +5,16 @@ import subprocess
 import psutil
 import cgl.plugins.google.sheets as sheets
 from cgl.core.utils.general import launch_lumber_watch
-from cgl.core.utils.read_write import load_json
+from cgl.core.utils.read_write import load_json, save_json
 
 
 def setup_server():
     print 'running setup_server'
     kill_syncthing()
-    USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
-    GLOBALS = load_json(USER_GLOBALS['globals'])
-    cgl_tools_folder = GLOBALS['paths']['cgl_tools']
+    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    set_machine_type('server')
+    globls = load_json(user_globals['globals'])
+    cgl_tools_folder = globls['paths']['cgl_tools']
     sheet_obj = get_sheet()
     add_device_info_to_sheet(sheet_obj, server='true')
     add_all_devices_to_config(sheet_obj)
@@ -21,6 +22,12 @@ def setup_server():
     add_folder_to_config(folder_id, cgl_tools_folder)
     share_all_files_to_devices()  # only if you're setting up main folders
     launch_syncthing()
+
+
+def set_machine_type(m_type='workstation'):
+    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    user_globals['sync_thing_machine_type'] = m_type
+    save_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'), user_globals)
 
 
 def get_syncthing_state():
@@ -40,6 +47,7 @@ def setup_workstation():
     """
     USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
     GLOBALS = load_json(USER_GLOBALS['globals'])
+    set_machine_type('workstation')
     kill_syncthing()
     device_info = get_my_device_info()
     print('Setting Up Workstation for Syncing')
@@ -551,8 +559,5 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    # nuke_syncthing()
-    # workstation_setup_test()
-    # accept_folders()
-    kill_syncthing()
+    server_setup_test()
 
