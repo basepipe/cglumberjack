@@ -30,6 +30,13 @@ def set_machine_type(m_type='workstation'):
     save_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'), user_globals)
 
 
+def clear_sync_thing_user_globals():
+    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    user_globals['sync_thing_config_modified'] = ""
+    user_globals['sync_thing_machine_type'] = ""
+    save_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'), user_globals)
+
+
 def get_syncthing_state():
     """
     Returns syncthing state.  On, Off, Paused, Syncing
@@ -497,11 +504,11 @@ def sync_with_server():
 
 def wipe_globals():
     kill_syncthing()
+    clear_sync_thing_user_globals()
     config_path = get_config_path()
     if os.path.exists(config_path):
         os.remove(config_path)
     launch_syncthing()
-    # remove_default_folder()
 
 
 def launch_syncthing():
@@ -519,21 +526,6 @@ def kill_syncthing():
             proc.terminate()
             print "Process Ended"
     # TODO - turn icon to not syncing
-
-
-def nuke_syncthing(clean_sheets=False):
-    """
-    Kill's Syncthing
-    Delete's the config.xml
-    Removes all machines from the google sheet related to this Company
-    restarts syncthing
-    starts "Lumber-watch" as a background process.
-    :return:
-    """
-    if clean_sheets:
-        pass
-        # wipe_sheets()
-    wipe_globals()
 
 
 def server_setup_test():
