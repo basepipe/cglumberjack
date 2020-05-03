@@ -80,7 +80,6 @@ class UserConfig(object):
     def __init__(self, user_email=None, user_name=None, current_path=None, my_tasks=None):
         # TODO - try the ENV VARS before this.
         self.user_config_path = user_config()
-        print self.user_config_path
         if os.path.exists(self.user_config_path):
             self.d = self._load_json(self.user_config_path)
         self.current_path = current_path
@@ -173,13 +172,21 @@ def get_user_globals():
             return load_json(user_globals_path)
     except TypeError:
         print('No cgl_user_globals ENV variable found. Assuming location.')
-        return load_json(os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack', 'user_globals.json'))
+        if os.path.exists(os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack', 'user_globals.json')):
+            return load_json(os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack', 'user_globals.json'))
+        else:
+            print('No Globals Found at %s:' % os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack',
+                                                           'user_globals.json'))
+            return {}
 
 
 def get_globals():
-    globals_path = get_user_globals()['globals']
-    if globals_path:
-        return load_json(globals_path)
+    if 'globals' in get_user_globals().keys():
+        globals_path = get_user_globals()['globals']
+        if globals_path:
+            return load_json(globals_path)
+        else:
+            print('No user_globals found at %s' % user_config())
     else:
         print('No user_globals found at %s' % user_config())
 

@@ -6,14 +6,14 @@ from cgl.core.utils.general import current_user
 from cgl.ui.widgets.widgets import AdvComboBox
 from cgl.core.path import PathObject, show_in_folder, get_folder_size, find_latest_publish_objects
 from cgl.core.config import get_globals
-import cgl.plugins.syncthing.utils as st
 
 
 class SyncMaster(LJDialog):
 
-    def __init__(self, company=None, project=None, scope='assets'):
+    def __init__(self, company=None, project=None, scope='assets', device_list=[]):
         LJDialog.__init__(self)
         user = current_user()
+        self.device_list = device_list
         self.setWindowTitle('Lumber Sync')
         self.globals = get_globals()
         self.company = company
@@ -21,6 +21,7 @@ class SyncMaster(LJDialog):
         self.scope = scope
         self.current_selection = ''
         self.path_object = PathObject(self.globals['paths']['root'])
+        self.sync_folder_dict = self.get_sync_folder_dict()
 
         layout = QtWidgets.QVBoxLayout(self)
         grid_layout = QtWidgets.QGridLayout()
@@ -41,7 +42,7 @@ class SyncMaster(LJDialog):
             self.shots_radio.setChecked(True)
         else:
             self.assets_radio.setChecked(True)
-        self.model = SyncTreeModel()
+        self.model = SyncTreeModel(self.sync_folder_dict)
         self.model.setRootPath(self.path_object.path_root)
         self.file_tree = QtWidgets.QTreeView()
         self.file_tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -79,6 +80,14 @@ class SyncMaster(LJDialog):
         self.shots_radio.hide()
         self.load_companies()
 
+    @staticmethod
+    def get_sync_folder_dict():
+        import cgl.plugins.syncthing.utils as st
+        dict_ = st.get_sync_folders()
+        for each in dict_:
+            print 'key', each
+        return st.get_sync_folders()
+
     @QtCore.Slot(QtCore.QModelIndex)
     def on_file_tree_clicked(self, index):
         index_ = self.model.index(index.row(), 0, index.parent())
@@ -112,18 +121,23 @@ class SyncMaster(LJDialog):
         print 'Total Folder Size:', get_folder_size(self.current_selection)
 
     def sync_clicked(self):
+        import cgl.plugins.syncthing.utils as st
         publishes = find_latest_publish_objects(self.current_selection, source=self.source_check_box.isChecked(),
                                                 render=self.render_check_box.isChecked())
-        print publishes, 11111111
-        if publishes:
-            st.kill_syncthing()
-            for p in publishes:
-                folder_id = '[root]\\%s' % p.path.replace('/', '\\')
-                folder = p.path_root.replace('/', '\\')
-                print folder_id, folder
-                st.add_folder_to_config(folder_id, folder)
-            st.launch_syncthing()
-            # st.share_files_to_devices()
+        device_dict = st.get_device_dict()
+        this_device = st.get_my_device_info()['id']
+        dialog_sharing = SharingDialog(this_device, device_dict)
+        dialog_sharing.exec_()
+        if dialog_sharing.button == 'Ok':
+            all_device_id = dialog_sharing.device_list
+            if all_device_id:
+                st.kill_syncthing()
+                if publishes:
+                    for p in publishes:
+                        folder_id = '[root]\\%s' % p.path.replace('/', '\\')
+                        folder = p.path_root.replace('/', '\\')
+                        st.add_folder_to_config(folder_id, folder, all_device_id, type_='sendonly')
+                st.launch_syncthing()
 
     def on_scope_changed(self):
         if self.shots_radio.isChecked():
@@ -146,7 +160,7 @@ class SyncMaster(LJDialog):
             self.assets_radio.hide()
 
     def load_file_tree(self):
-        self.model = SyncTreeModel()
+        self.model = SyncTreeModel(self.sync_folder_dict)
         self.model.setRootPath(self.path_object.path_root)
         self.file_tree.show()
         self.file_tree.setModel(self.model)
@@ -195,6 +209,10 @@ class SyncMaster(LJDialog):
 
 class SyncTreeModel(QtWidgets.QFileSystemModel):
 
+    def __init__(self, sync_folder_dict):
+        QtWidgets.QFileSystemModel.__init__(self)
+        self.sync_folder_dict = sync_folder_dict
+
     def headerData(self, section, orientation, role):
         if section == 4:
             if role == QtCore.Qt.DisplayRole:
@@ -218,15 +236,81 @@ class SyncTreeModel(QtWidgets.QFileSystemModel):
                 return QtCore.Qt.AlignHCenter
         if index.column() == self.columnCount()-2:
             if role == QtCore.Qt.DisplayRole:
-                return "Not Synced"
+                current_file = self.filePath(index).replace('/', '\\')
+                if current_file in self.sync_folder_dict.keys():
+                    print current_file
+                    return self.sync_folder_dict[current_file]['type']
+                else:
+                    return "Not Synced"
             if role == QtCore.Qt.TextAlignmentRole:
                 return QtCore.Qt.AlignHCenter
         return super(SyncTreeModel, self).data(index, role)
 
 
+class SharingDialog(LJDialog):
+    """
+    Allows someone to choose who they will share a folder with.
+    """
+    def __init__(self, this_device, device_dict):
+        LJDialog.__init__(self)
+        self.setWindowTitle('Sharing Options')
+        layout = QtWidgets.QVBoxLayout(self)
+        grid = QtWidgets.QGridLayout()
+        self.device_dict = device_dict
+        self.device_list = []
+        self.this_device = this_device
+        self.button = ''
+        for i, d in enumerate(device_dict):
+            device_id = d
+            if device_id != self.this_device:
+                device_name = device_dict[d]['device_name']
+                user = device_dict[d]['username']
+                proj_man_user = device_dict[d]['proj_man_user']
+                full_name = device_dict[d]['full_name']
+                label = '%s: (%s)' % (user, device_name)
+                check_box = QtWidgets.QCheckBox(label)
+                check_box.device_id = device_id
+                check_box.proj_man_user = proj_man_user
+                check_box.full_name = full_name
+                check_box.user = user
+                check_box.device_name = device_name
+                grid.addWidget(check_box, i, 0)
+                check_box.clicked.connect(self.on_checkbox_clicked)
+
+        message = QtWidgets.QLabel("Who (which machines) do you want to share with?")
+        button_row = QtWidgets.QHBoxLayout()
+        ok_button = QtWidgets.QPushButton('Ok')
+        cancel_button = QtWidgets.QPushButton('Cancel')
+
+        ok_button.clicked.connect(self.on_ok_clicked)
+        cancel_button.clicked.connect(self.on_cancel_clicked)
+        button_row.addStretch(1)
+        button_row.addWidget(cancel_button)
+        button_row.addWidget(ok_button)
+        layout.addWidget(message)
+        layout.addLayout(grid)
+        layout.addLayout(button_row)
+
+    def on_checkbox_clicked(self):
+        check_box = self.sender()
+        if self.sender().isChecked():
+            self.device_list.append(check_box.device_id)
+            print check_box.device_id
+            print check_box.device_name
+            print check_box.user
+            print check_box.full_name
+
+    def on_ok_clicked(self):
+        self.button = 'Ok'
+        self.accept()
+        return self.device_list
+
+    def on_cancel_clicked(self):
+        self.button = 'Cancel'
+        self.accept()
+        return None
+
+
 if __name__ == "__main__":
     # from cgl.core.utils import load_style_sheet
-    app = QtWidgets.QApplication([])
-    form = SyncMaster()
-    form.show()
-    app.exec_()
+    pass

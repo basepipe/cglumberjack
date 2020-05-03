@@ -7,7 +7,7 @@ from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
-from cgl.core.utils.general import current_user, check_for_latest_master, update_master
+from cgl.core.utils.general import current_user, check_for_latest_master, update_master, launch_lumber_watch
 from cgl.core.config import app_config, UserConfig
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
@@ -22,6 +22,40 @@ except ImportError:
 
 ICON_WIDTH = 24
 CONFIG = app_config()
+
+
+class FunctionRow(QtWidgets.QFrame):
+    def __init__(self, parent=None):
+        QtWidgets.QFrame.__init__(self, parent)
+
+        layout = QtWidgets.QHBoxLayout(self)
+        sync_button = QtWidgets.QToolButton()
+        render_label = QtWidgets.QLabel('Render: ')
+        self.render_local = QtWidgets.QRadioButton("Local")
+        # TODO - this needs to be something in the globals
+        self.render_farm = QtWidgets.QRadioButton("Smedge")
+        self.sync_state = False
+
+        layout.addStretch(1)
+        layout.addWidget(sync_button)
+        layout.addWidget(render_label)
+        layout.addWidget(self.render_local)
+        layout.addWidget(self.render_farm)
+
+        sync_button.clicked.connect(self.on_sync_clicked)
+        self.render_local.clicked.connect(self.on_render_clicked)
+        self.render_farm.clicked.connect(self.on_render_clicked)
+
+    def on_render_clicked(self):
+        if self.render_local.isChecked():
+            print 'local rendering'
+        elif self.render_farm.isChecked():
+            print 'farm rendering'
+
+    def on_sync_clicked(self):
+        print 'sync clicked'
+        # TODO - see if syncthing is running currently
+        # see if lumberwatch is currently running
 
 
 class PathWidget(QtWidgets.QFrame):
@@ -80,11 +114,31 @@ class NavigationWidget(QtWidgets.QFrame):
         self.refresh_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
 
         self.ingest_button = QtWidgets.QPushButton()
-        self.ingest_button.setToolTip('My Tasks')
+        self.ingest_button.setToolTip('Ingest Data')
         self.ingest_button.setProperty('class', 'grey_border')
         ingest_icon = os.path.join(cglpath.icon_path(), 'ingest24px.png')
         self.ingest_button.setIcon(QtGui.QIcon(ingest_icon))
         self.ingest_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
+
+        self.sync_button = QtWidgets.QPushButton()
+        self.sync_button.setToolTip('Sync Status')
+        self.sync_button.setProperty('class', 'grey_border')
+        sync_icon = os.path.join(cglpath.icon_path(), 'sync_on24px.png')
+        self.sync_button.setIcon(QtGui.QIcon(sync_icon))
+        self.sync_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
+        self.sync_button.installEventFilter(self)
+
+        # sync menu
+        self.sync_button.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.sync_button.customContextMenuRequested.connect(self.sync_clicked)
+        self.sync_popup = QtWidgets.QMenu(self)
+        self.sync_popup.addAction(QtWidgets.QAction('Sync Manager', self))
+        self.sync_popup.addSeparator()
+        self.sync_popup.addAction(QtWidgets.QAction('Set up Server', self))
+        self.sync_popup.addAction(QtWidgets.QAction('Set up Workstation', self))
+        self.sync_popup.addSeparator()
+        self.sync_popup.addAction(QtWidgets.QAction('Start Sync', self))
+        self.sync_popup.addAction(QtWidgets.QAction('Stop Sync', self))
 
         self.back_button = QtWidgets.QPushButton()
         self.back_button.setToolTip('Go back')
@@ -123,17 +177,38 @@ class NavigationWidget(QtWidgets.QFrame):
         self.cl_row.addWidget(self.search_box)
 
         self.cl_row.addWidget(self.ingest_button)
+        self.cl_row.addWidget(self.sync_button)
 
         layout.addLayout(self.cl_row)
         layout.addWidget(self.current_location_line_edit)
 
         self.my_tasks_button.clicked.connect(self.my_tasks_pressed)
         self.ingest_button.clicked.connect(self.ingest_clicked)
+        # self.sync_button.clicked.connect(self.sync_clicked)
         self.refresh_button.clicked.connect(self.refresh_clicked)
         self.back_button.clicked.connect(self.back_button_pressed)
         self.companies_button.clicked.connect(self.buttons_pressed)
         self.projects_button.clicked.connect(self.buttons_pressed)
         self.set_text(self.path_object.path_root)
+
+    def eventFilter(self, widget, event):
+        if widget == self.sync_button and isinstance(event, QtGui.QMouseEvent) and event.buttons() & QtCore.Qt.LeftButton:
+            self.leftClicked(event.pos())
+            return True
+        return False
+
+    def leftClicked(self, pos):
+        parentPosition = self.sync_button.mapToGlobal(QtCore.QPoint(0, 0))
+        menuPosition = parentPosition + pos
+
+        self.sync_popup.move(menuPosition)
+        self.sync_popup.show()
+
+    def sync_clicked(self, point):
+        self.sync_popup.exec_(self.sync_button.mapToGlobal(point))
+        print 'sync clicked'
+        # TODO - pick a good icon, green for go, red for not syncing,
+        # update the icon instead of the menu name on the other things.
 
     def refresh_clicked(self):
         print 'Refresh clicked'
@@ -557,7 +632,7 @@ class CGLumberjack(LJMainWindow):
         LJMainWindow.__init__(self)
 
         if start_time:
-            print 'Finished Loading Modules in %s seconds' % (time.time() - start_time)
+            print 'Finished Loading Lumbermill in %s seconds' % (time.time() - start_time)
         self.user_config = UserConfig().d
         if previous_path:
             self.previous_path = previous_path
@@ -603,7 +678,7 @@ class CGLumberjack(LJMainWindow):
         report_bug_button = QtWidgets.QAction('Report Bug', self)
         request_feature_button = QtWidgets.QAction('Request Feature', self)
         tools_menu = self.menu_bar.addMenu('&Tools')
-        sync_menu = self.menu_bar.addMenu('&Sync')
+        self.sync_menu = self.menu_bar.addMenu('&Sync')
         if self.project_management != 'lumbermill':
             self.proj_man_link = self.two_bar.addAction(proj_man)
         self.login_menu = self.two_bar.addAction(login)
@@ -616,14 +691,14 @@ class CGLumberjack(LJMainWindow):
         pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
         set_up_sync_thing_server = QtWidgets.QAction('Set up Server', self)
         set_up_sync_thing_workstation = QtWidgets.QAction('Set Up Workstation', self)
-        check_machines_action = QtWidgets.QAction('Check for new Machines', self)
-        add_machines_to_folders = QtWidgets.QAction('Share Folders With Machines', self)
-        pull_from_server = QtWidgets.QAction('Pull from Server', self)
-        manage_sharing_action = QtWidgets.QAction('Manage Sharing', self)
-        launch_syncthing = QtWidgets.QAction('Relaunch Sync', self)
-        kill_syncthing = QtWidgets.QAction('Kill Sync', self)
-        fix_paths = QtWidgets.QAction('Fix File Paths', self)
-
+        # check_machines_action = QtWidgets.QAction('Check for new Machines', self)
+        # add_machines_to_folders = QtWidgets.QAction('Share Folders With Machines', self)
+        # pull_from_server = QtWidgets.QAction('Pull from Server', self)
+        manage_sharing_action = QtWidgets.QAction('Share Files', self)
+        launch_syncthing = QtWidgets.QAction('Start Syncing', self)
+        kill_syncthing = QtWidgets.QAction('Stop Syncing', self)
+        show_sync_thing_browser = QtWidgets.QAction('Show Details', self)
+        # fix_paths = QtWidgets.QAction('Fix File Paths', self)
 
         # add actions to the file menu
         tools_menu.addAction(settings)
@@ -638,29 +713,31 @@ class CGLumberjack(LJMainWindow):
         tools_menu.addAction(request_feature_button)
         # connect signals and slots
 
-        sync_menu.addAction(manage_sharing_action)
-        sync_menu.addSeparator()
-        sync_menu.addAction(set_up_sync_thing_server)
-        sync_menu.addAction(check_machines_action)
-        sync_menu.addAction(add_machines_to_folders)
-        sync_menu.addSeparator()
-        sync_menu.addAction(set_up_sync_thing_workstation)
-        sync_menu.addAction(pull_from_server)
-        sync_menu.addAction(fix_paths)
-        sync_menu.addSeparator()
-        sync_menu.addAction(kill_syncthing)
-        sync_menu.addAction(launch_syncthing)
+        self.sync_menu.addAction(manage_sharing_action)
+        self.sync_menu.addSeparator()
+        self.sync_menu.addAction(set_up_sync_thing_server)
+        # self.sync_menu.addAction(check_machines_action)
+        # self.sync_menu.addAction(add_machines_to_folders)
+        self.sync_menu.addSeparator()
+        self.sync_menu.addAction(set_up_sync_thing_workstation)
+        # self.sync_menu.addAction(pull_from_server)
+        # self.sync_menu.addAction(fix_paths)
+        self.sync_menu.addSeparator()
+        self.sync_menu.addAction(kill_syncthing)
+        self.sync_menu.addAction(launch_syncthing)
+        self.sync_menu.addAction(show_sync_thing_browser)
 
         # connect signals and slots
         kill_syncthing.triggered.connect(self.on_kill_syncthing)
         launch_syncthing.triggered.connect(self.on_launch_syncthing)
-        pull_from_server.triggered.connect(self.enable_server_connection_clicked)
-        check_machines_action.triggered.connect(self.check_for_machines_clicked)
-        sync_menu.triggered.connect(self.add_machines_to_folders_clicked)
+        # pull_from_server.triggered.connect(self.enable_server_connection_clicked)
+        # check_machines_action.triggered.connect(self.check_for_machines_clicked)
+        # add_machines_to_folders.triggered.connect(self.add_machines_to_folders_clicked)
         manage_sharing_action.triggered.connect(self.manage_sharing_action_clicked)
+        show_sync_thing_browser.triggered.connect(self.show_sync_details)
         set_up_sync_thing_server.triggered.connect(self.set_up_st_server_clicked)
         set_up_sync_thing_workstation.triggered.connect(self.set_up_st_workstation_clicked)
-        fix_paths.triggered.connect(self.fix_paths_clicked)
+        # fix_paths.triggered.connect(self.fix_paths_clicked)
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
         create_project.triggered.connect(self.open_create_project_dialog)
@@ -674,67 +751,109 @@ class CGLumberjack(LJMainWindow):
         time_tracking.triggered.connect(self.time_tracking_clicked)
         # Load any custom menus that the user has defined
         self.load_pipeline_designer_menus()
+        # TODO how do i run this as a background process, or a parallell process?
+        # TODO - how do i grab the pid so i can close this when lumbermill closes potentially?
+        try:
+            if CONFIG['sync']['syncthing']['sync_thing_url']:
+                import psutil
+                sync = False
+                st_utils.kill_syncthing()
+                for proc in psutil.process_iter():
+                    if proc.name() == 'syncthing.exe':
+                        self.change_sync_icon(syncing=True)
+                        sync = True
+                if not sync:
+                    self.change_sync_icon(syncing=False)
+                    # TODO - turn icon to not syncing
+                self.lumber_watch = launch_lumber_watch(new_window=True)
+                # TODO if syncthing is set as a feature in the globals!!!!
+                st_utils.launch_syncthing()
+                self.change_sync_icon(syncing=True)
+        except KeyError:
+            print ('Skipping, Syncthing Not Set up')
 
-    @staticmethod
-    def fix_paths_clicked():
+    def change_sync_icon(self, syncing=True):
+        # ss = QtCore.QString("QMenu { background: black; color: red }")
+        # TODO - can i change menu title color?
+        # TODO - can i add an icon to the menu instead of a title?
+        # self.sync_menu.setStyleSheet(ss)
+        sync_button = self.centralWidget().nav_widget.sync_button
+        if syncing:
+            print 'setting sync icon to sync_on'
+            sync_icon = os.path.join(cglpath.icon_path(), 'sync_on24px.png')
+            print sync_icon
+        else:
+            print 'setting sync icon to sync_off'
+            sync_icon = os.path.join(cglpath.icon_path(), 'sync_off24px.png')
+            print sync_icon
+        sync_button.setIcon(QtGui.QIcon(sync_icon))
+        sync_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
+
+    def fix_paths_clicked(self):
         st_utils.fix_folder_paths()
+        self.change_sync_icon(syncing=True)
 
-    @staticmethod
-    def on_kill_syncthing():
+    def on_kill_syncthing(self):
+        self.change_sync_icon(syncing=False)
+        print 'Killing Sync Thing'
         st_utils.kill_syncthing()
 
-    @staticmethod
-    def on_launch_syncthing():
+    def on_launch_syncthing(self):
+        self.change_sync_icon(syncing=True)
+        print 'Starting Sync Thing'
         st_utils.launch_syncthing()
 
-    @staticmethod
-    def enable_server_connection_clicked():
+    def enable_server_connection_clicked(self):
         """
         connects an artist's machine to the server after the server has added them
         :return:
         """
         st_utils.accept_folders()
+        self.change_sync_icon(syncing=True)
         pass
 
-    @staticmethod
-    def check_for_machines_clicked():
+    def check_for_machines_clicked(self):
         st_utils.update_machines()
+        self.change_sync_icon(syncing=True)
         pass
 
-    @staticmethod
-    def add_machines_to_folders_clicked():
+    def add_machines_to_folders_clicked(self):
         st_utils.update_machines()
+        self.change_sync_icon(syncing=True)
         pass
 
     def manage_sharing_action_clicked(self):
-        from ui.widgets.sync_master import SyncMaster
-        scope = None
-        path_object = cglpath.PathObject(self.centralWidget().path_widget.path_line_edit.text())
-        if path_object.scope:
-            if path_object.scope != '*':
-                scope = path_object.scope
+        """
+        opens a dialog where use chooses who they want to share with
+        and which tasks they want to share.
+        :return:
+        """
+        path_object = self.centralWidget().path_widget.path_object
+        st_utils.share_files(path_object)
 
-        dialog = SyncMaster(company=path_object.company, project=path_object.project, scope=scope)
-        dialog.exec_()
-        print "This produces a gui for managing the sharing of folders and external devices."
-        pass
+    def show_sync_details(self):
+        """
+        shows the syncthing web gui
+        :return:
+        """
+        st_utils.show_browser()
 
-    @staticmethod
-    def set_up_st_server_clicked():
+    def set_up_st_server_clicked(self):
         """
         setups up server using client.json file from aws folder of the company's name, and a Google Sheets file that
         keeps track of all machines being used.
         :return:
         """
         st_utils.setup_server()
+        self.change_sync_icon(syncing=True)
 
-    @staticmethod
-    def set_up_st_workstation_clicked():
+    def set_up_st_workstation_clicked(self):
         """
         Set up the local workstation to work with sync thing and register local workstation to the sheets file.
         :return:
         """
         st_utils.setup_workstation()
+        self.change_sync_icon(syncing=True)
 
     def load_pipeline_designer_menus(self):
         import json

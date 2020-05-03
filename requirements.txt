@@ -1,3 +1,4 @@
+boto3
 pyperclip
 click
 pyside
@@ -15,6 +16,7 @@ PyWin32
 xmltodict
 oauth2client
 psutil
+watchdog
 
 #  http://aka.ms/vcpython27
 # https://s3.amazonaws.com/aws-cli/AWSCLI64.msi

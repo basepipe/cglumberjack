@@ -285,6 +285,17 @@ def load_style_sheet(style_file='stylesheet.css'):
     return data
 
 
+def launch_lumber_watch(new_window=False):
+    folder_, other = __file__.split('core')
+    lumber_watch_path = os.path.join(folder_, 'plugins', 'aws', 'cgl_sqs', 'utils.py').replace('\\', '/')
+    if os.path.isfile(lumber_watch_path):
+        print('Starting Lumberwatch Services')
+        command = 'python %s' % lumber_watch_path
+        cgl_execute(command, new_window=new_window)
+    else:
+        print 'Lumber Watch Path does not exist: %s' % (lumber_watch_path)
+
+
 def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=True,
                 command_name='cgl_execute', do_system=False, new_window=False, **kwargs):
     # TODO - we need to make sure this command is used everywhere we're passing commands if at all possible.
@@ -305,6 +316,7 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         else:
             print('Executing Command:\n%s' % command)
             if new_window:
+                print command
                 subprocess.Popen(command, universal_newlines=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
                 # TODO - would like a way to ensure output prints to the new console as well as to our output.  For now
                 # it seems like it's a one or the other scneario
