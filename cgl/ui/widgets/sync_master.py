@@ -21,6 +21,7 @@ class SyncMaster(LJDialog):
         self.scope = scope
         self.current_selection = ''
         self.path_object = PathObject(self.globals['paths']['root'])
+        self.sync_folder_dict = self.get_sync_folder_dict()
 
         layout = QtWidgets.QVBoxLayout(self)
         grid_layout = QtWidgets.QGridLayout()
@@ -41,7 +42,7 @@ class SyncMaster(LJDialog):
             self.shots_radio.setChecked(True)
         else:
             self.assets_radio.setChecked(True)
-        self.model = SyncTreeModel()
+        self.model = SyncTreeModel(self.sync_folder_dict)
         self.model.setRootPath(self.path_object.path_root)
         self.file_tree = QtWidgets.QTreeView()
         self.file_tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -79,6 +80,14 @@ class SyncMaster(LJDialog):
         self.shots_radio.hide()
         self.load_companies()
 
+    @staticmethod
+    def get_sync_folder_dict():
+        import cgl.plugins.syncthing.utils as st
+        dict_ = st.get_sync_folders()
+        for each in dict_:
+            print 'key', each
+        return st.get_sync_folders()
+
     @QtCore.Slot(QtCore.QModelIndex)
     def on_file_tree_clicked(self, index):
         index_ = self.model.index(index.row(), 0, index.parent())
@@ -115,13 +124,20 @@ class SyncMaster(LJDialog):
         import cgl.plugins.syncthing.utils as st
         publishes = find_latest_publish_objects(self.current_selection, source=self.source_check_box.isChecked(),
                                                 render=self.render_check_box.isChecked())
-        st.kill_syncthing()
-        if publishes:
-            for p in publishes:
-                folder_id = '[root]\\%s' % p.path.replace('/', '\\')
-                folder = p.path_root.replace('/', '\\')
-                st.add_folder_to_config(folder_id, folder, self.device_list, type_='sendonly')
-        st.launch_syncthing()
+        device_dict = st.get_device_dict()
+        this_device = st.get_my_device_info()['id']
+        dialog_sharing = SharingDialog(this_device, device_dict)
+        dialog_sharing.exec_()
+        if dialog_sharing.button == 'Ok':
+            all_device_id = dialog_sharing.device_list
+            if all_device_id:
+                st.kill_syncthing()
+                if publishes:
+                    for p in publishes:
+                        folder_id = '[root]\\%s' % p.path.replace('/', '\\')
+                        folder = p.path_root.replace('/', '\\')
+                        st.add_folder_to_config(folder_id, folder, all_device_id, type_='sendonly')
+                st.launch_syncthing()
 
     def on_scope_changed(self):
         if self.shots_radio.isChecked():
@@ -144,7 +160,7 @@ class SyncMaster(LJDialog):
             self.assets_radio.hide()
 
     def load_file_tree(self):
-        self.model = SyncTreeModel()
+        self.model = SyncTreeModel(self.sync_folder_dict)
         self.model.setRootPath(self.path_object.path_root)
         self.file_tree.show()
         self.file_tree.setModel(self.model)
@@ -193,6 +209,10 @@ class SyncMaster(LJDialog):
 
 class SyncTreeModel(QtWidgets.QFileSystemModel):
 
+    def __init__(self, sync_folder_dict):
+        QtWidgets.QFileSystemModel.__init__(self)
+        self.sync_folder_dict = sync_folder_dict
+
     def headerData(self, section, orientation, role):
         if section == 4:
             if role == QtCore.Qt.DisplayRole:
@@ -216,7 +236,12 @@ class SyncTreeModel(QtWidgets.QFileSystemModel):
                 return QtCore.Qt.AlignHCenter
         if index.column() == self.columnCount()-2:
             if role == QtCore.Qt.DisplayRole:
-                return "Not Synced"
+                current_file = self.filePath(index).replace('/', '\\')
+                if current_file in self.sync_folder_dict.keys():
+                    print current_file
+                    return self.sync_folder_dict[current_file]['type']
+                else:
+                    return "Not Synced"
             if role == QtCore.Qt.TextAlignmentRole:
                 return QtCore.Qt.AlignHCenter
         return super(SyncTreeModel, self).data(index, role)

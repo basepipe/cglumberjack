@@ -76,11 +76,8 @@ def setup_workstation():
 def fix_folder_paths():
     kill_syncthing()
     config_path = get_config_path()
-    print config_path
     tree = ElemTree.parse(config_path)
-    print tree
     root = tree.getroot()
-    print('Fixing Folder Paths')
     for child in root:
         if child.tag == 'folder':
             id_ = child.get('id')
@@ -91,8 +88,6 @@ def fix_folder_paths():
                 print('Changing path to %s' % cgl_folder)
             else:
                 print('Folder Passes')
-    print '------------------------------'
-    print tree
     tree.write(config_path)
     launch_syncthing()
 
@@ -125,9 +120,6 @@ def accept_folders():
                     add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
         if child.tag == 'folder':
             if ' ' in child.get('path'):
-                print 'found spaces in PATH - changing to local path'
-                print child.get('id'), 'ID'
-                print child.get('path'), 'PATH'
                 local_folder = get_folder_from_id(child.get('id'))
                 print 'changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder)
                 if not os.path.exists(local_folder):
@@ -140,6 +132,7 @@ def accept_folders():
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
     launch_syncthing()
+
 
 def get_folder_from_id(folder_id):
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
@@ -363,6 +356,21 @@ def add_all_devices_to_config(sheet, device_list=False):
         print('Config File does not exist: %s' % filepath)
 
 
+def get_sync_folders():
+    folders_dict = {}
+    config_path = get_config_path()
+    tree = ElemTree.parse(config_path)
+    root = tree.getroot()
+    device_id = ''
+    for child in root:
+        if child.tag == 'device':
+            device_id = child.get('name')
+        if child.tag == 'folder':
+            folders_dict[child.get('path')] = {'type': child.get('type'),
+                                               'device': device_id}
+    return folders_dict
+
+
 def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonly', sqs=True):
     """
     Function to add a new folder to config.xml file
@@ -418,24 +426,12 @@ def get_device_dict():
 
 
 def share_files(path_object):
-    from cgl.ui.widgets.sync_master import SharingDialog, SyncMaster
-    device_dict = get_device_dict()
-    this_device = get_my_device_info()['id']
-    dialog_sharing = SharingDialog(this_device, device_dict)
-    dialog_sharing.exec_()
-    if dialog_sharing.button == 'Ok':
-        all_device_id = dialog_sharing.device_list
-        if all_device_id:
-            print path_object.company
-            print path_object.project
-            print path_object.scope
-            sm_dialog = SyncMaster(company=path_object.company,
-                                   project=path_object.project,
-                                   scope=path_object.scope,
-                                   device_list=all_device_id)
-            sm_dialog.exec_()
-    else:
-        return
+    from cgl.ui.widgets.sync_master import SyncMaster
+    sm_dialog = SyncMaster(company=path_object.company,
+                           project=path_object.project,
+                           scope=path_object.scope,
+                           device_list=[])
+    sm_dialog.exec_()
 
 
 def share_all_files_to_devices(all_device_id=[], dialog=True):
@@ -564,7 +560,7 @@ def update_machines():
 
 if __name__ == "__main__":
     # kill_syncthing()
-    server_setup_test()
+    print get_sync_folders()
     # print get_config_path()
     # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
     # os.makedirs(path_)
