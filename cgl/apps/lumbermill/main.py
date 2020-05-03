@@ -697,6 +697,7 @@ class CGLumberjack(LJMainWindow):
         manage_sharing_action = QtWidgets.QAction('Share Files', self)
         launch_syncthing = QtWidgets.QAction('Start Syncing', self)
         kill_syncthing = QtWidgets.QAction('Stop Syncing', self)
+        show_sync_thing_browser = QtWidgets.QAction('Show Details', self)
         # fix_paths = QtWidgets.QAction('Fix File Paths', self)
 
         # add actions to the file menu
@@ -724,6 +725,7 @@ class CGLumberjack(LJMainWindow):
         self.sync_menu.addSeparator()
         self.sync_menu.addAction(kill_syncthing)
         self.sync_menu.addAction(launch_syncthing)
+        self.sync_menu.addAction(show_sync_thing_browser)
 
         # connect signals and slots
         kill_syncthing.triggered.connect(self.on_kill_syncthing)
@@ -732,6 +734,7 @@ class CGLumberjack(LJMainWindow):
         # check_machines_action.triggered.connect(self.check_for_machines_clicked)
         # add_machines_to_folders.triggered.connect(self.add_machines_to_folders_clicked)
         manage_sharing_action.triggered.connect(self.manage_sharing_action_clicked)
+        show_sync_thing_browser.triggered.connect(self.show_sync_details)
         set_up_sync_thing_server.triggered.connect(self.set_up_st_server_clicked)
         set_up_sync_thing_workstation.triggered.connect(self.set_up_st_workstation_clicked)
         # fix_paths.triggered.connect(self.fix_paths_clicked)
@@ -827,6 +830,13 @@ class CGLumberjack(LJMainWindow):
         """
         path_object = self.centralWidget().path_widget.path_object
         st_utils.share_files(path_object)
+
+    def show_sync_details(self):
+        """
+        shows the syncthing web gui
+        :return:
+        """
+        st_utils.show_browser()
 
     def set_up_st_server_clicked(self):
         """

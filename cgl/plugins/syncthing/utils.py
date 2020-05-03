@@ -8,8 +8,9 @@ from cgl.core.utils.general import launch_lumber_watch
 from cgl.core.utils.read_write import load_json, save_json
 
 
-def setup_server():
+def setup_server(clean=False):
     print 'running setup_server'
+    wipe_globals()
     kill_syncthing()
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     set_machine_type('server')
@@ -52,6 +53,7 @@ def setup_workstation():
     :param sheet_name:
     :return:
     """
+    wipe_globals()
     USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
     GLOBALS = load_json(USER_GLOBALS['globals'])
     set_machine_type('workstation')
@@ -406,7 +408,6 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
         print folder_id, 'exists in config'
 
 
-
 def get_device_dict():
     sheet = get_sheet()
     row_count = sheets.find_empty_row_in_sheet(sheet)
@@ -498,6 +499,9 @@ def sync_with_server():
 
 
 def wipe_globals():
+    # TODO - Clean up SHEETS - remove the device from the list.
+    # TODO - is there a way to remove the device from syncthing?
+    # TODO -
     kill_syncthing()
     clear_sync_thing_user_globals()
     config_path = get_config_path()
@@ -526,6 +530,12 @@ def kill_syncthing():
     # TODO - turn icon to not syncing
 
 
+def show_browser():
+    command = 'syncthing -browser-only'
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    return p
+
+
 def syncthing_running():
     for proc in psutil.process_iter():
         if proc.name() == 'syncthing.exe':
@@ -534,18 +544,6 @@ def syncthing_running():
     else:
         print 'Syncthing: -->> Not Syncing'
         return False
-
-
-def server_setup_test():
-    wipe_globals()
-    setup_server()
-    launch_lumber_watch()
-
-
-def workstation_setup_test():
-    wipe_globals()
-    setup_workstation()
-    launch_lumber_watch()
 
 
 def update_machines():
@@ -560,8 +558,9 @@ def update_machines():
 
 if __name__ == "__main__":
     # kill_syncthing()
-    print get_sync_folders()
+    # print get_sync_folders()
     # print get_config_path()
     # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
     # os.makedirs(path_)
+    setup_server()
 
