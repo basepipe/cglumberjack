@@ -115,14 +115,13 @@ class SyncMaster(LJDialog):
         import cgl.plugins.syncthing.utils as st
         publishes = find_latest_publish_objects(self.current_selection, source=self.source_check_box.isChecked(),
                                                 render=self.render_check_box.isChecked())
+        st.kill_syncthing()
         if publishes:
-            st.kill_syncthing()
             for p in publishes:
                 folder_id = '[root]\\%s' % p.path.replace('/', '\\')
                 folder = p.path_root.replace('/', '\\')
                 st.add_folder_to_config(folder_id, folder, self.device_list, type_='sendonly')
-            st.launch_syncthing()
-            # st.share_files_to_devices()
+        st.launch_syncthing()
 
     def on_scope_changed(self):
         if self.shots_radio.isChecked():

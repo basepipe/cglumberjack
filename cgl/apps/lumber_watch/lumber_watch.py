@@ -4,8 +4,12 @@ import time
 
 def check_message_queue():
     import cgl.plugins.aws.cgl_sqs.utils as sqs_utils
-    messages = sqs_utils.receive_messages()
-    print messages
+    return sqs_utils.receive_messages()
+
+
+def check_syncthing_status():
+    import cgl.plugins.syncthing.utils as st_utils
+    return st_utils.syncthing_running()
 
 
 def check_syncthing_config():
@@ -20,19 +24,16 @@ def check_syncthing_config():
     from cgl.core.utils.general import save_json
     user_config_path = str(user_config())
     config_file = st_utils.get_config_path()
-    print config_file
     user_config_dict = UserConfig().d
     time_stamp = getmtime(config_file)
     if 'sync_thing_config_modified' in user_config_dict.keys():
         previous_time_stamp = user_config_dict['sync_thing_config_modified']
         if time_stamp != previous_time_stamp:
-            print config_file
             print 'New Time Stamp for cgl_config, updating to %s' % time_stamp
             user_config_dict['sync_thing_config_modified'] = time_stamp
             save_json(user_config_path, user_config_dict)
             return True
         else:
-            print 'No Changes in %s' % config_file
             return False
     print('No previous timestamp detected, starting to track')
     user_config_dict['sync_thing_config_modified'] = time_stamp
@@ -53,9 +54,10 @@ def main(seconds, queue, syncthing):
         if queue:
             check_message_queue()
         if syncthing:
+            check_syncthing_status()
             st_config_change = check_syncthing_config()
         time.sleep(seconds - ((time.time() - start_time) % seconds))
 
 
 if __name__ == '__main__':
-    check_syncthing_config()
+    main()

@@ -54,11 +54,13 @@ def receive_messages(queue_url='https://sqs.us-east-1.amazonaws.com/044899505732
         VisibilityTimeout=0,
         WaitTimeSeconds=0
     )
-    print '-->>: Recieved %s new events' % len(response['Messages'])
+
     if 'Messages' in response.keys():
+        print 'Lumberwatch:  %s New Events' % len(response['Messages'])
         messages = response['Messages']
         return messages, sqs, queue_url
     else:
+        print 'Lumberwatch: No New Messages'
         return None, None, None
 
 

@@ -530,6 +530,16 @@ def kill_syncthing():
     # TODO - turn icon to not syncing
 
 
+def syncthing_running():
+    for proc in psutil.process_iter():
+        if proc.name() == 'syncthing.exe':
+            print 'Syncthing: Syncing'
+            return True
+    else:
+        print 'Syncthing: -->> Not Syncing'
+        return False
+
+
 def server_setup_test():
     wipe_globals()
     setup_server()
@@ -554,7 +564,7 @@ def update_machines():
 
 if __name__ == "__main__":
     # kill_syncthing()
-    launch_lumber_watch()
+    server_setup_test()
     # print get_config_path()
     # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
     # os.makedirs(path_)
