@@ -31,6 +31,7 @@ class FilesPanel(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
         self.work_files = []
+        self.in_current_folder = False
         self.render_files_widget = None
         self.high_files = []
         self.render_files = []
@@ -277,8 +278,6 @@ class FilesPanel(QtWidgets.QWidget):
 
     @staticmethod
     def populate_resolutions_combo(task_widget, path_object, task):
-        print task_widget.versions.currentText()
-        print '00000000000000'
         object_ = path_object.copy(user=task_widget.users.currentText(), task=task,
                                    version=task_widget.versions.currentText(),
                                    resolution='*')
@@ -305,8 +304,15 @@ class FilesPanel(QtWidgets.QWidget):
             self.user = ''
 
     def on_source_selected(self, data):
+        reload_render = False
         new_data = []
-        object_ = PathObject(self.current_location)
+        temp_ = PathObject(self.current_location)
+        if temp_.resolution:
+            if temp_.render_pass:
+                reload_render = True
+            object_ = PathObject(temp_.split_after('resolution'))
+        else:
+            object_ = temp_
         parent = self.sender().parent()
         object_.set_attr(root=self.path_object.root)
         object_.set_attr(version=parent.parent().versions.currentText())
@@ -329,17 +335,19 @@ class FilesPanel(QtWidgets.QWidget):
         self.source_selection_changed.emit(new_data)
         self.clear_task_selection_except(self.sender().task)
         self.sender().parent().show_tool_buttons(user=object_.user)
+        if reload_render:
+            self.load_render_files(self.task_widgets_dict[object_.task])
 
     def on_render_double_clicked(self, data):
-        print self.path_object.path_root
-        print
         if data:
-            print self.path_object.path_root
-            print self.path_object.render_pass
-            print self.path_object.camera
-            print self.path_object.aov
-            print '----------------------------'
+            self.in_current_folder = False
+            # print self.path_object.path_root
+            # print self.path_object.render_pass
+            # print self.path_object.camera
+            # print self.path_object.aov
+            # print '----------------------------'
             selected = data[0][0]
+            print selected
             if selected == '.':
                 print 'going back a folder'
                 last = self.path_object.get_last_attr()
@@ -351,34 +359,55 @@ class FilesPanel(QtWidgets.QWidget):
             if os.path.splitext(selected)[1]:
                 print selected, 'is a file'
             else:
-                print self.path_object.path_root
+                print self.path_object.path_root, 'entering folder'
                 self.enter_render_folder()
 
+    @staticmethod
+    def get_next_path_object_variable(path_object, current=False):
+        if '\\' in path_object.path:
+            pieces = path_object.path.split('\\')
+        else:
+            pieces = path_object.path.split('/')
+        if current:
+            position = len(pieces)-1
+        else:
+            position = len(pieces)
+        selected_variable = path_object.template[position]
+        print 'selected variable:', selected_variable
+        return selected_variable
+
     def on_render_selected(self, data):
+
         if data:
             new_data = []
-            self.current_location['context'] = 'render'
+            if self.current_location['context'] == 'source':
+                self.current_location['filename'] = ''
+                self.current_location['ext'] = ''
+                self.current_location['context'] = 'render'
             object_ = PathObject(self.current_location)
-            current_path = os.path.join(object_.path_root, data[0][0]).replace('\\', '/')
-            new_path_object = PathObject(current_path)
-
-            # print self.parent().parent().parent().path_widget.path_line_edit()
-            parent = self.sender().parent()
-            # TODO - this seems vastly overcomplicated for what it's doing
-            object_.set_attr(root=self.path_object.root)
-            object_.set_attr(version=parent.parent().versions.currentText())
-            object_.set_attr(context='render')
-            object_.set_attr(resolution=parent.parent().resolutions.currentText())
-            object_.set_attr(user=parent.parent().users.currentText())
+            if not self.in_current_folder:
+                current_variable = self.get_next_path_object_variable(object_)
+                self.in_current_folder = True
+            else:
+                current_variable = self.get_next_path_object_variable(object_, current=True)
+            print current_variable, object_.path_root
+            if current_variable != 'filename':
+                if object_.filename:
+                    object_.set_attr(filename='')
+                    object_.set_attr(ext='')
+            new_path_object = PathObject(object_).copy()
+            new_path_object.set_attr(attr=current_variable, value=data[0][0])
+            object_.set_attr(attr=current_variable, value=data[0][0])
             # object_.set_attr(task=self.sender().task)
-            try:
-                object_.set_attr(filename=data[0][0])
-                filename_base, ext = os.path.splitext(data[0][0])
-                object_.set_attr(filename_base=filename_base)
-                object_.set_attr(ext=ext.replace('.', ''))
-            except IndexError:
-                # this indicates a selection within the module, but not a specific selected files
-                pass
+            if current_variable == 'filename':
+                if os.path.splitext(data[0][0]):
+                    print 'this is a file'
+                    object_.set_attr(filename=data[0][0])
+                    filename_base, ext = os.path.splitext(data[0][0])
+                    object_.set_attr(filename_base=filename_base)
+                    object_.set_attr(ext=ext.replace('.', ''))
+                else:
+                    print 'this is a folder i thought was a file'
             self.update_task_location(new_path_object)
             for each in data:
                 dir_ = os.path.dirname(object_.path_root)
@@ -623,20 +652,23 @@ class FilesPanel(QtWidgets.QWidget):
                             child.widget().files_area.work_files_table.clearSelection()
         return
 
-    def enter_render_folder(self, force_path=None):
+    def enter_render_folder(self, render_path=None):
         """
 
         :param path_object:
         :return:
         """
-        glob_path = self.path_object.path_root
+        if not render_path:
+            glob_path = self.path_object.path_root
+        else:
+            glob_path = render_path
         files_ = glob.glob('%s/*' % glob_path)
         data_ = self.prep_list_for_table(files_, basename=True, length=1, back=True)
         model = FilesModel(data_, ['Ready to Review/Publish'])
         self.render_files_widget.set_item_model(model)
 
-
     def load_render_files(self, widget):
+        
         logging.debug('loading render files')
         widget.files_area.work_files_table.show()
         render_table = widget.files_area.export_files_table
