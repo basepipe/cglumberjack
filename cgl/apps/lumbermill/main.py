@@ -780,11 +780,11 @@ class CGLumberjack(LJMainWindow):
                             print('Sync Thing Not Found, run "Setup Workstation" to start using it.')
                     else:
                         self.load_syncthing = False
-                        self.sync_menu.hide()
+                        self.change_sync_icon(syncing=False)
                         print('sync_thing_auto_launch set to False, skipping launch')
                 else:
                     self.load_syncthing = False
-                    self.sync_menu.hide()
+                    self.change_sync_icon(syncing=False)
                     print('Syncthing Auto Launch setting not set in globals.  Skipping sync operations')
 
         except KeyError:
