@@ -562,5 +562,6 @@ if __name__ == "__main__":
     # print get_config_path()
     # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
     # os.makedirs(path_)
-    setup_server()
+    # setup_server()
+    launch_lumber_watch()
 
