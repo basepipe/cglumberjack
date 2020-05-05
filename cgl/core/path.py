@@ -1144,6 +1144,8 @@ class CreateProductionData(object):
             self.copy_default_file('maya', 'mb')
         if self.path_object.task == 'comp':
             self.copy_default_file('nuke', 'nk')
+        if self.path_object.task == 'key':
+            self.copy_default_file('nuke', 'nk')
 
     def copy_default_file(self, software, ext):
         self.path_object.set_attr(filename='%s_%s_%s.%s' % (self.path_object.seq,
