@@ -58,6 +58,7 @@ def setup_workstation():
     GLOBALS = load_json(USER_GLOBALS['globals'])
     set_machine_type('workstation')
     kill_syncthing()
+    print 1, get_my_device_info()
     device_info = get_my_device_info()
     print('Setting Up Workstation for Syncing')
     company = GLOBALS['account_info']['aws_company_name']
@@ -567,6 +568,6 @@ if __name__ == "__main__":
     # print get_config_path()
     # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
     # os.makedirs(path_)
-    # setup_server()
+    kill_syncthing()
     pass
 
