@@ -112,14 +112,17 @@ def accept_folders():
                     id_ = c.get('id')
                     print 'found pending folder: ', id_
                     local_folder = get_folder_from_id(id_)
-                    if not os.path.exists(local_folder):
-                        print 'Creating Local Folder for Syncing: %s' % local_folder
-                        os.makedirs(local_folder)
-                    c.set('path', local_folder)
-                    # need a device list here for the add folder to config part to work.
-                    device_list = [device_id]
-                    # this one writes the config file.
-                    add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
+                    if local_folder:
+                        if not os.path.exists(local_folder):
+                            print 'Creating Local Folder for Syncing: %s' % local_folder
+                            os.makedirs(local_folder)
+                        c.set('path', local_folder)
+                        # need a device list here for the add folder to config part to work.
+                        device_list = [device_id]
+                        # this one writes the config file.
+                        add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
+                    else:
+                        print('skipping non-cgl folders')
         if child.tag == 'folder':
             if ' ' in child.get('path'):
                 local_folder = get_folder_from_id(child.get('id'))
@@ -147,6 +150,7 @@ def get_folder_from_id(folder_id):
         return local_path
     except ValueError:
         print('Skipping %s, it is not a lumbermill share' % folder_id)
+        return None
 
 
 def get_syncthing_folders():
@@ -562,6 +566,5 @@ if __name__ == "__main__":
     # print get_config_path()
     # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
     # os.makedirs(path_)
-    # setup_server()
-    launch_lumber_watch()
+    setup_server()
 
