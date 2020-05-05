@@ -11,12 +11,12 @@ from cgl.core.utils.read_write import load_json, save_json
 def setup_server(clean=False):
     print 'running setup_server'
     wipe_globals()
-    kill_syncthing()
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     set_machine_type('server')
     globls = load_json(user_globals['globals'])
     cgl_tools_folder = globls['paths']['cgl_tools']
     sheet_obj = get_sheet()
+    print 1, get_my_device_info()
     add_device_info_to_sheet(sheet_obj, server='true')
     add_all_devices_to_config(sheet_obj)
     folder_id = r'[root]\_config\cgl_tools'
@@ -285,6 +285,7 @@ def add_device_info_to_sheet(sheet, server = 'false'):
     """
     new_row = sheets.find_empty_row_in_sheet(sheet)
     device_dictionary = get_my_device_info()
+    print device_dictionary
     if not sheets.id_exists(device_dictionary['id'], sheet) and not sheets.name_exists(device_dictionary['name'],sheet):
         sheet.update_cell(new_row, 1, device_dictionary['id'])
         sheet.update_cell(new_row, 2, device_dictionary['name'])
@@ -543,10 +544,10 @@ def show_browser():
 def syncthing_running():
     for proc in psutil.process_iter():
         if proc.name() == 'syncthing.exe':
-            print 'Syncthing: Syncing'
+            print 'Syncthing: Running'
             return True
     else:
-        print 'Syncthing: -->> Not Syncing'
+        print 'Syncthing: Not Running'
         return False
 
 
@@ -566,5 +567,6 @@ if __name__ == "__main__":
     # print get_config_path()
     # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
     # os.makedirs(path_)
-    setup_server()
+    # setup_server()
+    pass
 
