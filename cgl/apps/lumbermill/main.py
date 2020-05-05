@@ -22,6 +22,7 @@ except ImportError:
 
 ICON_WIDTH = 24
 CONFIG = app_config()
+USERCONFIG = UserConfig().d
 
 
 class FunctionRow(QtWidgets.QFrame):
@@ -671,6 +672,7 @@ class CGLumberjack(LJMainWindow):
         self.two_bar = self.menuBar()
         icon = QtGui.QPixmap(":/images/lumberjack.24px.png").scaled(24, 24)
         self.setWindowIcon(icon)
+        self.load_syncthing = True
         login = QtWidgets.QAction('login', self)
         time_tracking = QtWidgets.QAction('time', self)
         proj_man = QtWidgets.QAction('%s' % self.project_management, self)
@@ -755,20 +757,36 @@ class CGLumberjack(LJMainWindow):
         # TODO - how do i grab the pid so i can close this when lumbermill closes potentially?
         try:
             if CONFIG['sync']['syncthing']['sync_thing_url']:
-                import psutil
-                sync = False
-                st_utils.kill_syncthing()
-                for proc in psutil.process_iter():
-                    if proc.name() == 'syncthing.exe':
-                        self.change_sync_icon(syncing=True)
-                        sync = True
-                if not sync:
+                # TODO - check for user config settings to use syncthing.
+                if "sync_thing_auto_launch" in USERCONFIG.keys():
+                    if USERCONFIG["sync_thing_auto_launch"] == 'True':
+                        import psutil
+                        sync = False
+                        st_utils.kill_syncthing()
+                        for proc in psutil.process_iter():
+                            if proc.name() == 'syncthing.exe':
+                                self.change_sync_icon(syncing=True)
+                                sync = True
+                        if not sync:
+                            self.change_sync_icon(syncing=False)
+                            # TODO - turn icon to not syncing
+                        self.lumber_watch = launch_lumber_watch(new_window=True)
+                        # TODO if syncthing is set as a feature in the globals!!!!
+                        try:
+                            st_utils.launch_syncthing()
+                            self.change_sync_icon(syncing=True)
+                        except:
+                            # this is a WindowsError - which doesn't seem to allow me to use in the except clause
+                            print('Sync Thing Not Found, run "Setup Workstation" to start using it.')
+                    else:
+                        self.load_syncthing = False
+                        self.change_sync_icon(syncing=False)
+                        print('sync_thing_auto_launch set to False, skipping launch')
+                else:
+                    self.load_syncthing = False
                     self.change_sync_icon(syncing=False)
-                    # TODO - turn icon to not syncing
-                self.lumber_watch = launch_lumber_watch(new_window=True)
-                # TODO if syncthing is set as a feature in the globals!!!!
-                st_utils.launch_syncthing()
-                self.change_sync_icon(syncing=True)
+                    print('Syncthing Auto Launch setting not set in globals.  Skipping sync operations')
+
         except KeyError:
             print ('Skipping, Syncthing Not Set up')
 
