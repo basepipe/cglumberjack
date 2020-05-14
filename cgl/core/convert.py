@@ -117,14 +117,37 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
         print('process_info not defined')
 
 
-def create_prores_mov(input_sequence, output):
+def create_prores_mov(input_file, output_file=None, processing_method='local', dependent_job=None):
     """
     create a prores mov from specified input sequence, and save it to output.
-    :param input_sequence: input sequence string, formatted with (#, %04d, *)
+    :param input_file: input sequence string, formatted with (#, %04d, *)
     :param output: output string
     :return:
     """
-    pass
+    file_, ext = os.path.splitext(input_file)
+    file_type = ext_map[ext]
+    if not output_file:
+        output_file = '%s_prores.mov' % file_
+    if file_type == 'movie':
+        command = '%s -i %s -c:v prores_ks -profile:v 3 -c:a copy %s' % (PATHS['ffmpeg'], input_file, output_file)
+        print command
+        # cgl_execute(command, command_name='Create Prores', methodology=processing_method, WaitForJobID=dependent_job,
+        #             new_window=True)
+    else:
+        print('File type: %s not supported with create_prores_mov()' % file_type)
+
+
+def create_title(file_path='sample_image.png', title_text="Sample Title Text", size='1920x1080',
+                 bg='transparent',
+                 font_color='ffffff',
+                 font='Arial',
+                 font_size='120'):
+
+    command = '%s convert -background %s -fill #%s -size %s -gravity center ' \
+              '-font %s -pointsize %s label:"%s" %s' % (PATHS['magick'], bg, font_color,
+                                                        size, font, font_size,
+                                                        title_text, file_path)
+    print command
 
 
 def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], output_frame_rate=None,

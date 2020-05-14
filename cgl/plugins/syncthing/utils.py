@@ -21,7 +21,7 @@ def setup_server(clean=False):
     add_all_devices_to_config(sheet_obj)
     folder_id = r'[root]\_config\cgl_tools'
     add_folder_to_config(folder_id, cgl_tools_folder, type_='sendonly')
-    share_all_files_to_devices()  # only if you're setting up main folders
+    share_folders_to_devices()  # only if you're setting up main folders
     launch_syncthing()
 
 
@@ -441,34 +441,35 @@ def share_files(path_object):
     sm_dialog.exec_()
 
 
-def share_all_files_to_devices(all_device_id=[], dialog=True):
+def share_folders_to_devices(all_device_id=[], folder_list=[r'[root]\_config\cgl_tools']):
     """
     Makes all files shareable to all devices found in the config file
     :return:
     """
-    from cgl.plugins.aws.cgl_sqs.utils import folders_shared_message
-    this_device = get_my_device_info()['id']
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
+
     if not all_device_id:
-        for child in root:
-            if child.tag == 'device':
-                all_device_id.append(child.get('id'))
+        print('No device IDs identified, skipping file share')
+        return
+        # for child in root:
+        #     if child.tag == 'device':
+        #         all_device_id.append(child.get('id'))
 
     for child in root:
         shared = []
         if child.tag == 'folder':
-            for sub_element in child:
-                if sub_element.tag == 'device':
-                    shared.append(sub_element.get('id'))
-            for id_ in all_device_id:
-                if id_ not in shared:
-                    new_node = ElemTree.SubElement(child, 'device')
-                    new_node.set('id', id_)
-                    if this_device != id_:
-                        folders_shared_message(device_id=id_, device_name='test', message='sharing all folders')
-    tree.write(config_path)
+            id_ = child.get('id')
+            if id_ in folder_list:
+                for sub_element in child:
+                    if sub_element.tag == 'device':
+                        shared.append(sub_element.get('id'))
+                for d_id in all_device_id:
+                    if d_id not in shared:
+                        new_node = ElemTree.SubElement(child, 'device')
+                        new_node.set('id', d_id)
+                tree.write(config_path)
 
 
 def sync_with_server():
@@ -558,7 +559,7 @@ def update_machines():
     kill_syncthing()
     sheet = sheets.authorize_sheets()
     add_all_devices_to_config(sheet)
-    share_all_files_to_devices()
+    share_folders_to_devices()
     launch_syncthing()
 
 
