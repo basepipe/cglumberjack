@@ -17,7 +17,6 @@ def check_st_config():
     if lw.check_syncthing_config():
         # assuming all we have to do is accept folders.
         print 'config changed, probably going to accept folders'
-        st_utils.launch_syncthing()
         st_utils.accept_folders()
 
 
@@ -137,7 +136,7 @@ def add_machine_to_syncthing(message_attrs, test=True):
             st_utils.launch_syncthing()
             st_utils.kill_syncthing()
             print('sharing files to %s' % name)
-            st_utils.share_all_files_to_devices(all_device_id=[device_id], dialog=False)
+            st_utils.share_folders_to_devices(all_device_id=[device_id], dialog=False)
             print 'Sending Folders Shared Message'
             folders_shared_message(device_id=device_id, device_name=name,
                                    message='Shared Files with %s, check config')

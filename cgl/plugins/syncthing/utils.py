@@ -21,7 +21,7 @@ def setup_server(clean=False):
     add_all_devices_to_config(sheet_obj)
     folder_id = r'[root]\_config\cgl_tools'
     add_folder_to_config(folder_id, cgl_tools_folder, type_='sendonly')
-    share_all_files_to_devices()  # only if you're setting up main folders
+    share_folders_to_devices()  # only if you're setting up main folders
     launch_syncthing()
 
 
@@ -96,22 +96,19 @@ def fix_folder_paths():
 
 
 def accept_folders():
-    kill_syncthing()
     # parse the xml
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
     folders_dict = {}
-
     for child in root:
         if child.tag == 'device':
             device_id = child.get('id')
             device_name = child.get('name')
-            print device_name
             for c in child:
                 if c.tag == 'pendingFolder':
                     id_ = c.get('id')
-                    print 'found pending folder: ', id_
+                    print 'found pending folder, klling syncthing: %s', id_
                     local_folder = get_folder_from_id(id_)
                     if local_folder:
                         if not os.path.exists(local_folder):
@@ -121,11 +118,15 @@ def accept_folders():
                         # need a device list here for the add folder to config part to work.
                         device_list = [device_id]
                         # this one writes the config file.
+                        if syncthing_running():
+                            kill_syncthing()
                         add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
                     else:
                         print('skipping non-cgl folders')
         if child.tag == 'folder':
             if ' ' in child.get('path'):
+                if syncthing_running():
+                    kill_syncthing()
                 local_folder = get_folder_from_id(child.get('id'))
                 print 'changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder)
                 if not os.path.exists(local_folder):
@@ -137,7 +138,8 @@ def accept_folders():
                 tree.write(config_path)
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
-    launch_syncthing()
+    if not syncthing_running():
+        launch_syncthing()
 
 
 def get_folder_from_id(folder_id):
@@ -434,6 +436,9 @@ def get_device_dict():
 
 def share_files(path_object):
     from cgl.ui.widgets.sync_master import SyncMaster
+    print path_object.company
+    print path_object.project
+    print path_object.scope
     sm_dialog = SyncMaster(company=path_object.company,
                            project=path_object.project,
                            scope=path_object.scope,
@@ -441,34 +446,35 @@ def share_files(path_object):
     sm_dialog.exec_()
 
 
-def share_all_files_to_devices(all_device_id=[], dialog=True):
+def share_folders_to_devices(all_device_id=[], folder_list=[r'[root]\_config\cgl_tools'], dialog=False):
     """
     Makes all files shareable to all devices found in the config file
     :return:
     """
-    from cgl.plugins.aws.cgl_sqs.utils import folders_shared_message
-    this_device = get_my_device_info()['id']
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
+
     if not all_device_id:
-        for child in root:
-            if child.tag == 'device':
-                all_device_id.append(child.get('id'))
+        print('No device IDs identified, skipping file share')
+        return
+        # for child in root:
+        #     if child.tag == 'device':
+        #         all_device_id.append(child.get('id'))
 
     for child in root:
         shared = []
         if child.tag == 'folder':
-            for sub_element in child:
-                if sub_element.tag == 'device':
-                    shared.append(sub_element.get('id'))
-            for id_ in all_device_id:
-                if id_ not in shared:
-                    new_node = ElemTree.SubElement(child, 'device')
-                    new_node.set('id', id_)
-                    if this_device != id_:
-                        folders_shared_message(device_id=id_, device_name='test', message='sharing all folders')
-    tree.write(config_path)
+            id_ = child.get('id')
+            if id_ in folder_list:
+                for sub_element in child:
+                    if sub_element.tag == 'device':
+                        shared.append(sub_element.get('id'))
+                for d_id in all_device_id:
+                    if d_id not in shared:
+                        new_node = ElemTree.SubElement(child, 'device')
+                        new_node.set('id', d_id)
+                tree.write(config_path)
 
 
 def sync_with_server():
@@ -558,7 +564,7 @@ def update_machines():
     kill_syncthing()
     sheet = sheets.authorize_sheets()
     add_all_devices_to_config(sheet)
-    share_all_files_to_devices()
+    share_folders_to_devices()
     launch_syncthing()
 
 
@@ -568,6 +574,7 @@ if __name__ == "__main__":
     # print get_config_path()
     # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
     # os.makedirs(path_)
-    kill_syncthing()
+    # kill_syncthing()
+    launch_lumber_watch()
     pass
 

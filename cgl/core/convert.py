@@ -117,14 +117,37 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
         print('process_info not defined')
 
 
-def create_prores_mov(input_sequence, output):
+def create_prores_mov(input_file, output_file=None, processing_method='local', dependent_job=None):
     """
     create a prores mov from specified input sequence, and save it to output.
-    :param input_sequence: input sequence string, formatted with (#, %04d, *)
+    :param input_file: input sequence string, formatted with (#, %04d, *)
     :param output: output string
     :return:
     """
-    pass
+    file_, ext = os.path.splitext(input_file)
+    file_type = ext_map[ext]
+    if not output_file:
+        output_file = '%s_prores.mov' % file_
+    if file_type == 'movie':
+        command = '%s -i %s -c:v prores_ks -profile:v 3 -c:a copy %s' % (PATHS['ffmpeg'], input_file, output_file)
+        print command
+        # cgl_execute(command, command_name='Create Prores', methodology=processing_method, WaitForJobID=dependent_job,
+        #             new_window=True)
+    else:
+        print('File type: %s not supported with create_prores_mov()' % file_type)
+
+
+def create_title(file_path='sample_image.png', title_text="Sample Title Text", size='1920x1080',
+                 bg='transparent',
+                 font_color='ffffff',
+                 font='Arial',
+                 font_size='120'):
+
+    command = '%s convert -background %s -fill #%s -size %s -gravity center ' \
+              '-font %s -pointsize %s label:"%s" %s' % (PATHS['magick'], bg, font_color,
+                                                        size, font, font_size,
+                                                        title_text, file_path)
+    print command
 
 
 def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], output_frame_rate=None,
@@ -265,6 +288,31 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
         return process_info
 
 
+def extract_wav_from_movie(filein, fileout=None, processing_method='local', dependent_job=None):
+    """
+    extracts audio from a video file.
+    :param filein: location of video file to extract from.
+    :param fileout: location of .wav file to be created
+    :param processing_method: local, smedge, or deadline processing.
+    :param dependent_job:
+    :return:
+    """
+    # check if the input is an approved video format.
+    file_, ext = os.path.splitext(filein)
+    if ext in ext_map.keys():
+        if ext_map[ext] == 'movie':
+            if not fileout:
+                fileout = '%s.wav' % file_
+            if not fileout.endswith('.wav'):
+                print("%s is not a .wav file, aborting wav extraction")
+                return
+            command = '%s -i %s -acodec pcm_s16le -ac 2 %s' % (PATHS['ffmpeg'], filein, fileout)
+            cgl_execute(command, command_name='Audio Extraction', methodology=processing_method, WaitForJobID=dependent_job,
+                        new_window=True)
+    else:
+        print('Extension %s not cataloged in globals, please add it to the ext_map dictionary' % ext)
+
+
 @click.command()
 @click.option('--input_file', '-i', prompt='File Sequence Path (file.####.ext)',
               help='Path to the Input File.  Can be Image, Image Sequence, Movie')
@@ -272,8 +320,9 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
               help='Path to the output file/folder/sequence')
 @click.option('--width', '-w', default=1920, help='width in pixels')
 @click.option('--height', '-h', default=1080, help='height in pixels')
-@click.option('--file_type', '-ft', default='sequence', help='options: sequence, image, movie, ppt, pdf')
-@click.option('--conversion_type', '-t', default='proxy', help='Type of Conversion - sequence, movie, image, gif')
+@click.option('--file_type', '-ft', default='sequence', help='options: sequence, image, movie')
+@click.option('--conversion_type', '-t', default='proxy',
+              help='Type of Conversions: proxy, web_preview, editorial, thumb, gif, audio')
 def main(input_file, output_file, height, width, file_type, conversion_type):
     run_dict = {}
     if file_type == 'sequence':
@@ -282,8 +331,14 @@ def main(input_file, output_file, height, width, file_type, conversion_type):
         elif conversion_type == 'web_preview':
             create_web_mov(input_file, output=output_file)
     if file_type == 'movie':
-        if conversion_type == 'thumb':
+        if conversion_type == 'editorial':
+            create_prores_mov(input_file, output_file)
+        elif conversion_type == 'audio':
+            extract_wav_from_movie(input_file, output_file)
+        elif conversion_type == 'thumb':
             create_movie_thumb(input_file, output_file)
+        else:
+            print('Conversion Type: %s process not defined' % conversion_type)
     if run_dict.keys():
         for key in run_dict:
             click.echo('%s: %s' % (key, run_dict[key]))
