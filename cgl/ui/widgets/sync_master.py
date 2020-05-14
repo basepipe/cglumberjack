@@ -71,6 +71,7 @@ class SyncMaster(LJDialog):
         layout.addWidget(self.file_tree)
 
         self.source_check_box.setChecked(True)
+        self.render_check_box.setChecked(True)
         self.company_combo.currentIndexChanged.connect(self.on_company_changed)
         self.project_combo.currentIndexChanged.connect(self.on_project_changed)
         self.shots_radio.clicked.connect(self.on_scope_changed)

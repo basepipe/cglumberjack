@@ -436,6 +436,9 @@ def get_device_dict():
 
 def share_files(path_object):
     from cgl.ui.widgets.sync_master import SyncMaster
+    print path_object.company
+    print path_object.project
+    print path_object.scope
     sm_dialog = SyncMaster(company=path_object.company,
                            project=path_object.project,
                            scope=path_object.scope,
@@ -443,7 +446,7 @@ def share_files(path_object):
     sm_dialog.exec_()
 
 
-def share_folders_to_devices(all_device_id=[], folder_list=[r'[root]\_config\cgl_tools']):
+def share_folders_to_devices(all_device_id=[], folder_list=[r'[root]\_config\cgl_tools'], dialog=False):
     """
     Makes all files shareable to all devices found in the config file
     :return:
@@ -571,6 +574,7 @@ if __name__ == "__main__":
     # print get_config_path()
     # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
     # os.makedirs(path_)
-    kill_syncthing()
+    # kill_syncthing()
+    launch_lumber_watch()
     pass
 
