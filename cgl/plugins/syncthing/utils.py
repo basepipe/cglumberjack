@@ -109,7 +109,6 @@ def accept_folders():
                 if c.tag == 'pendingFolder':
                     id_ = c.get('id')
                     print 'found pending folder, klling syncthing: %s', id_
-                    kill_syncthing()
                     local_folder = get_folder_from_id(id_)
                     if local_folder:
                         if not os.path.exists(local_folder):
@@ -119,12 +118,15 @@ def accept_folders():
                         # need a device list here for the add folder to config part to work.
                         device_list = [device_id]
                         # this one writes the config file.
+                        if syncthing_running():
+                            kill_syncthing()
                         add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
                     else:
                         print('skipping non-cgl folders')
         if child.tag == 'folder':
             if ' ' in child.get('path'):
-                kill_syncthing()
+                if syncthing_running():
+                    kill_syncthing()
                 local_folder = get_folder_from_id(child.get('id'))
                 print 'changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder)
                 if not os.path.exists(local_folder):
@@ -138,7 +140,6 @@ def accept_folders():
                 print 'Removing "default" folder from syncthing registry'
     if not syncthing_running():
         launch_syncthing()
-
 
 
 def get_folder_from_id(folder_id):
