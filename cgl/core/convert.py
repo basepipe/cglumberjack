@@ -130,9 +130,8 @@ def create_prores_mov(input_file, output_file=None, processing_method='local', d
         output_file = '%s_prores.mov' % file_
     if file_type == 'movie':
         command = '%s -i %s -c:v prores_ks -profile:v 3 -c:a copy %s' % (PATHS['ffmpeg'], input_file, output_file)
-        print command
-        # cgl_execute(command, command_name='Create Prores', methodology=processing_method, WaitForJobID=dependent_job,
-        #             new_window=True)
+        cgl_execute(command, command_name='Create Prores', methodology=processing_method, WaitForJobID=dependent_job,
+                    new_window=True)
     else:
         print('File type: %s not supported with create_prores_mov()' % file_type)
 
@@ -141,13 +140,15 @@ def create_title(file_path='sample_image.png', title_text="Sample Title Text", s
                  bg='transparent',
                  font_color='ffffff',
                  font='Arial',
-                 font_size='120'):
-
+                 font_size='120',
+                 processing_method='local',
+                 dependent_job=None):
     command = '%s convert -background %s -fill #%s -size %s -gravity center ' \
               '-font %s -pointsize %s label:"%s" %s' % (PATHS['magick'], bg, font_color,
                                                         size, font, font_size,
                                                         title_text, file_path)
-    print command
+    cgl_execute(command, command_name='Create Title', methodology=processing_method, WaitForJobID=dependent_job,
+                new_window=False)
 
 
 def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], output_frame_rate=None,
