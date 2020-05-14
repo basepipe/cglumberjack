@@ -96,22 +96,20 @@ def fix_folder_paths():
 
 
 def accept_folders():
-    kill_syncthing()
     # parse the xml
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
     folders_dict = {}
-
     for child in root:
         if child.tag == 'device':
             device_id = child.get('id')
             device_name = child.get('name')
-            print device_name
             for c in child:
                 if c.tag == 'pendingFolder':
                     id_ = c.get('id')
-                    print 'found pending folder: ', id_
+                    print 'found pending folder, klling syncthing: %s', id_
+                    kill_syncthing()
                     local_folder = get_folder_from_id(id_)
                     if local_folder:
                         if not os.path.exists(local_folder):
@@ -126,6 +124,7 @@ def accept_folders():
                         print('skipping non-cgl folders')
         if child.tag == 'folder':
             if ' ' in child.get('path'):
+                kill_syncthing()
                 local_folder = get_folder_from_id(child.get('id'))
                 print 'changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder)
                 if not os.path.exists(local_folder):
@@ -137,7 +136,9 @@ def accept_folders():
                 tree.write(config_path)
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
-    launch_syncthing()
+    if not syncthing_running():
+        launch_syncthing()
+
 
 
 def get_folder_from_id(folder_id):
