@@ -1,5 +1,4 @@
 # noinspection PyUnresolvedReferences
-import exiftool
 import os
 from cgl.core.utils.general import cgl_execute
 import re
