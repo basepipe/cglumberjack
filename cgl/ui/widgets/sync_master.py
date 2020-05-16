@@ -178,6 +178,8 @@ class SyncMaster(LJDialog):
         self.file_tree.header().setResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
         self.file_tree.header().setResizeMode(4, QtWidgets.QHeaderView.ResizeToContents)
         self.file_tree.header().setResizeMode(5, QtWidgets.QHeaderView.ResizeToContents)
+        self.file_tree.header().setResizeMode(6, QtWidgets.QHeaderView.ResizeToContents)
+        self.file_tree.header().setResizeMode(7, QtWidgets.QHeaderView.ResizeToContents)
 
     def on_company_changed(self):
         self.company = self.company_combo.currentText()
@@ -236,16 +238,29 @@ class SyncTreeModel(QtWidgets.QFileSystemModel):
         if section == 5:
             if role == QtCore.Qt.DisplayRole:
                 return 'Total Size'
+        if section == 6:
+            if role == QtCore.Qt.DisplayRole:
+                return 'Remote Devices'
         if role == QtCore.Qt.DecorationRole:
             return None
         else:
             return super(SyncTreeModel, self).headerData(section, orientation, role)
 
     def columnCount(self, parent=QtCore.QModelIndex()):
-        return super(SyncTreeModel, self).columnCount()+2
+        return super(SyncTreeModel, self).columnCount()+3
 
     def data(self, index, role):
-        if index.column() == self.columnCount()-1:
+        if index.column() == 6:
+            if role == QtCore.Qt.DisplayRole:
+                current_file = self.filePath(index)
+                if current_file in self.sync_folder_dict.keys():
+                    device_list = ','.join(self.sync_folder_dict[current_file]['devices'])
+                    return device_list
+                else:
+                    return '-'
+        if index.column() == 5:
+            if role == QtCore.Qt.TextAlignmentRole:
+                return QtCore.Qt.AlignRight
             if role == QtCore.Qt.DisplayRole:
                 if os.path.isdir(self.filePath(index)):
                     size = get_cgl_info_size(self.filePath(index), source=self.source, render=self.render)
@@ -254,7 +269,7 @@ class SyncTreeModel(QtWidgets.QFileSystemModel):
                     return 'ignored'
             if role == QtCore.Qt.TextAlignmentRole:
                 return QtCore.Qt.AlignHCenter
-        if index.column() == self.columnCount()-2:
+        if index.column() == 4:
             if role == QtCore.Qt.DisplayRole:
                 current_file = self.filePath(index)
                 if current_file in self.sync_folder_dict.keys():

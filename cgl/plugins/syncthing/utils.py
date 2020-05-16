@@ -370,6 +370,7 @@ def get_sync_folders():
     from cgl.core.path import PathObject
     folders_dict = {}
     config_path = get_config_path()
+    print config_path
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
     device_id = ''
@@ -385,26 +386,29 @@ def get_sync_folders():
                 task_path = path_object.split_after('task')
                 shot_path = path_object.split_after('shot')
                 seq_path = path_object.split_after('seq')
-                set_sync_statuses(folders_dict, user_path, sync_folder)
-                set_sync_statuses(folders_dict, task_path, user_path)
-                set_sync_statuses(folders_dict, shot_path, task_path)
-                set_sync_statuses(folders_dict, seq_path, shot_path)
+                set_sync_statuses(folders_dict, user_path, sync_folder, device_id)
+                set_sync_statuses(folders_dict, task_path, user_path, device_id)
+                set_sync_statuses(folders_dict, shot_path, task_path, device_id)
+                set_sync_statuses(folders_dict, seq_path, shot_path, device_id)
             except TypeError:
                 pass
             folders_dict[sync_folder] = {'type': child.get('type'),
-                                         'device': device_id,
+                                         'devices': [device_id],
                                          'folders': []}
     return folders_dict
 
 
-def set_sync_statuses(folders_dict, path_, sync_folder):
+def set_sync_statuses(folders_dict, path_, sync_folder, device_id):
     if path_ in folders_dict.keys():
         if sync_folder not in folders_dict[path_]['folders']:
             folders_dict[path_]['folders'].append(sync_folder)
             folders_dict[path_]['type'] = '%s Synced' % len(folders_dict[path_]['folders'])
+        if device_id not in folders_dict[path_]['devices']:
+            folders_dict[path_]['devices'].append(device_id)
     else:
         folders_dict[path_] = {'folders': [sync_folder],
-                               'type': '1 Synced'}
+                               'type': '1 Synced',
+                               'devices': [device_id]}
 
 
 
@@ -611,7 +615,7 @@ if __name__ == "__main__":
     # kill_syncthing()
     sync_folders = get_sync_folders()
     for k in sync_folders:
-        print k, sync_folders[k]['folders']
+        print k, sync_folders[k]
 
 
 
