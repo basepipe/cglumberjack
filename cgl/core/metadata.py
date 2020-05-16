@@ -17,26 +17,6 @@ R3D = ['ClipName', 'EdgeTC', 'EndEdgeTC', 'TotalFrames', 'FrameHeight', 'FrameWi
        'Take']
 
 
-def get_meta_data(filein):
-    """
-    catch all for gathering meta data, tested on:
-    R3D, RAF, JPG, MOV
-    :param filein:
-    :return:
-    """
-    files = []
-    if filein.endswith('R3D'):
-        return get_red_data(filein)
-    # File types tested: RAF, JPG
-    if isinstance(filein, basestring):
-        files = [filein]
-    elif isinstance(filein, list):
-        files = filein
-    with exiftool.ExifTool() as et:
-        metadata = et.get_metadata_batch(files)
-    return metadata[0]
-
-
 def get_meta_data2(filein, tool='exiftool'):
     """
     Due to issues with the exiftool module this is provided as a way to parse output directly
