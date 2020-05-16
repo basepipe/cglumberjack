@@ -3,6 +3,7 @@ import os
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import current_user
+from cgl.core.cgl_info import get_cgl_info_size
 from cgl.ui.widgets.widgets import AdvComboBox
 from cgl.core.path import PathObject, show_in_folder, get_folder_size, find_latest_publish_objects
 from cgl.core.config import get_globals
@@ -13,6 +14,7 @@ class SyncMaster(LJDialog):
     def __init__(self, company=None, project=None, scope='assets', device_list=[]):
         LJDialog.__init__(self)
         user = current_user()
+        self.setMinimumWidth(800)
         self.device_list = device_list
         self.setWindowTitle('Lumber Sync')
         self.globals = get_globals()
@@ -42,9 +44,10 @@ class SyncMaster(LJDialog):
             self.shots_radio.setChecked(True)
         else:
             self.assets_radio.setChecked(True)
-        self.model = SyncTreeModel(self.sync_folder_dict)
+        self.model = SyncTreeModel(self.sync_folder_dict, self.source_check_box, self.render_check_box)
         self.model.setRootPath(self.path_object.path_root)
         self.file_tree = QtWidgets.QTreeView()
+        self.file_tree.header().setStretchLastSection(False)
         self.file_tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.file_tree.customContextMenuRequested.connect(self.sync_menu)
         self.file_tree.hide()
@@ -76,6 +79,8 @@ class SyncMaster(LJDialog):
         self.project_combo.currentIndexChanged.connect(self.on_project_changed)
         self.shots_radio.clicked.connect(self.on_scope_changed)
         self.assets_radio.clicked.connect(self.on_scope_changed)
+        self.source_check_box.clicked.connect(self.load_file_tree)
+        self.render_check_box.clicked.connect(self.load_file_tree)
         self.file_tree.clicked.connect(self.on_file_tree_clicked)
         self.assets_radio.hide()
         self.shots_radio.hide()
@@ -84,9 +89,6 @@ class SyncMaster(LJDialog):
     @staticmethod
     def get_sync_folder_dict():
         import cgl.plugins.syncthing.utils as st
-        dict_ = st.get_sync_folders()
-        for each in dict_:
-            print 'key', each
         return st.get_sync_folders()
 
     @QtCore.Slot(QtCore.QModelIndex)
@@ -161,7 +163,8 @@ class SyncMaster(LJDialog):
             self.assets_radio.hide()
 
     def load_file_tree(self):
-        self.model = SyncTreeModel(self.sync_folder_dict)
+        self.model = SyncTreeModel(self.sync_folder_dict, source=self.source_check_box.isChecked(),
+                                   render=self.render_check_box.isChecked())
         self.model.setRootPath(self.path_object.path_root)
         self.file_tree.show()
         self.file_tree.setModel(self.model)
@@ -169,6 +172,12 @@ class SyncMaster(LJDialog):
         self.file_tree.setColumnHidden(1, True)
         self.file_tree.setColumnHidden(2, True)
         self.file_tree.setColumnHidden(3, True)
+        self.file_tree.header().setResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        self.file_tree.header().setResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
+        self.file_tree.header().setResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
+        self.file_tree.header().setResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
+        self.file_tree.header().setResizeMode(4, QtWidgets.QHeaderView.ResizeToContents)
+        self.file_tree.header().setResizeMode(5, QtWidgets.QHeaderView.ResizeToContents)
 
     def on_company_changed(self):
         self.company = self.company_combo.currentText()
@@ -210,14 +219,20 @@ class SyncMaster(LJDialog):
 
 class SyncTreeModel(QtWidgets.QFileSystemModel):
 
-    def __init__(self, sync_folder_dict):
+    def __init__(self, sync_folder_dict, source, render):
         QtWidgets.QFileSystemModel.__init__(self)
         self.sync_folder_dict = sync_folder_dict
+        self.source = source
+        self.render = render
+        # No idea why this setNameFilters doesn't work
+        filters = ('JSON', '*.json')
+        self.setNameFilters(filters)
+        self.setNameFilterDisables(False)
 
     def headerData(self, section, orientation, role):
         if section == 4:
             if role == QtCore.Qt.DisplayRole:
-                return 'Sync Status'
+                return 'Status'
         if section == 5:
             if role == QtCore.Qt.DisplayRole:
                 return 'Total Size'
@@ -232,17 +247,20 @@ class SyncTreeModel(QtWidgets.QFileSystemModel):
     def data(self, index, role):
         if index.column() == self.columnCount()-1:
             if role == QtCore.Qt.DisplayRole:
-                return "Calculating..."
+                if os.path.isdir(self.filePath(index)):
+                    size = get_cgl_info_size(self.filePath(index), source=self.source, render=self.render)
+                    return size
+                else:
+                    return 'ignored'
             if role == QtCore.Qt.TextAlignmentRole:
                 return QtCore.Qt.AlignHCenter
         if index.column() == self.columnCount()-2:
             if role == QtCore.Qt.DisplayRole:
-                current_file = self.filePath(index).replace('/', '\\')
+                current_file = self.filePath(index)
                 if current_file in self.sync_folder_dict.keys():
-                    print current_file
                     return self.sync_folder_dict[current_file]['type']
                 else:
-                    return "Not Synced"
+                    return "-"
             if role == QtCore.Qt.TextAlignmentRole:
                 return QtCore.Qt.AlignHCenter
         return super(SyncTreeModel, self).data(index, role)

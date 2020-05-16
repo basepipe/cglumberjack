@@ -559,7 +559,7 @@ class IOPanel(QtWidgets.QWidget):
 
     def populate_tasks(self):
         self.task_combo.clear()
-        ignore = ['default_steps', '']
+        ignore = ['default_steps', '', 'cgl_info.json']
         schema = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
         tasks = schema['long_to_short'][self.scope_combo.currentText()]
         self.populate_seq()

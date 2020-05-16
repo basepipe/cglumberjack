@@ -4,7 +4,7 @@ import glob
 from cgl.plugins.Qt import QtCore, QtWidgets
 from cgl.core.config import app_config
 from cgl.ui.widgets.dialog import InputDialog
-from cgl.core.utils.general import current_user, cgl_copy
+from cgl.core.utils.general import current_user, cgl_copy, clean_file_list
 from cgl.ui.widgets.progress_gif import process_method
 from cgl.core.path import PathObject, CreateProductionData, lj_list_dir
 from cgl.core.path import replace_illegal_filename_characters, show_in_folder

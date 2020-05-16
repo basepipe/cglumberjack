@@ -53,25 +53,6 @@ def app_name(str_=None, human=False):
     return title
 
 
-def folder_size(folder, size=0):
-    """
-    gets the memory size of a folder, can also take files
-    :param folder:
-    :param size:
-    :return:
-    """
-
-    if os.path.isdir(folder):
-        for d, subdir, files in os.walk(folder):
-            for name in files:
-                size = size + os.path.getsize('%s/%s' % (d, name))
-            for subfolder in subdir:
-                folder_size('%s/%s' % (d, subfolder), size)
-        return '%s mb' % (size/1000000)
-    else:
-        return '%s mb' % (os.path.getsize(folder)/1000000)
-
-
 def current_user():
     """
     find the currently logged in user
@@ -99,6 +80,43 @@ def test_string_against_rules(test_string, rule, effected_label=None):
         if effected_label:
             effected_label.setStyleSheet("color: rgb(255, 50, 50);")
         return CONFIG['paths']['rules']['%s_example' % rule]
+
+
+def clean_file_list(file_list):
+    """
+    removes items we don't want to display in the GUI based off what's listed in the globals.
+    :param file_list:
+    :return:
+    """
+
+    ignore_matches = app_config()['rules']['ignore']['matches']
+    ignore_contains = app_config()['rules']['ignore']['contains']
+    ignore_endswith = app_config()['rules']['ignore']['endswith']
+    clean_list = []
+    for f in file_list:
+        ignore = False
+        if '\\' in f or '/' in f:
+            folder, name = os.path.split(f)
+        else:
+            name = f
+        if name in ignore_matches:
+            ignore = True
+            continue
+        if ignore_contains:
+            for igc in ignore_contains:
+                if igc in f:
+                    ignore = True
+                    continue
+        if ignore_endswith:
+            for ige in ignore_endswith:
+                if ige in f:
+                    ignore = True
+                    continue
+        if not ignore:
+            clean_list.append(f)
+
+    return clean_list
+
 
 
 def cgl_copy(source, destination, methodology='local', verbose=False, dest_is_folder=False, test=False, job_name=''):
@@ -254,8 +272,11 @@ def split_all(path):
 
 
 def save_json(filepath, data):
-    with open(filepath, 'w') as outfile:
-        json.dump(data, outfile, indent=4, sort_keys=True)
+    try:
+        with open(filepath, 'w') as outfile:
+            json.dump(data, outfile, indent=4, sort_keys=True)
+    except IOError:
+        print('Error writing file %s' % filepath)
 
 
 def load_json(filepath):

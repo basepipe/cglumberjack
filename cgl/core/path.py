@@ -7,7 +7,7 @@ import os
 import sys
 import re
 import copy
-from cgl.core.utils.general import split_all, cgl_copy, cgl_execute
+from cgl.core.utils.general import split_all, cgl_copy, cgl_execute, clean_file_list
 from cgl.core.config import app_config, UserConfig
 import convert
 
@@ -508,7 +508,8 @@ class PathObject(object):
                     list_.append(os.path.basename(each))
             else:
                 list_ = glob.glob(path_)
-            return list_
+
+            return clean_file_list(list_)
         else:
             return []
 
@@ -522,8 +523,6 @@ class PathObject(object):
         """
         value = self.data[attr]
         split_after_thing = os.path.join(self.path_root.split(value)[0], value)
-        print split_after_thing
-        print split_after_thing.replace('\\', '/')
         return os.path.join(self.path_root.split(value)[0], value).replace('\\', '/')
 
     def eliminate_wild_cards(self):
@@ -750,8 +749,9 @@ class PathObject(object):
 
     def set_json(self):
         json_obj = self.copy(latest=True, context='render', ext='json', task='lay', set_proper_filename=True)
-        self.asset_json = json_obj.path_root
-        self.shot_json = json_obj.path_root
+        if self.asset or self.shot:
+            self.asset_json = json_obj.path_root
+            self.shot_json = json_obj.path_root
         if self.task:
             json_obj = self.copy(context='render', ext='json', set_proper_filename=True)
             self.task_json = json_obj.path_root
@@ -955,6 +955,7 @@ class CreateProductionData(object):
         self.test = test
         self.path_object = PathObject(path_object)
         self.path_object.set_path()
+        self.path_object.set_json()
         self.do_scope = do_scope
         if file_system:
             self.create_folders()
@@ -977,11 +978,13 @@ class CreateProductionData(object):
         :return:
         """
         if self.path_object.scope != 'IO':
+            print 1
             if self.path_object.task_json:
                 self.update_task_json()
             if self.path_object.asset_json:
                 self.update_asset_json()
             if self.path_object.project_json:
+                print 2
                 self.update_project_json()
 
     def update_task_json(self):
@@ -1019,6 +1022,7 @@ class CreateProductionData(object):
 
         obj = self.path_object
         if os.path.exists(obj.asset_json):
+            print obj.asset_json, 'exists'
             asset_meta = assetcore.MetaObject(jsonfile=obj.asset_json)
         else:
             asset_meta = assetcore.MetaObject()
@@ -1039,7 +1043,7 @@ class CreateProductionData(object):
 
     def update_project_json(self):
         from cgl.core import assetcore
-
+        print 'updating project json'
         if os.path.exists(self.path_object.project_json):
             project_meta = assetcore.MetaObject(jsonfile=self.path_object.project_json)
         else:
@@ -1400,9 +1404,13 @@ def get_folder_size(folder):
     total_bytes = 0
     if os.path.isdir(folder):
         for root, dirs, files in os.walk(folder):
-            total_bytes += sum(os.path.getsize(os.path.join(root, name)) for name in files)
+            try:
+                total_bytes += sum(os.path.getsize(os.path.join(root, name).replace('\\', '/')) for name in files)
+            except:
+                print('ERROR: likely a problem with a file in %s' % root)
     elif os.path.isfile(folder):
         print 'this is a file numskull'
+        return 0
     return total_bytes
 
 
@@ -1523,27 +1531,26 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
     :param directory:
     :return: list of prepared files/items.
     """
-    ignore = ['publish_data.csv', '.preview', '.thumb']
     list_ = os.listdir(directory)
     if not list_:
         return
+    list_ = clean_file_list(list_)
     list_.sort()
     output_ = []
     for each in list_:
-        if each not in ignore:
-            if path_filter:
-                filtered = PathObject(each).data[path_filter]
-                output_.append([filtered])
-            else:
-                if basename:
-                    seq_string = str(seq_from_file(os.path.basename(each)))
-                    if seq_string:
-                        if seq_string not in output_:
-                            output_.append(seq_string)
-                    else:
-                        output_.append(each)
+        if path_filter:
+            filtered = PathObject(each).data[path_filter]
+            output_.append([filtered])
+        else:
+            if basename:
+                seq_string = str(seq_from_file(os.path.basename(each)))
+                if seq_string:
+                    if seq_string not in output_:
+                        output_.append(seq_string)
                 else:
                     output_.append(each)
+            else:
+                output_.append(each)
     for each in output_:
         if '#' in each:
             sequence = Sequence(os.path.join(directory, each))
