@@ -455,6 +455,11 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
 
 
 def get_device_dict():
+    """
+    Queries Google Sheets for all devices.  This could be made much faster if it simply querried the current config file
+    for sync thing.
+    :return:
+    """
     sheet = get_sheet()
     row_count = sheets.find_empty_row_in_sheet(sheet)
     device_id_col = 0

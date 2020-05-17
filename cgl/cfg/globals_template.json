@@ -586,6 +586,11 @@
         }
     }, 
     "rules": {
+        "ignore": {
+                    "contains": ["cgl_info.json", "_config", "publish_data.csv", ".preview", ".thumb", ".st_folder"],
+                    "matches": [],
+                    "endswith": []
+        },
         "context_list": [
             "render", 
             "source", 
