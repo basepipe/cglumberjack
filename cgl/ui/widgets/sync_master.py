@@ -127,9 +127,7 @@ class SyncMaster(LJDialog):
         import cgl.plugins.syncthing.utils as st
         publishes = find_latest_publish_objects(self.current_selection, source=self.source_check_box.isChecked(),
                                                 render=self.render_check_box.isChecked())
-        device_dict = st.get_device_dict()
-        this_device = st.get_my_device_info()['id']
-        dialog_sharing = SharingDialog(this_device, device_dict)
+        dialog_sharing = SharingDialog()
         dialog_sharing.exec_()
         if dialog_sharing.button == 'Ok':
             all_device_id = dialog_sharing.device_list
@@ -285,11 +283,16 @@ class SharingDialog(LJDialog):
     """
     Allows someone to choose who they will share a folder with.
     """
-    def __init__(self, this_device, device_dict):
+    def __init__(self, this_device=None, device_dict=None):
         LJDialog.__init__(self)
+
         self.setWindowTitle('Sharing Options')
         layout = QtWidgets.QVBoxLayout(self)
         grid = QtWidgets.QGridLayout()
+        if not this_device:
+            from cgl.plugins.syncthing.utils import get_device_dict, get_my_device_info
+            device_dict = get_device_dict()
+            this_device = get_my_device_info()['id']
         self.device_dict = device_dict
         self.device_list = []
         self.this_device = this_device

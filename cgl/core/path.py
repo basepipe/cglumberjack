@@ -879,8 +879,11 @@ class PathObject(object):
         """
         if self.user == 'publish':
             print "This is a publish user already, traditionally you'll be publishing from a user context."
+            return
         if not self.resolution:
             print('You must have resolution in order to publish')
+            return
+
         # current folders to be copied
         current_source = self.copy(filename=None, ext=None).path_root
         current_render = self.copy(context='render', filename=None, ext=None).path_root
@@ -894,13 +897,26 @@ class PathObject(object):
         self.publish_source = publish_source
         publish_render = publish.copy(context='render').path_root
         self.publish_render = publish_render
-        print 'Copying %s to %s' % (current_source, next_major_source)
+        if UserConfig()["sync_thing_machine_type"] == 'remote workstation':
+            from cgl.ui.widgets.sync_master import SharingDialog
+            dialog_sharing = SharingDialog()
+            dialog_sharing.exec_()
+            if dialog_sharing.button == 'Ok':
+                all_device_id = dialog_sharing.device_list
+                print 'Sharing Folders:'
+                print publish_source
+                print publish_render
+            return
+        else:
+            print 'No Sync Settings Set, ignoring.'
+            return
+        print 'Publishing %s to %s' % (current_source, next_major_source)
         cgl_copy(current_source, next_major_source)
-        print 'Copying %s to %s' % (current_source, publish_source)
+        print 'Publishing %s to %s' % (current_source, publish_source)
         cgl_copy(current_source, publish_source)
-        print 'Copying %s to %s' % (current_render, next_major_render)
+        print 'Publishing %s to %s' % (current_render, next_major_render)
         cgl_copy(current_render, next_major_render)
-        print 'Copying %s to %s' % (current_render, publish_render)
+        print 'Publishing %s to %s' % (current_render, publish_render)
         cgl_copy(current_render, publish_render)
         print 'Finished Copying'
 
