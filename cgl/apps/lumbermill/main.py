@@ -7,8 +7,8 @@ from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
-from cgl.core.utils.general import current_user, check_for_latest_master, update_master, launch_lumber_watch
-from cgl.core.config import app_config, UserConfig
+from cgl.core.utils.general import current_user, check_for_latest_master, update_master, launch_lumber_watch, save_json
+from cgl.core.config import app_config, UserConfig, user_config
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
 import cgl.plugins.syncthing.utils as st_utils
@@ -700,12 +700,21 @@ class CGLumberjack(LJMainWindow):
         launch_syncthing = QtWidgets.QAction('Start Syncing', self)
         kill_syncthing = QtWidgets.QAction('Stop Syncing', self)
         show_sync_thing_browser = QtWidgets.QAction('Show Details', self)
+        self.auto_launch_setting = QtWidgets.QAction('Auto-Launch: Off', self)
+        self.current_processing_method = QtWidgets.QMenu('Processing Method: Local', self)
+        change_to_local = QtWidgets.QAction('Set to Local', self)
+        change_to_smedge = QtWidgets.QAction('Set to Smedge', self)
+        change_to_deadline = QtWidgets.QAction('Set to Deadline', self)
         # fix_paths = QtWidgets.QAction('Fix File Paths', self)
+
+
 
         # add actions to the file menu
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
         tools_menu.addAction(open_user_globals)
+        tools_menu.addSeparator()
+        tools_menu.addMenu(self.current_processing_method)
         tools_menu.addSeparator()
         tools_menu.addAction(create_project)
         tools_menu.addAction(pipeline_designer)
@@ -714,6 +723,10 @@ class CGLumberjack(LJMainWindow):
         tools_menu.addAction(report_bug_button)
         tools_menu.addAction(request_feature_button)
         # connect signals and slots
+
+        self.current_processing_method.addAction(change_to_local)
+        self.current_processing_method.addAction(change_to_smedge)
+        self.current_processing_method.addAction(change_to_deadline)
 
         self.sync_menu.addAction(manage_sharing_action)
         self.sync_menu.addSeparator()
@@ -728,8 +741,13 @@ class CGLumberjack(LJMainWindow):
         self.sync_menu.addAction(kill_syncthing)
         self.sync_menu.addAction(launch_syncthing)
         self.sync_menu.addAction(show_sync_thing_browser)
+        self.sync_menu.addSeparator()
+        self.sync_menu.addAction(self.auto_launch_setting)
 
         # connect signals and slots
+        change_to_deadline.triggered.connect(self.change_processing_method)
+        change_to_local.triggered.connect(self.change_processing_method)
+        change_to_smedge.triggered.connect(self.change_processing_method)
         kill_syncthing.triggered.connect(self.on_kill_syncthing)
         launch_syncthing.triggered.connect(self.on_launch_syncthing)
         # pull_from_server.triggered.connect(self.enable_server_connection_clicked)
@@ -737,6 +755,7 @@ class CGLumberjack(LJMainWindow):
         # add_machines_to_folders.triggered.connect(self.add_machines_to_folders_clicked)
         manage_sharing_action.triggered.connect(self.manage_sharing_action_clicked)
         show_sync_thing_browser.triggered.connect(self.show_sync_details)
+        self.auto_launch_setting.triggered.connect(self.toggle_auto_launch)
         set_up_sync_thing_server.triggered.connect(self.set_up_st_server_clicked)
         set_up_sync_thing_workstation.triggered.connect(self.set_up_st_workstation_clicked)
         # fix_paths.triggered.connect(self.fix_paths_clicked)
@@ -753,6 +772,8 @@ class CGLumberjack(LJMainWindow):
         time_tracking.triggered.connect(self.time_tracking_clicked)
         # Load any custom menus that the user has defined
         self.load_pipeline_designer_menus()
+        self.set_auto_launch_text()
+        self.set_processing_method_text()
         # TODO how do i run this as a background process, or a parallell process?
         # TODO - how do i grab the pid so i can close this when lumbermill closes potentially?
         try:
@@ -789,6 +810,25 @@ class CGLumberjack(LJMainWindow):
 
         except KeyError:
             print ('Skipping, Syncthing Not Set up')
+
+    def set_processing_method_text(self, method=USERCONFIG['methodology']):
+        self.current_processing_method.setTitle('Processing Method: %s' % method.title())
+
+    def change_processing_method(self):
+        if 'Local' in self.sender().text():
+            print 'Changing to Local'
+            method = 'Local'
+        elif 'Smedge' in self.sender().text():
+            print 'Changing to Smedge'
+            method = "Smedge"
+        elif 'Deadline' in self.sender().text():
+            print 'Changing to Deadline'
+            method = "Deadline"
+        else:
+            return
+        USERCONFIG['methodology'] = method.lower()
+        save_json(user_config(), USERCONFIG)
+        self.set_processing_method_text(method)
 
     def change_sync_icon(self, syncing=True):
         # ss = QtCore.QString("QMenu { background: black; color: red }")
@@ -849,7 +889,35 @@ class CGLumberjack(LJMainWindow):
         path_object = self.centralWidget().path_widget.path_object
         st_utils.share_files(path_object)
 
-    def show_sync_details(self):
+    def set_auto_launch_text(self):
+        """
+        reads syncthing_auto_launch setting from globals and sets text accordingly.
+        :return:
+        """
+        if "sync_thing_auto_launch" in USERCONFIG.keys():
+            if USERCONFIG["sync_thing_auto_launch"] == 'True':
+                self.auto_launch_setting.setText('Auto-Launch: On')
+            else:
+                self.auto_launch_setting.setText('Auto-Launch: Off')
+
+    def toggle_auto_launch(self):
+        """
+        Turns Auto-Launch of Lumberwatch/Syncthing on/off by toggling.
+        :return:
+        """
+        if "sync_thing_auto_launch" in USERCONFIG.keys():
+            if USERCONFIG["sync_thing_auto_launch"] == 'True':
+                USERCONFIG["sync_thing_auto_launch"] = 'False'
+                save_json(user_config(), USERCONFIG)
+                print 'Setting Auto Launch of LumberSync Off - Restart to see effects'
+            else:
+                USERCONFIG["sync_thing_auto_launch"] = 'True'
+                save_json(user_config(), USERCONFIG)
+                print 'Setting Auto Launch of LumberSync On - Restart to see effects'
+        self.set_auto_launch_text()
+
+    @staticmethod
+    def show_sync_details():
         """
         shows the syncthing web gui
         :return:
