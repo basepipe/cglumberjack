@@ -131,16 +131,6 @@ class SyncMaster(LJDialog):
                                                 render=self.render_check_box.isChecked())
         dialog_sharing = SharingDialog(publish_objects=publishes)
         dialog_sharing.exec_()
-        if dialog_sharing.button == 'Ok':
-            all_device_id = dialog_sharing.device_list
-            if all_device_id:
-                st.kill_syncthing()
-                if publishes:
-                    for p in publishes:
-                        folder_id = '[root]\\%s' % p.path.replace('/', '\\')
-                        folder = p.path_root.replace('/', '\\')
-                        add_folder_to_config(folder_id, folder, all_device_id, type_='sendonly')
-                st.launch_syncthing()
 
     def on_scope_changed(self):
         if self.shots_radio.isChecked():
