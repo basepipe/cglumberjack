@@ -885,31 +885,19 @@ class PathObject(object):
             return
 
         # current folders to be copied
-        current_source = self.copy(filename=None, ext=None).path_root
+        current_source = self.copy(context='source', filename=None, ext=None).path_root
         current_render = self.copy(context='render', filename=None, ext=None).path_root
         # create the next major version folders to copy to
-        next_major = self.copy(filename=None, ext=None)
+        next_major = self.copy(context='source', filename=None, ext=None)
         next_major = next_major.next_major_version()
         next_major_render = next_major.copy(context='render').path_root
         next_major_source = next_major.path_root
         publish = next_major.copy(user='publish')
         publish_source = publish.path_root
         self.publish_source = publish_source
-        publish_render = publish.copy(context='render').path_root
+        publish_render_object = publish.copy(context='render')
+        publish_render = publish_render_object.path_root
         self.publish_render = publish_render
-        if UserConfig()["sync_thing_machine_type"] == 'remote workstation':
-            from cgl.ui.widgets.sync_master import SharingDialog
-            dialog_sharing = SharingDialog()
-            dialog_sharing.exec_()
-            if dialog_sharing.button == 'Ok':
-                all_device_id = dialog_sharing.device_list
-                print 'Sharing Folders:'
-                print publish_source
-                print publish_render
-            return
-        else:
-            print 'No Sync Settings Set, ignoring.'
-            return
         print 'Publishing %s to %s' % (current_source, next_major_source)
         cgl_copy(current_source, next_major_source)
         print 'Publishing %s to %s' % (current_source, publish_source)
@@ -918,7 +906,20 @@ class PathObject(object):
         cgl_copy(current_render, next_major_render)
         print 'Publishing %s to %s' % (current_render, publish_render)
         cgl_copy(current_render, publish_render)
-        print 'Finished Copying'
+        print '--------- Finished Publishing'
+        if UserConfig().d["sync_thing_machine_type"] == 'remote workstation':
+            from cgl.ui.widgets.sync_master import SharingDialog
+            dialog_sharing = SharingDialog([publish, publish_render_object])
+            dialog_sharing.exec_()
+            if dialog_sharing.button == 'Ok':
+                all_device_id = dialog_sharing.device_list
+                print 'Sharing Folders:'
+                print publish.path_root
+                print publish_render_object.path_root
+            else:
+                print 'skipping publish'
+        else:
+            print 'No Sync Settings Set, ignoring.'
 
     def show_in_folder(self):
         """

@@ -7,6 +7,8 @@ from cgl.core.cgl_info import get_cgl_info_size
 from cgl.ui.widgets.widgets import AdvComboBox
 from cgl.core.path import PathObject, show_in_folder, get_folder_size, find_latest_publish_objects
 from cgl.core.config import get_globals
+from cgl.plugins.syncthing.utils import get_device_dict, get_my_device_info, kill_syncthing, launch_syncthing, \
+    add_folder_to_config
 
 
 class SyncMaster(LJDialog):
@@ -127,7 +129,7 @@ class SyncMaster(LJDialog):
         import cgl.plugins.syncthing.utils as st
         publishes = find_latest_publish_objects(self.current_selection, source=self.source_check_box.isChecked(),
                                                 render=self.render_check_box.isChecked())
-        dialog_sharing = SharingDialog()
+        dialog_sharing = SharingDialog(publish_objects=publishes)
         dialog_sharing.exec_()
         if dialog_sharing.button == 'Ok':
             all_device_id = dialog_sharing.device_list
@@ -137,7 +139,7 @@ class SyncMaster(LJDialog):
                     for p in publishes:
                         folder_id = '[root]\\%s' % p.path.replace('/', '\\')
                         folder = p.path_root.replace('/', '\\')
-                        st.add_folder_to_config(folder_id, folder, all_device_id, type_='sendonly')
+                        add_folder_to_config(folder_id, folder, all_device_id, type_='sendonly')
                 st.launch_syncthing()
 
     def on_scope_changed(self):
@@ -283,16 +285,14 @@ class SharingDialog(LJDialog):
     """
     Allows someone to choose who they will share a folder with.
     """
-    def __init__(self, this_device=None, device_dict=None):
+    def __init__(self, publish_objects):
         LJDialog.__init__(self)
-
         self.setWindowTitle('Sharing Options')
+        self.publish_objects = publish_objects
         layout = QtWidgets.QVBoxLayout(self)
         grid = QtWidgets.QGridLayout()
-        if not this_device:
-            from cgl.plugins.syncthing.utils import get_device_dict, get_my_device_info
-            device_dict = get_device_dict()
-            this_device = get_my_device_info()['id']
+        this_device = get_my_device_info()['id']
+        device_dict = get_device_dict()
         self.device_dict = device_dict
         self.device_list = []
         self.this_device = this_device
@@ -340,6 +340,14 @@ class SharingDialog(LJDialog):
     def on_ok_clicked(self):
         self.button = 'Ok'
         self.accept()
+        if self.device_list:
+            kill_syncthing()
+            if self.publish_objects:
+                for p in self.publish_objects:
+                    folder_id = '[root]\\%s' % p.path.replace('/', '\\')
+                    folder = p.path_root.replace('/', '\\')
+                    add_folder_to_config(folder_id, folder, self.device_list, type_='sendonly')
+            launch_syncthing()
         return self.device_list
 
     def on_cancel_clicked(self):
