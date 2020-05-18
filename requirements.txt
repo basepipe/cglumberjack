@@ -16,7 +16,7 @@ PyWin32
 xmltodict
 oauth2client
 psutil
-watchdog
+matplotlib
 
 #  http://aka.ms/vcpython27
 # https://s3.amazonaws.com/aws-cli/AWSCLI64.msi

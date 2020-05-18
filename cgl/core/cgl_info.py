@@ -5,7 +5,7 @@ from cgl.core.path import PathObject, get_folder_size
 from cgl.core.utils.general import save_json, load_json
 
 
-def get_cgl_info_size(folder_path, source=True, render=True):
+def get_cgl_info_size(folder_path, source=True, render=True, return_type='best'):
     """
     gets the cgl_info for the specified folder, if it doesn't exist it creates it.
     :param folder_path:
@@ -32,10 +32,17 @@ def get_cgl_info_size(folder_path, source=True, render=True):
             size = source_size+render_size
             mb = "{:.2f}".format(float(size/1048576))
             gb = "{:.2f}".format(float(size/1073741824))
-            if len(mb.split('.')[0]) > len(gb.split('.')[0]):
-                return '%s Gb' % gb
-            else:
-                return '%s Mb' % mb
+            if return_type == 'best':
+                if len(mb.split('.')[0]) > len(gb.split('.')[0]):
+                    return '%s Gb' % gb
+                else:
+                    return '%s Mb' % mb
+            elif return_type == 'mb':
+                return mb
+            elif return_type == 'gb':
+                return gb
+            elif return_type == 'bytes':
+                return size
         else:
             return None
             print('No cgl_info.json file found, creating: %s' % cgl_info_file)
