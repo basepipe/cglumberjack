@@ -367,8 +367,10 @@ def add_all_devices_to_config(sheet, device_list=False):
 
 
 def get_sync_folders():
+    from cgl.core.path import PathObject
     folders_dict = {}
     config_path = get_config_path()
+    print config_path
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
     device_id = ''
@@ -376,9 +378,45 @@ def get_sync_folders():
         if child.tag == 'device':
             device_id = child.get('name')
         if child.tag == 'folder':
-            folders_dict[child.get('path')] = {'type': child.get('type'),
-                                               'device': device_id}
+            sync_folder = child.get('path').replace('\\', '/')
+            try:
+                path_object = PathObject(sync_folder)
+                #  print path_object.path_root
+                user_path = path_object.split_after('user')
+                task_path = path_object.split_after('task')
+                shot_path = path_object.split_after('shot')
+                seq_path = path_object.split_after('seq')
+                set_sync_statuses(folders_dict, user_path, sync_folder, device_id)
+                set_sync_statuses(folders_dict, task_path, user_path, device_id)
+                set_sync_statuses(folders_dict, shot_path, task_path, device_id)
+                set_sync_statuses(folders_dict, seq_path, shot_path, device_id)
+            except TypeError:
+                pass
+            folders_dict[sync_folder] = {'type': child.get('type'),
+                                         'devices': [device_id],
+                                         'folders': []}
     return folders_dict
+
+
+def set_sync_statuses(folders_dict, path_, sync_folder, device_id):
+    if path_ in folders_dict.keys():
+        if sync_folder not in folders_dict[path_]['folders']:
+            folders_dict[path_]['folders'].append(sync_folder)
+            folders_dict[path_]['type'] = '%s Synced' % len(folders_dict[path_]['folders'])
+        if device_id not in folders_dict[path_]['devices']:
+            folders_dict[path_]['devices'].append(device_id)
+    else:
+        folders_dict[path_] = {'folders': [sync_folder],
+                               'type': '1 Synced',
+                               'devices': [device_id]}
+
+
+
+def get_sync_report():
+    # I need to know all assets that are synced.
+    # I need to know which tasks within that asset are synced
+    # I needed to know which publish versions within those tasks are synced.
+    pass
 
 
 def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonly', sqs=True):
@@ -417,6 +455,11 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
 
 
 def get_device_dict():
+    """
+    Queries Google Sheets for all devices.  This could be made much faster if it simply querried the current config file
+    for sync thing.
+    :return:
+    """
     sheet = get_sheet()
     row_count = sheets.find_empty_row_in_sheet(sheet)
     device_id_col = 0
@@ -575,6 +618,9 @@ if __name__ == "__main__":
     # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
     # os.makedirs(path_)
     # kill_syncthing()
-    launch_lumber_watch()
-    pass
+    sync_folders = get_sync_folders()
+    for k in sync_folders:
+        print k, sync_folders[k]
+
+
 

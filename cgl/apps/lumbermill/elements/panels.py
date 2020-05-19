@@ -8,7 +8,7 @@ from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.core.path import PathObject, CreateProductionData, icon_path
 from cgl.core.project import create_project_config
 from cgl.ui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
-from cgl.core.utils.general import current_user
+from cgl.core.utils.general import current_user, clean_file_list
 from cgl.ui.widgets.progress_gif import process_method
 
 CONFIG = app_config()
@@ -81,12 +81,11 @@ class CompanyPanel(QtWidgets.QWidget):
         self.company_widget.list.clear()
         companies_loc = '%s/*' % self.path_object.root
         companies = glob.glob(companies_loc)
-        if companies:
+        clean_companies = clean_file_list(companies)
+        if clean_companies:
             for each in companies:
-                print each, 3
-                if '_config' not in each:
-                    c = os.path.basename(each)
-                    self.company_widget.list.addItem(c)
+                c = os.path.basename(each)
+                self.company_widget.list.addItem(c)
 
     def clear_layout(self, layout=None):
         clear_layout(self, layout=layout)
@@ -158,6 +157,7 @@ class ProjectPanel(QtWidgets.QWidget):
     def load_projects(self):
         self.path_object.set_attr(project='*')
         projects = self.path_object.glob_project_element('project')
+        projects = clean_file_list(projects)
         if not projects:
             print 'no projects for %s' % self.path_object.company
             self.project_filter.data_table.setEnabled(False)
@@ -245,6 +245,7 @@ class TaskPanel(QtWidgets.QWidget):
         if path_object:
             self.path_object = path_object
             elements = self.path_object.glob_project_element(element)
+            elements = clean_file_list(elements)
         else:
             return
         self.project_management = CONFIG['account_info']['project_management']
@@ -434,6 +435,7 @@ class ProductionPanel(QtWidgets.QWidget):
         red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
         self.assets.data_table.clearSpans()
         items = glob.glob(self.path_object.path_root)
+        items = clean_file_list(items)
         data = []
         temp_ = []
         self.assets.add_button.clicked.connect(self.on_create_asset)

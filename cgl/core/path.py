@@ -7,7 +7,7 @@ import os
 import sys
 import re
 import copy
-from cgl.core.utils.general import split_all, cgl_copy, cgl_execute
+from cgl.core.utils.general import split_all, cgl_copy, cgl_execute, clean_file_list
 from cgl.core.config import app_config, UserConfig
 import convert
 
@@ -508,7 +508,8 @@ class PathObject(object):
                     list_.append(os.path.basename(each))
             else:
                 list_ = glob.glob(path_)
-            return list_
+
+            return clean_file_list(list_)
         else:
             return []
 
@@ -522,8 +523,6 @@ class PathObject(object):
         """
         value = self.data[attr]
         split_after_thing = os.path.join(self.path_root.split(value)[0], value)
-        print split_after_thing
-        print split_after_thing.replace('\\', '/')
         return os.path.join(self.path_root.split(value)[0], value).replace('\\', '/')
 
     def eliminate_wild_cards(self):
@@ -750,8 +749,9 @@ class PathObject(object):
 
     def set_json(self):
         json_obj = self.copy(latest=True, context='render', ext='json', task='lay', set_proper_filename=True)
-        self.asset_json = json_obj.path_root
-        self.shot_json = json_obj.path_root
+        if self.asset or self.shot:
+            self.asset_json = json_obj.path_root
+            self.shot_json = json_obj.path_root
         if self.task:
             json_obj = self.copy(context='render', ext='json', set_proper_filename=True)
             self.task_json = json_obj.path_root
@@ -879,30 +879,47 @@ class PathObject(object):
         """
         if self.user == 'publish':
             print "This is a publish user already, traditionally you'll be publishing from a user context."
+            return
         if not self.resolution:
             print('You must have resolution in order to publish')
+            return
+
         # current folders to be copied
-        current_source = self.copy(filename=None, ext=None).path_root
+        current_source = self.copy(context='source', filename=None, ext=None).path_root
         current_render = self.copy(context='render', filename=None, ext=None).path_root
         # create the next major version folders to copy to
-        next_major = self.copy(filename=None, ext=None)
+        next_major = self.copy(context='source', filename=None, ext=None)
         next_major = next_major.next_major_version()
         next_major_render = next_major.copy(context='render').path_root
         next_major_source = next_major.path_root
         publish = next_major.copy(user='publish')
         publish_source = publish.path_root
         self.publish_source = publish_source
-        publish_render = publish.copy(context='render').path_root
+        publish_render_object = publish.copy(context='render')
+        publish_render = publish_render_object.path_root
         self.publish_render = publish_render
-        print 'Copying %s to %s' % (current_source, next_major_source)
+        print 'Publishing %s to %s' % (current_source, next_major_source)
         cgl_copy(current_source, next_major_source)
-        print 'Copying %s to %s' % (current_source, publish_source)
+        print 'Publishing %s to %s' % (current_source, publish_source)
         cgl_copy(current_source, publish_source)
-        print 'Copying %s to %s' % (current_render, next_major_render)
+        print 'Publishing %s to %s' % (current_render, next_major_render)
         cgl_copy(current_render, next_major_render)
-        print 'Copying %s to %s' % (current_render, publish_render)
+        print 'Publishing %s to %s' % (current_render, publish_render)
         cgl_copy(current_render, publish_render)
-        print 'Finished Copying'
+        print '--------- Finished Publishing'
+        if UserConfig().d["sync_thing_machine_type"] == 'remote workstation':
+            from cgl.ui.widgets.sync_master import SharingDialog
+            dialog_sharing = SharingDialog([publish, publish_render_object])
+            dialog_sharing.exec_()
+            if dialog_sharing.button == 'Ok':
+                all_device_id = dialog_sharing.device_list
+                print 'Sharing Folders:'
+                print publish.path_root
+                print publish_render_object.path_root
+            else:
+                print 'skipping publish'
+        else:
+            print 'No Sync Settings Set, ignoring.'
 
     def show_in_folder(self):
         """
@@ -955,6 +972,7 @@ class CreateProductionData(object):
         self.test = test
         self.path_object = PathObject(path_object)
         self.path_object.set_path()
+        self.path_object.set_json()
         self.do_scope = do_scope
         if file_system:
             self.create_folders()
@@ -977,11 +995,13 @@ class CreateProductionData(object):
         :return:
         """
         if self.path_object.scope != 'IO':
+            print 1
             if self.path_object.task_json:
                 self.update_task_json()
             if self.path_object.asset_json:
                 self.update_asset_json()
             if self.path_object.project_json:
+                print 2
                 self.update_project_json()
 
     def update_task_json(self):
@@ -1019,6 +1039,7 @@ class CreateProductionData(object):
 
         obj = self.path_object
         if os.path.exists(obj.asset_json):
+            print obj.asset_json, 'exists'
             asset_meta = assetcore.MetaObject(jsonfile=obj.asset_json)
         else:
             asset_meta = assetcore.MetaObject()
@@ -1039,7 +1060,7 @@ class CreateProductionData(object):
 
     def update_project_json(self):
         from cgl.core import assetcore
-
+        print 'updating project json'
         if os.path.exists(self.path_object.project_json):
             project_meta = assetcore.MetaObject(jsonfile=self.path_object.project_json)
         else:
@@ -1400,9 +1421,13 @@ def get_folder_size(folder):
     total_bytes = 0
     if os.path.isdir(folder):
         for root, dirs, files in os.walk(folder):
-            total_bytes += sum(os.path.getsize(os.path.join(root, name)) for name in files)
+            try:
+                total_bytes += sum(os.path.getsize(os.path.join(root, name).replace('\\', '/')) for name in files)
+            except:
+                print('ERROR: likely a problem with a file in %s' % root)
     elif os.path.isfile(folder):
         print 'this is a file numskull'
+        return 0
     return total_bytes
 
 
@@ -1523,27 +1548,26 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
     :param directory:
     :return: list of prepared files/items.
     """
-    ignore = ['publish_data.csv', '.preview', '.thumb']
     list_ = os.listdir(directory)
     if not list_:
         return
+    list_ = clean_file_list(list_)
     list_.sort()
     output_ = []
     for each in list_:
-        if each not in ignore:
-            if path_filter:
-                filtered = PathObject(each).data[path_filter]
-                output_.append([filtered])
-            else:
-                if basename:
-                    seq_string = str(seq_from_file(os.path.basename(each)))
-                    if seq_string:
-                        if seq_string not in output_:
-                            output_.append(seq_string)
-                    else:
-                        output_.append(each)
+        if path_filter:
+            filtered = PathObject(each).data[path_filter]
+            output_.append([filtered])
+        else:
+            if basename:
+                seq_string = str(seq_from_file(os.path.basename(each)))
+                if seq_string:
+                    if seq_string not in output_:
+                        output_.append(seq_string)
                 else:
                     output_.append(each)
+            else:
+                output_.append(each)
     for each in output_:
         if '#' in each:
             sequence = Sequence(os.path.join(directory, each))
