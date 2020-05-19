@@ -1,0 +1,15 @@
+FROM stefanscherer/chocolatey
+RUN choco install git -y
+RUN choco install python2 -y
+RUN choco install ffmpeg -y
+RUN choco install imagemagick.app -y
+RUN choco install syncthing -y
+RUN choco install wget -y
+RUN if not exist "C:\cglumberjack" git clone https://github.com/basepipe/cglumberjack.git C:\cglumberjack
+RUN pip install -r C:\cglumberjack\requirements.txt
+RUN setx PYTHONPATH "C:\cglumberjack\cgl;C:\cglumberjack"
+# Set up env variable file somewhere
+# Mount Link Points on the file system.
+# RUN python "C:\cglumberjack\cgl\bin\build_config.py"
+# docker build -t cgl_image
+# docker run -it cgl_image
