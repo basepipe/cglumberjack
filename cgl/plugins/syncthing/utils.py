@@ -9,6 +9,14 @@ from cgl.core.utils.read_write import load_json, save_json
 
 
 def setup_server(clean=False):
+    """
+    sets up a machine as a syncing server for a studio.  This is the machine that will add remote workstations as
+    collaborators, in a studio this must be connected to main storage server, for smaller projects this must be set up
+    on the machine with the main storage for the project.  all files from remote machines will come back to this on
+    publish.
+    :param clean: wipe the server as part of the setup process.
+    :return:
+    """
     print 'running setup_server'
     wipe_globals()
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
@@ -25,7 +33,14 @@ def setup_server(clean=False):
     launch_syncthing()
 
 
-def set_machine_type(m_type='workstation'):
+def set_machine_type(m_type=""):
+    """
+    sets the machine type for the current machine
+    a value of "" is used when a machine is using lumbermill but not syncthing.  This would be typical of a networked
+    machine at the studio.
+    :param m_type: valid types: "", "remote workstation", "server"
+    :return:
+    """
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     user_globals['sync_thing_machine_type'] = m_type
     save_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'), user_globals)
@@ -56,7 +71,7 @@ def setup_workstation():
     wipe_globals()
     USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
     GLOBALS = load_json(USER_GLOBALS['globals'])
-    set_machine_type('workstation')
+    set_machine_type("remote workstation")
     kill_syncthing()
     print 1, get_my_device_info()
     device_info = get_my_device_info()
@@ -236,15 +251,18 @@ def get_config_path():
     return_output = False
     print_output = True
     output_values = []
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-    if return_output or print_output:
-        while True:
-            output = p.stdout.readline()
-            if output == '' and p.poll() is not None:
-                break
-            if output:
-                output_values.append(output.strip())
-    return output_values[1]
+    try:
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        if return_output or print_output:
+            while True:
+                output = p.stdout.readline()
+                if output == '' and p.poll() is not None:
+                    break
+                if output:
+                    output_values.append(output.strip())
+        return output_values[1]
+    except:
+        print('Syncthing Not installed on system')
 
 
 def get_my_device_info():
@@ -479,6 +497,14 @@ def get_device_dict():
 
 def share_files(path_object):
     from cgl.ui.widgets.sync_master import SyncMaster
+    current_m_type = None
+    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    if 'sync_thing_machine_type' in user_globals.keys():
+        current_m_type = user_globals['sync_thing_machine_type']
+    if not current_m_type:
+        set_machine_type("")
+        print('This machine is not set up for syncing, sync files not accessible')
+        return
     print path_object.company
     print path_object.project
     print path_object.scope

@@ -135,8 +135,8 @@ def create_all_cgl_info_files(company, project, source=True, render=True):
 
 
 if __name__ == "__main__":
-    # create_all_cgl_info_files('VFX', '16BTH_2020_Arena', render=False)
+    create_all_cgl_info_files('loneCoconut', 'ILUCIA')
     # create_all_cgl_info_files('VFX', '16BTH_2020_Arena', source=False)
-    print get_cgl_info_size(r'Z:/Projects/VFX/source/16BTH_2020_Arena/assets/Vehicle', source=True, render=False)
+    # print get_cgl_info_size(r'Z:/Projects/VFX/source/16BTH_2020_Arena/assets/Vehicle', source=True, render=False)
 
 
