@@ -4,6 +4,9 @@ import sys
 import json
 from cgl.core.utils.read_write import load_json
 
+GLOBALS_TEMPLATE_PATH = os.path.join(__file__.split('cglumberjack')[0], 'cglumberjack', 'cgl', 'cfg',
+                                     'globals_template.json')
+
 
 class Configuration(object):
     """
@@ -184,11 +187,26 @@ def get_globals():
     if 'globals' in get_user_globals().keys():
         globals_path = get_user_globals()['globals']
         if globals_path:
+            print 'company globals: %s' % globals_path
             return load_json(globals_path)
         else:
             print('No user_globals found at %s' % user_config())
     else:
         print('No user_globals found at %s' % user_config())
+
+
+def update_globals(company=True):
+    """
+    this is a tool for generally updating globals when they are missing values
+    :return:
+    """
+    if company:
+        company_globals = get_globals()
+        default_globals = load_json(GLOBALS_TEMPLATE_PATH)
+        if 'ignore' not in company_globals['rules']:
+            company_globals['rules']['ignore'] = default_globals['rules']['ignore']
+            from cgl.core.utils.general import save_json
+            save_json(get_user_globals()['globals'], company_globals)
 
 
 

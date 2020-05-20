@@ -9,7 +9,7 @@ import time
 import logging
 import re
 import xmltodict
-from cgl.core.config import app_config
+from cgl.core.config import app_config, update_globals
 CONFIG = app_config()
 
 
@@ -88,10 +88,15 @@ def clean_file_list(file_list):
     :param file_list:
     :return:
     """
-
-    ignore_matches = app_config()['rules']['ignore']['matches']
-    ignore_contains = app_config()['rules']['ignore']['contains']
-    ignore_endswith = app_config()['rules']['ignore']['endswith']
+    print app_config()['rules'].keys(), '0-----------'
+    if 'ignore' in app_config()['rules'].keys():
+        ignore_matches = app_config()['rules']['ignore']['matches']
+        ignore_contains = app_config()['rules']['ignore']['contains']
+        ignore_endswith = app_config()['rules']['ignore']['endswith']
+    else:
+        update_globals()
+        print('Found Missing Globals and updated them.  Try Launching again')
+        return
     clean_list = []
     for f in file_list:
         ignore = False
