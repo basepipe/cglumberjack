@@ -504,6 +504,40 @@
                             "track": "Tracking"
                         }
                     }
+                },
+                "Editorial": {
+                    "long_to_short": {
+                        "assets": {
+                            "video": "video",
+                            "audio": "audio",
+                            "images": "images",
+                            "memes": "memes",
+                            "titles": "titles",
+                            "soundfx": "soundfx",
+                            "music": "music"
+                        },
+                        "shots": {
+                            "edit": "edit",
+                            "sound": "sound",
+                            "color": "color"
+                        }
+                    },
+                    "short_to_long": {
+                        "assets": {
+                            "video": "video",
+                            "audio": "audio",
+                            "images": "images",
+                            "memes": "memes",
+                            "titles": "titles",
+                            "soundfx": "soundfx",
+                            "music": "music"
+                        },
+                        "shots": {
+                            "edit": "edit",
+                            "sound": "sound",
+                            "color": "color"
+                        }
+                    }
                 }
             }
         }, 

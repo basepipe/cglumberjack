@@ -187,7 +187,6 @@ def get_globals():
     if 'globals' in get_user_globals().keys():
         globals_path = get_user_globals()['globals']
         if globals_path:
-            print 'company globals: %s' % globals_path
             return load_json(globals_path)
         else:
             print('No user_globals found at %s' % user_config())

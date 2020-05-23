@@ -132,6 +132,7 @@ def create_prores_mov(input_file, output_file=None, processing_method='local', d
         command = '%s -i %s -c:v prores_ks -profile:v 3 -c:a copy %s' % (PATHS['ffmpeg'], input_file, output_file)
         cgl_execute(command, command_name='Create Prores', methodology=processing_method, WaitForJobID=dependent_job,
                     new_window=True)
+        return output_file
     else:
         print('File type: %s not supported with create_prores_mov()' % file_type)
 
@@ -310,6 +311,7 @@ def extract_wav_from_movie(filein, fileout=None, processing_method='local', depe
             command = '%s -i %s -acodec pcm_s16le -ac 2 %s' % (PATHS['ffmpeg'], filein, fileout)
             cgl_execute(command, command_name='Audio Extraction', methodology=processing_method, WaitForJobID=dependent_job,
                         new_window=True)
+            return fileout
     else:
         print('Extension %s not cataloged in globals, please add it to the ext_map dictionary' % ext)
 

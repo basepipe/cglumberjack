@@ -88,7 +88,6 @@ def clean_file_list(file_list):
     :param file_list:
     :return:
     """
-    print app_config()['rules'].keys(), '0-----------'
     if 'ignore' in app_config()['rules'].keys():
         ignore_matches = app_config()['rules']['ignore']['matches']
         ignore_contains = app_config()['rules']['ignore']['contains']

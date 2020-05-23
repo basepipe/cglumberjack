@@ -62,7 +62,8 @@ class IOPanel(QtWidgets.QWidget):
         else:
             print 'No Path Object found, exiting'
             return
-        self.project_management = CONFIG['account_info']['project_management']
+        # self.project_management = CONFIG['account_info']['project_management']
+        self.project_management = 'lumbermill'
         self.schema = CONFIG['project_management'][self.project_management]['api']['default_schema']
         self.schema_dict = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
         self.path_object_next = None
@@ -109,6 +110,14 @@ class IOPanel(QtWidgets.QWidget):
         self.tags_title_row.addWidget(self.tags_title)
         self.tags_title_row.addWidget(self.tags_button)
         self.tags_button.hide()
+
+        self.schema_row = QtWidgets.QHBoxLayout()
+        self.schema_label = QtWidgets.QLabel('Project Type')
+        self.schema_combo = AdvComboBox()
+        self.schema_combo.addItems(CONFIG['project_management'][self.project_management]['tasks'].keys())
+        self.schema_row.addWidget(self.schema_label)
+        self.schema_row.addWidget(self.schema_combo)
+        self.schema_row.addStretch(1)
 
         self.scope_label = QtWidgets.QLabel('Scope')
         self.scope_combo = AdvComboBox()
@@ -171,6 +180,7 @@ class IOPanel(QtWidgets.QWidget):
         self.panel.addWidget(self.empty_state)
         self.panel.addLayout(self.tags_title_row)
         self.panel.addWidget(self.progress_bar)
+        self.panel.addLayout(self.schema_row)
         self.panel.addLayout(self.seq_row)
         self.panel.addLayout(self.tags_row)
         self.panel.addLayout(self.buttons_row)
@@ -185,6 +195,7 @@ class IOPanel(QtWidgets.QWidget):
 
         self.view_in_lumbermill.clicked.connect(self.on_view_in_lumbermill_clicked)
         self.refresh_button.clicked.connect(self.on_ingest_selected)
+        self.schema_combo.currentIndexChanged.connect(self.on_schema_changed)
         self.scope_combo.currentIndexChanged.connect(self.on_scope_changed)
         self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
         self.file_tree.selected.connect(self.on_file_selected)
@@ -199,10 +210,10 @@ class IOPanel(QtWidgets.QWidget):
         self.publish_button.clicked.connect(self.publish_selected_asset)
         self.empty_state.files_added.connect(self.new_files_dragged)
         logging.info('Testing the popup')
+        self.on_schema_changed()
         self.on_scope_changed()
 
     def on_source_add_clicked(self):
-        print self.path_object.scope
         dialog = InputDialog(title='Add Source Company or Gear', message='Add an Import Source:', line_edit=True,
                              buttons=['Cancel', 'Add Source'])
         dialog.exec_()
@@ -278,13 +289,35 @@ class IOPanel(QtWidgets.QWidget):
         self.source_widget.list.addItems(dir_)
 
     def on_source_selected(self):
+        selected = self.source_widget.list.selectedItems()[-1].text()
         self.hide_tags()
         self.file_tree.hide()
         self.empty_state.show()
-        self.source_widget.list.selectedItems()[-1].text()
         self.empty_state.setText('Drag Media Here \nto Create New Ingest Version')
-        self.path_object.set_attr(ingest_source=self.source_widget.list.selectedItems()[-1].text())
-        self.load_import_events()
+        self.path_object.set_attr(ingest_source=selected)
+        if selected == 'OBS' or selected == 'ZOOM':
+            self.load_fixed_events(selected)
+        else:
+            self.load_import_events()
+
+    def load_fixed_events(self, key):
+        """
+
+        :param key:
+        :return:
+        """
+        location_dict = {
+                            "OBS": r"D:\Videos",
+                            "ZOOM": r"B:\Users\tmiko\Documents\Zoom"
+                         }
+        # events = os.listdir(location_dict[key])
+        self.ingest_widget.empty_state.hide()
+        self.hide_tags()
+        self.clear_all()
+        # Load the Tree Widget
+        self.load_data_frame(dir_=location_dict[key])
+        self.populate_tree(dir_=location_dict[key])
+        # self.location_changed.emit(self.path_object)
 
     def load_import_events(self, new=False):
         latest = '-001.000'
@@ -317,9 +350,11 @@ class IOPanel(QtWidgets.QWidget):
         self.populate_tree()
         self.location_changed.emit(self.path_object)
 
-    def populate_tree(self):
+    def populate_tree(self, dir_=None):
+        if not dir_:
+            dir_ = self.path_object.path_root
         self.file_tree.clear()
-        if os.listdir(self.path_object.path_root):
+        if os.listdir(dir_):
             # self.empty_state.hide()
             self.version = self.path_object.version
             self.empty_state.setText('Drag Files To Add To Ingest %s' % self.version)
@@ -334,8 +369,9 @@ class IOPanel(QtWidgets.QWidget):
             self.hide_tags()
             self.empty_state.show()
 
-    def load_data_frame(self):
-        dir_ = self.path_object.path_root
+    def load_data_frame(self, dir_=None):
+        if not dir_:
+            dir_ = self.path_object.path_root
         print 'loading %s' % dir_
         self.pandas_path = os.path.join(dir_, 'publish_data.csv')
         if os.path.exists(self.pandas_path):
@@ -585,6 +621,12 @@ class IOPanel(QtWidgets.QWidget):
             seqs = ['']
         self.seq_combo.addItems(seqs)
         return seqs
+
+    def on_schema_changed(self):
+        self.schema = self.schema_combo.currentText()
+        self.schema_dict = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
+        if self.shot_combo.currentText():
+            self.populate_tasks()
 
     def on_scope_changed(self):
         # see if we can set scope based off the data_frame
