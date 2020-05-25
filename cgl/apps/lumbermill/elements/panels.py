@@ -297,6 +297,7 @@ class TaskPanel(QtWidgets.QWidget):
             if 'elem' in text:
                 short = text
             else:
+                print self.proj_man_tasks
                 short = self.proj_man_tasks[text]
             self.path_object.__dict__[self.element] = short
             self.path_object.data[self.element] = short

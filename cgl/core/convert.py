@@ -117,22 +117,38 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
         print('process_info not defined')
 
 
-def create_prores_mov(input_file, output_file=None, processing_method='local', dependent_job=None):
+def create_prores_mov(input_file, output_file=None, processing_method='local', dependent_job=None, quality=0,
+                      new_window=False, command_name="create_prores_mov()"):
     """
     create a prores mov from specified input sequence, and save it to output.
     :param input_file: input sequence string, formatted with (#, %04d, *)
     :param output: output string
     :return:
     """
+    if quality == 0:
+        description = 'proxy'
+    elif quality == 1:
+        description = 'low'
+    elif quality == 2:
+        description = 'standard'
+    elif quality == 3:
+        description = 'high'
     file_, ext = os.path.splitext(input_file)
     file_type = ext_map[ext]
     if not output_file:
-        output_file = '%s_prores.mov' % file_
+        output_file = '%s_prores_%s.mov' % (file_, description)
     if file_type == 'movie':
-        command = '%s -i %s -c:v prores_ks -profile:v 3 -c:a copy %s' % (PATHS['ffmpeg'], input_file, output_file)
-        cgl_execute(command, command_name='Create Prores', methodology=processing_method, WaitForJobID=dependent_job,
-                    new_window=True)
-        return output_file
+        if processing_method == 'local':
+            command = '%s -i %s -c:v prores_ks -qscale:v 1 -profile:v %s -c:a copy %s' % (PATHS['ffmpeg'], input_file, quality, output_file)
+            cgl_execute(command, command_name='Create Prores', methodology=processing_method, WaitForJobID=dependent_job,
+                        new_window=new_window)
+            return output_file
+        elif processing_method == 'smedge':
+            filename = "%s.py" % os.path.splitext(__file__)[0]
+            command = r'python %s -i %s -o %s -t prores -ft movie -q %s' % (filename, input_file, output_file, quality)
+            process_info = cgl_execute(command, command_name=command_name, methodology='smedge',
+                                       WaitForJobID=dependent_job)
+            process_info['file_out'] = output_file
     else:
         print('File type: %s not supported with create_prores_mov()' % file_type)
 
@@ -290,6 +306,69 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
         return process_info
 
 
+def change_extension(filein, new_ext):
+    new_ext = new_ext.replace('.', '')
+    file_ = os.path.splitext(filein)[0]
+    return '%s.%s' % (file_, new_ext)
+
+
+def convert_to_webm(filein, fileout=None, processing_method='local', dependent_job=None):
+    """
+    creates a .mp4 file specifically to be used in amazon's transcription services.
+    :param filein:
+    :param fileout:
+    :param processing_method:
+    :param dependent_job:
+    :return:
+    """
+    if not fileout:
+        fileout = change_extension(filein, 'mp4')
+    vcodec = ' -pix_fmt yuv420p -vcodec libvpx -vf "scale=trunc((a*oh)/2)*2:720" -g 30 -b:v 2000k -vpre 720p -quality realtime -cpu-used 0 -qmin 10 -qmax 42'
+    acodec = "-acodec libvorbis -aq 60 -ac 2"
+    command = "%s -i %s %s %s -f webm %s" % (PATHS['ffmpeg'], filein, acodec, vcodec, fileout)
+    cgl_execute(command, command_name='convert to webm', methodology=processing_method, WaitForJobID=dependent_job,
+                new_window=True)
+    return fileout
+
+
+def convert_to_mp4(filein, fileout=None, processing_method='local', dependent_job=None, audio_only=False,
+                   new_window=False, command_name='convert_to_mp4()'):
+    """
+    creates a .mp4 file specifically to be used in amazon's transcription services.
+    :param filein:
+    :param fileout:
+    :param processing_method:
+    :param dependent_job:
+    :return:
+    """
+    process_info = {}
+    if not fileout:
+        fileout = change_extension(filein, 'mp4')
+        'scale=trunc((a*oh)/2)*2:720'
+    vcodec = '-vcodec libx264 -pix_fmt yuv420p -vf "scale=trunc((a*oh)/2)*2:720" -g 30 -b:v 2000k -vprofile high -bf 0'
+    acodec = "-strict experimental -acodec aac -ab 160k -ac 2"
+    if audio_only:
+        fileout = fileout.replace('.mp4', '_audio.mp4')
+        if processing_method == 'local':
+            command = "%s -i %s -vn %s %s" % (PATHS['ffmpeg'], filein, acodec, fileout)
+        elif processing_method == 'smedge':
+            filename = "%s.py" % os.path.splitext(__file__)[0]
+            command = r'python %s -i %s -o %s -t audio -ft movie' % (filename, filein, fileout)
+            process_info = cgl_execute(command, command_name=command_name, methodology='smedge',
+                                       WaitForJobID=dependent_job)
+            process_info['file_out'] = fileout
+            return
+    else:
+        if processing_method == 'local':
+            command = "%s -i %s %s %s -f mp4 %s" % (PATHS['ffmpeg'], filein, acodec, vcodec, fileout)
+            cgl_execute(command, command_name='Convert to mp4', methodology=processing_method, WaitForJobID=dependent_job,
+                        new_window=new_window)
+            process_info['file_out'] = fileout
+        elif processing_method == 'smedge':
+            print 'Have not implemented smedge for convert_to_mp4 yet'
+    return process_info
+
+
 def extract_wav_from_movie(filein, fileout=None, processing_method='local', dependent_job=None):
     """
     extracts audio from a video file.
@@ -323,10 +402,12 @@ def extract_wav_from_movie(filein, fileout=None, processing_method='local', depe
               help='Path to the output file/folder/sequence')
 @click.option('--width', '-w', default=1920, help='width in pixels')
 @click.option('--height', '-h', default=1080, help='height in pixels')
-@click.option('--file_type', '-ft', default='sequence', help='options: sequence, image, movie')
-@click.option('--conversion_type', '-t', default='proxy',
-              help='Type of Conversions: proxy, web_preview, editorial, thumb, gif, audio')
-def main(input_file, output_file, height, width, file_type, conversion_type):
+@click.option('--file_type', '-ft', default='movie', help='options: sequence, image, movie')
+@click.option('--conversion_type', '-t', default='web_preview',
+              help='Type of Conversions: proxy, web_preview, prores, thumb, gif, audio')
+@click.option('--quality', '-q', default=0, help='0:proxy, 1:low, 2:standard, 3:high')
+def main(input_file, output_file, height, width, file_type, conversion_type, quality=0):
+    print 'running stuff'
     run_dict = {}
     if file_type == 'sequence':
         if conversion_type == 'proxy':
@@ -334,10 +415,11 @@ def main(input_file, output_file, height, width, file_type, conversion_type):
         elif conversion_type == 'web_preview':
             create_web_mov(input_file, output=output_file)
     if file_type == 'movie':
-        if conversion_type == 'editorial':
-            create_prores_mov(input_file, output_file)
+        if conversion_type == 'prores':
+            create_prores_mov(input_file, output_file, quality=quality)
         elif conversion_type == 'audio':
-            extract_wav_from_movie(input_file, output_file)
+            print 4
+            convert_to_mp4(input_file, output_file, audio_only=True)
         elif conversion_type == 'thumb':
             create_movie_thumb(input_file, output_file)
         else:
@@ -349,3 +431,4 @@ def main(input_file, output_file, height, width, file_type, conversion_type):
 
 if __name__ == '__main__':
     main()
+

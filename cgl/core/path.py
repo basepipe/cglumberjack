@@ -1376,20 +1376,27 @@ def font_path():
 
 
 def start(filepath):
-    print 1, filepath
-    if filepath.endswith('.nk'):
-        from cgl.core.utils.general import current_user
-        if current_user() == 'tmikota':
-            path_object = PathObject(filepath)
-            print path_object.company, path_object.project
-            if path_object.company == 'VFX':
-                cmd = r'%s --nukex ' % CONFIG['paths']['nuke']
-                command = (cmd + filepath)
-                print command
-                cgl_execute(command, methodology='local')
-                return
-    else:
-        cmd = "cmd /c start "
+    # if filepath.endswith('.nk'):
+    #     from cgl.core.utils.general import current_user
+    #     if current_user() == 'tmikota':
+    #         path_object = PathObject(filepath)
+    #         print path_object.company, path_object.project
+    #         if path_object.company == 'VFX':
+    #             cmd = r'%s --nukex ' % CONFIG['paths']['nuke']
+    #             command = (cmd + filepath)
+    #             print command
+    #             cgl_execute(command, methodology='local')
+    #             return
+    # else:
+    try:
+        path_object = PathObject(filepath)
+        if path_object.task.lower() == 'paperedit':
+            from robogary.src.apps.robo_gary import main
+            dialog = main.RoboGary(transcript_file=filepath)
+            dialog.exec_()
+    except AttributeError:
+        pass
+    cmd = "cmd /c start "
     if sys.platform == "darwin":
         cmd = "open "
     elif sys.platform == "linux2":

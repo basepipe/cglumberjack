@@ -111,13 +111,13 @@ class IOPanel(QtWidgets.QWidget):
         self.tags_title_row.addWidget(self.tags_button)
         self.tags_button.hide()
 
-        self.schema_row = QtWidgets.QHBoxLayout()
-        self.schema_label = QtWidgets.QLabel('Project Type')
-        self.schema_combo = AdvComboBox()
-        self.schema_combo.addItems(CONFIG['project_management'][self.project_management]['tasks'].keys())
-        self.schema_row.addWidget(self.schema_label)
-        self.schema_row.addWidget(self.schema_combo)
-        self.schema_row.addStretch(1)
+        # self.schema_row = QtWidgets.QHBoxLayout()
+        # self.schema_label = QtWidgets.QLabel('Project Type')
+        # self.schema_combo = AdvComboBox()
+        # self.schema_combo.addItems(CONFIG['project_management'][self.project_management]['tasks'].keys())
+        # self.schema_row.addWidget(self.schema_label)
+        # self.schema_row.addWidget(self.schema_combo)
+        # self.schema_row.addStretch(1)
 
         self.scope_label = QtWidgets.QLabel('Scope')
         self.scope_combo = AdvComboBox()
@@ -180,7 +180,7 @@ class IOPanel(QtWidgets.QWidget):
         self.panel.addWidget(self.empty_state)
         self.panel.addLayout(self.tags_title_row)
         self.panel.addWidget(self.progress_bar)
-        self.panel.addLayout(self.schema_row)
+        # self.panel.addLayout(self.schema_row)
         self.panel.addLayout(self.seq_row)
         self.panel.addLayout(self.tags_row)
         self.panel.addLayout(self.buttons_row)
@@ -195,7 +195,7 @@ class IOPanel(QtWidgets.QWidget):
 
         self.view_in_lumbermill.clicked.connect(self.on_view_in_lumbermill_clicked)
         self.refresh_button.clicked.connect(self.on_ingest_selected)
-        self.schema_combo.currentIndexChanged.connect(self.on_schema_changed)
+        # self.schema_combo.currentIndexChanged.connect(self.on_schema_changed)
         self.scope_combo.currentIndexChanged.connect(self.on_scope_changed)
         self.seq_combo.currentIndexChanged.connect(self.on_seq_changed)
         self.file_tree.selected.connect(self.on_file_selected)
@@ -210,7 +210,7 @@ class IOPanel(QtWidgets.QWidget):
         self.publish_button.clicked.connect(self.publish_selected_asset)
         self.empty_state.files_added.connect(self.new_files_dragged)
         logging.info('Testing the popup')
-        self.on_schema_changed()
+        # self.on_schema_changed()
         self.on_scope_changed()
 
     def on_source_add_clicked(self):
@@ -295,10 +295,11 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.show()
         self.empty_state.setText('Drag Media Here \nto Create New Ingest Version')
         self.path_object.set_attr(ingest_source=selected)
-        if selected == 'OBS' or selected == 'ZOOM':
-            self.load_fixed_events(selected)
-        else:
-            self.load_import_events()
+        self.load_import_events()
+        # if selected == 'OBS' or selected == 'ZOOM':
+        #     self.load_fixed_events(selected)
+        # else:
+        #     self.load_import_events()
 
     def load_fixed_events(self, key):
         """
@@ -449,6 +450,7 @@ class IOPanel(QtWidgets.QWidget):
                             status = self.data_frame.at[row, 'Status']
                             if status == 'Imported':
                                 status = 'Tagged'
+                            print f[FILENAME], '1111111111111111111111'
                             to_path = os.path.join(to_object.path_root, f[FILENAME])
                             if status == 'Published':
                                 self.tags_title.setText('CGL:>  Published!')
@@ -623,7 +625,7 @@ class IOPanel(QtWidgets.QWidget):
         return seqs
 
     def on_schema_changed(self):
-        self.schema = self.schema_combo.currentText()
+        # self.schema = self.schema_combo.currentText()
         self.schema_dict = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
         if self.shot_combo.currentText():
             self.populate_tasks()
