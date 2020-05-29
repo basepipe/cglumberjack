@@ -505,6 +505,14 @@
                         }
                     }
                 }
+            },
+            "user_details": [
+                "login",
+                "email",
+                "first",
+                "last"
+            ],
+            "users": {
             }
         }, 
         "shotgun": {
@@ -582,6 +590,14 @@
                         }
                     }
                 }
+            },
+            "user_details": [
+                "login",
+                "email",
+                "first",
+                "last"
+            ],
+            "users": {
             }
         }
     }, 

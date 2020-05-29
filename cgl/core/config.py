@@ -181,13 +181,14 @@ def get_user_globals():
 
 
 def get_globals():
-    if 'globals' in get_user_globals().keys():
-        globals_path = get_user_globals()['globals']
-        if globals_path:
-            return load_json(globals_path)
-        else:
-            print('No user_globals found at %s' % user_config())
-    else:
+    try:
+        if get_user_globals().keys():
+            globals_path = get_user_globals()['globals']
+            if globals_path:
+                return load_json(globals_path)
+            else:
+                print('No user_globals found at %s' % user_config())
+    except AttributeError:
         print('No user_globals found at %s' % user_config())
 
 
