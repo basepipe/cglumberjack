@@ -17,14 +17,12 @@ def setup_server(clean=False):
     :param clean: wipe the server as part of the setup process.
     :return:
     """
-    print 'running setup_server'
     wipe_globals()
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     set_machine_type('server')
     globls = load_json(user_globals['globals'])
     cgl_tools_folder = globls['paths']['cgl_tools']
     sheet_obj = get_sheet()
-    print 1, get_my_device_info()
     add_device_info_to_sheet(sheet_obj, server='true')
     add_all_devices_to_config(sheet_obj)
     folder_id = r'[root]\_config\cgl_tools'
@@ -234,6 +232,8 @@ def get_sheet():
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     globals_ = load_json(user_globals['globals'])
     client_file = globals_['sync']['syncthing']['sheets_config_path']
+    name_ = globals_['sync']['syncthing']['sheets_name'].split('_SYNC_THING')[0]
+    print 'Syncing with %s' % name_
     sheet_obj = None
     if not os.path.exists(client_file):
         sheets.get_sheets_authentication()
@@ -515,7 +515,7 @@ def share_files(path_object):
     sm_dialog.exec_()
 
 
-def share_folders_to_devices(all_device_id=[], folder_list=[r'[root]\_config\cgl_tools'], dialog=False):
+def share_folders_to_devices(device_ids=[], folder_list=[r'[root]\_config\cgl_tools'], dialog=False):
     """
     Makes all files shareable to all devices found in the config file
     :return:
@@ -524,7 +524,7 @@ def share_folders_to_devices(all_device_id=[], folder_list=[r'[root]\_config\cgl
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
 
-    if not all_device_id:
+    if not device_ids:
         print('No device IDs identified, skipping file share')
         return
         # for child in root:
@@ -539,7 +539,7 @@ def share_folders_to_devices(all_device_id=[], folder_list=[r'[root]\_config\cgl
                 for sub_element in child:
                     if sub_element.tag == 'device':
                         shared.append(sub_element.get('id'))
-                for d_id in all_device_id:
+                for d_id in device_ids:
                     if d_id not in shared:
                         new_node = ElemTree.SubElement(child, 'device')
                         new_node.set('id', d_id)

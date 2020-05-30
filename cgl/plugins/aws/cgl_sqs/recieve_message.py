@@ -1,15 +1,9 @@
 import os
 import boto3
 
-# Create SQS client
-ACCESS_KEY = os.environ['AWS_ACCESS_KEY']
-SECRET_KEY = os.environ['AWS_SECRET_KEY']
-region_name = os.environ['AWS_DEFAULT_REGION']
 
 # Create SQS client
-sqs = boto3.client('sqs', aws_access_key_id=ACCESS_KEY,
-                   aws_secret_access_key=SECRET_KEY,
-                   region_name=region_name)
+sqs = boto3.client('sqs')
 
 queue_url = 'https://sqs.us-east-1.amazonaws.com/044899505732/CGL_SYNC'
 
