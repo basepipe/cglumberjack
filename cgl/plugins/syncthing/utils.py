@@ -114,6 +114,7 @@ def process_st_config():
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
     folders_dict = {}
+    pending_device = False
     for child in root:
         if child.tag == 'device':
             device_id = child.get('id')
@@ -152,12 +153,14 @@ def process_st_config():
                 tree.write(config_path)
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
-        if child.tag == 'pendingDevice':
-            if syncthing_running():
-                kill_syncthing()
-            add_device_to_config(child.get('id'), child.get('name'))
-            root.remove(child)
-            tree.write(config_path)
+        if pending_device:
+            if child.tag == 'pendingDevice':
+                print("Found Pending Device: Checking to see if it's on the approved list.")
+                if syncthing_running():
+                    kill_syncthing()
+                add_device_to_config(child.get('id'), child.get('name'))
+                root.remove(child)
+                tree.write(config_path)
     if not syncthing_running():
         launch_syncthing()
 
@@ -352,6 +355,8 @@ def add_device_to_config(device_id, name):
     if sheets.id_exists(device_id, sheet):
         print 'Adding approved device to Syncing'
         add_all_devices_to_config(sheet=None, device_list=device_list)
+    else:
+        print 'Device not found in Google Sheets.'
 
 
 def add_all_devices_to_config(sheet, device_list=False):
@@ -653,5 +658,6 @@ def update_machines():
 
 if __name__ == "__main__":
     wipe_globals()
+    print get_config_path()
 
 

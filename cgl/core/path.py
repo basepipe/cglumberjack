@@ -1441,7 +1441,7 @@ def get_folder_size(folder):
 def print_file_size(total_bytes, do_print=True):
     total_mb = float(total_bytes) / 1024 / 1024
     total_gb = total_mb / 1024
-    size_string = '%s GB(%s bytes)' % (format(total_gb, ".2f"), '{:,}'.format(total_bytes))
+    size_string = '%s Mb(%s bytes)' % (format(total_mb, ".2f"), '{:,}'.format(total_bytes))
     if do_print:
         print size_string
     return size_string
@@ -1474,9 +1474,9 @@ def find_latest_publish_objects(folder, source=True, render=False):
             sync_objects.append(l_object)
             size = get_folder_size(l_object.path_root)
             total_size += size
-    print 'Total Size of Latest Publishes\n\t%s' % print_file_size(total_size, do_print=False)
+    print '%s %s Total Size of Latest Publishes\n\t%s' % (path_object.seq, path_object.shot,
+                                                          print_file_size(total_size, do_print=False))
     return sync_objects
-
 
 
 def show_in_folder(path_string):

@@ -217,7 +217,7 @@ def machine_added_message(device_id, device_name, message, **kwargs):
 def main(seconds, delete):
     start_time = time.time()
     while True:
-        # process_messages(force_delete=delete)
+        process_messages(force_delete=delete)
         check_st_config()
         st_utils.syncthing_running()
         time.sleep(seconds - ((time.time() - start_time) % seconds))
