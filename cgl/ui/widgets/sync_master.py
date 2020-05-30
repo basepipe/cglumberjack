@@ -326,6 +326,7 @@ class SharingDialog(LJDialog):
             print check_box.device_name
             print check_box.user
             print check_box.full_name
+        print self.device_list
 
     def on_ok_clicked(self):
         self.button = 'Ok'

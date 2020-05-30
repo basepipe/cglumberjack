@@ -15,9 +15,7 @@ except KeyError:
 def check_st_config():
     import cgl.apps.lumber_watch.lumber_watch as lw
     if lw.check_syncthing_config():
-        # assuming all we have to do is accept folders.
-        print 'config changed, probably going to accept folders'
-        st_utils.accept_folders()
+        st_utils.process_st_config()
 
 
 def send_message(message_attrs='', message_body=''):
@@ -172,7 +170,7 @@ def accept_folders_from_syncthing(message_attrs, test=True):
     if local_device_id == device_id:
         print '\t -->> Found New Folders for %s' % device_dict['name']
         if not test:
-            st_utils.accept_folders()  # this has kill and launch syncthing built in.
+            st_utils.process_st_config()  # this has kill and launch syncthing built in.
         return True
     
     
@@ -232,7 +230,7 @@ def machine_added_message(device_id, device_name, message, **kwargs):
 def main(seconds, delete):
     start_time = time.time()
     while True:
-        process_messages(force_delete=delete)
+        # process_messages(force_delete=delete)
         check_st_config()
         st_utils.syncthing_running()
         time.sleep(seconds - ((time.time() - start_time) % seconds))

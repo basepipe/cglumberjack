@@ -868,7 +868,7 @@ class CGLumberjack(LJMainWindow):
         connects an artist's machine to the server after the server has added them
         :return:
         """
-        st_utils.accept_folders()
+        st_utils.process_st_config()
         self.change_sync_icon(syncing=True)
         pass
 

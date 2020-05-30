@@ -110,7 +110,7 @@ def fix_folder_paths():
     launch_syncthing()
 
 
-def accept_folders():
+def process_st_config():
     # parse the xml
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
@@ -138,6 +138,7 @@ def accept_folders():
                         add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
                     else:
                         print('skipping non-cgl folders')
+
         if child.tag == 'folder':
             if ' ' in child.get('path'):
                 if syncthing_running():
@@ -153,6 +154,12 @@ def accept_folders():
                 tree.write(config_path)
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
+        if child.tag == 'pendingDevice':
+            if syncthing_running():
+                kill_syncthing()
+            add_device_to_config(child.get('id'), child.get('name'))
+            root.remove(child)
+            tree.write(config_path)
     if not syncthing_running():
         launch_syncthing()
 
@@ -340,7 +347,11 @@ def add_device_to_config(device_id, name):
     """
     device_list = [{'id': device_id,
                     'name': name}]
-    add_all_devices_to_config(sheet=None, device_list=device_list)
+    sheet = get_sheet()
+    # check to see if the device is on the device list.
+    if sheets.id_exists(device_id, sheet):
+        print 'Adding approved device to Syncing'
+        add_all_devices_to_config(sheet=None, device_list=device_list)
 
 
 def add_all_devices_to_config(sheet, device_list=False):
@@ -356,10 +367,12 @@ def add_all_devices_to_config(sheet, device_list=False):
 
     filepath = get_config_path()
     if os.path.exists(filepath):
+        print 1
         tree = ElemTree.parse(filepath)
         root = tree.getroot()
 
         for entry in device_list:
+            print 2
             new_node = ElemTree.SubElement(root, 'device')
             new_node.set('id', entry['id'])
             new_node.set('name', entry['name'])
@@ -380,6 +393,7 @@ def add_all_devices_to_config(sheet, device_list=False):
             maxRequestKiB = ElemTree.SubElement(new_node, 'maxRequestKiB')
             maxRequestKiB.text = 0
         tree.write(filepath)
+        print 3
     else:
         print('Config File does not exist: %s' % filepath)
 
@@ -427,7 +441,6 @@ def set_sync_statuses(folders_dict, path_, sync_folder, device_id):
         folders_dict[path_] = {'folders': [sync_folder],
                                'type': '1 Synced',
                                'devices': [device_id]}
-
 
 
 def get_sync_report():
@@ -644,9 +657,8 @@ if __name__ == "__main__":
     # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
     # os.makedirs(path_)
     # kill_syncthing()
-    sync_folders = get_sync_folders()
-    for k in sync_folders:
-        print k, sync_folders[k]
+    print get_config_path()
+    process_st_config()
 
 
 
