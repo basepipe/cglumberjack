@@ -477,6 +477,7 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
         new_node.set('autoNormalize', "true")
         if device_list:
             for id_ in device_list:
+                print 'adding device %s to folder %s' % (id_, filepath)
                 device_node = ElemTree.SubElement(new_node, 'device')
                 device_node.set('id', id_)
         print('Saving Config: %s' % config_path)
@@ -651,14 +652,6 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    # kill_syncthing()
-    # print get_sync_folders()
-    # print get_config_path()
-    # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
-    # os.makedirs(path_)
-    # kill_syncthing()
-    print get_config_path()
-    process_st_config()
-
+    wipe_globals()
 
 

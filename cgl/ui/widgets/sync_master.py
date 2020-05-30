@@ -334,10 +334,13 @@ class SharingDialog(LJDialog):
         if self.device_list:
             kill_syncthing()
             if self.publish_objects:
+                print 1, self.publish_objects
                 for p in self.publish_objects:
                     folder_id = '[root]\\%s' % p.path.replace('/', '\\')
                     folder = p.path_root.replace('/', '\\')
                     add_folder_to_config(folder_id, folder, self.device_list, type_='sendonly')
+            else:
+                print 'no publish objects'
             launch_syncthing()
         return self.device_list
 
