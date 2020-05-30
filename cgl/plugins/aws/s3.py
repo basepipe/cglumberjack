@@ -9,8 +9,10 @@ import boto3
 import requests
 import uuid
 import time
-from cgl.core.utils.general import save_json
+import click
+from cgl.core.utils.general import save_json, cgl_execute
 from cgl.core.convert import convert_to_mp4
+
 
 
 def upload_file(file_path, bucket_name, acl='public-read'):
@@ -82,3 +84,36 @@ def cgl_transcribe(bucket, filename, transcript_file_out):
     transcript = getTranscript(response["TranscriptionJob"]["Transcript"]["TranscriptFileUri"])
     print("\n==> Transcript: \n" + transcript_file_out)
     save_json(transcript_file_out, transcript)
+
+
+def upload_and_transcribe_audio(input_file, transcript_file_out, bucket='cgl-developeronboarding',
+                                processing_method='local', dependent_job=None):
+    if processing_method == 'local':
+        print('Uploading File %s' % input_file)
+        upload_file(input_file, bucket)
+        print('Upload Complete...')
+        time.sleep(3)
+        cgl_transcribe(bucket, os.path.basename(input_file), transcript_file_out)
+    elif processing_method == 'smedge':
+        filename = "%s.py" % os.path.splitext(__file__)[0]
+        command = r'python %s -i %s -o %s -b %s' % (filename, input_file, transcript_file_out, bucket)
+        command_name = 'Upload & Transcribe'
+        process_info = cgl_execute(command, command_name=command_name, methodology='smedge',
+                                   WaitForJobID=dependent_job)
+        process_info['file_out'] = transcript_file_out
+        return process_info
+
+
+@click.command()
+@click.option('--input_file', '-i', prompt="filepath to upload",
+              default=None, help='Filepath for the file to upload to s3')
+@click.option('--output_file', '-o', prompt='output file', default=False,
+              help='where to write the transcript file')
+@click.option('--bucket', '-b', prompt="s3 bucket name", default=None,
+              help="")
+def main(input_file, output_file, bucket):
+    upload_and_transcribe_audio(input_file, output_file, bucket)
+
+
+if __name__ == '__main__':
+    main()

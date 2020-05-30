@@ -133,6 +133,8 @@ def create_prores_mov(input_file, output_file=None, processing_method='local', d
         description = 'standard'
     elif quality == 3:
         description = 'high'
+    if not command_name:
+        command_name = "create_prores_mov(%s)" % description
     file_, ext = os.path.splitext(input_file)
     file_type = ext_map[ext]
     if not output_file:
@@ -149,6 +151,7 @@ def create_prores_mov(input_file, output_file=None, processing_method='local', d
             process_info = cgl_execute(command, command_name=command_name, methodology='smedge',
                                        WaitForJobID=dependent_job)
             process_info['file_out'] = output_file
+            return process_info
     else:
         print('File type: %s not supported with create_prores_mov()' % file_type)
 
@@ -344,20 +347,23 @@ def convert_to_mp4(filein, fileout=None, processing_method='local', dependent_jo
     process_info = {}
     if not fileout:
         fileout = change_extension(filein, 'mp4')
-        'scale=trunc((a*oh)/2)*2:720'
+        # 'scale=trunc((a*oh)/2)*2:720'
     vcodec = '-vcodec libx264 -pix_fmt yuv420p -vf "scale=trunc((a*oh)/2)*2:720" -g 30 -b:v 2000k -vprofile high -bf 0'
     acodec = "-strict experimental -acodec aac -ab 160k -ac 2"
     if audio_only:
-        fileout = fileout.replace('.mp4', '_audio.mp4')
+        if not fileout.endswith('_audio.mp4'):
+            fileout = fileout.replace('.mp4', '_audio.mp4')
         if processing_method == 'local':
             command = "%s -i %s -vn %s %s" % (PATHS['ffmpeg'], filein, acodec, fileout)
+            cgl_execute(command, command_name=command_name, methodology='local',
+                        WaitForJobID=dependent_job)
         elif processing_method == 'smedge':
             filename = "%s.py" % os.path.splitext(__file__)[0]
             command = r'python %s -i %s -o %s -t audio -ft movie' % (filename, filein, fileout)
             process_info = cgl_execute(command, command_name=command_name, methodology='smedge',
                                        WaitForJobID=dependent_job)
             process_info['file_out'] = fileout
-            return
+            return process_info
     else:
         if processing_method == 'local':
             command = "%s -i %s %s %s -f mp4 %s" % (PATHS['ffmpeg'], filein, acodec, vcodec, fileout)
@@ -407,7 +413,6 @@ def extract_wav_from_movie(filein, fileout=None, processing_method='local', depe
               help='Type of Conversions: proxy, web_preview, prores, thumb, gif, audio')
 @click.option('--quality', '-q', default=0, help='0:proxy, 1:low, 2:standard, 3:high')
 def main(input_file, output_file, height, width, file_type, conversion_type, quality=0):
-    print 'running stuff'
     run_dict = {}
     if file_type == 'sequence':
         if conversion_type == 'proxy':
@@ -418,7 +423,6 @@ def main(input_file, output_file, height, width, file_type, conversion_type, qua
         if conversion_type == 'prores':
             create_prores_mov(input_file, output_file, quality=quality)
         elif conversion_type == 'audio':
-            print 4
             convert_to_mp4(input_file, output_file, audio_only=True)
         elif conversion_type == 'thumb':
             create_movie_thumb(input_file, output_file)
@@ -431,4 +435,5 @@ def main(input_file, output_file, height, width, file_type, conversion_type, qua
 
 if __name__ == '__main__':
     main()
+
 
