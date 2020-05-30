@@ -18,7 +18,9 @@ def load_lumbermill(app, splash=None):
 if __name__ == "__main__":
     app, splash = startup.app_init()
     project_management, user_info = startup.user_init()
-    time_required = True
+    # TODO tell them to run the setup script if there's not globals file.
+    # TODO make this value a globals value
+    time_required = False
     if user_info:
         print 'Found User, %s' % user_info['login']
         if project_management == 'ftrack':
