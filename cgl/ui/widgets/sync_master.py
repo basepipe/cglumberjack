@@ -163,6 +163,8 @@ class SyncMaster(LJDialog):
             publishes += these_publishes
         dialog_sharing = SharingDialog(publish_objects=publishes)
         dialog_sharing.exec_()
+        if dialog_sharing.button == 'Ok':
+            self.on_project_changed()
 
     def on_scope_changed(self):
         if self.shots_radio.isChecked():

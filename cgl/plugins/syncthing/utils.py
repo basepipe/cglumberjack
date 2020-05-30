@@ -657,7 +657,8 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    wipe_globals()
-    print get_config_path()
+    #wipe_globals()
+    #print get_config_path()
+    kill_syncthing()
 
 
