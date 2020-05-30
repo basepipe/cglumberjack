@@ -9,7 +9,7 @@ import time
 import logging
 import re
 import xmltodict
-from cgl.core.config import app_config
+from cgl.core.config import app_config, update_globals
 CONFIG = app_config()
 
 
@@ -88,10 +88,14 @@ def clean_file_list(file_list):
     :param file_list:
     :return:
     """
-
-    ignore_matches = app_config()['rules']['ignore']['matches']
-    ignore_contains = app_config()['rules']['ignore']['contains']
-    ignore_endswith = app_config()['rules']['ignore']['endswith']
+    if 'ignore' in app_config()['rules'].keys():
+        ignore_matches = app_config()['rules']['ignore']['matches']
+        ignore_contains = app_config()['rules']['ignore']['contains']
+        ignore_endswith = app_config()['rules']['ignore']['endswith']
+    else:
+        update_globals()
+        print('Found Missing Globals and updated them.  Try Launching again')
+        return
     clean_list = []
     for f in file_list:
         ignore = False
@@ -116,7 +120,6 @@ def clean_file_list(file_list):
             clean_list.append(f)
 
     return clean_list
-
 
 
 def cgl_copy(source, destination, methodology='local', verbose=False, dest_is_folder=False, test=False, job_name=''):
@@ -337,7 +340,6 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         else:
             print('Executing Command:\n%s' % command)
             if new_window:
-                print command
                 subprocess.Popen(command, universal_newlines=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
                 # TODO - would like a way to ensure output prints to the new console as well as to our output.  For now
                 # it seems like it's a one or the other scneario
@@ -370,11 +372,14 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         if '-Type Nuke' in command:
             smedge_command = r'%s Script %s' % (CONFIG['paths']['smedge'], command)
         else:
+            # TODO - this should probably be able to work in a venv as well somehow.
+            #  Right now we're relying on a uniform python install.
             environment_overrides = "CGL_PYTHON=C:\Python27;C:\Python27\Scripts;C:\Python27\Lib\site-packages;"
             if command.startswith('python'):
                 command = '$(:CGL_PYTHON)\\%s' % command
-            smedge_command = r'%s Script -Type Generic Script -Name %s -Range %s ' \
-                             r'-Command "%s" -EnvironmentOverrides "%s"' % (CONFIG['paths']['smedge'],
+            # Contact Robin - i have to use the actual ID rather than "Generic" or "Script" or Generic Script
+            smedge_command = r'%s Script -Type 2c0ad30d-5432-44f3-8ab9-5d09d08e2955 -Name %s -Range %s' \
+                             r' -Command "%s" -EnvironmentOverrides "%s"' % (CONFIG['paths']['smedge'],
                                                                             command_name, range, command,
                                                                             environment_overrides)
         for k in kwargs:

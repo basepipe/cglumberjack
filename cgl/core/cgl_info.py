@@ -105,38 +105,38 @@ def get_cgl_info_files(path_object, scope='assets', seq='*', shot='*', task='*',
         print each
 
 
-def build_folder_info(root_folder):
+def build_folder_info(root_folder, force=False):
     # Goes through and builds cgl_info files for
     for root, dirs, files in os.walk(root_folder):
         try:
             temp_object = PathObject(root)
             last_attr = temp_object.get_last_attr()
             if temp_object.seq:
-                create_cgl_info(root, last_attr, dirs, files)
+                create_cgl_info(root, last_attr, dirs, files, force=force)
         except ValueError:
             # TODO - need to add anything that falls into this to some kind of "not in pipeline"
             #  list of stuff to be deleted.
             last_attr = ''
-            create_cgl_info(root, last_attr, dirs, files)
+            create_cgl_info(root, last_attr, dirs, files, force=force)
 
 
-def create_all_cgl_info_files(company, project, source=True, render=True):
+def create_all_cgl_info_files(company, project, source=True, render=True, force=False):
     start_time = time.time()
     if source:
         d = {"company": company, "project": project, 'context': 'source'}
         path_object = PathObject(d)
-        build_folder_info(path_object.path_root)
+        build_folder_info(path_object.path_root, force=force)
     if render:
         d2 = {"company": company, "project": project, 'context': 'render'}
         path_object2 = PathObject(d2)
-        build_folder_info(path_object2.path_root)
+        build_folder_info(path_object2.path_root, force=force)
     end_time = time.time()-start_time
     print 'print finished processing in %s minutes' % "{:.2f}".format(end_time/60)
 
 
 if __name__ == "__main__":
-    # create_all_cgl_info_files('VFX', '16BTH_2020_Arena', render=False)
+    create_all_cgl_info_files('loneCoconut', 'ILUCIA', force=True)
     # create_all_cgl_info_files('VFX', '16BTH_2020_Arena', source=False)
-    print get_cgl_info_size(r'Z:/Projects/VFX/source/16BTH_2020_Arena/assets/Vehicle', source=True, render=False)
+    # print get_cgl_info_size(r'Z:/Projects/VFX/source/16BTH_2020_Arena/assets/Vehicle', source=True, render=False)
 
 

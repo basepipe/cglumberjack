@@ -1376,20 +1376,27 @@ def font_path():
 
 
 def start(filepath):
-    print 1, filepath
-    if filepath.endswith('.nk'):
-        from cgl.core.utils.general import current_user
-        if current_user() == 'tmikota':
-            path_object = PathObject(filepath)
-            print path_object.company, path_object.project
-            if path_object.company == 'VFX':
-                cmd = r'%s --nukex ' % CONFIG['paths']['nuke']
-                command = (cmd + filepath)
-                print command
-                cgl_execute(command, methodology='local')
-                return
-    else:
-        cmd = "cmd /c start "
+    # if filepath.endswith('.nk'):
+    #     from cgl.core.utils.general import current_user
+    #     if current_user() == 'tmikota':
+    #         path_object = PathObject(filepath)
+    #         print path_object.company, path_object.project
+    #         if path_object.company == 'VFX':
+    #             cmd = r'%s --nukex ' % CONFIG['paths']['nuke']
+    #             command = (cmd + filepath)
+    #             print command
+    #             cgl_execute(command, methodology='local')
+    #             return
+    # else:
+    try:
+        path_object = PathObject(filepath)
+        if path_object.task.lower() == 'paperedit':
+            from robogary.src.apps.robo_gary import main
+            dialog = main.RoboGary(transcript_file=filepath)
+            dialog.exec_()
+    except AttributeError:
+        pass
+    cmd = "cmd /c start "
     if sys.platform == "darwin":
         cmd = "open "
     elif sys.platform == "linux2":
@@ -1434,7 +1441,7 @@ def get_folder_size(folder):
 def print_file_size(total_bytes, do_print=True):
     total_mb = float(total_bytes) / 1024 / 1024
     total_gb = total_mb / 1024
-    size_string = '%s GB(%s bytes)' % (format(total_gb, ".2f"), '{:,}'.format(total_bytes))
+    size_string = '%s Mb(%s bytes)' % (format(total_mb, ".2f"), '{:,}'.format(total_bytes))
     if do_print:
         print size_string
     return size_string
@@ -1467,9 +1474,9 @@ def find_latest_publish_objects(folder, source=True, render=False):
             sync_objects.append(l_object)
             size = get_folder_size(l_object.path_root)
             total_size += size
-    print 'Total Size of Latest Publishes\n\t%s' % print_file_size(total_size, do_print=False)
+    print '%s %s Total Size of Latest Publishes\n\t%s' % (path_object.seq, path_object.shot,
+                                                          print_file_size(total_size, do_print=False))
     return sync_objects
-
 
 
 def show_in_folder(path_string):

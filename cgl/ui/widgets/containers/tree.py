@@ -109,8 +109,9 @@ class LJTreeWidget(QtWidgets.QTreeView):
                 else:
                     # parent = find the row where filename matches 'parent'
                     items = self.model.findItems(str(row.Parent), column=FILENAME)
-                    parent = items[-1]
-                    parent.appendRow(row_list)
+                    if items:
+                        parent = items[-1]
+                        parent.appendRow(row_list)
         self.model.setHorizontalHeaderLabels(header)
         self.header().setResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.header().setMinimumSectionSize(140)

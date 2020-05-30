@@ -806,6 +806,8 @@ class CGLumberjack(LJMainWindow):
                 else:
                     self.load_syncthing = False
                     self.change_sync_icon(syncing=False)
+                    USERCONFIG["sync_thing_auto_launch"] = False
+                    USERCONFIG["sync_thing_machine_type"] = ""
                     print('Syncthing Auto Launch setting not set in globals.  Skipping sync operations')
 
         except KeyError:
@@ -866,7 +868,7 @@ class CGLumberjack(LJMainWindow):
         connects an artist's machine to the server after the server has added them
         :return:
         """
-        st_utils.accept_folders()
+        st_utils.process_st_config()
         self.change_sync_icon(syncing=True)
         pass
 

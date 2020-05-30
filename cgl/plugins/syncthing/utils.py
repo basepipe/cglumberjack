@@ -9,14 +9,20 @@ from cgl.core.utils.read_write import load_json, save_json
 
 
 def setup_server(clean=False):
-    print 'running setup_server'
+    """
+    sets up a machine as a syncing server for a studio.  This is the machine that will add remote workstations as
+    collaborators, in a studio this must be connected to main storage server, for smaller projects this must be set up
+    on the machine with the main storage for the project.  all files from remote machines will come back to this on
+    publish.
+    :param clean: wipe the server as part of the setup process.
+    :return:
+    """
     wipe_globals()
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     set_machine_type('server')
     globls = load_json(user_globals['globals'])
     cgl_tools_folder = globls['paths']['cgl_tools']
     sheet_obj = get_sheet()
-    print 1, get_my_device_info()
     add_device_info_to_sheet(sheet_obj, server='true')
     add_all_devices_to_config(sheet_obj)
     folder_id = r'[root]\_config\cgl_tools'
@@ -25,7 +31,14 @@ def setup_server(clean=False):
     launch_syncthing()
 
 
-def set_machine_type(m_type='workstation'):
+def set_machine_type(m_type=""):
+    """
+    sets the machine type for the current machine
+    a value of "" is used when a machine is using lumbermill but not syncthing.  This would be typical of a networked
+    machine at the studio.
+    :param m_type: valid types: "", "remote workstation", "server"
+    :return:
+    """
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     user_globals['sync_thing_machine_type'] = m_type
     save_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'), user_globals)
@@ -56,7 +69,7 @@ def setup_workstation():
     wipe_globals()
     USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
     GLOBALS = load_json(USER_GLOBALS['globals'])
-    set_machine_type('workstation')
+    set_machine_type("remote workstation")
     kill_syncthing()
     print 1, get_my_device_info()
     device_info = get_my_device_info()
@@ -95,12 +108,13 @@ def fix_folder_paths():
     launch_syncthing()
 
 
-def accept_folders():
+def process_st_config():
     # parse the xml
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
     folders_dict = {}
+    pending_device = False
     for child in root:
         if child.tag == 'device':
             device_id = child.get('id')
@@ -123,6 +137,7 @@ def accept_folders():
                         add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
                     else:
                         print('skipping non-cgl folders')
+
         if child.tag == 'folder':
             if ' ' in child.get('path'):
                 if syncthing_running():
@@ -138,6 +153,14 @@ def accept_folders():
                 tree.write(config_path)
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
+        if pending_device:
+            if child.tag == 'pendingDevice':
+                print("Found Pending Device: Checking to see if it's on the approved list.")
+                if syncthing_running():
+                    kill_syncthing()
+                add_device_to_config(child.get('id'), child.get('name'))
+                root.remove(child)
+                tree.write(config_path)
     if not syncthing_running():
         launch_syncthing()
 
@@ -219,6 +242,8 @@ def get_sheet():
     user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     globals_ = load_json(user_globals['globals'])
     client_file = globals_['sync']['syncthing']['sheets_config_path']
+    name_ = globals_['sync']['syncthing']['sheets_name'].split('_SYNC_THING')[0]
+    print 'Syncing with %s' % name_
     sheet_obj = None
     if not os.path.exists(client_file):
         sheets.get_sheets_authentication()
@@ -236,15 +261,18 @@ def get_config_path():
     return_output = False
     print_output = True
     output_values = []
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-    if return_output or print_output:
-        while True:
-            output = p.stdout.readline()
-            if output == '' and p.poll() is not None:
-                break
-            if output:
-                output_values.append(output.strip())
-    return output_values[1]
+    try:
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        if return_output or print_output:
+            while True:
+                output = p.stdout.readline()
+                if output == '' and p.poll() is not None:
+                    break
+                if output:
+                    output_values.append(output.strip())
+        return output_values[1]
+    except:
+        print('Syncthing Not installed on system')
 
 
 def get_my_device_info():
@@ -322,7 +350,13 @@ def add_device_to_config(device_id, name):
     """
     device_list = [{'id': device_id,
                     'name': name}]
-    add_all_devices_to_config(sheet=None, device_list=device_list)
+    sheet = get_sheet()
+    # check to see if the device is on the device list.
+    if sheets.id_exists(device_id, sheet):
+        print 'Adding approved device to Syncing'
+        add_all_devices_to_config(sheet=None, device_list=device_list)
+    else:
+        print 'Device not found in Google Sheets.'
 
 
 def add_all_devices_to_config(sheet, device_list=False):
@@ -338,10 +372,12 @@ def add_all_devices_to_config(sheet, device_list=False):
 
     filepath = get_config_path()
     if os.path.exists(filepath):
+        print 1
         tree = ElemTree.parse(filepath)
         root = tree.getroot()
 
         for entry in device_list:
+            print 2
             new_node = ElemTree.SubElement(root, 'device')
             new_node.set('id', entry['id'])
             new_node.set('name', entry['name'])
@@ -362,6 +398,7 @@ def add_all_devices_to_config(sheet, device_list=False):
             maxRequestKiB = ElemTree.SubElement(new_node, 'maxRequestKiB')
             maxRequestKiB.text = 0
         tree.write(filepath)
+        print 3
     else:
         print('Config File does not exist: %s' % filepath)
 
@@ -411,7 +448,6 @@ def set_sync_statuses(folders_dict, path_, sync_folder, device_id):
                                'devices': [device_id]}
 
 
-
 def get_sync_report():
     # I need to know all assets that are synced.
     # I need to know which tasks within that asset are synced
@@ -446,6 +482,7 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
         new_node.set('autoNormalize', "true")
         if device_list:
             for id_ in device_list:
+                print 'adding device %s to folder %s' % (id_, filepath)
                 device_node = ElemTree.SubElement(new_node, 'device')
                 device_node.set('id', id_)
         print('Saving Config: %s' % config_path)
@@ -479,6 +516,14 @@ def get_device_dict():
 
 def share_files(path_object):
     from cgl.ui.widgets.sync_master import SyncMaster
+    current_m_type = None
+    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    if 'sync_thing_machine_type' in user_globals.keys():
+        current_m_type = user_globals['sync_thing_machine_type']
+    if not current_m_type:
+        set_machine_type("")
+        print('This machine is not set up for syncing, sync files not accessible')
+        return
     print path_object.company
     print path_object.project
     print path_object.scope
@@ -489,7 +534,7 @@ def share_files(path_object):
     sm_dialog.exec_()
 
 
-def share_folders_to_devices(all_device_id=[], folder_list=[r'[root]\_config\cgl_tools'], dialog=False):
+def share_folders_to_devices(device_ids=[], folder_list=[r'[root]\_config\cgl_tools'], dialog=False):
     """
     Makes all files shareable to all devices found in the config file
     :return:
@@ -498,7 +543,7 @@ def share_folders_to_devices(all_device_id=[], folder_list=[r'[root]\_config\cgl
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
 
-    if not all_device_id:
+    if not device_ids:
         print('No device IDs identified, skipping file share')
         return
         # for child in root:
@@ -513,7 +558,7 @@ def share_folders_to_devices(all_device_id=[], folder_list=[r'[root]\_config\cgl
                 for sub_element in child:
                     if sub_element.tag == 'device':
                         shared.append(sub_element.get('id'))
-                for d_id in all_device_id:
+                for d_id in device_ids:
                     if d_id not in shared:
                         new_node = ElemTree.SubElement(child, 'device')
                         new_node.set('id', d_id)
@@ -612,15 +657,6 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    # kill_syncthing()
-    # print get_sync_folders()
-    # print get_config_path()
-    # path_ = r'C:\CGLUMBERJACK\COMPANIES\VFX\source\25F3_2020_Kish\assets\Prop\debrisA\mdl\publish\001.000'
-    # os.makedirs(path_)
-    # kill_syncthing()
-    sync_folders = get_sync_folders()
-    for k in sync_folders:
-        print k, sync_folders[k]
-
+    wipe_globals()
 
 

@@ -4,26 +4,15 @@ import click
 import time
 import cgl.plugins.syncthing.utils as st_utils
 
-try:
-    ACCESS_KEY = os.environ['AWS_ACCESS_KEY']
-    SECRET_KEY = os.environ['AWS_SECRET_KEY']
-    REGION_NAME = os.environ['AWS_DEFAULT_REGION']
-except KeyError:
-    print 'ERROR: You need to define the following env variables: ACCESS_KEY, SECRET_KEY, REGION_NAME'
-
 
 def check_st_config():
     import cgl.apps.lumber_watch.lumber_watch as lw
     if lw.check_syncthing_config():
-        # assuming all we have to do is accept folders.
-        print 'config changed, probably going to accept folders'
-        st_utils.accept_folders()
+        st_utils.process_st_config()
 
 
 def send_message(message_attrs='', message_body=''):
-    sqs = boto3.client('sqs', aws_access_key_id=ACCESS_KEY,
-                       aws_secret_access_key=SECRET_KEY,
-                       region_name=REGION_NAME)
+    sqs = boto3.client('sqs')
     # TODO - put this in the globals
     queue_url = 'https://sqs.us-east-1.amazonaws.com/044899505732/CGL_SYNC'
     response = sqs.send_message(
@@ -36,9 +25,7 @@ def send_message(message_attrs='', message_body=''):
 
 
 def receive_messages(queue_url='https://sqs.us-east-1.amazonaws.com/044899505732/CGL_SYNC'):
-    sqs = boto3.client('sqs', aws_access_key_id=ACCESS_KEY,
-                       aws_secret_access_key=SECRET_KEY,
-                       region_name=REGION_NAME)
+    sqs = boto3.client('sqs')
     # TODO - put this in the globals
 
     response = sqs.receive_message(
@@ -74,9 +61,7 @@ def process_messages(max_messages=1,
     :param force_delete:
     :return:
     """
-    sqs = boto3.client('sqs', aws_access_key_id=ACCESS_KEY,
-                       aws_secret_access_key=SECRET_KEY,
-                       region_name=REGION_NAME)
+    sqs = boto3.client('sqs')
 
     response = sqs.receive_message(
         QueueUrl=queue_url,
@@ -136,7 +121,7 @@ def add_machine_to_syncthing(message_attrs, test=True):
             st_utils.launch_syncthing()
             st_utils.kill_syncthing()
             print('sharing files to %s' % name)
-            st_utils.share_folders_to_devices(all_device_id=[device_id], dialog=False)
+            st_utils.share_folders_to_devices(device_ids=[device_id], dialog=False)
             print 'Sending Folders Shared Message'
             folders_shared_message(device_id=device_id, device_name=name,
                                    message='Shared Files with %s, check config')
@@ -172,7 +157,7 @@ def accept_folders_from_syncthing(message_attrs, test=True):
     if local_device_id == device_id:
         print '\t -->> Found New Folders for %s' % device_dict['name']
         if not test:
-            st_utils.accept_folders()  # this has kill and launch syncthing built in.
+            st_utils.process_st_config()  # this has kill and launch syncthing built in.
         return True
     
     
