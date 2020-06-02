@@ -620,20 +620,19 @@ def launch_syncthing():
 
 
 def kill_syncthing():
-    kill_sthing = False
     for proc in psutil.process_iter():
         if proc.name() == 'syncthing.exe':
             proc.terminate()
-            kill_sthing = True
-    if kill_sthing:
-        print 'Killed Syncthing background processes'
-    # TODO - turn icon to not syncing
+            print 'Killed Syncthing background processes'
 
 
 def show_browser():
-    command = 'syncthing -browser-only'
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-    return p
+    from cgl.core.utils.general import cgl_execute
+    print 'Launching Syncthing Browser'
+    # TODO - i want it to only be the browser-only, but for now it seems like there are times when we have to blast it
+    # command = 'syncthing -browser-only'
+    command = 'syncthing'
+    cgl_execute(command, new_window=True)
 
 
 def syncthing_running():
