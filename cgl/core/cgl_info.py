@@ -23,11 +23,17 @@ def get_cgl_info_size(folder_path, source=True, render=True, return_type='best')
                 render_file = cgl_info_file
                 source_file = cgl_info_file.replace('/render/', '/source/')
             if source:
-                source_size = load_json(source_file)[os.path.dirname(source_file)]['total_bytes']
-                source_size = float(source_size)
+                try:
+                    source_size = load_json(source_file)[os.path.dirname(source_file)]['total_bytes']
+                    source_size = float(source_size)
+                except KeyError:
+                    pass
             if render:
-                render_size = load_json(render_file)[os.path.dirname(render_file)]['total_bytes']
-                render_size = float(render_size)
+                try:
+                    render_size = load_json(render_file)[os.path.dirname(render_file)]['total_bytes']
+                    render_size = float(render_size)
+                except KeyError:
+                    pass
 
             size = source_size+render_size
             mb = "{:.2f}".format(float(size/1048576))
