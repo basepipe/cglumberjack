@@ -924,6 +924,7 @@ class CGLumberjack(LJMainWindow):
         shows the syncthing web gui
         :return:
         """
+        st_utils.kill_syncthing()
         st_utils.show_browser()
 
     def set_up_st_server_clicked(self):

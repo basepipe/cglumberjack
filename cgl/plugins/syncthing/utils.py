@@ -219,17 +219,13 @@ def folder_id_exists(folder_id, folder_path='', tree=None):
         config_path = get_config_path()
         tree = ElemTree.parse(config_path)
     root = tree.getroot()
-    existing_folders = []
+    child = None
 
     for child in root:
         if child.tag == 'folder':
-            entry = {'id': child.get('id'), 'path': child.get('path')}
-            existing_folders.append(entry)
-
-    for entry in existing_folders:
-        if folder_id == entry['id'] or folder_path == entry['path']:
-            return True
-    return False
+            if folder_id == child.get('id') or folder_path == child.get('path'):
+                return child
+    return child
 
 
 def get_sheet():
@@ -469,7 +465,11 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
-    if not folder_id_exists(folder_id, tree=tree):
+    new_node = None
+    folder_node = folder_id_exists(folder_id, tree=tree)
+    if folder_node:
+        new_node = folder_node
+    else:
         print folder_id, 'does not exist in config, creating'
         new_node = ElemTree.SubElement(root, 'folder')
         new_node.set('id', folder_id)
@@ -480,15 +480,15 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
         new_node.set('fsWatcherDelayS', "10")
         new_node.set('ignorePerms', "false")
         new_node.set('autoNormalize', "true")
-        if device_list:
-            for id_ in device_list:
-                print 'adding device %s to folder %s' % (id_, filepath)
-                device_node = ElemTree.SubElement(new_node, 'device')
-                device_node.set('id', id_)
+    if device_list:
+        for id_ in device_list:
+            print 'adding device %s to folder %s' % (id_, filepath)
+            device_node = ElemTree.SubElement(new_node, 'device')
+            device_node.set('id', id_)
+            print tree
+    if new_node:
         print('Saving Config: %s' % config_path)
         tree.write(config_path)
-    else:
-        print folder_id, 'exists in config'
 
 
 def get_device_dict():
@@ -620,20 +620,19 @@ def launch_syncthing():
 
 
 def kill_syncthing():
-    kill_sthing = False
     for proc in psutil.process_iter():
         if proc.name() == 'syncthing.exe':
             proc.terminate()
-            kill_sthing = True
-    if kill_sthing:
-        print 'Killed Syncthing background processes'
-    # TODO - turn icon to not syncing
+            print 'Killed Syncthing background processes'
 
 
 def show_browser():
-    command = 'syncthing -browser-only'
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-    return p
+    from cgl.core.utils.general import cgl_execute
+    print 'Launching Syncthing Browser'
+    # TODO - i want it to only be the browser-only, but for now it seems like there are times when we have to blast it
+    # command = 'syncthing -browser-only'
+    command = 'syncthing'
+    cgl_execute(command, new_window=True)
 
 
 def syncthing_running():
