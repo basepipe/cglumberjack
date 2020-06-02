@@ -342,7 +342,7 @@ class SharingDialog(LJDialog):
                 grid.addWidget(check_box, i, 0)
                 check_box.clicked.connect(self.on_checkbox_clicked)
 
-        message = QtWidgets.QLabel("Who (which machines) do you want to share with?")
+        message = QtWidgets.QLabel("Who do you want to share with?")
         button_row = QtWidgets.QHBoxLayout()
         ok_button = QtWidgets.QPushButton('Ok')
         cancel_button = QtWidgets.QPushButton('Cancel')
