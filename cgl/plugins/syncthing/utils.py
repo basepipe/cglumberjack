@@ -4,7 +4,7 @@ import os
 import subprocess
 import psutil
 import cgl.plugins.google.sheets as sheets
-from cgl.core.utils.general import launch_lumber_watch
+from cgl.core.utils.general import cgl_execute
 from cgl.core.utils.read_write import load_json, save_json
 
 
@@ -613,10 +613,9 @@ def wipe_globals():
 def launch_syncthing():
     kill_syncthing()
     print 'launching syncthing in background'
-    command = "syncthing -no-browser"
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    command = "syncthing"
+    cgl_execute(command, new_window=True)
     # TODO - turn the icon to "syncing"
-    return p
 
 
 def kill_syncthing():
@@ -627,7 +626,6 @@ def kill_syncthing():
 
 
 def show_browser():
-    from cgl.core.utils.general import cgl_execute
     print 'Launching Syncthing Browser'
     # TODO - i want it to only be the browser-only, but for now it seems like there are times when we have to blast it
     # command = 'syncthing -browser-only'
