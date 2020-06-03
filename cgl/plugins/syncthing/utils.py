@@ -110,6 +110,7 @@ def fix_folder_paths():
 
 def process_st_config():
     # parse the xml
+    write = False
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
@@ -122,7 +123,7 @@ def process_st_config():
             for c in child:
                 if c.tag == 'pendingFolder':
                     id_ = c.get('id')
-                    print 'found pending folder, klling syncthing: %s', id_
+                    print 'found pending folder, klling syncthing: %s' % id_
                     local_folder = get_folder_from_id(id_)
                     if local_folder:
                         if not os.path.exists(local_folder):
@@ -132,9 +133,10 @@ def process_st_config():
                         # need a device list here for the add folder to config part to work.
                         device_list = [device_id]
                         # this one writes the config file.
-                        if syncthing_running():
-                            kill_syncthing()
-                        add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
+                        tree = add_folder_to_config(folder_id=id_, filepath=local_folder, tree=tree,
+                                                    device_list=device_list, type_='receiveonly')
+                        print tree
+                        write = True
                     else:
                         print('skipping non-cgl folders')
 
@@ -150,7 +152,7 @@ def process_st_config():
                 # might need to create the folders if they don't exist, just to be sure.
                 child.set('path', local_folder)
                 child.set('type', 'receiveonly')
-                tree.write(config_path)
+                write = True
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
         if pending_device:
@@ -160,9 +162,16 @@ def process_st_config():
                     kill_syncthing()
                 add_device_to_config(child.get('id'), child.get('name'))
                 root.remove(child)
-                tree.write(config_path)
-    if not syncthing_running():
-        launch_syncthing()
+                write = True
+    if write:
+        write_globals(tree)
+
+
+def write_globals(tree):
+    kill_syncthing()
+    print 'writing globls: %s' % get_config_path()
+    tree.write(get_config_path())
+    launch_syncthing()
 
 
 def get_folder_from_id(folder_id):
@@ -225,7 +234,7 @@ def folder_id_exists(folder_id, folder_path='', tree=None):
         if child.tag == 'folder':
             if folder_id == child.get('id') or folder_path == child.get('path'):
                 return child
-    return child
+    return None
 
 
 def get_sheet():
@@ -451,7 +460,7 @@ def get_sync_report():
     pass
 
 
-def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonly', sqs=True):
+def add_folder_to_config(folder_id, filepath, tree=None, device_list=None, type_ = 'sendonly', sqs=True, write=False):
     """
     Function to add a new folder to config.xml file
     :param folder_id: The ID label for the folder being added to syncthing
@@ -463,7 +472,8 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
     filepath = filepath.replace('/', '\\')
     # TODO - check to see if the folder exists
     config_path = get_config_path()
-    tree = ElemTree.parse(config_path)
+    if not tree:
+        tree = ElemTree.parse(config_path)
     root = tree.getroot()
     new_node = None
     folder_node = folder_id_exists(folder_id, tree=tree)
@@ -487,8 +497,10 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
             device_node.set('id', id_)
             print tree
     if new_node:
-        print('Saving Config: %s' % config_path)
-        tree.write(config_path)
+        if write:
+            print('Saving Config: %s' % config_path)
+            tree.write(config_path)
+    return tree
 
 
 def get_device_dict():
@@ -654,6 +666,6 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    wipe_globals()
+    process_st_config()
 
 
