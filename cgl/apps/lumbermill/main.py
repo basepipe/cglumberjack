@@ -758,7 +758,6 @@ class CGLumberjack(LJMainWindow):
         self.auto_launch_setting.triggered.connect(self.toggle_auto_launch)
         set_up_sync_thing_server.triggered.connect(self.set_up_st_server_clicked)
         set_up_sync_thing_workstation.triggered.connect(self.set_up_st_workstation_clicked)
-        # fix_paths.triggered.connect(self.fix_paths_clicked)
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
         create_project.triggered.connect(self.open_create_project_dialog)
@@ -849,10 +848,6 @@ class CGLumberjack(LJMainWindow):
         sync_button.setIcon(QtGui.QIcon(sync_icon))
         sync_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
 
-    def fix_paths_clicked(self):
-        st_utils.fix_folder_paths()
-        self.change_sync_icon(syncing=True)
-
     def on_kill_syncthing(self):
         self.change_sync_icon(syncing=False)
         print 'Killing Sync Thing'
@@ -924,7 +919,7 @@ class CGLumberjack(LJMainWindow):
         shows the syncthing web gui
         :return:
         """
-        st_utils.kill_syncthing()
+        # st_utils.kill_syncthing()
         st_utils.show_browser()
 
     def set_up_st_server_clicked(self):

@@ -89,30 +89,12 @@ def setup_workstation():
                           message='%s added machine %s' % ('user', device_info['name']))
 
 
-def fix_folder_paths():
-    kill_syncthing()
-    config_path = get_config_path()
-    tree = ElemTree.parse(config_path)
-    root = tree.getroot()
-    for child in root:
-        if child.tag == 'folder':
-            id_ = child.get('id')
-            cgl_folder = get_folder_from_id(id_)
-            xml_folder = child.get('path')
-            if xml_folder != cgl_folder:
-                child.set('path', cgl_folder)
-                print('Changing path to %s' % cgl_folder)
-            else:
-                print('Folder Passes')
-    tree.write(config_path)
-    launch_syncthing()
-
-
 def process_st_config():
     # parse the xml
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
+    write = False
     folders_dict = {}
     pending_device = False
     for child in root:
@@ -132,16 +114,12 @@ def process_st_config():
                         # need a device list here for the add folder to config part to work.
                         device_list = [device_id]
                         # this one writes the config file.
-                        if syncthing_running():
-                            kill_syncthing()
                         add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
+                        write = True
                     else:
                         print('skipping non-cgl folders')
-
         if child.tag == 'folder':
             if ' ' in child.get('path'):
-                if syncthing_running():
-                    kill_syncthing()
                 local_folder = get_folder_from_id(child.get('id'))
                 print 'changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder)
                 if not os.path.exists(local_folder):
@@ -150,19 +128,18 @@ def process_st_config():
                 # might need to create the folders if they don't exist, just to be sure.
                 child.set('path', local_folder)
                 child.set('type', 'receiveonly')
-                tree.write(config_path)
+                write = True
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
+                root.remove(child)
         if pending_device:
             if child.tag == 'pendingDevice':
                 print("Found Pending Device: Checking to see if it's on the approved list.")
-                if syncthing_running():
-                    kill_syncthing()
                 add_device_to_config(child.get('id'), child.get('name'))
                 root.remove(child)
-                tree.write(config_path)
-    if not syncthing_running():
-        launch_syncthing()
+                write = True
+    if write:
+        write_globals(tree)
 
 
 def get_folder_from_id(folder_id):
@@ -206,12 +183,14 @@ def edit_syncthing_folder(folder_id, new_local_path):
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
+    write = False
 
     for child in root:
         if child.tag == 'folder' and child.get('id') == folder_id:
             child.set('path', new_local_path)
-
-    tree.write(config_path)
+            write = True
+    if write:
+        write_globals(tree)
 
 
 def folder_id_exists(folder_id, folder_path='', tree=None):
@@ -368,12 +347,9 @@ def add_all_devices_to_config(sheet, device_list=False):
 
     filepath = get_config_path()
     if os.path.exists(filepath):
-        print 1
         tree = ElemTree.parse(filepath)
         root = tree.getroot()
-
         for entry in device_list:
-            print 2
             new_node = ElemTree.SubElement(root, 'device')
             new_node.set('id', entry['id'])
             new_node.set('name', entry['name'])
@@ -394,7 +370,6 @@ def add_all_devices_to_config(sheet, device_list=False):
             maxRequestKiB = ElemTree.SubElement(new_node, 'maxRequestKiB')
             maxRequestKiB.text = 0
         tree.write(filepath)
-        print 3
     else:
         print('Config File does not exist: %s' % filepath)
 
@@ -444,13 +419,6 @@ def set_sync_statuses(folders_dict, path_, sync_folder, device_id):
                                'devices': [device_id]}
 
 
-def get_sync_report():
-    # I need to know all assets that are synced.
-    # I need to know which tasks within that asset are synced
-    # I needed to know which publish versions within those tasks are synced.
-    pass
-
-
 def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonly', sqs=True):
     """
     Function to add a new folder to config.xml file
@@ -466,6 +434,7 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
     new_node = None
+    write = True
     folder_node = folder_id_exists(folder_id, tree=tree)
     if folder_node:
         new_node = folder_node
@@ -480,15 +449,15 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
         new_node.set('fsWatcherDelayS', "10")
         new_node.set('ignorePerms', "false")
         new_node.set('autoNormalize', "true")
+        write = True
     if device_list:
         for id_ in device_list:
             print 'adding device %s to folder %s' % (id_, filepath)
             device_node = ElemTree.SubElement(new_node, 'device')
             device_node.set('id', id_)
-            print tree
-    if new_node:
-        print('Saving Config: %s' % config_path)
-        tree.write(config_path)
+            write = True
+    if write:
+        write_globals(tree)
 
 
 def get_device_dict():
@@ -539,16 +508,14 @@ def share_folders_to_devices(device_ids=[], folder_list=[r'[root]\_config\cgl_to
     Makes all files shareable to all devices found in the config file
     :return:
     """
+
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
-
+    write = False
     if not device_ids:
         print('No device IDs identified, skipping file share')
         return
-        # for child in root:
-        #     if child.tag == 'device':
-        #         all_device_id.append(child.get('id'))
 
     for child in root:
         shared = []
@@ -562,7 +529,9 @@ def share_folders_to_devices(device_ids=[], folder_list=[r'[root]\_config\cgl_to
                     if d_id not in shared:
                         new_node = ElemTree.SubElement(child, 'device')
                         new_node.set('id', d_id)
-                tree.write(config_path)
+                        write = True
+    if write:
+        write_globals(tree)
 
 
 def sync_with_server():
@@ -571,8 +540,7 @@ def sync_with_server():
     :param sheet: Google sheet object for the device sheet
     :return:
     """
-    # TODO - this is temp - company-aws, and sheet_name must be in globals.
-    kill_syncthing()
+    write = False
     company = 'lone-coconut'
     sheet_name = 'LONE_COCONUT_SYNC_THING'
     sheet = get_sheet()
@@ -592,9 +560,21 @@ def sync_with_server():
             if child.tag == 'folder' and '[' in child.get('id'):
                 new_node = ElemTree.SubElement(child, 'device')
                 new_node.set('id', device_id)
-        tree.write(config_path)
+                write = True
     else:
         print "Error finding server device in sheet"
+    if write:
+        write_globals(tree)
+
+
+def write_globals(tree):
+    """
+    Allows me to write globals for a elemtree, acts as a wrapper around what syncthing needs to do before/after.
+    :param tree:
+    :return:
+    """
+    kill_syncthing()
+    tree.write(get_config_path())
     launch_syncthing()
 
 
@@ -612,8 +592,8 @@ def wipe_globals():
 
 def launch_syncthing():
     kill_syncthing()
-    print 'launching syncthing in background'
-    command = "syncthing -no-browser"
+    # print 'launching syncthing in background'
+    command = "syncthing"
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
     # TODO - turn the icon to "syncing"
     return p
@@ -638,11 +618,22 @@ def show_browser():
 def syncthing_running():
     for proc in psutil.process_iter():
         if proc.name() == 'syncthing.exe':
+            print proc
             print 'Syncthing: Running'
             return True
     else:
         print 'Syncthing: Not Running'
         return False
+
+def test(name):
+    r = os.popen('tasklist /v').read().strip().split('\n')
+    print ('# of tasks is %s' % (len(r)))
+    for i in range(len(r)):
+        s = r[i]
+        if name in r[i]:
+            print ('%s in r[i]' % (name))
+            return r[i]
+    return []
 
 
 def update_machines():
@@ -656,6 +647,6 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    wipe_globals()
+    test('syncthing.exe')
 
 
