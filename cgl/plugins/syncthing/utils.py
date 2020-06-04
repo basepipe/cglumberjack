@@ -4,7 +4,7 @@ import os
 import subprocess
 import psutil
 import cgl.plugins.google.sheets as sheets
-from cgl.core.utils.general import launch_lumber_watch
+from cgl.core.utils.general import cgl_execute
 from cgl.core.utils.read_write import load_json, save_json
 
 
@@ -87,6 +87,24 @@ def setup_workstation():
     machine_added_message(device_id=device_info['id'],
                           device_name=device_info['name'],
                           message='%s added machine %s' % ('user', device_info['name']))
+
+def fix_folder_paths():
+    kill_syncthing()
+    config_path = get_config_path()
+    tree = ElemTree.parse(config_path)
+    root = tree.getroot()
+    for child in root:
+        if child.tag == 'folder':
+            id_ = child.get('id')
+            cgl_folder = get_folder_from_id(id_)
+            xml_folder = child.get('path')
+            if xml_folder != cgl_folder:
+                child.set('path', cgl_folder)
+                print('Changing path to %s' % cgl_folder)
+            else:
+                print('Folder Passes')
+    tree.write(config_path)
+    launch_syncthing()
 
 
 def process_st_config():
@@ -617,8 +635,6 @@ def show_browser():
 def syncthing_running():
     for proc in psutil.process_iter():
         if proc.name() == 'syncthing.exe':
-            print proc
-            print 'Syncthing: Running'
             return True
     else:
         print 'Syncthing: Not Running'
@@ -647,6 +663,6 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    print get_config_path()
+    wipe_globals()
 
 
