@@ -492,7 +492,7 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
     new_node = None
     write = True
     folder_node = folder_id_exists(folder_id, tree=tree)
-    if len(folder_node):
+    if folder_node is not None:
         new_node = folder_node
     else:
         print folder_id, 'does not exist in config, creating'
@@ -706,6 +706,6 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    process_st_config()
+    wipe_globals()
 
 
