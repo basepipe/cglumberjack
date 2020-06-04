@@ -1087,8 +1087,8 @@ class CGLumberjack(LJMainWindow):
 
     @staticmethod
     def open_user_globals():
-        logging.info(os.path.dirname(CONFIG['paths']['user_globals']))
-        cglpath.start(os.path.dirname(CONFIG['paths']['user_globals']))
+        logging.info(os.path.dirname(user_config()))
+        cglpath.start(os.path.dirname(user_config()))
 
     def load_user_config(self):
         user_config = UserConfig()
