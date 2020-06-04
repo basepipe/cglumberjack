@@ -202,7 +202,7 @@ def folder_id_exists(folder_id, folder_path='', tree=None):
         if child.tag == 'folder':
             if folder_id == child.get('id') or folder_path == child.get('path'):
                 return child
-    return child
+    return None
 
 
 def get_sheet():
