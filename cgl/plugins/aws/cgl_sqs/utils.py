@@ -171,6 +171,7 @@ def send_sync_message(device_id, device_name, message, message_type, **kwargs):
     :param kwargs: 
     :return: 
     """
+    print "Notifying Lumbermill of New Machine Add"
     message_types = ['Folders Shared', 'Machine Added']
     if message_type in message_types:
         message_attrs = {'device_id': {'DataType': 'String', 'StringValue': device_id},

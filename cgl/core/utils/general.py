@@ -314,7 +314,7 @@ def launch_lumber_watch(new_window=False):
     lumber_watch_path = os.path.join(folder_, 'plugins', 'aws', 'cgl_sqs', 'utils.py').replace('\\', '/')
     if os.path.isfile(lumber_watch_path):
         print('Starting Lumberwatch Services')
-        command = 'python %s' % lumber_watch_path
+        command = 'python %s -s 5' % lumber_watch_path
         cgl_execute(command, new_window=new_window)
     else:
         print 'Lumber Watch Path does not exist: %s' % (lumber_watch_path)
