@@ -107,12 +107,11 @@ def fix_folder_paths():
     launch_syncthing()
 
 
-def process_st_config():
-    # parse the xml
+def process_pending_folders():
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
-    write = False
+    start = False
     folders_dict = {}
     for child in root:
         if child.tag == 'device':
@@ -121,7 +120,9 @@ def process_st_config():
             for c in child:
                 if c.tag == 'pendingFolder':
                     id_ = c.get('id')
-                    print 'found pending folder, klling syncthing: %s', id_
+                    print 'found pending folder, klling syncthing: %s' % id_
+                    kill_syncthing()
+                    start = True
                     local_folder = get_folder_from_id(id_)
                     if local_folder:
                         if not os.path.exists(local_folder):
@@ -132,9 +133,43 @@ def process_st_config():
                         device_list = [device_id]
                         # this one writes the config file.
                         add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
-                        write = True
                     else:
                         print('skipping non-cgl folders')
+    if start:
+        launch_syncthing()
+
+
+
+def process_pending_devices():
+    # parse the xml
+    config_path = get_config_path()
+    tree = ElemTree.parse(config_path)
+    root = tree.getroot()
+    write = False
+    folders_dict = {}
+    for child in root:
+        if child.tag == 'pendingDevice':
+            print("Found Pending Device: Checking to see if it's on the approved list.")
+            add_device_to_config(child.get('id'), child.get('name'))
+            root.remove(child)
+            write = True
+    if write:
+        kill_syncthing()
+        tree.write(config_path)
+        launch_syncthing()
+
+
+def process_folder_naming():
+    """
+    remaps folders to local root.
+    :return:
+    """
+    config_path = get_config_path()
+    tree = ElemTree.parse(config_path)
+    root = tree.getroot()
+    write = False
+    folders_dict = {}
+    for child in root:
         if child.tag == 'folder':
             if ' ' in child.get('path'):
                 local_folder = get_folder_from_id(child.get('id'))
@@ -149,13 +184,18 @@ def process_st_config():
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
                 root.remove(child)
-        if child.tag == 'pendingDevice':
-            print("Found Pending Device: Checking to see if it's on the approved list.")
-            add_device_to_config(child.get('id'), child.get('name'))
-            root.remove(child)
-            write = True
+                write = True
     if write:
-        write_globals(tree)
+        kill_syncthing()
+        tree.write(config_path)
+        launch_syncthing()
+
+
+
+def process_st_config(pendingFolder=True):
+    process_pending_devices()
+    process_pending_folders()
+    process_folder_naming()
 
 
 def get_folder_from_id(folder_id):
@@ -474,7 +514,9 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
             device_node.set('id', id_)
             write = True
     if write:
-        write_globals(tree)
+        # assumes syncthing is dead already
+        tree.write(get_config_path())
+        # assumes other code will launch syncthing.
 
 
 def get_device_dict():
@@ -663,6 +705,8 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    wipe_globals()
+    # process_pending_devices()
+    process_pending_folders()
+    #process_folder_naming()
 
 
