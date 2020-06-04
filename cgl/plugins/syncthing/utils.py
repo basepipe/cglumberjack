@@ -133,11 +133,12 @@ def process_pending_folders():
                         device_list = [device_id]
                         # this one writes the config file.
                         add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly')
+                        child.remove(c)
                     else:
                         print('skipping non-cgl folders')
     if start:
+        write_globals(tree, kill=False)
         launch_syncthing()
-
 
 
 def process_pending_devices():
@@ -192,7 +193,7 @@ def process_folder_naming():
 
 
 
-def process_st_config(pendingFolder=True):
+def process_st_config():
     process_pending_devices()
     process_pending_folders()
     process_folder_naming()
@@ -491,7 +492,7 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
     new_node = None
     write = True
     folder_node = folder_id_exists(folder_id, tree=tree)
-    if folder_node:
+    if len(folder_node):
         new_node = folder_node
     else:
         print folder_id, 'does not exist in config, creating'
@@ -513,6 +514,7 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
             write = True
     if write:
         # assumes syncthing is dead already
+        print('writing file to %s' % get_config_path())
         tree.write(get_config_path())
         # assumes other code will launch syncthing.
 
@@ -624,13 +626,14 @@ def sync_with_server():
         write_globals(tree)
 
 
-def write_globals(tree):
+def write_globals(tree, kill=True):
     """
     Allows me to write globals for a elemtree, acts as a wrapper around what syncthing needs to do before/after.
     :param tree:
     :return:
     """
-    kill_syncthing()
+    if kill:
+        kill_syncthing()
     tree.write(get_config_path())
     launch_syncthing()
 
@@ -703,8 +706,6 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    # process_pending_devices()
-    process_pending_folders()
-    #process_folder_naming()
+    process_st_config()
 
 
