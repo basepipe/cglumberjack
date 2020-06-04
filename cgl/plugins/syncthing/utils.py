@@ -96,7 +96,6 @@ def process_st_config():
     root = tree.getroot()
     write = False
     folders_dict = {}
-    pending_device = False
     for child in root:
         if child.tag == 'device':
             device_id = child.get('id')
@@ -132,12 +131,11 @@ def process_st_config():
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
                 root.remove(child)
-        if pending_device:
-            if child.tag == 'pendingDevice':
-                print("Found Pending Device: Checking to see if it's on the approved list.")
-                add_device_to_config(child.get('id'), child.get('name'))
-                root.remove(child)
-                write = True
+        if child.tag == 'pendingDevice':
+            print("Found Pending Device: Checking to see if it's on the approved list.")
+            add_device_to_config(child.get('id'), child.get('name'))
+            root.remove(child)
+            write = True
     if write:
         write_globals(tree)
 
@@ -328,7 +326,7 @@ def add_device_to_config(device_id, name):
     sheet = get_sheet()
     # check to see if the device is on the device list.
     if sheets.id_exists(device_id, sheet):
-        print 'Adding approved device to Syncing'
+        print 'Adding approved device to Syncing %s' % device_list
         add_all_devices_to_config(sheet=None, device_list=device_list)
     else:
         print 'Device not found in Google Sheets.'
@@ -350,6 +348,7 @@ def add_all_devices_to_config(sheet, device_list=False):
         tree = ElemTree.parse(filepath)
         root = tree.getroot()
         for entry in device_list:
+            print 'adding device: %s' % entry
             new_node = ElemTree.SubElement(root, 'device')
             new_node.set('id', entry['id'])
             new_node.set('name', entry['name'])
@@ -625,6 +624,7 @@ def syncthing_running():
         print 'Syncthing: Not Running'
         return False
 
+
 def test(name):
     r = os.popen('tasklist /v').read().strip().split('\n')
     print ('# of tasks is %s' % (len(r)))
@@ -647,6 +647,6 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    test('syncthing.exe')
+    print get_config_path()
 
 
