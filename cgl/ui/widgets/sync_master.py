@@ -368,7 +368,6 @@ class SharingDialog(LJDialog):
 
     def on_ok_clicked(self):
         self.button = 'Ok'
-        self.accept()
         if self.device_list:
             kill_syncthing()
             if self.publish_objects:
@@ -380,6 +379,7 @@ class SharingDialog(LJDialog):
             else:
                 print 'no publish objects'
             launch_syncthing()
+        self.accept()
         return self.device_list
 
     def on_cancel_clicked(self):
