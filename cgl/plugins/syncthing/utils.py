@@ -239,14 +239,12 @@ def edit_syncthing_folder(folder_id, new_local_path):
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
-    write = False
 
     for child in root:
         if child.tag == 'folder' and child.get('id') == folder_id:
             child.set('path', new_local_path)
-            write = True
-    if write:
-        write_globals(tree)
+
+    tree.write(config_path)
 
 
 def folder_id_exists(folder_id, folder_path='', tree=None):
