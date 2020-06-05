@@ -82,7 +82,9 @@ def setup_workstation():
     sheet_obj = get_sheet()
     add_device_info_to_sheet(sheet_obj)
     add_all_devices_to_config(sheet_obj)
+    print 3
     add_folder_to_config(folder_id, folder_path, type_='recieveonly')
+    print 5
     machine_added_message(device_id=device_info['id'],
                           device_name=device_info['name'],
                           message='%s added machine %s' % ('user', device_info['name']))
@@ -135,7 +137,8 @@ def process_pending_folders():
                         # need a device list here for the add folder to config part to work.
                         device_list = [device_id]
                         # this one writes the config file.
-                        add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly', tree=tree)
+                        add_folder_to_config(id_, local_folder, device_list=device_list, type_='receiveonly',
+                                             pass_tree=tree)
                         child.remove(c)
                     else:
                         print('skipping non-cgl folders')
@@ -502,7 +505,7 @@ def set_sync_statuses(folders_dict, path_, sync_folder, device_id):
                                'devices': [device_id]}
 
 
-def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonly', sqs=True, tree=None):
+def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonly', sqs=True, pass_tree=None):
     """
     Function to add a new folder to config.xml file
     :param folder_id: The ID label for the folder being added to syncthing
@@ -514,11 +517,12 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
     filepath = filepath.replace('/', '\\')
     # TODO - check to see if the folder exists
     config_path = get_config_path()
-    if not tree:
+    if pass_tree:
+        tree = pass_tree
+    else:
         tree = ElemTree.parse(config_path)
     root = tree.getroot()
     new_node = None
-    write = True
     folder_node = folder_id_exists(folder_id, tree=tree)
     if folder_node is not None:
         new_node = folder_node
@@ -527,7 +531,6 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
                 print 'adding device %s to folder %s' % (id_, filepath)
                 device_node = ElemTree.SubElement(new_node, 'device')
                 device_node.set('id', id_)
-        write = True
     else:
         print folder_id, 'does not exist in config, creating'
         new_node = ElemTree.SubElement(root, 'folder')
@@ -544,14 +547,12 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
                 print 'adding device %s to folder %s' % (id_, filepath)
                 device_node = ElemTree.SubElement(new_node, 'device')
                 device_node.set('id', id_)
-        write = True
-    if tree:
+    if pass_tree:
         return tree
-    if write:
-        # assumes syncthing is dead already
-        print('writing file to %s' % get_config_path())
-        tree.write(get_config_path())
-        # assumes other code will launch syncthing.
+    # assumes syncthing is dead already
+    print('writing file to %s' % get_config_path())
+    tree.write(get_config_path())
+    # assumes other code will launch syncthing.
 
 
 def get_device_dict():
@@ -743,6 +744,6 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    process_st_config()
+    setup_workstation()
 
 
