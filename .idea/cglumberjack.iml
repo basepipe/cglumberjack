@@ -5,8 +5,9 @@
       <sourceFolder url="file://$MODULE_DIR$/cgl" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/cgl/plugins/project_management/shotgun/shotgun_api3" />
+      <excludeFolder url="file://$MODULE_DIR$/python27venv" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 2.7.13 (C:\Python27\python.exe)" jdkType="Python SDK" />
+    <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
