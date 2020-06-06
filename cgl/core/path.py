@@ -1394,6 +1394,7 @@ def start(filepath):
             from robogary.src.apps.robo_gary import main
             dialog = main.RoboGary(transcript_file=filepath)
             dialog.exec_()
+            return
     except AttributeError:
         pass
     cmd = "cmd /c start "

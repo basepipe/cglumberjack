@@ -141,6 +141,7 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.create_empty_version.connect(self.new_empty_version_clicked)
             task_widget.files_area.review_button_clicked.connect(self.on_review_clicked)
             task_widget.files_area.publish_button_clicked.connect(self.on_publish_clicked)
+            task_widget.files_area.create_edit_clicked.connect(self.on_create_edit_clicked)
             task_widget.copy_latest_version.connect(self.new_version_from_latest)
             task_widget.copy_selected_version.connect(self.version_up_selected_clicked)
             task_widget.files_area.work_files_table.selected.connect(self.on_source_selected)
@@ -373,7 +374,6 @@ class FilesPanel(QtWidgets.QWidget):
         else:
             position = len(pieces)
         selected_variable = path_object.template[position]
-        print 'selected variable:', selected_variable
         return selected_variable
 
     def on_render_selected(self, data):
@@ -401,7 +401,6 @@ class FilesPanel(QtWidgets.QWidget):
             # object_.set_attr(task=self.sender().task)
             if current_variable == 'filename':
                 if os.path.splitext(data[0][0]):
-                    print 'this is a file'
                     object_.set_attr(filename=data[0][0])
                     filename_base, ext = os.path.splitext(data[0][0])
                     object_.set_attr(filename_base=filename_base)
@@ -481,6 +480,26 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_review_clicked(self):
         self.review_signal.emit()
+
+    def on_create_edit_clicked(self):
+        from robogary.src.plugins.editorial.timeline import editorial_from_template
+        filepath = self.path_object.path_root
+        if filepath.endswith('.mp4') and 'audio' not in filepath:
+            template_edit = self.path_object.copy(context='source', task='template',
+                                                  resolution='high', ext='xml')
+            dialog = InputDialog(message="Set a Title and a Secondary Title (not required)",
+                                 combo_box_items=['Set Title'],
+                                 combo_box2_items=['Set Secondary Title (optional)'],
+                                 buttons=['Cancel', 'Ok'])
+            dialog.exec_()
+            if dialog.button == 'Ok':
+                title = dialog.combo_box.currentText()
+                secondary = dialog.combo_box2.currentText()
+                if secondary == 'Set Secondary Title (optional)':
+                    secondary = None
+                if not os.path.exists(os.path.dirname(template_edit.path_root)):
+                    CreateProductionData(template_edit)
+                editorial_from_template(filepath, title, secondary, template_edit.path_root)
 
     def on_publish_clicked(self):
         print 'Publishing stuff now'
