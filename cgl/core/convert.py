@@ -344,12 +344,13 @@ def convert_to_mp4(filein, fileout=None, processing_method='local', dependent_jo
     :param dependent_job:
     :return:
     """
-    process_info = {}
     if not fileout:
         fileout = change_extension(filein, 'mp4')
         # 'scale=trunc((a*oh)/2)*2:720'
     vcodec = '-vcodec libx264 -pix_fmt yuv420p -vf "scale=trunc((a*oh)/2)*2:720" -g 30 -b:v 2000k -vprofile high -bf 0'
     acodec = "-strict experimental -acodec aac -ab 160k -ac 2"
+    process_info = {'file_out': fileout, 'job_id': 0}
+
     if audio_only:
         if not fileout.endswith('_audio.mp4'):
             fileout = fileout.replace('.mp4', '_audio.mp4')
@@ -357,6 +358,8 @@ def convert_to_mp4(filein, fileout=None, processing_method='local', dependent_jo
             command = "%s -i %s -vn %s %s" % (PATHS['ffmpeg'], filein, acodec, fileout)
             cgl_execute(command, command_name=command_name, methodology='local',
                         WaitForJobID=dependent_job)
+            process_info['file_out'] = fileout
+            return process_info
         elif processing_method == 'smedge':
             filename = "%s.py" % os.path.splitext(__file__)[0]
             command = r'python %s -i %s -o %s -t audio -ft movie' % (filename, filein, fileout)

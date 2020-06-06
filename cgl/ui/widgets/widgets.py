@@ -198,6 +198,7 @@ class FilesWidget(QtWidgets.QFrame):
     create_empty_version = QtCore.Signal()
     copy_latest_version = QtCore.Signal()
     copy_selected_version = QtCore.Signal()
+    create_edit_clicked = QtCore.Signal()
 
     def __init__(self, parent, show_import=False):
         QtWidgets.QFrame.__init__(self, parent)
@@ -232,9 +233,13 @@ class FilesWidget(QtWidgets.QFrame):
         self.review_button.setText('Review')
         self.publish_button = LJButton()
         self.publish_button.setText('Publish')
+        self.create_edit_button = LJButton('Create Edit')
+        self.create_edit_button.setText('Create Edit')
+        self.create_edit_button.hide()
 
         tool_button_layout.addStretch()
         tool_button_layout.addWidget(self.open_button)
+        tool_button_layout.addWidget(self.create_edit_button)
         tool_button_layout.addWidget(self.import_button)
         tool_button_layout.addWidget(self.new_version_button)
         tool_button_layout.addWidget(self.review_button)
@@ -253,6 +258,7 @@ class FilesWidget(QtWidgets.QFrame):
         self.review_button.clicked.connect(self.on_review_button_clicked)
         self.publish_button.clicked.connect(self.on_publish_button_clicked)
         self.import_button.clicked.connect(self.on_import_clicked)
+        self.create_edit_button.clicked.connect(self.on_create_edit_button_clicked)
         if self.show_import:
             self.import_button.show()
 
@@ -278,6 +284,8 @@ class FilesWidget(QtWidgets.QFrame):
 
     def show_tool_buttons(self, user):
         self.open_button.show()
+        if self.parent().path_object.task == 'video':
+            self.create_edit_button.show()
         if self.show_import:
             self.import_button.show()
         if user != 'publish':
@@ -299,6 +307,9 @@ class FilesWidget(QtWidgets.QFrame):
 
     def on_open_button_clicked(self):
         self.open_button_clicked.emit()
+
+    def on_create_edit_button_clicked(self):
+        self.create_edit_clicked.emit()
 
 
 class QHLine(QtWidgets.QFrame):
