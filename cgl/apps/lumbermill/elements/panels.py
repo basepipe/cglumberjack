@@ -472,9 +472,7 @@ class ProductionPanel(QtWidgets.QWidget):
             self.assets.message.show()
 
     def on_main_asset_selected(self, data):
-        print 'selecting'
         if data:
-            print data[0][2]
             path_object = PathObject(data[0][2])
             if not path_object.task:
                 path_object.set_attr(task='*')

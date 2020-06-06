@@ -228,11 +228,18 @@ class IOPanel(QtWidgets.QWidget):
                 print 'Source %s already exists!' % new_source
 
     def file_interaction(self, files, path, to_folder):
+        """
+        drags files over to the ingestion area.
+        :param files:
+        :param path:
+        :param to_folder:
+        :return:
+        """
+        from cgl.core.utils.general import cgl_copy
         # TODO - ultimately we want to figure out how to handle the progress bar through the cgl_execute function.
         if path == '*':
             print 'Please Select An Ingest Source Before Dragging Files'
             return
-        from cgl.core.utils.general import cgl_copy
         publish_data_csv = os.path.join(to_folder, 'publish_data.csv').replace('\\', '/')
         if os.path.exists(to_folder):
             create_new = False
@@ -247,10 +254,11 @@ class IOPanel(QtWidgets.QWidget):
             item.setSelected(True)
             self.parent().parent().centralWidget().update_location_to_latest(self.path_object)
             # self.empty_state.hide()
+        self.load_data_frame()
         if os.path.exists(publish_data_csv):
+            print publish_data_csv, 'exists'
             os.remove(publish_data_csv)
             time.sleep(.5)  # seems like on the network i have to force it to sleep so it has time to delete.
-        self.load_data_frame()
         self.populate_tree()
 
     def new_files_dragged(self, files):
@@ -266,20 +274,6 @@ class IOPanel(QtWidgets.QWidget):
         file_process = threading.Thread(target=self.file_interaction, args=(files, path, to_folder))
         #QtWidgets.qApp.processEvents()
         file_process.start()
-
-        # TODO - how do i know if the location changed?
-        # if os.path.exists(to_folder):
-        #     print 'dragging to exsting folder'
-        # else:
-        #     print 'dragging to new folder'
-        #     self.location_changed.emit(self.path_object)
-        # self.empty_state.hide()
-        # TODO - No idea why none of these are working for selecting the version.
-        # num = self.ingest_widget.list.count()
-        # item = self.ingest_widget.list.item(num - 1)
-        # item.setSelected(True)
-        # self.ingest_widget.list.setCurrentItem(item)
-        # self.ingest_widget.list.setCurrentRow(-1)
 
     def load_companies(self):
         self.source_widget.list.clear()
@@ -450,7 +444,6 @@ class IOPanel(QtWidgets.QWidget):
                             status = self.data_frame.at[row, 'Status']
                             if status == 'Imported':
                                 status = 'Tagged'
-                            print f[FILENAME], '1111111111111111111111'
                             to_path = os.path.join(to_object.path_root, f[FILENAME])
                             if status == 'Published':
                                 self.tags_title.setText('CGL:>  Published!')

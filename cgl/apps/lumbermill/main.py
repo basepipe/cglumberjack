@@ -71,13 +71,21 @@ class PathWidget(QtWidgets.QFrame):
         layout = QtWidgets.QHBoxLayout(self)
         self.path_line_edit = QtWidgets.QLineEdit()
         self.path_line_edit.setMinimumHeight(ICON_WIDTH)
+        self.view_button = QtWidgets.QToolButton()
+        self.view_button.setText('^')
         self.text = self.path_object.path_root
         layout.addWidget(self.path_line_edit)
+        layout.addWidget(self.view_button)
 
         # add css
         self.setProperty('class', 'light_grey')
         self.path_line_edit.setProperty('class', 'medium_grey')
         # self.path_line_edit.setObjectName('display_path')
+        self.view_button.clicked.connect(self.go_to_path)
+
+    def go_to_path(self):
+        path = self.path_line_edit.text()
+        cglpath.show_in_folder(path)
 
     def update_path(self, path_object):
         if isinstance(path_object, dict):
@@ -207,12 +215,9 @@ class NavigationWidget(QtWidgets.QFrame):
 
     def sync_clicked(self, point):
         self.sync_popup.exec_(self.sync_button.mapToGlobal(point))
-        print 'sync clicked'
-        # TODO - pick a good icon, green for go, red for not syncing,
         # update the icon instead of the menu name on the other things.
 
     def refresh_clicked(self):
-        print 'Refresh clicked'
         self.refresh_button_clicked.emit(self.path_object)
 
     def text(self):
