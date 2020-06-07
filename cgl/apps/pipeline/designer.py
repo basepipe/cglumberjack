@@ -288,19 +288,20 @@ class Designer(LJDialog):
 
     def make_init_for_folders_in_path(self, folder):
         config = self.cgl_tools.replace('\\', '/')
-        folder = folder.replace('\\', '/')
-        folder = folder.replace(config, '')
-        parts = folder.split('/')
-        if '' in parts:
-            parts.remove('')
-        string = config
-        for p in parts:
-            if ':' not in p:
-                if '.' not in p:
-                    string = '%s/%s' % (string, p)
-                    init = '%s/__init__.py' % string
-                    if not os.path.exists(init):
-                        self.make_init(os.path.dirname(init))
+        if folder:
+            folder = folder.replace('\\', '/')
+            folder = folder.replace(config, '')
+            parts = folder.split('/')
+            if '' in parts:
+                parts.remove('')
+            string = config
+            for p in parts:
+                if ':' not in p:
+                    if '.' not in p:
+                        string = '%s/%s' % (string, p)
+                        init = '%s/__init__.py' % string
+                        if not os.path.exists(init):
+                            self.make_init(os.path.dirname(init))
 
     @staticmethod
     def make_init(folder):
