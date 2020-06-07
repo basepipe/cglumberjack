@@ -425,6 +425,7 @@ class IOPanel(QtWidgets.QWidget):
                 else:
                     return
                 shot = str(self.shot_combo.currentText())
+                print shot, '-------------------------------------------------------------'
                 self.tags_title.setText('CGL:> Which Task will this be published to?')
                 if self.task_combo.currentText():
                     try:
@@ -437,6 +438,9 @@ class IOPanel(QtWidgets.QWidget):
                                                           version='000.000',
                                                           user='publish',
                                                           resolution='high')
+                        print to_object.path_root
+                        print to_object.filename
+                        print to_object.__dict__
                         status = ''
                         for f in self.current_selection:
                             row = self.data_frame.loc[(self.data_frame['Filename'] == f[FILENAME]) &
