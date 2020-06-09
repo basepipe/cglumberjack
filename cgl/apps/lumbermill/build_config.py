@@ -666,7 +666,7 @@ class QuickSync(QtWidgets.QDialog):
         self.code_root_line_edit.setText(DEFAULT_CODE_ROOT)
         self.root_line_edit.setText(self.default_root)
         self.sync_cgl_tools_line_edit.setText(os.path.join(self.default_root, '_config', 'cgl_tools'))
-        self.company_line_edit.setText('lone coconut')
+        self.company_line_edit.setText('generic')
 
         self.code_root_line_edit.setEnabled(False)
         # self.root_line_edit.setEnabled(False)
@@ -680,7 +680,8 @@ class QuickSync(QtWidgets.QDialog):
         self.import_line_edit = QtWidgets.QLineEdit()
         self.import_button = QtWidgets.QToolButton()
         self.import_button.setText('...')
-        self.sync_thing_checkbox.setChecked(True)
+        # self.sync_thing_checkbox.setChecked(True)
+        self.sync_thing_checkbox.hide()
         self.projects_checkbox.setChecked(True)
 
         self.company_name = 'Lone Coconut'
@@ -829,7 +830,9 @@ class QuickSync(QtWidgets.QDialog):
                 with open(globals_path, 'w+') as f:
                     f.write(r.content)
             self.accept()
+            return True
         else:
+            return False
             print('No Globals Found - Get your Studio to publish their globals, or Create new ones?')
 
     def edit_globals_paths(self):
@@ -866,7 +869,7 @@ class QuickSync(QtWidgets.QDialog):
             os.makedirs(cgl_tools_folder)
         sync_folders = {r'[root]\_config\cgl_tools': os.path.join(cgl_tools_folder)}
         # TODO - need to set 2nd value here as a global in globals. sync_sheet: LONE_COCONUT_SYNC_THING
-        syncthing.setup_workstation()
+        # syncthing.setup_workstation()
         dialog = InputDialog(title='Sync Message', message='Your Machine has be submitted for approval for file sharing\n'
                                                            'After you have been added, click:\n'
                                                            ' Sync> Sync From Server\n'
@@ -879,24 +882,16 @@ class QuickSync(QtWidgets.QDialog):
         checks s3 for the existance of a globals file and pipeline_designer files.
         :return:
         """
-        # step 1 - download the globals
-        self.download_globals_from_cloud()
-        # Step 2: replace ROOT, and CODEROOT instances in the globals file
-        # Step 3: Copy the edited globals file to the default location
-        self.edit_globals_paths()
-        # Step 3b: Create Default User Globals
-        create_user_globals(self.default_user_globals, self.default_globals)
-        # Step 4: Copy the published CGL_TOOLS to the default location
-        # Step 5: Import any Projects
-        # Step 6: Set up Syncthing
-        self.setup_syncthing()
-        from cgl.ui.widgets.dialog import InputDialog
-        dialog = InputDialog(title='Sync Message', message='Your Machine has be submitted for approval for file sharing\n'
-                                                           'After you have been added, click:\n'
-                                                           ' Sync> Pull From Server\n'
-                                                           'and you will start syncing folders')
-        dialog.exec_()
-        # set_up_syncthing(folders=[os.path.join(self.default_root, '_config', 'cgl_tools')])
+        if self.download_globals_from_cloud():
+        # TODO - if there are no globals from the cloud, start with something fresh.
+            self.edit_globals_paths()
+            create_user_globals(self.default_user_globals, self.default_globals)
+        else:
+            if self.company_line_edit.text() == 'generic':
+                print('Need to create globals from template')
+            else:
+                print('Not sure what to do with commpany name, creating default globals')
+
 
 
 def create_user_globals(user_globals, globals_path):
