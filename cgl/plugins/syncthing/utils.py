@@ -2,10 +2,17 @@ import xml.etree.ElementTree as ElemTree
 import getpass
 import os
 import subprocess
+import requests
 import psutil
+import json
+import datetime
 import cgl.plugins.google.sheets as sheets
-from cgl.core.utils.general import cgl_execute
+# from cgl.core.utils.general import cgl_execute
 from cgl.core.utils.read_write import load_json, save_json
+
+
+api_key = ''
+url = 'http://localhost:8384/rest'
 
 
 def setup_server(clean=False):
@@ -336,6 +343,34 @@ def get_my_device_info():
         return {'id': device_id, 'name': machine_name}
     else:
         return None
+
+
+def save_all_synch_events():
+    path = os.path.join(os.path.expanduser('~'), 'Documents', 'cglumberjack', 'time_%s.json' % datetime.datetime.now().strftime("%H_%M_%S"))
+    r = requests.get('%s/events' % url, headers={'X-API-Key': '%s' % api_key})
+    dict = json.loads(r.content)
+    with open(path, 'w+') as outfile:
+        json.dump(dict, outfile, indent=4)
+
+
+def get_events_of_type(type):
+    return_list = []
+    r = requests.get('%s/events' % url, headers={'X-API-Key': '%s' % api_key})
+    dict = json.loads(r.content)
+    for each in dict:
+        if each['type'] == type:
+            return_list.append(each)
+    return return_list
+
+
+def get_download_progress(filename):
+    return_list = []
+    r = requests.get('%s/events' % url, headers={'X-API-Key': '%s' % api_key})
+    dict = json.loads(r.content)
+    # for each in dict:
+    #     if each['type'] == 'DownloadProgress':
+    #         for entry in each
+
 
 
 def add_device_info_to_sheet(sheet, server = 'false'):
@@ -706,6 +741,6 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    wipe_globals()
+    # wipe_globals()
 
 
