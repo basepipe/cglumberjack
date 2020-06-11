@@ -364,12 +364,15 @@ def get_events_of_type(type):
 
 
 def get_download_progress(filename):
-    return_list = []
+    return_dict = {}
     r = requests.get('%s/events' % url, headers={'X-API-Key': '%s' % api_key})
     dict = json.loads(r.content)
-    # for each in dict:
-    #     if each['type'] == 'DownloadProgress':
-    #         for entry in each
+    for each in dict:
+        if each['type'] == 'DownloadProgress':
+            for folder in each['data']:
+                for file in folder:
+                    return_dict[file] = (file['bytesDone']/file['bytesTotal'])
+    return return_dict
 
 
 
@@ -742,5 +745,5 @@ def update_machines():
 
 if __name__ == "__main__":
     # wipe_globals()
-
+    print get_download_progress('name')
 
