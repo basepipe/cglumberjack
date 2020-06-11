@@ -181,11 +181,6 @@ def process_pending_devices():
             print("Found Pending Device: Checking to see if it's on the approved list.")
             add_device_to_config(child.get('id'), child.get('name'))
             root.remove(child)
-            write = True
-    if write:
-        tree.write(config_path)
-    else:
-        print('No Pending Devices Found')
 
 
 def process_folder_naming(kill=False):
@@ -380,7 +375,6 @@ def save_all_sync_events():
 
 def syncthing_synced():
     api_key = get_sync_api_key()
-    print api_key
     start_time = time.time()
     synced = True
     try:
@@ -391,9 +385,15 @@ def syncthing_synced():
             if each['type'] == "FolderSummary":
                 if each['data']['summary']['needBytes']:
                     synced = False
+                    print '\n'
                     print each['data']['folder']
-                    perc = (float(each['data']['summary']['needBytes'])/float(each['data']['summary']['globalBytes']))
+                    perc = (float(each['data']['summary']['needBytes']) / float(each['data']['summary']['globalBytes']))
                     print '\t%s percent Synced' % perc
+                    print '\n----------'
+                    print each['data']['summary']
+                    print '\n----------'
+
+
             # if each['type'] == 'DownloadProgress':
             #     synced = False
             #     print each, 'Download Progress', each['type']['DownloadProgress']
@@ -428,15 +428,15 @@ def get_events_of_type(type):
 
 
 def get_download_progress(filename):
-    return_list = []
+    return_dict = {}
     api_key = get_sync_api_key()
     r = requests.get('%s/events' % URL, headers={'X-API-Key': '%s' % api_key})
     dict = json.loads(r.content)
     for each in dict:
         if each['type'] == 'DownloadProgress':
             for folder in each['data']:
-                for file in folder:
-                    return_dict[file] = (file['bytesDone']/file['bytesTotal'])
+                for file_ in folder:
+                    return_dict[file_] = (file_['bytesDone']/file_['bytesTotal'])
     return return_dict
 
 
@@ -757,9 +757,8 @@ def launch_syncthing():
     # print 'launching syncthing in background'
     print 'Launching Syncthing'
     command = "syncthing"
-    cgl_execute(command, new_window=True)
+    cgl_execute(command, new_window=False)
     # p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, )
-    # # TODO - turn the icon to "syncing"
     # return p
 
 
@@ -774,8 +773,8 @@ def show_browser():
     from cgl.core.utils.general import cgl_execute
     print 'Launching Syncthing Browser'
     # TODO - i want it to only be the browser-only, but for now it seems like there are times when we have to blast it
-    # command = 'syncthing -browser-only'
-    command = 'syncthing'
+    command = 'syncthing -browser-only'
+    # command = 'syncthing'
     cgl_execute(command, new_window=True)
 
 
@@ -823,8 +822,9 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    #print get_config_path()
-    # wipe_globals()
-    # setup_workstation()
-    kill_syncthing()
+    print get_config_path()
+    #wipe_globals()
+    #setup_workstation()
+    # kill_syncthing()
     # launch_syncthing()
+    add_device_to_config('WJ7JN2J-JLZIXTC-PM2Z7TI-RBMJIDG-52ODBRU-OURMISB-MSBCUSH-57Q2VAK', 'cmpa-w-x10dri')
