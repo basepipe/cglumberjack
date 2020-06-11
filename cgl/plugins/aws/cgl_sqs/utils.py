@@ -7,8 +7,13 @@ import cgl.plugins.syncthing.utils as st_utils
 
 def check_st_config():
     import cgl.apps.lumber_watch.lumber_watch as lw
-    if lw.check_syncthing_config():
-        st_utils.process_st_config()
+    if st_utils.syncthing_synced():
+        print 'Safe To Sync - no BG processes'
+        if lw.check_syncthing_config():
+            print 'Detected Changes in Config - Syncing Lumbermill'
+            st_utils.process_st_config()
+    else:
+        print "Currently Syncing Files"
 
 
 def send_message(message_attrs='', message_body=''):
@@ -219,8 +224,9 @@ def main(seconds, delete):
     start_time = time.time()
     while True:
         process_messages(force_delete=delete)
-        check_st_config()
-        st_utils.syncthing_running()
+        if st_utils.syncthing_running():
+            check_st_config()
+        # st_utils.save_all_sync_events()
         time.sleep(seconds - ((time.time() - start_time) % seconds))
 
 
