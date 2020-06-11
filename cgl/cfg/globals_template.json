@@ -551,14 +551,14 @@
         }, 
         "shotgun": {
             "api": {
-                "api_key": "bc29cd2fd4ce9fe3c2598c4d559b09f88eaa95b05edfd12a834a23aea0797e2f", 
-                "api_script": "core_tools", 
-                "api_user": "tmikota", 
+                "api_key": "",
+                "api_script": "lumbermill",
+                "api_user": "",
                 "concurrent": 4, 
                 "concurrent_low": 0, 
-                "notes": "ensure short codes exist for all pipeline steps in shotgun, might want a wizard for this.", 
+                "notes": "",
                 "project_short_name": "sg_code", 
-                "server_url": "https://fsuada.shotgunstudio.com",
+                "server_url": "",
                 "default_schema": "default"
             }, 
             "tasks": {

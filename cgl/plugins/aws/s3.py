@@ -104,6 +104,45 @@ def upload_and_transcribe_audio(input_file, transcript_file_out, bucket='cgl-dev
         return process_info
 
 
+def bat_scripts_dir():
+    """
+    returns location of the .bat scripts folder
+    :return:
+    """
+    directory = __file__.split('cglumberjack')[0]
+    return os.path.join(directory, 'cglumberjack', 'resources', 'bat_scripts')
+
+
+def zip_bat_scripts():
+    """
+    makes a zip file of the .bat scripts to prepare it for upload to amazon s3
+    :return:
+    """
+    from zipfile import ZipFile
+    zip_file = os.path.join(bat_scripts_dir(), 'lumbermill_installer.zip')
+    if os.path.exists(zip_file):
+        os.remove(zip_file)
+    zip = ZipFile(zip_file, 'w')
+    for f in os.listdir(bat_scripts_dir()):
+        filename = os.path.join(bat_scripts_dir(), f)
+        if filename != zip_file:
+            zip.write(filename, f)
+    zip.close()
+    return zip_file
+
+
+def upload_lumbermill_installer_zip():
+    """
+    Creates a zip file of all the .bat scripts, uploads it to the cgl-developeronboarding bucket, the removes the
+    zip file.
+    :return:
+    """
+    path_ = zip_bat_scripts()
+    print(path_)
+    upload_file(path_, bucket_name='cgl-developeronboarding')
+    os.remove(path_)
+
+
 @click.command()
 @click.option('--input_file', '-i', prompt="filepath to upload",
               default=None, help='Filepath for the file to upload to s3')
@@ -116,4 +155,5 @@ def main(input_file, output_file, bucket):
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    upload_lumbermill_installer_zip()

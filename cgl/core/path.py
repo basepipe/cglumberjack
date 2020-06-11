@@ -348,7 +348,7 @@ class PathObject(object):
         self.set_shotname()
         self.set_path()
 
-    def set_path(self, bob=False):
+    def set_path(self):
         """
         set's self.path_root, self.path, self.filename, self.command_base, self.hd_proxy_path, self.thumb_path, and
         self.preview_path
@@ -1394,6 +1394,13 @@ def start(filepath):
             from robogary.src.apps.robo_gary import main
             dialog = main.RoboGary(transcript_file=filepath)
             dialog.exec_()
+            return
+        if path_object.task.lower() == 'template':
+            import cgl.plugins.premiere.premiere_tools as pt
+            reload(pt)
+            dir_ = os.path.dirname(path_object.path_root)
+            pt.launch_fcp_xml(folder_path=dir_, file=path_object.filename)
+            return
     except AttributeError:
         pass
     cmd = "cmd /c start "
@@ -1440,7 +1447,7 @@ def get_folder_size(folder):
 
 def print_file_size(total_bytes, do_print=True):
     total_mb = float(total_bytes) / 1024 / 1024
-    total_gb = total_mb / 1024
+    # total_gb = total_mb / 1024
     size_string = '%s Mb(%s bytes)' % (format(total_mb, ".2f"), '{:,}'.format(total_bytes))
     if do_print:
         print size_string

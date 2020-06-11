@@ -335,7 +335,7 @@ def convert_to_webm(filein, fileout=None, processing_method='local', dependent_j
 
 
 def convert_to_mp4(filein, fileout=None, processing_method='local', dependent_job=None, audio_only=False,
-                   new_window=False, command_name='convert_to_mp4()'):
+                   new_window=False, command_name='convert_to_mp4()', delete_existing=True):
     """
     creates a .mp4 file specifically to be used in amazon's transcription services.
     :param filein:
@@ -344,19 +344,34 @@ def convert_to_mp4(filein, fileout=None, processing_method='local', dependent_jo
     :param dependent_job:
     :return:
     """
-    process_info = {}
     if not fileout:
         fileout = change_extension(filein, 'mp4')
+        print fileout
+        if os.path.exists(fileout):
+            print 'deleting fileout: %s' % fileout
+            if delete_existing:
+                print('deleting existing file: %s' % fileout)
+                os.remove(fileout)
         # 'scale=trunc((a*oh)/2)*2:720'
     vcodec = '-vcodec libx264 -pix_fmt yuv420p -vf "scale=trunc((a*oh)/2)*2:720" -g 30 -b:v 2000k -vprofile high -bf 0'
     acodec = "-strict experimental -acodec aac -ab 160k -ac 2"
+    process_info = {'file_out': fileout, 'job_id': 0}
+
     if audio_only:
         if not fileout.endswith('_audio.mp4'):
             fileout = fileout.replace('.mp4', '_audio.mp4')
+            print fileout
+            if os.path.exists(fileout):
+                print 'deleting fileout: %s' % fileout
+                if delete_existing:
+                    print('deleting existing file: %s' % fileout)
+                    os.remove(fileout)
         if processing_method == 'local':
             command = "%s -i %s -vn %s %s" % (PATHS['ffmpeg'], filein, acodec, fileout)
             cgl_execute(command, command_name=command_name, methodology='local',
                         WaitForJobID=dependent_job)
+            process_info['file_out'] = fileout
+            return process_info
         elif processing_method == 'smedge':
             filename = "%s.py" % os.path.splitext(__file__)[0]
             command = r'python %s -i %s -o %s -t audio -ft movie' % (filename, filein, fileout)
@@ -371,7 +386,12 @@ def convert_to_mp4(filein, fileout=None, processing_method='local', dependent_jo
                         new_window=new_window)
             process_info['file_out'] = fileout
         elif processing_method == 'smedge':
-            print 'Have not implemented smedge for convert_to_mp4 yet'
+            filename = "%s.py" % os.path.splitext(__file__)[0]
+            command = r'python %s -i %s -o %s -t mp4 -ft movie' % (filename, filein, fileout)
+            process_info = cgl_execute(command, command_name=command_name, methodology='smedge',
+                                       WaitForJobID=dependent_job)
+            process_info['file_out'] = fileout
+            return process_info
     return process_info
 
 
@@ -410,7 +430,7 @@ def extract_wav_from_movie(filein, fileout=None, processing_method='local', depe
 @click.option('--height', '-h', default=1080, help='height in pixels')
 @click.option('--file_type', '-ft', default='movie', help='options: sequence, image, movie')
 @click.option('--conversion_type', '-t', default='web_preview',
-              help='Type of Conversions: proxy, web_preview, prores, thumb, gif, audio')
+              help='Type of Conversions: proxy, mp4, web_preview, prores, thumb, gif, audio')
 @click.option('--quality', '-q', default=0, help='0:proxy, 1:low, 2:standard, 3:high')
 def main(input_file, output_file, height, width, file_type, conversion_type, quality=0):
     run_dict = {}
@@ -426,6 +446,8 @@ def main(input_file, output_file, height, width, file_type, conversion_type, qua
             convert_to_mp4(input_file, output_file, audio_only=True)
         elif conversion_type == 'thumb':
             create_movie_thumb(input_file, output_file)
+        elif conversion_type == 'mp4':
+            convert_to_mp4(input_file, output_file)
         else:
             print('Conversion Type: %s process not defined' % conversion_type)
     if run_dict.keys():

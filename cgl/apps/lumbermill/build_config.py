@@ -196,6 +196,7 @@ class ConfigDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, company='', config_dict=None, root=r"C:\CGLUMBERJACK\COMPANIES"):
         QtWidgets.QDialog.__init__(self, parent)
         self.app_config = config_dict
+        globals_path = os.path.join(root, '_config', 'config.json')
         self.proj_management_label = QtWidgets.QLabel('Project Management')
         self.contents = {}
         self.company = company
@@ -277,18 +278,8 @@ class ConfigDialog(QtWidgets.QDialog):
 
         # self.globals_tree_widget = DictionaryTreeWidget({})
         this = __file__.split('cglumberjack')[0]
-        if not self.app_config:
-            dialog = QuickSync()
-            dialog.exec_()
-            globals_path = dialog.globals_path
-            cgl_tools_path = dialog.cgl_tools_path
-            if globals_path:
-                dict_ = read_write.load_json(globals_path)
-                self.inherited_globals = True
-            else:
-                self.inherited_globals = False
-                this = __file__.split('cglumberjack')[0]
-                dict_ = read_write.load_json(os.path.join(this, 'cglumberjack', 'cgl', 'cfg', 'globals_template.json'))
+        this = __file__.split('cglumberjack')[0]
+        dict_ = read_write.load_json(os.path.join(this, 'cglumberjack', 'cgl', 'cfg', 'globals_template.json'))
         self.proj_man_dict = dict_['project_management']
         self.path_item_widget = PathItemWidget(paths_dict=dict_['paths'], hide_on_find=True)
 
@@ -666,7 +657,7 @@ class QuickSync(QtWidgets.QDialog):
         self.code_root_line_edit.setText(DEFAULT_CODE_ROOT)
         self.root_line_edit.setText(self.default_root)
         self.sync_cgl_tools_line_edit.setText(os.path.join(self.default_root, '_config', 'cgl_tools'))
-        self.company_line_edit.setText('lone coconut')
+        self.company_line_edit.setText('default')
 
         self.code_root_line_edit.setEnabled(False)
         # self.root_line_edit.setEnabled(False)
@@ -674,14 +665,15 @@ class QuickSync(QtWidgets.QDialog):
         self.sync_folder_line_edit.setEnabled(False)
 
         self.aws_globals_label = QtWidgets.QLabel()
-        self.projects_checkbox = QtWidgets.QCheckBox('Import a Project')
+        # self.projects_checkbox = QtWidgets.QCheckBox('Import a Project')
         self.sync_thing_checkbox = QtWidgets.QCheckBox('Set up Remote Syncing')
-        self.import_label = QtWidgets.QLabel('Import Project From:')
-        self.import_line_edit = QtWidgets.QLineEdit()
-        self.import_button = QtWidgets.QToolButton()
-        self.import_button.setText('...')
-        self.sync_thing_checkbox.setChecked(True)
-        self.projects_checkbox.setChecked(True)
+        # self.import_label = QtWidgets.QLabel('Import Project From:')
+        # self.import_line_edit = QtWidgets.QLineEdit()
+        # self.import_button = QtWidgets.QToolButton()
+        # self.import_button.setText('...')
+        # self.sync_thing_checkbox.setChecked(True)
+        self.sync_thing_checkbox.hide()
+        # self.projects_checkbox.setChecked(True)
 
         self.company_name = 'Lone Coconut'
         self.company_name_s3 = 'lone-coconut'
@@ -699,10 +691,10 @@ class QuickSync(QtWidgets.QDialog):
         grid_layout.addWidget(self.root_line_edit, 2, 1)
         grid_layout.addWidget(code_root_label, 3, 0)
         grid_layout.addWidget(self.code_root_line_edit, 3, 1)
-        grid_layout.addWidget(self.import_label, 4, 0)
-        grid_layout.addWidget(self.import_line_edit, 4, 1)
-        grid_layout.addWidget(self.import_button, 4, 2)
-        grid_layout.addWidget(self.import_project_hint, 5, 1)
+        # grid_layout.addWidget(self.import_label, 4, 0)
+        # grid_layout.addWidget(self.import_line_edit, 4, 1)
+        # grid_layout.addWidget(self.import_button, 4, 2)
+        # grid_layout.addWidget(self.import_project_hint, 5, 1)
         grid_layout.addWidget(self.sync_options_label, 6, 0)
         grid_layout.addWidget(self.sync_folder_label, 7, 0)
         grid_layout.addWidget(self.sync_folder_line_edit, 7, 1)
@@ -713,22 +705,22 @@ class QuickSync(QtWidgets.QDialog):
         layout.addWidget(company_label)
         layout.addWidget(self.company_line_edit)
         layout.addWidget(self.aws_globals_label)
-        layout.addWidget(self.projects_checkbox)
+        # layout.addWidget(self.projects_checkbox)
         layout.addWidget(self.sync_thing_checkbox)
         layout.addLayout(grid_layout)
         layout.addLayout(button_layout)
         layout.addStretch(1)
         self.aws_globals_label.hide()
-        self.on_projects_checkbox_clicked()
+        # self.on_projects_checkbox_clicked()
         self.on_sync_thing_checkbox_clicked()
         self.on_company_name_changed()
 
         self.company_line_edit.editingFinished.connect(self.on_company_name_changed)
         self.root_line_edit.textChanged.connect(self.on_root_changed)
         self.download_globals_button.clicked.connect(self.set_up_lumbermill)
-        self.projects_checkbox.clicked.connect(self.on_projects_checkbox_clicked)
+        # self.projects_checkbox.clicked.connect(self.on_projects_checkbox_clicked)
         self.sync_thing_checkbox.clicked.connect(self.on_sync_thing_checkbox_clicked)
-        self.import_line_edit.editingFinished.connect(self.on_import_line_edit_changed)
+        # self.import_line_edit.editingFinished.connect(self.on_import_line_edit_changed)
 
     def on_root_changed(self):
         self.default_root = self.root_line_edit.text()
@@ -783,18 +775,6 @@ class QuickSync(QtWidgets.QDialog):
             self.sync_folder_line_edit.hide()
             self.sync_cgl_tools_line_edit.hide()
 
-    def on_projects_checkbox_clicked(self):
-        state = self.projects_checkbox.checkState()
-        if state:
-            self.import_label.show()
-            self.import_line_edit.show()
-            self.import_button.show()
-            self.import_project_hint.show()
-        else:
-            self.import_line_edit.hide()
-            self.import_label.hide()
-            self.import_button.hide()
-            self.import_project_hint.hide()
 
     def on_company_name_changed(self):
         self.company_name = self.company_line_edit.text()
@@ -829,7 +809,9 @@ class QuickSync(QtWidgets.QDialog):
                 with open(globals_path, 'w+') as f:
                     f.write(r.content)
             self.accept()
+            return True
         else:
+            return False
             print('No Globals Found - Get your Studio to publish their globals, or Create new ones?')
 
     def edit_globals_paths(self):
@@ -866,7 +848,7 @@ class QuickSync(QtWidgets.QDialog):
             os.makedirs(cgl_tools_folder)
         sync_folders = {r'[root]\_config\cgl_tools': os.path.join(cgl_tools_folder)}
         # TODO - need to set 2nd value here as a global in globals. sync_sheet: LONE_COCONUT_SYNC_THING
-        syncthing.setup_workstation()
+        # syncthing.setup_workstation()
         dialog = InputDialog(title='Sync Message', message='Your Machine has be submitted for approval for file sharing\n'
                                                            'After you have been added, click:\n'
                                                            ' Sync> Sync From Server\n'
@@ -874,29 +856,18 @@ class QuickSync(QtWidgets.QDialog):
         dialog.exec_()
         # syncthing.setup(self.company_name_s3, 'LONE_COCONUT_SYNC_THING', sync_folders)
 
+
     def set_up_lumbermill(self):
         """
         checks s3 for the existance of a globals file and pipeline_designer files.
         :return:
         """
-        # step 1 - download the globals
-        self.download_globals_from_cloud()
-        # Step 2: replace ROOT, and CODEROOT instances in the globals file
-        # Step 3: Copy the edited globals file to the default location
-        self.edit_globals_paths()
-        # Step 3b: Create Default User Globals
-        create_user_globals(self.default_user_globals, self.default_globals)
-        # Step 4: Copy the published CGL_TOOLS to the default location
-        # Step 5: Import any Projects
-        # Step 6: Set up Syncthing
-        self.setup_syncthing()
-        from cgl.ui.widgets.dialog import InputDialog
-        dialog = InputDialog(title='Sync Message', message='Your Machine has be submitted for approval for file sharing\n'
-                                                           'After you have been added, click:\n'
-                                                           ' Sync> Pull From Server\n'
-                                                           'and you will start syncing folders')
-        dialog.exec_()
-        # set_up_syncthing(folders=[os.path.join(self.default_root, '_config', 'cgl_tools')])
+        if self.download_globals_from_cloud():
+            self.edit_globals_paths()
+            create_user_globals(self.default_user_globals, self.default_globals)
+        else:
+            dialog = ConfigDialog(company=self.company_line_edit.text(), root=self.default_root)
+            dialog.exec_()
 
 
 def create_user_globals(user_globals, globals_path):
@@ -917,9 +888,8 @@ def create_user_globals(user_globals, globals_path):
 
 
 if __name__ == "__main__":
-    # from cgl.core.utils import load_style_sheet
     app = QtWidgets.QApplication([])
-    #app = QtWidgets.QApplication([])
     form = QuickSync()
     form.show()
     app.exec_()
+
