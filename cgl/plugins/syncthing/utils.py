@@ -432,9 +432,12 @@ def get_download_progress(filename):
     api_key = get_sync_api_key()
     r = requests.get('%s/events' % URL, headers={'X-API-Key': '%s' % api_key})
     dict = json.loads(r.content)
-    # for each in dict:
-    #     if each['type'] == 'DownloadProgress':
-    #         for entry in each
+    for each in dict:
+        if each['type'] == 'DownloadProgress':
+            for folder in each['data']:
+                for file in folder:
+                    return_dict[file] = (file['bytesDone']/file['bytesTotal'])
+    return return_dict
 
 
 def add_device_info_to_sheet(sheet, server = 'false'):
