@@ -182,10 +182,6 @@ def process_pending_devices():
             add_device_to_config(child.get('id'), child.get('name'))
             root.remove(child)
             write = True
-    if write:
-        tree.write(config_path)
-    else:
-        print('No Pending Devices Found')
 
 
 def process_folder_naming(kill=False):
