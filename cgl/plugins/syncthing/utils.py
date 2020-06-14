@@ -523,14 +523,10 @@ def add_all_devices_to_config(sheet, device_list=False, remove_pending=False):
             maxRequestKiB = ElemTree.SubElement(new_node, 'maxRequestKiB')
             maxRequestKiB.text = 0
         if remove_pending:
-            print 1
             for child in root:
                 if child.tag == 'pendingDevice':
-                    print 2
                     for key in device_list:
-                        print 3
                         if key['id'] == child.get('id'):
-                            print 4
                             root.remove(child)
         tree.write(filepath)
     else:
