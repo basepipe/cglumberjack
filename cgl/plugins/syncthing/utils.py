@@ -178,10 +178,9 @@ def process_pending_devices():
     folders_dict = {}
     for child in root:
         if child.tag == 'pendingDevice':
-            print("Found Pending Device: Checking to see if it's on the approved list.")
-            add_device_to_config(child.get('id'), child.get('name'))
-            root.remove(child)
-            write = True
+            if child.get('id') != get_my_device_info()['id']:
+                print("Found Pending Device: Checking to see if it's on the approved list.")
+                add_device_to_config(child.get('id'), child.get('name'), remove=True)
 
 
 def process_folder_naming(kill=False):
@@ -469,7 +468,7 @@ def get_all_device_info(sheet):
     return device_list
 
 
-def add_device_to_config(device_id, name):
+def add_device_to_config(device_id, name, remove=True):
     """
     Add Specific Device to the Config
     :param device_id:
@@ -482,12 +481,12 @@ def add_device_to_config(device_id, name):
     # check to see if the device is on the device list.
     if sheets.id_exists(device_id, sheet):
         print 'Adding approved device to Syncing %s' % device_list
-        add_all_devices_to_config(sheet=None, device_list=device_list)
+        add_all_devices_to_config(sheet=None, device_list=device_list, remove_pending=remove)
     else:
         print 'Device not found in Google Sheets.'
 
 
-def add_all_devices_to_config(sheet, device_list=False):
+def add_all_devices_to_config(sheet, device_list=False, remove_pending=False):
     """
     Add a new device to be synched with in syncthing
     :return:
@@ -523,6 +522,16 @@ def add_all_devices_to_config(sheet, device_list=False):
             maxRecvKbps.text = 0
             maxRequestKiB = ElemTree.SubElement(new_node, 'maxRequestKiB')
             maxRequestKiB.text = 0
+        if remove_pending:
+            print 1
+            for child in root:
+                if child.tag == 'pendingDevice':
+                    print 2
+                    for key in device_list:
+                        print 3
+                        if key['id'] == child.get('id'):
+                            print 4
+                            root.remove(child)
         tree.write(filepath)
     else:
         print('Config File does not exist: %s' % filepath)
@@ -819,8 +828,5 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    #print get_config_path()
-    # wipe_globals()
-    # setup_workstation()
-    kill_syncthing()
-    # launch_syncthing()
+    process_pending_devices()
+    # print get_config_path()
