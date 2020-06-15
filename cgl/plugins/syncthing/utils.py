@@ -165,7 +165,7 @@ def process_pending_folders():
         tree.write(config_path)
         process_pending_folders()
     else:
-        print('No Pending Folders Found')
+        print('\tNo Pending Folders Found')
         return True
 
 
@@ -212,7 +212,7 @@ def process_folder_naming(kill=False):
     if write:
         tree.write(config_path)
     else:
-        print('No Folder Naming Issues Found')
+        print('\tNo Folder Naming Issues Found')
 
 
 def process_st_config():
@@ -375,27 +375,27 @@ def save_all_sync_events():
 
 def syncthing_synced():
     api_key = get_sync_api_key()
-    print api_key
     start_time = time.time()
     synced = True
     try:
         # TODO - this seems to only pull one value and continue to repeate it.
-        r = requests.get('%s/events' % URL, headers={'X-API-Key': '%s' % api_key}, timeout=60)
+        r = requests.get('%s/events' % URL, headers={'X-API-Key': '%s' % api_key}, timeout=15)
         dict = json.loads(r.content)
         # we see if there are any remaining files to be synced
         for each in dict:
             if each['type'] == "FolderSummary":
                 if each['data']['summary']['needBytes']:
                     synced = False
-                    print each['data']['folder']
-                    perc = (float(each['data']['summary']['needBytes'])/float(each['data']['summary']['globalBytes']))
-                    print '\t%s percent Synced' % perc
+                    print each['data']['summary']
+                    break
+                    # perc = (float(each['data']['summary']['needBytes'])/float(each['data']['summary']['globalBytes']))
+                    # print '\t%s percent Synced' % perc
         if synced:
             return True
         else:
             return False
     except requests.exceptions.ReadTimeout:
-        print('Sync reached 60s timeout - restarting')
+        print('Sync reached 15s timeout - restarting')
         kill_syncthing()
         time.sleep(5)
         process_st_config()
@@ -761,10 +761,13 @@ def launch_syncthing():
 
 
 def kill_syncthing():
+    killed = False
     for proc in psutil.process_iter():
         if proc.name() == 'syncthing.exe':
             proc.terminate()
-            print 'Killed Syncthing background processes'
+            killed = True
+    if killed:
+        print 'Killed Syncthing background processes'
 
 
 def show_browser():
