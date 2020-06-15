@@ -389,10 +389,6 @@ def syncthing_synced():
                     print each['data']['folder']
                     perc = (float(each['data']['summary']['needBytes'])/float(each['data']['summary']['globalBytes']))
                     print '\t%s percent Synced' % perc
-            # if each['type'] == 'DownloadProgress':
-            #     synced = False
-            #     print each, 'Download Progress', each['type']['DownloadProgress']
-            # return synced
         if synced:
             return True
         else:
@@ -443,7 +439,6 @@ def add_device_info_to_sheet(sheet, server = 'false'):
     """
     new_row = sheets.find_empty_row_in_sheet(sheet)
     device_dictionary = get_my_device_info()
-    print device_dictionary
     if not sheets.id_exists(device_dictionary['id'], sheet) and not sheets.name_exists(device_dictionary['name'],sheet):
         sheet.update_cell(new_row, 1, device_dictionary['id'])
         sheet.update_cell(new_row, 2, device_dictionary['name'])
