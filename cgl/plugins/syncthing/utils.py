@@ -753,7 +753,7 @@ def launch_syncthing():
     # kill_syncthing()
     # print 'launching syncthing in background'
     print 'Launching Syncthing'
-    command = "syncthing -no-browser"
+    command = "syncthing"
     cgl_execute(command, new_window=True)
     # p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, )
     # # TODO - turn the icon to "syncing"
@@ -820,5 +820,6 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    process_pending_devices()
+    wipe_globals()
+    # process_pending_devices()
     # print get_config_path()
