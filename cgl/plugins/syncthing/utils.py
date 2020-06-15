@@ -165,7 +165,7 @@ def process_pending_folders():
         tree.write(config_path)
         process_pending_folders()
     else:
-        print('No Pending Folders Found')
+        print('\tNo Pending Folders Found')
         return True
 
 
@@ -178,10 +178,9 @@ def process_pending_devices():
     folders_dict = {}
     for child in root:
         if child.tag == 'pendingDevice':
-            print("Found Pending Device: Checking to see if it's on the approved list.")
-            add_device_to_config(child.get('id'), child.get('name'))
-            root.remove(child)
-            write = True
+            if child.get('id') != get_my_device_info()['id']:
+                print("Found Pending Device: Checking to see if it's on the approved list.")
+                add_device_to_config(child.get('id'), child.get('name'), remove=True)
 
 
 def process_folder_naming(kill=False):
@@ -213,7 +212,7 @@ def process_folder_naming(kill=False):
     if write:
         tree.write(config_path)
     else:
-        print('No Folder Naming Issues Found')
+        print('\tNo Folder Naming Issues Found')
 
 
 def process_st_config():
@@ -376,30 +375,27 @@ def save_all_sync_events():
 
 def syncthing_synced():
     api_key = get_sync_api_key()
-    print api_key
     start_time = time.time()
     synced = True
     try:
-        r = requests.get('%s/events' % URL, headers={'X-API-Key': '%s' % api_key}, timeout=60)
+        # TODO - this seems to only pull one value and continue to repeate it.
+        r = requests.get('%s/events' % URL, headers={'X-API-Key': '%s' % api_key}, timeout=15)
         dict = json.loads(r.content)
         # we see if there are any remaining files to be synced
         for each in dict:
             if each['type'] == "FolderSummary":
                 if each['data']['summary']['needBytes']:
                     synced = False
-                    print each['data']['folder']
-                    perc = (float(each['data']['summary']['needBytes'])/float(each['data']['summary']['globalBytes']))
-                    print '\t%s percent Synced' % perc
-            # if each['type'] == 'DownloadProgress':
-            #     synced = False
-            #     print each, 'Download Progress', each['type']['DownloadProgress']
-            # return synced
+                    print each['data']['summary']
+                    break
+                    # perc = (float(each['data']['summary']['needBytes'])/float(each['data']['summary']['globalBytes']))
+                    # print '\t%s percent Synced' % perc
         if synced:
             return True
         else:
             return False
     except requests.exceptions.ReadTimeout:
-        print('Sync reached 60s timeout - restarting')
+        print('Sync reached 15s timeout - restarting')
         kill_syncthing()
         time.sleep(5)
         process_st_config()
@@ -444,7 +440,6 @@ def add_device_info_to_sheet(sheet, server = 'false'):
     """
     new_row = sheets.find_empty_row_in_sheet(sheet)
     device_dictionary = get_my_device_info()
-    print device_dictionary
     if not sheets.id_exists(device_dictionary['id'], sheet) and not sheets.name_exists(device_dictionary['name'],sheet):
         sheet.update_cell(new_row, 1, device_dictionary['id'])
         sheet.update_cell(new_row, 2, device_dictionary['name'])
@@ -469,7 +464,7 @@ def get_all_device_info(sheet):
     return device_list
 
 
-def add_device_to_config(device_id, name):
+def add_device_to_config(device_id, name, remove=True):
     """
     Add Specific Device to the Config
     :param device_id:
@@ -482,12 +477,12 @@ def add_device_to_config(device_id, name):
     # check to see if the device is on the device list.
     if sheets.id_exists(device_id, sheet):
         print 'Adding approved device to Syncing %s' % device_list
-        add_all_devices_to_config(sheet=None, device_list=device_list)
+        add_all_devices_to_config(sheet=None, device_list=device_list, remove_pending=remove)
     else:
         print 'Device not found in Google Sheets.'
 
 
-def add_all_devices_to_config(sheet, device_list=False):
+def add_all_devices_to_config(sheet, device_list=False, remove_pending=False):
     """
     Add a new device to be synched with in syncthing
     :return:
@@ -523,6 +518,12 @@ def add_all_devices_to_config(sheet, device_list=False):
             maxRecvKbps.text = 0
             maxRequestKiB = ElemTree.SubElement(new_node, 'maxRequestKiB')
             maxRequestKiB.text = 0
+        if remove_pending:
+            for child in root:
+                if child.tag == 'pendingDevice':
+                    for key in device_list:
+                        if key['id'] == child.get('id'):
+                            root.remove(child)
         tree.write(filepath)
     else:
         print('Config File does not exist: %s' % filepath)
@@ -760,10 +761,13 @@ def launch_syncthing():
 
 
 def kill_syncthing():
+    killed = False
     for proc in psutil.process_iter():
         if proc.name() == 'syncthing.exe':
             proc.terminate()
-            print 'Killed Syncthing background processes'
+            killed = True
+    if killed:
+        print 'Killed Syncthing background processes'
 
 
 def show_browser():
@@ -819,8 +823,6 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    #print get_config_path()
-    # wipe_globals()
-    # setup_workstation()
-    kill_syncthing()
-    # launch_syncthing()
+    wipe_globals()
+    # process_pending_devices()
+    # print get_config_path()

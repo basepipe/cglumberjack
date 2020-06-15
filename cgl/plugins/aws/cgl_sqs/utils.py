@@ -225,7 +225,9 @@ def main(seconds, delete):
     while True:
         process_messages(force_delete=delete)
         if st_utils.syncthing_running():
+            print 1
             check_st_config()
+            time.sleep(5)
         # st_utils.save_all_sync_events()
         time.sleep(seconds - ((time.time() - start_time) % seconds))
 
