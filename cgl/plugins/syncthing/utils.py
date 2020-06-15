@@ -379,6 +379,7 @@ def syncthing_synced():
     start_time = time.time()
     synced = True
     try:
+        # TODO - this seems to only pull one value and continue to repeate it.
         r = requests.get('%s/events' % URL, headers={'X-API-Key': '%s' % api_key}, timeout=60)
         dict = json.loads(r.content)
         # we see if there are any remaining files to be synced
@@ -752,7 +753,7 @@ def launch_syncthing():
     # kill_syncthing()
     # print 'launching syncthing in background'
     print 'Launching Syncthing'
-    command = "syncthing"
+    command = "syncthing -no-browser"
     cgl_execute(command, new_window=True)
     # p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, )
     # # TODO - turn the icon to "syncing"
