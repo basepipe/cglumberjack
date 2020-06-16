@@ -376,20 +376,39 @@ def save_all_sync_events():
 def syncthing_synced():
     api_key = get_sync_api_key()
     start_time = time.time()
+    syncing_files = []
+    synced_files = []
     synced = True
+    total_bytes_done = 0
+    total_bytes = 0
     try:
         # TODO - this seems to only pull one value and continue to repeate it.
         r = requests.get('%s/events' % URL, headers={'X-API-Key': '%s' % api_key}, timeout=15)
         dict = json.loads(r.content)
-        # we see if there are any remaining files to be synced
+        download = False
         for each in dict:
             if each['type'] == "FolderSummary":
                 if each['data']['summary']['needBytes']:
                     synced = False
-                    print each['data']['summary']
-                    break
+                    now = datetime.datetime.now()
+                    event_time = each['time'].split('.')[0]
+                    date_time_obj = datetime.datetime.strptime(str(event_time), '%Y-%m-%dT%H:%M:%S')
+                    h, m, s = str(now - date_time_obj).split(':')
+                    if m == '00':
+                        syncing_files.append(each)
+                    else:
+                        synced_files.append(each)
                     # perc = (float(each['data']['summary']['needBytes'])/float(each['data']['summary']['globalBytes']))
                     # print '\t%s percent Synced' % perc
+            if each['type'] == 'DownloadProgress':
+                download = True
+                for folder in each['data']:
+                    for file in each['data'][folder]:
+                        total_bytes_done += each['data'][folder][file]['bytesDone']
+                        total_bytes += each['data'][folder][file]['bytesTotal']
+        print '%s files Currently Syncing' % len(syncing_files)
+        if not len(syncing_files):
+            return True
         if synced:
             return True
         else:

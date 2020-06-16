@@ -12,8 +12,6 @@ def check_st_config():
         if lw.check_syncthing_config():
             print 'Detected Changes in Config - Syncing Lumbermill'
             st_utils.process_st_config()
-    else:
-        print "Currently Syncing Files"
 
 
 def send_message(message_attrs='', message_body=''):
