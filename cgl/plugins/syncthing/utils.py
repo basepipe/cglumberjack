@@ -182,6 +182,10 @@ def process_pending_devices():
             if child.get('id') != get_my_device_info()['id']:
                 print("Found Pending Device: Checking to see if it's on the approved list.")
                 add_device_to_config(child.get('id'), child.get('name'), remove=True)
+                devices = True
+    if devices:
+        print('\tNo Pending Devices Found')
+
 
 
 def process_folder_naming(kill=False):
