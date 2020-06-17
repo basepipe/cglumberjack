@@ -5,6 +5,7 @@ from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import current_user
 from cgl.core.cgl_info import get_cgl_info_size, create_all_cgl_info_files
 from cgl.ui.widgets.widgets import AdvComboBox
+from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.path import PathObject, show_in_folder, get_folder_size, find_latest_publish_objects
 from cgl.core.config import get_globals
 from cgl.plugins.syncthing.utils import get_device_dict, get_my_device_info, kill_syncthing, launch_syncthing, \
@@ -157,14 +158,25 @@ class SyncMaster(LJDialog):
     def sync_clicked(self):
         print self.current_selection
         publishes = []
+        no_publishes = []
         for cs in self.current_selection:
             these_publishes = find_latest_publish_objects(cs, source=self.source_check_box.isChecked(),
                                                           render=self.render_check_box.isChecked())
-            publishes += these_publishes
-        dialog_sharing = SharingDialog(publish_objects=publishes)
-        dialog_sharing.exec_()
-        if dialog_sharing.button == 'Ok':
-            self.on_project_changed()
+            if not these_publishes:
+                no_publishes.append(cs)
+            else:
+                publishes += these_publishes
+        if publishes:
+            dialog_sharing = SharingDialog(publish_objects=publishes)
+            dialog_sharing.exec_()
+            if dialog_sharing.button == 'Ok':
+                self.on_project_changed()
+        else:
+            for p in no_publishes:
+                print p
+            dialog = InputDialog(title='No Publishes', message='No Published Versions Found, '
+                                                               'please check assets and try syncing again.')
+            dialog.exec_()
 
     def on_scope_changed(self):
         if self.shots_radio.isChecked():
