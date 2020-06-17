@@ -156,7 +156,6 @@ class SyncMaster(LJDialog):
         print 'Total Folder Size:', get_folder_size(self.current_selection[-1])
 
     def sync_clicked(self):
-        print self.current_selection
         publishes = []
         no_publishes = []
         for cs in self.current_selection:
@@ -166,17 +165,24 @@ class SyncMaster(LJDialog):
                 no_publishes.append(cs)
             else:
                 publishes += these_publishes
+        if no_publishes:
+            message = 'No Publish versions found for:\n'
+            for p in no_publishes:
+                asset = ''
+                if 'assets' in p:
+                    asset = p.split('assets')[-1]
+                elif 'shots' in p:
+                    asset = p.split('shots')[-1]
+                if asset:
+                    message = '%s\n\t%s' % (message, asset)
+
+            dialog = InputDialog(title='Unable to Sync', message=message)
+            dialog.exec_()
         if publishes:
             dialog_sharing = SharingDialog(publish_objects=publishes)
             dialog_sharing.exec_()
             if dialog_sharing.button == 'Ok':
                 self.on_project_changed()
-        else:
-            for p in no_publishes:
-                print p
-            dialog = InputDialog(title='No Publishes', message='No Published Versions Found, '
-                                                               'please check assets and try syncing again.')
-            dialog.exec_()
 
     def on_scope_changed(self):
         if self.shots_radio.isChecked():
