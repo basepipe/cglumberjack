@@ -177,6 +177,7 @@ def process_pending_devices():
     root = tree.getroot()
     write = False
     folders_dict = {}
+    devices = False
     for child in root:
         if child.tag == 'pendingDevice':
             if child.get('id') != get_my_device_info()['id']:
@@ -860,6 +861,7 @@ def update_machines():
 
 
 if __name__ == "__main__":
-    wipe_globals()
+    #wipe_globals()
+    setup_workstation()
     # process_pending_devices()
     # print get_config_path()
