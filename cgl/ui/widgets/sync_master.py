@@ -332,6 +332,7 @@ class SharingDialog(LJDialog):
                 user = device_dict[d]['username']
                 proj_man_user = device_dict[d]['proj_man_user']
                 full_name = device_dict[d]['full_name']
+                is_server = device_dict[d]['is_server']
                 label = '%s: (%s)' % (user, device_name)
                 check_box = QtWidgets.QCheckBox(label)
                 check_box.device_id = device_id
@@ -339,6 +340,11 @@ class SharingDialog(LJDialog):
                 check_box.full_name = full_name
                 check_box.user = user
                 check_box.device_name = device_name
+                if is_server == 'Yes':
+                    check_box.setChecked(True)
+                    check_box.setEnabled(False)
+                    check_box.setText('Server')
+                    self.device_list.append(device_id)
                 grid.addWidget(check_box, i, 0)
                 check_box.clicked.connect(self.on_checkbox_clicked)
 

@@ -89,8 +89,9 @@ def process_messages(max_messages=1,
                     print 'CGL Event Found: "Machine Added"'
                     do_delete = add_machine_to_syncthing(message['MessageAttributes'], test=test)
                 elif message['MessageAttributes']['message_type']['StringValue'] == 'Folders Shared':
-                    print 'CGL Event Found: "Folders Shared"'
-                    do_delete = accept_folders_from_syncthing(message['MessageAttributes'], test=test)
+                    pass
+                    # print 'CGL Event Found: "Folders Shared"'
+                    # do_delete = accept_folders_from_syncthing(message['MessageAttributes'], test=test)
                 else:
                     print 'Unexpected Event: %s' % message['MessageAttributes']['message_type']['StringValue']
             if do_delete or force_delete:

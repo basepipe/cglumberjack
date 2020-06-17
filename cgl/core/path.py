@@ -913,7 +913,7 @@ class PathObject(object):
             dialog_sharing.exec_()
             if dialog_sharing.button == 'Ok':
                 all_device_id = dialog_sharing.device_list
-                print 'Sharing Folders:'
+                print 'Sharing Folders to: %s' % all_device_id
                 print publish.path_root
                 print publish_render_object.path_root
             else:

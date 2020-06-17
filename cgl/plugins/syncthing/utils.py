@@ -10,6 +10,7 @@ import time
 import cgl.plugins.google.sheets as sheets
 from cgl.core.utils.general import cgl_execute
 from cgl.core.utils.read_write import load_json, save_json
+from cgl.core.path import PathObject
 
 URL = 'http://localhost:8384/rest'
 
@@ -197,6 +198,12 @@ def process_folder_naming(kill=False):
         if child.tag == 'folder':
             if ' ' in child.get('path'):
                 local_folder = get_folder_from_id(child.get('id'))
+                p_obj = PathObject(local_folder)
+                label = ''
+                if p_obj.scope == 'assets':
+                    label = '%s-%s-%s (%s)' % (p_obj.asset, p_obj.task, p_obj.version, p_obj.context)
+                elif p_obj.scope == 'shots':
+                    label = '%s_%s-%s-%s (%s)' % (p_obj.seq, p_obj.shot, p_obj.task, p_obj.version, p_obj.context)
                 print 'changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder)
                 if not os.path.exists(local_folder):
                     print 'Creating Local Folder for Syncing: %s' % local_folder
@@ -204,6 +211,8 @@ def process_folder_naming(kill=False):
                 # might need to create the folders if they don't exist, just to be sure.
                 child.set('path', local_folder)
                 child.set('type', 'receiveonly')
+                if label:
+                    child.set('label', label)
                 write = True
             if child.get('ID') == 'default':
                 print 'Removing "default" folder from syncthing registry'
@@ -549,7 +558,6 @@ def add_all_devices_to_config(sheet, device_list=False, remove_pending=False):
 
 
 def get_sync_folders():
-    from cgl.core.path import PathObject
     folders_dict = {}
     config_path = get_config_path()
     print config_path
@@ -593,7 +601,7 @@ def set_sync_statuses(folders_dict, path_, sync_folder, device_id):
                                'devices': [device_id]}
 
 
-def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonly', sqs=True):
+def add_folder_to_config(folder_id, filepath, device_list=None, type_='sendonly', sqs=True):
     """
     Function to add a new folder to config.xml file
     :param folder_id: The ID label for the folder being added to syncthing
@@ -603,7 +611,12 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
     """
     folder_id = folder_id.replace('/', '\\')
     filepath = filepath.replace('/', '\\')
-    # TODO - check to see if the folder exists
+    # p_obj = PathObject(filepath)
+    # if p_obj.scope == 'assets':
+    #     label = '%s-%s-%s (%s)' % (p_obj.asset, p_obj.task, p_obj.version, p_obj.context)
+    # elif p_obj.scope == 'shots':
+    #     label = '%s_%s-%s-%s (%s)' % (p_obj.seq, p_obj.shot, p_obj.task, p_obj.version, p_obj.context)
+    # # TODO - check to see if the folder exists
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
@@ -617,6 +630,7 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_ = 'sendonl
         new_node = ElemTree.SubElement(root, 'folder')
         new_node.set('id', folder_id)
         new_node.set('path', filepath)
+        # new_node.set('label', label)
         new_node.set('type', type_)
         new_node.set('rescanIntervalS', '3600')
         new_node.set('fsWatcherEnabled', "True")
