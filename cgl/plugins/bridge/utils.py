@@ -61,3 +61,4 @@ def copy_new_asset(asset_name, filepath):
 
 
 if __name__ == "__main__":
+    pass
