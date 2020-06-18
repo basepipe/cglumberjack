@@ -1,5 +1,6 @@
 import os
 import shutil
+import random
 
 
 def does_asset_exist(asset_name):
@@ -58,6 +59,16 @@ def copy_new_asset(asset_name, filepath):
         print "Successfully copied files to %s" % asset_dir
     else:
         print "Error: Asset '%s' already exists" % asset_name
+
+
+def generate_new_id():
+    int_1 = random.randint(10000000, 99999999)
+    int_2 = random.randint(1000, 9999)
+    int_3 = random.randint(1000, 9999)
+    int_4 = random.randint(1000, 9999)
+    int_5 = random.randint(100000000000, 999999999999)
+    id = "%d-%d-%d-%d-%d" % (int_1, int_2, int_3, int_4, int_5)
+    return id
 
 
 if __name__ == "__main__":
