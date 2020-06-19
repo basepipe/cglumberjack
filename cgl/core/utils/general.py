@@ -288,6 +288,15 @@ def load_json(filepath):
     return data
 
 
+def fix_json(filepath):
+    """
+    Function to fix json file if there's no newlines
+    :param filepath: Path to json file
+    :return:
+    """
+    save_json(filepath, load_json(filepath))
+
+
 def save_xml(filepath, data):
     with open(filepath, 'w') as outfile:
         outfile.write(xmltodict.unparse(data))
