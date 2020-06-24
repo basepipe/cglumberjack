@@ -1,0 +1,116 @@
+    {
+        "asset": "",
+        "averageColor": null,
+        "categories": [
+            "3d"
+        ],
+        "environment": [
+            ""
+        ],
+        "id": "",
+        "isDownloaded": true,
+        "isExternal": true,
+        "jsonPath": [
+            "3d",
+            "(Insert Asset Name)",
+            "assetData.json"
+        ],
+        "meta": [
+            {
+                "key": "scanArea",
+                "name": "Scan Area",
+                "value": "1x1 m"
+            },
+            {
+                "key": "width",
+                "name": "Width",
+                "value": "0m"
+            },
+            {
+                "key": "length",
+                "name": "Length",
+                "value": "0m"
+            },
+            {
+                "key": "height",
+                "name": "Height",
+                "value": "0m"
+            },
+            {
+                "key": "texelDensity",
+                "name": "Texel Density",
+                "value": "0 px/m"
+            },
+            {
+                "key": "assembly",
+                "name": "Assembly",
+                "value": "false"
+            },
+            {
+                "key": "calibration",
+                "name": "Calibration",
+                "value": ""
+            },
+            {
+                "key": "color",
+                "name": "Color",
+                "value": "null"
+            },
+            {
+                "key": "iteration",
+                "name": "Iteration Number",
+                "value": "%%iteration%%"
+            },
+            {
+                "key": "set",
+                "name": "Set Toggle",
+                "value": "false"
+            },
+            {
+                "key": "setname",
+                "name": "Set Name",
+                "value": "null"
+            },
+            {
+                "key": "points",
+                "name": "Points",
+                "value": "0"
+            },
+            {
+                "key": "scanner",
+                "name": "Scanner",
+                "value": ""
+            },
+            {
+                "key": "tileable",
+                "name": "Tileable",
+                "value": false
+            }
+        ],
+        "mtime": ,
+        "name": "",
+        "origin": "bridge-custom",
+        "parentDir": "C:\\Users\\Molta\\Documents\\Megascans Library\\Custom",
+        "path": [
+            "3d",
+            "(Insert asset name)"
+        ],
+        "preview": [
+            "3d",
+            "(Insert Asset name)",
+            "preview_0.jpg"
+        ],
+        "previews": {
+            "relativeSize": "1x1"
+        },
+        "revision": 0,
+        "searchStr": "(asset name) (asset id replacing '-' with spaces)",
+        "tags": [],
+        "thumb": [
+            "3d",
+            "(asset name)",
+            "thumbnail.jpg"
+        ],
+        "type": "3d",
+        "version": 2
+    },

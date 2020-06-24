@@ -1,0 +1,181 @@
+{
+    "asset": "",
+    "assetCategories": [
+        "3D asset"
+    ],
+    "averageColor": null,
+    "categories": [
+        "3d"
+    ],
+    "environment": [
+        ""
+    ],
+    "id": "",
+    "isExternal": true,
+    "isMSAsset": false,
+    "lodList": [
+        {
+            "bitDepth": 8,
+            "contentLength": 0,
+            "name": "",
+            "resolution": "2048x2048",
+            "type": "lod",
+            "uri": ""
+        }
+    ],
+    "lowRez": "",
+    "maps": [
+        {
+            "averageColor": "",
+            "bitDepth": 8,
+            "colorSpace": "",
+            "contentLength": 0,
+            "mimeType": "",
+            "name": "Albedo",
+            "resolution": "2048x2048",
+            "type": "albedo",
+            "uri": ""
+        },
+        {
+            "averageColor": "",
+            "bitDepth": 8,
+            "colorSpace": "",
+            "contentLength": 0,
+            "mimeType": "",
+            "name": "Bump",
+            "resolution": "2048x2048",
+            "type": "bump",
+            "uri": ""
+        },
+        {
+            "averageColor": "",
+            "bitDepth": 8,
+            "colorSpace": "",
+            "contentLength": 0,
+            "mimeType": "",
+            "name": "Metalness",
+            "resolution": "2048x2048",
+            "type": "metalness",
+            "uri": ""
+        },
+        {
+            "averageColor": "",
+            "bitDepth": 8,
+            "colorSpace": "",
+            "contentLength": 0,
+            "mimeType": "",
+            "name": "Normal",
+            "resolution": "2048x2048",
+            "type": "normal",
+            "uri": ""
+        },
+        {
+            "averageColor": "",
+            "bitDepth": 8,
+            "colorSpace": "",
+            "contentLength": 0,
+            "mimeType": "",
+            "name": "Roughness",
+            "resolution": "2048x2048",
+            "type": "roughness",
+            "uri": ""
+        }
+    ],
+    "meta": [
+        {
+            "key": "scanArea",
+            "name": "Scan Area",
+            "value": "1x1 m"
+        },
+        {
+            "key": "width",
+            "name": "Width",
+            "value": "0m"
+        },
+        {
+            "key": "length",
+            "name": "Length",
+            "value": "0m"
+        },
+        {
+            "key": "height",
+            "name": "Height",
+            "value": "0m"
+        },
+        {
+            "key": "texelDensity",
+            "name": "Texel Density",
+            "value": "0 px/m"
+        },
+        {
+            "key": "assembly",
+            "name": "Assembly",
+            "value": "false"
+        },
+        {
+            "key": "calibration",
+            "name": "Calibration",
+            "value": ""
+        },
+        {
+            "key": "color",
+            "name": "Color",
+            "value": "null"
+        },
+        {
+            "key": "iteration",
+            "name": "Iteration Number",
+            "value": "%%iteration%%"
+        },
+        {
+            "key": "set",
+            "name": "Set Toggle",
+            "value": "false"
+        },
+        {
+            "key": "setname",
+            "name": "Set Name",
+            "value": "null"
+        },
+        {
+            "key": "points",
+            "name": "Points",
+            "value": "0"
+        },
+        {
+            "key": "scanner",
+            "name": "Scanner",
+            "value": ""
+        },
+        {
+            "key": "tileable",
+            "name": "Tileable",
+            "value": false
+        }
+    ],
+    "models": [
+        {
+            "bitDepth": 8,
+            "contentLength": 0,
+            "name": "",
+            "resolution": "2048x2048",
+            "type": "lod",
+            "uri": ""
+        }
+    ],
+    "name": "",
+    "origin": "bridge-custom",
+    "path": "",
+    "preview": "",
+    "previews": {
+        "relativeSize": "1x1"
+    },
+    "searchStr": "",
+    "surfaceSize": "",
+    "tags": [],
+    "thumbnail": "",
+    "tilesHorizontal": false,
+    "tilesVertical": false,
+    "type": "3d",
+    "version": 2
+}
