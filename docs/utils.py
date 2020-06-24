@@ -15,14 +15,13 @@ def add_to_path(file_name):
 
 
 def make_build():
-    os.chdir('../../../docs')
+    os.chdir(os.path.dirname(__file__))
     p = subprocess.Popen('make.bat html')
 
 
 def open_html(file_name):
     url = file_name
-    webbrowser.register('chrome', None, webbrowser.BackgroundBrowser("C://Program Files (x86)//Google//Chrome//Application//chrome.exe"))
-    webbrowser.get('chrome').open(url)
+    webbrowser.open(url)
 
 
 if __name__ == '__main__':
