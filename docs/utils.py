@@ -10,13 +10,17 @@ CONFIG = app_config()
 html_root = os.path.join(CONFIG['paths']['code_root'], 'docs', 'build', 'html')
 
 
-def add_to_path(file_name):
-    sys.path.insert(0, file_name)
+def setup_path():
+    root_ = CONFIG['paths']['code_root']
+    sys.path.append(root_)
+    sys.path.append(os.path.join(root_, 'cgl'))
+    sys.path.append(os.path.join(root_, 'cgl', 'core'))
 
 
 def make_build():
     os.chdir(os.path.dirname(__file__))
-    p = subprocess.Popen('make.bat html')
+    c = subprocess.call(['make', 'clean'], shell=True)
+    p = subprocess.call(['make', 'html'], shell=True)
 
 
 def open_html(file_name):
@@ -26,4 +30,5 @@ def open_html(file_name):
 
 if __name__ == '__main__':
     make_build()
-    open_html(os.path.join(html_root, 'index.html'))
+    html_file = os.path.join(html_root, 'index.html')
+    open_html(html_file)
