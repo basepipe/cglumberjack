@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Core &#8212; cglumberjack 1 documentation</title>
+    <title>Apps &#8212; cglumberjack 1 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -33,7 +33,43 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="core">
+  <div class="section" id="apps">
+<h1>Apps<a class="headerlink" href="#apps" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="bin">
+<h1>Bin<a class="headerlink" href="#bin" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-bin.build_config">
+<span id="build-config"></span><h2>build_config<a class="headerlink" href="#module-bin.build_config" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-bin.create_task">
+<span id="create-task"></span><h2>create_task<a class="headerlink" href="#module-bin.create_task" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-bin.login_dialog">
+<span id="login-dialog"></span><h2>login_dialog<a class="headerlink" href="#module-bin.login_dialog" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-bin.lumbermill">
+<span id="lumbermill"></span><h2>lumbermill<a class="headerlink" href="#module-bin.lumbermill" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-bin.pipeline_designer">
+<span id="pipeline-designer"></span><h2>pipeline_designer<a class="headerlink" href="#module-bin.pipeline_designer" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-bin.push_bat_scripts">
+<span id="push-bat-scripts"></span><h2>push_bat_scripts<a class="headerlink" href="#module-bin.push_bat_scripts" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-bin.release_code">
+<span id="release-code"></span><h2>release_code<a class="headerlink" href="#module-bin.release_code" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-bin.setup_asana">
+<span id="setup-asana"></span><h2>setup_asana<a class="headerlink" href="#module-bin.setup_asana" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-bin.set_env_vars">
+<span id="set-env-vars"></span><h2>set_env_vars<a class="headerlink" href="#module-bin.set_env_vars" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-bin.time_sheet">
+<span id="time-sheet"></span><h2>time_sheet<a class="headerlink" href="#module-bin.time_sheet" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+<div class="section" id="core">
 <h1>Core<a class="headerlink" href="#core" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="module-core.assetcore">
 <span id="assetcore"></span><h2>assetcore<a class="headerlink" href="#module-core.assetcore" title="Permalink to this headline">¶</a></h2>
@@ -816,6 +852,134 @@ As a first step these will be the same as whatever is the highest directory.
 
 </div>
 </div>
+<div class="section" id="plugins">
+<h1>Plugins<a class="headerlink" href="#plugins" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-plugins.CustomMenu">
+<span id="custommenu"></span><h2>CustomMenu<a class="headerlink" href="#module-plugins.CustomMenu" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="plugins.CustomMenu.CustomMenu">
+<em class="property">class </em><code class="descclassname">plugins.CustomMenu.</code><code class="descname">CustomMenu</code><span class="sig-paren">(</span><em>software</em>, <em>type_</em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.CustomMenu.CustomMenu" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Base Class to be used in conjunction with the “Menu Designer”.</p>
+<p>A user simply has to fill in the following functions:
+get_scene_path()
+set_menu_parent()
+create_menu()
+add_button()
+delete_menu()
+find_menu_by_name()</p>
+<p>examples can be found here:
+plugins/nuke/custom_menu.py
+plugins/maya/custom_menu.py</p>
+<dl class="method">
+<dt id="plugins.CustomMenu.CustomMenu.get_icon_path">
+<code class="descname">get_icon_path</code><span class="sig-paren">(</span><em>shelf</em>, <em>button</em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.CustomMenu.CustomMenu.get_icon_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the icon path within the current menu of the cgl_tools directory of the corresponding icon
+:param shelf:
+:param button:
+:return: icon path string</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="plugins.CustomMenu.CustomMenu.load_cgl">
+<code class="descname">load_cgl</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plugins.CustomMenu.CustomMenu.load_cgl" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns all the shelves, menus, or preflights from the json file
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="plugins.CustomMenu.CustomMenu.order_buttons">
+<code class="descname">order_buttons</code><span class="sig-paren">(</span><em>menu</em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.CustomMenu.CustomMenu.order_buttons" title="Permalink to this definition">¶</a></dt>
+<dd><p>orders the buttons correctly within a menu.
+:param menu:
+:return:</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="plugins.CustomMenu.CustomMenu.order_menus">
+<em class="property">static </em><code class="descname">order_menus</code><span class="sig-paren">(</span><em>menus</em><span class="sig-paren">)</span><a class="headerlink" href="#plugins.CustomMenu.CustomMenu.order_menus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Orders the Menus from the json file correctly.  This is necessary for the menus to show up in the correct
+order within the interface.
+:return:</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-plugins.Qt">
+<span id="qt"></span><h2>Qt<a class="headerlink" href="#module-plugins.Qt" title="Permalink to this headline">¶</a></h2>
+<p>Minimal Python 2 &amp; 3 shim around all Qt bindings</p>
+<dl class="docutils">
+<dt>DOCUMENTATION</dt>
+<dd><p class="first">Qt.py was born in the film and visual effects industry to address
+the growing need for the development of software capable of running
+with more than one flavour of the Qt bindings for Python - PySide,
+PySide2, PyQt4 and PyQt5.</p>
+<ol class="arabic simple">
+<li>Build for one, run with all</li>
+<li>Explicit is better than implicit</li>
+<li>Support co-existence</li>
+</ol>
+<dl class="docutils">
+<dt>Default resolution order:</dt>
+<dd><ul class="first last simple">
+<li>PySide2</li>
+<li>PyQt5</li>
+<li>PySide</li>
+<li>PyQt4</li>
+</ul>
+</dd>
+<dt>Usage:</dt>
+<dd>&gt;&gt; import sys
+&gt;&gt; from Qt import QtWidgets
+&gt;&gt; app = QtWidgets.QApplication(sys.argv)
+&gt;&gt; button = QtWidgets.QPushButton(“Hello World”)
+&gt;&gt; button.show()
+&gt;&gt; app.exec_()</dd>
+</dl>
+<p>All members of PySide2 are mapped from other bindings, should they exist.
+If no equivalent member exist, it is excluded from Qt.py and inaccessible.
+The idea is to highlight members that exist across all supported binding,
+and guarantee that code that runs on one binding runs on all others.</p>
+<p class="last">For more details, visit <a class="reference external" href="https://github.com/mottosso/Qt.py">https://github.com/mottosso/Qt.py</a></p>
+</dd>
+</dl>
+<p>LICENSE</p>
+<blockquote>
+<div>See end of file for license (MIT, BSD) information.</div></blockquote>
+</div>
+</div>
+<div class="section" id="ui">
+<h1>Ui<a class="headerlink" href="#ui" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-ui.background">
+<span id="background"></span><h2>background<a class="headerlink" href="#module-ui.background" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-ui.imageload">
+<span id="imageload"></span><h2>imageload<a class="headerlink" href="#module-ui.imageload" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="pyside-rc">
+<h2>PySide_rc<a class="headerlink" href="#pyside-rc" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-ui.util">
+<span id="util"></span><h2>util<a class="headerlink" href="#module-ui.util" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="ui.util.define_palettes">
+<code class="descclassname">ui.util.</code><code class="descname">define_palettes</code><span class="sig-paren">(</span><em>color_a=PySide.QtGui.QColor.fromRgbF(1.000000</em>, <em>0.000000</em>, <em>0.000000</em>, <em>1.000000)</em>, <em>color_b=PySide.QtGui.QColor.fromRgbF(0.000000</em>, <em>1.000000</em>, <em>0.000000</em>, <em>1.000000)</em>, <em>color_c=PySide.QtGui.QColor.fromRgbF(0.000000</em>, <em>0.000000</em>, <em>0.000000</em>, <em>1.000000)</em><span class="sig-paren">)</span><a class="headerlink" href="#ui.util.define_palettes" title="Permalink to this definition">¶</a></dt>
+<dd><p>by default gives you red, green, black palettes to work with.
+:return:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ui.util.widget_name">
+<code class="descclassname">ui.util.</code><code class="descname">widget_name</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="headerlink" href="#ui.util.widget_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a standard widget name as used in settings
+Args:</p>
+<blockquote>
+<div>obj: object to find name for</div></blockquote>
+<p>Returns: “%s:%s” % (obj.__class__.__name__, obj.getObjectName())</p>
+</dd></dl>
+
+</div>
+</div>
 
 
           </div>
@@ -835,7 +999,21 @@ As a first step these will be the same as whatever is the highest directory.
 
 <h3>Navigation</h3>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Core</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#bin">Bin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-bin.build_config">build_config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-bin.create_task">create_task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-bin.login_dialog">login_dialog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-bin.lumbermill">lumbermill</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-bin.pipeline_designer">pipeline_designer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-bin.push_bat_scripts">push_bat_scripts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-bin.release_code">release_code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-bin.setup_asana">setup_asana</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-bin.set_env_vars">set_env_vars</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-bin.time_sheet">time_sheet</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#core">Core</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-core.assetcore">assetcore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-core.cgl_convert">cgl_convert</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-core.cgl_info">cgl_info</a></li>
@@ -847,6 +1025,18 @@ As a first step these will be the same as whatever is the highest directory.
 <li class="toctree-l2"><a class="reference internal" href="#module-core.project">project</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-core.screen_grab">screen_grab</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-core.startup">startup</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#plugins">Plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-plugins.CustomMenu">CustomMenu</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-plugins.Qt">Qt</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#ui">Ui</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-ui.background">background</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-ui.imageload">imageload</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pyside-rc">PySide_rc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-ui.util">util</a></li>
 </ul>
 </li>
 </ul>
