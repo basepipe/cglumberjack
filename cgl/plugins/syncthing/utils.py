@@ -3,7 +3,6 @@ import getpass
 import os
 import subprocess
 import requests
-import psutil
 import json
 import datetime
 import time
@@ -799,6 +798,7 @@ def launch_syncthing():
 
 
 def kill_syncthing():
+    import psutil
     killed = False
     for proc in psutil.process_iter():
         if proc.name() == 'syncthing.exe':
@@ -818,6 +818,7 @@ def show_browser():
 
 
 def syncthing_running():
+    import psutil
     for proc in psutil.process_iter():
         if proc.name() == 'syncthing.exe':
             return True

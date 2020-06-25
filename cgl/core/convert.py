@@ -171,11 +171,18 @@ def create_title(file_path='sample_image.png', title_text="Sample Title Text", s
                 new_window=False)
 
 
+def create_quicktime_mov():
+    """
+    Creates quicktime movie with shotgun's prefferred settings.
+    :return:
+    """
+
+
 def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], output_frame_rate=None,
                    res=settings['resolution']['video_review'], processing_method='local', dependent_job=None,
                    command_name='create_web_mov()', new_window=False):
     """
-    create a web optimized h264 mp4 from an specified input_sequence to a specified output.mov.
+    create a web optimized h264 mp4 from an specified input_sequence to a specified output.mp4
     This assumes an sRGB jpg sequence as input
     :param input_sequence: input sequence string, formatted with (#, %04d, *)
     :param output: output mp4 string
