@@ -184,6 +184,29 @@ def copy_file_list(file_list, destination, methodology, verbose, dest_is_folder=
     return run_dict
 
 
+def create_file_dirs(file_path):
+    """
+    given file_path checks to see if directories exist and creates them if they don't.
+    :param file_path: path to file you're about to create.
+    :return:
+    """
+    dirname = os.path.dirname(file_path)
+    if os.path.isdir(file_path):
+        dirname = file_path
+    print dirname
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+
+
+def normpath(filepath):
+    """
+    returns path with all '\' replaced with '/'
+    :param filepath:
+    :return:
+    """
+    return filepath.replace('\\', '/')
+
+
 def cgl_copy_single(source, destination, test=False, methodology='local', verbose=False, dest_is_folder=False,
                     command_name='cgl_copy_single'):
     """

@@ -192,10 +192,10 @@ class ProjectManagementData(object):
                     'sg_task': self.task_data,
                     'code': self.version_name,
                     'user': self.user_data}
-            print('Creating Version: %s' % self.version)
+            print('Creating Shotgun Version: %s' % self.version)
             self.version_data = ShotgunQuery.create('Version', data)
-            print self.version_data
             self.upload_media()
+            print self.get_version_url()
             return self.version_data
         else:
             print('No File Defined, skipping version creation')
@@ -277,7 +277,6 @@ class ProjectManagementData(object):
 
         :return:
         """
-        print 2
         if not self.file_type:
             print 'Cannot Determine File Type - skipping Shotgun Upload'
             return
@@ -291,10 +290,6 @@ class ProjectManagementData(object):
                 'sg_path_to_movie': preview}
         if self.file_type == 'movie' or self.file_type == 'sequence':
             id_ = int(self.version_data['id'])
-            print id_
-            print preview
-            print self.version_data
-            print self.get_url()
             ShotgunQuery.upload('Version', id_, preview, field_name='sg_uploaded_movie')
             # ShotgunQuery.upload_thumbnail('Version', id_, thumb)
             # ShotgunQuery.upload('Version', id_, preview, field_name='sg_latest_quicktime')

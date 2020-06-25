@@ -5,7 +5,6 @@ from cgl.core.config import app_config
 from cgl.core.path import icon_path, image_path, PathObject
 from cgl.ui.widgets.containers.table import LJTableWidget
 from cgl.ui.startup import do_gui_init
-from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.ui.widgets.widgets import GifWidget
 from preflight_check import PreflightCheck
 
@@ -49,25 +48,6 @@ class PreflightModel(QtCore.QAbstractTableModel):
 
     def columnCount(self, index):
         return len(self.headers)
-
-#
-# class FileTableModel(ListItemModel):
-#     def data(self, index, role):
-#         row = index.row()
-#         col = index.column()
-#         if role == QtCore.Qt.DisplayRole:
-#             return self.data_[row][col]
-#         if role == QtCore.Qt.DecorationRole:
-#             data = self.data_[row][col]
-#             if data == 'Untested':
-#                 ip = icon_path('checkbox_unchecked.png')
-#                 return QtGui.QIcon(ip)
-#             if data == 'Pass':
-#                 ip = icon_path('checkbox_checked.png')
-#                 return QtGui.QIcon(ip)
-#             if data == 'Fail':
-#                 ip = icon_path('checkbox_unchecked.png')
-#                 return QtGui.QIcon(ip)
 
 
 class ItemTable(LJTableWidget):

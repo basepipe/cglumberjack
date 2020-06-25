@@ -11,8 +11,8 @@ from cgl.core.utils.general import current_user, check_for_latest_master, update
 from cgl.core.config import app_config, UserConfig, user_config
 from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
 from apps.lumbermill.elements.FilesPanel import FilesPanel
-import cgl.plugins.syncthing.utils as st_utils
 from cgl.ui.widgets.help import ReportBugDialog, RequestFeatureDialog
+import cgl.plugins.syncthing.utils as st_utils
 try:
     import apps.lumbermill.elements.IOPanel as IoP
     DO_IOP = True
@@ -634,7 +634,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
 
 class CGLumberjack(LJMainWindow):
-    def __init__(self, show_import=False, user_info=None, start_time=None, previous_path=None):
+    def __init__(self, show_import=False, user_info=None, start_time=None, previous_path=None, sync_enabled=True):
         LJMainWindow.__init__(self)
 
         if start_time:
@@ -780,42 +780,41 @@ class CGLumberjack(LJMainWindow):
         self.set_processing_method_text()
         # TODO how do i run this as a background process, or a parallell process?
         # TODO - how do i grab the pid so i can close this when lumbermill closes potentially?
-        try:
-            if CONFIG['sync']['syncthing']['sync_thing_url']:
-                # TODO - check for user config settings to use syncthing.
-                if "sync_thing_auto_launch" in USERCONFIG.keys():
-                    if USERCONFIG["sync_thing_auto_launch"] == 'True':
-                        import psutil
-                        sync = False
-                        st_utils.kill_syncthing()
-                        for proc in psutil.process_iter():
-                            if proc.name() == 'syncthing.exe':
+        if sync_enabled:
+            try:
+                if CONFIG['sync']['syncthing']['sync_thing_url']:
+                    # TODO - check for user config settings to use syncthing.
+                    if "sync_thing_auto_launch" in USERCONFIG.keys():
+                        if USERCONFIG["sync_thing_auto_launch"] == 'True':
+                            sync = False
+                            st_utils.kill_syncthing()
+                            if st_utils.syncthing_running():
                                 self.change_sync_icon(syncing=True)
                                 sync = True
-                        if not sync:
+                            else:
+                                self.change_sync_icon(syncing=False)
+                                # TODO - turn icon to not syncing
+                            self.lumber_watch = launch_lumber_watch(new_window=True)
+                            # TODO if syncthing is set as a feature in the globals!!!!
+                            try:
+                                st_utils.launch_syncthing()
+                                self.change_sync_icon(syncing=True)
+                            except:
+                                # this is a WindowsError - which doesn't seem to allow me to use in the except clause
+                                print('Sync Thing Not Found, run "Setup Workstation" to start using it.')
+                        else:
+                            self.load_syncthing = False
                             self.change_sync_icon(syncing=False)
-                            # TODO - turn icon to not syncing
-                        self.lumber_watch = launch_lumber_watch(new_window=True)
-                        # TODO if syncthing is set as a feature in the globals!!!!
-                        try:
-                            st_utils.launch_syncthing()
-                            self.change_sync_icon(syncing=True)
-                        except:
-                            # this is a WindowsError - which doesn't seem to allow me to use in the except clause
-                            print('Sync Thing Not Found, run "Setup Workstation" to start using it.')
+                            print('sync_thing_auto_launch set to False, skipping launch')
                     else:
                         self.load_syncthing = False
                         self.change_sync_icon(syncing=False)
-                        print('sync_thing_auto_launch set to False, skipping launch')
-                else:
-                    self.load_syncthing = False
-                    self.change_sync_icon(syncing=False)
-                    USERCONFIG["sync_thing_auto_launch"] = False
-                    USERCONFIG["sync_thing_machine_type"] = ""
-                    print('Syncthing Auto Launch setting not set in globals.  Skipping sync operations')
+                        USERCONFIG["sync_thing_auto_launch"] = False
+                        USERCONFIG["sync_thing_machine_type"] = ""
+                        print('Syncthing Auto Launch setting not set in globals.  Skipping sync operations')
 
-        except KeyError:
-            print ('Skipping, Syncthing Not Set up')
+            except KeyError:
+                print ('Skipping, Syncthing Not Set up')
 
     def set_processing_method_text(self, method=USERCONFIG['methodology']):
         self.current_processing_method.setTitle('Processing Method: %s' % method.title())

@@ -26,6 +26,8 @@
           <option value="Qt.QtGui" />
           <option value="plugins.project_management.template.main.ProjectManagementData.data_type" />
           <option value="nuke" />
+          <option value="plugins.maya.cgl_maya.maya" />
+          <option value="plugins.maya.cgl_maya.pymel" />
         </list>
       </option>
     </inspection_tool>

@@ -1,0 +1,42 @@
+{
+    "maya": {
+        "lumbermill": {
+            "Open": {
+                "icon": "", 
+                "label": "Open", 
+                "module": "import cgl_tools.maya.shelves.lumbermill.Open as Open; Open.run()", 
+                "name": "Open", 
+                "order": 1
+            }, 
+            "Playblast": {
+                "icon": "", 
+                "label": "Playblast", 
+                "module": "import cgl_tools.maya.shelves.lumbermill.Playblast as Playblast; Playblast.run()", 
+                "name": "Playblast", 
+                "order": 3
+            }, 
+            "Publish": {
+                "icon": "", 
+                "label": "Publish", 
+                "module": "import cgl_tools.maya.shelves.lumbermill.Publish as Publish; Publish.run()", 
+                "name": "Publish", 
+                "order": 5
+            }, 
+            "Review": {
+                "icon": "", 
+                "label": "Review", 
+                "module": "import cgl_tools.maya.shelves.lumbermill.Review as Review; Review.run()", 
+                "name": "Review", 
+                "order": 4
+            }, 
+            "VersionUp": {
+                "icon": "", 
+                "label": "VersionUp", 
+                "module": "import cgl_tools.maya.shelves.lumbermill.VersionUp as VersionUp; VersionUp.run()", 
+                "name": "VersionUp", 
+                "order": 2
+            }, 
+            "order": 1
+        }
+    }
+}

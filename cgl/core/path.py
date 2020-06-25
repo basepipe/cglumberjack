@@ -74,6 +74,8 @@ class PathObject(object):
         self.path_root = None  # this gives the full path with the root
         self.thumb_path = None
         self.preview_path = None
+        self.preview_file = None
+        self.preview_seq = None
         self.hd_proxy_path = None
         self.start_frame = None
         self.end_frame = None
@@ -713,10 +715,12 @@ class PathObject(object):
             path_ = os.path.split(self.path_root)[0]
             if sys.platform == 'win32':
                 self.preview_path = '%s/%s/%s' % (path_, '.preview', name_)
+                self.preview_seq = self.preview_path.replace(ext, '.####%s' % ext)
                 self.data['preview_path'] = self.preview_path
                 self.set_thumb_path()
             else:
                 self.preview_path = os.path.join(self.root, '.preview', name_)
+                self.preview_seq = self.preview_path.replace(ext, '.####%s' % ext)
                 self.set_thumb_path()
                 self.data['preview_path'] = self.preview_path
 
@@ -907,19 +911,22 @@ class PathObject(object):
         print 'Publishing %s to %s' % (current_render, publish_render)
         cgl_copy(current_render, publish_render)
         print '--------- Finished Publishing'
-        if UserConfig().d["sync_thing_machine_type"] == 'remote workstation':
-            from cgl.ui.widgets.sync_master import SharingDialog
-            dialog_sharing = SharingDialog([publish, publish_render_object])
-            dialog_sharing.exec_()
-            if dialog_sharing.button == 'Ok':
-                all_device_id = dialog_sharing.device_list
-                print 'Sharing Folders to: %s' % all_device_id
-                print publish.path_root
-                print publish_render_object.path_root
-            else:
-                print 'skipping publish'
-        else:
-            print 'No Sync Settings Set, ignoring.'
+        return publish_render_object
+        # if UserConfig().d["sync_thing_machine_type"] == 'remote workstation':
+        #     from cgl.ui.widgets.sync_master import SharingDialog
+        #     dialog_sharing = SharingDialog([publish, publish_render_object])
+        #     dialog_sharing.exec_()
+        #     if dialog_sharing.button == 'Ok':
+        #         all_device_id = dialog_sharing.device_list
+        #         print 'Sharing Folders to: %s' % all_device_id
+        #         print publish.path_root
+        #         print publish_render_object.path_root
+        #         return publish_render_object
+        #     else:
+        #         print 'skipping remote publish'
+        #         return publish_render_object
+        # else:
+
 
     def show_in_folder(self):
         """
@@ -1001,7 +1008,6 @@ class CreateProductionData(object):
             if self.path_object.asset_json:
                 self.update_asset_json()
             if self.path_object.project_json:
-                print 2
                 self.update_project_json()
 
     def update_task_json(self):

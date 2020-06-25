@@ -1,0 +1,21 @@
+{
+    "maya": {
+        "mdl": {
+            "Publish": {
+                "label": "Publish", 
+                "module": "cgl_tools.maya.preflights.mdl.Publish", 
+                "name": "Publish", 
+                "order": 1, 
+                "required": "True"
+            }, 
+            "SaveScene": {
+                "label": "SaveScene", 
+                "module": "cgl_tools.maya.preflights.mdl.SaveScene", 
+                "name": "SaveScene", 
+                "order": 2, 
+                "required": "True"
+            }, 
+            "order": 1
+        }
+    }
+}

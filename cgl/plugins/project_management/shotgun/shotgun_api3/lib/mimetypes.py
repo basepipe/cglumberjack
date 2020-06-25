@@ -21,6 +21,10 @@ Functions:
 init([files]) -- parse a list of files, default knownfiles (on Windows, the
   default values are taken from the registry)
 read_mime_types(file) -- parse one file, return a dictionary or None
+
+Note that this code has not been updated for python 3 compatibility, as it is
+a patched version of the native mimetypes module and is used only in Python
+versions 2.7.0 - 2.7.9, which included a broken version of the mimetypes module.
 """
 
 import os
@@ -64,8 +68,8 @@ class MimeTypes:
     def __init__(self, filenames=(), strict=True):
         if not inited:
             init()
-        self.encodings_map = encodings_map.copy_path()
-        self.suffix_map = suffix_map.copy_path()
+        self.encodings_map = encodings_map.copy()
+        self.suffix_map = suffix_map.copy()
         self.types_map = ({}, {}) # dict for (non-strict, strict)
         self.types_map_inv = ({}, {})
         for (ext, type) in types_map.items():
