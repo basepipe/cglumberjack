@@ -10,7 +10,7 @@ from cgl.core.path import PathObject, CreateProductionData, lj_list_dir
 from cgl.core.path import replace_illegal_filename_characters, show_in_folder
 from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 from cgl.ui.widgets.containers.model import FilesModel
-from panels import clear_layout
+from cgl.apps.lumbermill.elements.panels import clear_layout
 
 # TODO - this appears to be the main offender when it comes to calling the globals through app_config()
 
@@ -73,7 +73,7 @@ class FilesPanel(QtWidgets.QWidget):
                 'its a dict, this sucks'
                 current = PathObject(data)
         except IndexError:
-            print 'Nothing Selected'
+            print('Nothing Selected')
             return
         if data:
             self.clear_layout(self.panel)
@@ -342,25 +342,20 @@ class FilesPanel(QtWidgets.QWidget):
     def on_render_double_clicked(self, data):
         if data:
             self.in_current_folder = False
-            # print self.path_object.path_root
-            # print self.path_object.render_pass
-            # print self.path_object.camera
-            # print self.path_object.aov
-            # print '----------------------------'
             selected = data[0][0]
-            print selected
+            print(selected)
             if selected == '.':
-                print 'going back a folder'
+                print('going back a folder')
                 last = self.path_object.get_last_attr()
                 self.path_object.set_attr(last, None)
-                print self.path_object.path_root
+                print(self.path_object.path_root)
                 self.update_task_location(self.path_object)
                 self.enter_render_folder()
                 return
             if os.path.splitext(selected)[1]:
-                print selected, 'is a file'
+                print(selected, 'is a file')
             else:
-                print self.path_object.path_root, 'entering folder'
+                print(self.path_object.path_root, 'entering folder')
                 self.enter_render_folder()
 
     @staticmethod
@@ -390,7 +385,7 @@ class FilesPanel(QtWidgets.QWidget):
                 self.in_current_folder = True
             else:
                 current_variable = self.get_next_path_object_variable(object_, current=True)
-            print current_variable, object_.path_root
+            print(current_variable, object_.path_root)
             if current_variable != 'filename':
                 if object_.filename:
                     object_.set_attr(filename='')
@@ -406,7 +401,7 @@ class FilesPanel(QtWidgets.QWidget):
                     object_.set_attr(filename_base=filename_base)
                     object_.set_attr(ext=ext.replace('.', ''))
                 else:
-                    print 'this is a folder i thought was a file'
+                    print('this is a folder i thought was a file')
             self.update_task_location(new_path_object)
             for each in data:
                 dir_ = os.path.dirname(object_.path_root)
@@ -446,7 +441,7 @@ class FilesPanel(QtWidgets.QWidget):
 
     @staticmethod
     def new_version_from_latest():
-        print 'version up_latest'
+        print('version up_latest')
 
     def new_empty_version_clicked(self):
         """
@@ -502,7 +497,7 @@ class FilesPanel(QtWidgets.QWidget):
                 editorial_from_template(filepath, title, secondary, template_edit.path_root)
 
     def on_publish_clicked(self):
-        print 'Publishing stuff now'
+        print('Publishing stuff now')
         current = PathObject(self.current_location)
         current.publish()
         dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
@@ -537,7 +532,6 @@ class FilesPanel(QtWidgets.QWidget):
         files_widget.on_task_selected(self.path_object)
 
     def on_assign_button_clicked(self, data):
-        print data
         task = self.sender().task
         users_dict = CONFIG['project_management'][self.project_management]['users']
         all_users = []
@@ -553,7 +547,6 @@ class FilesPanel(QtWidgets.QWidget):
         dialog.exec_()
         if dialog.button == 'Start':
             selected_user = dialog.combo_box.currentText()  # this denotes the OS login name of the user
-            print selected_user
             user_info = CONFIG['project_management'][self.project_management]['users'][selected_user]
             self.path_object.set_attr(task=task)
             self.path_object.set_attr(user=selected_user)
@@ -583,19 +576,19 @@ class FilesPanel(QtWidgets.QWidget):
 
     @staticmethod
     def import_versions_from():
-        print 'import versions'
+        print('import versions')
 
     @staticmethod
     def push():
-        print 'push'
+        print('push')
 
     @staticmethod
     def pull():
-        print 'pull'
+        print('pull')
 
     @staticmethod
     def share_download_link():
-        print 'download link'
+        print('download link')
 
     # LOAD FUNCTIONS
     def on_file_dragged_to_render(self, data):

@@ -210,7 +210,7 @@ class Preflight(QtWidgets.QDialog):
                     each['Status'] = 'Failed'
                 self.update_status(check=each['Check'], status=each['Status'])
             else:
-                print "Can't run a check when previous required checks have not passed"
+                print("Can't run a check when previous required checks have not passed")
 
     def send_signal_one(self, data):
         self.signal_one.emit(data)
@@ -220,18 +220,18 @@ class Preflight(QtWidgets.QDialog):
         if int(check["Order"]) == 1:
             return True
         for irow in range(int(check['Order'])-1):
-            print irow, int(check['Order'])-1
+            print(irow, int(check['Order'])-1)
             name = mdl.index(irow, 0)
             passed = mdl.index(irow, 1)
             required = mdl.index(irow, 4)
             if str(mdl.data(passed)) != str('Passed'):
-                print '%s didnt pass' % str(mdl.data(name))
+                print('%s didnt pass' % str(mdl.data(name)))
                 if str(mdl.data(required)) == str(True):
-                    print "Required Check Doesn't Pass: ", str(mdl.data(name)), str(mdl.data(passed)), \
-                        str(mdl.data(required))
+                    print("Required Check Doesn't Pass: ", str(mdl.data(name)), str(mdl.data(passed)), \
+                        str(mdl.data(required)))
                     return False
                 else:
-                    print "Check Failed, Not Required, Next Check Enabled"
+                    print("Check Failed, Not Required, Next Check Enabled")
                     return True
         return True
         # get a list of all the checks before me

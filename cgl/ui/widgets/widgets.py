@@ -44,8 +44,8 @@ class LJTag(QtWidgets.QFrame):
         close_button.clicked.connect(self.delete_tag)
 
     def delete_tag(self):
-        print self.text
-        print 'delete'
+        print(self.text)
+        print('delete')
         self.close_clicked.emit()
 
 
@@ -534,7 +534,7 @@ class TaskWidget(QtWidgets.QWidget):
                 if not self.start_task_button.isVisible():
                     self.empty_state.show()
         else:
-            print 'Found unexpected model: %s' % mdl
+            print('Found unexpected model: %s' % mdl)
 
     def on_add_button_clicked(self):
         self.add_clicked.emit()
@@ -662,7 +662,7 @@ class AssetWidget(QtWidgets.QWidget):
         try:
             self.message.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         except AttributeError:
-            print 'PySide2 Natively does not have QtWidgets.QSizePolicy'
+            print('PySide2 Natively does not have QtWidgets.QSizePolicy')
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.search_box = search_box
         self.add_button = QtWidgets.QToolButton()

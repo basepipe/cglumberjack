@@ -12,10 +12,9 @@ def unzip(zipped_file, destination, password=None):
     :param password:
     :return:
     """
-    print 'unzipping %s' % zipped_file
+    print('unzipping %s' % zipped_file)
     with ZipFile(zipped_file, 'r') as zipObj:
         zipObj.extractall(path=destination, pwd=password)
-    print 5, destination
     return destination
 
 

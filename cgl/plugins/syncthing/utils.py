@@ -77,7 +77,7 @@ def setup_workstation():
     GLOBALS = load_json(USER_GLOBALS['globals'])
     set_machine_type("remote workstation")
     kill_syncthing()
-    print 1, get_my_device_info()
+    print(1, get_my_device_info())
     device_info = get_my_device_info()
     print('Setting Up Workstation for Syncing')
     company = GLOBALS['account_info']['aws_company_name']
@@ -124,11 +124,11 @@ def process_pending_folders():
             for c in child:
                 if c.tag == 'pendingFolder':
                     id_ = c.get('id')
-                    print 'found pending folder: %s' % id_
+                    print('found pending folder: %s' % id_)
                     local_folder = get_folder_from_id(id_)
                     if local_folder:
                         if not os.path.exists(local_folder):
-                            print 'Creating Local Folder for Syncing: %s' % local_folder
+                            print('Creating Local Folder for Syncing: %s' % local_folder)
                             os.makedirs(local_folder)
                         c.set('path', local_folder)
                         # need a device list here for the add folder to config part to work.
@@ -142,7 +142,7 @@ def process_pending_folders():
                         if folder_node is not None:
                             new_node = folder_node
                         else:
-                            print 'id_, adding %s to config' % id_
+                            print('id_, adding %s to config' % id_)
                             new_node = ElemTree.SubElement(root, 'folder')
                             new_node.set('id', id_)
                             new_node.set('path', local_folder)
@@ -155,7 +155,7 @@ def process_pending_folders():
                             write = True
                         if device_list:
                             for id_ in device_list:
-                                print 'adding device %s to folder %s' % (id_, local_folder)
+                                print('adding device %s to folder %s' % (id_, local_folder))
                                 device_node = ElemTree.SubElement(new_node, 'device')
                                 device_node.set('id', id_)
                         child.remove(c)
@@ -208,9 +208,9 @@ def process_folder_naming(kill=False):
                     label = '%s-%s-%s (%s)' % (p_obj.asset, p_obj.task, p_obj.version, p_obj.context)
                 elif p_obj.scope == 'shots':
                     label = '%s_%s-%s-%s (%s)' % (p_obj.seq, p_obj.shot, p_obj.task, p_obj.version, p_obj.context)
-                print 'changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder)
+                print('changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder))
                 if not os.path.exists(local_folder):
-                    print 'Creating Local Folder for Syncing: %s' % local_folder
+                    print('Creating Local Folder for Syncing: %s' % local_folder)
                     os.makedirs(local_folder)
                 # might need to create the folders if they don't exist, just to be sure.
                 child.set('path', local_folder)
@@ -219,7 +219,7 @@ def process_folder_naming(kill=False):
                     child.set('label', label)
                 write = True
             if child.get('ID') == 'default':
-                print 'Removing "default" folder from syncthing registry'
+                print('Removing "default" folder from syncthing registry')
                 root.remove(child)
                 write = True
     if write:
@@ -230,7 +230,7 @@ def process_folder_naming(kill=False):
 
 def process_st_config():
     kill_syncthing()
-    print 'Processing syncthing config'
+    print('Processing syncthing config')
     process_pending_devices()
     process_pending_folders()
     process_folder_naming()
@@ -311,7 +311,7 @@ def get_sheet():
     globals_ = load_json(user_globals['globals'])
     client_file = globals_['sync']['syncthing']['sheets_config_path']
     name_ = globals_['sync']['syncthing']['sheets_name'].split('_SYNC_THING')[0]
-    print 'Syncing with %s' % name_
+    print('Syncing with %s' % name_)
     sheet_obj = None
     if not os.path.exists(client_file):
         sheets.get_sheets_authentication()
@@ -412,14 +412,14 @@ def syncthing_synced():
                     else:
                         synced_files.append(each)
                     # perc = (float(each['data']['summary']['needBytes'])/float(each['data']['summary']['globalBytes']))
-                    # print '\t%s percent Synced' % perc
+                    # print('\t%s percent Synced' % perc)
             if each['type'] == 'DownloadProgress':
                 download = True
                 for folder in each['data']:
                     for file in each['data'][folder]:
                         total_bytes_done += each['data'][folder][file]['bytesDone']
                         total_bytes += each['data'][folder][file]['bytesTotal']
-        print '%s files Currently Syncing' % len(syncing_files)
+        print('%s files Currently Syncing' % len(syncing_files))
         if not len(syncing_files):
             return True
         if synced:
@@ -437,7 +437,7 @@ def syncthing_synced():
 
 def check_status(response):
     if response.status_code != 200:
-        print 'not yet'
+        print('not yet')
 
 
 def get_events_of_type(type):
@@ -508,10 +508,10 @@ def add_device_to_config(device_id, name, remove=True):
     sheet = get_sheet()
     # check to see if the device is on the device list.
     if sheets.id_exists(device_id, sheet):
-        print 'Adding approved device to Syncing %s' % device_list
+        print('Adding approved device to Syncing %s' % device_list)
         add_all_devices_to_config(sheet=None, device_list=device_list, remove_pending=remove)
     else:
-        print 'Device not found in Google Sheets.'
+        print('Device not found in Google Sheets.')
 
 
 def add_all_devices_to_config(sheet, device_list=False, remove_pending=False):
@@ -530,7 +530,7 @@ def add_all_devices_to_config(sheet, device_list=False, remove_pending=False):
         tree = ElemTree.parse(filepath)
         root = tree.getroot()
         for entry in device_list:
-            print 'adding device: %s' % entry
+            print('adding device: %s' % entry)
             new_node = ElemTree.SubElement(root, 'device')
             new_node.set('id', entry['id'])
             new_node.set('name', entry['name'])
@@ -564,7 +564,7 @@ def add_all_devices_to_config(sheet, device_list=False, remove_pending=False):
 def get_sync_folders():
     folders_dict = {}
     config_path = get_config_path()
-    print config_path
+    print(config_path)
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
     device_id = ''
@@ -575,7 +575,7 @@ def get_sync_folders():
             sync_folder = child.get('path').replace('\\', '/')
             try:
                 path_object = PathObject(sync_folder)
-                #  print path_object.path_root
+                #  print(path_object.path_root)
                 user_path = path_object.split_after('user')
                 task_path = path_object.split_after('task')
                 shot_path = path_object.split_after('shot')
@@ -630,7 +630,7 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_='sendonly'
     if folder_node is not None:
         new_node = folder_node
     else:
-        print folder_id, 'does not exist in config, creating'
+        print(folder_id, 'does not exist in config, creating')
         new_node = ElemTree.SubElement(root, 'folder')
         new_node.set('id', folder_id)
         new_node.set('path', filepath)
@@ -644,7 +644,7 @@ def add_folder_to_config(folder_id, filepath, device_list=None, type_='sendonly'
         write = True
     if device_list:
         for id_ in device_list:
-            print 'adding device %s to folder %s' % (id_, filepath)
+            print('adding device %s to folder %s' % (id_, filepath))
             device_node = ElemTree.SubElement(new_node, 'device')
             device_node.set('id', id_)
             write = True
@@ -688,9 +688,9 @@ def share_files(path_object):
         set_machine_type("")
         print('This machine is not set up for syncing, sync files not accessible')
         return
-    print path_object.company
-    print path_object.project
-    print path_object.scope
+    print(path_object.company)
+    print(path_object.project)
+    print(path_object.scope)
     sm_dialog = SyncMaster(company=path_object.company,
                            project=path_object.project,
                            scope=path_object.scope,
@@ -757,7 +757,7 @@ def sync_with_server():
                 new_node.set('id', device_id)
                 write = True
     else:
-        print "Error finding server device in sheet"
+        print("Error finding server device in sheet")
     if write:
         write_globals(tree)
 
@@ -788,8 +788,8 @@ def wipe_globals():
 
 def launch_syncthing():
     # kill_syncthing()
-    # print 'launching syncthing in background'
-    print 'Launching Syncthing'
+    # print('launching syncthing in background')
+    print('Launching Syncthing')
     command = "syncthing"
     cgl_execute(command, new_window=True)
     # p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, )
@@ -805,12 +805,12 @@ def kill_syncthing():
             proc.terminate()
             killed = True
     if killed:
-        print 'Killed Syncthing background processes'
+        print('Killed Syncthing background processes')
 
 
 def show_browser():
     from cgl.core.utils.general import cgl_execute
-    print 'Launching Syncthing Browser'
+    print('Launching Syncthing Browser')
     # TODO - i want it to only be the browser-only, but for now it seems like there are times when we have to blast it
     # command = 'syncthing -browser-only'
     command = 'syncthing'
@@ -823,17 +823,17 @@ def syncthing_running():
         if proc.name() == 'syncthing.exe':
             return True
     else:
-        print 'Syncthing: Not Running'
+        print('Syncthing: Not Running')
         return False
 
 
 def test(name):
     r = os.popen('tasklist /v').read().strip().split('\n')
-    print ('# of tasks is %s' % (len(r)))
+    print(('# of tasks is %s' % (len(r))))
     for i in range(len(r)):
         s = r[i]
         if name in r[i]:
-            print ('%s in r[i]' % (name))
+            print(('%s in r[i]' % (name)))
             return r[i]
     return []
 
@@ -842,7 +842,7 @@ def get_sync_api_key():
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
     root = tree.getroot()
-    # print root['gui']['api_key']
+    # print(root['gui']['api_key'])
     for child in root:
         if child.tag == 'gui':
             for c in child:
@@ -852,7 +852,7 @@ def get_sync_api_key():
 
 
 def update_machines():
-    print 'update_machines'
+    print('update_machines')
     # TODO - sheet_name and client_json need to be globals.
     kill_syncthing()
     sheet = sheets.authorize_sheets()
@@ -865,4 +865,4 @@ if __name__ == "__main__":
     #wipe_globals()
     setup_workstation()
     # process_pending_devices()
-    # print get_config_path()
+    # print(get_config_path())

@@ -1,11 +1,9 @@
 import getpass
 import os
-import json
-import time
+import urllib.request
 import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.utils import read_write, web
-import plugins.syncthing.utils as syncthing
 
 
 
@@ -369,7 +367,7 @@ class ConfigDialog(QtWidgets.QDialog):
 
     @staticmethod
     def on_line_edits_changed(data):
-        print data
+        print(data)
 
     def on_globals_changed(self):
         config = self.widget_dict['globals']['line_edit'].text()
@@ -432,7 +430,7 @@ class ConfigDialog(QtWidgets.QDialog):
                 os.makedirs(os.path.dirname(self.widget_dict['globals']['line_edit'].text()))
             read_write.save_json(self.widget_dict['globals']['line_edit'].text(), self.global_config)
         else:
-            print 'No Dictionary Loaded for Global Config'
+            print('No Dictionary Loaded for Global Config')
 
     def check_user_config_exists(self):
         config = self.user_globals_line_edit.text()
@@ -458,7 +456,7 @@ class ConfigDialog(QtWidgets.QDialog):
                  }
             read_write.save_json(user_globals, d)
         else:
-            print 'No Root Defined, cannot save user globals'
+            print('No Root Defined, cannot save user globals')
 
     def load_user_config(self):
         pass
@@ -481,7 +479,7 @@ class ConfigDialog(QtWidgets.QDialog):
             # self.globals_tree_widget.show()
             return self.global_config
         else:
-            print 'Code Root Not Defined'
+            print('Code Root Not Defined')
             return None
 
     def check_user_config(self):
@@ -528,11 +526,11 @@ class ConfigDialog(QtWidgets.QDialog):
 
     def set_proj_man(self):
         for software in self.proj_man_dict.keys():
-            print software
-            print self.proj_man_dict[software]['api']
+            print(software)
+            print(self.proj_man_dict[software]['api'])
             try:
                 if self.proj_man_dict[software]['api']['server_url']:
-                    print 'setting project management to %s' % software
+                    print('setting project management to %s' % software)
                     index = self.proj_management_combo.findText(software)
                     if index != -1:
                         self.proj_management_combo.setCurrentIndex(index)
@@ -735,25 +733,24 @@ class QuickSync(QtWidgets.QDialog):
         elif 'render' in import_folder:
             context = 'render'
         else:
-            print 'Not a valid folder to import'
+            print('Not a valid folder to import')
             return
         first, second = import_folder.split(context)
-        print first, second, 2
         company = os.path.split(os.path.dirname(first))[-1]
         if second:
-            print 'second is', second
+            print('second is', second)
             splitty = os.path.split(second)
-            print splitty, 0
+            print(splitty, 0)
             if re.search('\w', splitty[0]):
                 project = splitty[0]
-                print 'match'
+                print('match')
             else:
-                print 'no match'
+                print('no match')
                 project = splitty[1]
             if not project:
                 project = second.replace('\\', '').replace('/', '')
             project = project.replace('\\', '').replace('/', '')
-            print project, 1
+            print(project, 1)
             sync_folder = os.path.join(self.default_root, company, 'source', project)
         else:
             sync_folder = os.path.join(self.default_root, company, 'source')
@@ -801,18 +798,21 @@ class QuickSync(QtWidgets.QDialog):
                 os.makedirs(os.path.dirname(globals_path))
             if os.path.exists(globals_path):
                 os.remove(globals_path)
-            r = requests.get(self.aws_globals, allow_redirects=True)
-            if '<Error>' in r.content:
-                print('No File %s for company: %s' % (self.aws_globals, self.company_name))
-            else:
-                print('Saving Globals file to: %s' % globals_path)
-                with open(globals_path, 'w+') as f:
-                    f.write(r.content)
-            self.accept()
-            return True
-        else:
-            return False
-            print('No Globals Found - Get your Studio to publish their globals, or Create new ones?')
+            urllib.request.urlretrieve(self.aws_globals, globals_path)
+            # TODO PYTHON 2 - Version
+            # r = requests.get(self.aws_globals, allow_redirects=True)
+            # print(r.content)
+        #     if '<Error>' in str(r.content):
+        #         print('No File %s for company: %s' % (self.aws_globals, self.company_name))
+        #     else:
+        #         print('Saving Globals file to: %s' % globals_path)
+        #         with open(globals_path, 'w+') as f:
+        #             f.write(r.content)
+        #     self.accept()
+        #     return True
+        # else:
+        #     return False
+        #     print('No Globals Found - Get your Studio to publish their globals, or Create new ones?')
 
     def edit_globals_paths(self):
         globals = read_write.load_json(self.globals_path)
@@ -833,7 +833,7 @@ class QuickSync(QtWidgets.QDialog):
         globals_dir = os.path.dirname(globals["paths"]["globals"])
         if not os.path.exists(globals_dir):
             os.makedirs(globals_dir)
-        print 'Saving Globals To: %s' % globals["paths"]["globals"]
+        print('Saving Globals To: %s' % globals["paths"]["globals"])
         read_write.save_json(globals["paths"]["globals"], globals)
 
     def setup_syncthing(self):
@@ -881,10 +881,10 @@ def create_user_globals(user_globals, globals_path):
              "methodology": "local",
              "my_tasks": {}
              }
-        print "saving user_globals to %s" % user_globals
+        print("saving user_globals to %s" % user_globals)
         read_write.save_json(user_globals, d)
     else:
-        print 'No Root Defined, cannot save user globals'
+        print('No Root Defined, cannot save user globals')
 
 
 if __name__ == "__main__":

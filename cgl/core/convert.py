@@ -42,7 +42,6 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     :return:
     """
     from cgl.core.path import Sequence, PathObject
-    print input_sequence
     if ' ' in input_sequence:
         input_sequence, frange = input_sequence.split(' ')
     input_sequence.replace('/', '\\')
@@ -104,9 +103,9 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
 
     if process_info:
         process_info['file_out'] = fileout
-        print fileout
-        print '-----------'
-        print process_info
+        print(fileout)
+        print('-----------')
+        print(process_info)
         try:
             write_to_cgl_data(process_info)
         except ValueError:
@@ -286,7 +285,7 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
     :return:
     """
     if not output_file:
-        print 'No output_file specified, cancelling thumbnail generation'
+        print('No output_file specified, cancelling thumbnail generation')
         return
     res = settings['resolution']['thumb_cine'].replace('x', ':')
     prep_for_output(output_file)
@@ -353,9 +352,9 @@ def convert_to_mp4(filein, fileout=None, processing_method='local', dependent_jo
     """
     if not fileout:
         fileout = change_extension(filein, 'mp4')
-        print fileout
+        print(fileout)
         if os.path.exists(fileout):
-            print 'deleting fileout: %s' % fileout
+            print('deleting fileout: %s' % fileout)
             if delete_existing:
                 print('deleting existing file: %s' % fileout)
                 os.remove(fileout)
@@ -367,9 +366,9 @@ def convert_to_mp4(filein, fileout=None, processing_method='local', dependent_jo
     if audio_only:
         if not fileout.endswith('_audio.mp4'):
             fileout = fileout.replace('.mp4', '_audio.mp4')
-            print fileout
+            print(fileout)
             if os.path.exists(fileout):
-                print 'deleting fileout: %s' % fileout
+                print('deleting fileout: %s' % fileout)
                 if delete_existing:
                     print('deleting existing file: %s' % fileout)
                     os.remove(fileout)

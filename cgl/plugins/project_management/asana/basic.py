@@ -99,7 +99,7 @@ class AsanaJack(object):
         for t in tag_array:
             tag_list.append(t['gid'])
 
-        print assignee_name
+        print(assignee_name)
         assignee_list = self.client.users.find_by_workspace(self.workspace_data['gid'], iterator_type=None)
         for a in assignee_list:
             if a['name'] == assignee_name:

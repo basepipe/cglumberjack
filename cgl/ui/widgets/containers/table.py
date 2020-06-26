@@ -46,12 +46,12 @@ class LJTableWidget(QtWidgets.QTableView):
                 sel = mdl.data_[row]
                 items.append(sel)
         else:
-            print 'No data to select'
+            print('No data to select')
         self.items_ = items
         try:
             self.double_clicked.emit(items)
         except IndexError:
-            print 'nothing selected'
+            print('nothing selected')
             self.nothing_selected.emit()
 
     def row_count(self):
@@ -129,12 +129,12 @@ class LJTableWidget(QtWidgets.QTableView):
                 sel = mdl.data_[row]
                 items.append(sel)
         else:
-            print 'No data to select'
+            print('No data to select')
         self.items_ = items
         try:
             self.selected.emit(items)
         except IndexError:
-            print 'nothing selected'
+            print('nothing selected')
             self.nothing_selected.emit()
 
     def contextMenuEvent(self, event):
@@ -149,9 +149,9 @@ class LJTableWidget(QtWidgets.QTableView):
         mdl = self.model().sourceModel()
         row = mdl_index.row()
         sel = mdl.data_[row]
-        print sel
+        print(sel)
         path_object = self.path_object.copy(project=sel[0])
-        print path_object.path_root
+        print(path_object.path_root)
         show_in_project_management(path_object)
 
     def select_row_by_text(self, text, column=0):
@@ -208,7 +208,7 @@ class LJTableWidget(QtWidgets.QTableView):
                 header.resizeSection(column, width)
                 total_width += width
             except AttributeError:
-                print 'PySide2 compatibility issue: setResizeMode'
+                print('PySide2 compatibility issue: setResizeMode')
         for row in range(v_header.count()):
             try:
                 self.verticalHeader().setResizeMode(row, QtWidgets.QHeaderView.ResizeToContents)
@@ -217,7 +217,7 @@ class LJTableWidget(QtWidgets.QTableView):
                 v_header.resizeSection(row, height)
                 total_height += height
             except AttributeError:
-                print 'PySide2 compatibility issue: setResizeMode'
+                print('PySide2 compatibility issue: setResizeMode')
         self.height_hint = total_height
         self.width_hint = total_width
         self.sizeHint()
@@ -227,7 +227,7 @@ class LJTableWidget(QtWidgets.QTableView):
 
     def clear(self):
         self.clear()
-        print 'I should be clearing this'
+        print('I should be clearing this')
 
 
 class LJKeyPairTableWidget(LJTableWidget):

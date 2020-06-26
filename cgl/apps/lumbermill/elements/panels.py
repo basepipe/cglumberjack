@@ -55,10 +55,10 @@ class CompanyPanel(QtWidgets.QWidget):
             self.load_companies()
 
     def create_company_globals(self, company, proj_management):
-        print 'Creating Company Globals %s' % company
+        print('Creating Company Globals %s' % company)
         dir_ = os.path.join(self.user_root, 'companies', company)
         if not os.path.exists(dir_):
-            print '%s doesnt exist, making it' % dir_
+            print('%s doesnt exist, making it' % dir_)
             os.makedirs(dir_)
             app_config(company=company, proj_management=proj_management)
             # set the config stuff according to what's up
@@ -74,7 +74,7 @@ class CompanyPanel(QtWidgets.QWidget):
             if self.path_object.company != '*':
                 dir_ = os.path.dirname(self.path_object.company_config)
                 if not os.path.exists(dir_):
-                    print 'Creating Directory for Company Config File %s' % dir_
+                    print('Creating Directory for Company Config File %s' % dir_)
                     os.makedirs(dir_)
 
     def load_companies(self):
@@ -130,7 +130,7 @@ class ProjectPanel(QtWidgets.QWidget):
 
     def on_project_changed(self, data):
         data = self.project_filter.data_table.items_
-        print data
+        print(data)
         if self.title == 'Projects':
             self.path_object.set_attr(project=data[0][0])
             self.path_object.set_attr(scope='*')
@@ -159,7 +159,7 @@ class ProjectPanel(QtWidgets.QWidget):
         projects = self.path_object.glob_project_element('project')
         projects = clean_file_list(projects)
         if not projects:
-            print 'no projects for %s' % self.path_object.company
+            print('no projects for %s' % self.path_object.company)
             self.project_filter.data_table.setEnabled(False)
             self.project_filter.add_button.setText('Create First Project')
         else:
@@ -172,14 +172,14 @@ class ProjectPanel(QtWidgets.QWidget):
 
     def load_companies(self):
         companies_loc = '%s/*' % self.path_object.root
-        print companies_loc
+        print(companies_loc)
         companies = glob.glob(companies_loc)
         clean_companies = []
         for c in companies:
             if '_config' not in c:
                 clean_companies.append(c)
         if not clean_companies:
-            print 'no companies'
+            print('no companies')
             self.project_filter.data_table.setEnabled(False)
             self.project_filter.add_button.setText('Create First Company')
         else:
@@ -202,8 +202,8 @@ class ProjectPanel(QtWidgets.QWidget):
                 project_name = dialog.proj_line_edit.text()
                 self.path_object.set_attr(project=project_name)
                 production_management = dialog.proj_management_combo.currentText()
-                print self.path_object.path_root
-                print production_management
+                print(self.path_object.path_root)
+                print(production_management)
                 process_method(progress_bar,
                                self.do_create_project,
                                args=(progress_bar, self.path_object, production_management),
@@ -224,7 +224,7 @@ class ProjectPanel(QtWidgets.QWidget):
     @staticmethod
     def do_create_project(progress_bar, path_object, production_management):
         CreateProductionData(path_object=path_object.path_root, file_system=True, project_management=production_management)
-        print 'setting project management to %s' % production_management
+        print('setting project management to %s' % production_management)
         create_project_config(path_object.company, path_object.project)
         progress_bar.hide()
 
@@ -297,7 +297,7 @@ class TaskPanel(QtWidgets.QWidget):
             if 'elem' in text:
                 short = text
             else:
-                print self.proj_man_tasks
+                print(self.proj_man_tasks)
                 short = self.proj_man_tasks[text]
             self.path_object.__dict__[self.element] = short
             self.path_object.data[self.element] = short
@@ -396,7 +396,7 @@ class ProductionPanel(QtWidgets.QWidget):
             try:
                 company_json = UserConfig().d['my_tasks'][self.path_object.company]
             except KeyError:
-                print 'Couldnt find company %s in company_json tasks file.' % self.path_object.company
+                print('Couldnt find company %s in company_json tasks file.' % self.path_object.company)
                 self.parent().progress_bar.hide()
                 return
             if self.path_object.project in company_json:
@@ -424,7 +424,7 @@ class ProductionPanel(QtWidgets.QWidget):
                     self.parent().progress_bar.hide()
                     return True
                 else:
-                    print 'No Tasks Assigned for %s' % self.path_object.project
+                    print('No Tasks Assigned for %s' % self.path_object.project)
                     self.parent().progress_bar.hide()
                     return False
             else:

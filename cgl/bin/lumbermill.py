@@ -3,7 +3,7 @@ zero_start_time = time.time()
 import cgl.core.startup as startup
 from apps.lumbermill.main import CGLumberjack
 start_time = time.time()
-print 'Loaded initial modules in %s seconds: %s' % ((start_time - zero_start_time), __file__)
+print('Loaded initial modules in %s seconds: %s' % ((start_time - zero_start_time), __file__))
 
 
 def load_lumbermill(app, splash=None):
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # TODO make this value a globals value
     time_required = False
     if user_info:
-        print 'Found User, %s' % user_info['login']
+        print('Found User, %s' % user_info['login'])
         if project_management == 'ftrack':
             if time_required:
                 if startup.check_time_log(project_management):

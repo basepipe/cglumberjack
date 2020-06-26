@@ -40,7 +40,7 @@ def drop_handler(emitter, event):
             file_list.append(str(url.toLocalFile()))
         emitter.emit(file_list)
     else:
-        print 'invalid'
+        print('invalid')
         event.ignore()
 
 

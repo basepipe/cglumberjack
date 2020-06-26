@@ -91,7 +91,6 @@ class ScreenCapture(QtWidgets.QDialog):
 
 def capture_area(rect, output_path):
     desktop = QtWidgets.QApplication.instance().desktop()
-    print desktop.winId()
     pixmap = QtGui.QPixmap.grabWindow(desktop.winId(), rect.x()+2, rect.y()+2, rect.width()-4, rect.height()-4)
     pixmap.save(output_path)
     return output_path

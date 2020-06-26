@@ -1,5 +1,5 @@
-from cgl.plugins.Qt import QtGui, QtWidgets
-from PySide import QtCore
+from cgl.plugins.Qt import QtGui, QtWidgets, QtCore
+# from PySide import QtCore
 # noinspection PyUnresolvedReferences
 
 

@@ -60,7 +60,7 @@ class IOPanel(QtWidgets.QWidget):
         if path_object:
             self.path_object = path_object
         else:
-            print 'No Path Object found, exiting'
+            print('No Path Object found, exiting')
             return
         # self.project_management = CONFIG['account_info']['project_management']
         self.project_management = 'lumbermill'
@@ -225,7 +225,7 @@ class IOPanel(QtWidgets.QWidget):
                 os.makedirs(new_source)
                 self.parent().parent().centralWidget().update_location_to_latest(self.path_object)
             else:
-                print 'Source %s already exists!' % new_source
+                print('Source %s already exists!' % new_source)
 
     def file_interaction(self, files, path, to_folder):
         """
@@ -238,7 +238,7 @@ class IOPanel(QtWidgets.QWidget):
         from cgl.core.utils.general import cgl_copy
         # TODO - ultimately we want to figure out how to handle the progress bar through the cgl_execute function.
         if path == '*':
-            print 'Please Select An Ingest Source Before Dragging Files'
+            print('Please Select An Ingest Source Before Dragging Files')
             return
         publish_data_csv = os.path.join(to_folder, 'publish_data.csv').replace('\\', '/')
         if os.path.exists(to_folder):
@@ -256,7 +256,7 @@ class IOPanel(QtWidgets.QWidget):
             # self.empty_state.hide()
         self.load_data_frame()
         if os.path.exists(publish_data_csv):
-            print publish_data_csv, 'exists'
+            print(publish_data_csv, 'exists')
             os.remove(publish_data_csv)
             time.sleep(.5)  # seems like on the network i have to force it to sleep so it has time to delete.
         self.populate_tree()
@@ -367,7 +367,7 @@ class IOPanel(QtWidgets.QWidget):
     def load_data_frame(self, dir_=None):
         if not dir_:
             dir_ = self.path_object.path_root
-        print 'loading %s' % dir_
+        print('loading %s' % dir_)
         self.pandas_path = os.path.join(dir_, 'publish_data.csv')
         if os.path.exists(self.pandas_path):
             self.data_frame = pd.read_csv(self.pandas_path)
@@ -389,8 +389,8 @@ class IOPanel(QtWidgets.QWidget):
                 else:
                     file_ = filename
                     frange = ' '
-                print file_
-                print '\t', frange
+                print(file_)
+                print('\t', frange)
                 fullpath = os.path.join(os.path.abspath(directory), file_)
                 data.append((file_, fullpath, type_, frange, ' ', False, ' ', ' ', ' ', ' ', ' ', ' ',
                              self.io_statuses[0], parent))
@@ -425,7 +425,7 @@ class IOPanel(QtWidgets.QWidget):
                 else:
                     return
                 shot = str(self.shot_combo.currentText())
-                print shot, '-------------------------------------------------------------'
+                print(shot, '-------------------------------------------------------------')
                 self.tags_title.setText('CGL:> Which Task will this be published to?')
                 if self.task_combo.currentText():
                     try:
@@ -438,9 +438,9 @@ class IOPanel(QtWidgets.QWidget):
                                                           version='000.000',
                                                           user='publish',
                                                           resolution='high')
-                        print to_object.path_root
-                        print to_object.filename
-                        print to_object.__dict__
+                        print(to_object.path_root)
+                        print(to_object.filename)
+                        print(to_object.__dict__)
                         status = ''
                         for f in self.current_selection:
                             row = self.data_frame.loc[(self.data_frame['Filename'] == f[FILENAME]) &
@@ -474,10 +474,10 @@ class IOPanel(QtWidgets.QWidget):
 
                         # how do i edit the text only on the selected item?
                     except KeyError:
-                        print 'Error with something:'
-                        print 'scope', self.scope_combo.currentText()
-                        print 'seq', seq
-                        print 'shot', shot
+                        print('Error with something:')
+                        print('scope', self.scope_combo.currentText())
+                        print('seq', seq)
+                        print('shot', shot)
 
 
     def go_to_location(self, to_path):
@@ -501,7 +501,7 @@ class IOPanel(QtWidgets.QWidget):
         self.tags_line_edit.clear()
         filepath = data[-1][0].replace('/', '\\')
         if data[-1][1] == 'sequence':
-            print 'found a sequence, doing different'
+            print('found a sequence, doing different')
         # if this is a sequence do something different.
         row = self.data_frame.loc[self.data_frame['Filepath'] == filepath].index[0]
         tags = self.data_frame.loc[row, 'Tags']
@@ -658,7 +658,7 @@ class IOPanel(QtWidgets.QWidget):
 
     def on_file_selected(self, data):
         self.tags_title.setText("<b>CGL:></b>  Choose 'Assets' or 'Shots' for your scope")
-        print 'file selected, showing gui'
+        print('file selected, showing gui')
         self.show_tags_gui()
         self.current_selection = data
         self.scope_combo.setCurrentIndex(0)
