@@ -60,7 +60,7 @@ class PublishPlate(PreflightCheck):
         self.data_frame.to_csv(self.pandas_path, index=False)
 
     def ingest_folder(self, index, row, from_file, to_file, current_date):
-        print 'Copying %s to %s' % (from_file, to_file)
+        print('Copying %s to %s' % (from_file, to_file))
         # Send this to the Preflights - No matter what basically
         if not self.test:
             cgl_copy(from_file, to_file, methodology=METHODOLOGY)
@@ -77,7 +77,7 @@ class PublishPlate(PreflightCheck):
             CreateProductionData(to_dir)
         from_filename = os.path.split(from_file)[-1]
         self.shared_data['publish_path_object'] = PathObject(os.path.join(to_dir, from_filename))
-        print 'Copying sequence %s to %s' % (from_file, to_dir)
+        print('Copying sequence %s to %s' % (from_file, to_dir))
         seq = self.shared_data['publish_path_object'].seq
         shot = self.shared_data['publish_path_object'].shot
         info_ = cgl_copy(from_file, to_dir, methodology=METHODOLOGY, job_name='%s_%s' % (seq, shot))
@@ -89,9 +89,9 @@ class PublishPlate(PreflightCheck):
         self.make_source_file(to_dir, row)
 
     def ingest_file(self, index, row, from_file, to_file, current_date):
-        print 'FILETYPE =', row['Filetype']
+        print('FILETYPE =', row['Filetype'])
         if not self.test:
-            print 'Copying %s to %s' % (from_file, to_file)
+            print('Copying %s to %s' % (from_file, to_file))
             CreateProductionData(os.path.dirname(to_file))
             cgl_copy(from_file, to_file, methodology=METHODOLOGY)
             self.shared_data['publish_path_object'] = PathObject(to_file)

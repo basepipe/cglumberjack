@@ -33,19 +33,19 @@ def next_release_folder():
 
 def copy_to_latest():
     # TODO this really needs to be robocopy, so slow!!!
-    print 'copying %s to %s' % (DEVROOT, LATEST)
+    print('copying %s to %s' % (DEVROOT, LATEST))
     cgl_copy(DEVROOT, LATEST, dest_is_folder=True)
     # shutil.copytree(DEVROOT, LATEST)
 
 
 def copy_to_next_version():
-    print 'copying %s to %s' % (DEVROOT, next_release_folder())
+    print('copying %s to %s' % (DEVROOT, next_release_folder()))
     cgl_copy(DEVROOT, next_release_folder())
     # shutil.copytree(DEVROOT, next_release_folder())
 
 
 def clear_latest():
-    print 'deleting %s' % LATEST
+    print('deleting %s' % LATEST)
     if os.path.isdir(LATEST):
         shutil.rmtree(LATEST, onerror=del_rw)
     else:
@@ -56,10 +56,10 @@ def safe_to_release():
     root_ = CONFIG['paths']['root']
     code_root = CONFIG['paths']['code_root']
     if code_root != LATEST:
-        print 'code_root = ', code_root, 'not safe to release'
+        print('code_root = ', code_root, 'not safe to release')
         return False
     elif root_ != ROOT:
-        print 'root = ', root_, 'not safe to release'
+        print('root = ', root_, 'not safe to release')
         return False
     else:
         return True

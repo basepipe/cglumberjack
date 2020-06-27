@@ -79,7 +79,7 @@ class BlenderPathObject(PathObject):
         self.path_template = []
         self.version_template = []
 
-        if isinstance(path_object, unicode):
+        if isinstance(path_object, bytes):
             path_object = str(path_object)
         if isinstance(path_object, dict):
             self.process_info(path_object)

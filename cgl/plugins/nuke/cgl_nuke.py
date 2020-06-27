@@ -2,7 +2,7 @@ import os
 import logging
 from cgl.plugins.Qt import QtWidgets
 import time
-import nuke, nukescripts
+import nuke
 from cgl.core.utils.general import cgl_execute, write_to_cgl_data
 from cgl.core.path import PathObject, Sequence, CreateProductionData, lj_list_dir
 from cgl.core.config import app_config, UserConfig
@@ -82,7 +82,7 @@ class NukePathObject(PathObject):
         self.path_template = []
         self.version_template = []
 
-        if isinstance(path_object, unicode):
+        if isinstance(path_object, bytes):
             path_object = str(path_object)
         if isinstance(path_object, dict):
             self.process_info(path_object)
@@ -132,20 +132,19 @@ class NukePathObject(PathObject):
                         'job_id': None}
         if selected:
             if not nuke.selectedNodes():
-                print 'render() set to selected, please select a write node and try again'
+                print('render() set to selected, please select a write node and try again')
                 return
             for s in nuke.selectedNodes():
                 if s.Class() == 'Write':
                     node_name = s.name()
                     file_name = s['file'].value()
-                    print file_name
                     dir_ = os.path.dirname(file_name)
                     CreateProductionData(dir_, project_management='lumbermill')
                     sequence = Sequence(file_name)
                     if sequence.is_valid_sequence():
                         file_name = sequence.hash_sequence
                     if processing_method == 'local':
-                        from gui import render_node
+                        from cgl.plugins.nuke.gui import render_node
                         render_node(s)
                         process_info['file_out'] = file_name
                         process_info['artist_time'] = time.time() - process_info['start_time']
@@ -178,7 +177,7 @@ class NukePathObject(PathObject):
                         process_info_list.append(process_info)
             return process_info_list
         else:
-            print 'this is what happens when selected is set to False'
+            print('this is what happens when selected is set to False')
 
 
 def get_main_window():
@@ -194,7 +193,7 @@ def normpath(filepath):
 
 
 def get_file_name():
-    return unicode(nuke.Root().name())
+    return str(nuke.Root().name())
 
 
 def open_file(filepath):
@@ -214,10 +213,8 @@ def save_file_as(filepath):
 def import_directory(filepath):
     path_object = NukePathObject(filepath)
     if path_object.task == 'lite':
-        print 1
         import_lighting_renders(filepath)
     else:
-        print 2
         for root, dirs, files in os.walk(filepath):
             for name in dirs:
                 for sequence in lj_list_dir(os.path.join(root, name)):
@@ -267,13 +264,12 @@ def import_lighting_renders(filepath):
                                 utility_nodes.append(node)
                             if temp_object.aov == beauty:
                                 beauty_nodes.append(node)
-                                print 'creating beauty node'
+                                print('creating beauty node')
                             if temp_object.aov in shaders:
                                 shader_nodes.append(node)
             else:
                 pass
     if z_node:
-        print 1
         z_nodes = setup_z_node(z_node)
         for each in z_nodes:
             utility_nodes.append(each)
@@ -339,8 +335,7 @@ def move_nodes(plus_x=0, plus_y=0, start_x=0, start_y=0, nodes=None, padding=Tru
     if not nodes:
         nodes = nuke.selectedNodes()
     for i, n in enumerate(nodes):
-        print type(n)
-        print n['name'].value()
+        print(n['name'].value())
         if not start_x:
             start_x2 = n['xpos'].value()
         else:
@@ -351,8 +346,8 @@ def move_nodes(plus_x=0, plus_y=0, start_x=0, start_y=0, nodes=None, padding=Tru
             start_y2 = start_y
         new_x = (int(start_x2 + (x_multiplier*(i+1)) + x_padding + plus_x))
         new_y = (int(start_y2 - (y_multiplier*(i+1)) - y_padding - plus_y))
-        print 'moving x:%s to %s' % (n['xpos'].value(), new_x)
-        print 'moving y:%s to %s' % (n['ypos'].value(), new_y)
+        print('moving x:%s to %s' % (n['xpos'].value(), new_x))
+        print('moving y:%s to %s' % (n['ypos'].value(), new_y))
         n.setXpos(new_x)
         if start_y or plus_y:
             n.setYpos(new_y)
@@ -410,7 +405,6 @@ def find_node(name):
     nodes = nuke.allNodes()
     for n in nodes:
         if name in n['name'].value():
-            print 'found name'
             return n
     return None
 
@@ -561,7 +555,8 @@ def check_write_node_version(selected=True):
                     path = s['file'].value()
                     path_object = NukePathObject(path)
                     if scene_object.version != path_object.version:
-                        print 'scene %s, render %s, versions do not match' % (scene_object.version, path_object.version)
+                        print('scene %s, render %s, versions do not match' % (scene_object.version,
+                                                                              path_object.version))
                         return False
                     else:
                         return True
@@ -596,23 +591,12 @@ def match_scene_version():
         if write_output.version == path_object.version:
             print('Write Node version %s matches scene version' % write_output.version)
         else:
-            print n.name()
+            print(n.name())
             if not 'elem' in n.name():
-                print('Changing Write Version %s to %s') % (write_output.version, path_object.version)
+                print('Changing Write Version %s to %s' % (write_output.version, path_object.version))
                 write_output.set_attr(version=path_object.version)
                 n.knob('file').fromUserText(write_output.path_root)
     nuke.scriptSave()
-
-"""
-def version_up(write_nodes=True):
-    path_object = PathObject(nuke.Root().name())
-    next_minor = path_object.new_minor_version_object()
-    print('Versioning Up %s: %s' % (next_minor.version, next_minor.path_root))
-    CreateProductionData(next_minor, project_management='lumbermill')
-    nuke.scriptSaveAs(next_minor.path_root)
-    if write_nodes:
-        match_scene_version()
-"""
 
 
 def version_up(write_nodes=True):
@@ -640,7 +624,7 @@ def version_up_selected_write_node():
             path = s['file'].value()
             path_object = NukePathObject(path)
             next_minor = path_object.new_minor_version_object()
-            print 'Setting File to %s' % next_minor.path_root
+            print('Setting File to %s' % next_minor.path_root)
             s.knob('file').fromUserText(next_minor.path_root)
 
 
@@ -661,10 +645,10 @@ def get_write_paths_as_path_objects():
 
 
 def auto_backdrop(label=None):
+    import nukescripts
     n = nukescripts.autoBackdrop()
     if label:
         n['label'].setValue(label)
-    # change the padding on the backdrop node
 
 
 def backdrop(name, bg_color=(.267, .267, .267), text_color=(.498, .498, .498), nodes=None, move=(0, 0),
@@ -738,7 +722,7 @@ def get_highest_z_index():
     z_index = -10
     bd_nodes = nuke.allNodes('BackdropNode')
     for node in bd_nodes:
-        print node['label'].value()
+        print(node['label'].value())
         if node['z_order'].value() > z_index:
             z_index = node['z_order'].value()
     return int(z_index)
@@ -801,7 +785,7 @@ def replace_in_path(input_script=None, find_pattern=None, replace_pattern=None, 
     nodes_ = [w for w in find_nodes(type_)]
     for n in nodes_:
         path = n['file'].value()
-        print n.name(), path
+        print(n.name(), path)
         #path = path.replace(find_pattern, replace_pattern)
         #n['file'].setValue(path)
     # nuke.scriptSave(output_script)

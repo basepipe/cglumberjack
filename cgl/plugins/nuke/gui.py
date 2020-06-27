@@ -9,7 +9,6 @@ from cgl.core.config import app_config
 from cgl.core.utils.general import current_user
 from cgl.plugins.preflight.main import Preflight
 
-
 CONFIG = app_config()
 
 
@@ -28,14 +27,14 @@ class NukeBrowserWidget(CGLumberjackWidget):
     def __init__(self, parent=None, path=None,
                  show_import=False):
         super(NukeBrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
-        print 'Nuke Scene path: ', path
+        print('Nuke Scene path: ', path)
 
     def open_clicked(self):
-        print self.path_object.path_root
-        print 'open nuke'
+        print(self.path_object.path_root)
+        print('open nuke')
 
     def import_clicked(self):
-        from cgl_nuke import import_media, import_script, import_directory, import_geo, connect_z_nodes
+        from cgl.plugins.nuke.cgl_nuke import import_media, import_script, import_directory, import_geo
         z_index = 0
         for selection in self.source_selection:
             base_, ext = os.path.splitext(selection)
@@ -43,13 +42,13 @@ class NukeBrowserWidget(CGLumberjackWidget):
                 print('Importing Directory: %s' % selection)
                 import_directory(selection)
             if selection.endswith('.nk'):
-                print 'Importing Nuke Script'
+                print('Importing Nuke Script')
                 import_script(selection)
             elif ext.lower() == '.obj' or ext.lower() == '.fbx':
-                print "importing geo"
+                print("importing geo")
                 import_geo(selection.replace('\\', '/'))
             else:
-                print 'importing media'
+                print('importing media')
                 import_media(selection)
             z_index = z_index-1
         # connect_z_nodes()
@@ -80,12 +79,12 @@ class CGLNukeWidget(QtWidgets.QDialog):
 class CGLNuke(CGLumberjack):
     def __init__(self, parent=None, path=None, user_info=None):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path)
-        print 'CGLNuke path is %s' % path
+        print('CGLNuke path is %s' % path)
         self.setCentralWidget(NukeBrowserWidget(self, show_import=True, path=path))
 
 
 class RenderDialog(QtWidgets.QDialog):
-    from cgl_nuke import get_main_window
+    from cgl.plugins.nuke.cgl_nuke import get_main_window
 
     def __init__(self, parent=get_main_window(), write_node=''):
         QtWidgets.QDialog.__init__(self, parent)
@@ -137,12 +136,12 @@ class RenderDialog(QtWidgets.QDialog):
         self.accept()
 
     def get_frame_range(self):
-        print 'Getting Frame Range'
+        print('Getting Frame Range')
         self.frange_line_edit.setText('%s-%s' % (self.sframe, self.eframe))
 
     def on_render_clicked(self):
         self.accept()
-        print 'Rendering %s-%s by %s' % (self.sframe, self.eframe, self.byframe)
+        print('Rendering %s-%s by %s' % (self.sframe, self.eframe, self.byframe))
         nuke.execute(self.write_node, start=int(self.sframe), end=int(self.eframe), incr=int(self.byframe))
         n = nuke.toNode(self.write_node)
         self.render_path = n['file'].value()
@@ -178,7 +177,7 @@ def render_node(n):
         dialog.exec_()
         return dialog.render_path
     else:
-        print '%s is not a Write node' % n
+        print('%s is not a Write node' % n)
 
 
 def render_selected_local():
@@ -246,13 +245,13 @@ def review_selected():
         files = glob.glob(glob_string)
         if files:
             each.upload_review()
-            print 'reviewing %s' % each.path_root
+            print('reviewing %s' % each.path_root)
         else:
             dialog = InputDialog(title='No Rendered Files', message='No Renders Found!  Can not Submit Review',
                                  buttons=['Render', 'Ok'])
             dialog.exec_()
             if dialog.button == 'Render':
-                print 'Clicking the Render Selected Button'
+                print('Clicking the Render Selected Button')
             else:
                 dialog.accept()
 
@@ -289,7 +288,6 @@ def launch_lumbermill():
 
 def fix_paths():
     import cgl.ui.widgets.path_fixer as path_fixer
-    reload(path_fixer)
     write_nodes = nuke.allNodes('Write')
     read_nodes = nuke.allNodes('Read')
     all_nodes = write_nodes + read_nodes

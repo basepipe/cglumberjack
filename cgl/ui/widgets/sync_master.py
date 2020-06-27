@@ -117,7 +117,7 @@ class SyncMaster(LJDialog):
     def on_file_tree_clicked(self):
         files = []
         selected = self.file_tree.selectionModel().selectedIndexes()
-        print selected
+        print(selected)
         for index in selected:
             if index.column() == 0:
                 try:
@@ -153,7 +153,7 @@ class SyncMaster(LJDialog):
 
     def show_in_folder(self):
         show_in_folder(self.current_selection[-1])
-        print 'Total Folder Size:', get_folder_size(self.current_selection[-1])
+        print('Total Folder Size:', get_folder_size(self.current_selection[-1]))
 
     def sync_clicked(self):
         publishes = []
@@ -384,24 +384,24 @@ class SharingDialog(LJDialog):
         check_box = self.sender()
         if self.sender().isChecked():
             self.device_list.append(check_box.device_id)
-            print check_box.device_id
-            print check_box.device_name
-            print check_box.user
-            print check_box.full_name
-        print self.device_list
+            print(check_box.device_id)
+            print(check_box.device_name)
+            print(check_box.user)
+            print(check_box.full_name)
+        print(self.device_list)
 
     def on_ok_clicked(self):
         self.button = 'Ok'
         if self.device_list:
             kill_syncthing()
             if self.publish_objects:
-                print 1, self.publish_objects
+                print(1, self.publish_objects)
                 for p in self.publish_objects:
                     folder_id = '[root]\\%s' % p.path.replace('/', '\\')
                     folder = p.path_root.replace('/', '\\')
                     add_folder_to_config(folder_id, folder, self.device_list, type_='sendonly')
             else:
-                print 'no publish objects'
+                print('no publish objects')
             launch_syncthing()
         self.accept()
         return self.device_list

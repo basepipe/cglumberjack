@@ -7,7 +7,7 @@ class ThisButtonRules(PreflightCheck):
         pass
 
     def run(self):
-        print 'ThisButtonRules'
+        print('ThisButtonRules')
         # self.pass_check('Check Passed')
         # self.fail_check('Check Failed')
 

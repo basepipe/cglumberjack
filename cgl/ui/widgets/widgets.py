@@ -998,7 +998,7 @@ class AdvComboBox(QtWidgets.QComboBox):
         def filter_(text):
             self.pFilterModel.setFilterFixedString(str(text))
 
-        self.lineEdit().textEdited[unicode].connect(filter_)
+        self.lineEdit().textEdited[str].connect(filter_)
         self.completer.activated.connect(self.on_completer_activated)
 
     # on selection of an item from the completer, select the corresponding item from combobox

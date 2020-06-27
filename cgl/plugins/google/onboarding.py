@@ -55,13 +55,13 @@ def mark_dev_as_onboarded(github_username):
     for entry in range(2, sheets.find_empty_row_in_sheet(sheet)):
         if sheet.cell(entry, 4).value == github_username:
             if sheet.cell(entry, 5).value == "Yes":
-                print "Error: User already onboarded"
+                print("Error: User already onboarded")
                 return False
             elif sheet.cell(entry, 5).value != "Yes":
-                print "User Found"
+                print("User Found")
                 sheet.update_cell(entry, 5, 'Yes')
                 return True
-    print "Error: Username not found"
+    print("Error: Username not found")
     return False
 
 

@@ -63,7 +63,7 @@ class CGLMenuButton(QtWidgets.QWidget):
 
         try:
             dialog = self.parent().parent().parent()
-            print dialog
+            print(dialog)
             self.software = dialog.software_combo.currentText()
         except AttributeError:
             # TODO - look into this a bit deeper, this is a fairly generic catch right now.
@@ -179,14 +179,13 @@ class CGLMenuButton(QtWidgets.QWidget):
         icon = QtGui.QIcon(to_path)
         tab_ = self.parent().parent()
         index_ = tab_.currentIndex()
-        # print index_
         tab_.setTabIcon(index_, icon)
         # # display the icon?
         self.on_save_clicked()
 
 
     def on_save_clicked(self):
-        print 'save_clicked 172, emit.'
+        print('save_clicked 172, emit.')
         self.save_all_signal.emit()
 
     def on_open_clicked(self):
@@ -208,7 +207,7 @@ class CGLMenuButton(QtWidgets.QWidget):
                 if attr == 'name':
                     if not str(self.attrs[attr]):
                         split = self.attrs['module'].split()
-                        print 'setting name to module name: %s' % split[-1].split('.run()')[0]
+                        print('setting name to module name: %s' % split[-1].split('.run()')[0])
                         attr_value = split[-1].split('.run()')[0]
                 self.attrs_dict[attr].setText(attr_value)
         # load the python file into the text edit
@@ -232,7 +231,7 @@ class CGLMenuButton(QtWidgets.QWidget):
             return None
 
     def load_default_text(self):
-        print self.menu_type, self.software, 11111111111
+        print(self.menu_type, self.software, 11111111111)
         if self.menu_type == 'preflights':
             preflight = "from plugins.preflight.preflight_check import PreflightCheck\n" \
                         "\n\n" \
@@ -242,7 +241,7 @@ class CGLMenuButton(QtWidgets.QWidget):
                         "        pass\n" \
                         "\n" \
                         "    def run(self):\n" \
-                        "        print '%s'\n" \
+                        "        print('%s')\n" \
                         "        # self.pass_check('Check Passed')\n" \
                         "        # self.fail_check('Check Failed')\n\n" % (self.name, self.name)
             return preflight
@@ -253,11 +252,11 @@ class CGLMenuButton(QtWidgets.QWidget):
             return "\n\ndef run():\n    print(\"hello world: %s\")" % self.name
 
     def on_delete_clicked(self):
-        print self
-        print self.parent().parent()
-        print self.parent().parent().parent()
-        print '--------------------'
-        print self.parent().parent().currentIndex()
+        print(self)
+        print(self.parent().parent())
+        print(self.parent().parent().parent())
+        print('--------------------')
+        print(self.parent().parent().currentIndex())
         self.parent().parent().removeTab(self.parent().parent().currentIndex())
 
 
@@ -407,12 +406,12 @@ class CGLMenu(QtWidgets.QWidget):
             self.buttons_tab_widget.setCurrentIndex(index)
 
     def on_save_clicked(self):
-        print 'save_clicked emit, 1'
+        print('save_clicked emit, 1')
         self.save_clicked.emit()
 
     def get_command_text(self, button_name, menu_type):
-        print 'import cgl_tools.%s.%s.%s.%s as %s; %s.run()' % (self.software, menu_type, self.menu_name, button_name,
-                                                                 button_name, button_name)
+        print('import cgl_tools.%s.%s.%s.%s as %s; %s.run()' % (self.software, menu_type, self.menu_name, button_name,
+                                                                button_name, button_name))
         return 'import cgl_tools.%s.%s.%s.%s as %s; %s.run()' % (self.software, menu_type, self.menu_name, button_name,
                                                                  button_name, button_name)
 

@@ -15,7 +15,7 @@ class LJSearchEdit(QtWidgets.QLineEdit):
         try:
             self.layout.addWidget(self.button, 0, QtCore.Qt.AlignRight)
         except TypeError:
-            print ("Lumbermill is skipping adding this button for some reason:\n\t%s" % self.button)
+            print("Lumbermill is skipping adding this button for some reason:\n\t%s" % self.button)
         self.button.clicked.connect(self.cancel_clicked)
         self.button.hide()
         if button:

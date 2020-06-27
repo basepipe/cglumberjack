@@ -29,25 +29,6 @@ class TaskSetupGUI(QtWidgets.QDialog):
         self.load_schemas()
         self.temp_globals = self._load_json(os.path.join(CONFIG['paths']['root'], '_config', 'globals.json'))
 
-    # def on_item_clicked(self):
-    #     print self.task_table.currentItem().text()
-    #     self.previous_selection = self.task_table.currentItem()
-    #     self.on_table_edited()
-    #
-    # def on_table_edited(self):
-    #     if self.previous_selection:
-    #         print 1
-    #         item = self.previous_selection
-    #     else:
-    #         print 2
-    #         item = self.task_table.currentItem()
-    #     longname = self.task_table.item(item.row(), 0).text()
-    #     print longname
-    #     #
-    #     # self.schemas[longname]['long_name'] = self.task_table.item(item.row(), 0).text()
-    #     # self.schemas[longname]['short_name'] = self.task_table.item(item.row(), 1).text()
-    #     # self.schemas[longname]['type'] = self.task_table.item(item.row(), 2).text()
-    #     # self.schemas[longname]['schema'] = self.task_table.item(item.row(), 3).text()
 
     def iterate_over_table(self):
         row_count = self.task_table.rowCount()
@@ -83,11 +64,11 @@ class TaskSetupGUI(QtWidgets.QDialog):
         if os.path.exists(os.path.join(CONFIG['paths']['root'], '_config', 'lc_schemas.json')):
             return self._load_json(os.path.join(CONFIG['paths']['root'], '_config', 'lc_schemas.json'))
         else:
-            print 'Starting FTrack Session'
+            print('Starting FTrack Session')
             session = ftrack_api.Session(server_url=CONFIG['project_management']['ftrack']['api']['server_url'],
                                          api_key=CONFIG['project_management']['ftrack']['api']['api_key'],
                                          api_user=CONFIG['project_management']['ftrack']['api']['api_user'])
-            print 'Querying Ftrack for Schemas & Tasks'
+            print('Querying Ftrack for Schemas & Tasks')
             schemas = session.query('ProjectSchema').all()
             all_tasks = {}
             for s in schemas:
@@ -106,7 +87,7 @@ class TaskSetupGUI(QtWidgets.QDialog):
 
     @staticmethod
     def _write_json(filepath, data):
-        print 'writing json to %s' % filepath
+        print('writing json to %s' % filepath)
         with open(filepath, 'w') as outfile:
             json.dump(data, outfile, indent=4, sort_keys=True)
 
@@ -166,11 +147,11 @@ class TaskSetupGUI(QtWidgets.QDialog):
         pass
 
     def closeEvent(self, event):
-        print event
+        print(event)
         self.iterate_over_table()
         formatted_tasks = self.format_schemas()
         self.temp_globals['project_management']['ftrack']['tasks'] = formatted_tasks
-        print os.path.join(CONFIG['paths']['root'], '_config', 'ftrack_tasks.json')
+        print(os.path.join(CONFIG['paths']['root'], '_config', 'ftrack_tasks.json'))
         self._write_json(os.path.join(CONFIG['paths']['root'], '_config', 'globals.json'), self.temp_globals)
         #self._write_json(os.path.join(CONFIG['paths']['root'], '_config', 'ftrack_tasks.json'), formatted_tasks)
 

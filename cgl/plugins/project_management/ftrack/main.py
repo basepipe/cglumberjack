@@ -274,10 +274,10 @@ class ProjectManagementData(object):
             if self.path_object.company not in my_tasks:
                 my_tasks[self.path_object.company] = {}
             if self.path_object.project not in my_tasks[self.path_object.company]:
-                print 'didnt find %s' % self.path_object.project
+                print('didnt find %s' % self.path_object.project)
                 my_tasks[self.path_object.company][self.path_object.project] = {}
             else:
-                print my_tasks[self.path_object.company][self.path_object.project]
+                print(my_tasks[self.path_object.company][self.path_object.project])
             new_path = self.path_root.split(self.user)[0]
             my_tasks[self.path_object.company][self.path_object.project][self.task_name] = {}
             task_info = my_tasks[self.path_object.company][self.path_object.project][self.task_name]
@@ -317,10 +317,10 @@ class ProjectManagementData(object):
     def upload_media(self, force_creation=False):
         # set the status name to 'Needs Review'
         if not self.file_type:
-            print 'Cannot Determine File Type - skipping Ftrack Upload'
+            print('Cannot Determine File Type - skipping Ftrack Upload')
             return
         if not os.path.exists(self.path_object.preview_path):
-            print self.path_object.preview_path, 'Does Not Exist'
+            print(self.path_object.preview_path, 'Does Not Exist')
             return
 
         else:
@@ -343,8 +343,8 @@ class ProjectManagementData(object):
                 'frameOut': 150,
                 'frameRate': 25
             })
-            print self.version_data
-            print server_location
+            print(self.version_data)
+            print(server_location)
             thumb_component = self.version_data.create_component(
                 path=thumb,
                 data={'name': 'thumbnail'},
@@ -528,21 +528,21 @@ class ProjectManagementData(object):
             return data['status']['name']
             #return self.task_data['status']['name']
         else:
-            print 'No Task Data found!'
+            print('No Task Data found!')
             return None
 
     def get_url(self):
-        print self.path_root
+        print(self.path_root)
         if self.task:
-            print 'task'
+            print('task')
             return self.get_task_url(self.project, self.seq, self.shot, self.task, view='shot')
         if self.shot:
-            print 'shot'
+            print('shot')
             return self.get_shot_url(self.project, self.seq, self.shot)
         elif self.asset:
-            print 'asset not defined yet'
+            print('asset not defined yet')
         if self.project:
-            print 'project'
+            print('project')
             return self.get_proj_url(self.project)
 
     def get_proj_url(self, project):
@@ -603,7 +603,7 @@ class ProjectManagementData(object):
         url_string = r'%s/widget/#view=freview_webplayer_v1&itemId=freview&entityType=list&entityId=' \
                      r'%s&controller=widget' % (self.server_url, playlist)
         webbrowser.open(url_string)
-        print url_string
+        print(url_string)
 
 
 def find_user_assignments(path_object, user_email, force=False):
@@ -622,7 +622,7 @@ def find_user_assignments(path_object, user_email, force=False):
         else:
             continue_parse = True
         if continue_parse:
-            print 'GATHERING TASK DATA FROM FTRACK'
+            print('GATHERING TASK DATA FROM FTRACK')
             server_url = CONFIG['project_management']['ftrack']['api']['server_url']
             api_key = CONFIG['project_management']['ftrack']['api']['api_key']
             api_user = CONFIG['project_management']['ftrack']['api']['api_user']
@@ -669,7 +669,7 @@ def find_user_assignments(path_object, user_email, force=False):
             else:
                 return None
     else:
-        print 'Invalid Input Value(s): Company = %s, Project = %s' % (company, project)
+        print('Invalid Input Value(s): Company = %s, Project = %s' % (company, project))
 
 
 if __name__ == "__main__":

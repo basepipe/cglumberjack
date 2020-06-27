@@ -128,7 +128,7 @@ class AsanaJack(object):
         italic_text = '<em>this is italic text</em>'
         underline_text = '<u>this is underline text</u>'
         strikethrough_text = '<s>this is strikethrough text</s>'
-        code_text = '<code>    print "this is code text"</code>'
+        code_text = '<code>    print("this is code text")</code>'
         link_text = 'This is a link: <a href="http://www.google.com">"Google"</a>, asana only displays whats in href'
 
         :param software:

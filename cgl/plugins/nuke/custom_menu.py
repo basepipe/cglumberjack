@@ -21,7 +21,7 @@ class NukeCustomMenu(CustomMenu):
 
     def add_button(self, menu, label='', annotation='', command='', icon='', image_overlay_label='', hot_key=''):
         menu_ = self.menu_dict[menu]
-        print 'menu_command', command
+        print('menu_command', command)
         if not hot_key:
             menu_.addCommand(label, str(command))
         else:
@@ -34,7 +34,7 @@ class NukeCustomMenu(CustomMenu):
     def delete_menu(self, menu_name):
         menu_ = self.find_menu_by_name(self.menu_parent, menu_name)
         if menu_:
-            print 'deleting nuke menu %s' % menu_name
+            print('deleting nuke menu %s' % menu_name)
 
 
 

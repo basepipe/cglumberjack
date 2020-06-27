@@ -15,10 +15,10 @@ exr_sequence_hash = r'Z:/COMPANIES/loneCoconut/render/CGL_TESTPROJECT/shots/010/
 # sequence = Sequence(exr_sequence_star)
 # sequence.print_info()
 
-# print '00000000000000000000'
+# print('00000000000000000000'
 path_object = PathObject(exr_sequence_hash)
-print path_object.preview_path
-print path_object.thumb_path
+print(path_object.preview_path)
+print(path_object.thumb_path)
 # job_info = path_object.make_proxy()
 # job_info = path_object.make_preview(job_id=job_info['job_id'])
 job_info = path_object.upload_review()
@@ -53,7 +53,7 @@ job_info = path_object.upload_review()
 #         break
 #     if output:
 #         output_values.append(output.strip())
-# print output_values
+# print(output_values)
 # # cgl_execute(command, new_window=True)
 
 # C:\PROGRA~1\ImageMagick-7.0.8-Q16\magick.exe Z:/COMPANIES/loneCoconut/render/cgl_unitTestC/shots/CDL/0700/plate/publish/000.000/high/A065C007_120101_R2GR.00193328.exr -resize 1920 Z:\COMPANIES\loneCoconut\render\cgl_unitTestC\shots\CDL\0700\plate\publish\000.000\1920x1080\A065C007_120101_R2GR.00193328.jpg

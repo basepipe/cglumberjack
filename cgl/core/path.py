@@ -106,11 +106,8 @@ class PathObject(object):
         self.path_template = []
         self.version_template = []
         # TODO python 3 doesn't like unicode
-        try:
-            if isinstance(path_object, unicode):
-                path_object = str(path_object)
-        except NameError:
-            print('Running Python 3 - skipping unicode test')
+        if isinstance(path_object, bytes):
+            path_object = str(path_object)
         if isinstance(path_object, dict):
             self.process_dict(path_object)
         elif isinstance(path_object, str):

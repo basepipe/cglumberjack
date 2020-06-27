@@ -40,7 +40,7 @@ class BrowserWidget(CGLumberjackWidget):
 class AppMainWindow(CGLumberjack):
     def __init__(self, parent=None, path=None, user_info=None):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
-        print 'Application Path path is %s' % path
+        print('Application Path path is %s' % path)
         self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
 
 
@@ -130,7 +130,7 @@ class MayaPathObject(PathObject):
         command line locally.  smedge/deadline - submit the job to a render manager for farm rendering.
         :return:
         """
-        print 'what is my render path?'
+        print('what is my render path?')
         pass
 
 
@@ -202,7 +202,7 @@ def reference_file(filepath, namespace=None):
         namespace = get_namespace(filepath)
 
     if os.path.isfile(filepath):
-        print 'filepath: ', filepath
+        print('filepath: ', filepath)
         return pm.createReference(filepath, namespace=namespace, ignoreVersion=True, loadReferenceDepth='all')
 
 
@@ -333,14 +333,14 @@ def render(preview=False):
     if preview:
         basic_playblast(path_object=MayaPathObject(pm.sceneName()))
     else:
-        print 'Rendering to Farm Now'
+        print('Rendering to Farm Now')
 
 
 def review():
     from cgl.core.project import do_review
     playblast_seq = scene_object().copy(context='render', filename='playblast.####.jpg')
     if glob.glob(playblast_seq.path_root.replace('####', '*')):
-        print 'exists - reviewing'
+        print('exists - reviewing')
         do_review(progress_bar=None, path_object=playblast_seq)
 
 

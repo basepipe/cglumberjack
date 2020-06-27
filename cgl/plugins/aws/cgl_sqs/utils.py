@@ -8,9 +8,9 @@ import cgl.plugins.syncthing.utils as st_utils
 def check_st_config():
     import cgl.apps.lumber_watch.lumber_watch as lw
     if st_utils.syncthing_synced():
-        print 'Safe To Sync - no BG processes'
+        print('Safe To Sync - no BG processes')
         if lw.check_syncthing_config():
-            print 'Detected Changes in Config - Syncing Lumbermill'
+            print('Detected Changes in Config - Syncing Lumbermill')
             st_utils.process_st_config()
 
 
@@ -45,11 +45,11 @@ def receive_messages(queue_url='https://sqs.us-east-1.amazonaws.com/044899505732
     )
 
     if 'Messages' in response.keys():
-        print 'Lumberwatch:  %s New Events' % len(response['Messages'])
+        print('Lumberwatch:  %s New Events' % len(response['Messages']))
         messages = response['Messages']
         return messages, sqs, queue_url
     else:
-        print 'Lumberwatch: No New Messages'
+        print('Lumberwatch: No New Messages')
         return None, None, None
 
 
@@ -86,38 +86,38 @@ def process_messages(max_messages=1,
             receipt_handle = message['ReceiptHandle']
             if 'message_type' in message['MessageAttributes'].keys():
                 if message['MessageAttributes']['message_type']['StringValue'] == 'Machine Added':
-                    print 'CGL Event Found: "Machine Added"'
+                    print('CGL Event Found: "Machine Added"')
                     do_delete = add_machine_to_syncthing(message['MessageAttributes'], test=test)
                 elif message['MessageAttributes']['message_type']['StringValue'] == 'Folders Shared':
                     pass
-                    # print 'CGL Event Found: "Folders Shared"'
+                    # print('CGL Event Found: "Folders Shared"')
                     # do_delete = accept_folders_from_syncthing(message['MessageAttributes'], test=test)
                 else:
-                    print 'Unexpected Event: %s' % message['MessageAttributes']['message_type']['StringValue']
+                    print('Unexpected Event: %s' % message['MessageAttributes']['message_type']['StringValue'])
             if do_delete or force_delete:
-                print '\t -->> processing complete, deleting message'
+                print('\t -->> processing complete, deleting message')
                 sqs.delete_message(
                     QueueUrl=queue_url,
                     ReceiptHandle=receipt_handle
                 )
             else:
-                print '\t -->> message not processed, skipping delete'
+                print('\t -->> message not processed, skipping delete')
     else:
-        print 'CGL Events: No Events To Process'
+        print('CGL Events: No Events To Process')
 
 
 def add_machine_to_syncthing(message_attrs, test=True):
-    print 'add_machine_to_syncthing'
+    print('add_machine_to_syncthing')
     try:
         device_dict = st_utils.get_my_device_info()
     except:
-        print '\t -->> No Device ID Found, cannot accept folders.'
+        print('\t -->> No Device ID Found, cannot accept folders.')
         return
     local_device_id = device_dict['id']
     try:
         device_id = message_attrs['device_id']['StringValue']
         name = message_attrs['device_name']['StringValue']
-        print '\t -->> Adding device %s:%s to syncthing' % (device_id, name)
+        print('\t -->> Adding device %s:%s to syncthing' % (device_id, name))
         if not test:
             st_utils.kill_syncthing()
             print('adding %s to sync' % name)
@@ -126,13 +126,13 @@ def add_machine_to_syncthing(message_attrs, test=True):
             st_utils.kill_syncthing()
             print('sharing files to %s' % name)
             st_utils.share_folders_to_devices(device_ids=[device_id], dialog=False)
-            print 'Sending Folders Shared Message'
+            print('Sending Folders Shared Message')
             folders_shared_message(device_id=device_id, device_name=name,
                                    message='Shared Files with %s, check config')
             st_utils.launch_syncthing()
             return True
         if local_device_id != device_id:
-            print '\t -->> Adding device %s:%s to syncthing' % (device_id, name)
+            print('\t -->> Adding device %s:%s to syncthing' % (device_id, name))
             if not test:
                 try:
                     st_utils.kill_syncthing()
@@ -143,9 +143,9 @@ def add_machine_to_syncthing(message_attrs, test=True):
                     print('\t -->> Failed Adding Machine to Syncthing')
                     return False
         else:
-            print '\t -->> Skipping message that originated from this machine.'
+            print('\t -->> Skipping message that originated from this machine.')
     except KeyError:
-        print '\t -->> Did not find expected key in messageAttrs %s, skipping add machine to syncthing' % message_attrs
+        print('\t -->> Did not find expected key in messageAttrs %s, skipping add machine to syncthing' % message_attrs)
         return False
 
 
@@ -153,13 +153,13 @@ def accept_folders_from_syncthing(message_attrs, test=True):
     try:
         device_dict = st_utils.get_my_device_info()
     except:
-        print '\t -->> No Device ID Found, cannot accept folders.'
+        print('\t -->> No Device ID Found, cannot accept folders.')
         return
     local_device_id = device_dict['id']
     device_id = message_attrs['device_id']['StringValue']
     # i have to know that this computer is meant to have these folders.
     if local_device_id == device_id:
-        print '\t -->> Found New Folders for %s' % device_dict['name']
+        print('\t -->> Found New Folders for %s' % device_dict['name'])
         if not test:
             st_utils.process_st_config()  # this has kill and launch syncthing built in.
         return True
@@ -175,7 +175,7 @@ def send_sync_message(device_id, device_name, message, message_type, **kwargs):
     :param kwargs: 
     :return: 
     """
-    print "Notifying Lumbermill of New Machine Add"
+    print("Notifying Lumbermill of New Machine Add")
     message_types = ['Folders Shared', 'Machine Added']
     if message_type in message_types:
         message_attrs = {'device_id': {'DataType': 'String', 'StringValue': device_id},
@@ -224,7 +224,6 @@ def main(seconds, delete):
     while True:
         process_messages(force_delete=delete)
         if st_utils.syncthing_running():
-            print 1
             check_st_config()
             time.sleep(5)
         # st_utils.save_all_sync_events()

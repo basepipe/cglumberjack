@@ -2,7 +2,7 @@ import cgl.core.startup as startup
 
 
 def load_time_sheet(app_, splash_=None):
-    print 'No Time Log Found - Enter Time for yesterday'
+    print('No Time Log Found - Enter Time for yesterday')
     from cgl.ui.widgets.dialog import TimeTracker
     import datetime
     gui = TimeTracker()
@@ -14,7 +14,7 @@ def load_time_sheet(app_, splash_=None):
             splash_.finish(gui)
         app_.exec_()
     except AttributeError:
-        print 'The Time Tracker GUI could not load'
+        print('The Time Tracker GUI could not load')
 
 
 if __name__ == "__main__":

@@ -18,8 +18,3 @@ for task in result:
     # ftrack.commit()
 
 
-# print result[0].__dict__
-
-# how can i print all the attrs in this timelog?
-# how do i create a timelog object?  what attrs are needed?
-

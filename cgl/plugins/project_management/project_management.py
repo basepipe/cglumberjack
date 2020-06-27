@@ -284,10 +284,10 @@ class ProjectManagementData(object):
             if self.path_object.company not in my_tasks:
                 my_tasks[self.path_object.company] = {}
             if self.path_object.project not in my_tasks[self.path_object.company]:
-                print 'didnt find %s' % self.path_object.project
+                print('didnt find %s' % self.path_object.project)
                 my_tasks[self.path_object.company][self.path_object.project] = {}
             else:
-                print my_tasks[self.path_object.company][self.path_object.project]
+                print(my_tasks[self.path_object.company][self.path_object.project])
             new_path = self.path_root.split(self.user)[0]
             my_tasks[self.path_object.company][self.path_object.project][self.task_name] = {}
             task_info = my_tasks[self.path_object.company][self.path_object.project][self.task_name]
@@ -484,7 +484,7 @@ def find_user_assignments(path_object, user_email, force=False):
         else:
             continue_parse = True
         if continue_parse:
-            print 'GATHERING TASK DATA FROM FTRACK'
+            print('GATHERING TASK DATA FROM FTRACK')
             server_url = CONFIG['project_management']['ftrack']['api']['server_url']
             api_key = CONFIG['project_management']['ftrack']['api']['api_key']
             api_user = CONFIG['project_management']['ftrack']['api']['api_user']
@@ -531,7 +531,7 @@ def find_user_assignments(path_object, user_email, force=False):
             else:
                 return None
     else:
-        print 'Invalid Input Value(s): Company = %s, Project = %s' % (company, project)
+        print('Invalid Input Value(s): Company = %s, Project = %s' % (company, project))
 
 
 if __name__ == "__main__":

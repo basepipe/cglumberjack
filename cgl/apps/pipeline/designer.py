@@ -28,7 +28,7 @@ class Designer(LJDialog):
                 if each not in self.task_list:
                     self.task_list.append(each)
         except TypeError:
-            print 'Problems found in your globals "schema"'
+            print('Problems found in your globals "schema"')
             return
         self.task_list.sort()
         self.task_list.insert(0, '')
@@ -179,7 +179,7 @@ class Designer(LJDialog):
         self.menus.setCurrentIndex(index)
 
     def on_save_clicked(self):
-        print 'saving menus 182'
+        print('saving menus 182')
         self.save_menus()
 
     def load_menus(self):
@@ -200,7 +200,7 @@ class Designer(LJDialog):
                             buttons.save_clicked.connect(self.on_save_clicked)
                             self.menus.addTab(buttons, menu)
             else:
-                print '%s not found in %s' % (self.softwre, self.menu_path)
+                print('%s not found in %s' % (self.softwre, self.menu_path))
 
     def on_new_software_clicked(self):
         dialog = InputDialog(title='Add Software', message='Enter or Choose Software',
@@ -230,7 +230,7 @@ class Designer(LJDialog):
                     button_name = button_widget.name_line_edit.text()
                 else:
                     split = button_widget.command_line_edit.text().split()
-                    print 'setting name to module name: %s' % split[-1].split('.run()')[0]
+                    print('setting name to module name: %s' % split[-1].split('.run()')[0])
                     button_name = split[-1].split('.run()')[0]
                 if self.type == 'preflights':
                     menu_dict[menu_name][button_name] = {
@@ -252,8 +252,8 @@ class Designer(LJDialog):
                                                          'icon': icon_text,
                                                          'name': button_name
                                                         }
-                    print '\t', button_name
-                    print menu_dict[menu_name][button_name]
+                    print('\t', button_name)
+                    print(menu_dict[menu_name][button_name])
                 else:
                     menu_dict[menu_name][button_name] = {
                                                          'module': button_widget.command_line_edit.text(),
@@ -264,8 +264,8 @@ class Designer(LJDialog):
 
                 self.save_code(menu_name, button_widget)
         json_object = {self.software: menu_dict}
-        print 'saving json', self.menu_path
-        print json_object
+        print('saving json', self.menu_path)
+        print(json_object)
         self.save_json(self.menu_path, json_object)
 
     def create_empty_menu(self):

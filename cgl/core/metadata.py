@@ -51,7 +51,7 @@ def get_meta_data2(filein, tool='exiftool', print_output=False):
                 value = ' '.join(values)
                 d[key] = value
             except ValueError:
-                print 'skipping %s' % each
+                print('skipping %s' % each)
         return d
 
 
