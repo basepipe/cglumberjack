@@ -5,7 +5,7 @@ from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import load_style_sheet
 from cgl.core.project import get_cgl_tools
-from utils import CGLMenu
+from cgl.apps.pipeline.utils import CGLMenu
 
 
 class Designer(LJDialog):
@@ -310,9 +310,10 @@ class Designer(LJDialog):
                 i.write("")
 
     def save_json(self, filepath, data):
-        self.make_init_for_folders_in_path(filepath)
-        with open(filepath, 'w') as outfile:
-            json.dump(data, outfile, indent=4, sort_keys=True)
+        if data:
+            self.make_init_for_folders_in_path(filepath)
+            with open(filepath, 'w') as outfile:
+                json.dump(data, outfile, indent=4, sort_keys=True)
 
     @staticmethod
     def load_json(filepath):

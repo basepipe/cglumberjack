@@ -1,4 +1,5 @@
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
+QtWidgets.QHeaderView.setResizeMode = QtWidgets.QHeaderView.setSectionResizeMode
 import re
 import datetime
 from cgl.core.config import app_config, UserConfig
