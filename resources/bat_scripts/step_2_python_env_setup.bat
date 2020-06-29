@@ -35,6 +35,7 @@ choco install imagemagick.app -y
 choco install awscli -y
 choco install wget -y
 choco install exiftool -y
+choco install syncthing -y
 echo "Python Installation Done - Next do step_3_setup_cgl_repos.bat"
 
 
