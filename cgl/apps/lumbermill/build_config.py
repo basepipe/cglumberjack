@@ -5,7 +5,7 @@ import time
 import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.utils import read_write, web
-import plugins.syncthing.utils as syncthing
+
 
 
 
@@ -842,6 +842,7 @@ class QuickSync(QtWidgets.QDialog):
         :return:
         """
         from cgl.ui.widgets.dialog import InputDialog
+        import plugins.syncthing.utils as syncthing
 
         cgl_tools_folder = os.path.join(self.default_root, '_config', 'cgl_tools')
         if not os.path.exists(cgl_tools_folder):
