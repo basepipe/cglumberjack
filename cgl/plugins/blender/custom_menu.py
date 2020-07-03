@@ -1,4 +1,4 @@
-from plugins.CustomMenu import CustomMenu
+from cgl.plugins.CustomMenu import CustomMenu
 import bpy
 
 
@@ -16,9 +16,10 @@ class LumberMenu(CustomMenu):
         # load menu "name" from the blender name_panel.py file.
         # find the Panel class
         # panel_class = the one that has panel in it.
-        bpy.utils.register_class(panel_class)
+        # bpy.utils.register_class(panel_class)
         # from each class in that file:
-        add_button(button_class)
+        # add_button(button_class)
+        print(name)
 
     def set_menu_parent(self):
         """

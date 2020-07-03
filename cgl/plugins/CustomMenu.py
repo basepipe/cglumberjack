@@ -167,8 +167,9 @@ class CustomMenu(object):
                             icon=icon_file,
                             image_overlay_label=label)
 
-    def load_menus(self):
-        self.delete_menus()
+    def load_menus(self, test=False):
+        if test:
+            self.delete_menus()
         try:
             menus = self.remove_inactive_menus()
         except KeyError:
@@ -177,10 +178,14 @@ class CustomMenu(object):
 
         software_menus = self.order_menus(menus)
         for menu in software_menus:
-            _menu = self.create_menu(menu)
-            self.menu_dict[menu] = _menu
-            buttons = self.order_buttons(menu)
-            self.add_menu_buttons(menu, buttons)
+            if test:
+                print('menu: ', menu)
+                print('buttons: ', self.order_buttons(menu))
+            else:
+                _menu = self.create_menu(menu)
+                self.menu_dict[menu] = _menu
+                buttons = self.order_buttons(menu)
+                self.add_menu_buttons(menu, buttons)
 
     # When Starting a new shelf, simply copy all of the functions below and fill them in with softwarespecific functions
     # See Nuke and Maya examples: plugins/nuke/custom_menu.py & plugins/maya/custom_menu.py
