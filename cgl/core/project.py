@@ -124,6 +124,10 @@ def get_cgl_config():
 
 
 def get_cgl_tools():
+    """
+    get the path for the cgl_tools directory
+    :return:
+    """
     return CONFIG['paths']['cgl_tools']
 
 

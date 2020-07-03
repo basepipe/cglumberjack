@@ -1,63 +1,65 @@
 from plugins.CustomMenu import CustomMenu
+import bpy
 
 
-class BlenderCustomMenu(CustomMenu):
+class LumberMenu(CustomMenu):
     def __init__(self, software='maya', type_='shelves'):
         CustomMenu.__init__(self, software, type_)
 
-    def get_scene_path(self):
+    def create_menu(self, name, menu_type='panel'):
         """
-        Returns the current scene path
+        creates a menu with title of 'name'
+        :param name:
+        :param menu_type:
         :return:
         """
-        pass
-
-    def create_menu(self, name):
-        """
-        Creates a menu with the name "name", returns the resulting menu
-        :param name: name of the menu
-        :return: menu
-        """
-        menu = "Creates a menu called name"
-        return menu
+        # load menu "name" from the blender name_panel.py file.
+        # find the Panel class
+        # panel_class = the one that has panel in it.
+        bpy.utils.register_class(panel_class)
+        # from each class in that file:
+        add_button(button_class)
 
     def set_menu_parent(self):
         """
-        This is the object we will attach our menu to.
+        set the parent of a menu
         :return:
         """
         pass
 
-    def add_button(self, shelf, label='', annotation='', command='', icon='', image_overlay_label=''):
+    def add_button(self, button_class):
         """
-        command to add a button to a menu
-        :param shelf: the menu or shelf to add the button to
-        :param label: label of the button
-        :param annotation: information about the button
-        :param command: command to execute
-        :param icon: location of the icon
+        add a button to a menu
+        :param shelf:
+        :param label:
+        :param annotation:
+        :param command:
+        :param icon:
         :param image_overlay_label:
         :return:
         """
-        pass
+        bpy.utils.register_class(LumbermillRigging)
 
     @staticmethod
-    def find_menu_by_name(parent, menu_name):
+    def find_menu_by_name(menu_name):
         """
-        Finds a menu object by the given menu_name
+        finds menu in software package given its string name
         :param parent:
         :param menu_name:
         :return:
         """
-        pass
+        # load menu "name" from the blender name_panel.py file.
+        # return the class that matches "menu_name"
+        return menu_class
 
     def delete_menu(self, menu_name):
         """
-        Deletes the menu of name "menu_name"
+        deletes menu by "menu_name"
         :param shelf_name:
         :return:
         """
-        pass
+        menu_class = self.find_menu_by_name(menu_name)
+        bpy.utils.unregister_class(menu_class)
 
 
 

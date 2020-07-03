@@ -584,7 +584,10 @@ class InputDialog(LJDialog):
         self.btn3.clicked.connect(self.close)
         if regex:
             self.line_edit.textChanged.connect(self.on_text_changed_regex)
-            self.combo_box.textChanged.connect(self.on_text_changed_regex)
+            try:
+                self.combo_box.textChanged.connect(self.on_text_changed_regex)
+            except AttributeError:
+                self.combo_box.editTextChanged.connect(self.on_text_changed_regex)
 
     def on_button_clicked(self):
         self.button = self.sender().text()

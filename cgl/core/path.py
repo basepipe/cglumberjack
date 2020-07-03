@@ -1361,7 +1361,20 @@ class Sequence(object):
             return '%11d' % number
 
 
+def get_resources_path():
+    """
+    get the resources path
+    :return: path string
+    """
+    return os.path.join(CONFIG['paths']['code_root'], 'resources')
+
+
 def image_path(image=None):
+    """
+    get the path where images are stored
+    :param image:
+    :return:
+    """
     if image:
         return os.path.join(CONFIG['paths']['code_root'], 'resources', 'images', image)
     else:
@@ -1369,6 +1382,11 @@ def image_path(image=None):
 
 
 def icon_path(icon=None):
+    """
+    get the path where icons are stored.
+    :param icon:
+    :return:
+    """
     if icon:
         return os.path.join(CONFIG['paths']['code_root'], 'resources', 'icons', icon)
     else:
@@ -1376,22 +1394,19 @@ def icon_path(icon=None):
 
 
 def font_path():
+    """
+    get the path where fonts for the app are stored
+    :return:
+    """
     return os.path.join(CONFIG['paths']['code_root'], 'resources', 'fonts')
 
 
 def start(filepath):
-    # if filepath.endswith('.nk'):
-    #     from cgl.core.utils.general import current_user
-    #     if current_user() == 'tmikota':
-    #         path_object = PathObject(filepath)
-    #         print(path_object.company, path_object.project
-    #         if path_object.company == 'VFX':
-    #             cmd = r'%s --nukex ' % CONFIG['paths']['nuke']
-    #             command = (cmd + filepath)
-    #             print(command
-    #             cgl_execute(command, methodology='local')
-    #             return
-    # else:
+    """
+    opens a file on any os
+    :param filepath:
+    :return:
+    """
     try:
         path_object = PathObject(filepath)
         if path_object.task.lower() == 'paperedit':

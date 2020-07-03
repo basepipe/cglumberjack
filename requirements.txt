@@ -17,3 +17,4 @@ xmltodict
 oauth2client
 psutil
 matplotlib
+stringcase

@@ -73,3 +73,22 @@ def load_style_sheet(style_file='stylesheet.css'):
     data = f.read()
     data.strip('\n')
     return data
+
+
+def load_text_file(file_path):
+    file_obj = open(file_path, "r")
+    lines = file_obj.readlines()
+    file_obj.close()
+    return lines
+
+
+def save_text_lines(text_array, file_path):
+    """
+    this expects to get typical text that would print normally.
+    :param text_to_save:
+    :param file_path:
+    :return:
+    """
+    file_object = open(file_path, "w")
+    file_object.writelines(text_array)
+    file_object.close()
