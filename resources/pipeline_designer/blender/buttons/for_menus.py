@@ -14,6 +14,7 @@ class ButtonTemplate(bpy.types.Operator):
 
     def execute(self, context):
         run()
+        return {'FINISHED'}
 
 
 def run():

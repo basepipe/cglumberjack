@@ -1,5 +1,8 @@
 import logging
-from Queue import Empty
+try:
+    from Queue import Empty
+except ModuleNotFoundError:
+    print('Python3 - Skipping Queue import')
 from plugins.project_management.shotgun import shotgun_api3 as sg_api
 from cgl.core.config import app_config
 
@@ -90,18 +93,14 @@ class ShotgunProcess(object):
 
     def run(self):
         logging.debug("%s run" % self.__str__())
-        try:
-            task = self.queue.get(True)
+        task = self.queue.get(True)
+        if not self.connection:
+            import plugins.project_management.shotgun.shotgun_api3 as sg_api
+            config = app_config()['project_management']['shotgun']['api']
+            self.connection = sg_api.Shotgun(base_url=config['server_url'],
+                                             script_name=config['api_script'],
+                                             api_key=config['api_key'])
 
-            if not self.connection:
-                import plugins.project_management.shotgun.shotgun_api3 as sg_api
-                config = app_config()['project_management']['shotgun']['api']
-                self.connection = sg_api.Shotgun(base_url=config['server_url'],
-                                                 script_name=config['api_script'],
-                                                 api_key=config['api_key'])
+        result = getattr(self.connection, task.type)(*task.args, **task.kwargs)
 
-            result = getattr(self.connection, task.type)(*task.args, **task.kwargs)
-
-            task.result['result'] = result
-        except Empty:
-            pass
+        task.result['result'] = result

@@ -188,7 +188,6 @@ class Designer(LJDialog):
             create_menu_file(menu_name)
 
     def on_save_clicked(self):
-        print('saving menus 182')
         self.save_menus()
 
     def load_menus(self):
@@ -230,6 +229,9 @@ class Designer(LJDialog):
         for mi in range(self.menus.count()):
             menu_name = self.menus.tabText(mi)
             menu = self.menus.widget(mi)
+            if self.software == 'blender':
+                from cgl.plugins.blender.utils import add_buttons_to_menu
+                add_buttons_to_menu(menu_name)
             menu_dict[menu_name] = {}
             menu_dict[menu_name]['order'] = mi+1
             for bi in range(menu.buttons_tab_widget.count()):
@@ -261,8 +263,6 @@ class Designer(LJDialog):
                                                          'icon': icon_text,
                                                          'name': button_name
                                                         }
-                    print('\t', button_name)
-                    print(menu_dict[menu_name][button_name])
                 else:
                     menu_dict[menu_name][button_name] = {
                                                          'module': button_widget.command_line_edit.text(),
@@ -274,7 +274,6 @@ class Designer(LJDialog):
                 self.save_code(menu_name, button_widget)
         json_object = {self.software: menu_dict}
         print('saving json', self.menu_path)
-        print(json_object)
         self.save_json(self.menu_path, json_object)
 
     def create_empty_menu(self):
@@ -290,11 +289,6 @@ class Designer(LJDialog):
         if not os.path.exists(dir_):
             os.makedirs(dir_)
         self.make_init_for_folders_in_path(dir_)
-
-        if self.software == 'blender':
-            from cgl.plugins.blender.utils import create_menu_file, create_button_file
-            print('blender saving buttons')
-            # create the blender menu file
 
         if button_widget.do_save:
             with open(button_file, 'w+') as x:

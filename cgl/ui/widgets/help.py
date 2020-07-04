@@ -7,7 +7,7 @@ from cgl.core.utils.general import current_user
 from cgl.core import screen_grab
 import cgl.core.path as cglpath
 from cgl.ui.widgets.widgets import AdvComboBox, TagWidget
-from plugins.project_management.asana.basic import AsanaJack
+from cgl.plugins.project_management.asana.basic import AsanaJack
 
 CONFIG = app_config()
 PROJECT_MANAGEMENT = CONFIG['account_info']['project_management']

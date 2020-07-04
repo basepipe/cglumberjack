@@ -7,6 +7,7 @@ import os
 import sys
 import re
 import copy
+import importlib
 from cgl.core.utils.general import split_all, cgl_copy, cgl_execute, clean_file_list
 from cgl.core.config import app_config, UserConfig
 
@@ -106,8 +107,11 @@ class PathObject(object):
         self.path_template = []
         self.version_template = []
         # TODO python 3 doesn't like unicode
-        if isinstance(path_object, bytes):
-            path_object = str(path_object)
+        try:
+            if isinstance(path_object, unicode):
+                path_object = str(path_object)
+        except NameError:
+            print('Python3 does not support unicode, skipping')
         if isinstance(path_object, dict):
             self.process_dict(path_object)
         elif isinstance(path_object, str):
@@ -1145,7 +1149,10 @@ class CreateProductionData(object):
                     session = self.session
                 module = "cgl.plugins.project_management.%s.main" % project_management
                 # noinspection PyTypeChecker
-                loaded_module = __import__(module, globals(), locals(), 'main', -1)
+                try:
+                    loaded_module = __import__(module, globals(), locals(), 'main', -1)  # Python 2.7 way of doing this
+                except ValueError:
+                    loaded_module = importlib.import_module(module)
                 loaded_module.ProjectManagementData(path_object,
                                                     session=session,
                                                     user_email=user_login,

@@ -10,7 +10,7 @@ from cgl.ui.widgets.containers.menu import LJMenu
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import current_user
 from cgl.core.path import icon_path
-import plugins.project_management.ftrack.util as ftrack_util
+import cgl.plugins.project_management.ftrack.util as ftrack_util
 
 CONFIG = app_config()
 

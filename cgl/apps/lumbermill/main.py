@@ -9,8 +9,8 @@ from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
 from cgl.core.utils.general import current_user, check_for_latest_master, update_master, launch_lumber_watch, save_json
 from cgl.core.config import app_config, UserConfig, user_config
-from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
-from apps.lumbermill.elements.FilesPanel import FilesPanel
+from cgl.apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
+from cgl.apps.lumbermill.elements.FilesPanel import FilesPanel
 from cgl.ui.widgets.help import ReportBugDialog, RequestFeatureDialog
 import cgl.plugins.syncthing.utils as st_utils
 try:
@@ -582,8 +582,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(path_object.data)
 
     def load_files_panel(self, path_object):
-        self.panel = FilesPanel(path_object=path_object, user_email=self.user_email,
-                                show_import=self.show_import)
+        self.panel = FilesPanel(path_object=path_object, show_import=self.show_import)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
         # self.panel.new_version_signal.connect(self.new_version_clicked)
@@ -650,21 +649,26 @@ class CGLumberjack(LJMainWindow):
         self.project_management = CONFIG['account_info']['project_management']
         self.user_info = ''
         self.user_email = ''
+        if user_info:
+            self.user_info = user_info
+            if user_info['login']:
+                self.user_email = user_info['login']
         self.user_name = ''
         self.company = ''
         self.pd_menus = {}
         self.menu_dict = {}
         self.menus = {}
         self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
-                                                 user_email=user_info['login'],
+                                                 user_email=self.user_info,
                                                  company=self.company,
                                                  path=self.previous_path,
                                                  radio_filter=self.filter,
                                                  show_import=show_import))
-        if user_info['first']:
-            self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['first'])
-        else:
-            self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['login'])
+        if user_info:
+            if user_info['first']:
+                self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['first'])
+            else:
+                self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['login'])
         self.status_bar = QtWidgets.QStatusBar()
         self.setStatusBar(self.status_bar)
 

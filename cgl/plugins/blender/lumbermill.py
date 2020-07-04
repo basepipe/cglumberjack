@@ -1,7 +1,9 @@
 import os
 import logging
+import bpy
 from cgl.plugins.Qt import QtCore, QtWidgets
-from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
+from cgl.plugins.blender.utils import QtWindowEventLoop
+from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 from cgl.core.utils.general import current_user
 from cgl.core.utils.general import create_file_dirs
 from cgl.core.path import PathObject
@@ -40,7 +42,7 @@ class BrowserWidget(CGLumberjackWidget):
 class AppMainWindow(CGLumberjack):
     def __init__(self, parent=None, path=None, user_info=None):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
-        print 'Application Path path is %s' % path
+        print('Application Path path is %s' % path)
         self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
 
 
@@ -112,8 +114,11 @@ class LumberObject(PathObject):
         self.path_template = []
         self.version_template = []
 
-        if isinstance(path_object, unicode):
-            path_object = str(path_object)
+        try:
+            if isinstance(path_object, unicode):
+                path_object = str(path_object)
+        except NameError:
+            print('Python3 does not support unicode, skipping')
         if isinstance(path_object, dict):
             self.process_info(path_object)
         elif isinstance(path_object, str):
@@ -129,7 +134,7 @@ class LumberObject(PathObject):
         command line locally.  smedge/deadline - submit the job to a render manager for farm rendering.
         :return:
         """
-        print 'what is my render path?'
+        print('what is my render path?')
         pass
 
 
@@ -138,7 +143,7 @@ def get_scene_name():
     get current scene name
     :return:
     """
-    pass
+    return bpy.data.filepath
 
 
 def scene_object():
@@ -146,6 +151,42 @@ def scene_object():
     returns LumberObject of curent scene
     :return:
     """
+    return LumberObject(get_scene_name())
+
+
+def save_file_as(filepath):
+    """
+    save current file as
+    :param filepath:
+    :return:
+    """
+    bpy.ops.wm.save_as_mainfile(filepath=filepath)
+    return filepath
+
+
+def version_up(vtype='minor'):
+    """
+    versions up the current scene
+    :param vtype: minor or major
+    :return:
+    """
+    path_object = LumberObject(get_scene_name())
+    if vtype == 'minor':
+        new_version = path_object.new_minor_version_object()
+    elif vtype == 'major':
+        new_version = path_object.next_major_version()
+    create_file_dirs(new_version.path_root)
+    return save_file_as(new_version.path_root)
+
+
+def import_file(filepath='', namespace=None):
+    """
+    imports file into a scene.
+    :param filepath:
+    :param namespace:
+    :return:
+    """
+    print('import file')
     pass
 
 
@@ -155,44 +196,28 @@ def open_file(filepath):
     :param filepath:
     :return:
     """
+    print('open file')
     pass
 
 
-def save_file(filepath=None):
+def save_file(filepath=''):
     """
     Save Current File
     :param filepath:
     :return:
     """
+    print('save file')
     pass
 
 
-def save_file_as(filepath):
-    """
-    save current file as
-    :param filepath:
-    :return:
-    """
-    pass
-
-
-def import_file(filepath, namespace=None):
-    """
-    imports file into a scene.
-    :param filepath:
-    :param namespace:
-    :return:
-    """
-    pass
-
-
-def reference_file(filepath, namespace=None):
+def reference_file(filepath='', namespace=None):
     """
     creates a "reference" of a file, this is a convenience function to be used in various software plugins
     to promote continuity accross plugins
     :param filepath:
     :return:
     """
+    print(filepath)
     pass
 
 
@@ -218,13 +243,7 @@ def select(nodes=None, d=True):
     pass
 
 
-def version_up(vtype='minor'):
-    """
-    versions up the current scene
-    :param vtype: minor or major
-    :return:
-    """
-    pass
+
 
 
 def export_selected(to_path, ext='mb'):
@@ -311,12 +330,16 @@ def render(preview=False):
     pass
 
 
-def review():
+def review(file_base_name):
     """
     submit a review of the current scene.  (Requires a render to be present)
     :return:
     """
-    pass
+    from cgl.core.project import do_review
+    sequence = scene_object().copy(context='render', filename='%s.####.jpg' % file_base_name)
+    if glob.glob(playblast_seq.path_root.replace('####', '*')):
+        print('exists - reviewing')
+        do_review(progress_bar=None, path_object=sequence)
 
 
 def launch_preflight(task=None, software=None):
@@ -341,22 +364,22 @@ def publish():
     return publish_object
 
 
-def launch_():
+class CustomWindowOperator(QtWindowEventLoop):
+    bl_idname = 'screen.lumbermill_window'
+    bl_label = 'Lumbermill For Blender'
     scene_name = get_scene_name()
     scene = LumberObject(scene_name)
     location = '%s/*' % scene.split_after('shot')
-    project_management = CONFIG['account_info']['project_management']
-    users = CONFIG['project_management'][project_management]['users']
-    if current_user() in users:
-        user_info = users[current_user()]
-        app = QtWidgets.QApplication.instance()
-        main_window = AppMainWindow(user_info=user_info, path=location)
-        main_window.setWindowTitle('Lumbermill: Maya')
-        main_window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        main_window.show()
-        main_window.raise_()
-    app.exec_()
+
+    def __init__(self):
+        super().__init__(AppMainWindow, path=self.location)
+
+
+def launch_():
+    # https://github.com/vincentgires/blender-scripts/blob/master/scripts/addons/qtutils/example.py
+    bpy.utils.register_class(CustomWindowOperator)
+    bpy.ops.screen.lumbermill_window()
 
 
 if __name__ == "__main__":
-    print SOFTWARE
+    print(SOFTWARE)

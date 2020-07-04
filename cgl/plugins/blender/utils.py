@@ -1,11 +1,81 @@
 import re
 import os
+import sys
 import stringcase
+import logging
+import bpy
+from cgl.plugins.Qt import QtCore, QtWidgets
 import cgl.core.utils.read_write as read_write
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.apps.pipeline.utils import get_button_path, get_menu_path
 from cgl.core.path import get_resources_path
 from cgl.core.project import get_cgl_tools
+
+logger = logging.getLogger('qtutils')
+
+
+class QtWindowEventLoop(bpy.types.Operator):
+    """Allows PyQt or PySide to run inside Blender"""
+    # example taken from https://github.com/vincentgires/blender-scripts/blob/master/scripts/addons/qtutils/core.py
+
+    bl_idname = 'screen.qt_event_loop'
+    bl_label = 'Qt Event Loop'
+
+    def __init__(self, widget, *args, **kwargs):
+        self._widget = widget
+        self._args = args
+        self._kwargs = kwargs
+
+    def modal(self, context, event):
+        wm = context.window_manager
+
+        if not self.widget.isVisible():
+            # if widget is closed
+            logger.debug('finish modal operator')
+            wm.event_timer_remove(self._timer)
+            return {'FINISHED'}
+        else:
+            logger.debug('process the events for Qt window')
+            self.event_loop.processEvents()
+            self.app.sendPostedEvents(None, 0)
+
+        return {'PASS_THROUGH'}
+
+    def execute(self, context):
+        logger.debug('execute operator')
+
+        self.app = QtWidgets.QApplication.instance()
+        # instance() gives the possibility to have multiple windows
+        # and close it one by one
+
+        if not self.app:
+            # create the first instance
+            self.app = QtWidgets.QApplication(sys.argv)
+
+        if 'stylesheet' in self._kwargs:
+            stylesheet = self._kwargs['stylesheet']
+            self.set_stylesheet(self.app, stylesheet)
+
+        self.event_loop = QtCore.QEventLoop()
+        self.widget = self._widget(*self._args, **self._kwargs)
+
+        logger.debug(self.app)
+        logger.debug(self.widget)
+
+        # run modal
+        wm = context.window_manager
+        self._timer = wm.event_timer_add(1 / 120, window=context.window)
+        context.window_manager.modal_handler_add(self)
+
+        return {'RUNNING_MODAL'}
+
+    def set_stylesheet(self, app, filepath):
+        file_qss = QtCore.QFile(filepath)
+        if file_qss.exists():
+            file_qss.open(QtCore.QFile.ReadOnly)
+            stylesheet = QtCore.QTextStream(file_qss).readAll()
+            app.setStyleSheet(stylesheet)
+            file_qss.close()
 
 
 def create_tt(length, tt_object):
@@ -133,8 +203,11 @@ def add_buttons_to_menu(menu):
                 i += 1
                 button_name = get_menu_at(menu_object, 'blender', menu, i)
                 button_string = '        self.layout.row().operator("object.%s")\n' % stringcase.snakecase(button_name)
-                new_menu_lines.append(button_string)
-                remove_pass = True
+                if button_string not in menu_lines:
+                    new_menu_lines.append(button_string)
+                    remove_pass = True
+                else:
+                    print('Found button, skipping')
 
     read_write.save_text_lines(new_menu_lines, menu_file)
 

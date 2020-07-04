@@ -114,6 +114,7 @@ class CustomMenu(object):
     def delete_menus(self):
         if self.menus:
             for menu in self.menus:
+                print('deleting %s' % menu)
                 self.delete_menu(menu)
 
     def delete_menu(self, menu_name):
@@ -177,6 +178,7 @@ class CustomMenu(object):
             pass
 
         software_menus = self.order_menus(menus)
+        print('menus: %s', software_menus)
         for menu in software_menus:
             if test:
                 print('menu: ', menu)

@@ -65,7 +65,6 @@ class CGLMenuButton(QtWidgets.QWidget):
 
         try:
             dialog = self.parent().parent().parent()
-            print(dialog)
             self.software = dialog.software_combo.currentText()
         except AttributeError:
             # TODO - look into this a bit deeper, this is a fairly generic catch right now.
@@ -187,7 +186,6 @@ class CGLMenuButton(QtWidgets.QWidget):
         self.on_save_clicked()
 
     def on_save_clicked(self):
-        print('save_clicked 172, emit.')
         self.save_all_signal.emit()
 
     def on_open_clicked(self):
@@ -209,7 +207,6 @@ class CGLMenuButton(QtWidgets.QWidget):
                 if attr == 'name':
                     if not str(self.attrs[attr]):
                         split = self.attrs['module'].split()
-                        print('setting name to module name: %s' % split[-1].split('.run()')[0])
                         attr_value = split[-1].split('.run()')[0]
                 self.attrs_dict[attr].setText(attr_value)
         # load the python file into the text edit
@@ -222,7 +219,6 @@ class CGLMenuButton(QtWidgets.QWidget):
 
     def load_code_text(self):
         code_path = get_button_path(self.software, self.preflight_name, self.name, menu_type=self.menu_type)
-        print('loading: %s' % code_path)
         if os.path.exists(code_path):
             try:
                 return open(code_path).read()
@@ -242,11 +238,7 @@ class CGLMenuButton(QtWidgets.QWidget):
             self.do_save = False
 
     def on_delete_clicked(self):
-        print(self)
-        print(self.parent().parent())
-        print(self.parent().parent().parent())
-        print('--------------------')
-        print(self.parent().parent().currentIndex())
+        print('Deleting Tab')
         self.parent().parent().removeTab(self.parent().parent().currentIndex())
 
 
@@ -397,12 +389,9 @@ class CGLMenu(QtWidgets.QWidget):
             self.buttons_tab_widget.setCurrentIndex(index)
 
     def on_save_clicked(self):
-        print('save_clicked emit, 1')
         self.save_clicked.emit()
 
     def get_command_text(self, button_name, menu_type):
-        print('import cgl_tools.%s.%s.%s.%s as %s; %s.run()' % (self.software, menu_type, self.menu_name, button_name,
-                                                                button_name, button_name))
         return 'import cgl_tools.%s.%s.%s.%s as %s; %s.run()' % (self.software, menu_type, self.menu_name, button_name,
                                                                  button_name, button_name)
 
@@ -439,7 +428,6 @@ def create_button_file(software, menu_name, button_name, menu_type):
 
     button_template = os.path.join(get_resources_path(), 'pipeline_designer', template_software, 'buttons',
                                    'for_%s.py' % menu_type)
-    print(button_template)
     button_lines = load_text_file(button_template)
     changed_lines = []
     for l in button_lines:
@@ -467,8 +455,6 @@ def create_button_file(software, menu_name, button_name, menu_type):
     dirname = os.path.dirname(button_path)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-    print(changed_lines)
-    print('--------- Saving button to: %s' % button_path)
     save_text_lines(changed_lines, button_path)
     return button_path
 
