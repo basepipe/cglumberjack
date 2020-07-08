@@ -99,10 +99,10 @@ class ProjectManagementData(object):
                 self.set_status()
 
     def create_project_management_data(self):
-        print('im in shotgun land')
+        logging.debug('im in shotgun land')
         self.project_data = self.entity_exists('project')
         if not self.project_data:
-            print('creating project')
+            logging.debug('creating project')
             self.project_data = self.create_project()
         if self.scope == 'assets':
             if self.type:
@@ -176,7 +176,7 @@ class ProjectManagementData(object):
         elif data_type == 'task':
             data = self.find_task()
         elif data_type == 'version':
-            print('found version')
+            logging.debug('found version')
             data = self.create_version()
         return data
 
@@ -185,20 +185,20 @@ class ProjectManagementData(object):
         Creates a Version within the Project Management system based off information passed through the PathObject
         :return: Version Data Object
         """
-        print('Do i need to see if the version already exists?')
+        logging.debug('Do i need to see if the version already exists?')
         if self.filename:
             data = {'project': self.project_data,
                     'entity': self.entity_data,
                     'sg_task': self.task_data,
                     'code': self.version_name,
                     'user': self.user_data}
-            print('Creating Shotgun Version: %s' % self.version)
+            logging.debug('Creating Shotgun Version: %s' % self.version)
             self.version_data = ShotgunQuery.create('Version', data)
             self.upload_media()
-            print(self.get_version_url())
+            logging.debug(self.get_version_url())
             return self.version_data
         else:
-            print('No File Defined, skipping version creation')
+            logging.debug('No File Defined, skipping version creation')
 
     def create_project(self, short_name=None):
         """
@@ -255,7 +255,7 @@ class ProjectManagementData(object):
 
         task_data = self.find_task_shortname()
         if self.user_data:
-            print('user exists')
+            logging.debug('user exists')
             data = {'project': self.project_data,
                     'entity': self.entity_data,
                     'step': task_data,
@@ -263,7 +263,7 @@ class ProjectManagementData(object):
                     'content': self.task_name
                     }
         else:
-            print('no user')
+            logging.debug('no user')
             data = {'project': self.project_data,
                     'entity': self.entity_data,
                     'step': task_data,
@@ -278,10 +278,10 @@ class ProjectManagementData(object):
         :return:
         """
         if not self.file_type:
-            print('Cannot Determine File Type - skipping Shotgun Upload')
+            logging.debug('Cannot Determine File Type - skipping Shotgun Upload')
             return
         if not os.path.exists(self.path_object.preview_path):
-            print(self.path_object.preview_path, 'Does Not Exist')
+            logging.debug(self.path_object.preview_path, 'Does Not Exist')
             return
         else:
             preview = self.path_object.preview_path
@@ -315,7 +315,7 @@ class ProjectManagementData(object):
 
         :return:
         """
-        print('Adding to Dailies')
+        logging.debug('Adding to Dailies')
         pass
 
     def add_project_to_user(self):
@@ -414,20 +414,20 @@ class ProjectManagementData(object):
         if force:
             self.get_project_management_data()
         if self.version_data:
-            print('Setting Version Status to: %s' % self.status)
+            logging.debug('Setting Version Status to: %s' % self.status)
             ShotgunQuery.update('Version', entity_id=self.version_data['id'], data={'sg_status_list': self.status})
-            print('Setting Task Status to: %s' % self.status)
+            logging.debug('Setting Task Status to: %s' % self.status)
             ShotgunQuery.update('Task', entity_id=self.task_data['id'], data={'sg_status_list': self.status})
             self.set_entity_status()
             return
         if self.task_data:
-            print('setting status for the task')
+            logging.debug('setting status for the task')
             ShotgunQuery.update('Task', entity_id=self.task_data['id'], data={'sg_status_list': self.status})
             self.set_entity_status()
 
     def set_entity_status(self):
         asset_status = self.get_asset_status()
-        print('Setting Entity Status to: %s' % asset_status)
+        logging.debug('Setting Entity Status to: %s' % asset_status)
 
     def get_asset_status(self):
         """
@@ -474,7 +474,7 @@ class ProjectManagementData(object):
         if asset_status in long_to_short.keys():
             return long_to_short[asset_status]
         else:
-            print('Didnt find %s in keys' % asset_status)
+            logging.debug('Didnt find %s in keys' % asset_status)
 
     def get_status(self):
         self.project_data = self.entity_exists('project')
@@ -484,7 +484,7 @@ class ProjectManagementData(object):
             return data['status']['name']
             #return self.task_data['status']['name']
         else:
-            print('No Task Data found!')
+            logging.debug('No Task Data found!')
             return None
 
     def get_url(self):
@@ -492,15 +492,15 @@ class ProjectManagementData(object):
         if self.version:
             return self.get_version_url()
         if self.task:
-            print('task')
+            logging.debug('task')
             return self.get_task_url()
         if self.shot:
-            print('shot')
+            logging.debug('shot')
             return self.get_shot_url()
         elif self.asset:
-            print('asset not defined yet')
+            logging.debug('asset not defined yet')
         if self.project:
-            print('project')
+            logging.debug('project')
             return self.get_proj_url()
 
     def get_proj_url(self):
@@ -532,7 +532,7 @@ class ProjectManagementData(object):
         url_string = r'%s/widget/#view=freview_webplayer_v1&itemId=freview&entityType=list&entityId=' \
                      r'%s&controller=widget' % (self.server_url, playlist)
         webbrowser.open(url_string)
-        print(url_string)
+        logging.debug(url_string)
 
 
 

@@ -4,7 +4,6 @@ import sys
 import stringcase
 import logging
 import bpy
-from cgl.plugins.Qt import QtCore, QtWidgets
 import cgl.core.utils.read_write as read_write
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.apps.pipeline.utils import get_button_path, get_menu_path
@@ -12,6 +11,9 @@ from cgl.core.path import get_resources_path
 from cgl.core.project import get_cgl_tools
 
 logger = logging.getLogger('qtutils')
+
+
+
 
 
 class QtWindowEventLoop(bpy.types.Operator):

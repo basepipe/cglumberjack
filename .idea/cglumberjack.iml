@@ -6,8 +6,9 @@
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/cgl/plugins/project_management/shotgun/shotgun_api3" />
       <excludeFolder url="file://$MODULE_DIR$/python27venv" />
+      <excludeFolder url="file://$MODULE_DIR$/python38_fixvenv" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.8 (python38venv)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.8 (cglumberjack)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

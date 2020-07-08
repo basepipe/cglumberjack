@@ -79,7 +79,7 @@ class EditGlobals(LJDialog):
             elif isinstance(self.globals_dict[key], list):
                 self.create_tree_widget_item(self.globals_dict, key, value=str(self.globals_dict[key]))
             elif isinstance(self.globals_dict[key], str):
-                print('string:', key, self.globals_dict[key])
+                logging.debug('string:', key, self.globals_dict[key])
 
     def add_children(self, parent_item, children):
         if isinstance(children, dict):
@@ -94,7 +94,7 @@ class EditGlobals(LJDialog):
                         or isinstance(children[key], float):
                     self.create_tree_widget_item(children, key, value=str(children[key]), parent=parent_item)
                 else:
-                    print(key, 'is type ', type(children[key]))
+                    logging.debug(key, 'is type ', type(children[key]))
 
     def load_projects(self):
         """
@@ -206,7 +206,7 @@ class EditGlobals(LJDialog):
         else:
             os.makedirs(os.path.dirname(globals_path))
             # save_json(globals_path, dict_)
-        print(globals_path)
+        logging.debug(globals_path)
 
     def get_dictionary(self, item, key=False, value=False):
         dict_ = {}
@@ -228,8 +228,8 @@ class EditGlobals(LJDialog):
             parent_key = parent_item.text(0)
             previous_keys.append(parent_key)
         else:
-            print('Editing value on the copied dict')
-            print('keys:', previous_keys, 'value:', value)
+            logging.debug('Editing value on the copied dict')
+            logging.debug('keys:', previous_keys, 'value:', value)
 
     def get_parentage(self, item, prev_text=None, dict_=None):
         if not dict_:

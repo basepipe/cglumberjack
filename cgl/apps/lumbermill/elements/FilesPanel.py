@@ -73,7 +73,7 @@ class FilesPanel(QtWidgets.QWidget):
                 'its a dict, this sucks'
                 current = PathObject(data)
         except IndexError:
-            print('Nothing Selected')
+            logging.debug('Nothing Selected')
             return
         if data:
             self.clear_layout(self.panel)
@@ -343,19 +343,19 @@ class FilesPanel(QtWidgets.QWidget):
         if data:
             self.in_current_folder = False
             selected = data[0][0]
-            print(selected)
+            logging.debug(selected)
             if selected == '.':
-                print('going back a folder')
+                logging.debug('going back a folder')
                 last = self.path_object.get_last_attr()
                 self.path_object.set_attr(last, None)
-                print(self.path_object.path_root)
+                logging.debug(self.path_object.path_root)
                 self.update_task_location(self.path_object)
                 self.enter_render_folder()
                 return
             if os.path.splitext(selected)[1]:
-                print(selected, 'is a file')
+                logging.debug(selected, 'is a file')
             else:
-                print(self.path_object.path_root, 'entering folder')
+                logging.debug(self.path_object.path_root, 'entering folder')
                 self.enter_render_folder()
 
     @staticmethod
@@ -385,7 +385,7 @@ class FilesPanel(QtWidgets.QWidget):
                 self.in_current_folder = True
             else:
                 current_variable = self.get_next_path_object_variable(object_, current=True)
-            print(current_variable, object_.path_root)
+            logging.debug(current_variable, object_.path_root)
             if current_variable != 'filename':
                 if object_.filename:
                     object_.set_attr(filename='')
@@ -401,7 +401,7 @@ class FilesPanel(QtWidgets.QWidget):
                     object_.set_attr(filename_base=filename_base)
                     object_.set_attr(ext=ext.replace('.', ''))
                 else:
-                    print('this is a folder i thought was a file')
+                    logging.debug('this is a folder i thought was a file')
             self.update_task_location(new_path_object)
             for each in data:
                 dir_ = os.path.dirname(object_.path_root)
@@ -441,7 +441,7 @@ class FilesPanel(QtWidgets.QWidget):
 
     @staticmethod
     def new_version_from_latest():
-        print('version up_latest')
+        logging.debug('version up_latest')
 
     def new_empty_version_clicked(self):
         """
@@ -497,7 +497,7 @@ class FilesPanel(QtWidgets.QWidget):
                 editorial_from_template(filepath, title, secondary, template_edit.path_root)
 
     def on_publish_clicked(self):
-        print('Publishing stuff now')
+        logging.debug('Publishing stuff now')
         current = PathObject(self.current_location)
         current.publish()
         dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
@@ -576,19 +576,19 @@ class FilesPanel(QtWidgets.QWidget):
 
     @staticmethod
     def import_versions_from():
-        print('import versions')
+        logging.debug('import versions')
 
     @staticmethod
     def push():
-        print('push')
+        logging.debug('push')
 
     @staticmethod
     def pull():
-        print('pull')
+        logging.debug('pull')
 
     @staticmethod
     def share_download_link():
-        print('download link')
+        logging.debug('download link')
 
     # LOAD FUNCTIONS
     def on_file_dragged_to_render(self, data):

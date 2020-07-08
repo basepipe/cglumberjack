@@ -1,13 +1,11 @@
 import os
 import logging
-import bpy
-from cgl.plugins.Qt import QtCore, QtWidgets
-from cgl.plugins.blender.utils import QtWindowEventLoop
-from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
+# from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 from cgl.core.utils.general import current_user
 from cgl.core.utils.general import create_file_dirs
 from cgl.core.path import PathObject
 from cgl.core.config import app_config, UserConfig
+import bpy
 
 
 CONFIG = app_config()
@@ -16,34 +14,49 @@ PADDING = CONFIG['default']['padding']
 PROCESSING_METHOD = UserConfig().d['methodology']
 SOFTWARE = os.path.basename(os.path.dirname(__file__))
 
+#
+# class BrowserWidget(CGLumberjackWidget):
+#     def __init__(self, parent=None, path=None,
+#                  show_import=False):
+#         super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
+#
+#     def open_clicked(self):
+#         print('Opening: %s' % self.path_object.path_root)
+#         open_file(self.path_object.path_root)
+#
+#     def import_clicked(self):
+#         for selection in self.source_selection:
+#             base_, ext = os.path.splitext(selection)
+#             import_file(selection, namespace=None)
+#         self.parent().parent().accept()
+#
+#     def reference_clicked(self):
+#         for selection in self.source_selection:
+#             base_, ext = os.path.splitext(selection)
+#             reference_file(selection, namespace=None)
+#         self.parent().parent().accept()
+#
+#
+# class AppMainWindow(CGLumberjack):
+#     def __init__(self, parent=None, path=None, user_info=None):
+#         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
+#         print('Application Path path is %s' % path)
+#         self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
 
-class BrowserWidget(CGLumberjackWidget):
-    def __init__(self, parent=None, path=None,
-                 show_import=False):
-        super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
 
-    def open_clicked(self):
-        print('Opening: %s' % self.path_object.path_root)
-        open_file(self.path_object.path_root)
+class BlenderConfirmDialog(bpy.types.Operator):
+    bl_idname = 'ui.blender_confirm_dialog'
+    bl_label = 'Title'
+    message = 'this is the message'
 
-    def import_clicked(self):
-        for selection in self.source_selection:
-            base_, ext = os.path.splitext(selection)
-            import_file(selection, namespace=None)
-        self.parent().parent().accept()
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
 
-    def reference_clicked(self):
-        for selection in self.source_selection:
-            base_, ext = os.path.splitext(selection)
-            reference_file(selection, namespace=None)
-        self.parent().parent().accept()
+    def draw(self, context):
+        self.layout.label(text=self.message)
 
-
-class AppMainWindow(CGLumberjack):
-    def __init__(self, parent=None, path=None, user_info=None):
-        CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
-        print('Application Path path is %s' % path)
-        self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
+    def execute(self, context):
+        return {"FINISHED"}
 
 
 class LumberObject(PathObject):
@@ -186,8 +199,11 @@ def import_file(filepath='', namespace=None):
     :param namespace:
     :return:
     """
-    print('import file')
-    pass
+    if filepath.endswith('fbx'):
+        bpy.ops.import_scene.fbx(filepath)
+    elif filepath.endswith('obj'):
+        bpy.ops.import_scene.obj(filepath)
+
 
 
 def open_file(filepath):
@@ -196,8 +212,7 @@ def open_file(filepath):
     :param filepath:
     :return:
     """
-    print('open file')
-    pass
+    return bpy.ops.wm.open_mainfile(filepath)
 
 
 def save_file(filepath=''):
@@ -206,8 +221,7 @@ def save_file(filepath=''):
     :param filepath:
     :return:
     """
-    print('save file')
-    pass
+    return bpy.ops.wm.save_mainfile()
 
 
 def reference_file(filepath='', namespace=None):
@@ -221,7 +235,7 @@ def reference_file(filepath='', namespace=None):
     pass
 
 
-def confirm_prompt(title='title', message='message', button='Ok'):
+def confirm_prompt(title='Lumber message:', message='This is a message', button='Ok'):
     """
     standard confirm prompt, this is an easy wrapper that allows us to do
     confirm prompts in the native language of the application while keeping conventions
@@ -230,7 +244,14 @@ def confirm_prompt(title='title', message='message', button='Ok'):
     :param button: single button is created with a string, multiple buttons created with array
     :return:
     """
-    pass
+    try:
+        bpy.utils.unregister_class(BlenderConfirmDialog)
+    except RuntimeError:
+        print('no class registered')
+    BlenderConfirmDialog.bl_label = title
+    BlenderConfirmDialog.message = message
+    bpy.utils.register_class(BlenderConfirmDialog)
+    bpy.ops.ui.blender_confirm_dialog('INVOKE_DEFAULT')
 
 
 def select(nodes=None, d=True):
@@ -241,9 +262,6 @@ def select(nodes=None, d=True):
     :return:
     """
     pass
-
-
-
 
 
 def export_selected(to_path, ext='mb'):
@@ -367,12 +385,9 @@ def publish():
 class CustomWindowOperator(QtWindowEventLoop):
     bl_idname = 'screen.lumbermill_window'
     bl_label = 'Lumbermill For Blender'
-    scene_name = get_scene_name()
-    scene = LumberObject(scene_name)
-    location = '%s/*' % scene.split_after('shot')
 
     def __init__(self):
-        super().__init__(AppMainWindow, path=self.location)
+        super().__init__(AppMainWindow)
 
 
 def launch_():

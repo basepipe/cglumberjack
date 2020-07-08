@@ -111,7 +111,7 @@ class PathObject(object):
             if isinstance(path_object, unicode):
                 path_object = str(path_object)
         except NameError:
-            print('Python3 does not support unicode, skipping')
+            logging.debug('Python3 does not support unicode, skipping')
         if isinstance(path_object, dict):
             self.process_dict(path_object)
         elif isinstance(path_object, str):
@@ -290,7 +290,7 @@ class PathObject(object):
                         self.template.append(each)
                     return self.template
                 except KeyError:
-                    logging.info("Config ERROR: Can't find either %s or %s within app config 'templates'"
+                    logging.debug("Config ERROR: Can't find either %s or %s within app config 'templates'"
                                  % (self.scope, self.context))
                     return
             else:
@@ -481,7 +481,7 @@ class PathObject(object):
                     # self.set_path()
         if do_set_path:
             self.set_path()
-            # print('setting path for kwargs: %s' % kwargs)
+            # logging.debug('setting path for kwargs: %s' % kwargs)
 
     def glob_project_element(self, attr, full_path=False):
         """
@@ -497,7 +497,7 @@ class PathObject(object):
         try:
             index = self.template.index(attr)
         except ValueError:
-            print('%s not found in template, skipping')
+            logging.debug('%s not found in template, skipping')
             return []
         parts = self.path.split('/')
         i = 0
@@ -792,9 +792,9 @@ class PathObject(object):
                     CreateProductionData(path_object=self)
                     return True
                 elif PROJ_MANAGEMENT == 'lumbermill':
-                    print('no review process defined for default lumbermill')
+                    logging.debug('no review process defined for default lumbermill')
             else:
-                print('No preview file found for uploading: %s' % self.preview_path)
+                logging.debug('No preview file found for uploading: %s' % self.preview_path)
                 info = self.make_preview()
                 self.upload_review(job_id=info['job_id'])
                 return False
@@ -803,7 +803,7 @@ class PathObject(object):
         #TODO make this smart enough to know based off the self.thumb_path
         if os.path.exists(self.preview_path):
             if type_ == 'movie':
-                print('Creating Thumbnail %s' % self.thumb_path)
+                logging.debug('Creating Thumbnail %s' % self.thumb_path)
                 thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
                                                         command_name='%s: create_movie_thumb()' % self.command_base,
                                                         dependent_job=job_id,
@@ -820,28 +820,28 @@ class PathObject(object):
             # make sure that an hd_proxy exists:
             review_res = CONFIG['default']['resolution']['video_review']
             proxy_info = self.make_proxy(resolution=review_res, ext='jpg', job_id=job_id)
-            print(proxy_info)
-            print('proxy id %s' % proxy_info['job_id'])
+            logging.debug(proxy_info)
+            logging.debug('proxy id %s' % proxy_info['job_id'])
             mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
                                               command_name='%s: create_web_mov()' % self.command_base,
                                               dependent_job=proxy_info['job_id'], processing_method=PROCESSING_METHOD,
                                               new_window=new_window)
-            print('mov info id %s' % mov_info['job_id'])
-            print('Creating Thumbnail %s' % self.thumb_path)
+            logging.debug('mov info id %s' % mov_info['job_id'])
+            logging.debug('Creating Thumbnail %s' % self.thumb_path)
             thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
                                                     command_name='%s: create_movie_thumb()' % self.command_base,
                                                     dependent_job=mov_info['job_id'],
                                                     processing_method=PROCESSING_METHOD, new_window=new_window)
             return thumb_info
         elif self.file_type == 'movie':
-            print('making movie preview not supported')
+            logging.debug('making movie preview not supported')
         elif self.file_type == 'image':
-            print('making image preview not supported')
+            logging.debug('making image preview not supported')
         elif self.file_type == 'ppt':
-            print('making ppt preview not supported')
+            logging.debug('making ppt preview not supported')
         elif self.file_type == 'pdf':
-            print('making pdf preview not supported')
-    
+            logging.debug('making pdf preview not supported')
+
     def make_proxy(self, resolution=None, copy_input_padding=True, ext='jpg', new_window=False, job_id=None):
         """
         :param resolution: HEIGHTxWIDTH ex: (1920x1080)
@@ -885,10 +885,10 @@ class PathObject(object):
         :return:
         """
         if self.user == 'publish':
-            print("This is a publish user already, traditionally you'll be publishing from a user context.")
+            logging.debug("This is a publish user already, traditionally you'll be publishing from a user context.")
             return
         if not self.resolution:
-            print('You must have resolution in order to publish')
+            logging.debug('You must have resolution in order to publish')
             return
 
         # current folders to be copied
@@ -905,15 +905,15 @@ class PathObject(object):
         publish_render_object = publish.copy(context='render')
         publish_render = publish_render_object.path_root
         self.publish_render = publish_render
-        print('Publishing %s to %s' % (current_source, next_major_source))
+        logging.debug('Publishing %s to %s' % (current_source, next_major_source))
         cgl_copy(current_source, next_major_source)
-        print('Publishing %s to %s' % (current_source, publish_source))
+        logging.debug('Publishing %s to %s' % (current_source, publish_source))
         cgl_copy(current_source, publish_source)
-        print('Publishing %s to %s' % (current_render, next_major_render))
+        logging.debug('Publishing %s to %s' % (current_render, next_major_render))
         cgl_copy(current_render, next_major_render)
-        print('Publishing %s to %s' % (current_render, publish_render))
+        logging.debug('Publishing %s to %s' % (current_render, publish_render))
         cgl_copy(current_render, publish_render)
-        print('--------- Finished Publishing')
+        logging.debug('--------- Finished Publishing')
         return publish_render_object
         # if UserConfig().d["sync_thing_machine_type"] == 'remote workstation':
         #     from cgl.ui.widgets.sync_master import SharingDialog
@@ -921,12 +921,12 @@ class PathObject(object):
         #     dialog_sharing.exec_()
         #     if dialog_sharing.button == 'Ok':
         #         all_device_id = dialog_sharing.device_list
-        #         print('Sharing Folders to: %s' % all_device_id)
-        #         print(publish.path_root)
-        #         print(publish_render_object.path_root)
+        #         logging.debug('Sharing Folders to: %s' % all_device_id)
+        #         logging.debug(publish.path_root)
+        #         logging.debug(publish_render_object.path_root)
         #         return publish_render_object
         #     else:
-        #         print('skipping remote publish')
+        #         logging.debug('skipping remote publish')
         #         return publish_render_object
         # else:
 
@@ -1047,7 +1047,7 @@ class CreateProductionData(object):
 
         obj = self.path_object
         if os.path.exists(obj.asset_json):
-            print(obj.asset_json, 'exists')
+            logging.debug(obj.asset_json, 'exists')
             asset_meta = assetcore.MetaObject(jsonfile=obj.asset_json)
         else:
             asset_meta = assetcore.MetaObject()
@@ -1068,7 +1068,7 @@ class CreateProductionData(object):
 
     def update_project_json(self):
         from cgl.core import assetcore
-        print('updating project json')
+        logging.debug('updating project json')
         if os.path.exists(self.path_object.project_json):
             project_meta = assetcore.MetaObject(jsonfile=self.path_object.project_json)
         else:
@@ -1092,10 +1092,10 @@ class CreateProductionData(object):
 
     def create_folders(self):
         if not self.path_object.root:
-            logging.info('No Root Defined')
+            logging.debug('No Root Defined')
             return
         if not self.path_object.company:
-            logging.info('No Company Defined')
+            logging.debug('No Company Defined')
             return
         if not self.path_object.context:
             self.path_object.set_attr(context='source')
@@ -1133,12 +1133,12 @@ class CreateProductionData(object):
             if path_.endswith('.'):
                 path_ = path_[:-1]
         # at this stage we're making path_
-        logging.info('Creating %s Directory: %s' % (path_object.context, path_))
+        logging.debug('Creating %s Directory: %s' % (path_object.context, path_))
         if not test:
             if not os.path.exists(path_):
                 os.makedirs(path_)
         else:
-            logging.info('TEST MODE: No directories were created')
+            logging.debug('TEST MODE: No directories were created')
 
     def create_project_management_data(self, path_object, project_management, user_login=None, status=None):
 
@@ -1158,7 +1158,7 @@ class CreateProductionData(object):
                                                     user_email=user_login,
                                                     status=status).create_project_management_data()
             else:
-                print('Creating Paths on Disk, lumbermill will create %s '
+                logging.debug('Creating Paths on Disk, lumbermill will create %s '
                       'versions when you add files' % project_management)
         else:
             logging.debug('Using Lumbermill built in proj management')
@@ -1188,7 +1188,7 @@ class CreateProductionData(object):
         this = this.replace('\\', '/')
         this = '%scglumberjack/cgl' % this
         default_file = "%s/plugins/%s/templates/default.%s" % (this, software, ext)
-        logging.info('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
+        logging.debug('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
         cgl_copy(default_file, self.path_object.path_root, methodology='local')
 
 
@@ -1247,14 +1247,14 @@ class Sequence(object):
         _, self.ext = os.path.splitext(self.sequence)
 
     def print_info(self):
-        print('---------------- sequence info -------------------')
-        print('Star: %s' % self.star_sequence)
-        print('Hash: %s' % self.hash_sequence)
-        print('Num: %s' % self.num_sequence)
-        print('Frame Range: %s' % self.frame_range)
-        print('Start Frame: %s' % self.start_frame)
-        print('End Frame: %s' % self.end_frame)
-        print('Middle Frame: %s' % self.middle_frame)
+        logging.debug('---------------- sequence info -------------------')
+        logging.debug('Star: %s' % self.star_sequence)
+        logging.debug('Hash: %s' % self.hash_sequence)
+        logging.debug('Num: %s' % self.num_sequence)
+        logging.debug('Frame Range: %s' % self.frame_range)
+        logging.debug('Start Frame: %s' % self.start_frame)
+        logging.debug('End Frame: %s' % self.end_frame)
+        logging.debug('Middle Frame: %s' % self.middle_frame)
 
     def set_sequence_strings(self):
         """
@@ -1464,9 +1464,9 @@ def get_folder_size(folder):
             try:
                 total_bytes += sum(os.path.getsize(os.path.join(root, name).replace('\\', '/')) for name in files)
             except:
-                print('ERROR: likely a problem with a file in %s' % root)
+                logging.debug('ERROR: likely a problem with a file in %s' % root)
     elif os.path.isfile(folder):
-        print('this is a file numskull')
+        logging.debug('this is a file numskull')
         return 0
     return total_bytes
 
@@ -1476,7 +1476,7 @@ def print_file_size(total_bytes, do_print=True):
     # total_gb = total_mb / 1024
     size_string = '%s Mb(%s bytes)' % (format(total_mb, ".2f"), '{:,}'.format(total_bytes))
     if do_print:
-        print(size_string)
+        logging.debug(size_string)
     return size_string
 
 
@@ -1507,7 +1507,7 @@ def find_latest_publish_objects(folder, source=True, render=False):
             sync_objects.append(l_object)
             size = get_folder_size(l_object.path_root)
             total_size += size
-    print('%s %s Total Size of Latest Publishes\n\t%s' % (path_object.seq, path_object.shot,
+    logging.debug('%s %s Total Size of Latest Publishes\n\t%s' % (path_object.seq, path_object.shot,
                                                           print_file_size(total_size, do_print=False)))
     return sync_objects
 
@@ -1523,7 +1523,7 @@ def show_in_folder(path_string):
         full_path = full_path.replace('/', '\\')
 
     command = (cmd + full_path)
-    logging.info("running command: %s" % command)
+    logging.debug("running command: %s" % command)
     # this command will only ever be run locally, it does not need render management support
     cgl_execute(command, methodology='local')
 
@@ -1562,7 +1562,7 @@ def seq_from_file(basename):
         else:
             return basename
     else:
-        print('%s not found in extension map in in globals, please add it' % ext_)
+        logging.debug('%s not found in extension map in in globals, please add it' % ext_)
         return basename
 
 
