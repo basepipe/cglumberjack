@@ -1,5 +1,6 @@
 import glob
 import os
+import logging
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.config import app_config
 from cgl.ui.widgets.widgets import LJButton, LJTableWidget

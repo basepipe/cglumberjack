@@ -1,10 +1,10 @@
 import os
 import logging
-# from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 from cgl.core.utils.general import current_user
 from cgl.core.utils.general import create_file_dirs
 from cgl.core.path import PathObject
 from cgl.core.config import app_config, UserConfig
+from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import bpy
 
 
@@ -14,34 +14,61 @@ PADDING = CONFIG['default']['padding']
 PROCESSING_METHOD = UserConfig().d['methodology']
 SOFTWARE = os.path.basename(os.path.dirname(__file__))
 
-#
-# class BrowserWidget(CGLumberjackWidget):
-#     def __init__(self, parent=None, path=None,
-#                  show_import=False):
-#         super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
-#
-#     def open_clicked(self):
-#         print('Opening: %s' % self.path_object.path_root)
-#         open_file(self.path_object.path_root)
-#
-#     def import_clicked(self):
-#         for selection in self.source_selection:
-#             base_, ext = os.path.splitext(selection)
-#             import_file(selection, namespace=None)
-#         self.parent().parent().accept()
-#
-#     def reference_clicked(self):
-#         for selection in self.source_selection:
-#             base_, ext = os.path.splitext(selection)
-#             reference_file(selection, namespace=None)
-#         self.parent().parent().accept()
-#
-#
-# class AppMainWindow(CGLumberjack):
-#     def __init__(self, parent=None, path=None, user_info=None):
-#         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
-#         print('Application Path path is %s' % path)
-#         self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
+
+class BrowserWidget(CGLumberjackWidget):
+    def __init__(self, parent=None, path=None,
+                 show_import=False):
+        super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
+
+    def open_clicked(self):
+        """
+        Re-implementation of the open_clicked function in lumbermill.  This allows us to customize it to
+        this app's specific needs
+        :return:
+        """
+        selection = self.path_widget.path_line_edit.text()
+        if os.path.exists(selection):
+            open_file(selection)
+        else:
+            logging.info('{0} does not exist!'.format(selection))
+
+    def import_clicked(self):
+        """
+        Re-implemenation of the import_clicked function in lumbermill.  This allows us to customize it to
+        this app's specific needs.  Typically the default will work if you've defined the import_file() function
+        in this plugin.
+        :return:
+        """
+        selection = self.path_widget.path_line_edit.text()
+        if os.path.exists(selection):
+            import_file(selection, namespace=None)
+        else:
+            logging.info('{0} does not exist!'.format(selection))
+        # close lumbermill.
+        # self.parent().parent().accept()
+
+    def reference_clicked(self):
+        """
+        Re-implemenation of the reference_clicked function in lumbermill.  This allows us to customize it to
+        this app's specific needs.  Typically the default will work if you've defined the reference_file() function
+        in this plugin.
+        :return:
+        """
+        print('reference clicked! Referencing not yet implemented in Blender.')
+        # selection = self.path_widget.path_line_edit.text()
+        # if os.path.exists(selection)::
+        #     reference_file(selection, namespace=None)
+        # else:
+        #     logging.info('{0} does not exist!'.format(selection))
+        ## close lumbermill
+        # self.parent().parent().accept()
+
+
+class BlenderJack(CGLumberjack):
+    def __init__(self, parent=None, path=None, user_info=None):
+        CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
+        print('Application Path path is %s' % path)
+        self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
 
 
 class BlenderConfirmDialog(bpy.types.Operator):
@@ -200,10 +227,11 @@ def import_file(filepath='', namespace=None):
     :return:
     """
     if filepath.endswith('fbx'):
-        bpy.ops.import_scene.fbx(filepath)
+        bpy.ops.import_scene.fbx(filepath=filepath)
     elif filepath.endswith('obj'):
-        bpy.ops.import_scene.obj(filepath)
-
+        bpy.ops.import_scene.obj(filepath=filepath)
+    elif filepath.endswith('blend'):
+        bpy.ops.wm.append(filepath=filepath)
 
 
 def open_file(filepath):
@@ -212,7 +240,8 @@ def open_file(filepath):
     :param filepath:
     :return:
     """
-    return bpy.ops.wm.open_mainfile(filepath)
+    bpy.ops.wm.open_mainfile(filepath=filepath)
+    return filepath
 
 
 def save_file(filepath=''):
@@ -254,24 +283,32 @@ def confirm_prompt(title='Lumber message:', message='This is a message', button=
     bpy.ops.ui.blender_confirm_dialog('INVOKE_DEFAULT')
 
 
-def select(nodes=None, d=True):
+def select(selection, d=True):
     """
     allows us to select something in the scene.
-    :param nodes: node to select (or string)
+    :param selection: node to select (or string)
     :param d: if true - deselect everything
     :return:
     """
-    pass
+    if isinstance(nodes, list):
+        print('{0} is a list'.format(selection))
+    elif isinstance(nodes, string):
+        bpy.data.objects[object_name].select_set(True)
 
 
-def export_selected(to_path, ext='mb'):
+def export_selected(to_path):
     """
     exports selected geometry to specified type.
     :param to_path: path to export to
     :param type: type of geo to export according to ext: obj, fbx, abc, usd, blnd
     :return:
     """
-    pass
+    if to_path.endswith('fbx'):
+        bpy.ops.export_scene.fbx(filepath=to_path, use_selection=True)
+    elif to_path.endswith('obj'):
+        bpy.ops.export_scene.obj(filepath=to_path, use_selection=True)
+    elif to_path.endswith('blend'):
+        bpy.ops.export_scene.blend(filepath=to_path, use_selection=True)
 
 
 def create_turntable(length=180, task=False):
@@ -382,18 +419,8 @@ def publish():
     return publish_object
 
 
-class CustomWindowOperator(QtWindowEventLoop):
-    bl_idname = 'screen.lumbermill_window'
-    bl_label = 'Lumbermill For Blender'
-
-    def __init__(self):
-        super().__init__(AppMainWindow)
-
-
 def launch_():
-    # https://github.com/vincentgires/blender-scripts/blob/master/scripts/addons/qtutils/example.py
-    bpy.utils.register_class(CustomWindowOperator)
-    bpy.ops.screen.lumbermill_window()
+    BlenderJack.show()
 
 
 if __name__ == "__main__":

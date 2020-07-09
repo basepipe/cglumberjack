@@ -18,3 +18,5 @@ oauth2client
 psutil
 matplotlib
 stringcase
+shiboken2
+vfxwindow

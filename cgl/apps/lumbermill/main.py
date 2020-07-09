@@ -5,6 +5,7 @@ from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.progress_gif import ProgressGif, process_method
 from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
+from vfxwindow import VFXWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
 from cgl.core.utils.general import current_user, check_for_latest_master, update_master, launch_lumber_watch, save_json
@@ -12,7 +13,7 @@ from cgl.core.config import app_config, UserConfig, user_config
 from cgl.apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
 from cgl.apps.lumbermill.elements.FilesPanel import FilesPanel
 from cgl.ui.widgets.help import ReportBugDialog, RequestFeatureDialog
-import cgl.plugins.syncthing.utils as st_utils
+# import cgl.plugins.syncthing.utils as st_utils
 try:
     import apps.lumbermill.elements.IOPanel as IoP
     DO_IOP = True
@@ -635,9 +636,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             # launch_(self, task, selection)
 
 
-class CGLumberjack(LJMainWindow):
+class CGLumberjack(VFXWindow):
     def __init__(self, show_import=False, user_info=None, start_time=None, previous_path=None, sync_enabled=True):
-        LJMainWindow.__init__(self)
+        VFXWindow.__init__(self)
 
         if start_time:
             logging.debug('Finished Loading Lumbermill in %s seconds' % (time.time() - start_time))
@@ -790,29 +791,34 @@ class CGLumberjack(LJMainWindow):
         if sync_enabled:
             try:
                 if CONFIG['sync']['syncthing']['sync_thing_url']:
+
                     # TODO - check for user config settings to use syncthing.
                     if "sync_thing_auto_launch" in USERCONFIG.keys():
-                        if USERCONFIG["sync_thing_auto_launch"] == 'True':
-                            sync = False
-                            st_utils.kill_syncthing()
-                            if st_utils.syncthing_running():
-                                self.change_sync_icon(syncing=True)
-                                sync = True
+                        try:
+                            import cgl.plugins.syncthing.utils as st_utils
+                            if USERCONFIG["sync_thing_auto_launch"] == 'True':
+                                sync = False
+                                st_utils.kill_syncthing()
+                                if st_utils.syncthing_running():
+                                    self.change_sync_icon(syncing=True)
+                                    sync = True
+                                else:
+                                    self.change_sync_icon(syncing=False)
+                                    # TODO - turn icon to not syncing
+                                self.lumber_watch = launch_lumber_watch(new_window=True)
+                                # TODO if syncthing is set as a feature in the globals!!!!
+                                try:
+                                    st_utils.launch_syncthing()
+                                    self.change_sync_icon(syncing=True)
+                                except:
+                                    # this is a WindowsError - which doesn't seem to allow me to use in the except clause
+                                    logging.debug('Sync Thing Not Found, run "Setup Workstation" to start using it.')
                             else:
+                                self.load_syncthing = False
                                 self.change_sync_icon(syncing=False)
-                                # TODO - turn icon to not syncing
-                            self.lumber_watch = launch_lumber_watch(new_window=True)
-                            # TODO if syncthing is set as a feature in the globals!!!!
-                            try:
-                                st_utils.launch_syncthing()
-                                self.change_sync_icon(syncing=True)
-                            except:
-                                # this is a WindowsError - which doesn't seem to allow me to use in the except clause
-                                logging.debug('Sync Thing Not Found, run "Setup Workstation" to start using it.')
-                        else:
-                            self.load_syncthing = False
-                            self.change_sync_icon(syncing=False)
-                            logging.debug('sync_thing_auto_launch set to False, skipping launch')
+                                logging.debug('sync_thing_auto_launch set to False, skipping launch')
+                        except ModuleNotFoundError:
+                            logging.info('problem launching syncthing - main.py line 800')
                     else:
                         self.load_syncthing = False
                         self.change_sync_icon(syncing=False)

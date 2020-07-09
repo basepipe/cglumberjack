@@ -1,7 +1,8 @@
+import os
 import bpy
 import importlib
 from cgl.plugins.CustomMenu import CustomMenu
-from cgl.plugins.blender.utils import get_menu_path, get_button_path
+from .utils import get_button_path, get_menu_path
 
 
 class LumberMenu(CustomMenu):
@@ -24,47 +25,54 @@ class LumberMenu(CustomMenu):
     def add_button(self, menu, label, annotation='', command='', icon='', image_overlay_label='', hot_key=''):
         """
         add a button to a menu
-        :param shelf:
+        :param menu:
         :param label:
         :param annotation:
         :param command:
-        :param icon:
-        :param image_overlay_label:
+        :param icon: not required
+        :param image_overlay_label: not required
+        :param hot_key: not required
         :return:
         """
         menu_path = get_button_path('blender', menu, label)
         module = menu_path.split('cgl_tools\\')[-1].replace('\\', '.').replace('.py', '')
         module = 'cgl_tools.%s' % module
-        module_result = importlib.import_module(module)
-        button_class = getattr(module_result, label)
         try:
-            bpy.utils.register_class(button_class)
-        except ValueError:
-            print('%s already registered' % label)
+            module_result = importlib.import_module(module)
+            button_class = getattr(module_result, label)
+            try:
+                bpy.utils.register_class(button_class)
+            except ValueError:
+                print('%s already registered' % label)
+        except ModuleNotFoundError:
+            print('module: {0} not found'.format(module))
 
     @staticmethod
-    def find_menu_by_name(name):
+    def find_menu_by_name(menu_name):
         """
         finds menu in software package given its string name
         :param parent:
         :param menu_name:
         :return:
         """
-        menu_path = get_menu_path('blender', name, menu_file=True)
+        menu_path = get_menu_path('blender', menu_name, menu_file=True)
         module = menu_path.split('cgl_tools\\')[-1].replace('\\', '.').replace('.py', '')
         module = 'cgl_tools.%s' % module
         module_result = importlib.import_module(module)
-        menu_class = getattr(module_result, name)
+        menu_class = getattr(module_result, menu_name)
         return menu_class
 
     def delete_menu(self, menu_name):
         """
         deletes menu by "menu_name"
-        :param shelf_name:
+        :param menu_name:
         :return:
         """
         menu_class = self.find_menu_by_name(menu_name)
-        bpy.utils.unregister_class(menu_class)
+        try:
+            bpy.utils.unregister_class(menu_class)
+        except RuntimeError:
+            print('bpy.utils.unregister_class could not find {0}'.format(menu_class))
 
 
 

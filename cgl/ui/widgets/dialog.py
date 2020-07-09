@@ -10,7 +10,6 @@ from cgl.ui.widgets.containers.menu import LJMenu
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import current_user
 from cgl.core.path import icon_path
-import cgl.plugins.project_management.ftrack.util as ftrack_util
 
 CONFIG = app_config()
 
@@ -163,6 +162,7 @@ class TimeTracker(LJDialog):
         for row in xrange(0, self.task_table.rowCount()):
             timelog_id = self.task_table.item(row, 4).text()
             if timelog_id in self.edited_logs:
+                import cgl.plugins.project_management.ftrack.util as ftrack_util
                 duration = float(self.task_table.item(row,3).text())
                 ftrack_util.edit_timelog(timelog_id, duration)
             elif timelog_id in self.new_logs:
