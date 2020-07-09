@@ -359,33 +359,35 @@ class CGLMenu(QtWidgets.QWidget):
                              name_example='Name may only contain letters and spaces')
         dialog.exec_()
         if dialog.button == 'Ok':
-            text_ = dialog.line_edit.text().replace(' ', '_')
-            menu_name = stringcase.pascalcase(text_)
-            command = self.get_command_text(button_name=menu_name, menu_type=self.menu_type)
-            module = self.default_preflight_text(menu_name)
+            # text_ = dialog.line_edit.text().replace(' ', '_')
+            text_ = stringcase.snakecase(dialog.line_edit.text().lower())
+            button_name = stringcase.pascalcase(text_)
+            label = stringcase.titlecase(text_)
+            command = self.get_command_text(button_name=button_name, menu_type=self.menu_type)
+            module = self.default_preflight_text(button_name)
             if self.menu_type == 'preflights':
-                attrs = {'label': menu_name,
-                         'name': menu_name,
+                attrs = {'label': button_name,
+                         'name': button_name,
                          'required': 'True',
                          'module': module}
             elif self.menu_type == 'menus' or self.menu_type == 'context-menus':
-                attrs = {'label': menu_name,
-                         'name': menu_name,
+                attrs = {'label': button_name,
+                         'name': button_name,
                          'module': command}
             elif self.menu_type == 'shelves':
-                attrs = {'label': menu_name,
+                attrs = {'label': button_name,
                          'module': command,
-                         'name': menu_name,
+                         'name': button_name,
                          'icon': ''}
             self.new_button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
-                                                   preflight_step_name=menu_name,
+                                                   preflight_step_name=button_name,
                                                    attrs=attrs, preflight_path=self.menu_path, menu_type=self.menu_type)
             self.new_button_widget.save_all_signal.connect(self.on_save_clicked)
             if 'icon' in attrs.keys():
                 icon = QtGui.QIcon(attrs['icon'])
-                index = self.buttons_tab_widget.addTab(self.new_button_widget, icon, menu_name)
+                index = self.buttons_tab_widget.addTab(self.new_button_widget, icon, button_name)
             else:
-                index = self.buttons_tab_widget.addTab(self.new_button_widget, menu_name)
+                index = self.buttons_tab_widget.addTab(self.new_button_widget, button_name)
             self.buttons_tab_widget.setCurrentIndex(index)
 
     def on_save_clicked(self):

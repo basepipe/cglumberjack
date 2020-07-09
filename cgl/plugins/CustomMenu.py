@@ -162,7 +162,7 @@ class CustomMenu(object):
             else:
                 annotation = ''
             print(icon_file)
-            self.add_button(menu, label=self.menus[menu][button]['label'],
+            self.add_button(menu, label=self.menus[menu][button]['name'],
                             annotation=annotation,
                             command=self.menus[menu][button]['module'],
                             icon=icon_file,

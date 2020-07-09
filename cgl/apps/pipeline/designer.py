@@ -231,6 +231,7 @@ class Designer(LJDialog):
             menu = self.menus.widget(mi)
             if self.software == 'blender':
                 from cgl.plugins.blender.utils import add_buttons_to_menu
+                print(menu_name)
                 add_buttons_to_menu(menu_name)
             menu_dict[menu_name] = {}
             menu_dict[menu_name]['order'] = mi+1

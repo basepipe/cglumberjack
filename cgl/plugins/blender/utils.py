@@ -139,50 +139,50 @@ def create_button_file(class_name, label, menu_name):
     # Add a row to the Menu File
 
 
-def add_buttons_to_menu(menu):
+def add_buttons_to_menu(menu_name):
     """
     adds buttons from a cgl menu config file to a blender menu
     :param menu_class:
     :param button_list:
     :return:
     """
-    menu_file = get_menu_path('blender', menu, '%s.py' % menu)
+    menu_file = get_menu_path('blender', menu_name, '%s.py' % menu_name)
     menu_config = os.path.join(get_cgl_tools(), 'blender', 'menus.cgl')
     menu_object = read_write.load_json(menu_config)
-    biggest = get_last_button_number(menu_object, 'blender', menu)
-    menu_lines = read_write.load_text_file(menu_file)
-    print(menu_object)
-    print(menu_lines)
-    new_menu_lines = []
-    for ml in menu_lines:
-        if 'pass' in ml:
-            if remove_pass:
-                continue
-        new_menu_lines.append(ml)
-        if 'ADD BUTTONS' in ml:
-            i = 0
-            while i < biggest:
-                i += 1
-                button_name = get_menu_at(menu_object, 'blender', menu, i)
-                button_string = '        self.layout.row().operator("object.%s")\n' % stringcase.snakecase(button_name)
-                if button_string not in menu_lines:
-                    new_menu_lines.append(button_string)
-                    remove_pass = True
-                else:
-                    print('Found button, skipping')
+    biggest = get_last_button_number(menu_object, 'blender', menu_name)
+    if biggest:
+        menu_lines = read_write.load_text_file(menu_file)
+        new_menu_lines = []
+        for ml in menu_lines:
+            if 'pass' in ml:
+                if remove_pass:
+                    continue
+            new_menu_lines.append(ml)
+            if 'ADD BUTTONS' in ml:
+                break
+        i = 0
+        while i < biggest:
+            i += 1
+            button_name = get_menu_at(menu_object, 'blender', menu_name, i)
+            button_string = '        self.layout.row().operator("object.%s")\n' % stringcase.snakecase(button_name)
+            new_menu_lines.append(button_string)
 
-    read_write.save_text_lines(new_menu_lines, menu_file)
+        read_write.save_text_lines(new_menu_lines, menu_file)
 
 
 def get_last_button_number(menu_dict, software, menu):
-    buttons = menu_dict[software][menu]
-    biggest = 0
-    for button in buttons:
-        if button != 'order':
-            num = buttons[button]['order']
-            if num > biggest:
-                biggest = num
-    return biggest
+    if menu in menu_dict[software]:
+        buttons = menu_dict[software][menu]
+        biggest = 0
+        for button in buttons:
+            if button != 'order':
+                num = buttons[button]['order']
+                if num > biggest:
+                    biggest = num
+        return biggest
+    else:
+        print('Menu not yet saved')
+        return None
 
 
 def get_menu_at(menu_dict, software, menu, i):
