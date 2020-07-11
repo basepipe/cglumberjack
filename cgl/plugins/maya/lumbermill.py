@@ -350,11 +350,11 @@ def launch_preflight(task=None):
     :param task:
     :return:
     """
-    from plugins.preflight.main import Preflight
+    from cgl.plugins.preflight.main import Preflight
     if not task:
         task = scene_object().task
     pf_mw = Preflight(parent=None, software='maya', preflight=task, path_object=scene_object())
-    pf_mw.exec_()
+    pf_mw.show()
 
 
 def publish():

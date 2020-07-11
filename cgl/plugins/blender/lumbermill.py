@@ -219,7 +219,7 @@ def version_up(vtype='minor'):
     return save_file_as(new_version.path_root)
 
 
-def import_file(filepath='', namespace=None):
+def import_file(filepath='', namespace=None, collection_name=None):
     """
     imports file into a scene.
     :param filepath:
@@ -227,11 +227,18 @@ def import_file(filepath='', namespace=None):
     :return:
     """
     if filepath.endswith('fbx'):
+        bpy.context.area.type = "VIEW_3D"
         bpy.ops.import_scene.fbx(filepath=filepath)
     elif filepath.endswith('obj'):
+        bpy.context.area.type = "VIEW_3D"
         bpy.ops.import_scene.obj(filepath=filepath)
     elif filepath.endswith('blend'):
-        bpy.ops.wm.append(filepath=filepath)
+        filename = os.path.basename(filepath)
+        if collection_name is None:
+            collection_name = filepath.replace('.blend', '')
+        bpy.context.area.type = "VIEW_3D"
+        bpy.ops.wm.append(directory='{}/Collection'.format(filepath),
+                          filepath=filepath, filename=collection_name, link=True, instance_collections=True)
 
 
 def open_file(filepath):
@@ -382,7 +389,20 @@ def render(preview=False):
     quality real time render for example.
     :return:
     """
-    pass
+    lmb_object = scene_object()
+    file_out = lmb_object.copy(context='render',
+                                 filename='{0}_{1}_{2}'.format(lmb_object.seq, lmb_object.shot, lmb_object.task),
+                                 ext='').path_root
+    file_out = '{}.'.format(file_out)
+    if preview:
+        file_out = '{}playblast.'.format(file_out)
+        bpy.context.scene.render.image_settings.file_format = 'JPEG'
+        bpy.context.scene.render.filepath = file_out
+        bpy.ops.render.opengl(animation=True)
+    else:
+        bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR'
+        bpy.context.scene.render.filepath = file_out
+        bpy.ops.render.render(animation=True, use_viewport=True)
 
 
 def review(file_base_name):
@@ -403,7 +423,7 @@ def launch_preflight(task=None, software=None):
     :param task:
     :return:
     """
-    from plugins.preflight.main import Preflight
+    from cgl.plugins.preflight.main import Preflight
     if not task:
         task = scene_object().task
     pf_mw = Preflight(parent=None, software=SOFTWARE, preflight=task, path_object=scene_object())

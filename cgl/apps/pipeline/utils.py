@@ -75,7 +75,7 @@ class CGLMenuButton(QtWidgets.QWidget):
         self.name = preflight_step_name
         self.preflight_name = preflight_name
         self.preflight_path = preflight_path
-        self.menu_name = os.path.split(preflight_path.split('menus')[1])[0]
+        # self.menu_name = os.path.split(preflight_path.split(menu_type)[1])[0]
         self.do_save = True
         # Create the Layouts
         layout = QtWidgets.QVBoxLayout(self)
@@ -430,7 +430,9 @@ def create_button_file(software, menu_name, button_name, menu_type):
 
     button_template = os.path.join(get_resources_path(), 'pipeline_designer', template_software, 'buttons',
                                    'for_%s.py' % menu_type)
+    print('Button_template: {}'.format(button_template))
     button_lines = load_text_file(button_template)
+    print('Button Lines: {}'.format(button_lines))
     changed_lines = []
     for l in button_lines:
         if software == 'blender':

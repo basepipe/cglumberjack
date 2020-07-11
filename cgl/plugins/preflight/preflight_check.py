@@ -26,7 +26,7 @@ class PreflightCheck(object):
         self.setWindowTitle(self.getName())
         try:
             self.run()
-        except Exception, error:
+        except Exception as error:
             logging.error(error, exc_info=True)
             self.send_feedback("SOMETHING WENT WRONG:")
             self.parent().checkError(error)

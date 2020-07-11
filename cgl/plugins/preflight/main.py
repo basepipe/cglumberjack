@@ -6,7 +6,7 @@ from cgl.core.path import icon_path, image_path, PathObject
 from cgl.ui.widgets.containers.table import LJTableWidget
 from cgl.ui.startup import do_gui_init
 from cgl.ui.widgets.widgets import GifWidget
-from preflight_check import PreflightCheck
+from .preflight_check import PreflightCheck
 
 CONFIG = app_config()
 
@@ -103,8 +103,12 @@ class Preflight(QtWidgets.QDialog):
         PreflightCheck.shared_data['path_object'] = PathObject(path_object)
         PreflightCheck.shared_data['current_selection'] = current_selection
         PreflightCheck.shared_data['preflight_dialog'] = self
-        for key, value in kwargs.iteritems():
-            PreflightCheck.shared_data[key] = value
+        try:
+            for key, value in kwargs.iteritems():
+                PreflightCheck.shared_data[key] = value
+        except AttributeError:
+            for key, value in kwargs.items():
+                PreflightCheck.shared_data[key] = value
         if model:
             PreflightCheck.shared_data['parent'] = parent
             PreflightCheck.shared_data['mdl'] = model
