@@ -391,7 +391,7 @@ class ProductionPanel(QtWidgets.QWidget):
         login = CONFIG['project_management'][proj_man]['users'][current_user()]['login']
         if proj_man == 'ftrack':
             # ideally we load from a .csv file and run this in the background only to update the .csv file.
-            from plugins.project_management.ftrack.main import find_user_assignments
+            from cgl.plugins.project_management.ftrack.main import find_user_assignments
             process_method(self.parent().progress_bar, find_user_assignments, args=(self.path_object, login),
                            text='Finding Your Tasks')
             try:

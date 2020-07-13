@@ -2,7 +2,7 @@ import time
 import logging
 zero_start_time = time.time()
 import cgl.core.startup as startup
-from apps.lumbermill.main import CGLumberjack
+from cgl.apps.lumbermill.main import CGLumberjack
 start_time = time.time()
 logging.debug('Loaded initial modules in %s seconds: %s' % ((start_time - zero_start_time), __file__))
 
