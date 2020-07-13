@@ -1,4 +1,5 @@
 import os
+import glob
 import logging
 from cgl.core.utils.general import current_user
 from cgl.core.utils.general import create_file_dirs
@@ -6,6 +7,7 @@ from cgl.core.path import PathObject
 from cgl.core.config import app_config, UserConfig
 from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 import bpy
+
 
 
 CONFIG = app_config()
@@ -124,6 +126,8 @@ class LumberObject(PathObject):
         self.path = None  # string of the properly formatted path
         self.path_root = None  # this gives the full path with the root
         self.thumb_path = None
+        self.playblast_path = None
+        self.render_path = None
         self.preview_path = None
         self.preview_seq = None
         self.hd_proxy_path = None
@@ -158,7 +162,7 @@ class LumberObject(PathObject):
             if isinstance(path_object, unicode):
                 path_object = str(path_object)
         except NameError:
-            print('Python3 does not support unicode, skipping')
+            pass
         if isinstance(path_object, dict):
             self.process_info(path_object)
         elif isinstance(path_object, str):
@@ -167,6 +171,16 @@ class LumberObject(PathObject):
             self.process_info(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
+        self.set_render_paths()
+
+    def set_render_paths(self):
+        padding = '#'*self.frame_padding
+        if self.task == 'anim':
+            render_path = self.copy(context='render', ext='jpg', set_proper_filename=True).path_root
+            self.render_path = render_path.replace('.jpg', '.{}.jpg'.format(padding))
+        else:
+            render_path = self.copy(context='render', ext='exr', set_proper_filename=True).path_root
+            self.render_path = render_path.replace('.exr', '.{}.exr'.format(padding))
 
     def render(self, processing_method=PROCESSING_METHOD):
         """
@@ -382,21 +396,16 @@ def export_usd_layout(to_path, lighting=False):
     pass
 
 
-def render(preview=False):
+def render():
     """
-    renders the current scene.
-    :param preview: option to render a less intensive version of the scene - a playblast from maya or a low
-    quality real time render for example.
+    renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
     :return:
     """
-    lmb_object = scene_object()
-    file_out = lmb_object.copy(context='render',
-                                 filename='{0}_{1}_{2}'.format(lmb_object.seq, lmb_object.shot, lmb_object.task),
-                                 ext='').path_root
-    file_out = '{}.'.format(file_out)
-    if preview:
-        file_out = '{}playblast.'.format(file_out)
+
+    file_out = scene_object().render_path.split('#')[0]
+    if scene_object().task == 'anim':
         bpy.context.scene.render.image_settings.file_format = 'JPEG'
+        # bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
         bpy.context.scene.render.filepath = file_out
         bpy.ops.render.opengl(animation=True)
     else:
@@ -405,16 +414,17 @@ def render(preview=False):
         bpy.ops.render.render(animation=True, use_viewport=True)
 
 
-def review(file_base_name):
+def review():
     """
     submit a review of the current scene.  (Requires a render to be present)
     :return:
     """
     from cgl.core.project import do_review
-    sequence = scene_object().copy(context='render', filename='%s.####.jpg' % file_base_name)
-    if glob.glob(playblast_seq.path_root.replace('####', '*')):
-        print('exists - reviewing')
-        do_review(progress_bar=None, path_object=sequence)
+    padding = scene_object().frame_padding
+    render_files = glob.glob(scene_object().render_path.replace('#'*padding, '*'))
+    if render_files:
+        path_object = LumberObject(scene_object().render_path)
+        do_review(progress_bar=None, path_object=path_object)
 
 
 def launch_preflight(task=None, software=None):
@@ -423,11 +433,9 @@ def launch_preflight(task=None, software=None):
     :param task:
     :return:
     """
-    from cgl.plugins.preflight.main import Preflight
-    if not task:
-        task = scene_object().task
-    pf_mw = Preflight(parent=None, software=SOFTWARE, preflight=task, path_object=scene_object())
-    pf_mw.exec_()
+    from .gui import PreflightOperator
+    bpy.utils.register_class(PreflightOperator)
+    bpy.ops.screen.preflight()
 
 
 def publish():
@@ -436,6 +444,8 @@ def publish():
     :return:
     """
     publish_object = scene_object().publish()
+    confirm_prompt(title='Publish Successful',
+                   message='Your file has been published {}'.format(publish_object.path_root))
     return publish_object
 
 

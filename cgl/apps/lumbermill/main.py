@@ -597,9 +597,14 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def open_clicked(self):
         if '####' in self.path_widget.path_line_edit.text():
-            logging.error('Nothing set for sequences yet')
+            sequence_path = self.path_widget.path_line_edit.text()
+            sequence = cglpath.Sequence(sequence_path)
+            file_seq = sequence.num_sequence.split()[0]
+            command = ('{} {}'.format(CONFIG['paths']['ffplay'], file_seq))
+            os.system(command)
+            logging.info('Nothing set for sequences yet')
         else:
-            logging.debug('Opening %s' % self.path_widget.path_line_edit.text())
+            logging.info('Opening %s' % self.path_widget.path_line_edit.text())
             cglpath.start(self.path_widget.path_line_edit.text())
 
     @staticmethod
@@ -1016,10 +1021,13 @@ class CGLumberjack(VFXWindow):
         module = command.split()[1]
         module_name = module.split('.')[-1]
         try:
-            import importlib
-            loaded_module = importlib.import_module(module, module_name)
-            # Python 2.7
-            # loaded_module = __import__(module, globals(), locals(), module_name, -1)
+            try:
+                # Python 2.7
+                loaded_module = __import__(module, globals(), locals(), module_name, -1)
+            except ValueError:
+                import importlib
+                # Python 3.0
+                loaded_module = importlib.import_module(module, module_name)
             action = QtWidgets.QAction(label, self)
             self.menu_dict[menu].addAction(action)
             function = getattr(loaded_module, 'run')

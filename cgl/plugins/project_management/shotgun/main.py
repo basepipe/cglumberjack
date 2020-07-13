@@ -3,7 +3,7 @@ import webbrowser
 import datetime
 import os
 import json
-from plugins.project_management.shotgun.tracking_internal.shotgun_specific import ShotgunQuery
+from .tracking_internal.shotgun_specific import ShotgunQuery
 from cgl.core.config import app_config
 
 CONFIG = app_config()

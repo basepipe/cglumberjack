@@ -82,12 +82,12 @@ class ItemTable(LJTableWidget):
             self.nothing_selected.emit()
 
 
-class Preflight(QtWidgets.QDialog):
+class Preflight(QtWidgets.QWidget):
     signal_one = QtCore.Signal(object)
 
     def __init__(self, parent=None, software='lumbermill', preflight='', model=None, path_object=None,
                  current_selection=None, **kwargs):
-        QtWidgets.QDialog.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         self.software = software
         self.preflight = preflight
         self.software_dir = os.path.join(CONFIG['paths']['cgl_tools'], software)
@@ -155,6 +155,8 @@ class Preflight(QtWidgets.QDialog):
         self.run_selected.clicked.connect(self.run_selected_clicked)
         self.run_all.clicked.connect(self.run_all_clicked)
 
+        self.show()
+
     def _load_json(self):
         print(self.json_file)
         print(self.software, self.preflight)
@@ -176,7 +178,12 @@ class Preflight(QtWidgets.QDialog):
             if item != 'order':
                 module = self.modules[item]['module']
                 module_name = module.split('.')[-1]
-                loaded_module = __import__(module, globals(), locals(), module_name, -1)
+                try:
+                    loaded_module = __import__(module, globals(), locals(), module_name, -1)
+                except ValueError:
+                    import importlib
+                    # Python 3+
+                    loaded_module = importlib.import_module(module, module_name)
                 class_ = getattr(loaded_module, module_name)
                 c = class_()
                 self.function_d.update({self.modules[item]['label']: c})

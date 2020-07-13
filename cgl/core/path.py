@@ -10,6 +10,7 @@ import copy
 import importlib
 from cgl.core.utils.general import split_all, cgl_copy, cgl_execute, clean_file_list
 from cgl.core.config import app_config, UserConfig
+from cgl.core import convert
 
 CONFIG = app_config()
 PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
@@ -111,7 +112,7 @@ class PathObject(object):
             if isinstance(path_object, unicode):
                 path_object = str(path_object)
         except NameError:
-            logging.debug('Python3 does not support unicode, skipping')
+            pass
         if isinstance(path_object, dict):
             self.process_dict(path_object)
         elif isinstance(path_object, str):
@@ -816,6 +817,9 @@ class PathObject(object):
         for images it's a jpeg within the boundaries of 1920x1080
         :return:
         """
+        print('making preview')
+        print('------------------')
+        print(self.file_type)
         if self.file_type == 'sequence':
             # make sure that an hd_proxy exists:
             review_res = CONFIG['default']['resolution']['video_review']
@@ -834,7 +838,19 @@ class PathObject(object):
                                                     processing_method=PROCESSING_METHOD, new_window=new_window)
             return thumb_info
         elif self.file_type == 'movie':
-            logging.debug('making movie preview not supported')
+            print('I will be able to create a movie preview soon.')
+            print(PROCESSING_METHOD)
+            mov_info = convert.create_web_mov(self.path_root, self.preview_path,
+                                              command_name='%s: create_web_mov()' % self.command_base,
+                                              dependent_job=None, processing_method=PROCESSING_METHOD,
+                                              new_window=new_window)
+            # logging.debug('mov info id %s' % mov_info['job_id'])
+            # logging.debug('Creating Thumbnail %s' % self.thumb_path)
+            # thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
+            #                                         command_name='%s: create_movie_thumb()' % self.command_base,
+            #                                         dependent_job=mov_info['job_id'],
+            #                                         processing_method=PROCESSING_METHOD, new_window=new_window)
+            return mov_info
         elif self.file_type == 'image':
             logging.debug('making image preview not supported')
         elif self.file_type == 'ppt':
@@ -1152,7 +1168,7 @@ class CreateProductionData(object):
                 try:
                     loaded_module = __import__(module, globals(), locals(), 'main', -1)  # Python 2.7 way of doing this
                 except ValueError:
-                    loaded_module = importlib.import_module(module)
+                    loaded_module = importlib.import_module(module, 'main')
                 loaded_module.ProjectManagementData(path_object,
                                                     session=session,
                                                     user_email=user_login,
@@ -1537,7 +1553,12 @@ def show_in_project_management(path_object):
     if PROJ_MANAGEMENT != 'lumbermill':
         module = "plugins.project_management.%s.main" % PROJ_MANAGEMENT
         # noinspection PyTypeChecker
-        loaded_module = __import__(module, globals(), locals(), 'main', -1)
+        try:
+            loaded_module = __import__(module, globals(), locals(), 'main', -1)
+        except ValueError:
+            import importlib
+            # Python 3.0
+            loaded_module = importlib.import_module(module, 'main')
         start_url(loaded_module.ProjectManagementData(path_object).get_url())
 
 

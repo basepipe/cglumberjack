@@ -25,16 +25,20 @@ class QtWindowEventLoop(bpy.types.Operator):
 
     def modal(self, context, event):
         wm = context.window_manager
-
-        if not self.widget.isVisible():
-            # if widget is closed
-            logger.debug('finish modal operator')
+        try:
+            if not self.widget.isVisible():
+                # if widget is closed
+                logger.debug('finish modal operator')
+                wm.event_timer_remove(self._timer)
+                return {'FINISHED'}
+            else:
+                logger.debug('process the events for Qt window')
+                self.event_loop.processEvents()
+                self.app.sendPostedEvents(None, 0)
+        except RuntimeError:
+            print('widget.isVisible() crashed, skipping')
             wm.event_timer_remove(self._timer)
             return {'FINISHED'}
-        else:
-            logger.debug('process the events for Qt window')
-            self.event_loop.processEvents()
-            self.app.sendPostedEvents(None, 0)
 
         return {'PASS_THROUGH'}
 
@@ -108,7 +112,6 @@ class PreflightOperator(QtWindowEventLoop):
     bl_idname = 'screen.preflight'
     bl_label = 'Preflight'
     task = scene_object().task
-    print(task)
 
     def __init__(self):
         super().__init__(Preflight, parent=None, software='blender', preflight='mdl', path_object=scene_object())

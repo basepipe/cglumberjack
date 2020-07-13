@@ -184,8 +184,9 @@ class Designer(LJDialog):
             self.make_init_for_folders_in_path(menu_folder)
         self.save_menus()
         if self.software == 'blender':
-            from cgl.plugins.blender.utils import create_menu_file
-            create_menu_file(menu_name)
+            if self.type == 'menus':
+                from cgl.plugins.blender.utils import create_menu_file
+                create_menu_file(menu_name)
 
     def on_save_clicked(self):
         self.save_menus()

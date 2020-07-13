@@ -238,7 +238,16 @@ class CGLMenuButton(QtWidgets.QWidget):
             self.do_save = False
 
     def on_delete_clicked(self):
-        print('Deleting Tab')
+        menu_widget = self.parent().parent()
+        # delete the file
+        filepath = menu_widget.currentWidget().command_line_edit.text().replace('.', '/')
+        filepath = '{}.py'.format(filepath)
+        filepath = os.path.join(os.path.dirname(get_cgl_tools()), filepath)
+        if os.path.exists(filepath):
+            print('Deleting the file: {}'.format(filepath))
+            os.remove(filepath)
+        else:
+            print('File Does Not Exist: {}'.format(filepath))
         self.parent().parent().removeTab(self.parent().parent().currentIndex())
 
 
@@ -387,6 +396,7 @@ class CGLMenu(QtWidgets.QWidget):
                 icon = QtGui.QIcon(attrs['icon'])
                 index = self.buttons_tab_widget.addTab(self.new_button_widget, icon, button_name)
             else:
+                print(3)
                 index = self.buttons_tab_widget.addTab(self.new_button_widget, button_name)
             self.buttons_tab_widget.setCurrentIndex(index)
 
@@ -420,7 +430,7 @@ class CGLMenu(QtWidgets.QWidget):
 
 
 def create_button_file(software, menu_name, button_name, menu_type):
-    button_path = get_button_path(software, menu_name, button_name)
+    button_path = get_button_path(software, menu_name, button_name, menu_type=menu_type)
     if software == 'lumbermill':
         template_software = 'lumbermill'
     elif software == 'blender':
@@ -447,6 +457,10 @@ def create_button_file(software, menu_name, button_name, menu_type):
                 changed_lines.append(new_l)
             elif 'print' in l:
                 new_l = l.replace('button_template', stringcase.titlecase(button_name))
+                new_l = l.replace('PreflightTemplate', stringcase.titlecase(button_name))
+                changed_lines.append(new_l)
+            elif 'PreflightTemplate' in l:
+                new_l = l.replace('PreflightTemplate', stringcase.titlecase(button_name))
                 changed_lines.append(new_l)
             else:
                 changed_lines.append(l)
@@ -459,6 +473,8 @@ def create_button_file(software, menu_name, button_name, menu_type):
     dirname = os.path.dirname(button_path)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
+    print(changed_lines)
+    print(button_path)
     save_text_lines(changed_lines, button_path)
     return button_path
 

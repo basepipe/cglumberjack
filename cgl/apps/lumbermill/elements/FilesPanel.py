@@ -433,7 +433,12 @@ class FilesPanel(QtWidgets.QWidget):
                             button_label = menu_items['lumbermill'][self.task][item]['label']
                             button_command = menu_items['lumbermill'][self.task][item]['module']
                             module = button_command.split()[1]
-                            loaded_module = __import__(module, globals(), locals(), item, -1)
+                            try:
+                                loaded_module = __import__(module, globals(), locals(), item, -1)
+                            except ValueError:
+                                import importlib
+                                # Python 3.0
+                                loaded_module = importlib.import_module(module, item)
                             widget = self.render_files_widget
                             if widget.item_right_click_menu.action_exists(button_label):
                                 widget.item_right_click_menu.create_action(button_label,

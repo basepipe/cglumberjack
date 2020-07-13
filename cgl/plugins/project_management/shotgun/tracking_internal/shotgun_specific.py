@@ -3,7 +3,7 @@ try:
     from Queue import Empty
 except ModuleNotFoundError:
     print('Python3 - Skipping Queue import')
-from plugins.project_management.shotgun import shotgun_api3 as sg_api
+from cgl.plugins.project_management.shotgun import shotgun_api3 as sg_api
 from cgl.core.config import app_config
 
 # TODO: This is a temporary fix until i can sort out the maya multi-threading issues
