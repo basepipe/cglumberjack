@@ -596,7 +596,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.source_selection = data
 
     def open_clicked(self):
-        if '####' in self.path_widget.path_line_edit.text():
+        if '##' in self.path_widget.path_line_edit.text():
             sequence_path = self.path_widget.path_line_edit.text()
             sequence = cglpath.Sequence(sequence_path)
             file_seq = sequence.num_sequence.split()[0]
