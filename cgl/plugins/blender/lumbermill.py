@@ -240,11 +240,10 @@ def import_file(filepath='', namespace=None, collection_name=None):
     :param namespace:
     :return:
     """
+
     if filepath.endswith('fbx'):
-        bpy.context.area.type = "VIEW_3D"
         bpy.ops.import_scene.fbx(filepath=filepath)
     elif filepath.endswith('obj'):
-        bpy.context.area.type = "VIEW_3D"
         bpy.ops.import_scene.obj(filepath=filepath)
     elif filepath.endswith('blend'):
         filename = os.path.basename(filepath)
