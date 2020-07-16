@@ -1181,15 +1181,19 @@ class CreateProductionData(object):
 
     def create_default_file(self):
         if self.path_object.task == 'prev':
-            self.copy_default_file('maya', 'mb')
-        if self.path_object.task == 'mdl':
-            self.copy_default_file('maya', 'mb')
-        if self.path_object.task == 'shd':
-            self.copy_default_file('maya', 'mb')
+            self.copy_default_file('blender', 'blend')
+        if self.path_object.task == 'lay':
+            self.copy_default_file('blender', 'blend')
         if self.path_object.task == 'anim':
-            self.copy_default_file('maya', 'mb')
+            self.copy_default_file('blender', 'blend')
+        if self.path_object.task == 'mdl':
+            self.copy_default_file('blender', 'blend')
+        if self.path_object.task == 'shd':
+            self.copy_default_file('blender', 'blend')
+        if self.path_object.task == 'anim':
+            self.copy_default_file('blender', 'blend')
         if self.path_object.task == 'lite':
-            self.copy_default_file('maya', 'mb')
+            self.copy_default_file('blender', 'blend')
         if self.path_object.task == 'comp':
             self.copy_default_file('nuke', 'nk')
         if self.path_object.task == 'key':

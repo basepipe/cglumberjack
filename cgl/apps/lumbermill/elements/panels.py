@@ -498,7 +498,7 @@ class ProductionPanel(QtWidgets.QWidget):
             self.assets.assets_radio.setChecked(True)
 
     def on_create_asset(self):
-        from apps.lumbermill.elements import asset_creator
+        from cgl.apps.lumbermill.elements import asset_creator
         if self.path_object.scope == 'assets':
             task_mode = True
         else:

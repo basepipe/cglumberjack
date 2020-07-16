@@ -233,7 +233,7 @@ def version_up(vtype='minor'):
     return save_file_as(new_version.path_root)
 
 
-def import_file(filepath='', namespace=None, collection_name=None):
+def import_file(filepath='', namespace=None, collection_name=None, link=True):
     """
     imports file into a scene.
     :param filepath:
@@ -246,12 +246,25 @@ def import_file(filepath='', namespace=None, collection_name=None):
     elif filepath.endswith('obj'):
         bpy.ops.import_scene.obj(filepath=filepath)
     elif filepath.endswith('blend'):
-        filename = os.path.basename(filepath)
+
         if collection_name is None:
-            collection_name = filepath.replace('.blend', '')
-        bpy.context.area.type = "VIEW_3D"
-        bpy.ops.wm.append(directory='{}/Collection'.format(filepath),
-                          filepath=filepath, filename=collection_name, link=True, instance_collections=True)
+            collection_name = os.path.basename(filepath).replace('.blend', '').split('_')[1] # this is really messy we should use asset name here
+
+        # append, set to true to keep the link to the original file
+
+
+        # link all collections starting with 'MyCollection'
+        with bpy.data.libraries.load(filepath, link=link) as (data_from, data_to):
+            data_to.collections = [c for c in data_from.collections if c.startswith(collection_name)]
+
+        # link collection to scene collection
+        for coll in data_to.collections:
+            if coll is not None:
+                bpy.data.scenes['Scene'].collection.children.link(coll)
+
+        #
+        # bpy.ops.wm.append(directory='{}/Collection'.format(filepath),
+        #                   filepath=filepath, filename=collection_name, link=True, instance_collections=True)
 
 
 def open_file(filepath):
@@ -400,13 +413,15 @@ def render():
     renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
     :return:
     """
-
+    previewRenderTypes = ['anim','rig','mdl']
     file_out = scene_object().render_path.split('#')[0]
-    if scene_object().task == 'anim':
+
+    if scene_object().task in previewRenderTypes :
         bpy.context.scene.render.image_settings.file_format = 'JPEG'
         # bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
         bpy.context.scene.render.filepath = file_out
         bpy.ops.render.opengl(animation=True)
+
     else:
         bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR'
         bpy.context.scene.render.filepath = file_out
