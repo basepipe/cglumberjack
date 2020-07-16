@@ -352,7 +352,12 @@ def convert_to_mp4(filein, fileout=None, processing_method='local', dependent_jo
     """
     if not fileout:
         fileout = change_extension(filein, 'mp4')
-        print(fileout)
+        if audio_only:
+            if not fileout.endswith('_audio.mp4'):
+                fileout = fileout.replace('.mp4', '_audio.mp4')
+        if filein == fileout:
+            print('Filein and Fileout are the same: {}'.format(filein))
+            return
         if os.path.exists(fileout):
             print('deleting fileout: %s' % fileout)
             if delete_existing:
@@ -364,14 +369,6 @@ def convert_to_mp4(filein, fileout=None, processing_method='local', dependent_jo
     process_info = {'file_out': fileout, 'job_id': 0}
 
     if audio_only:
-        if not fileout.endswith('_audio.mp4'):
-            fileout = fileout.replace('.mp4', '_audio.mp4')
-            print(fileout)
-            if os.path.exists(fileout):
-                print('deleting fileout: %s' % fileout)
-                if delete_existing:
-                    print('deleting existing file: %s' % fileout)
-                    os.remove(fileout)
         if processing_method == 'local':
             command = "%s -i %s -vn %s %s" % (PATHS['ffmpeg'], filein, acodec, fileout)
             cgl_execute(command, command_name=command_name, methodology='local',
@@ -385,6 +382,8 @@ def convert_to_mp4(filein, fileout=None, processing_method='local', dependent_jo
                                        WaitForJobID=dependent_job)
             process_info['file_out'] = fileout
             return process_info
+        else:
+            print('Got processing method: {}, error'.format(processing_method))
     else:
         if processing_method == 'local':
             command = "%s -i %s %s %s -f mp4 %s" % (PATHS['ffmpeg'], filein, acodec, vcodec, fileout)

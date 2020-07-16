@@ -433,6 +433,10 @@ def launch_preflight(task=None, software=None):
     :return:
     """
     from .gui import PreflightOperator
+    try:
+        bpy.utils.unregister_class(PreflightOperator)
+    except RuntimeError:
+        print('no class registered')
     bpy.utils.register_class(PreflightOperator)
     bpy.ops.screen.preflight()
 
@@ -443,8 +447,7 @@ def publish():
     :return:
     """
     publish_object = scene_object().publish()
-    confirm_prompt(title='Publish Successful',
-                   message='Your file has been published {}'.format(publish_object.path_root))
+    # TODO - i'd like to have a lumbermill controlled popup here.  The blender one doesn't work.
     return publish_object
 
 

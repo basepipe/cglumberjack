@@ -1,5 +1,5 @@
 from cgl.core.convert import convert_to_mp4, create_prores_mov
-from plugins.aws import s3
+from cgl.plugins.aws import s3
 import os
 from cgl.core.path import PathObject, CreateProductionData
 from robogary.src.plugins.editorial.timeline import editorial_from_template
