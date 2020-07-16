@@ -92,6 +92,10 @@ class Preflight(QtWidgets.QWidget):
         self.preflight = preflight
         self.software_dir = os.path.join(CONFIG['paths']['cgl_tools'], software)
         self.preflight_dir = os.path.join(self.software_dir, 'preflights')
+        if self.preflight not in os.listdir(self.preflight_dir):
+            print(self.preflight_dir, self.preflight)
+            self.preflight = 'default'
+            print('no {} preflight found, using default'.format(self.preflight))
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.json_file = os.path.join(self.software_dir, 'preflights.cgl')
         self.modules = {}
@@ -275,7 +279,11 @@ class Preflight(QtWidgets.QWidget):
 
         self.run_selected_clicked(checks=all_rows)
         self.image_plane.stop()
-        self.accept()
+        try:
+            self.accept()  # if this is a QDialog
+        except AttributeError:
+            print('Attempting to Close this QWidget')
+            self.close()
 
 
 def main():

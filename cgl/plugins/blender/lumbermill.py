@@ -164,11 +164,11 @@ class LumberObject(PathObject):
         except NameError:
             pass
         if isinstance(path_object, dict):
-            self.process_info(path_object)
+            self.process_dict(path_object)
         elif isinstance(path_object, str):
             self.process_string(path_object)
         elif isinstance(path_object, PathObject):
-            self.process_info(path_object.data)
+            self.process_dict(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
         self.set_render_paths()
@@ -240,11 +240,10 @@ def import_file(filepath='', namespace=None, collection_name=None):
     :param namespace:
     :return:
     """
+
     if filepath.endswith('fbx'):
-        bpy.context.area.type = "VIEW_3D"
         bpy.ops.import_scene.fbx(filepath=filepath)
     elif filepath.endswith('obj'):
-        bpy.context.area.type = "VIEW_3D"
         bpy.ops.import_scene.obj(filepath=filepath)
     elif filepath.endswith('blend'):
         filename = os.path.basename(filepath)
@@ -434,6 +433,10 @@ def launch_preflight(task=None, software=None):
     :return:
     """
     from .gui import PreflightOperator
+    try:
+        bpy.utils.unregister_class(PreflightOperator)
+    except RuntimeError:
+        print('no class registered')
     bpy.utils.register_class(PreflightOperator)
     bpy.ops.screen.preflight()
 
@@ -444,8 +447,7 @@ def publish():
     :return:
     """
     publish_object = scene_object().publish()
-    confirm_prompt(title='Publish Successful',
-                   message='Your file has been published {}'.format(publish_object.path_root))
+    # TODO - i'd like to have a lumbermill controlled popup here.  The blender one doesn't work.
     return publish_object
 
 

@@ -169,6 +169,11 @@ class CustomMenu(object):
                             image_overlay_label=label)
 
     def load_menus(self, test=False):
+        """
+        loads all menus
+        :param test:
+        :return:
+        """
         if test:
             self.delete_menus()
         try:
