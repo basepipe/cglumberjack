@@ -164,11 +164,11 @@ class LumberObject(PathObject):
         except NameError:
             pass
         if isinstance(path_object, dict):
-            self.process_info(path_object)
+            self.process_dict(path_object)
         elif isinstance(path_object, str):
             self.process_string(path_object)
         elif isinstance(path_object, PathObject):
-            self.process_info(path_object.data)
+            self.process_dict(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
         self.set_render_paths()
