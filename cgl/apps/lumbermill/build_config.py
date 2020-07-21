@@ -796,27 +796,26 @@ class QuickSync(QtWidgets.QDialog):
                 os.makedirs(os.path.dirname(globals_path))
             if os.path.exists(globals_path):
                 os.remove(globals_path)
-            print('YOU NEED TO FIX THE GLOBALS DOWNLOADING NOW!!!!!!')
-        #     try:
-        #         r, this_ = urllib.request.urlretrieve(self.aws_globals, globals_path)
-        #         print(r)
-        #         print("python3 version needs some love!!!")
-        #     except ImportError:  # Python 2
-        #         r = requests.get(self.aws_globals, allow_redirects=True)
-        #         logging.debug(r.content)
-        #         if '<Error>' in str(r.content):
-        #             logging.debug('No File %s for company: %s' % (self.aws_globals, self.company_name))
-        #         else:
-        #             logging.debug('Saving Globals file to: %s' % globals_path)
-        #             with open(globals_path, 'w+') as f:
-        #                 f.write(r.content)
-        #         self.accept()
-        #         return True
-        #     else:
-        #         logging.error('Problem downloading %s' % self.aws_globals)
-        # else:
-        #     logging.debug('No Globals Found - Get your Studio to publish their globals, or Create new ones?')
-        #     return False
+            try:
+                # save the globals to globals_path
+                urllib.request.urlretrieve(self.aws_globals, globals_path)
+                return True
+            except ImportError:  # Python 2
+                r = requests.get(self.aws_globals, allow_redirects=True)
+                logging.debug(r.content)
+                if '<Error>' in str(r.content):
+                    logging.debug('No File %s for company: %s' % (self.aws_globals, self.company_name))
+                else:
+                    logging.debug('Saving Globals file to: %s' % globals_path)
+                    with open(globals_path, 'w+') as f:
+                        f.write(r.content)
+                self.accept()
+                return True
+            else:
+                logging.error('Problem downloading %s' % self.aws_globals)
+        else:
+            logging.debug('No Globals Found - Get your Studio to publish their globals, or Create new ones?')
+            return False
 
     def edit_globals_paths(self):
         globals = read_write.load_json(self.globals_path)
@@ -858,15 +857,18 @@ class QuickSync(QtWidgets.QDialog):
         dialog.exec_()
         # syncthing.setup(self.company_name_s3, 'LONE_COCONUT_SYNC_THING', sync_folders)
 
-
     def set_up_lumbermill(self):
         """
         checks s3 for the existance of a globals file and pipeline_designer files.
         :return:
         """
         if self.download_globals_from_cloud():
+            print(1)
             self.edit_globals_paths()
+            print(2)
             create_user_globals(self.default_user_globals, self.default_globals)
+            print(3)
+            self.accept()
         else:
             dialog = ConfigDialog(company=self.company_line_edit.text(), root=self.default_root)
             dialog.exec_()
