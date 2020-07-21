@@ -5,14 +5,15 @@ from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.progress_gif import ProgressGif, process_method
 from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
+from vfxwindow import VFXWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
 from cgl.core.utils.general import current_user, check_for_latest_master, update_master, launch_lumber_watch, save_json
 from cgl.core.config import app_config, UserConfig, user_config
-from apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
-from apps.lumbermill.elements.FilesPanel import FilesPanel
+from cgl.apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
+from cgl.apps.lumbermill.elements.FilesPanel import FilesPanel
 from cgl.ui.widgets.help import ReportBugDialog, RequestFeatureDialog
-import cgl.plugins.syncthing.utils as st_utils
+# import cgl.plugins.syncthing.utils as st_utils
 try:
     import apps.lumbermill.elements.IOPanel as IoP
     DO_IOP = True
@@ -49,12 +50,12 @@ class FunctionRow(QtWidgets.QFrame):
 
     def on_render_clicked(self):
         if self.render_local.isChecked():
-            print 'local rendering'
+            logging.debug('local rendering')
         elif self.render_farm.isChecked():
-            print 'farm rendering'
+            logging.debug('farm rendering')
 
     def on_sync_clicked(self):
-        print 'sync clicked'
+        logging.debug('sync clicked')
         # TODO - see if syncthing is running currently
         # see if lumberwatch is currently running
 
@@ -293,7 +294,7 @@ class NavigationWidget(QtWidgets.QFrame):
                                                      user=None, scope='IO')
             self.location_changed.emit(self.path_object)
         else:
-            print 'Please Choose a Company and a Project before pushing the ingest button'
+            logging.debug('Please Choose a Company and a Project before pushing the ingest button')
 
     def back_button_pressed(self):
         path_object = cglpath.PathObject(self.current_location_line_edit.text())
@@ -446,7 +447,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(path_object)
 
     def update_render_location(self, data):
-        print 'updating the render location'
+        logging.debug('updating the render location')
 
     def update_location(self, data):
         self.nav_widget.search_box.setText('')
@@ -575,6 +576,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             each.widget().deleteLater()
 
     def add_task(self, path_object):
+        logging.debug(1)
         from apps.lumbermill.elements import asset_creator
         task_mode = True
         dialog = asset_creator.AssetCreator(self, path_dict=path_object.data, task_mode=task_mode)
@@ -582,8 +584,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(path_object.data)
 
     def load_files_panel(self, path_object):
-        self.panel = FilesPanel(path_object=path_object, user_email=self.user_email,
-                                show_import=self.show_import)
+        self.panel = FilesPanel(path_object=path_object, show_import=self.show_import)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
         # self.panel.new_version_signal.connect(self.new_version_clicked)
@@ -595,29 +596,36 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.source_selection = data
 
     def open_clicked(self):
-        if '####' in self.path_widget.path_line_edit.text():
-            logging.error('Nothing set for sequences yet')
+        if '##' in self.path_widget.path_line_edit.text():
+            sequence_path = self.path_widget.path_line_edit.text()
+            sequence = cglpath.Sequence(sequence_path)
+            file_seq = sequence.num_sequence.split()[0]
+            command = ('{} {}'.format(CONFIG['paths']['ffplay'], file_seq))
+            os.system(command)
+            logging.info('Nothing set for sequences yet')
         else:
             logging.info('Opening %s' % self.path_widget.path_line_edit.text())
             cglpath.start(self.path_widget.path_line_edit.text())
 
     @staticmethod
     def import_clicked():
-        print 'import clicked'
+        logging.debug('import clicked')
 
     def review_clicked(self):
         selection = cglpath.PathObject(self.path_widget.path_line_edit.text())
         selection.set_file_type()
         process_method(self.progress_bar, self.do_review, args=(self.progress_bar, selection), text='Submitting Review')
-        print 'updating_location %s %s' % (selection.path_root, selection.data)
+        logging.debug('updating_location %s %s' % (selection.path_root, selection.data))
         self.update_location(data=selection.data)
 
     @staticmethod
     def do_review(progress_bar, path_object):
+        logging.debug(2)
         from cgl.core.project import do_review
         do_review(progress_bar, path_object)
 
     def publish_clicked(self):
+        logging.debug(3)
         from plugins.preflight.launch import launch_
         from cgl.ui.widgets.publish_dialog import PublishDialog
         selection = cglpath.PathObject(self.path_widget.path_line_edit.text())
@@ -633,12 +641,12 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             # launch_(self, task, selection)
 
 
-class CGLumberjack(LJMainWindow):
+class CGLumberjack(VFXWindow):
     def __init__(self, show_import=False, user_info=None, start_time=None, previous_path=None, sync_enabled=True):
-        LJMainWindow.__init__(self)
+        VFXWindow.__init__(self)
 
         if start_time:
-            print 'Finished Loading Lumbermill in %s seconds' % (time.time() - start_time)
+            logging.debug('Finished Loading Lumbermill in %s seconds' % (time.time() - start_time))
         self.user_config = UserConfig().d
         if previous_path:
             self.previous_path = previous_path
@@ -650,21 +658,26 @@ class CGLumberjack(LJMainWindow):
         self.project_management = CONFIG['account_info']['project_management']
         self.user_info = ''
         self.user_email = ''
+        if user_info:
+            self.user_info = user_info
+            if user_info['login']:
+                self.user_email = user_info['login']
         self.user_name = ''
         self.company = ''
         self.pd_menus = {}
         self.menu_dict = {}
         self.menus = {}
         self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
-                                                 user_email=user_info['login'],
+                                                 user_email=self.user_info,
                                                  company=self.company,
                                                  path=self.previous_path,
                                                  radio_filter=self.filter,
                                                  show_import=show_import))
-        if user_info['first']:
-            self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['first'])
-        else:
-            self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['login'])
+        if user_info:
+            if user_info['first']:
+                self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['first'])
+            else:
+                self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['login'])
         self.status_bar = QtWidgets.QStatusBar()
         self.setStatusBar(self.status_bar)
 
@@ -783,51 +796,56 @@ class CGLumberjack(LJMainWindow):
         if sync_enabled:
             try:
                 if CONFIG['sync']['syncthing']['sync_thing_url']:
+
                     # TODO - check for user config settings to use syncthing.
                     if "sync_thing_auto_launch" in USERCONFIG.keys():
-                        if USERCONFIG["sync_thing_auto_launch"] == 'True':
-                            sync = False
-                            st_utils.kill_syncthing()
-                            if st_utils.syncthing_running():
-                                self.change_sync_icon(syncing=True)
-                                sync = True
+                        try:
+                            import cgl.plugins.syncthing.utils as st_utils
+                            if USERCONFIG["sync_thing_auto_launch"] == 'True':
+                                sync = False
+                                st_utils.kill_syncthing()
+                                if st_utils.syncthing_running():
+                                    self.change_sync_icon(syncing=True)
+                                    sync = True
+                                else:
+                                    self.change_sync_icon(syncing=False)
+                                    # TODO - turn icon to not syncing
+                                self.lumber_watch = launch_lumber_watch(new_window=True)
+                                # TODO if syncthing is set as a feature in the globals!!!!
+                                try:
+                                    st_utils.launch_syncthing()
+                                    self.change_sync_icon(syncing=True)
+                                except:
+                                    # this is a WindowsError - which doesn't seem to allow me to use in the except clause
+                                    logging.debug('Sync Thing Not Found, run "Setup Workstation" to start using it.')
                             else:
+                                self.load_syncthing = False
                                 self.change_sync_icon(syncing=False)
-                                # TODO - turn icon to not syncing
-                            self.lumber_watch = launch_lumber_watch(new_window=True)
-                            # TODO if syncthing is set as a feature in the globals!!!!
-                            try:
-                                st_utils.launch_syncthing()
-                                self.change_sync_icon(syncing=True)
-                            except:
-                                # this is a WindowsError - which doesn't seem to allow me to use in the except clause
-                                print('Sync Thing Not Found, run "Setup Workstation" to start using it.')
-                        else:
-                            self.load_syncthing = False
-                            self.change_sync_icon(syncing=False)
-                            print('sync_thing_auto_launch set to False, skipping launch')
+                                logging.debug('sync_thing_auto_launch set to False, skipping launch')
+                        except ModuleNotFoundError:
+                            logging.info('problem launching syncthing - main.py line 800')
                     else:
                         self.load_syncthing = False
                         self.change_sync_icon(syncing=False)
                         USERCONFIG["sync_thing_auto_launch"] = False
                         USERCONFIG["sync_thing_machine_type"] = ""
-                        print('Syncthing Auto Launch setting not set in globals.  Skipping sync operations')
+                        logging.debug('Syncthing Auto Launch setting not set in globals.  Skipping sync operations')
 
             except KeyError:
-                print ('Skipping, Syncthing Not Set up')
+                logging.debug('Skipping, Syncthing Not Set up')
 
     def set_processing_method_text(self, method=USERCONFIG['methodology']):
         self.current_processing_method.setTitle('Processing Method: %s' % method.title())
 
     def change_processing_method(self):
         if 'Local' in self.sender().text():
-            print 'Changing to Local'
+            logging.debug('Changing to Local')
             method = 'Local'
         elif 'Smedge' in self.sender().text():
-            print 'Changing to Smedge'
+            logging.debug('Changing to Smedge')
             method = "Smedge"
         elif 'Deadline' in self.sender().text():
-            print 'Changing to Deadline'
+            logging.debug('Changing to Deadline')
             method = "Deadline"
         else:
             return
@@ -842,24 +860,24 @@ class CGLumberjack(LJMainWindow):
         # self.sync_menu.setStyleSheet(ss)
         sync_button = self.centralWidget().nav_widget.sync_button
         if syncing:
-            print 'setting sync icon to sync_on'
+            logging.debug('setting sync icon to sync_on')
             sync_icon = os.path.join(cglpath.icon_path(), 'sync_on24px.png')
-            print sync_icon
+            logging.debug(sync_icon)
         else:
-            print 'setting sync icon to sync_off'
+            logging.debug('setting sync icon to sync_off')
             sync_icon = os.path.join(cglpath.icon_path(), 'sync_off24px.png')
-            print sync_icon
+            logging.debug(sync_icon)
         sync_button.setIcon(QtGui.QIcon(sync_icon))
         sync_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
 
     def on_kill_syncthing(self):
         self.change_sync_icon(syncing=False)
-        print 'Killing Sync Thing'
+        logging.debug('Killing Sync Thing')
         st_utils.kill_syncthing()
 
     def on_launch_syncthing(self):
         self.change_sync_icon(syncing=True)
-        print 'Starting Sync Thing'
+        logging.debug('Starting Sync Thing')
         st_utils.launch_syncthing()
 
     def enable_server_connection_clicked(self):
@@ -910,11 +928,11 @@ class CGLumberjack(LJMainWindow):
             if USERCONFIG["sync_thing_auto_launch"] == 'True':
                 USERCONFIG["sync_thing_auto_launch"] = 'False'
                 save_json(user_config(), USERCONFIG)
-                print 'Setting Auto Launch of LumberSync Off - Restart to see effects'
+                logging.debug('Setting Auto Launch of LumberSync Off - Restart to see effects')
             else:
                 USERCONFIG["sync_thing_auto_launch"] = 'True'
                 save_json(user_config(), USERCONFIG)
-                print 'Setting Auto Launch of LumberSync On - Restart to see effects'
+                logging.debug('Setting Auto Launch of LumberSync On - Restart to see effects')
         self.set_auto_launch_text()
 
     @staticmethod
@@ -958,9 +976,9 @@ class CGLumberjack(LJMainWindow):
                         buttons = self.order_buttons(menu)
                         self.add_menu_buttons(menu, buttons)
                 else:
-                    print 'No Menus Found'
+                    logging.debug('No Menus Found')
         else:
-            print 'No menu file found!'
+            logging.debug('No menu file found!')
         pass
 
     @staticmethod
@@ -1003,7 +1021,13 @@ class CGLumberjack(LJMainWindow):
         module = command.split()[1]
         module_name = module.split('.')[-1]
         try:
-            loaded_module = __import__(module, globals(), locals(), module_name, -1)
+            try:
+                # Python 2.7
+                loaded_module = __import__(module, globals(), locals(), module_name, -1)
+            except ValueError:
+                import importlib
+                # Python 3.0
+                loaded_module = importlib.import_module(module, module_name)
             action = QtWidgets.QAction(label, self)
             self.menu_dict[menu].addAction(action)
             function = getattr(loaded_module, 'run')
@@ -1038,7 +1062,7 @@ class CGLumberjack(LJMainWindow):
         from cgl.ui.widgets.dialog import TimeTracker
         dialog = TimeTracker()
         dialog.exec_()
-        print 'time tracking clicked'
+        logging.debug('time tracking clicked')
 
     def update_lumbermill_clicked(self):
         process_method(self.centralWidget().progress_bar, self.do_update_check,
@@ -1086,12 +1110,12 @@ class CGLumberjack(LJMainWindow):
 
     @staticmethod
     def open_company_globals():
-        logging.info(os.path.dirname(CONFIG['paths']['globals']))
+        logging.debug(os.path.dirname(CONFIG['paths']['globals']))
         cglpath.start(os.path.dirname(CONFIG['paths']['globals']))
 
     @staticmethod
     def open_user_globals():
-        logging.info(os.path.dirname(user_config()))
+        logging.debug(os.path.dirname(user_config()))
         cglpath.start(os.path.dirname(user_config()))
 
     def load_user_config(self):
@@ -1118,7 +1142,7 @@ class CGLumberjack(LJMainWindow):
 
     @staticmethod
     def on_settings_clicked():
-        print 'settings clicked'
+        logging.debug('settings clicked')
 
     def on_designer_clicked(self):
         pm = CONFIG['account_info']['project_management']

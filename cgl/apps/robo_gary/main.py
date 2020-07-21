@@ -149,10 +149,8 @@ class RoboGary(LJDialog):
         start_word = self.find_word(phrase[0], multi_word=True)
         end_word = self.find_word(phrase[-1])
         if start_word:
-            # print 'start word "%s", %s' % (phrase[0], start_word)
             self.selection_start_line_edit.setText(start_word['start_time'])
         if end_word:
-            # print 'end word %s, %s' % (phrase[-1], end_word)
             self.selection_end_line_edit.setText(end_word['end_time'])
 
     def find_word(self, word, multi_word=False):
@@ -178,11 +176,10 @@ class RoboGary(LJDialog):
                 if len(final_matches) == 1:
                     return final_matches[0]
                 elif len(final_matches) > 1:
-                    print '%s Matches, try adjusting self.next_words_length' % len(final_matches)
+                    print('%s Matches, try adjusting self.next_words_length' % len(final_matches))
                     for each in final_matches:
-                        print each
+                        print(each)
                 else:
-                    # print 'No Match Found for %s' % word
                     pass
 
     def find_next_words_in_text(self, multi_word=False):
@@ -254,9 +251,9 @@ class RoboGary(LJDialog):
         return next_
 
     def on_highlight_clicked(self):
-        print 'highlight clicked'
-        print self.screenplay_text_edit.textCursor().selectedText()
-        print 'now i just have to get the start time of the first word, and the end time of the last word'
+        print('highlight clicked')
+        print(self.screenplay_text_edit.textCursor().selectedText())
+        print('now i just have to get the start time of the first word, and the end time of the last word')
 
     def load_transcript(self):
         speaker_labels = self.transcript['results']['speaker_labels']

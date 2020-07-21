@@ -38,15 +38,15 @@ class ProductionComboDelegate(QtWidgets.QItemDelegate):
 
     @staticmethod
     def setEditorData(editor, index):
-        print editor, index
+        print(editor, index)
 
     def send_index_change(self):
-        print self.__dict__
+        print(self.__dict__)
         self.index_changed.emit(self.sender().currentText())
 
     @staticmethod
     def reload_items(items):
-        print items
+        print(items)
 
 
 class LJTreeModel(QtGui.QStandardItemModel):
@@ -138,7 +138,7 @@ class LJTreeWidget(QtWidgets.QTreeView):
         mdl.setHorizontalHeaderLabels(headers)
 
     def row_count(self):
-        print 'row count:', self.model.rowCount()
+        print('row count:', self.model.rowCount())
         return self.model.rowCount()
 
     def column_count(self):
@@ -162,7 +162,7 @@ class LJTreeWidget(QtWidgets.QTreeView):
                 if r.parent().row() != -1:
                     parent = r.parent()
                 for column in range(self.column_count()):
-                    # print column, self.model.item(r.row(), column).text()
+                    # print(column, self.model.item(r.row(), column).text())
                     if parent:
                         item = parent.child(r.row(), column).data(QtCore.Qt.DisplayRole)
                     else:
@@ -170,12 +170,12 @@ class LJTreeWidget(QtWidgets.QTreeView):
                     row.append(item)
             items.append(row)
         else:
-            print 'No data to select'
+            print('No data to select')
         self.items_ = items
         try:
             self.selected.emit(items)
         except IndexError:
-            print 'nothing selected'
+            print('nothing selected')
             self.nothing_selected.emit()
 
     def select_row_by_text(self, text, column=0):
@@ -201,7 +201,7 @@ class LJTreeWidget(QtWidgets.QTreeView):
     @staticmethod
     def on_closing():
         settings = UISettings.settings()
-        print settings, 'Need to adjust this code'
+        print(settings, 'Need to adjust this code')
         # hheading = self.horizontalHeader()
         # settings.setValue(widget_name(self) + ":hheading", hheading.saveState())
 
@@ -219,7 +219,7 @@ class LJTreeWidget(QtWidgets.QTreeView):
     #             header.resizeSection(column, width)
     #             total_width += width
     #         except AttributeError:
-    #             print 'PySide2 compatibility issue: setResizeMode'
+    #             print('PySide2 compatibility issue: setResizeMode')
     #     for row in range(self.row_count()):
     #         self.height_hint += 24
     #     self.width_hint = total_width
@@ -229,9 +229,9 @@ class LJTreeWidget(QtWidgets.QTreeView):
     #     return QtCore.QSize(self.height_hint, self.width_hint)
 
     def dropEvent(self, event):
-        print 'dropping like its hot'
-        print self.height_hint
-        print event.mimeData()
+        print('dropping like its hot')
+        print(self.height_hint)
+        print(event.mimeData())
         # if e.mimeData().hasUrls:
         #     e.setDropAction(QtCore.Qt.CopyAction)
         #     e.accept()

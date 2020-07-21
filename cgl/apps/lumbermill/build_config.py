@@ -1,11 +1,10 @@
 import getpass
 import os
-import json
-import time
+import logging
+import urllib.request
 import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.utils import read_write, web
-
 
 
 
@@ -196,7 +195,6 @@ class ConfigDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, company='', config_dict=None, root=r"C:\CGLUMBERJACK\COMPANIES"):
         QtWidgets.QDialog.__init__(self, parent)
         self.app_config = config_dict
-        globals_path = os.path.join(root, '_config', 'config.json')
         self.proj_management_label = QtWidgets.QLabel('Project Management')
         self.contents = {}
         self.company = company
@@ -277,7 +275,6 @@ class ConfigDialog(QtWidgets.QDialog):
         button_layout.addWidget(self.ok_button)
 
         # self.globals_tree_widget = DictionaryTreeWidget({})
-        this = __file__.split('cglumberjack')[0]
         this = __file__.split('cglumberjack')[0]
         dict_ = read_write.load_json(os.path.join(this, 'cglumberjack', 'cgl', 'cfg', 'globals_template.json'))
         self.proj_man_dict = dict_['project_management']
@@ -369,7 +366,7 @@ class ConfigDialog(QtWidgets.QDialog):
 
     @staticmethod
     def on_line_edits_changed(data):
-        print data
+        logging.debug(data)
 
     def on_globals_changed(self):
         config = self.widget_dict['globals']['line_edit'].text()
@@ -432,7 +429,7 @@ class ConfigDialog(QtWidgets.QDialog):
                 os.makedirs(os.path.dirname(self.widget_dict['globals']['line_edit'].text()))
             read_write.save_json(self.widget_dict['globals']['line_edit'].text(), self.global_config)
         else:
-            print 'No Dictionary Loaded for Global Config'
+            logging.debug('No Dictionary Loaded for Global Config')
 
     def check_user_config_exists(self):
         config = self.user_globals_line_edit.text()
@@ -458,7 +455,7 @@ class ConfigDialog(QtWidgets.QDialog):
                  }
             read_write.save_json(user_globals, d)
         else:
-            print 'No Root Defined, cannot save user globals'
+            logging.debug('No Root Defined, cannot save user globals')
 
     def load_user_config(self):
         pass
@@ -481,7 +478,7 @@ class ConfigDialog(QtWidgets.QDialog):
             # self.globals_tree_widget.show()
             return self.global_config
         else:
-            print 'Code Root Not Defined'
+            logging.debug('Code Root Not Defined')
             return None
 
     def check_user_config(self):
@@ -528,11 +525,11 @@ class ConfigDialog(QtWidgets.QDialog):
 
     def set_proj_man(self):
         for software in self.proj_man_dict.keys():
-            print software
-            print self.proj_man_dict[software]['api']
+            logging.debug(software)
+            logging.debug(self.proj_man_dict[software]['api'])
             try:
                 if self.proj_man_dict[software]['api']['server_url']:
-                    print 'setting project management to %s' % software
+                    logging.debug('setting project management to %s' % software)
                     index = self.proj_management_combo.findText(software)
                     if index != -1:
                         self.proj_management_combo.setCurrentIndex(index)
@@ -549,7 +546,7 @@ class ConfigDialog(QtWidgets.QDialog):
             api_script = self.proj_man_dict[self.project_management]['api']['api_script']
             self.api_script_line_edit.setText(api_script)
         except KeyError:
-            print('No Api script found, skipping')
+            logging.debug('No Api script found, skipping')
             self.api_script_line_edit.setText('')
         self.api_key_line_edit.setText(api_key)
         self.api_user_line_edit.setText(api_user)
@@ -735,25 +732,23 @@ class QuickSync(QtWidgets.QDialog):
         elif 'render' in import_folder:
             context = 'render'
         else:
-            print 'Not a valid folder to import'
+            logging.debug('Not a valid folder to import')
             return
         first, second = import_folder.split(context)
-        print first, second, 2
         company = os.path.split(os.path.dirname(first))[-1]
         if second:
-            print 'second is', second
+            logging.debug('second is', second)
             splitty = os.path.split(second)
-            print splitty, 0
+            logging.debug(splitty, 0)
             if re.search('\w', splitty[0]):
                 project = splitty[0]
-                print 'match'
+                logging.debug('match')
             else:
-                print 'no match'
+                logging.debug('no match')
                 project = splitty[1]
             if not project:
                 project = second.replace('\\', '').replace('/', '')
             project = project.replace('\\', '').replace('/', '')
-            print project, 1
             sync_folder = os.path.join(self.default_root, company, 'source', project)
         else:
             sync_folder = os.path.join(self.default_root, company, 'source')
@@ -801,18 +796,26 @@ class QuickSync(QtWidgets.QDialog):
                 os.makedirs(os.path.dirname(globals_path))
             if os.path.exists(globals_path):
                 os.remove(globals_path)
-            r = requests.get(self.aws_globals, allow_redirects=True)
-            if '<Error>' in r.content:
-                print('No File %s for company: %s' % (self.aws_globals, self.company_name))
+            try:
+                # save the globals to globals_path
+                urllib.request.urlretrieve(self.aws_globals, globals_path)
+                return True
+            except ImportError:  # Python 2
+                r = requests.get(self.aws_globals, allow_redirects=True)
+                logging.debug(r.content)
+                if '<Error>' in str(r.content):
+                    logging.debug('No File %s for company: %s' % (self.aws_globals, self.company_name))
+                else:
+                    logging.debug('Saving Globals file to: %s' % globals_path)
+                    with open(globals_path, 'w+') as f:
+                        f.write(r.content)
+                self.accept()
+                return True
             else:
-                print('Saving Globals file to: %s' % globals_path)
-                with open(globals_path, 'w+') as f:
-                    f.write(r.content)
-            self.accept()
-            return True
+                logging.error('Problem downloading %s' % self.aws_globals)
         else:
+            logging.debug('No Globals Found - Get your Studio to publish their globals, or Create new ones?')
             return False
-            print('No Globals Found - Get your Studio to publish their globals, or Create new ones?')
 
     def edit_globals_paths(self):
         globals = read_write.load_json(self.globals_path)
@@ -833,7 +836,7 @@ class QuickSync(QtWidgets.QDialog):
         globals_dir = os.path.dirname(globals["paths"]["globals"])
         if not os.path.exists(globals_dir):
             os.makedirs(globals_dir)
-        print 'Saving Globals To: %s' % globals["paths"]["globals"]
+        logging.debug('Saving Globals To: %s' % globals["paths"]["globals"])
         read_write.save_json(globals["paths"]["globals"], globals)
 
     def setup_syncthing(self):
@@ -842,21 +845,17 @@ class QuickSync(QtWidgets.QDialog):
         :return:
         """
         from cgl.ui.widgets.dialog import InputDialog
-        import plugins.syncthing.utils as syncthing
 
         cgl_tools_folder = os.path.join(self.default_root, '_config', 'cgl_tools')
         if not os.path.exists(cgl_tools_folder):
             os.makedirs(cgl_tools_folder)
-        sync_folders = {r'[root]\_config\cgl_tools': os.path.join(cgl_tools_folder)}
-        # TODO - need to set 2nd value here as a global in globals. sync_sheet: LONE_COCONUT_SYNC_THING
-        # syncthing.setup_workstation()
+
         dialog = InputDialog(title='Sync Message', message='Your Machine has be submitted for approval for file sharing\n'
                                                            'After you have been added, click:\n'
                                                            ' Sync> Sync From Server\n'
                                                            'and you will start syncing folders')
         dialog.exec_()
         # syncthing.setup(self.company_name_s3, 'LONE_COCONUT_SYNC_THING', sync_folders)
-
 
     def set_up_lumbermill(self):
         """
@@ -866,6 +865,7 @@ class QuickSync(QtWidgets.QDialog):
         if self.download_globals_from_cloud():
             self.edit_globals_paths()
             create_user_globals(self.default_user_globals, self.default_globals)
+            self.accept()
         else:
             dialog = ConfigDialog(company=self.company_line_edit.text(), root=self.default_root)
             dialog.exec_()
@@ -882,10 +882,10 @@ def create_user_globals(user_globals, globals_path):
              "methodology": "local",
              "my_tasks": {}
              }
-        print "saving user_globals to %s" % user_globals
+        logging.debug("saving user_globals to %s" % user_globals)
         read_write.save_json(user_globals, d)
     else:
-        print 'No Root Defined, cannot save user globals'
+        logging.debug('No Root Defined, cannot save user globals')
 
 
 if __name__ == "__main__":

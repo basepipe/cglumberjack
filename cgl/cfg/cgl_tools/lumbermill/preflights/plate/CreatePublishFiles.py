@@ -49,7 +49,7 @@ class CreatePublishFiles(PreflightCheck):
             df.to_csv(source_path.path_root, index=False)
 
     def save_data_frame(self):
-        print 'saving data to: %s' % self.pandas_path
+        print('saving data to: %s' % self.pandas_path)
         self.data_frame.to_csv(self.pandas_path, index=False)
 
     def run(self):
@@ -65,7 +65,7 @@ class CreatePublishFiles(PreflightCheck):
 
                     # What to do if it's a Folder
                     if row['Filetype'] == 'folder':
-                        print 'Copying %s to %s' % (from_file, to_file)
+                        print('Copying %s to %s' % (from_file, to_file))
                         # Send this to the Preflights - No matter what basically
                         if not self.test:
                             cgl_copy(from_file, to_file)
@@ -82,9 +82,9 @@ class CreatePublishFiles(PreflightCheck):
                     else:
                         to_dir = os.path.dirname(to_file)
                         if row['Filetype'] == 'sequence':
-                            print '2, Sequence'
+                            print('2, Sequence')
                             if not self.test:
-                                print 'Creating Directory: %s' % to_dir
+                                print('Creating Directory: %s' % to_dir)
                                 CreateProductionData(to_dir)
                             file_sequence, self.shared_data['frange'] = split_sequence_frange(from_file)
                             from_query = split_sequence(from_file)
@@ -93,7 +93,7 @@ class CreatePublishFiles(PreflightCheck):
 
                             for f in glob.glob('%s*' % from_query):
                                 to_file = os.path.join(to_dir, os.path.basename(f))
-                                print 'Copying %s to %s' % (f, to_file)
+                                print('Copying %s to %s' % (f, to_file))
                                 if not self.test:
                                     cgl_copy(f, to_file)
                                 # self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
@@ -103,10 +103,10 @@ class CreatePublishFiles(PreflightCheck):
                                 row['Status'] = 'Published'
                                 self.make_source_file(to_dir, row)
                         else:
-                            print '4 File'
-                            print 'Copying %s to %s' % (from_file, to_file)
+                            print('4 File')
+                            print('Copying %s to %s' % (from_file, to_file))
                             if not self.test:
-                                print 'Creating File: %s' % to_file
+                                print('Creating File: %s' % to_file)
                                 CreateProductionData(to_file, json=True)
                                 cgl_copy(from_file, to_file)
                             # self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
@@ -118,5 +118,5 @@ class CreatePublishFiles(PreflightCheck):
                     self.save_data_frame()
                     self.pass_check('Check Passed')
                 else:
-                    print 'Skipping Untagged assets'
+                    print('Skipping Untagged assets')
 

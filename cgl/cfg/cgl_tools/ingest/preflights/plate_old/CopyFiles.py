@@ -6,7 +6,7 @@ class CopyFiles(PreflightCheck):
         pass
 
     def run(self):
-        print 'CopyFiles'
+        print('CopyFiles')
         # self.pass_check('Check Passed')
         # self.fail_check('Check Failed')
 

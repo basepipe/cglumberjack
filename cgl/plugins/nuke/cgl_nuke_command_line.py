@@ -27,13 +27,13 @@ def replace_in_path(input_script, find_pattern, replace_pattern, output_script=N
     nodes_ = [w for w in find_nodes(type_)]
     for n in nodes_:
         path = n['file'].value()
-        print n.name(), path
+        print(n.name(), path)
         #path = path.replace(find_pattern, replace_pattern)
         #n['file'].setValue(path)
     # nuke.scriptSave(output_script)
 
 
 if __name__ == '__main__':
-    print 'this is a test'
+    print('this is a test')
 
 

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import logging
 from cgl.core.config import app_config, UserConfig
 from cgl.core.path import PathObject, CreateProductionData
 
@@ -44,9 +45,9 @@ def get_task_info(path_object, force=False):
     :param force:
     :return:
     """
-    print UserConfig().d
-    print path_object.company, path_object.project
-    print path_object.path_root
+    logging.debug(UserConfig().d)
+    logging.debug(path_object.company, path_object.project)
+    logging.debug(path_object.path_root)
     if path_object.company in UserConfig().d['my_tasks'].keys():
         if path_object.project in UserConfig().d['my_tasks'].keys():
             all_tasks = UserConfig().d['my_tasks'][path_object.company][path_object.project]
@@ -95,7 +96,6 @@ def create_project_config(company, project):
     project_config = os.path.join(project_dir, 'global.yaml')
     if os.path.exists(company_config):
         if not os.path.exists(project_dir):
-            print project_dir
             os.makedirs(project_dir)
             cgl_copy(company_config, project_config)
 
@@ -124,6 +124,10 @@ def get_cgl_config():
 
 
 def get_cgl_tools():
+    """
+    get the path for the cgl_tools directory
+    :return:
+    """
     return CONFIG['paths']['cgl_tools']
 
 
@@ -189,7 +193,7 @@ def do_review(progress_bar=None, path_object=None):
     from cgl.ui.widgets.dialog import InputDialog
     job_id = None
     if not path_object:
-        print 'No Valid PathObject() found for review'
+        logging.debug('No Valid PathObject() found for review')
         return None
     else:
         selection = path_object
@@ -197,10 +201,10 @@ def do_review(progress_bar=None, path_object=None):
         selection.set_hd_proxy_path()
         # selection.set_path()
     if os.path.isdir(selection.path_root):
-        print 'Choose a sequence or file'
+        logging.debug('Choose a sequence or file')
         return
     if not os.path.exists(selection.preview_path):
-        print('No Web Preview Found, creating one')
+        logging.debug('No Web Preview Found, creating one')
         job_info = selection.make_preview()
         job_id = job_info['job_id']
     if selection.context == 'render':
@@ -208,7 +212,7 @@ def do_review(progress_bar=None, path_object=None):
         # LUMBERMILL REVIEWS
         if PROJ_MANAGEMENT == 'lumbermill':
             # do this for movies
-            print 'Lumbermill Not connected to review features'
+            logging.debug('Lumbermill Not connected to review features')
         # FTRACK REVIEWS
         elif PROJ_MANAGEMENT == 'ftrack':
             if selection.filename:
@@ -224,7 +228,7 @@ def do_review(progress_bar=None, path_object=None):
                     selection.upload_review(job_id=job_id)
                     # CreateProductionData(selection)
             else:
-                print('Select file for Review')
+                logging.debug('Select file for Review')
 
         elif PROJ_MANAGEMENT == 'shotgun':
             if selection.filename:
@@ -238,15 +242,14 @@ def do_review(progress_bar=None, path_object=None):
                         return
                 else:
                     if os.path.exists(selection.preview_path):
-                        print 1
                         CreateProductionData(path_object=selection)
                     else:
                         selection.upload_review(job_id=job_id)
             else:
-                print('Select file for Review')
+                logging.debug('Select file for Review')
 
         else:
-            print('%s is an unknown project management type' % PROJ_MANAGEMENT)
+            logging.debug('%s is an unknown project management type' % PROJ_MANAGEMENT)
 
         selection.set_attr(filename='')
         selection.set_attr(ext='')

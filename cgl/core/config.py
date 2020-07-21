@@ -18,7 +18,7 @@ class Configuration(object):
 
     def __init__(self, company=None, project=None, proj_management=None):
         self.user_config = os.path.join(os.path.expanduser('~'), 'Documents', 'cglumberjack', 'user_globals.json')
-        print self.user_config
+        print(self.user_config)
         if not os.path.exists(self.user_config):
             logging.info('User Config Not Found: %s' % self.user_config)
             return
@@ -27,7 +27,7 @@ class Configuration(object):
             logging.info('No Globals Found at %s' % self.globals)
             return
         self.globals = load_json(user_globals['globals'])
-        print self.globals
+        print(self.globals)
         Configuration.LOADED_CONFIG['app'] = self.globals
 
 
@@ -40,13 +40,13 @@ class Configuration(object):
     #     default_global = os.path.join(self.cg_lumberjack_dir, 'globals.json')
     #     to_path = os.path.join(self.company_global_dir, 'globals.json')
     #     if os.path.exists(self.company_global_dir):
-    #         print 'Copying from %s to %s' % (default_global, to_path)
+    #         print('Copying from %s to %s' % (default_global, to_path))
     #         if 'globals.json' not in os.listdir(self.company_global_dir):
     #             cgl_copy(default_global, to_path)
     #             if self.proj_management:
     #                 self.update_proj_management()
     #     else:
-    #         print '%s does not exist' % self.company_global_dir
+    #         print('%s does not exist' % self.company_global_dir)
     #         os.makedirs(self.company_global_dir)
     #         cgl_copy(default_global, to_path)
     #         if self.proj_management:
@@ -116,7 +116,7 @@ class UserConfig(object):
 
     @staticmethod
     def update_company():
-        print 'Skipping company for now'
+        print('Skipping company for now')
         # if self.company:
         #     self.d['company'] = self.company
 

@@ -16,7 +16,6 @@ ROOT = CONFIG['paths']['code_root']
 class SetupGUI(LJDialog):
     def __init__(self, parent=None, title='Setup'):
         LJDialog.__init__(self)
-        print "hello"
         self.setWindowTitle("Setup")
         self.authorization = ""
 
@@ -106,11 +105,9 @@ class SetupGUI(LJDialog):
         for item in docs['project']['component']:
             if item['@name'] == "TaskManager":
                 item['servers']['Generic']['username'] = user_id
-                # print item['servers']['Generic']['username']
                 for element in item['servers']['Generic']['option']:
                     if element['@name'] == "templateVariables":
                         element['list']['TemplateVariable'][0]['option'][1]['@value'] = project_id
-                       # print element['list']['TemplateVariable'][0]['option'][1]['@value']
         idea_xml = os.path.join(ROOT, '.idea', 'workspace.xml')
         save_xml(idea_xml, docs)
 

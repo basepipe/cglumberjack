@@ -1,8 +1,10 @@
 import os
+import stringcase
 from cgl.core.utils.general import cgl_copy
+from cgl.core.utils.read_write import load_text_file, save_text_lines
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.dialog import InputDialog
-from cgl.core.path import start, icon_path
+from cgl.core.path import start, icon_path, get_resources_path
 from cgl.core.project import get_cgl_tools
 from cgl.ui.widgets.text import Highlighter
 
@@ -63,7 +65,6 @@ class CGLMenuButton(QtWidgets.QWidget):
 
         try:
             dialog = self.parent().parent().parent()
-            print dialog
             self.software = dialog.software_combo.currentText()
         except AttributeError:
             # TODO - look into this a bit deeper, this is a fairly generic catch right now.
@@ -74,6 +75,7 @@ class CGLMenuButton(QtWidgets.QWidget):
         self.name = preflight_step_name
         self.preflight_name = preflight_name
         self.preflight_path = preflight_path
+        # self.menu_name = os.path.split(preflight_path.split(menu_type)[1])[0]
         self.do_save = True
         # Create the Layouts
         layout = QtWidgets.QVBoxLayout(self)
@@ -179,14 +181,11 @@ class CGLMenuButton(QtWidgets.QWidget):
         icon = QtGui.QIcon(to_path)
         tab_ = self.parent().parent()
         index_ = tab_.currentIndex()
-        # print index_
         tab_.setTabIcon(index_, icon)
         # # display the icon?
         self.on_save_clicked()
 
-
     def on_save_clicked(self):
-        print 'save_clicked 172, emit.'
         self.save_all_signal.emit()
 
     def on_open_clicked(self):
@@ -208,7 +207,6 @@ class CGLMenuButton(QtWidgets.QWidget):
                 if attr == 'name':
                     if not str(self.attrs[attr]):
                         split = self.attrs['module'].split()
-                        print 'setting name to module name: %s' % split[-1].split('.run()')[0]
                         attr_value = split[-1].split('.run()')[0]
                 self.attrs_dict[attr].setText(attr_value)
         # load the python file into the text edit
@@ -217,12 +215,10 @@ class CGLMenuButton(QtWidgets.QWidget):
             self.code_text_edit.setPlainText(code_text)
             self.do_save = False
         else:
-            code_text = self.load_default_text()
-            self.code_text_edit.setPlainText(code_text)
+            self.create_default_button()
 
     def load_code_text(self):
-        code_path = os.path.join(os.path.dirname(self.preflight_path), self.menu_type, self.preflight_name,
-                                 '%s.py' % self.name)
+        code_path = get_button_path(self.software, self.preflight_name, self.name, menu_type=self.menu_type)
         if os.path.exists(code_path):
             try:
                 return open(code_path).read()
@@ -230,34 +226,28 @@ class CGLMenuButton(QtWidgets.QWidget):
                 with open(code_path, 'w+') as y:
                     y.write("")
             return None
-
-    def load_default_text(self):
-        print self.menu_type, self.software, 11111111111
-        if self.menu_type == 'preflights':
-            preflight = "from plugins.preflight.preflight_check import PreflightCheck\n" \
-                        "\n\n" \
-                        "class %s(PreflightCheck):\n" \
-                        "\n" \
-                        "    def getName(self):\n" \
-                        "        pass\n" \
-                        "\n" \
-                        "    def run(self):\n" \
-                        "        print '%s'\n" \
-                        "        # self.pass_check('Check Passed')\n" \
-                        "        # self.fail_check('Check Failed')\n\n" % (self.name, self.name)
-            return preflight
-
-        elif self.menu_type == 'menus' and self.software == 'lumbermill':
-            return "\n\ndef run(lumbermill):\n    print(\"hello world: %s\")" % self.name
         else:
-            return "\n\ndef run():\n    print(\"hello world: %s\")" % self.name
+            print('%s does not exist' % code_path)
+
+    def create_default_button(self):
+        create_button_file(software=self.software, menu_name=self.preflight_name, button_name=self.name,
+                           menu_type=self.menu_type)
+        code_text = self.load_code_text()
+        if code_text:
+            self.code_text_edit.setPlainText(code_text)
+            self.do_save = False
 
     def on_delete_clicked(self):
-        print self
-        print self.parent().parent()
-        print self.parent().parent().parent()
-        print '--------------------'
-        print self.parent().parent().currentIndex()
+        menu_widget = self.parent().parent()
+        # delete the file
+        filepath = menu_widget.currentWidget().command_line_edit.text().replace('.', '/')
+        filepath = '{}.py'.format(filepath)
+        filepath = os.path.join(os.path.dirname(get_cgl_tools()), filepath)
+        if os.path.exists(filepath):
+            print('Deleting the file: {}'.format(filepath))
+            os.remove(filepath)
+        else:
+            print('File Does Not Exist: {}'.format(filepath))
         self.parent().parent().removeTab(self.parent().parent().currentIndex())
 
 
@@ -374,45 +364,46 @@ class CGLMenu(QtWidgets.QWidget):
             message = 'Enter a name for your Context Menu Item'
 
         dialog = InputDialog(title=title_, message=message,
-                             line_edit=True, regex='^([A-Z][a-z]+)+$',
-                             name_example='class name must be CamelCase - ExamplePreflightName')
+                             line_edit=True, regex='^([aA-zZ ]+)+$',
+                             name_example='Name may only contain letters and spaces')
         dialog.exec_()
         if dialog.button == 'Ok':
-            preflight_name = dialog.line_edit.text()
-            command = self.get_command_text(button_name=preflight_name, menu_type=self.menu_type)
-            module = self.default_preflight_text(preflight_name)
+            # text_ = dialog.line_edit.text().replace(' ', '_')
+            text_ = stringcase.snakecase(dialog.line_edit.text().lower())
+            button_name = stringcase.pascalcase(text_)
+            label = stringcase.titlecase(text_)
+            command = self.get_command_text(button_name=button_name, menu_type=self.menu_type)
+            module = self.default_preflight_text(button_name)
             if self.menu_type == 'preflights':
-                attrs = {'label': preflight_name,
-                         'name': preflight_name,
+                attrs = {'label': button_name,
+                         'name': button_name,
                          'required': 'True',
                          'module': module}
             elif self.menu_type == 'menus' or self.menu_type == 'context-menus':
-                attrs = {'label': preflight_name,
-                         'name': preflight_name,
+                attrs = {'label': button_name,
+                         'name': button_name,
                          'module': command}
             elif self.menu_type == 'shelves':
-                attrs = {'label': preflight_name,
+                attrs = {'label': button_name,
                          'module': command,
-                         'name': preflight_name,
+                         'name': button_name,
                          'icon': ''}
             self.new_button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
-                                                   preflight_step_name=dialog.line_edit.text(),
+                                                   preflight_step_name=button_name,
                                                    attrs=attrs, preflight_path=self.menu_path, menu_type=self.menu_type)
             self.new_button_widget.save_all_signal.connect(self.on_save_clicked)
             if 'icon' in attrs.keys():
                 icon = QtGui.QIcon(attrs['icon'])
-                index = self.buttons_tab_widget.addTab(self.new_button_widget, icon, preflight_name)
+                index = self.buttons_tab_widget.addTab(self.new_button_widget, icon, button_name)
             else:
-                index = self.buttons_tab_widget.addTab(self.new_button_widget, preflight_name)
+                print(3)
+                index = self.buttons_tab_widget.addTab(self.new_button_widget, button_name)
             self.buttons_tab_widget.setCurrentIndex(index)
 
     def on_save_clicked(self):
-        print 'save_clicked emit, 1'
         self.save_clicked.emit()
 
     def get_command_text(self, button_name, menu_type):
-        print 'import cgl_tools.%s.%s.%s.%s as %s; %s.run()' % (self.software, menu_type, self.menu_name, button_name,
-                                                                 button_name, button_name)
         return 'import cgl_tools.%s.%s.%s.%s as %s; %s.run()' % (self.software, menu_type, self.menu_name, button_name,
                                                                  button_name, button_name)
 
@@ -438,14 +429,83 @@ class CGLMenu(QtWidgets.QWidget):
                             self.buttons_tab_widget.addTab(button_widget, button)
 
 
+def create_button_file(software, menu_name, button_name, menu_type):
+    button_path = get_button_path(software, menu_name, button_name, menu_type=menu_type)
+    if software == 'lumbermill':
+        template_software = 'lumbermill'
+    elif software == 'blender':
+        template_software = 'blender'
+    else:
+        template_software = 'default'
+
+    button_template = os.path.join(get_resources_path(), 'pipeline_designer', template_software, 'buttons',
+                                   'for_%s.py' % menu_type)
+    print('Button_template: {}'.format(button_template))
+    button_lines = load_text_file(button_template)
+    print('Button Lines: {}'.format(button_lines))
+    changed_lines = []
+    for l in button_lines:
+        if software == 'blender':
+            if l.startswith('class ButtonTemplate'):
+                new_l = l.replace('ButtonTemplate', button_name)
+                changed_lines.append(new_l)
+            elif 'object.button_template' in l:
+                new_l = l.replace('button_template', stringcase.snakecase(button_name))
+                changed_lines.append(new_l)
+            elif 'bl_label' in l:
+                new_l = l.replace('button_template', stringcase.titlecase(button_name))
+                changed_lines.append(new_l)
+            elif 'print' in l:
+                new_l = l.replace('button_template', stringcase.titlecase(button_name))
+                new_l = l.replace('PreflightTemplate', stringcase.titlecase(button_name))
+                changed_lines.append(new_l)
+            elif 'PreflightTemplate' in l:
+                new_l = l.replace('PreflightTemplate', stringcase.titlecase(button_name))
+                changed_lines.append(new_l)
+            else:
+                changed_lines.append(l)
+        else:
+            if 'print' in l:
+                new_l = l.replace('button_template', stringcase.titlecase(button_name))
+                changed_lines.append(new_l)
+            else:
+                changed_lines.append(l)
+    dirname = os.path.dirname(button_path)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    print(changed_lines)
+    print(button_path)
+    save_text_lines(changed_lines, button_path)
+    return button_path
 
 
+def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
+    """
+    returns the menu path for a menu with the given name
+    :param software: software package to get the menu path for.
+    :param menu_name: CamelCase string - all menus created with pipeline designer are CamelCase
+    :param menu_file: if True returns a menu path with a menu_name.py file.
+    :param menu_type: menus, preflights, shelves, context-menus
+    :return:
+    """
+    if menu_file:
+        menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name, '%s.py' % menu_name)
+    else:
+        menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name)
+    return menu_folder
 
 
+def get_button_path(software, menu_name, button_name, menu_type='menus'):
+    """
 
-
-
-
-
+    :param software: software as it appears in pipeline designer.
+    :param menu_name: CamelCase menu name
+    :param button_name: CamelCase button name
+    :param menu_type: menus, preflights, shelves, context-menus
+    :return:
+    """
+    menu_folder = get_menu_path(software, menu_name, menu_type=menu_type)
+    button_path = os.path.join(menu_folder, '%s.py' % button_name)
+    return button_path
 
 

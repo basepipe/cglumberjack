@@ -6,7 +6,7 @@ from cgl.core.path import icon_path, image_path, PathObject
 from cgl.ui.widgets.containers.table import LJTableWidget
 from cgl.ui.startup import do_gui_init
 from cgl.ui.widgets.widgets import GifWidget
-from preflight_check import PreflightCheck
+from .preflight_check import PreflightCheck
 
 CONFIG = app_config()
 
@@ -82,16 +82,20 @@ class ItemTable(LJTableWidget):
             self.nothing_selected.emit()
 
 
-class Preflight(QtWidgets.QDialog):
+class Preflight(QtWidgets.QWidget):
     signal_one = QtCore.Signal(object)
 
     def __init__(self, parent=None, software='lumbermill', preflight='', model=None, path_object=None,
                  current_selection=None, **kwargs):
-        QtWidgets.QDialog.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         self.software = software
         self.preflight = preflight
         self.software_dir = os.path.join(CONFIG['paths']['cgl_tools'], software)
         self.preflight_dir = os.path.join(self.software_dir, 'preflights')
+        if self.preflight not in os.listdir(self.preflight_dir):
+            print(self.preflight_dir, self.preflight)
+            self.preflight = 'default'
+            print('no {} preflight found, using default'.format(self.preflight))
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.json_file = os.path.join(self.software_dir, 'preflights.cgl')
         self.modules = {}
@@ -103,8 +107,12 @@ class Preflight(QtWidgets.QDialog):
         PreflightCheck.shared_data['path_object'] = PathObject(path_object)
         PreflightCheck.shared_data['current_selection'] = current_selection
         PreflightCheck.shared_data['preflight_dialog'] = self
-        for key, value in kwargs.iteritems():
-            PreflightCheck.shared_data[key] = value
+        try:
+            for key, value in kwargs.iteritems():
+                PreflightCheck.shared_data[key] = value
+        except AttributeError:
+            for key, value in kwargs.items():
+                PreflightCheck.shared_data[key] = value
         if model:
             PreflightCheck.shared_data['parent'] = parent
             PreflightCheck.shared_data['mdl'] = model
@@ -151,6 +159,8 @@ class Preflight(QtWidgets.QDialog):
         self.run_selected.clicked.connect(self.run_selected_clicked)
         self.run_all.clicked.connect(self.run_all_clicked)
 
+        self.show()
+
     def _load_json(self):
         print(self.json_file)
         print(self.software, self.preflight)
@@ -172,7 +182,12 @@ class Preflight(QtWidgets.QDialog):
             if item != 'order':
                 module = self.modules[item]['module']
                 module_name = module.split('.')[-1]
-                loaded_module = __import__(module, globals(), locals(), module_name, -1)
+                try:
+                    loaded_module = __import__(module, globals(), locals(), module_name, -1)
+                except ValueError:
+                    import importlib
+                    # Python 3+
+                    loaded_module = importlib.import_module(module, module_name)
                 class_ = getattr(loaded_module, module_name)
                 c = class_()
                 self.function_d.update({self.modules[item]['label']: c})
@@ -210,7 +225,7 @@ class Preflight(QtWidgets.QDialog):
                     each['Status'] = 'Failed'
                 self.update_status(check=each['Check'], status=each['Status'])
             else:
-                print "Can't run a check when previous required checks have not passed"
+                print("Can't run a check when previous required checks have not passed")
 
     def send_signal_one(self, data):
         self.signal_one.emit(data)
@@ -220,18 +235,18 @@ class Preflight(QtWidgets.QDialog):
         if int(check["Order"]) == 1:
             return True
         for irow in range(int(check['Order'])-1):
-            print irow, int(check['Order'])-1
+            print(irow, int(check['Order'])-1)
             name = mdl.index(irow, 0)
             passed = mdl.index(irow, 1)
             required = mdl.index(irow, 4)
             if str(mdl.data(passed)) != str('Passed'):
-                print '%s didnt pass' % str(mdl.data(name))
+                print('%s didnt pass' % str(mdl.data(name)))
                 if str(mdl.data(required)) == str(True):
-                    print "Required Check Doesn't Pass: ", str(mdl.data(name)), str(mdl.data(passed)), \
-                        str(mdl.data(required))
+                    print("Required Check Doesn't Pass: ", str(mdl.data(name)), str(mdl.data(passed)), \
+                        str(mdl.data(required)))
                     return False
                 else:
-                    print "Check Failed, Not Required, Next Check Enabled"
+                    print("Check Failed, Not Required, Next Check Enabled")
                     return True
         return True
         # get a list of all the checks before me
@@ -264,7 +279,11 @@ class Preflight(QtWidgets.QDialog):
 
         self.run_selected_clicked(checks=all_rows)
         self.image_plane.stop()
-        self.accept()
+        try:
+            self.accept()  # if this is a QDialog
+        except AttributeError:
+            print('Attempting to Close this QWidget')
+            self.close()
 
 
 def main():

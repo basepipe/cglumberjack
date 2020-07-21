@@ -90,12 +90,11 @@ class PathFixer(LJDialog):
                         frange_ = c.split(' ')[-1]
                         if '-' in frange_:
                             sframe, eframe = frange_.split('-')
-                            print 'setting frange to %s-%s' % (sframe, eframe)
+                            print('setting frange to %s-%s' % (sframe, eframe))
                             node['first'].setValue(int(sframe))
                             node['last'].setValue(int(eframe))
             except WindowsError:
-                print 'filepath does not exist: %s' % filepath
-
+                print('filepath does not exist: %s' % filepath)
 
     def on_replace_root_clicked(self):
         if self.replace_root.isChecked():

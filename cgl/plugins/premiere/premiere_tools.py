@@ -18,7 +18,6 @@ def launch_fcp_xml(folder_path, file, wait=9):
     thread = threading.Thread(target=launch_premiere)
     thread.start()
     time.sleep(9)
-    # print 1
     pyautogui.keyDown('ctrl')
     pyautogui.press('o')
     pyautogui.keyUp('ctrl')

@@ -44,8 +44,8 @@ class LJTag(QtWidgets.QFrame):
         close_button.clicked.connect(self.delete_tag)
 
     def delete_tag(self):
-        print self.text
-        print 'delete'
+        print(self.text)
+        print('delete')
         self.close_clicked.emit()
 
 
@@ -534,7 +534,7 @@ class TaskWidget(QtWidgets.QWidget):
                 if not self.start_task_button.isVisible():
                     self.empty_state.show()
         else:
-            print 'Found unexpected model: %s' % mdl
+            print('Found unexpected model: %s' % mdl)
 
     def on_add_button_clicked(self):
         self.add_clicked.emit()
@@ -662,7 +662,7 @@ class AssetWidget(QtWidgets.QWidget):
         try:
             self.message.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         except AttributeError:
-            print 'PySide2 Natively does not have QtWidgets.QSizePolicy'
+            print('PySide2 Natively does not have QtWidgets.QSizePolicy')
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.search_box = search_box
         self.add_button = QtWidgets.QToolButton()
@@ -771,30 +771,11 @@ class FileTableWidget(LJTableWidget):
         if hide_header:
             self.horizontalHeader().hide()
 
-        # self.item_right_click_menu.create_action("Create Dailies Template", self.create_dailies_template_signal)
-        # self.item_right_click_menu.addSeparator()
         self.setAcceptDrops(True)
 
     def show_in_proj(self):
         from cgl.core.path import show_in_project_management
         show_in_project_management(self.path_object)
-
-    # def add_custom_task_items(self):
-    #     # get the current task
-    #     if self.task and 'elem' not in self.task:
-    #         menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
-    #         if os.path.exists(menu_file):
-    #             menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())
-    #             if self.task in menu_items['lumbermill']:
-    #                 for item in menu_items['lumbermill'][self.task]:
-    #                     if item != 'order':
-    #                         button_label = menu_items['lumbermill'][self.task][item]['label']
-    #                         button_command = menu_items['lumbermill'][self.task][item]['module']
-    #                         module = button_command.split()[1]
-    #                         loaded_module = __import__(module, globals(), locals(), item, -1)
-    #                         self.item_right_click_menu.create_action(button_label,
-    #                                                                  lambda: loaded_module.run(''))
-        # see if there are custom menu items required for this task.
 
     def item_right_click(self, position):
         self.item_right_click_menu.exec_(self.mapToGlobal(position))
@@ -998,7 +979,7 @@ class AdvComboBox(QtWidgets.QComboBox):
         def filter_(text):
             self.pFilterModel.setFilterFixedString(str(text))
 
-        self.lineEdit().textEdited[unicode].connect(filter_)
+        self.lineEdit().textEdited[str].connect(filter_)
         self.completer.activated.connect(self.on_completer_activated)
 
     # on selection of an item from the completer, select the corresponding item from combobox

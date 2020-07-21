@@ -5,7 +5,7 @@ from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import load_style_sheet
 from cgl.core.project import get_cgl_tools
-from utils import CGLMenu
+from cgl.apps.pipeline.utils import CGLMenu, get_menu_path, get_button_path
 
 
 class Designer(LJDialog):
@@ -28,7 +28,7 @@ class Designer(LJDialog):
                 if each not in self.task_list:
                     self.task_list.append(each)
         except TypeError:
-            print 'Problems found in your globals "schema"'
+            print('Problems found in your globals "schema"')
             return
         self.task_list.sort()
         self.task_list.insert(0, '')
@@ -112,7 +112,8 @@ class Designer(LJDialog):
             softwares = os.listdir(dir_)
             for s in softwares:
                 if '.' not in s:
-                    self.software_combo.addItem(s)
+                    if '__' not in s:
+                        self.software_combo.addItem(s)
         self.software = self.software_combo.currentText()
         self.update_menu_path()
 
@@ -172,14 +173,22 @@ class Designer(LJDialog):
 
     def do_add_menu(self, menu_name):
         cgl_file = self.menu_path
+        menu_folder = get_menu_path(self.software, menu_name, menu_file=False, menu_type=self.type)
         new_menu = CGLMenu(parent=self, software=self.software, menu_name=menu_name, menu=[],
                            menu_path=cgl_file, menu_type=self.type)
         new_menu.save_clicked.connect(self.on_save_clicked)
         index = self.menus.addTab(new_menu, menu_name)
         self.menus.setCurrentIndex(index)
+        if not os.path.exists(menu_folder):
+            os.makedirs(menu_folder)
+            self.make_init_for_folders_in_path(menu_folder)
+        self.save_menus()
+        if self.software == 'blender':
+            if self.type == 'menus':
+                from cgl.plugins.blender.utils import create_menu_file
+                create_menu_file(menu_name)
 
     def on_save_clicked(self):
-        print 'saving menus 182'
         self.save_menus()
 
     def load_menus(self):
@@ -200,7 +209,7 @@ class Designer(LJDialog):
                             buttons.save_clicked.connect(self.on_save_clicked)
                             self.menus.addTab(buttons, menu)
             else:
-                print '%s not found in %s' % (self.softwre, self.menu_path)
+                print('%s not found in %s' % (self.softwre, self.menu_path))
 
     def on_new_software_clicked(self):
         dialog = InputDialog(title='Add Software', message='Enter or Choose Software',
@@ -221,6 +230,10 @@ class Designer(LJDialog):
         for mi in range(self.menus.count()):
             menu_name = self.menus.tabText(mi)
             menu = self.menus.widget(mi)
+            if self.software == 'blender':
+                from cgl.plugins.blender.utils import add_buttons_to_menu
+                print(menu_name)
+                add_buttons_to_menu(menu_name)
             menu_dict[menu_name] = {}
             menu_dict[menu_name]['order'] = mi+1
             for bi in range(menu.buttons_tab_widget.count()):
@@ -230,7 +243,7 @@ class Designer(LJDialog):
                     button_name = button_widget.name_line_edit.text()
                 else:
                     split = button_widget.command_line_edit.text().split()
-                    print 'setting name to module name: %s' % split[-1].split('.run()')[0]
+                    print('setting name to module name: %s' % split[-1].split('.run()')[0])
                     button_name = split[-1].split('.run()')[0]
                 if self.type == 'preflights':
                     menu_dict[menu_name][button_name] = {
@@ -252,8 +265,6 @@ class Designer(LJDialog):
                                                          'icon': icon_text,
                                                          'name': button_name
                                                         }
-                    print '\t', button_name
-                    print menu_dict[menu_name][button_name]
                 else:
                     menu_dict[menu_name][button_name] = {
                                                          'module': button_widget.command_line_edit.text(),
@@ -264,8 +275,7 @@ class Designer(LJDialog):
 
                 self.save_code(menu_name, button_widget)
         json_object = {self.software: menu_dict}
-        print 'saving json', self.menu_path
-        print json_object
+        print('saving json', self.menu_path)
         self.save_json(self.menu_path, json_object)
 
     def create_empty_menu(self):
@@ -275,12 +285,13 @@ class Designer(LJDialog):
     def save_code(self, menu_name, button_widget):
         button_name = button_widget.name
         code = button_widget.code_text_edit.document().toPlainText()
-        button_file = os.path.join(self.cgl_tools, self.software, self.type, menu_name,
-                                   "%s.py" % button_name)
+        button_file = get_button_path(software=self.software, menu_name=menu_name, button_name=button_name,
+                                      menu_type=self.type)
         dir_ = os.path.dirname(button_file)
         if not os.path.exists(dir_):
             os.makedirs(dir_)
         self.make_init_for_folders_in_path(dir_)
+
         if button_widget.do_save:
             with open(button_file, 'w+') as x:
                 x.write(code)
@@ -310,9 +321,10 @@ class Designer(LJDialog):
                 i.write("")
 
     def save_json(self, filepath, data):
-        self.make_init_for_folders_in_path(filepath)
-        with open(filepath, 'w') as outfile:
-            json.dump(data, outfile, indent=4, sort_keys=True)
+        if data:
+            self.make_init_for_folders_in_path(filepath)
+            with open(filepath, 'w') as outfile:
+                json.dump(data, outfile, indent=4, sort_keys=True)
 
     @staticmethod
     def load_json(filepath):

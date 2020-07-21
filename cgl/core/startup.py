@@ -108,7 +108,7 @@ def do_freeze_fix():
         os.environ["QT_PLUGIN_PATH"] = "."
         QtWidgets.QApplication.setLibraryPaths([os.path.dirname(sys.executable)+"/plugins",
                                                 os.path.dirname(sys.executable)])
-        # print QtWidgets.QApplication.libraryPaths()
+        # logging.debug(QtWidgets.QApplication.libraryPaths())
 
 
 def _load_ui_settings():
@@ -188,16 +188,16 @@ def user_init():
     from cgl.core.utils.general import current_user
     from cgl.ui.widgets.dialog import LoginDialog
     current = current_user().lower()
-    print current
+    logging.debug(current)
     CONFIG = app_config()
     proj_man = CONFIG['account_info']['project_management']
-    print proj_man
+    logging.debug(proj_man)
     users = CONFIG['project_management'][proj_man]['users']
-    print users
+    logging.debug(users)
     if users:
-        print 1
+        logging.debug(1)
         if current in users.keys():
-            print 'Found user: %s in company globals' % current
+            logging.debug('Found user: %s in company globals' % current)
             return proj_man, users[current]
         else:
             dialog = LoginDialog()
@@ -205,7 +205,7 @@ def user_init():
             if dialog.button == 'Ok':
                 return proj_man, dialog.user_info
     else:
-        print 'ERROR: %s not found in company globals file' % current
+        logging.debug('ERROR: %s not found in company globals file' % current)
         dialog = LoginDialog()
         dialog.exec_()
         if dialog.button == 'Ok':
@@ -216,7 +216,7 @@ def user_init():
 def check_time_log(project_management):
     if project_management == 'ftrack':
         import plugins.project_management.ftrack.util as ftrack_util
-        print 'Checking Ftrack Time Log'
+        logging.debug('Checking Ftrack Time Log')
         if ftrack_util.check_for_timelog():
             return True
         else:

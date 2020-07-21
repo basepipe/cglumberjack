@@ -116,7 +116,7 @@ class ShotgunProcess(Process):
                 task.condition.release()
                 self.state = 2
             except Empty:
-                print "empty"
+                print("empty")
                 pass
 
 

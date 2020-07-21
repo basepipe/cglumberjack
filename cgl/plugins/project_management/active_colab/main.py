@@ -17,7 +17,7 @@ class ProjectManagementData(object):
         for key in kwargs:
             self.__dict__[key] = kwargs[key]
 
-        print 'Creating Entries for Active Colab:'
+        print('Creating Entries for Active Colab:')
 
     def create_entities_from_data(self):
         self.create_single_entity('project', self.project)
@@ -29,11 +29,11 @@ class ProjectManagementData(object):
     def create_single_entity(self, entity_type, entity_name):
         if entity_name:
             if not self.entity_exists(entity_type, entity_name):
-                print 'Creating %s: %s' % (entity_type, entity_name)
+                print('Creating %s: %s' % (entity_type, entity_name))
 
     @staticmethod
     def entity_exists(data_type, name):
-        print data_type
-        print name
+        print(data_type)
+        print(name)
         return False
 

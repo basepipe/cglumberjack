@@ -18,6 +18,5 @@ class CheckWriteVersions(PreflightCheck):
             if dialog.button == 'Ok':
                 self.pass_check('Check Passed')
             else:
-                print 'I made it here somehow'
                 self.fail_check('Check Failed')
 

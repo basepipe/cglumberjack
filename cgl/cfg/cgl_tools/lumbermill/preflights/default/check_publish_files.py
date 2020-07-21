@@ -25,7 +25,7 @@ class check_publish_files(PreflightCheck):
                     self.pass_check('Found Render Files')
                     return
         else:
-            print 'File Name Not Defined'
+            print('File Name Not Defined')
 
         self.fail_check('No Render Files Found at: %s \nCheck Failed' % os.path.dirname(path_object.path_root))
 

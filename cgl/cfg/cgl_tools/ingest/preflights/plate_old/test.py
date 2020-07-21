@@ -6,7 +6,7 @@ class test(PreflightCheck):
         pass
 
     def run(self):
-        print 'test'
+        print('test')
         # self.pass_check('Check Passed')
         # self.fail_check('Check Failed')
 

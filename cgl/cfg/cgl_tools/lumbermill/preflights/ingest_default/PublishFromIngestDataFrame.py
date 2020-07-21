@@ -60,7 +60,7 @@ class PublishFromIngestDataFrame(PreflightCheck):
                 from_file = row['Filepath']
                 to_file = row['Publish_Filepath']
                 if row['Filetype'] == 'folder':
-                    print 'Copying %s to %s' % (from_file, to_file)
+                    print('Copying %s to %s' % (from_file, to_file))
                     # Send this to the Preflights - No matter what basically
                     if not self.test:
                         cgl_copy(from_file, to_file)
@@ -85,7 +85,7 @@ class PublishFromIngestDataFrame(PreflightCheck):
 
                     for f in glob.glob('%s*' % from_query):
                         to_file = os.path.join(to_dir, os.path.basename(f))
-                        print 'Copying %s to %s' % (f, to_file)
+                        print('Copying %s to %s' % (f, to_file))
                         if not self.test:
                             cgl_copy(f, to_file)
                         self.shared_data['file_tree'].model.item(index, STATUS).setText('Published')
@@ -95,8 +95,8 @@ class PublishFromIngestDataFrame(PreflightCheck):
                         row['Status'] = 'Published'
                         self.make_source_file(to_dir, row)
                 else:
-                    print 'FILETYPE =', row['Filetype']
-                    print 'Copying %s to %s' % (from_file, to_file)
+                    print('FILETYPE =', row['Filetype'])
+                    print('Copying %s to %s' % (from_file, to_file))
                     if not self.test:
                         CreateProductionData(to_file, json=True)
                         cgl_copy(from_file, to_file)

@@ -32,11 +32,11 @@ class CustomMenu(object):
         if self.scene_path:
             self.path_object = PathObject(str(self.scene_path))
         else:
-            print 'No Valid Scene Path'
+            print('No Valid Scene Path')
         self.company_config = os.path.dirname(get_cgl_config())
-        print 'Company Config is: %s' % self.company_config
+        print('Company Config is: %s' % self.company_config)
         if not os.path.exists(self.company_config):
-            print 'Company Config %s: does no exist' % self.company_config
+            print('Company Config %s: does no exist' % self.company_config)
             return
 
         self.menus_file = os.path.join(get_cgl_tools(), software, '%s.cgl' % self.type)
@@ -46,8 +46,8 @@ class CustomMenu(object):
 
     def set_path_object(self):
         if self.scene_path:
-            print 'Setting PathObject with %s' % self.scene_path
-            print self.scene_path
+            print('Setting PathObject with %s' % self.scene_path)
+            print(self.scene_path)
             self.path_object = PathObject(str(self.scene_path))
 
     def load_cgl(self):
@@ -63,7 +63,7 @@ class CustomMenu(object):
                     else:
                         return
         else:
-            print 'No menu file found!'
+            print('No menu file found!')
 
     @staticmethod
     def order_menus(menus):
@@ -114,6 +114,7 @@ class CustomMenu(object):
     def delete_menus(self):
         if self.menus:
             for menu in self.menus:
+                print('deleting %s' % menu)
                 self.delete_menu(menu)
 
     def delete_menu(self, menu_name):
@@ -160,20 +161,21 @@ class CustomMenu(object):
                 annotation = self.menus[menu][button]['annotation']
             else:
                 annotation = ''
-            print icon_file
-            self.add_button(menu, label=self.menus[menu][button]['label'],
+            print(icon_file)
+            self.add_button(menu, label=self.menus[menu][button]['name'],
                             annotation=annotation,
                             command=self.menus[menu][button]['module'],
                             icon=icon_file,
                             image_overlay_label=label)
 
-    def load_menus(self):
-        self.delete_menus()
-        # tools_root = os.path.dirname(get_cgl_tools())
-        # for each in self.menus:
-        #     print '%s: adding %s to the PATH ' % (each, tools_root)
-        #     if tools_root not in sys.path:
-        #         sys.path.insert(0, tools_root)
+    def load_menus(self, test=False):
+        """
+        loads all menus
+        :param test:
+        :return:
+        """
+        if test:
+            self.delete_menus()
         try:
             menus = self.remove_inactive_menus()
         except KeyError:
@@ -181,11 +183,16 @@ class CustomMenu(object):
             pass
 
         software_menus = self.order_menus(menus)
+        print('menus: %s', software_menus)
         for menu in software_menus:
-            _menu = self.create_menu(menu)
-            self.menu_dict[menu] = _menu
-            buttons = self.order_buttons(menu)
-            self.add_menu_buttons(menu, buttons)
+            if test:
+                print('menu: ', menu)
+                print('buttons: ', self.order_buttons(menu))
+            else:
+                _menu = self.create_menu(menu)
+                self.menu_dict[menu] = _menu
+                buttons = self.order_buttons(menu)
+                self.add_menu_buttons(menu, buttons)
 
     # When Starting a new shelf, simply copy all of the functions below and fill them in with softwarespecific functions
     # See Nuke and Maya examples: plugins/nuke/custom_menu.py & plugins/maya/custom_menu.py

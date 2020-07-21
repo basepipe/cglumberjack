@@ -40,11 +40,11 @@ class BrowserWidget(CGLumberjackWidget):
 class AppMainWindow(CGLumberjack):
     def __init__(self, parent=None, path=None, user_info=None):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
-        print 'Application Path path is %s' % path
+        print('Application Path path is %s' % path)
         self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
 
 
-class MayaPathObject(PathObject):
+class LumberObject(PathObject):
 
     def __init__(self, path_object=None):
         if not path_object:
@@ -130,7 +130,7 @@ class MayaPathObject(PathObject):
         command line locally.  smedge/deadline - submit the job to a render manager for farm rendering.
         :return:
         """
-        print 'what is my render path?'
+        print('what is my render path?')
         pass
 
 
@@ -147,7 +147,7 @@ def scene_object():
     returns PathObject of curent scene
     :return:
     """
-    return MayaPathObject(pm.sceneName())
+    return LumberObject(pm.sceneName())
 
 
 def open_file(filepath):
@@ -202,7 +202,7 @@ def reference_file(filepath, namespace=None):
         namespace = get_namespace(filepath)
 
     if os.path.isfile(filepath):
-        print 'filepath: ', filepath
+        print('filepath: ', filepath)
         return pm.createReference(filepath, namespace=namespace, ignoreVersion=True, loadReferenceDepth='all')
 
 
@@ -235,13 +235,13 @@ def version_up(vtype='minor'):
     :param vtype: minor or major
     :return:
     """
-    path_object = MayaPathObject(pm.sceneName())
+    path_object = LumberObject(pm.sceneName())
     if vtype == 'minor':
         new_version = path_object.new_minor_version_object()
     elif vtype == 'major':
         new_version = path_object.next_major_version()
     create_file_dirs(new_version.path_root)
-    return pm.saveAs(new_version.path_root)
+    return save_file_as(new_version.path_root)
 
 
 def export_selected(to_path, ext='mb'):
@@ -263,7 +263,7 @@ def export_selected(to_path, ext='mb'):
 def create_turntable(length=180, task=False):
 
     if task:
-        current_task = MayaPathObject(pm.sceneName()).task
+        current_task = LumberObject(pm.sceneName()).task
         if not pm.objExists(task):
             confirm_prompt('No object %s found')
             return
@@ -279,7 +279,7 @@ def create_turntable(length=180, task=False):
 
 
 def clean_turntable():
-    po = MayaPathObject(pm.sceneName())
+    po = LumberObject(pm.sceneName())
     clean_tt(po.task)
     pass
 
@@ -331,16 +331,16 @@ def export_usd_layout(to_path, lighting=False):
 
 def render(preview=False):
     if preview:
-        basic_playblast(path_object=MayaPathObject(pm.sceneName()))
+        basic_playblast(path_object=LumberObject(pm.sceneName()))
     else:
-        print 'Rendering to Farm Now'
+        print('Rendering to Farm Now')
 
 
 def review():
     from cgl.core.project import do_review
     playblast_seq = scene_object().copy(context='render', filename='playblast.####.jpg')
     if glob.glob(playblast_seq.path_root.replace('####', '*')):
-        print 'exists - reviewing'
+        print('exists - reviewing')
         do_review(progress_bar=None, path_object=playblast_seq)
 
 
@@ -350,11 +350,11 @@ def launch_preflight(task=None):
     :param task:
     :return:
     """
-    from plugins.preflight.main import Preflight
+    from cgl.plugins.preflight.main import Preflight
     if not task:
         task = scene_object().task
     pf_mw = Preflight(parent=None, software='maya', preflight=task, path_object=scene_object())
-    pf_mw.exec_()
+    pf_mw.show()
 
 
 def publish():
@@ -368,7 +368,7 @@ def publish():
 
 def launch_():
     scene_name = get_scene_name()
-    scene = MayaPathObject(scene_name)
+    scene = LumberObject(scene_name)
     location = '%s/*' % scene.split_after('shot')
     project_management = CONFIG['account_info']['project_management']
     users = CONFIG['project_management'][project_management]['users']

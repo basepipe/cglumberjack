@@ -109,7 +109,6 @@ def do_freeze_fix():
         os.environ["QT_PLUGIN_PATH"] = "."
         QtWidgets.QApplication.setLibraryPaths([os.path.dirname(sys.executable)+"/plugins",
                                                 os.path.dirname(sys.executable)])
-        # print QtWidgets.QApplication.libraryPaths()
 
 
 def _load_ui_settings():

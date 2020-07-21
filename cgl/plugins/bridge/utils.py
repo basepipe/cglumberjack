@@ -39,10 +39,10 @@ def make_new_asset_dir(asset_name):
     try:
         os.mkdir(path)
     except OSError:
-        print "Error creating directory %s" % path
+        print("Error creating directory %s" % path)
         return False
     else:
-        print "Successfully created directory at %s" % path
+        print("Successfully created directory at %s" % path)
         return path
 
 
@@ -56,7 +56,7 @@ def copy_new_asset(asset_dir, filepath):
     for file in os.listdir(filepath):
         if os.path.splitext(file)[1] == '.exr':
             shutil.copy(os.path.join(filepath, file), asset_dir)
-    print "Successfully copied files to %s" % asset_dir
+    print("Successfully copied files to %s" % asset_dir)
 
 
 def copy_json_template(filepath):
@@ -119,7 +119,7 @@ def edit_json(asset_name, json_path):
 #     :return:
 #     """
 #     if does_asset_exist(asset_name):
-#         print "Error: %s already exists" % asset_name
+#         print("Error: %s already exists" % asset_name)
 #     else:
 #         new_dir = make_new_asset_dir(asset_name)
 #         if new_dir:
@@ -128,7 +128,7 @@ def edit_json(asset_name, json_path):
 #             json_file = os.path.join(new_dir, 'assetData.json')
 #             edit_json(asset_name, json_file)
 #         else:
-#             print "Exiting"
+#             print("Exiting")
 #             pass
 
 

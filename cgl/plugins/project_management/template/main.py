@@ -6,7 +6,7 @@ class ProjectManagementData(object):
 
     def __init__(self, path_object, **kwargs):
         self.data = path_object
-        print 'Creating Entries for '
+        print('Creating Entries for ')
 
     def create_entities_from_path_object(self):
         self.create_single_entity('project', self.data.project)
@@ -17,13 +17,13 @@ class ProjectManagementData(object):
     def create_single_entity(self, entity_type, entity_name):
         if entity_name:
             if not self.entity_exists(entity_type, entity_name):
-                print 'Creating %s: %s' % (entity_type, entity_name)
+                print('Creating %s: %s' % (entity_type, entity_name))
 
     def edit_entity(self, **kwargs):
-        print 'Editing %s: %s' % (self.data_type, self.data.data[self.data_type])
+        print('Editing %s: %s' % (self.data_type, self.data.data[self.data_type]))
 
     def delete_entity(self, **kwargs):
-        print 'Deleting %s: %s' % (self.data_type, self.data.data[self.data_type])
+        print('Deleting %s: %s' % (self.data_type, self.data.data[self.data_type]))
 
     @staticmethod
     def entity_exists(data_type, name):

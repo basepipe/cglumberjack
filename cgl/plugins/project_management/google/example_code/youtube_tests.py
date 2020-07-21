@@ -17,6 +17,6 @@ for s in streams:
                     highest_res = res
                     stream = s
 
-print stream
+print(stream)
 # download the video
 # video.download('/home/jay/Downloads')

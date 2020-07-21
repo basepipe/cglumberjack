@@ -13,7 +13,7 @@ class ImageLoadThread(QtCore.QThread):
         self.running = True
 
     def run(self):
-        print 'RUNNING THREAD'
+        print('RUNNING THREAD')
         while self.running:
             try:
                 image = ImageLoadThread.queue.get(True, 0.5)
@@ -23,11 +23,11 @@ class ImageLoadThread(QtCore.QThread):
 
                 if image:
                     if os.path.exists(image):
-                        print 'found image %s' % image
+                        print('found image %s' % image)
                         ImageLoadThread.LoadToCache(image)
                         self.loaded_signal.emit(image)
                     else:
-                        print 'image %s does not exist' % image
+                        print('image %s does not exist' % image)
                 if not self.running:
                     return
             except Queue.Empty:
@@ -56,7 +56,7 @@ class ImageLoadThread(QtCore.QThread):
         if img_id in cls.image_cache:
             return cls.image_cache[img_id]
         else:
-            print 'Adding to Queue %s' % path
+            print('Adding to Queue %s' % path)
             return cls.addQueue(path)
 
     @classmethod

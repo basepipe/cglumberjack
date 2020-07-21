@@ -20,18 +20,18 @@ STEPFIELDS = ['code', 'short_name', 'id', ]
 path_ = r'Z:/Projects/VFX/render/16BTH_2020_Arena/assets/Environment/Tongs/shd/tmikota/000.002/high/010_0500_comp.mp4'.replace('/', '\\')
 exr_path = r'Z:\Projects\VFX\render\16BTH_2020_Arena\assets\Environment\Tongs\shd\tmikota\000.002\high\010_0500_comp.####.exr'
 path_object = PathObject(exr_path)
-#print path_object.preview_path
+#print(path_object.preview_path
 # path_object.make_proxy()
 #path_object.make_preview()
 id_ = 13759
 filters = [['id', 'is', id_],
           ]
 version = ShotgunQuery.find_one('Version', filters, fields=VERSIONFIELDS)
-print version
+print(version)
 #version = find_version_info_from_path(full_path)
 id_ = str(version['id'])
-print id_, type(id_)
-print path_, type(path_)
+print(id_, type(id_))
+print(path_, type(path_))
 ShotgunQuery.upload("Version", id_, path_object.preview_path, "sg_uploaded_movie")
 #ShotgunQuery.upload('Version', id_, path_object.preview_path, "sg_uploaded_movie")
 

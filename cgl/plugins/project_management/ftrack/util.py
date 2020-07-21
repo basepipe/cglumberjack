@@ -166,10 +166,10 @@ if __name__ == '__main__':
     path = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/high/03_2a_#####.exr'
     # path = r'D:/VFX/FRIDAY_ROOT/cglumberjack/render/cgl_testProjectJ/shots/080/000/plate/publish/000.000/high/.preview/03_2a_.mp4'
     path_object = PathObject(path)
-    print path_object.file_type
-    print path_object.preview_path
-    print path_object.thumb_path
-    print path_object.hd_proxy_path_full
+    print(path_object.file_type)
+    print(path_object.preview_path)
+    print(path_object.thumb_path)
+    print(path_object.hd_proxy_path_full)
     #path_object.set_file_type()
     #create_previews2(path_object)
     ProjectManagementData(path_object).upload_media()

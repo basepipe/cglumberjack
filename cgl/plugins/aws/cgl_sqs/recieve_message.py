@@ -23,8 +23,8 @@ response = sqs.receive_message(
 
 message = response['Messages'][0]
 receipt_handle = message['ReceiptHandle']
-print message
-print receipt_handle
+print(message)
+print(receipt_handle)
 
 # Delete received message from queue
 sqs.delete_message(

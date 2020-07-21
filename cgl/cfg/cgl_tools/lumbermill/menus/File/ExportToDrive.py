@@ -75,7 +75,7 @@ class ExportDialog(LJDialog):
     def get_available_drives(self):
         ignore = ['C:\\']
         root_drive = self.path_object.root.split(':')[0]
-        print root_drive
+        print(root_drive)
         ignore.append('%s:\\' % root_drive)
         if sys.platform == "darwin":
             print('osx')

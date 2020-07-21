@@ -8,6 +8,6 @@ def command_line_render(filepath, frange, interactive=False):
         command = '%s -F %s %s' % (app_config()['paths']['nuke'], frange, filepath)
     else:
         command = '%s -F %s -x %s' % (app_config()['paths']['nuke'], frange, filepath)
-    print command
+    print(command)
 
 

@@ -1,4 +1,5 @@
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
+QtWidgets.QHeaderView.setResizeMode = QtWidgets.QHeaderView.setSectionResizeMode
 import re
 import datetime
 from cgl.core.config import app_config, UserConfig
@@ -9,7 +10,6 @@ from cgl.ui.widgets.containers.menu import LJMenu
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import current_user
 from cgl.core.path import icon_path
-import plugins.project_management.ftrack.util as ftrack_util
 
 CONFIG = app_config()
 
@@ -23,12 +23,12 @@ class TimeTracker(LJDialog):
         try:
             users = CONFIG['project_management']['ftrack']['users']
         except KeyError:
-            print 'No Ftrack User Found - check Ftrack Globals'
+            print('No Ftrack User Found - check Ftrack Globals')
             return
         if current_user() in users:
             user_info = users[user]
             if not user_info:
-                print 'User: %s not found in ftrack globals' % user
+                print('User: %s not found in ftrack globals' % user)
         self.timelogs = {}
         self.new_logs = []
         self.edited_logs = []
@@ -162,6 +162,7 @@ class TimeTracker(LJDialog):
         for row in xrange(0, self.task_table.rowCount()):
             timelog_id = self.task_table.item(row, 4).text()
             if timelog_id in self.edited_logs:
+                import cgl.plugins.project_management.ftrack.util as ftrack_util
                 duration = float(self.task_table.item(row,3).text())
                 ftrack_util.edit_timelog(timelog_id, duration)
             elif timelog_id in self.new_logs:
@@ -475,7 +476,6 @@ class FrameRange(LJDialog):
         self.sframe_line_edit = QtWidgets.QLineEdit()
         self.eframe_line_edit = QtWidgets.QLineEdit()
         if sframe:
-            print sframe, 'yup'
             self.sframe_line_edit.setText(str(sframe))
         if eframe:
             self.eframe_line_edit.setText(str(eframe))
@@ -510,9 +510,9 @@ class FrameRange(LJDialog):
                 self.sframe = sframe
                 self.accept()
             else:
-                print 'No end frame defined'
+                print('No end frame defined')
         else:
-            print 'No Start Frame Defined'
+            print('No Start Frame Defined')
 
 
 class InputDialog(LJDialog):
@@ -584,7 +584,10 @@ class InputDialog(LJDialog):
         self.btn3.clicked.connect(self.close)
         if regex:
             self.line_edit.textChanged.connect(self.on_text_changed_regex)
-            self.combo_box.textChanged.connect(self.on_text_changed_regex)
+            try:
+                self.combo_box.textChanged.connect(self.on_text_changed_regex)
+            except AttributeError:
+                self.combo_box.editTextChanged.connect(self.on_text_changed_regex)
 
     def on_button_clicked(self):
         self.button = self.sender().text()
@@ -744,10 +747,10 @@ class LoginDialog(LJDialog):
         self.accept()
 
     def create_user_info_dict(self):
-        print self.line_edit_dict
+        print(self.line_edit_dict)
         d_ = {}
         for key in self.line_edit_dict:
-            print key, self.line_edit_dict[key].text()
+            print(key, self.line_edit_dict[key].text())
             d_[key] = self.line_edit_dict[key].text()
         return d_
 
@@ -950,14 +953,14 @@ class ProjectCreator(LJDialog):
 
     def on_csv_dragged(self, data):
         if len(data) > 0:
-            print 'I can only handle one file at a time'
+            print('I can only handle one file at a time')
         if data[0].endswith('.csv'):
-            print 'Reading .csv file: %s' % data[0]
+            print('Reading .csv file: %s' % data[0])
             self.read_file(data[0])
             self.empty_state.hide()
             self.table.show()
         else:
-            print 'Only .csv files supported'
+            print('Only .csv files supported')
 
     def read_file(self, filepath):
         import pandas as pd
@@ -997,7 +1000,7 @@ class ProjectCreator(LJDialog):
             else:
                 for _, row in df.iterrows():
                     if row[c] and str(row[c]) != 'nan':
-                        print '%04d' % int(row['shot'])
+                        print('%04d' % int(row['shot']))
                         df = df.append({'shot': row['shot'], 'ftrack_task': c, 'bid hours': row[c],
                                         'description': row['description']}, ignore_index=True)
         return df
@@ -1026,8 +1029,8 @@ class ProjectCreator(LJDialog):
                 cell = self.model.data(self.model.createIndex(irow, icol))
                 row_dict[self.model._df.columns[icol]] = cell
                 if self.model._df.columns[icol] == 'bid hours':
-                    print 'found bid hours'
-                    print 'cell value is %s' % cell
+                    print('found bid hours')
+                    print('cell value is %s' % cell)
                     row_dict['bid'] = float(cell)*60 * 60
                 if self.model._df.columns[icol] == 'bid days':
                     # ftrack wants bids in seconds.
@@ -1037,7 +1040,7 @@ class ProjectCreator(LJDialog):
                 if self.model._df.columns[icol] == 'ftrack_task':
                     if cell:
                         d_ = self.project_management['tasks'][self.task_template_combo.currentText()]['long_to_short']
-                        print d_[self.scope].keys()
+                        print(d_[self.scope].keys())
                         sn = d_[self.scope][cell.title()]
                         row_dict['task'] = sn
                 if self.model._df.columns[icol] == 'shot':

@@ -193,7 +193,7 @@ def create_file_dirs(file_path):
     dirname = os.path.dirname(file_path)
     if os.path.isdir(file_path):
         dirname = file_path
-    print dirname
+    print(dirname)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
 
@@ -221,7 +221,7 @@ def cgl_copy_single(source, destination, test=False, methodology='local', verbos
     :param destination: directory path or new directory path or new file path
     :param test: False by default, if True it simply prints the commands it's doing.
     :param methodology: how command will be executed
-    :param verbose: (boolean) Toggle print statments
+    :param verbose: (boolean) Toggle print(statments
     :param dest_is_folder: if True the destination is a folder.
     :param command_name: this is what will be sent to the render manager.
     :return: True if successful
@@ -261,7 +261,7 @@ def cgl_copy_single(source, destination, test=False, methodology='local', verbos
                 do_system = True
         if command:
             if test:
-                print command
+                print(command)
             else:
                 run_dict['start_time'] = time.time()
                 run_dict['command'] = command
@@ -271,13 +271,13 @@ def cgl_copy_single(source, destination, test=False, methodology='local', verbos
                 run_dict['end_time'] = time.time()
         return run_dict
     elif sys.platform == 'darwin':
-        print 'OSX is not a supported platform'
+        print('OSX is not a supported platform')
         return False
     elif sys.platform == 'linux2':
-        print 'Linux is not a supported platform'
+        print('Linux is not a supported platform')
         return False
     else:
-        print '%s is not a supported platform' % sys.platform
+        print('%s is not a supported platform' % sys.platform)
         return False
 
 
@@ -349,7 +349,7 @@ def launch_lumber_watch(new_window=False):
         command = 'python %s -s 60' % lumber_watch_path
         cgl_execute(command, new_window=new_window)
     else:
-        print 'Lumber Watch Path does not exist: %s' % (lumber_watch_path)
+        print('Lumber Watch Path does not exist: %s' % (lumber_watch_path))
 
 
 def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=True,
@@ -384,7 +384,7 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
                             break
                         if output:
                             if print_output:
-                                print output.strip()
+                                print(output.strip())
                             output_values.append(output.strip())
 
         run_dict['artist_time'] = time.time() - run_dict['start_time']
@@ -398,7 +398,7 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         #     return rc
     elif methodology == 'deadline':
         # TODO - add deadline integration
-        print 'deadline not yet supported'
+        print('deadline not yet supported')
     elif methodology == 'smedge':
         range = '1'
         if '-Type Nuke' in command:
@@ -435,10 +435,10 @@ def check_for_latest_master(return_output=True, print_output=False):
     for line in output:
         if 'pushes to master' in line:
             if 'up to date' in line:
-                print 'cglumberjack code base up to date'
+                print('cglumberjack code base up to date')
                 return True
             else:
-                print 'cglumberjack code base needs updated'
+                print('cglumberjack code base needs updated')
     return False
 
 
@@ -475,7 +475,7 @@ def write_to_cgl_data(process_info):
     if job_id not in data[user].keys():
         data[user][process_info['job_id']] = process_info
     else:
-        print '%s already exists in %s dict' % (process_info['job_id'], user)
+        print('%s already exists in %s dict' % (process_info['job_id'], user))
         return
     save_json(cgl_data, data)
 
@@ -495,10 +495,10 @@ def edit_cgl_data(job_id, key, value=None, user=None):
     cgl_data = os.path.join(os.path.dirname(CONFIG['paths']['globals']), 'cgl_data.json')
     if os.path.exists(cgl_data):
         data = load_json(cgl_data)
-        print user, job_id, key, value
+        print(user, job_id, key, value)
         data[user][job_id][key] = value
         save_json(cgl_data, data)
-        print 'saved it probably'
+        print('saved it probably')
     else:
         logging.info('No cgl_data.json found! Aborting')
         click.echo('No cgl_data.json found! Aborting')
@@ -520,7 +520,7 @@ def main(edit_cgl, user, job_id, key, value):
 
 if __name__ == '__main__':
     main()
-    # print get_globals()
+    # print(get_globals())
 
 
 

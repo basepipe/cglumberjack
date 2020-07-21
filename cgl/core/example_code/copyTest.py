@@ -11,7 +11,7 @@ def shutil_copy_test(from_dir, to_dir):
         from_file = os.path.join(from_dir, each)
         to_file = os.path.join(to_dir, each)
         shutil.copy(from_file, to_file)
-    print 'Copied %s files with shutil.copy in %s' % (len(files), (time.time()-start_time))
+    print('Copied %s files with shutil.copy in %s' % (len(files), (time.time()-start_time)))
 
     # clean up the operation
     for f in files:
@@ -26,7 +26,7 @@ def shutil_copy2_test(from_path, to_path):
         from_file = os.path.join(from_path, each)
         to_file = os.path.join(to_dir, each)
         shutil.copy2(from_file, to_file)
-    print 'Copied %s files with shutil.copy2 in %s' % (len(files), (time.time()-start_time))
+    print('Copied %s files with shutil.copy2 in %s' % (len(files), (time.time()-start_time)))
 
     for f in files:
         to_file = os.path.join(to_dir, f)
@@ -38,10 +38,9 @@ def xcopy_test(from_path, to_path):
     from_path = r'"%s"' % from_path
     to_path = r'"%s"' % to_path
     command = 'xcopy %s %s /i /j /q' % (from_path, to_path)
-    # print command
     start_time = time.time()
     os.system(command)
-    print 'Copied %s files with xcopy in %s' % (len(files), (time.time() - start_time))
+    print('Copied %s files with xcopy in %s' % (len(files), (time.time() - start_time)))
     for f in files:
         to_file = os.path.join(to_dir, f)
         os.remove(to_file)
@@ -55,7 +54,7 @@ def robocopy_test(from_path, to_path):
     command = 'robocopy "%s" "%s" /NFL /NDL /NJH /NJS /nc /ns /np /MT:8' % (from_path, to_path)
     start_time = time.time()
     os.system(command)
-    print 'Copied %s files with robocopy in %s' % (len(files), (time.time() - start_time))
+    print('Copied %s files with robocopy in %s' % (len(files), (time.time() - start_time)))
     # for f in files:
     #     to_file = os.path.join(to_dir, f)
     #     os.remove(to_file)
@@ -94,17 +93,17 @@ def copy(source, destination, test=False, verbose=True):
         if command:
             start_time = time.time()
             if test:
-                print command
+                print(command)
             else:
-                print command
+                print(command)
                 os.system(command)
             if verbose:
-                print 'Lumbermill Copied %s file(s) in %s seconds' % (len(files), (time.time() - start_time))
+                print('Lumbermill Copied %s file(s) in %s seconds' % (len(files), (time.time() - start_time)))
             return True
         else:
             return False
     else:
-        print '%s is not a supported platform' % sys.platform
+        print('%s is not a supported platform' % sys.platform)
         return False
 
 

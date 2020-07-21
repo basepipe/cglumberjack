@@ -1,5 +1,5 @@
-import httplib
-import urllib2
+import http.client
+import urllib
 import requests
 
 
@@ -10,12 +10,15 @@ def url_exists(url):
     :return:
     """
     try:
-        u = urllib2.urlopen(url)
-    except urllib2.HTTPError:
-        return False
-    if u.code == 200:
-        return True
-    else:
+        request = requests.get(url)
+        if request.status_code == 200:
+            print('Web site exists')
+            return True
+        else:
+            print("Website returned response code: {code}".format(code=request.status_code))
+            return False
+    except ConnectionError:
+        print('Web site does not exist')
         return False
 
 

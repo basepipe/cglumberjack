@@ -8,7 +8,7 @@
 # See docs folder for detailed usage info.
 
 import os
-import shotgun_api3
+import cgl.plugins.project_management.shotgun.shotgun_api3 as shotgun_api3
 
 
 def get_asset_status(task, status):
@@ -18,7 +18,7 @@ def get_asset_status(task, status):
     :param status:
     :return:
     """
-    print task, status
+    print(task, status)
     keep_same = ['rev', "omt", 'hld', 'not', 'wtg']
     previous_task = ['stdn', 'mdl', 'tex', 'shd']
     long_to_short = {'stdn ip': 's_ip',
@@ -55,7 +55,7 @@ def get_asset_status(task, status):
     if asset_status in long_to_short.keys():
         return long_to_short[asset_status]
     else:
-        print 'Didnt find %s in keys' % asset_status
+        print('Didnt find %s in keys' % asset_status)
 
 
 def get_next_task_status(task_status):
@@ -127,7 +127,7 @@ def is_valid(sg, logger, args):
     # Make sure we have a valid sg connection.
     try:
         sg.find_one("Project", [])
-    except Exception, e:
+    except Exception as e:
         logger.warning(e)
         return
 
@@ -161,11 +161,11 @@ def update_entity_status(sg, logger, event, args):
         #     task, status = next_task_status
         #     all_tasks = sg.find("Task", [['entity', 'is', entity]], ['content', 'sg_status_list'])
         #     for t in all_tasks:
-        #         print t
-        #         print t['content']
-        #         print '-----------------'
+        #         print(t)
+        #         print(t['content'])
+        #         print('-----------------')
         #         if task in t['content']:
-        #             print 'found a match for %s' % task
+        #             print('found a match for %s' % task)
 
         new_asset_status = get_asset_status(shortname, new_value)
         if new_asset_status:

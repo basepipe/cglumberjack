@@ -99,7 +99,7 @@ class AsanaJack(object):
         for t in tag_array:
             tag_list.append(t['gid'])
 
-        print assignee_name
+        print(assignee_name)
         assignee_list = self.client.users.find_by_workspace(self.workspace_data['gid'], iterator_type=None)
         for a in assignee_list:
             if a['name'] == assignee_name:
@@ -128,7 +128,7 @@ class AsanaJack(object):
         italic_text = '<em>this is italic text</em>'
         underline_text = '<u>this is underline text</u>'
         strikethrough_text = '<s>this is strikethrough text</s>'
-        code_text = '<code>    print "this is code text"</code>'
+        code_text = '<code>    print("this is code text")</code>'
         link_text = 'This is a link: <a href="http://www.google.com">"Google"</a>, asana only displays whats in href'
 
         :param software:

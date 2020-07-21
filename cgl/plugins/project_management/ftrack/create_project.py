@@ -17,7 +17,7 @@ class FTrackReader:
     def list_projects(self):
         projects = self.session.query('Project where status is active')
         for proj in projects:
-            print proj['name']
+            print(proj['name'])
 
     def read_project(self, project_name):
         assets = self.session.query('AssetBuild where project.name is %s' % project_name)

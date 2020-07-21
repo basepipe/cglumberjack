@@ -7,7 +7,10 @@ from cgl.core.utils.general import current_user
 from cgl.core import screen_grab
 import cgl.core.path as cglpath
 from cgl.ui.widgets.widgets import AdvComboBox, TagWidget
-from plugins.project_management.asana.basic import AsanaJack
+try:
+    from cgl.plugins.project_management.asana.basic import AsanaJack
+except ModuleNotFoundError:
+    print('skipping asana load')
 
 CONFIG = app_config()
 PROJECT_MANAGEMENT = CONFIG['account_info']['project_management']
@@ -409,8 +412,7 @@ class RequestFeatureDialog(LJDialog):
         self.popMenu.exec_(self.assign_button.mapToGlobal(point))
 
     def on_user_selected(self):
-        self.users =  self.sender().user
-        # print 'i rule'
+        self.users = self.sender().user
 
     def on_show_tags_clicked(self):
         self.tag_widget.show()
@@ -591,14 +593,14 @@ class RequestFeatureDialog(LJDialog):
             rtf_links = self.rtf_bullet_list('Resources:', links)
         self.rtf_task_text = "<body>%s%s%s%s</body>" % (rtf_task_description, rtf_requirements, rtf_expected_results,
                                                         rtf_links)
-        print self.rtf_task_text
+        print(self.rtf_task_text)
         self.text_edit.setAcceptRichText(True)
         self.text_edit.setText(self.rtf_task_text)
 
     def get_relevant_links(self):
         links = []
         for s in self.list_from_bullets(self.message_software):
-            print s.lower()
+            print(s.lower())
             if s.lower() in self.reference_dict.keys():
                 for link_type in self.reference_dict[s.lower()]:
                     for link in self.reference_dict[s.lower()][link_type]:
@@ -654,7 +656,7 @@ class RequestFeatureDialog(LJDialog):
             else:
                 self.sender().setCurrentIndex(0)
         else:
-            print 'No Text'
+            print('No Text')
 
     def on_gui_chosen(self):
         self.show_stuff()
@@ -702,7 +704,7 @@ class RequestFeatureDialog(LJDialog):
         if isinstance(self.sender(), QtWidgets.QLineEdit):
             self.sender().setText('')
         elif isinstance(self.sender(), AdvComboBox):
-            print 'its a combo'
+            print('its a combo')
             if self.sender().itemText(0) != '':
                 self.sender().insertItem(0, '')
             else:
@@ -843,11 +845,11 @@ class ReportBugDialog(LJDialog):
             if 'screen_grab' in each:
                 os.remove(each)
         self.close()
-        print 'Email Sent!'
+        print('Email Sent!')
 
     def screen_grab(self):
         output_path = screen_grab.run()
-        print 'Created Screen Grab: %s' % output_path
+        print('Created Screen Grab: %s' % output_path)
         self.add_attachments(file_paths=[output_path])
         # filename = os.path.split(output_path)[-1]
         # self.attachments.append(filename)

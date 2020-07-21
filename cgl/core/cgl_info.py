@@ -66,7 +66,7 @@ def create_cgl_info(file_path, last_attr, dirs, files, force=False):
     if force:
         create = True
     if create:
-        print 'Calculating: ', json_file
+        print('Calculating: ', json_file)
         parent, this = os.path.split(file_path)
         parent = os.path.join(parent, 'cgl_info.json').replace('\\', '/')
         folder_info = {}
@@ -108,7 +108,7 @@ def get_cgl_info_files(path_object, scope='assets', seq='*', shot='*', task='*',
     path_object.set_attr(filename='cgl_info.json')
     cgl_info_files = glob.glob(path_object.path_root)
     for each in cgl_info_files:
-        print each
+        print(each)
 
 
 def build_folder_info(root_folder, force=False):
@@ -137,12 +137,12 @@ def create_all_cgl_info_files(company, project, source=True, render=True, force=
         path_object2 = PathObject(d2)
         build_folder_info(path_object2.path_root, force=force)
     end_time = time.time()-start_time
-    print 'print finished processing in %s minutes' % "{:.2f}".format(end_time/60)
+    print('print(finished processing in %s minutes' % "{:.2f}".format(end_time/60))
 
 
 if __name__ == "__main__":
     create_all_cgl_info_files('loneCoconut', 'ILUCIA', force=True)
     # create_all_cgl_info_files('VFX', '16BTH_2020_Arena', source=False)
-    # print get_cgl_info_size(r'Z:/Projects/VFX/source/16BTH_2020_Arena/assets/Vehicle', source=True, render=False)
+    # print(get_cgl_info_size(r'Z:/Projects/VFX/source/16BTH_2020_Arena/assets/Vehicle', source=True, render=False))
 
 

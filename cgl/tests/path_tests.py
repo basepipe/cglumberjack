@@ -5,8 +5,8 @@ filepath = r'Z:\Projects\VFX\render\16BTH_2020_Arena\shots\010\0400\lite\tmikota
 
 
 path_object = PathObject(filepath)
-print path_object.render_pass
-print path_object.camera
-print path_object.aov
-print path_object.filename
-print path_object.path_root
+print(path_object.render_pass)
+print(path_object.camera)
+print(path_object.aov)
+print(path_object.filename)
+print(path_object.path_root)

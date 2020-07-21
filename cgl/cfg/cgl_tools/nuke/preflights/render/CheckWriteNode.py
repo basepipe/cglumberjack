@@ -7,7 +7,7 @@ class CheckWriteNode(PreflightCheck):
         pass
 
     def run(self):
-        print 'Checking to see if a valid write node exists'
+        print('Checking to see if a valid write node exists')
         self.pass_check('Check Passed')
         # self.fail_check('Check Failed')
 

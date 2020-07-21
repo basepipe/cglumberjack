@@ -2,6 +2,6 @@
 
 
 def run():
-	print 'farm render rules!'
+	print('farm render rules!')
 	# preflight.launch_('farm_render')
 
