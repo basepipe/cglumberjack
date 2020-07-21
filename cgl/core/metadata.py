@@ -27,7 +27,7 @@ def get_meta_data2(filein, tool='exiftool', print_output=False):
     """
     d = {}
     if tool == 'exiftool':
-        command = r'exiftool %s' % filein
+        command = r'exiftool "%s"' % filein
         output = cgl_execute(command=command, verbose=False, print_output=print_output)
         for each in output['printout']:
             key, value = re.split("\s+:\s+", each)

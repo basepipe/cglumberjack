@@ -1,5 +1,6 @@
 import getpass
 import os
+import logging
 import urllib.request
 import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
