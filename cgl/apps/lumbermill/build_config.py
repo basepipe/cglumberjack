@@ -195,7 +195,6 @@ class ConfigDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, company='', config_dict=None, root=r"C:\CGLUMBERJACK\COMPANIES"):
         QtWidgets.QDialog.__init__(self, parent)
         self.app_config = config_dict
-        globals_path = os.path.join(root, '_config', 'config.json')
         self.proj_management_label = QtWidgets.QLabel('Project Management')
         self.contents = {}
         self.company = company
@@ -276,7 +275,6 @@ class ConfigDialog(QtWidgets.QDialog):
         button_layout.addWidget(self.ok_button)
 
         # self.globals_tree_widget = DictionaryTreeWidget({})
-        this = __file__.split('cglumberjack')[0]
         this = __file__.split('cglumberjack')[0]
         dict_ = read_write.load_json(os.path.join(this, 'cglumberjack', 'cgl', 'cfg', 'globals_template.json'))
         self.proj_man_dict = dict_['project_management']
@@ -798,21 +796,27 @@ class QuickSync(QtWidgets.QDialog):
                 os.makedirs(os.path.dirname(globals_path))
             if os.path.exists(globals_path):
                 os.remove(globals_path)
-            urllib.request.urlretrieve(self.aws_globals, globals_path)
-            # TODO PYTHON 2 - Version
-            # r = requests.get(self.aws_globals, allow_redirects=True)
-            # logging.debug(r.content)
-        #     if '<Error>' in str(r.content):
-        #         logging.debug('No File %s for company: %s' % (self.aws_globals, self.company_name))
+            print('YOU NEED TO FIX THE GLOBALS DOWNLOADING NOW!!!!!!')
+        #     try:
+        #         r, this_ = urllib.request.urlretrieve(self.aws_globals, globals_path)
+        #         print(r)
+        #         print("python3 version needs some love!!!")
+        #     except ImportError:  # Python 2
+        #         r = requests.get(self.aws_globals, allow_redirects=True)
+        #         logging.debug(r.content)
+        #         if '<Error>' in str(r.content):
+        #             logging.debug('No File %s for company: %s' % (self.aws_globals, self.company_name))
+        #         else:
+        #             logging.debug('Saving Globals file to: %s' % globals_path)
+        #             with open(globals_path, 'w+') as f:
+        #                 f.write(r.content)
+        #         self.accept()
+        #         return True
         #     else:
-        #         logging.debug('Saving Globals file to: %s' % globals_path)
-        #         with open(globals_path, 'w+') as f:
-        #             f.write(r.content)
-        #     self.accept()
-        #     return True
+        #         logging.error('Problem downloading %s' % self.aws_globals)
         # else:
-        #     return False
         #     logging.debug('No Globals Found - Get your Studio to publish their globals, or Create new ones?')
+        #     return False
 
     def edit_globals_paths(self):
         globals = read_write.load_json(self.globals_path)
@@ -846,9 +850,7 @@ class QuickSync(QtWidgets.QDialog):
         cgl_tools_folder = os.path.join(self.default_root, '_config', 'cgl_tools')
         if not os.path.exists(cgl_tools_folder):
             os.makedirs(cgl_tools_folder)
-        sync_folders = {r'[root]\_config\cgl_tools': os.path.join(cgl_tools_folder)}
-        # TODO - need to set 2nd value here as a global in globals. sync_sheet: LONE_COCONUT_SYNC_THING
-        # syncthing.setup_workstation()
+
         dialog = InputDialog(title='Sync Message', message='Your Machine has be submitted for approval for file sharing\n'
                                                            'After you have been added, click:\n'
                                                            ' Sync> Sync From Server\n'
