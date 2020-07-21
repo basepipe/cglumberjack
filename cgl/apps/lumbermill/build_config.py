@@ -863,11 +863,8 @@ class QuickSync(QtWidgets.QDialog):
         :return:
         """
         if self.download_globals_from_cloud():
-            print(1)
             self.edit_globals_paths()
-            print(2)
             create_user_globals(self.default_user_globals, self.default_globals)
-            print(3)
             self.accept()
         else:
             dialog = ConfigDialog(company=self.company_line_edit.text(), root=self.default_root)
