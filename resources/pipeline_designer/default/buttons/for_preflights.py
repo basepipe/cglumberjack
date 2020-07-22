@@ -1,4 +1,4 @@
-from plugins.preflight.preflight_check import PreflightCheck
+from cgl.plugins.preflight.preflight_check import PreflightCheck
 # there is typically a lumbermill.py, and utils.py file in the plugins directory.
 # look here for pre-built, useful functions
 # from cgl.plugins.SOFTWARE import lumbermill

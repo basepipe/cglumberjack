@@ -1,4 +1,4 @@
-from plugins.CustomMenu import CustomMenu
+from cgl.plugins.CustomMenu import CustomMenu
 import pymel.core as pm
 import maya.mel
 

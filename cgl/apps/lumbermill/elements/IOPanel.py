@@ -11,7 +11,7 @@ from cgl.ui.widgets.combo import AdvComboBox
 from cgl.ui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cgl.core.config import app_config
 from cgl.core.path import PathObject, icon_path, lj_list_dir, split_sequence_frange, get_file_type
-from plugins.preflight.main import Preflight
+from cgl.plugins.preflight.main import Preflight
 from panels import clear_layout
 import time
 

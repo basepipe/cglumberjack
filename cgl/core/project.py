@@ -75,7 +75,7 @@ def get_task_info(path_object, force=False):
 def pull_task_info(path_object):
     from cgl.core.utils.general import current_user
     if PROJ_MANAGEMENT == 'ftrack':
-        from plugins.project_management.ftrack.main import find_user_assignments
+        from cgl.plugins.project_management.ftrack.main import find_user_assignments
         login = CONFIG['project_management']['ftrack']['users'][current_user()]
         project_tasks = find_user_assignments(path_object, login, force=True)
         task_info = project_tasks[path_object.task_name]

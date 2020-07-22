@@ -1,4 +1,4 @@
-from plugins.preflight.preflight_check import PreflightCheck
+from cgl.plugins.preflight.preflight_check import PreflightCheck
 from cgl.core.project import publish
 
 

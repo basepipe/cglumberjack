@@ -1,4 +1,4 @@
-from plugins.nuke.cglnuke import render_local
+from cgl.plugins.nuke.cglnuke import render_local
 
 
 def run():

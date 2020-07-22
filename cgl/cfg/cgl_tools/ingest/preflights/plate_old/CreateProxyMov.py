@@ -1,6 +1,6 @@
 import glob
 import os
-from plugins.preflight.preflight_check import PreflightCheck
+from cgl.plugins.preflight.preflight_check import PreflightCheck
 from cgl.core.path import PathObject, lj_list_dir
 from cgl.core.convert import create_mov
 
