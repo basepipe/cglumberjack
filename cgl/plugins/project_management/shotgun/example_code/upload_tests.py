@@ -1,4 +1,4 @@
-from plugins.project_management.shotgun.tracking_internal.shotgun_specific import ShotgunQuery
+from cgl.plugins.project_management.shotgun.tracking_internal.shotgun_specific import ShotgunQuery
 from cgl.core.config import app_config
 from cgl.core.path import PathObject
 

@@ -98,7 +98,7 @@ class ShotgunProcess(Process):
                 if isinstance(task, ShotgunQueueEnd):
                     break
                 if not self.connection:
-                    from plugins.project_management.shotgun import shotgun_api3 as sg_api
+                    from cgl.plugins.project_management.shotgun import shotgun_api3 as sg_api
                     config = app_config()['shotgun']
                     self.connection = sg_api.Shotgun(base_url=config['url'],
                                                      script_name=config['api_script'],

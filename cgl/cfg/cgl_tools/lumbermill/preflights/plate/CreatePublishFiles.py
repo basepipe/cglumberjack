@@ -2,7 +2,7 @@ import os
 import glob
 import datetime
 import pandas as pd
-from plugins.preflight.preflight_check import PreflightCheck
+from cgl.plugins.preflight.preflight_check import PreflightCheck
 from cgl.core.path import PathObject, CreateProductionData, split_sequence, split_sequence_frange
 from cgl.core.utils.general import cgl_copy
 

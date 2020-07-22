@@ -5,7 +5,7 @@ from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.progress_gif import ProgressGif, process_method
 from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
-from vfxwindow import VFXWindow
+# from vfxwindow import VFXWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
 from cgl.core.utils.general import current_user, check_for_latest_master, update_master, launch_lumber_watch, save_json
@@ -626,7 +626,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def publish_clicked(self):
         logging.debug(3)
-        from plugins.preflight.launch import launch_
+        from cgl.plugins.preflight.launch import launch_
         from cgl.ui.widgets.publish_dialog import PublishDialog
         selection = cglpath.PathObject(self.path_widget.path_line_edit.text())
         if not selection.filename or selection.context == 'source':
@@ -641,9 +641,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             # launch_(self, task, selection)
 
 
-class CGLumberjack(VFXWindow):
+class CGLumberjack(LJMainWindow):
     def __init__(self, show_import=False, user_info=None, start_time=None, previous_path=None, sync_enabled=True):
-        VFXWindow.__init__(self)
+        LJMainWindow.__init__(self)
 
         if start_time:
             logging.debug('Finished Loading Lumbermill in %s seconds' % (time.time() - start_time))

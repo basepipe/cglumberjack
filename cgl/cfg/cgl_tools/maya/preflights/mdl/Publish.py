@@ -1,4 +1,4 @@
-from plugins.preflight.preflight_check import PreflightCheck
+from cgl.plugins.preflight.preflight_check import PreflightCheck
 from cgl.plugins.maya import lumbermill
 
 class Publish(PreflightCheck):

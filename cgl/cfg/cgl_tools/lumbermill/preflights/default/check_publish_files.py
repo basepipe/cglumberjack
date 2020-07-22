@@ -1,5 +1,5 @@
 import os
-from plugins.preflight.preflight_check import PreflightCheck
+from cgl.plugins.preflight.preflight_check import PreflightCheck
 from cgl.core.path import PathObject
 
 

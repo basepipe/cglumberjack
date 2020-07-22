@@ -1,4 +1,4 @@
-from plugins.preflight.preflight_check import PreflightCheck
+from cgl.plugins.preflight.preflight_check import PreflightCheck
 from cgl.core.config import UserConfig
 
 PROCESSING_METHOD = UserConfig().d['methodology']

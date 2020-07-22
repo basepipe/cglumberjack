@@ -1,4 +1,4 @@
-from plugins.preflight.preflight_check import PreflightCheck
+from cgl.plugins.preflight.preflight_check import PreflightCheck
 import plugins.nuke.cgl_nuke as cgl_nuke
 from cgl.ui.widgets.dialog import InputDialog
 

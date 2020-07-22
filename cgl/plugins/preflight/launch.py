@@ -1,5 +1,5 @@
 from cgl.plugins.Qt import QtCore
-from plugins.preflight.main import Preflight
+from cgl.plugins.preflight.main import Preflight
 
 
 def launch_(parent, task, path_object, do_review=True):

@@ -1,7 +1,7 @@
 import os
 import datetime
 import pandas as pd
-from plugins.preflight.preflight_check import PreflightCheck
+from cgl.plugins.preflight.preflight_check import PreflightCheck
 from cgl.core.path import PathObject, CreateProductionData
 from cgl.core.utils.general import cgl_copy
 from cgl.core.config import UserConfig
