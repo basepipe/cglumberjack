@@ -5,7 +5,8 @@ from cgl.core.utils.general import current_user
 from cgl.core.utils.general import create_file_dirs
 from cgl.core.path import PathObject
 from cgl.core.config import app_config, UserConfig
-from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
+from cgl.apps.lumbermill.main import CGLumberjackWidget
+from cgl.plugins.blender.main_window import CGLumberjack
 import bpy
 
 
