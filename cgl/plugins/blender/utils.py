@@ -6,7 +6,8 @@ import logging
 import cgl.core.utils.read_write as read_write
 from cgl.core.path import get_resources_path
 from cgl.core.project import get_cgl_tools
-
+from pathlib import Path
+import json
 logger = logging.getLogger('qtutils')
 
 
@@ -43,9 +44,9 @@ def get_button_path(software, menu_name, button_name, menu_type='menus'):
 def create_tt(length, tt_object):
     """
     Creates a turntable with frame range of 0-length, around the selected object.
-    :param length: 
-    :param tt_object: 
-    :return: 
+    :param length:
+    :param tt_object:
+    :return:
     """
     pass
 
@@ -191,6 +192,81 @@ def get_menu_at(menu_dict, software, menu, i):
         if button != 'order':
             if int(buttons[button]['order']) == i:
                 return button
+
+def write_layout(outFile = None):
+    from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file
+    import bpy
+
+    if outFile == None:
+        outFile = scene_object().copy(ext = 'json').path_root
+    data = {}
+
+    for obj in bpy.data.objects:
+        if obj.is_instancer:
+            name = obj.name
+            print('___________' + name)
+            #            blender_transform = np.array(obj.matrix_world).tolist()
+            blender_transform = [obj.matrix_world.to_translation().x,
+                                 obj.matrix_world.to_translation().y,
+                                 obj.matrix_world.to_translation().z,
+                                 obj.matrix_world.to_euler().x,
+                                 obj.matrix_world.to_euler().y,
+                                 obj.matrix_world.to_euler().z,
+                                 obj.matrix_world.to_scale().x,
+                                 obj.matrix_world.to_scale().y,
+                                 obj.matrix_world.to_scale().z]
+            libraryPath = bpy.path.abspath(obj.instance_collection.library.filepath)
+            filename = Path(bpy.path.abspath(libraryPath)).__str__()
+            libObject = LumberObject(filename)
+
+            data[name] = {'name': libObject.asset,
+                          'source_path': libObject.path,
+                          'blender_transform': blender_transform}
+
+    with open(outFile, "w") as library_data_file:
+        json.dump(data, library_data_file, indent=4, sort_keys=True)
+
+    return (outFile)
+
+
+def read_layout(outFile = None ):
+    from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file
+    import bpy
+
+    if outFile == None:
+        outFile = scene_object().copy(ext='json').path_root
+    #outFile = scene_object().path_root.replace(scene_object().ext, 'json')
+
+    with open(outFile) as json_file:
+        data = json.load(json_file)
+        for p in data:
+            print(p)
+            data_path = data[p]['source_path']
+            blender_transform = data[p]['blender_transform']
+
+            transform_data = []
+            for value in blender_transform:
+                transform_data.append(value)
+
+            print(transform_data)
+
+            pathToFile = os.path.join(scene_object().root, data_path)
+            lumberObject = LumberObject(pathToFile)
+
+            if lumberObject.filename not in bpy.data.libraries:
+                import_file(lumberObject.path_root, linked=False)
+            if p not in bpy.data.objects:
+                obj = bpy.data.objects.new(p, None)
+                bpy.context.collection.objects.link(obj)
+                obj.instance_type = 'COLLECTION'
+                obj.instance_collection = bpy.data.collections[lumberObject.asset]
+                obj.location = (transform_data[0], transform_data[1], transform_data[2])
+                obj.rotation_euler = (transform_data[3], transform_data[4], transform_data[5])
+                obj.scale = (transform_data[6],transform_data[7],transform_data[8])
+
+    bpy.ops.file.make_paths_relative()
+
+
 
 
 if __name__ == '__main__':
