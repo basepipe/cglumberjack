@@ -266,7 +266,7 @@ def render_selected():
                 dialog = Preflight(parent=None, software='nuke', preflight='render')
                 #gui.setWindowFlags(QtCore.Qt.Window)
                 dialog.setWindowTitle('Preflight')
-                dialog.exec_()
+                # dialog.exec_()
 
 
 def launch_lumbermill():

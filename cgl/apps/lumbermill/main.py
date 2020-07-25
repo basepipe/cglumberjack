@@ -67,7 +67,7 @@ class PathWidget(QtWidgets.QFrame):
         if path_object:
             self.path_object = cglpath.PathObject(path_object)
             self.path_root = self.path_object.path_root
-        else:c
+        else:
             return
         layout = QtWidgets.QHBoxLayout(self)
         self.path_line_edit = QtWidgets.QLineEdit()
