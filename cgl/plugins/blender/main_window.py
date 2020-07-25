@@ -1,8 +1,16 @@
+import os
 from vfxwindow import VFXWindow
+from cgl.core.config import app_config, UserConfig, user_config
+from cgl.plugins.blender.cgl_browser_widget import BrowserWidget
+from PySide2 import QtWidgets, QtCore, QtGui
+
+USERCONFIG = UserConfig().d
+ICON_WIDTH = 24
+CONFIG = app_config()
 
 
 class CGLumberjack(VFXWindow):
-    def __init__(self, show_import=False, user_info=None, start_time=None, previous_path=None, sync_enabled=True):
+    def __init__(self, show_import=True, user_info=None, start_time=None, previous_path=None, sync_enabled=True):
         VFXWindow.__init__(self)
 
         if start_time:
@@ -27,12 +35,12 @@ class CGLumberjack(VFXWindow):
         self.pd_menus = {}
         self.menu_dict = {}
         self.menus = {}
-        self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
-                                                 user_email=self.user_info,
-                                                 company=self.company,
-                                                 path=self.previous_path,
-                                                 radio_filter=self.filter,
-                                                 show_import=show_import))
+        self.setCentralWidget(BrowserWidget(self, project_management=self.project_management,
+                                                  user_email=self.user_info,
+                                                  company=self.company,
+                                                  path=self.previous_path,
+                                                  radio_filter=self.filter,
+                                                  show_import=True))
         if user_info:
             if user_info['first']:
                 self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['first'])
