@@ -82,16 +82,33 @@ class NukePathObject(PathObject):
         self.path_template = []
         self.version_template = []
 
-        if isinstance(path_object, bytes):
-            path_object = str(path_object)
+        try:
+            if isinstance(path_object, unicode):
+                path_object = str(path_object)
+        except NameError:
+            pass
         if isinstance(path_object, dict):
-            self.process_info(path_object)
+            self.process_dict(path_object)
         elif isinstance(path_object, str):
             self.process_string(path_object)
         elif isinstance(path_object, PathObject):
-            self.process_info(path_object.data)
+            self.process_dict(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
+
+
+
+        #
+        # if isinstance(path_object, bytes):
+        #     path_object = str(path_object)
+        # if isinstance(path_object, dict):
+        #     self.process_info(path_object)
+        # elif isinstance(path_object, str):
+        #     self.process_string(path_object)
+        # elif isinstance(path_object, PathObject):
+        #     self.process_info(path_object.data)
+        # else:
+        #     logging.error('type: %s not expected' % type(path_object))
         self.set_frame_range()
         self.set_proxy_resolution()
 
@@ -100,7 +117,8 @@ class NukePathObject(PathObject):
         sets nuke proxy resolution according to project globals
         :return:
         """
-        if self.project.lower() in CONFIG['default']['proxy_resolution'].keys():
+
+        if str(self.project).lower() in CONFIG['default']['proxy_resolution'].keys():
             proxy_resolution = CONFIG['default']['proxy_resolution'][self.project.lower()]
         else:
             proxy_resolution = CONFIG['default']['proxy_resolution']['default']
@@ -789,4 +807,67 @@ def replace_in_path(input_script=None, find_pattern=None, replace_pattern=None, 
         #path = path.replace(find_pattern, replace_pattern)
         #n['file'].setValue(path)
     # nuke.scriptSave(output_script)
+
+
+def get_proxy_resolution():
+    CONFIG = app_config()
+    current_shot = PathObject(nuke.root().name())
+    project = str(current_shot.project).lower()
+    print(project.lower())
+    if project.lower() in CONFIG['default']['proxy_resolution'].keys():
+        if CONFIG['default']['proxy_resolution'][project]:
+
+            proxy_resolution = CONFIG['default']['proxy_resolution'][project]
+        else:
+            proxy_resolution = CONFIG['default']['proxy_resolution']['default']
+            print('No proxy resolution Found, using default')
+    else:
+        proxy_resolution = CONFIG['default']['proxy_resolution']['default']
+        print('No proxy resolution Found, using default')
+        print(project)
+
+    return proxy_resolution
+
+def set_comp_default_settings():
+    proxy_res = get_proxy_resolution()
+    readNode = nuke.toNode('plate_Read')
+    if not readNode:
+        readNode = nuke.selectedNode()
+
+    selectedFormat = readNode['format'].value()
+    nuke.root()['format'].setValue(selectedFormat)
+
+    firstFrame = int(readNode.knob('first').getValue())
+    lastFrame = int(readNode.knob('last').getValue())
+
+    proxy_width = proxy_res.split('x')[0]
+    proxy_height = proxy_res.split('x')[1]
+
+    # Setup proxy settings
+    #
+    lc_format = []
+
+    print(lc_format)
+
+    for f in nuke.formats():
+
+        if f.name() == 'DEFAULT_PROXY':
+            f.setName('DEFAULT_PROXY_OLD')
+            f.setWidth(int(proxy_width))
+            f.setHeight(int(proxy_width))
+        lc_format.append(f)
+
+    DEFAULT_PROXY = '%s DEFAULT_PROXY' % proxy_res.replace('x', ' ')
+    nuke.addFormat(DEFAULT_PROXY)
+
+    nuke.root()['proxy_type'].setValue('format')
+    nuke.root()['proxy_format'].setValue('DEFAULT_PROXY')
+    nuke.root()['proxySetting'].setValue('if nearest')
+    readNode['proxy_format'].setValue('DEFAULT_PROXY')
+    nuke.root()['proxySetting'].setValue('if nearest')
+
+    # nuke.alert("Comp Size, duration and proxy set")
+
+
+
 

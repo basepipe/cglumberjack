@@ -5,7 +5,6 @@ from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.progress_gif import ProgressGif, process_method
 from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
-# from vfxwindow import VFXWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
 from cgl.core.utils.general import current_user, check_for_latest_master, update_master, launch_lumber_watch, save_json
@@ -14,6 +13,7 @@ from cgl.apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, S
 from cgl.apps.lumbermill.elements.FilesPanel import FilesPanel
 from cgl.ui.widgets.help import ReportBugDialog, RequestFeatureDialog
 # import cgl.plugins.syncthing.utils as st_utils
+
 try:
     import apps.lumbermill.elements.IOPanel as IoP
     DO_IOP = True

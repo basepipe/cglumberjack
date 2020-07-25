@@ -5,7 +5,8 @@ from cgl.core.utils.general import current_user
 from cgl.core.utils.general import create_file_dirs
 from cgl.core.path import PathObject
 from cgl.core.config import app_config, UserConfig
-from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
+from cgl.apps.lumbermill.main import CGLumberjackWidget
+from cgl.plugins.blender.main_window import CGLumberjack
 import bpy
 
 
@@ -17,60 +18,11 @@ PROCESSING_METHOD = UserConfig().d['methodology']
 SOFTWARE = os.path.basename(os.path.dirname(__file__))
 
 
-class BrowserWidget(CGLumberjackWidget):
-    def __init__(self, parent=None, path=None,
-                 show_import=False):
-        super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
-
-    def open_clicked(self):
-        """
-        Re-implementation of the open_clicked function in lumbermill.  This allows us to customize it to
-        this app's specific needs
-        :return:
-        """
-        selection = self.path_widget.path_line_edit.text()
-        if os.path.exists(selection):
-            open_file(selection)
-        else:
-            logging.info('{0} does not exist!'.format(selection))
-
-    def import_clicked(self):
-        """
-        Re-implemenation of the import_clicked function in lumbermill.  This allows us to customize it to
-        this app's specific needs.  Typically the default will work if you've defined the import_file() function
-        in this plugin.
-        :return:
-        """
-        selection = self.path_widget.path_line_edit.text()
-        if os.path.exists(selection):
-            import_file(selection, namespace=None)
-        else:
-            logging.info('{0} does not exist!'.format(selection))
-        # close lumbermill.
-        # self.parent().parent().accept()
-
-    def reference_clicked(self):
-        """
-        Re-implemenation of the reference_clicked function in lumbermill.  This allows us to customize it to
-        this app's specific needs.  Typically the default will work if you've defined the reference_file() function
-        in this plugin.
-        :return:
-        """
-        print('reference clicked! Referencing not yet implemented in Blender.')
-        # selection = self.path_widget.path_line_edit.text()
-        # if os.path.exists(selection)::
-        #     reference_file(selection, namespace=None)
-        # else:
-        #     logging.info('{0} does not exist!'.format(selection))
-        ## close lumbermill
-        # self.parent().parent().accept()
-
-
 class BlenderJack(CGLumberjack):
     def __init__(self, parent=None, path=None, user_info=None):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
         print('Application Path path is %s' % path)
-        self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
+        # self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
 
 
 class BlenderConfirmDialog(bpy.types.Operator):
