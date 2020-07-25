@@ -316,16 +316,22 @@ class ProjectManagementData(object):
 
     def upload_media(self, force_creation=False):
         # set the status name to 'Needs Review'
+        from cgl.core.metadata import get_meta_data2
         if not self.file_type:
             print('Cannot Determine File Type - skipping Ftrack Upload')
             return
         if not os.path.exists(self.path_object.preview_path):
             print(self.path_object.preview_path, 'Does Not Exist')
             return
-
         else:
             preview = self.path_object.preview_path
             thumb = self.path_object.thumb_path
+        start_frame, end_frame = self.path_object.frame_range.split('-')
+        try:
+            meta_data = get_meta_data2(self.path_object.preview_path)
+            fps = meta_data["Video Frame Rate"]
+        except KeyError:
+            fps = 24
         server_location = self.ftrack.query('Location where name is "ftrack.server"').first()
         thumb_component = ''
         component = None
@@ -338,13 +344,12 @@ class ProjectManagementData(object):
                 location=server_location
             )
             # self.version_data.encode_media(component)
+            print('Setting frame in: {}, frame out: {}, frame_rate: {}'.format(start_frame, end_frame, fps))
             component['metadata']['ftr_meta'] = json.dumps({
-                'frameIn': 0,
-                'frameOut': 150,
-                'frameRate': 25
+                'frameIn': int(start_frame),
+                'frameOut': int(end_frame),
+                'frameRate': fps
             })
-            print(self.version_data)
-            print(server_location)
             thumb_component = self.version_data.create_component(
                 path=thumb,
                 data={'name': 'thumbnail'},

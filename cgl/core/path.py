@@ -1325,41 +1325,51 @@ class Sequence(object):
         start_frame, end_frame, middle_frame, frame_range are all set by this function
         :return:
         """
-        # This requires the # form of the sequence
-        glob_string = ''
-        if '#' in self.sequence:
-            glob_string = '%s*%s' % (self.sequence.split('#')[0], self.ext)
-        elif '%' in self.sequence:
-            glob_string = '%s*%s' % (self.sequence.split('%')[0], self.ext)
-        elif '*' in self.sequence:
-            glob_string = self.sequence
-        frames = glob.glob(glob_string)
-        if frames:
-            try:
-                sframe = re.search(SEQ_REGEX, frames[0]).group(0).replace('.', '')
-                eframe = re.search(SEQ_REGEX, frames[-1]).group(0).replace('.', '')
-                if sframe and eframe:
-                    self.frame_range = '%s-%s' % (sframe, eframe)
-                    self.start_frame = sframe
-                    self.end_frame = eframe
-                    self.padding = len(self.start_frame)
-                    self.hash = '#'*self.padding
-                    if self.padding < 10:
-                        self.num = '%0'+str(self.padding)+'d'
-                    else:
-                        self.num = '%'+str(self.padding)+'d'
-                    mid_frame = int((int(eframe) - int(sframe)) / 2) + int(sframe)
-                    self.middle_frame = self.int_as_padded_frame(mid_frame, self.padding)
-            except AttributeError:
-                logging.error('problem with filepath: %s and frames: '
-                              '%s in get_frange_from_seq, skipping.' % (self.sequence, frames))
+        seq_match = r'\s[\d]+-[\d]+$'
+        regex = re.compile(r'\s[\d]+-[\d]+$')
+        current_sel = self.sequence
+        frange = re.search(regex, current_sel)
+        if frange:
+            sframe, eframe = frange[0].split('-')
         else:
-            self.start_frame = CONFIG['default']['start_frame']
-            self.hash = '#' * self.padding
-            if self.padding < 10:
-                self.num = '%0' + str(self.padding) + 'd'
+            # This requires the # form of the sequence
+            glob_string = ''
+            if '#' in self.sequence:
+                glob_string = '%s*%s' % (self.sequence.split('#')[0], self.ext)
+            elif '%' in self.sequence:
+                glob_string = '%s*%s' % (self.sequence.split('%')[0], self.ext)
+            elif '*' in self.sequence:
+                glob_string = self.sequence
+            frames = glob.glob(glob_string)
+            if frames:
+                try:
+                    sframe = re.search(SEQ_REGEX, frames[0]).group(0).replace('.', '')
+                    eframe = re.search(SEQ_REGEX, frames[-1]).group(0).replace('.', '')
+                except AttributeError:
+                    logging.error('problem with filepath: %s and frames: '
+                                  '%s in get_frange_from_seq, skipping.' % (self.sequence, frames))
             else:
-                self.num = '%' + str(self.padding) + 'd'
+                self.start_frame = CONFIG['default']['start_frame']
+                self.hash = '#' * self.padding
+                if self.padding < 10:
+                    self.num = '%0' + str(self.padding) + 'd'
+                else:
+                    self.num = '%' + str(self.padding) + 'd'
+                return
+        if sframe and eframe:
+            self.frame_range = '%s-%s' % (sframe, eframe)
+            self.start_frame = sframe
+            self.end_frame = eframe
+            self.padding = len(self.start_frame)
+            self.hash = '#'*self.padding
+            if self.padding < 10:
+                self.num = '%0'+str(self.padding)+'d'
+            else:
+                self.num = '%'+str(self.padding)+'d'
+            mid_frame = int((int(eframe) - int(sframe)) / 2) + int(sframe)
+            self.middle_frame = self.int_as_padded_frame(mid_frame, self.padding)
+
+
 
     @staticmethod
     def int_as_padded_frame(number, padding=None):
