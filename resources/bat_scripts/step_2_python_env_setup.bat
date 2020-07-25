@@ -36,6 +36,8 @@ choco install awscli -y
 choco install wget -y
 choco install exiftool -y
 choco install syncthing -y
+choco install ghostscript -y
+choco install gstreamer -y
 echo "Python Installation Done - Next do step_3_setup_cgl_repos.bat"
 
 
