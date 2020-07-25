@@ -128,7 +128,6 @@ class Preflight(QtWidgets.QWidget):
         self.software_label.setProperty('class', 'ultra_title')
 
         self.image_plane = GifWidget(gif_path=image_path('rolling_logs.gif'))
-        # self.image_plane.start()
         self.image_plane.hide()
 
         self.run_all = QtWidgets.QPushButton('Run All')
@@ -162,8 +161,6 @@ class Preflight(QtWidgets.QWidget):
         self.show()
 
     def _load_json(self):
-        print(self.json_file)
-        print(self.software, self.preflight)
         with open(self.json_file, 'r') as stream:
             d = json.load(stream)
             try:

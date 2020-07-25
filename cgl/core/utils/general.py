@@ -404,9 +404,8 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         if '-Type Nuke' in command:
             smedge_command = r'%s Script %s' % (CONFIG['paths']['smedge'], command)
         else:
-            # TODO - this should probably be able to work in a venv as well somehow.
-            #  Right now we're relying on a uniform python install.
-            environment_overrides = "CGL_PYTHON=C:\Python27;C:\Python27\Scripts;C:\Python27\Lib\site-packages;"
+            # TODO I need to set this in the User Globals as it'll change most likely.
+            environment_overrides = "CGL_PYTHON=C:\Python38;C:\Python38\Scripts;C:\Python38\Lib\site-packages;"
             if command.startswith('python'):
                 command = '$(:CGL_PYTHON)\\%s' % command
             # Contact Robin - i have to use the actual ID rather than "Generic" or "Script" or Generic Script

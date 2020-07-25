@@ -5,11 +5,9 @@ from cgl.core.utils.general import current_user
 from cgl.core.utils.general import create_file_dirs
 from cgl.core.path import PathObject
 from cgl.core.config import app_config, UserConfig
-from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
-try:
-    import bpy
-except ModuleNotFoundError:
-    print('skipping bpy import')
+from cgl.apps.lumbermill.main import CGLumberjackWidget
+from cgl.plugins.blender.main_window import CGLumberjack
+import bpy
 
 
 
@@ -20,60 +18,11 @@ PROCESSING_METHOD = UserConfig().d['methodology']
 SOFTWARE = os.path.basename(os.path.dirname(__file__))
 
 
-class BrowserWidget(CGLumberjackWidget):
-    def __init__(self, parent=None, path=None,
-                 show_import=False):
-        super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
-
-    def open_clicked(self):
-        """
-        Re-implementation of the open_clicked function in lumbermill.  This allows us to customize it to
-        this app's specific needs
-        :return:
-        """
-        selection = self.path_widget.path_line_edit.text()
-        if os.path.exists(selection):
-            open_file(selection)
-        else:
-            logging.info('{0} does not exist!'.format(selection))
-
-    def import_clicked(self):
-        """
-        Re-implemenation of the import_clicked function in lumbermill.  This allows us to customize it to
-        this app's specific needs.  Typically the default will work if you've defined the import_file() function
-        in this plugin.
-        :return:
-        """
-        selection = self.path_widget.path_line_edit.text()
-        if os.path.exists(selection):
-            import_file(selection, namespace=None)
-        else:
-            logging.info('{0} does not exist!'.format(selection))
-        # close lumbermill.
-        # self.parent().parent().accept()
-
-    def reference_clicked(self):
-        """
-        Re-implemenation of the reference_clicked function in lumbermill.  This allows us to customize it to
-        this app's specific needs.  Typically the default will work if you've defined the reference_file() function
-        in this plugin.
-        :return:
-        """
-        print('reference clicked! Referencing not yet implemented in Blender.')
-        # selection = self.path_widget.path_line_edit.text()
-        # if os.path.exists(selection)::
-        #     reference_file(selection, namespace=None)
-        # else:
-        #     logging.info('{0} does not exist!'.format(selection))
-        ## close lumbermill
-        # self.parent().parent().accept()
-
-
 class BlenderJack(CGLumberjack):
     def __init__(self, parent=None, path=None, user_info=None):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
         print('Application Path path is %s' % path)
-        self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
+        # self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
 
 
 class BlenderConfirmDialog(bpy.types.Operator):
@@ -89,7 +38,6 @@ class BlenderConfirmDialog(bpy.types.Operator):
 
     def execute(self, context):
         return {"FINISHED"}
-
 
 
 class LumberObject(PathObject):
@@ -237,7 +185,7 @@ def version_up(vtype='minor'):
     return save_file_as(new_version.path_root)
 
 
-def import_file(filepath='', namespace=None, collection_name=None, append = True, linked=True ,type = 'COLLECTION'):
+def import_file(filepath='', namespace=None, collection_name=None, link=True):
     """
     imports file into a scene.
     :param filepath:
@@ -252,36 +200,21 @@ def import_file(filepath='', namespace=None, collection_name=None, append = True
     elif filepath.endswith('blend'):
 
         if collection_name is None:
-            collection = PathObject(filepath)
-            collection_name = collection.asset
-        # append, set to true to keep the link to the original file
-        if type == 'COLLECTION':
-            print('collection selected')
-            with bpy.data.libraries.load(filepath, link=append) as (data_from, data_to):
-                data_to.collections = [c for c in data_from.collections if c.startswith(collection_name)]
-                # for obj in data_to.groups[0].objects:
-                #     bpy.context.scene.objects.link(obj)
+            collection_name = os.path.basename(filepath).replace('.blend', '').split('_')[1] # this is really messy we should use asset name here
 
-        if type == 'GROUP':
-            print('group Selected')
-            with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
-                data_to.node_groups = data_from.node_groups
+        # append, set to true to keep the link to the original file
+
+
+        # link all collections starting with 'MyCollection'
+        with bpy.data.libraries.load(filepath, link=link) as (data_from, data_to):
+            data_to.collections = [c for c in data_from.collections if c.startswith(collection_name)]
 
         # link collection to scene collection
+        for coll in data_to.collections:
+            if coll is not None:
+                bpy.data.scenes['Scene'].collection.children.link(coll)
 
-
-        #for coll in data_to.collections:
-            #if coll is not None:
-                #bpy.data.scenes['Scene'].collection.children.link(coll)
-        if linked == True:
-
-            obj = bpy.data.objects.new(collection_name, None)
-
-            obj.instance_type = 'COLLECTION'
-            obj.instance_collection = bpy.data.collections[collection_name]
-            bpy.context.collection.objects.link(obj)
-
-
+        #
         # bpy.ops.wm.append(directory='{}/Collection'.format(filepath),
         #                   filepath=filepath, filename=collection_name, link=True, instance_collections=True)
 
@@ -332,7 +265,6 @@ def confirm_prompt(title='Lumber message:', message='This is a message', button=
     BlenderConfirmDialog.bl_label = title
     BlenderConfirmDialog.message = message
     bpy.utils.register_class(BlenderConfirmDialog)
-
     bpy.ops.ui.blender_confirm_dialog('INVOKE_DEFAULT')
 
 
@@ -360,7 +292,6 @@ def export_selected(to_path):
         bpy.ops.export_scene.fbx(filepath=to_path, use_selection=True)
     elif to_path.endswith('obj'):
         bpy.ops.export_scene.obj(filepath=to_path, use_selection=True)
-
     elif to_path.endswith('blend'):
         bpy.ops.export_scene.blend(filepath=to_path, use_selection=True)
 
@@ -434,7 +365,7 @@ def render():
     renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
     :return:
     """
-    previewRenderTypes = ['anim','rig','mdl','lay']
+    previewRenderTypes = ['anim','rig','mdl']
     file_out = scene_object().render_path.split('#')[0]
 
     if scene_object().task in previewRenderTypes :
