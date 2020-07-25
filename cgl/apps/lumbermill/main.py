@@ -1,5 +1,6 @@
 import time
 import os
+import re
 import logging
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.progress_gif import ProgressGif, process_method
@@ -612,6 +613,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         logging.debug('import clicked')
 
     def review_clicked(self):
+
         selection = cglpath.PathObject(self.path_widget.path_line_edit.text())
         selection.set_file_type()
         process_method(self.progress_bar, self.do_review, args=(self.progress_bar, selection), text='Submitting Review')

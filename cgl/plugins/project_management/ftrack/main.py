@@ -317,7 +317,6 @@ class ProjectManagementData(object):
     def upload_media(self, force_creation=False):
         # set the status name to 'Needs Review'
         from cgl.core.metadata import get_meta_data2
-
         if not self.file_type:
             print('Cannot Determine File Type - skipping Ftrack Upload')
             return
@@ -345,9 +344,10 @@ class ProjectManagementData(object):
                 location=server_location
             )
             # self.version_data.encode_media(component)
+            print('Setting frame in: {}, frame out: {}, frame_rate: {}'.format(start_frame, end_frame, fps))
             component['metadata']['ftr_meta'] = json.dumps({
-                'frameIn': start_frame,
-                'frameOut': end_frame,
+                'frameIn': int(start_frame),
+                'frameOut': int(end_frame),
                 'frameRate': fps
             })
             print(self.version_data)
