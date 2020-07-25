@@ -615,10 +615,16 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def review_clicked(self):
 
         selection = cglpath.PathObject(self.path_widget.path_line_edit.text())
-        selection.set_file_type()
-        process_method(self.progress_bar, self.do_review, args=(self.progress_bar, selection), text='Submitting Review')
-        logging.debug('updating_location %s %s' % (selection.path_root, selection.data))
-        self.update_location(data=selection.data)
+        if not os.path.exists(selection.preview_path):
+            selection.set_file_type()
+            process_method(self.progress_bar, self.do_review,
+                           args=(self.progress_bar, selection),
+                           text='Submitting Review')
+            logging.debug('updating_location %s %s' % (selection.path_root, selection.data))
+            self.update_location(data=selection.data)
+        else:
+            dialog = InputDialog(title='Preview Exists', message='Review Exists, version up to create new one')
+            dialog.exec_()
 
     @staticmethod
     def do_review(progress_bar, path_object):

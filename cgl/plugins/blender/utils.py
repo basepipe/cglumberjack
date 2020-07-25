@@ -6,7 +6,7 @@ import logging
 import cgl.core.utils.read_write as read_write
 from cgl.core.path import get_resources_path
 from cgl.core.project import get_cgl_tools
-from pathlib import Path
+
 import json
 logger = logging.getLogger('qtutils')
 
@@ -196,7 +196,8 @@ def get_menu_at(menu_dict, software, menu, i):
 def write_layout(outFile = None):
     from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file
     import bpy
-
+    from pathlib import Path
+    import json
     if outFile == None:
         outFile = scene_object().copy(ext = 'json').path_root
     data = {}

@@ -328,6 +328,7 @@ class ProjectManagementData(object):
             thumb = self.path_object.thumb_path
         start_frame, end_frame = self.path_object.frame_range.split('-')
         try:
+            print(self.path_object.preview_path)
             meta_data = get_meta_data2(self.path_object.preview_path)
             fps = meta_data["Video Frame Rate"]
         except KeyError:
@@ -355,6 +356,7 @@ class ProjectManagementData(object):
                 data={'name': 'thumbnail'},
                 location=server_location
             )
+
 
         elif self.file_type == 'image':
             component = self.version_data.create_component(

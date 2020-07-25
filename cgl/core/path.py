@@ -774,7 +774,7 @@ class PathObject(object):
         """
         self.command_base = '%s_%s_%s' % (self.seq, self.shot, self.task)
 
-    def upload_review(self, job_id=None):
+    def upload_review(self, job_id=None, processing_method='local'):
         """
         uploads a review file to project management/review software as defined in globals.  where review file
         is not present it attempts to make one.
@@ -785,7 +785,7 @@ class PathObject(object):
             pyfile = '%s.py' % os.path.splitext(__file__)[0]
             command = r'python %s -p %s -r True' % (pyfile, self.path_root)
             process_info = cgl_execute(command, command_name='%s: upload_review()' % self.command_base,
-                                       methodology='smedge', WaitForJobID=job_id)
+                                       methodology=processing_method, WaitForJobID=job_id)
             return process_info
         else:
             if os.path.exists(self.preview_path):
@@ -797,7 +797,7 @@ class PathObject(object):
             else:
                 logging.debug('No preview file found for uploading: %s' % self.preview_path)
                 info = self.make_preview()
-                self.upload_review(job_id=info['job_id'])
+                self.upload_review(job_id=info['job_id'], processing_method=processing_method)
                 return False
 
     def make_thumbnail(self, job_id=None, new_window=False, type_='movie'):
@@ -1728,6 +1728,7 @@ def main(path_string, upload_review):
         if upload_review:
             path_object = PathObject(path_string)
             path_object.upload_review()
+            path_object.go_to_dailies()
     else:
         click.echo('No Path Provided, aborting cgl.core.path command line operation')
 
