@@ -200,19 +200,20 @@ def import_file(filepath='', namespace=None, collection_name=None, link=True):
     elif filepath.endswith('blend'):
 
         if collection_name is None:
-            collection_name = os.path.basename(filepath).replace('.blend', '').split('_')[1] # this is really messy we should use asset name here
-
+            collection = PathObject(filepath)
+            collection_name = collection.asset
         # append, set to true to keep the link to the original file
+        if type == 'COLLECTION':
+            print('collection selected')
+            with bpy.data.libraries.load(filepath, link=append) as (data_from, data_to):
+                data_to.collections = [c for c in data_from.collections if c.startswith(collection_name)]
+                # for obj in data_to.groups[0].objects:
+                #     bpy.context.scene.objects.link(obj)
 
-
-        # link all collections starting with 'MyCollection'
-        with bpy.data.libraries.load(filepath, link=link) as (data_from, data_to):
-            data_to.collections = [c for c in data_from.collections if c.startswith(collection_name)]
-
-        # link collection to scene collection
-        for coll in data_to.collections:
-            if coll is not None:
-                bpy.data.scenes['Scene'].collection.children.link(coll)
+        if type == 'GROUP':
+            print('group Selected')
+            with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
+                data_to.node_groups = data_from.node_groups
 
         #
         # bpy.ops.wm.append(directory='{}/Collection'.format(filepath),
