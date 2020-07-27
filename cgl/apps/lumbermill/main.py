@@ -623,8 +623,16 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             logging.debug('updating_location %s %s' % (selection.path_root, selection.data))
             self.update_location(data=selection.data)
         else:
-            dialog = InputDialog(title='Preview Exists', message='Review Exists, version up to create new one')
-            dialog.exec_()
+            print('Review Exits ')
+            selection.set_file_type()
+            process_method(self.progress_bar, self.do_review,
+                           args=(self.progress_bar, selection),
+                           text='Submitting Review')
+            logging.debug('updating_location %s %s' % (selection.path_root, selection.data))
+            self.update_location(data=selection.data)
+            #dialog = InputDialog(title='Preview Exists', message='Review Exists, version up to create new one')
+
+            #dialog.exec_()
 
     @staticmethod
     def do_review(progress_bar, path_object):

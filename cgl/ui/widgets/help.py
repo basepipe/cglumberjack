@@ -9,6 +9,7 @@ import cgl.core.path as cglpath
 from cgl.ui.widgets.widgets import AdvComboBox, TagWidget
 try:
     from cgl.plugins.project_management.asana.basic import AsanaJack
+
 except ModuleNotFoundError:
     print('skipping asana load')
 
