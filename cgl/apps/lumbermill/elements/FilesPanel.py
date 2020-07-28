@@ -222,7 +222,7 @@ class FilesPanel(QtWidgets.QWidget):
             if ingest_source_location.endswith(dialog.combo_box.currentText()):
                 CreateProductionData(self.current_location, json=False)
         else:
-            from apps.lumbermill.elements import asset_creator
+            from cgl.apps.lumbermill.elements import asset_creator
             if 'asset' in self.current_location:
                 task_mode = True
             else:

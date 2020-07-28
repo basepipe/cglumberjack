@@ -1,4 +1,4 @@
-from apps.pipeline.designer import Designer
+from cgl.apps.pipeline.designer import Designer
 
 
 class PreflightDesigner(Designer):

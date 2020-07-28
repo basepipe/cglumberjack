@@ -578,7 +578,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def add_task(self, path_object):
         logging.debug(1)
-        from apps.lumbermill.elements import asset_creator
+        from cgl.apps.lumbermill.elements import asset_creator
         task_mode = True
         dialog = asset_creator.AssetCreator(self, path_dict=path_object.data, task_mode=task_mode)
         dialog.exec_()
