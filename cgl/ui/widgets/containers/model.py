@@ -1,8 +1,10 @@
 # noinspection PyUnresolvedReferences
 import os
 from cgl.plugins.Qt.QtCore import QAbstractTableModel, Qt, QAbstractItemModel
-from cgl.plugins.Qt.QtGui import QIcon
+from cgl.plugins.Qt.QtGui import QIcon, QColor
 from cgl.core.path import icon_path
+from cgl.core.config import app_config
+from cgl.core.utils.general import has_approved_frame_padding
 
 
 # noinspection PyUnusedLocal
@@ -168,21 +170,24 @@ class FilesModel(QAbstractTableModel):
         try:
             data = self.data_[index.row()][index.column()]
             if role == Qt.DisplayRole:
-                data = self.data_[index.row()][index.column()]
                 if data is None:
                     return ""
-                if role == Qt.DisplayRole:
-                    if isinstance(data, dict):
-                        if 'name' in data:
-                            return data['name']
-                        elif 'code' in data:
-                            return data['code']
-                    return data
+                elif isinstance(data, dict):
+                    if 'name' in data:
+                        return data['name']
+                    elif 'code' in data:
+                        return data['code']
+                return data
             if role == Qt.DecorationRole:
-                data = self.data_[index.row()][index.column()]
                 if "." not in data:
                     icon_path_ = os.path.join(icon_path(), 'folder24px.png')
                     return QIcon(icon_path_)
+            if role == Qt.ForegroundRole:
+                padding_difference = has_approved_frame_padding(data)
+                if padding_difference:
+                    print(data)
+                    print('Padding {} does not match studio padding {}'.format(padding_difference[0], padding_difference[1]))
+                    return QColor('red')
         except KeyError:
             return ''
 

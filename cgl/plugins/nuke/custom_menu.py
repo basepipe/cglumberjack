@@ -35,6 +35,3 @@ class NukeCustomMenu(CustomMenu):
         menu_ = self.find_menu_by_name(self.menu_parent, menu_name)
         if menu_:
             print('deleting nuke menu %s' % menu_name)
-
-
-
