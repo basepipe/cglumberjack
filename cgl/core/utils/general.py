@@ -398,7 +398,9 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
             smedge_command = r'%s Script %s' % (CONFIG['paths']['smedge'], command)
         else:
             # TODO I need to set this in the User Globals as it'll change most likely.
-            environment_overrides = "CGL_PYTHON=C:\Python38;C:\Python38\Scripts;C:\Python38\Lib\site-packages;"
+            environment_overrides = "CGL_PYTHON=C:\Python38;" \
+                                    "C:\Python38\Scripts;" \
+                                    "C:\Python38\Lib\site-packages;"
             if command.startswith('python'):
                 command = '$(:CGL_PYTHON)\\%s' % command
             # Contact Robin - i have to use the actual ID rather than "Generic" or "Script" or Generic Script

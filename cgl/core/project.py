@@ -191,69 +191,21 @@ def do_review(progress_bar=None, path_object=None):
     import logging
     from cgl.core.utils.general import cgl_copy
     from cgl.ui.widgets.dialog import InputDialog
-    job_id = None
     if not path_object:
         logging.debug('No Valid PathObject() found for review')
         return None
     else:
         selection = path_object
-        selection.set_preview_path()
-        selection.set_hd_proxy_path()
-        # selection.set_path()
     if os.path.isdir(selection.path_root):
         logging.debug('Choose a sequence or file')
         return
-    if not os.path.exists(selection.preview_path):
-        logging.debug('No Web Preview Found, creating one')
-        job_info = selection.make_preview()
-        job_id = job_info['job_id']
     if selection.context == 'render':
-        # lin_images = ['exr', 'dpx']
-        # LUMBERMILL REVIEWS
-        if PROJ_MANAGEMENT == 'lumbermill':
-            # do this for movies
-            logging.debug('Lumbermill Not connected to review features')
-        # FTRACK REVIEWS
-        elif PROJ_MANAGEMENT == 'ftrack':
-            if selection.filename:
-                if selection.file_type == 'folder' or not selection.file_type:
-                    dialog = InputDialog(title='Error: unsupported folder or file_type',
-                                         message="%s is a folder or undefined file_type\nunsure how to proceed" %
-                                         selection.filename)
-                    dialog.exec_()
-                    if dialog.button == 'Ok' or dialog.button == 'Cancel':
-                        dialog.accept()
-                        return
-                else:
-                    selection.upload_review(job_id=job_id)
-                    # CreateProductionData(selection)
-            else:
-                logging.debug('Select file for Review')
+        # If selection context is render submit the review
 
-        elif PROJ_MANAGEMENT == 'shotgun':
-            if selection.filename:
-                if selection.file_type == 'folder' or not selection.file_type:
-                    dialog = InputDialog(title='Error: unsupported folder or file_type',
-                                         message="%s is a folder or undefined file_type\nunsure how to proceed" %
-                                         selection.filename)
-                    dialog.exec_()
-                    if dialog.button == 'Ok' or dialog.button == 'Cancel':
-                        dialog.accept()
-                        return
-                else:
-                    if os.path.exists(selection.preview_path):
-                        CreateProductionData(path_object=selection)
-                    else:
-                        selection.upload_review(job_id=job_id)
-            else:
-                logging.debug('Select file for Review')
-
-        else:
-            logging.debug('%s is an unknown project management type' % PROJ_MANAGEMENT)
-
-        selection.set_attr(filename='')
-        selection.set_attr(ext='')
+        selection.review()
     else:
+        # if selection context is source prep for review
+
         dialog = InputDialog(title="Prep for Review", message="Move or copy files to review area?",
                              buttons=['Move', 'Copy'])
         dialog.exec_()

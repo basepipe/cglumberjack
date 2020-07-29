@@ -630,7 +630,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     @staticmethod
     def do_review(progress_bar, path_object):
-        logging.debug(2)
         from cgl.core.project import do_review
         do_review(progress_bar, path_object)
 
