@@ -374,6 +374,8 @@ class PathObject(object):
                     if self.__dict__[attr]:
                         path_string = os.path.join(path_string, self.__dict__[attr])
         path_string = path_string.replace('\\', '/')
+        # TODO - if it ends with a frame range
+
         if path_string.endswith('.'):
             path_string = path_string[:-1]
         if sys.platform == 'win32':
@@ -781,17 +783,19 @@ class PathObject(object):
         :param job_id: job_id for dependencies on the farm.  Essentially if a job_id is present this is sent to the farm
         :return:
         """
+
+        self.path_root = self.path_root.replace(self.frame_range, '')
         if job_id:
             pyfile = '%s.py' % os.path.splitext(__file__)[0]
+
             command = r'python %s -p %s -r True' % (pyfile, self.path_root)
             process_info = cgl_execute(command, command_name='%s: upload_review()' % self.command_base,
-                                       methodology=processing_method, WaitForJobID=job_id)
+                                       methodology=processing_method, WaitForJobID=job_id, verbose=True)
             return process_info
         else:
             if os.path.exists(self.preview_path):
                 if PROJ_MANAGEMENT == 'ftrack':
                     prod_data = CreateProductionData(path_object=self)
-                    print(333)
                     return True
                 elif PROJ_MANAGEMENT == 'lumbermill':
                     logging.debug('no review process defined for default lumbermill')
@@ -1747,16 +1751,15 @@ def main(path_string, upload_review):
     if path_string:
         if upload_review:
             path_object = PathObject(path_string)
-            print(1)
             path_object.upload_review()
-            print(2)
-            path_object.go_to_dailies()
-            print(3)
+        else:
+            print('Upload Review Set to False')
     else:
         click.echo('No Path Provided, aborting cgl.core.path command line operation')
 
 
 
-
+if __name__ == '__main__':
+    main()
 
 

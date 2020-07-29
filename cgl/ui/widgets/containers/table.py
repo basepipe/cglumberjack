@@ -68,7 +68,9 @@ class LJTableWidget(QtWidgets.QTableView):
             self.viewClicked()
 
     # noinspection PyShadowingNames,PyPep8
-    def set_item_model(self, mdl, proxy=LJTableSearchProxy()):
+    def set_item_model(self, mdl, proxy=None):
+        if not proxy:
+            proxy = LJTableSearchProxy()
         self.setModel(proxy)
         # if isinstance(mdl, )
         proxy.setSourceModel(mdl)
