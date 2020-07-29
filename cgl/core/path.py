@@ -842,9 +842,9 @@ class PathObject(object):
                                                         dependent_job=mov_info['job_id'],
                                                         processing_method=PROCESSING_METHOD, new_window=new_window)
                 return thumb_info
+            else:
+                print('HD Proxy not found, possible error in creation: %s' % self.hd_proxy_path)
         elif self.file_type == 'movie':
-            print('I will be able to create a movie preview soon.')
-            print(PROCESSING_METHOD)
             mov_info = convert.create_web_mov(self.path_root, self.preview_path,
                                               command_name='%s: create_web_mov()' % self.command_base,
                                               dependent_job=None, processing_method=PROCESSING_METHOD,

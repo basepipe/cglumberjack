@@ -354,9 +354,6 @@ def launch_lumber_watch(new_window=False):
 
 def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=True,
                 command_name='cgl_execute', do_system=False, new_window=False, **kwargs):
-    # TODO - we need to make sure this command is used everywhere we're passing commands if at all possible.
-    set_python_path_string = 'set PYTHONPATH=%PYTHONPATH%;{}; {};\n'.format(CONFIG['paths']['code_root'],
-                                                                           CONFIG['paths']['cgl_tools'])
     run_dict = {'command': command,
                 'command_name': command_name,
                 'start_time': time.time(),
@@ -371,7 +368,6 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
             # TODO this requires testing, i think i've solved why this was needed, it'd ne nice to remove it.
             os.system(command)
         else:
-            print(set_python_path_string)
             print('Executing Command:\n%s' % command)
             if new_window:
                 subprocess.Popen(command, universal_newlines=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
