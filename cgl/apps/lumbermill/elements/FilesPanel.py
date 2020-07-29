@@ -684,26 +684,20 @@ class FilesPanel(QtWidgets.QWidget):
         self.render_files_widget.set_item_model(model)
 
     def load_render_files(self, widget):
-        print('loading render files')
         widget.files_area.work_files_table.show()
-        print('work files table', widget.files_area.work_files_table)
         render_table = widget.files_area.export_files_table
-        print('render table', render_table)
         current = PathObject(self.version_obj)
         if widget.files_area.work_files_table.user:
-            print(1)
             renders = current.copy(context='render', task=widget.task, user=widget.files_area.work_files_table.user,
                                    version=widget.files_area.work_files_table.version,
                                    resolution=widget.files_area.work_files_table.resolution,
                                    filename='*')
             files_ = glob.glob(renders.path_root)
             if current.user == 'publish':
-                print(2)
                 render_files_label = 'Published Files'
                 widget.files_area.publish_button.hide()
                 widget.files_area.new_version_button.hide()
             else:
-                print(3)
                 widget.files_area.new_version_button.show()
                 widget.files_area.review_button.show()
                 widget.files_area.publish_button.show()
@@ -711,7 +705,6 @@ class FilesPanel(QtWidgets.QWidget):
             logging.debug('Published Files for %s' % current.path_root)
             data_ = self.prep_list_for_table(files_, basename=True, length=1)
             model = FilesModel(data_, [render_files_label])
-            print('setting up model')
             widget.setup(render_table, model)  # this is somehow replacing the other table for source when there are no files
             render_table.show()
             widget.files_area.open_button.show()
