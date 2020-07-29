@@ -1733,7 +1733,7 @@ def get_file_icon(filepath):
 def hd_proxy_exists(hd_proxy_path, frame_range):
     print(hd_proxy_path)
     if '#' in hd_proxy_path:
-        files = glob.glob('{}*'.format(hd_proxy_path.split('##')[0]))
+        files = glob.glob('{}*.jpg'.format(hd_proxy_path.split('##')[0]))
         if files:
             sframe, eframe = frame_range.split('-')
             length = int(eframe) - int(sframe) + 1
