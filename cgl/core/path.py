@@ -776,33 +776,31 @@ class PathObject(object):
         """
         self.command_base = '%s_%s_%s' % (self.seq, self.shot, self.task)
 
-    def upload_review(self, job_id=None, processing_method='local'):
+    def upload_review(self, job_id=None):
         """
         uploads a review file to project management/review software as defined in globals.  where review file
         is not present it attempts to make one.
         :param job_id: job_id for dependencies on the farm.  Essentially if a job_id is present this is sent to the farm
         :return:
         """
-
         self.path_root = self.path_root.replace(self.frame_range, '')
         if job_id:
             pyfile = '%s.py' % os.path.splitext(__file__)[0]
 
             command = r'python %s -p %s -r True' % (pyfile, self.path_root)
             process_info = cgl_execute(command, command_name='%s: upload_review()' % self.command_base,
-                                       methodology=processing_method, WaitForJobID=job_id, verbose=True)
+                                       methodology=PROCESSING_METHOD, WaitForJobID=job_id, verbose=True)
             return process_info
         else:
             if os.path.exists(self.preview_path):
+                print('Preview Path Found: {}'.format(self.preview_path))
                 if PROJ_MANAGEMENT == 'ftrack':
                     prod_data = CreateProductionData(path_object=self)
                     return True
                 elif PROJ_MANAGEMENT == 'lumbermill':
                     logging.debug('no review process defined for default lumbermill')
             else:
-                logging.debug('No preview file found for uploading: %s' % self.preview_path)
-                info = self.make_preview()
-                self.upload_review(job_id=info['job_id'], processing_method=processing_method)
+                print('No preview file found for uploading: %s' % self.preview_path)
                 return False
 
     def make_thumbnail(self, job_id=None, new_window=False, type_='movie'):
@@ -816,7 +814,7 @@ class PathObject(object):
                                                         processing_method=PROCESSING_METHOD, new_window=new_window)
                 return thumb_info
 
-    def make_preview(self, job_id=None, new_window=False):
+    def make_preview(self, job_id=None, new_window=False ):
         """
         Creates web optimized preview of PathObject.  For movies and image sequences it's a 1920x1080 quicktime h264,
         for images it's a jpeg within the boundaries of 1920x1080
@@ -826,24 +824,18 @@ class PathObject(object):
 
         if self.file_type == 'sequence':
             # make sure that an hd_proxy exists:
-            review_res = CONFIG['default']['resolution']['video_review']
-            # proxy_info = self.make_proxy(resolution=review_res, ext='jpg', job_id=job_id)
-            if hd_proxy_exists(self.hd_proxy_path, self.frame_range):
-                #logging.debug(proxy_info)
-                #logging.debug('proxy id %s' % proxy_info['job_id'])
-                mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
-                                                  command_name='%s: create_web_mov()' % self.command_base,
-                                                  dependent_job=None, processing_method=PROCESSING_METHOD,
-                                                  new_window=new_window)
-                logging.debug('mov info id %s' % mov_info['job_id'])
-                logging.debug('Creating Thumbnail %s' % self.thumb_path)
-                thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
-                                                        command_name='%s: create_movie_thumb()' % self.command_base,
-                                                        dependent_job=mov_info['job_id'],
-                                                        processing_method=PROCESSING_METHOD, new_window=new_window)
-                return thumb_info
-            else:
-                print('HD Proxy not found, possible error in creation: %s' % self.hd_proxy_path)
+            mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
+                                              command_name='%s: create_web_mov()' % self.command_base,
+                                              dependent_job=job_id, processing_method=PROCESSING_METHOD,
+                                              new_window=new_window)
+            logging.debug('mov info id %s' % mov_info['job_id'])
+            logging.debug('Creating Thumbnail %s' % self.thumb_path)
+            thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
+                                                    command_name='%s: create_movie_thumb()' % self.command_base,
+                                                    dependent_job=mov_info['job_id'],
+                                                    processing_method=PROCESSING_METHOD, new_window=new_window)
+            return thumb_info
+
         elif self.file_type == 'movie':
             mov_info = convert.create_web_mov(self.path_root, self.preview_path,
                                               command_name='%s: create_web_mov()' % self.command_base,
@@ -895,6 +887,30 @@ class PathObject(object):
                                                    new_window=new_window,
                                                    command_name='%s: create_proxy_sequence()' % self.command_base)
         return proxy_info
+
+    def review(self):
+        """
+        Code to create all media needed for a review in the project management software of choice.  This finishes
+        by uploading the file to the project management software and opening the resulting url in a web browser.
+        :return:
+        """
+        if not os.path.exists(self.preview_path):
+            # This entire chunk could probably be put into "path_object"
+            if self.file_type == 'sequence':
+                # Step 0) Create the HD Proxy if it doesn't exist.
+                if not hd_proxy_exists(self.hd_proxy_path, self.frame_range):
+                    print("Making Preview Media")
+                    review_res = CONFIG['default']['resolution']['video_review']
+                    proxy_info = self.make_proxy(resolution=review_res, ext='jpg', job_id=None)
+                    job_id = proxy_info['job_id']
+            # Step 2) Create the web preview & Thumbnail with .make_preview()
+            job_info = self.make_preview(job_id=job_id)
+            job_id = job_info['job_id']
+            # Step 3) Upload to Project Management Software
+            self.upload_review(job_id=job_id)
+        else:
+            print('Preview Already Exists - version up to submit new Review')
+            return False
 
     def publish(self):
         """
