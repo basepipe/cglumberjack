@@ -374,6 +374,8 @@ class PathObject(object):
                     if self.__dict__[attr]:
                         path_string = os.path.join(path_string, self.__dict__[attr])
         path_string = path_string.replace('\\', '/')
+        # TODO - if it ends with a frame range
+
         if path_string.endswith('.'):
             path_string = path_string[:-1]
         if sys.platform == 'win32':
@@ -781,16 +783,19 @@ class PathObject(object):
         :param job_id: job_id for dependencies on the farm.  Essentially if a job_id is present this is sent to the farm
         :return:
         """
+
+        self.path_root = self.path_root.replace(self.frame_range, '')
         if job_id:
             pyfile = '%s.py' % os.path.splitext(__file__)[0]
+
             command = r'python %s -p %s -r True' % (pyfile, self.path_root)
             process_info = cgl_execute(command, command_name='%s: upload_review()' % self.command_base,
-                                       methodology=processing_method, WaitForJobID=job_id)
+                                       methodology=processing_method, WaitForJobID=job_id, verbose=True)
             return process_info
         else:
             if os.path.exists(self.preview_path):
                 if PROJ_MANAGEMENT == 'ftrack':
-                    CreateProductionData(path_object=self)
+                    prod_data = CreateProductionData(path_object=self)
                     return True
                 elif PROJ_MANAGEMENT == 'lumbermill':
                     logging.debug('no review process defined for default lumbermill')
@@ -817,29 +822,29 @@ class PathObject(object):
         for images it's a jpeg within the boundaries of 1920x1080
         :return:
         """
-        print('making preview')
-        print('------------------')
-        print(self.file_type)
+        # Check for self.hd_proxy_path
+
         if self.file_type == 'sequence':
             # make sure that an hd_proxy exists:
             review_res = CONFIG['default']['resolution']['video_review']
-            proxy_info = self.make_proxy(resolution=review_res, ext='jpg', job_id=job_id)
-            logging.debug(proxy_info)
-            logging.debug('proxy id %s' % proxy_info['job_id'])
-            mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
-                                              command_name='%s: create_web_mov()' % self.command_base,
-                                              dependent_job=proxy_info['job_id'], processing_method=PROCESSING_METHOD,
-                                              new_window=new_window)
-            logging.debug('mov info id %s' % mov_info['job_id'])
-            logging.debug('Creating Thumbnail %s' % self.thumb_path)
-            thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
-                                                    command_name='%s: create_movie_thumb()' % self.command_base,
-                                                    dependent_job=mov_info['job_id'],
-                                                    processing_method=PROCESSING_METHOD, new_window=new_window)
-            return thumb_info
+            # proxy_info = self.make_proxy(resolution=review_res, ext='jpg', job_id=job_id)
+            if hd_proxy_exists(self.hd_proxy_path, self.frame_range):
+                #logging.debug(proxy_info)
+                #logging.debug('proxy id %s' % proxy_info['job_id'])
+                mov_info = convert.create_web_mov(self.hd_proxy_path, self.preview_path,
+                                                  command_name='%s: create_web_mov()' % self.command_base,
+                                                  dependent_job=None, processing_method=PROCESSING_METHOD,
+                                                  new_window=new_window)
+                logging.debug('mov info id %s' % mov_info['job_id'])
+                logging.debug('Creating Thumbnail %s' % self.thumb_path)
+                thumb_info = convert.create_movie_thumb(self.preview_path, self.thumb_path,
+                                                        command_name='%s: create_movie_thumb()' % self.command_base,
+                                                        dependent_job=mov_info['job_id'],
+                                                        processing_method=PROCESSING_METHOD, new_window=new_window)
+                return thumb_info
+            else:
+                print('HD Proxy not found, possible error in creation: %s' % self.hd_proxy_path)
         elif self.file_type == 'movie':
-            print('I will be able to create a movie preview soon.')
-            print(PROCESSING_METHOD)
             mov_info = convert.create_web_mov(self.path_root, self.preview_path,
                                               command_name='%s: create_web_mov()' % self.command_base,
                                               dependent_job=None, processing_method=PROCESSING_METHOD,
@@ -1709,6 +1714,25 @@ def get_file_icon(filepath):
     return ip
 
 
+def hd_proxy_exists(hd_proxy_path, frame_range):
+    print(hd_proxy_path)
+    if '#' in hd_proxy_path:
+        files = glob.glob('{}*'.format(hd_proxy_path.split('##')[0]))
+        if files:
+            sframe, eframe = frame_range.split('-')
+            length = int(eframe) - int(sframe) + 1
+            if len(files) != length:
+                print('Full HD Proxy Files not found at: {}, '
+                      'Proxy Must Exist before Creating mov'.format(hd_proxy_path))
+                return False
+            else:
+                print("HD Proxy Sequence Found at: {}, Creating Web Preview".format(hd_proxy_path))
+                return True
+        else:
+            print('HD Proxy Path not found at: {}, Proxy Must Exist before Creating mov'.format(hd_proxy_path))
+            return False
+
+
 def get_file_type(filepath):
     ft = 'file'
     if "." not in filepath:
@@ -1728,12 +1752,14 @@ def main(path_string, upload_review):
         if upload_review:
             path_object = PathObject(path_string)
             path_object.upload_review()
-            path_object.go_to_dailies()
+        else:
+            print('Upload Review Set to False')
     else:
         click.echo('No Path Provided, aborting cgl.core.path command line operation')
 
 
 
-
+if __name__ == '__main__':
+    main()
 
 

@@ -128,12 +128,11 @@ class FilesPanel(QtWidgets.QWidget):
             self.render_files = []
             if user != 'publish':
                 my_files_label = 'My Work Files'
-                if not self.work_files:
+                if not self.work_files and not self.render_files:
                     my_files_label = 'Drag/Drop Work Files'
                     task_widget.files_area.work_files_table.hide()
             else:
                 my_files_label = 'Published Work Files'
-            logging.debug('Work Files: %s' % self.work_files)
             task_widget.setup(task_widget.files_area.work_files_table,
                               FileTableModel(self.prep_list_for_table(self.work_files, basename=True),
                                              [my_files_label]))
@@ -222,7 +221,7 @@ class FilesPanel(QtWidgets.QWidget):
             if ingest_source_location.endswith(dialog.combo_box.currentText()):
                 CreateProductionData(self.current_location, json=False)
         else:
-            from apps.lumbermill.elements import asset_creator
+            from cgl.apps.lumbermill.elements import asset_creator
             if 'asset' in self.current_location:
                 task_mode = True
             else:
@@ -685,22 +684,26 @@ class FilesPanel(QtWidgets.QWidget):
         self.render_files_widget.set_item_model(model)
 
     def load_render_files(self, widget):
-        
-        logging.debug('loading render files')
+        print('loading render files')
         widget.files_area.work_files_table.show()
+        print('work files table', widget.files_area.work_files_table)
         render_table = widget.files_area.export_files_table
+        print('render table', render_table)
         current = PathObject(self.version_obj)
         if widget.files_area.work_files_table.user:
+            print(1)
             renders = current.copy(context='render', task=widget.task, user=widget.files_area.work_files_table.user,
                                    version=widget.files_area.work_files_table.version,
                                    resolution=widget.files_area.work_files_table.resolution,
                                    filename='*')
             files_ = glob.glob(renders.path_root)
             if current.user == 'publish':
+                print(2)
                 render_files_label = 'Published Files'
                 widget.files_area.publish_button.hide()
                 widget.files_area.new_version_button.hide()
             else:
+                print(3)
                 widget.files_area.new_version_button.show()
                 widget.files_area.review_button.show()
                 widget.files_area.publish_button.show()
@@ -708,7 +711,8 @@ class FilesPanel(QtWidgets.QWidget):
             logging.debug('Published Files for %s' % current.path_root)
             data_ = self.prep_list_for_table(files_, basename=True, length=1)
             model = FilesModel(data_, [render_files_label])
-            widget.setup(render_table, model)
+            print('setting up model')
+            widget.setup(render_table, model)  # this is somehow replacing the other table for source when there are no files
             render_table.show()
             widget.files_area.open_button.show()
             widget.empty_state.hide()
@@ -737,6 +741,7 @@ class FilesPanel(QtWidgets.QWidget):
         """
         if not list_:
             return
+            # return [['No Files Found']]
         list_.sort()
 
         output_ = []

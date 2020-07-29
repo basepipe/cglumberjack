@@ -354,8 +354,6 @@ def launch_lumber_watch(new_window=False):
 
 def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=True,
                 command_name='cgl_execute', do_system=False, new_window=False, **kwargs):
-    # TODO - we need to make sure this command is used everywhere we're passing commands if at all possible.
-
     run_dict = {'command': command,
                 'command_name': command_name,
                 'start_time': time.time(),
@@ -391,11 +389,6 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         run_dict['end_time'] = time.time()
         run_dict['printout'] = output_values
         return run_dict
-        # rc = p.poll()
-        # if return_output:
-        #     return output_values
-        # else:
-        #     return rc
     elif methodology == 'deadline':
         # TODO - add deadline integration
         print('deadline not yet supported')
@@ -477,6 +470,17 @@ def write_to_cgl_data(process_info):
         print('%s already exists in %s dict' % (process_info['job_id'], user))
         return
     save_json(cgl_data, data)
+
+
+def has_approved_frame_padding(filename):
+    hashes = re.compile("#+")
+    m = re.search(hashes, filename)
+    this_padding = int(len(m.group()))
+    studio_padding = int(CONFIG['default']['padding'])
+    if this_padding == studio_padding:
+        return 0
+    else:
+        return [this_padding, studio_padding]
 
 
 def edit_cgl_data(job_id, key, value=None, user=None):

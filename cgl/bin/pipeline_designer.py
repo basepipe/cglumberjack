@@ -2,7 +2,7 @@ import cgl.core.startup as startup
 
 
 def load_pipeline_designer(app_, splash_):
-    from apps.pipeline.designer import Designer
+    from cgl.apps.pipeline.designer import Designer
     mw = Designer(type_='preflights')
     if mw:
         # mw = Designer(type_='menus')

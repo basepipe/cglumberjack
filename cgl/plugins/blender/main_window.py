@@ -516,7 +516,7 @@ class CGLumberjack(VFXWindow):
         pm = CONFIG['account_info']['project_management']
         def_schema = CONFIG['project_management'][pm]['api']['default_schema']
         schema = CONFIG['project_management'][pm]['tasks'][def_schema]
-        from apps.pipeline.designer import Designer
+        from cgl.apps.pipeline.designer import Designer
         dialog = Designer(self, pm_tasks=schema)
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)

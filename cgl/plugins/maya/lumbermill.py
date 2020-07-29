@@ -1,7 +1,7 @@
 import os
 import glob
 from cgl.plugins.Qt import QtCore, QtWidgets
-from apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
+from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 from cgl.core.utils.general import current_user
 import logging
 from cgl.core.utils.general import create_file_dirs

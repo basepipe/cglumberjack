@@ -42,6 +42,10 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
     :return:
     """
     from cgl.core.path import Sequence, PathObject
+
+    if not os.path.exists(PATHS['magick']):
+        logging.error('Imagemagick path not found:{}'.format(PATHS['magick']))
+        return
     if ' ' in input_sequence:
         input_sequence, frange = input_sequence.split(' ')
     input_sequence.replace('/', '\\')
