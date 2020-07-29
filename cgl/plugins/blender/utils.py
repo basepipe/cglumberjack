@@ -199,7 +199,7 @@ def write_layout(outFile = None):
     from pathlib import Path
     import json
     if outFile == None:
-        outFile = scene_object().copy(ext = 'json').path_root
+        outFile = scene_object().copy(ext='json', task='lay', user='publish').path_root
     data = {}
 
     for obj in bpy.data.objects:
@@ -235,7 +235,14 @@ def read_layout(outFile = None ):
     import bpy
 
     if outFile == None:
-        outFile = scene_object().copy(ext='json').path_root
+
+        outFileObject = scene_object().copy(ext='json', task='lay', user='publish').latest_version()
+        outFileObject.set_attr(filename='%s_%s_%s.%s' % (outFileObject.seq,
+                                                       outFileObject.shot,
+                                                       outFileObject.task,
+                                                       'json'
+                                                       ))
+        outFile= outFileObject.path_root
     #outFile = scene_object().path_root.replace(scene_object().ext, 'json')
 
     with open(outFile) as json_file:
@@ -266,6 +273,7 @@ def read_layout(outFile = None ):
                 obj.scale = (transform_data[6],transform_data[7],transform_data[8])
 
     bpy.ops.file.make_paths_relative()
+
 
 
 

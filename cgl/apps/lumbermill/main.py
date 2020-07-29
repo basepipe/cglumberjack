@@ -623,7 +623,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             logging.debug('updating_location %s %s' % (selection.path_root, selection.data))
             self.update_location(data=selection.data)
         else:
+
             dialog = InputDialog(title='Preview Exists', message='Review Exists, version up to create new one')
+
             dialog.exec_()
 
     @staticmethod
