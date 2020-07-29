@@ -2,7 +2,7 @@
 import os
 import logging
 from cgl.core.config import app_config, UserConfig
-from cgl.core.path import PathObject, CreateProductionData, hd_proxy_exists
+from cgl.core.path import PathObject, CreateProductionData
 
 CONFIG = app_config()
 PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
