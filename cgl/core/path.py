@@ -1351,9 +1351,8 @@ class Sequence(object):
         current_sel = self.sequence
         frange = re.search(regex, current_sel)
         if frange:
-            print(frange)
-            sframe = frange.group(0).split('-')[0]
-            eframe = frange.group(0).split('-')[1]
+            sframe,eframe = frange.group(0).split('-')
+
         else:
             # This requires the # form of the sequence
             glob_string = ''
