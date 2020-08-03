@@ -894,16 +894,18 @@ class PathObject(object):
         by uploading the file to the project management software and opening the resulting url in a web browser.
         :return:
         """
+        job_id = None
         if not os.path.exists(self.preview_path):
-            # This entire chunk could probably be put into "path_object"
+            # This entire chunk could probably be put into "path_objec
             if self.file_type == 'sequence':
                 # Step 0) Create the HD Proxy if it doesn't exist.
                 if not hd_proxy_exists(self.hd_proxy_path, self.frame_range):
                     print("Making Preview Media")
                     review_res = CONFIG['default']['resolution']['video_review']
-                    proxy_info = self.make_proxy(resolution=review_res, ext='jpg', job_id=None)
+                    proxy_info = self.make_proxy(resolution=review_res, ext='jpg', job_id=job_id)
                     job_id = proxy_info['job_id']
             # Step 2) Create the web preview & Thumbnail with .make_preview()
+
             job_info = self.make_preview(job_id=job_id)
             job_id = job_info['job_id']
             # Step 3) Upload to Project Management Software
