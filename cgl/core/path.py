@@ -1353,7 +1353,8 @@ class Sequence(object):
         current_sel = self.sequence
         frange = re.search(regex, current_sel)
         if frange:
-            sframe, eframe = frange[0].split('-')
+            sframe,eframe = frange.group(0).split('-')
+
         else:
             # This requires the # form of the sequence
             glob_string = ''

@@ -6,7 +6,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/cgl/plugins/project_management/shotgun/shotgun_api3" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.8 (cglumberjack)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.8" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

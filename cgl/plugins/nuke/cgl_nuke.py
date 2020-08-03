@@ -821,7 +821,7 @@ def set_comp_default_settings():
         readNode = nuke.selectedNode()
 
     selectedFormat = readNode['format'].value()
-    nuke.root()['format'].setValue(selectedFormat)
+
 
     firstFrame = int(readNode.knob('first').getValue())
     lastFrame = int(readNode.knob('last').getValue())
@@ -851,8 +851,10 @@ def set_comp_default_settings():
     nuke.root()['proxySetting'].setValue('if nearest')
     readNode['proxy_format'].setValue('DEFAULT_PROXY')
     nuke.root()['proxySetting'].setValue('if nearest')
+    nuke.root()['format'].setValue(selectedFormat)
+    nuke.frame(firstFrame)
 
-    # nuke.alert("Comp Size, duration and proxy set")
+    nuke.alert("Comp Size, duration and proxy set")
 
 
 
