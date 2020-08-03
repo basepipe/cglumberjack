@@ -317,13 +317,13 @@ def create_turntable(length=250, task=False):
     :param task:
     :return:
     """
-    distanceFromObject = objectDimensions[0] * -4
+
 
     selectedObject = bpy.context.object
     objectDimensions = selectedObject.dimensions
-
+    distanceFromObject = objectDimensions[0] * -4
     height = objectDimensions[2] / 2
-    height = objectDimensions[2] / 2
+    lenght = 250
 
     #Creates locator top parent camera to
     locator = bpy.data.objects.new('TurnTableLocator', None)
