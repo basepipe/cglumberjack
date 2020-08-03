@@ -309,7 +309,7 @@ def export_selected(to_path):
         bpy.ops.export_scene.blend(filepath=to_path, use_selection=True)
 
 
-def create_turntable(length=180, task=False):
+def create_turntable(length=250, task=False):
     """
     Creates a Turntable of length around the selected object, or around a "task" object.
     This is specific to 3d applications.
@@ -317,6 +317,33 @@ def create_turntable(length=180, task=False):
     :param task:
     :return:
     """
+
+
+    selectedObject = bpy.context.object
+    objectDimensions = selectedObject.dimensions
+    distanceFromObject = objectDimensions[0] * -4
+    height = objectDimensions[2] / 2
+    lenght = 250
+
+    #Creates locator top parent camera to
+    locator = bpy.data.objects.new('TurnTableLocator', None)
+    locator.empty_display_size = 2
+    locator.empty_display_type = 'PLAIN_AXES'
+    bpy.context.scene.collection.objects.link(locator)
+    #Create camera
+    turnTableCamObj = bpy.data.cameras.new('turnTable')
+    turnTable = bpy.data.objects.new("TurnTableCam", turnTableCamObj)
+    bpy.context.scene.collection.objects.link(turnTable)
+    turnTable.parent = locator
+
+    turnTable.location = (0, distanceFromObject, height)
+    turnTable.rotation_euler = (1.5707963705062866, 0.0, 0.0)
+    #Animates TurnTable
+    locator.keyframe_insert("rotation_euler", frame=1)
+    locator.rotation_euler = (0, 0, 6.2831854820251465)
+    locator.keyframe_insert("rotation_euler", frame=lenght)
+
+    locator.animation_data.action.fcurves[2].keyframe_points[0].interpolation = 'LINEAR'
     pass
 
 
@@ -325,6 +352,13 @@ def clean_turntable():
     cleans up the turntable
     :return:
     """
+    objs = bpy.data.objects
+    remove = ['TurnTableLocator', 'TurnTableCam']
+
+    for removeName in remove:
+        for obj in objs:
+            if obj.name == removeName:
+                objs.remove(objs[obj.name], do_unlink=True)
     pass
 
 
