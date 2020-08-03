@@ -78,7 +78,7 @@ class CGLNukeWidget(QtWidgets.QDialog):
 
 class CGLNuke(CGLumberjack):
     def __init__(self, parent=None, path=None, user_info=None):
-        CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path)
+        CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path,sync_enabled=False)
         print('CGLNuke path is %s' % path)
         self.setCentralWidget(NukeBrowserWidget(self, show_import=True, path=path))
 
