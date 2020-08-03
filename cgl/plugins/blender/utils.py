@@ -275,7 +275,61 @@ def read_layout(outFile = None ):
     bpy.ops.file.make_paths_relative()
 
 
+def rename_materials(selection = None):
+    import bpy
+    """
+    Sequentially renames  materials from given object name if empty , renamed from selected object
+    :param name:
+    """
+    if selection == None:
+        selection = bpy.context.selected_objects
 
+
+        for object in selection:
+            for material_slot in object.material_slots:
+                material_slot.material.name = object.name
+                print(object.name, material_slot.name)
+
+    if selection:
+        selection = [bpy.data.objects[selection]]
+        for object in selection:
+            for material_slot in object.material_slots:
+                material_slot.material.name = object.name
+                print(object.name, material_slot.name)
+
+
+def setup_preview_viewport_display(color=None, selection=None):
+    import bpy
+    """
+    set up the default viewport display color  diffuse_color on materials
+    :param color: Value of the color  of the parent menu  FloatProperty 4
+    :param selection:
+    """
+    if selection == None:
+        selection = bpy.context.selected_objects
+
+
+    for object in selection:
+        for material_slot in object.material_slots:
+            material = material_slot.material
+            node_tree = material.node_tree.nodes
+            if color == None:
+                for node in node_tree:
+                    if node.type == 'OUTPUT_MATERIAL':
+                        for input in node.inputs:
+                            if len(input.links) != 0:
+                                input_surface = input.links[0].from_node
+                                color_input = input_surface.inputs[0]
+                                try:
+                                    color_input_nested = color_input.links[0].from_node
+                                    color_input.default_value = color_input_nested.outputs[0].default_value
+                                except(IndexError):
+                                    print('no color inputs found. Using Default')
+                                    pass
+
+                                material.diffuse_color = color_input.default_value
+            else:
+                material_slot.material.diffuse_color = color
 
 
 if __name__ == '__main__':

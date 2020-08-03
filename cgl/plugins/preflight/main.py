@@ -258,8 +258,10 @@ class Preflight(QtWidgets.QWidget):
         # refresh the table with self.table_data
         self.preflights.set_item_model(PreflightModel(self.table_data,
                                                       ["Check", "Status", "Path", "Order", "Required"]))
+        self.preflights.sortByColumn(3, QtCore.Qt.SortOrder(0))
         self.preflights.hideColumn(2)
         self.preflights.hideColumn(3)
+        self.preflights.setSortingEnabled(False)
 
     def run_all_clicked(self):
         # To Do: load waiting gif while function operates
