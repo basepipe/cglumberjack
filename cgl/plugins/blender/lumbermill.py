@@ -309,7 +309,7 @@ def export_selected(to_path):
         bpy.ops.export_scene.blend(filepath=to_path, use_selection=True)
 
 
-def create_turntable(length=250, task=False):
+def create_turntable(length=250, task=False, startFrame = 1001):
     """
     Creates a Turntable of length around the selected object, or around a "task" object.
     This is specific to 3d applications.
@@ -323,8 +323,7 @@ def create_turntable(length=250, task=False):
     objectDimensions = selectedObject.dimensions
     distanceFromObject = objectDimensions[0] * -4
     height = objectDimensions[2] / 2
-    lenght = 250
-
+    endFrame = startFrame - 1 + length
     #Creates locator top parent camera to
     locator = bpy.data.objects.new('TurnTableLocator', None)
     locator.empty_display_size = 2
@@ -339,11 +338,13 @@ def create_turntable(length=250, task=False):
     turnTable.location = (0, distanceFromObject, height)
     turnTable.rotation_euler = (1.5707963705062866, 0.0, 0.0)
     #Animates TurnTable
-    locator.keyframe_insert("rotation_euler", frame=1)
+    locator.keyframe_insert("rotation_euler", frame=startFrame)
     locator.rotation_euler = (0, 0, 6.2831854820251465)
-    locator.keyframe_insert("rotation_euler", frame=lenght)
+    locator.keyframe_insert("rotation_euler", frame=endFrame)
 
     locator.animation_data.action.fcurves[2].keyframe_points[0].interpolation = 'LINEAR'
+    bpy.context.scene.frame_start = startFrame
+    bpy.context.scene.frame_end = length
     pass
 
 
