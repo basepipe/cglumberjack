@@ -601,7 +601,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             sequence_path = self.path_widget.path_line_edit.text()
             sequence = cglpath.Sequence(sequence_path)
             file_seq = sequence.num_sequence.split()[0]
-            command = ('{} {}'.format(CONFIG['paths']['ffplay'], file_seq))
+            command = ('{} -start_number {} {}'.format(CONFIG['paths']['ffplay'],sequence.start_frame, file_seq))
             os.system(command)
             logging.info('Nothing set for sequences yet')
         else:

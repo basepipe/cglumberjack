@@ -1381,7 +1381,7 @@ class Sequence(object):
             self.frame_range = '%s-%s' % (sframe, eframe)
             self.start_frame = sframe
             self.end_frame = eframe
-            self.padding = len(self.start_frame)
+            self.padding = len(self.start_frame) - 1
             self.hash = '#'*self.padding
             if self.padding < 10:
                 self.num = '%0'+str(self.padding)+'d'
