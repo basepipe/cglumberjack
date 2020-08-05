@@ -1382,7 +1382,7 @@ class Sequence(object):
             self.start_frame = sframe
             self.end_frame = eframe
             #print(self.start_frame)
-            self.padding =len(str(int(self.start_frame)))
+            self.padding =len(self.start_frame.replace(' ',''))
             self.hash = '#'*self.padding
             if self.padding < 10:
                 self.num = '%0'+str(self.padding)+'d'
