@@ -344,7 +344,7 @@ def create_turntable(length=250, task=False, startFrame = 1001):
 
     locator.animation_data.action.fcurves[2].keyframe_points[0].interpolation = 'LINEAR'
     bpy.context.scene.frame_start = startFrame
-    bpy.context.scene.frame_end = length
+    bpy.context.scene.frame_end = endFrame
     pass
 
 
