@@ -309,7 +309,7 @@ def export_selected(to_path):
         bpy.ops.export_scene.blend(filepath=to_path, use_selection=True)
 
 
-def create_turntable(length=250, task=False, startFrame = 1001):
+def create_turntable(length=250, task=False, startFrame =1):
     """
     Creates a Turntable of length around the selected object, or around a "task" object.
     This is specific to 3d applications.
