@@ -1353,7 +1353,7 @@ class Sequence(object):
         current_sel = self.sequence
         frange = re.search(regex, current_sel)
         if frange:
-            sframe,eframe = frange.group(0).split('-')
+            sframe,eframe = frange.group(0).split('-').replace(' ','')
 
         else:
             # This requires the # form of the sequence
@@ -1385,7 +1385,7 @@ class Sequence(object):
             self.start_frame = sframe
             self.end_frame = eframe
             #print(self.start_frame)
-            self.padding =len(self.start_frame.replace(' ',''))
+            self.padding =len(self.start_frame)
             self.hash = '#'*self.padding
             if self.padding < 10:
                 self.num = '%0'+str(self.padding)+'d'
