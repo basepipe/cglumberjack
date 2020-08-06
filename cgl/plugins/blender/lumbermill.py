@@ -420,7 +420,13 @@ def render():
         bpy.context.scene.render.image_settings.file_format = 'JPEG'
         # bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
         bpy.context.scene.render.filepath = file_out
-        bpy.ops.render.opengl(animation=True, use_viewport=True)
+        context = bpy.context.screen.areas
+        for area in context:
+            if area.type == 'VIEW_3D':
+                area.type = 'IMAGE_EDITOR'
+                area.spaces.active.image = bpy.data.images['Render Result']
+
+        bpy.ops.render.opengl(animation=True, view_context=True)
 
     else:
         bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR'
