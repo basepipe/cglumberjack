@@ -294,7 +294,6 @@ class NavigationWidget(QtWidgets.QFrame):
             self.path_object = self.path_object.copy(seq=None, shot=None, ingest_source=None, resolution='', version='',
                                                      user=None, scope='IO')
             self.location_changed.emit(self.path_object)
-            print('Changing Location to {}'.format(self.path_object.path_root))
         else:
             logging.debug('Please Choose a Company and a Project before pushing the ingest button')
 
@@ -452,7 +451,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         logging.debug('updating the render location')
 
     def update_location(self, data):
-        print('updating location to {}'.format(data.path_root))
         self.nav_widget.search_box.setText('')
         # TODO - if we're in the project set the search box to the default project
         # TODO - if we're in the companies set the search box to the default company
@@ -477,10 +475,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         shot_attrs = ['shot', 'asset']
         version_template = path_object.version_template
         del version_template[0:2]
-        print('DO_IOP', DO_IOP)
         if DO_IOP:
             if path_object.scope == 'IO':
-                print('found IO scope')
                 if path_object.version:
                     if not self.panel:
                         self.panel = IoP.IOPanel(parent=self, path_object=path_object)
