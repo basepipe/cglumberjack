@@ -212,11 +212,6 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
                 data_to.collections = [c for c in data_from.collections if c.startswith(collection_name)]
                 # for obj in data_to.groups[0].objects:
                 #     bpy.context.scene.objects.link(obj)
-                if linked:
-                    obj = bpy.data.objects.new(collection_name, None)
-                    obj.instance_type = 'COLLECTION'
-                    obj.instance_collection = bpy.data.collections[collection_name]
-                    bpy.context.collection.objects.link(obj)
 
         if type == 'GROUP':
             print('group Selected')
@@ -234,6 +229,13 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
                 # data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
                 data_to.objects = [c for c in data_from.objects if c.startswith(collection_name)]
 
+        if linked:
+            obj = bpy.data.objects.new(collection_name, None)
+            obj.instance_type = 'COLLECTION'
+            obj.instance_collection = bpy.data.collections[collection_name]
+            bpy.context.collection.objects.link(obj)
+            bpy.ops.object.select_all(action='DESELECT')
+            bpy.data.objects['TELEFONO'].select_set(True)
 
 def open_file(filepath):
     """
