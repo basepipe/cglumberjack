@@ -202,17 +202,36 @@ def import_file(filepath='', namespace=None, collection_name=None, append = True
             collection = PathObject(filepath)
             collection_name = collection.asset
         # append, set to true to keep the link to the original file
+
+
         if type == 'COLLECTION':
             print('collection selected')
             with bpy.data.libraries.load(filepath, link=append) as (data_from, data_to):
                 data_to.collections = [c for c in data_from.collections if c.startswith(collection_name)]
                 # for obj in data_to.groups[0].objects:
                 #     bpy.context.scene.objects.link(obj)
+                if linked == True:
+                    obj = bpy.data.objects.new(collection_name, None)
+
+                    obj.instance_type = 'COLLECTION'
+                    obj.instance_collection = bpy.data.collections[collection_name]
+                    bpy.context.collection.objects.link(obj)
 
         if type == 'GROUP':
             print('group Selected')
             with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
                 data_to.node_groups = data_from.node_groups
+
+        if type == 'ANIM':
+            print('anim Import selected')
+            with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
+                data_to.actions = data_from.actions
+        if type == 'CAMERA':
+            print('Camera Import selected')
+            with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
+                #data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
+                data_to.objects = [c for c in data_from.objects if c.startswith(collection_name)]
+
 
         # link collection to scene collection
 
@@ -220,13 +239,6 @@ def import_file(filepath='', namespace=None, collection_name=None, append = True
         #for coll in data_to.collections:
             #if coll is not None:
                 #bpy.data.scenes['Scene'].collection.children.link(coll)
-        if linked == True:
-
-            obj = bpy.data.objects.new(collection_name, None)
-
-            obj.instance_type = 'COLLECTION'
-            obj.instance_collection = bpy.data.collections[collection_name]
-            bpy.context.collection.objects.link(obj)
 
 
         # bpy.ops.wm.append(directory='{}/Collection'.format(filepath),
