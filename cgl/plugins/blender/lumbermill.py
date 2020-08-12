@@ -183,7 +183,7 @@ def version_up(vtype='minor'):
     return save_file_as(new_version.path_root)
 
 
-def import_file(filepath='', namespace=None, collection_name=None, append=True, linked=True, type='COLLECTION'):
+def import_file(filepath='', namespace=None, collection_name=None, append=True, linked=True, type='COLLECTION',snap_to_cursor= False):
     """
     imports file into a scene.
     :param type: 'COLLECTION' , 'GROUP', 'ANIM' , 'CAMERA'
@@ -235,10 +235,15 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
             obj.instance_collection = bpy.data.collections[collection_name]
             bpy.context.collection.objects.link(obj)
             bpy.ops.object.select_all(action='DESELECT')
-            bpy.data.objects['TELEFONO'].select_set(True)
+            obj.select_set(True)
+
+            if snap_to_cursor:
+                obj.location = bpy.context.scene.cursor.location
+
+
 
 def open_file(filepath):
-    """
+    """save
     Open File: filepath
     :param filepath:
     :return:
@@ -328,11 +333,13 @@ def create_turntable(length=250, task=False, startFrame=1):
     distanceFromObject = objectDimensions[0] * -4
     height = objectDimensions[2] / 2
     endFrame = startFrame - 1 + length
+
     # Creates locator top parent camera to
     locator = bpy.data.objects.new('TurnTableLocator', None)
     locator.empty_display_size = 2
     locator.empty_display_type = 'PLAIN_AXES'
     bpy.context.scene.collection.objects.link(locator)
+
     # Create camera
     turnTableCamObj = bpy.data.cameras.new('turnTable')
     turnTable = bpy.data.objects.new("TurnTableCam", turnTableCamObj)
@@ -341,6 +348,7 @@ def create_turntable(length=250, task=False, startFrame=1):
 
     turnTable.location = (0, distanceFromObject, height)
     turnTable.rotation_euler = (1.5707963705062866, 0.0, 0.0)
+
     # Animates TurnTable
     locator.keyframe_insert("rotation_euler", frame=startFrame)
     locator.rotation_euler = (0, 0, 6.2831854820251465)
