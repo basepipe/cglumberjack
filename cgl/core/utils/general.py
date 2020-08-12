@@ -477,12 +477,13 @@ def write_to_cgl_data(process_info):
 def has_approved_frame_padding(filename):
     hashes = re.compile("#+")
     m = re.search(hashes, filename)
-    this_padding = int(len(m.group()))
-    studio_padding = int(CONFIG['default']['padding'])
-    if this_padding == studio_padding:
-        return 0
-    else:
-        return [this_padding, studio_padding]
+    if m:
+        this_padding = int(len(m.group()))
+        studio_padding = int(CONFIG['default']['padding'])
+        if this_padding == studio_padding:
+            return 0
+        else:
+            return [this_padding, studio_padding]
 
 
 def edit_cgl_data(job_id, key, value=None, user=None):

@@ -201,13 +201,24 @@ class Designer(LJDialog):
             menu_dict = self.load_json(self.menu_path)
         if menu_dict:
             if self.software in menu_dict:
-                for i in range(len(menu_dict[self.software])+1):
+                if isinstance(menu_dict[self.software], dict):
+                    for i in range(len(menu_dict[self.software])+1):
+                        for menu in menu_dict[self.software]:
+                            if i == menu_dict[self.software][menu]['order']:
+                                buttons = CGLMenu(parent=self, software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
+                                                  menu_path=self.menu_path, menu_type=self.type)
+                                buttons.save_clicked.connect(self.on_save_clicked)
+                                self.menus.addTab(buttons, menu)
+                elif isinstance(menu_dict[self.software], list):
                     for menu in menu_dict[self.software]:
-                        if i == menu_dict[self.software][menu]['order']:
-                            buttons = CGLMenu(parent=self, software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
-                                              menu_path=self.menu_path, menu_type=self.type)
-                            buttons.save_clicked.connect(self.on_save_clicked)
-                            self.menus.addTab(buttons, menu)
+                        menu_name = menu['name']
+                        # buttons = menu['buttons']
+                        buttons = CGLMenu(parent=self, software=self.software, menu_name=menu_name,
+                                          menu=menu,
+                                          menu_path=self.menu_path, menu_type=self.type)
+                        buttons.save_clicked.connect(self.on_save_clicked)
+                        self.menus.addTab(buttons, menu_name)
+
             else:
                 print('%s not found in %s' % (self.softwre, self.menu_path))
 
@@ -227,17 +238,18 @@ class Designer(LJDialog):
     def save_menus(self):
         # TODO - if you change the label this actually deletes stuff.
         menu_dict = {}
+        menu_array = []
         for mi in range(self.menus.count()):
             menu_name = self.menus.tabText(mi)
             menu = self.menus.widget(mi)
             if self.software == 'blender':
                 from cgl.plugins.blender.utils import add_buttons_to_menu
-                print(menu_name)
                 add_buttons_to_menu(menu_name)
-            menu_dict[menu_name] = {}
-            menu_dict[menu_name]['order'] = mi+1
+            mi_dict = {"name": menu_name,
+                       "buttons": []}
+            # menu_dict[menu_name]['order'] = mi+1
             for bi in range(menu.buttons_tab_widget.count()):
-
+                button_dict = {}
                 button_widget = menu.buttons_tab_widget.widget(bi)
                 if button_widget.name_line_edit.text():
                     button_name = button_widget.name_line_edit.text()
@@ -246,35 +258,40 @@ class Designer(LJDialog):
                     print('setting name to module name: %s' % split[-1].split('.run()')[0])
                     button_name = split[-1].split('.run()')[0]
                 if self.type == 'preflights':
-                    menu_dict[menu_name][button_name] = {
-                        'module': button_widget.command_line_edit.text(),
-                        'label': button_widget.label_line_edit.text(),
-                        'order': bi + 1,
-                        'required': button_widget.required_line_edit.text(),
-                        'name': button_name
-                    }
+                    button_dict = {
+                                        'module': button_widget.command_line_edit.text(),
+                                        'label': button_widget.label_line_edit.text(),
+                                        'order': bi + 1,
+                                        'required': button_widget.required_line_edit.text(),
+                                        'name': button_name
+                                    }
                 elif self.type == 'shelves':
                     if button_widget.icon_path_line_edit.text():
                         icon_text = button_widget.icon_path_line_edit.text()
                     else:
                         icon_text = ""
-                    menu_dict[menu_name][button_name] = {
-                                                         'module': button_widget.command_line_edit.text(),
-                                                         'label': button_widget.label_line_edit.text(),
-                                                         'order': bi + 1,
-                                                         'icon': icon_text,
-                                                         'name': button_name
-                                                        }
+                    button_dict = {
+                                     'module': button_widget.command_line_edit.text(),
+                                     'label': button_widget.label_line_edit.text(),
+                                     'order': bi + 1,
+                                     'icon': icon_text,
+                                     'name': button_name
+                                    }
                 else:
-                    menu_dict[menu_name][button_name] = {
-                                                         'module': button_widget.command_line_edit.text(),
-                                                         'label': button_widget.label_line_edit.text(),
-                                                         'order': bi+1,
-                                                         'name': button_name
-                                                         }
-
-                self.save_code(menu_name, button_widget)
-        json_object = {self.software: menu_dict}
+                    button_dict = {
+                                     'module': button_widget.command_line_edit.text(),
+                                     'label': button_widget.label_line_edit.text(),
+                                     'order': bi+1,
+                                     'name': button_name
+                                     }
+                mi_dict['buttons'].append(button_dict)
+                # print(mi_dict)
+            menu_array.append(mi_dict)
+        if self.software.lower() == 'unreal':
+            print('Unreal Engine')
+        else:
+            self.save_code(menu_name, button_widget)
+        json_object = {self.software: menu_array}
         print('saving json', self.menu_path)
         self.save_json(self.menu_path, json_object)
 
