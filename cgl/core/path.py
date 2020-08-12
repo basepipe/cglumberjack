@@ -1354,7 +1354,7 @@ class Sequence(object):
         frange = re.search(regex, current_sel)
         if frange:
             sframe,eframe = frange.group(0).split('-')
-
+            sframe = sframe.replace(' ','')
         else:
             # This requires the # form of the sequence
             glob_string = ''

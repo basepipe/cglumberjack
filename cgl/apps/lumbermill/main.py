@@ -174,7 +174,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.projects_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
         self.current_location_line_edit = QtWidgets.QLineEdit()
         self.current_location_line_edit.setReadOnly(True)
-        self.current_location_line_edit.setMinimumHeight(ICON_WIDTH*1.28)
+        self.current_location_line_edit.setMinimumHeight(ICON_WIDTH * 1.28)
         self.current_location_line_edit.hide()
         self.search_box = LJSearchEdit(self)
 
@@ -203,7 +203,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.set_text(self.path_object.path_root)
 
     def eventFilter(self, widget, event):
-        if widget == self.sync_button and isinstance(event, QtGui.QMouseEvent) and event.buttons() & QtCore.Qt.LeftButton:
+        if widget == self.sync_button and isinstance(event,QtGui.QMouseEvent) and event.buttons() & QtCore.Qt.LeftButton:
             self.leftClicked(event.pos())
             return True
         return False
@@ -229,17 +229,17 @@ class NavigationWidget(QtWidgets.QFrame):
         self.current_location_line_edit.setText(text.replace('\\', '/'))
         if self.current_location_line_edit.text():
             self.path_object = cglpath.PathObject(self.current_location_line_edit.text())
-            
+
     def show_company(self):
         self.companies_button.show()
         self.projects_button.hide()
         self.my_tasks_button.hide()
-        
+
     def show_projects(self):
         self.companies_button.show()
         self.projects_button.show()
         self.my_tasks_button.hide()
-        
+
     def show_production(self):
         self.companies_button.show()
         self.projects_button.show()
@@ -250,7 +250,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.my_tasks_button.hide()
         self.companies_button.hide()
         self.projects_button.hide()
-            
+
     def update_buttons(self, path_object=None):
         if not path_object:
             if self.path_object:
@@ -498,7 +498,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if path_object.data['my_tasks']:
                     go_ahead = True
             if go_ahead:
-                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box,
+                self.panel = ProductionPanel(parent=self, path_object=path_object,
+                                             search_box=self.nav_widget.search_box,
                                              my_tasks=True)
                 if self.panel:
                     if self.panel.load_tasks():
@@ -527,7 +528,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.project == '*':
                 self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box)
             else:
-                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProductionPanel(parent=self, path_object=path_object,
+                                             search_box=self.nav_widget.search_box)
         if last == 'scope':
             if path_object.scope == '*':
                 self.panel = ScopePanel(path_object=path_object)
@@ -535,16 +537,19 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if DO_IOP:
                     self.panel = IoP.IOPanel(path_object=path_object)
             else:
-                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProductionPanel(parent=self, path_object=path_object,
+                                             search_box=self.nav_widget.search_box)
         elif last in shot_attrs:
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
-                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProductionPanel(parent=self, path_object=path_object,
+                                             search_box=self.nav_widget.search_box)
             else:
                 self.panel = TaskPanel(path_object=path_object, element='task')
                 self.panel.add_button.connect(self.add_task)
         elif last in seq_attrs:
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
-                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProductionPanel(parent=self, path_object=path_object,
+                                             search_box=self.nav_widget.search_box)
         elif last == 'ingest_source':
             if DO_IOP:
                 self.panel = IoP.IOPanel(path_object=path_object)
@@ -601,7 +606,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             sequence_path = self.path_widget.path_line_edit.text()
             sequence = cglpath.Sequence(sequence_path)
             file_seq = sequence.num_sequence.split()[0]
-            command = ('{} {}'.format(CONFIG['paths']['ffplay'], file_seq))
+            command = ('{} -start_number {} {}'.format(CONFIG['paths']['ffplay'], sequence.start_frame, file_seq))
             os.system(command)
             logging.info('Nothing set for sequences yet')
         else:
@@ -733,8 +738,6 @@ class CGLumberjack(LJMainWindow):
         change_to_smedge = QtWidgets.QAction('Set to Smedge', self)
         change_to_deadline = QtWidgets.QAction('Set to Deadline', self)
         # fix_paths = QtWidgets.QAction('Fix File Paths', self)
-
-
 
         # add actions to the file menu
         tools_menu.addAction(settings)
