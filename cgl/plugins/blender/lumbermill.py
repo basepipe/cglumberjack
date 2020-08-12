@@ -126,7 +126,7 @@ class LumberObject(PathObject):
         self.set_render_paths()
 
     def set_render_paths(self):
-        padding = '#'*self.frame_padding
+        padding = '#' * self.frame_padding
         if self.task == 'anim':
             render_path = self.copy(context='render', ext='jpg', set_proper_filename=True).path_root
             self.render_path = render_path.replace('.jpg', '.{}.jpg'.format(padding))
@@ -184,9 +184,14 @@ def version_up(vtype='minor'):
     create_file_dirs(new_version.path_root)
     return save_file_as(new_version.path_root)
 
-def import_file(filepath='', namespace=None, collection_name=None, append = True, linked=True ,type = 'COLLECTION'):
+
+def import_file(filepath='', namespace=None, collection_name=None, append=True, linked=True, type='COLLECTION',snap_to_cursor= False):
     """
     imports file into a scene.
+    :param type: 'COLLECTION' , 'GROUP', 'ANIM' , 'CAMERA'
+    :param linked: when collection type instanced , links collection to scene
+    :param append: Imports file to scene
+    :param collection_name:
     :param filepath:
     :param namespace:
     :return:
@@ -202,6 +207,7 @@ def import_file(filepath='', namespace=None, collection_name=None, append = True
             collection = PathObject(filepath)
             collection_name = collection.asset
         # append, set to true to keep the link to the original file
+
         if type == 'COLLECTION':
             print('collection selected')
             with bpy.data.libraries.load(filepath, link=append) as (data_from, data_to):
@@ -214,23 +220,29 @@ def import_file(filepath='', namespace=None, collection_name=None, append = True
             with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
                 data_to.node_groups = data_from.node_groups
 
-        # link collection to scene collection
+        if type == 'ANIM':
+            print('anim Import selected')
+            with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
+                data_to.actions = data_from.actions
 
+        if type == 'CAMERA':
+            print('Camera Import selected')
+            with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
+                # data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
+                data_to.objects = [c for c in data_from.objects if c.startswith(collection_name)]
 
-        #for coll in data_to.collections:
-            #if coll is not None:
-                #bpy.data.scenes['Scene'].collection.children.link(coll)
-        if linked == True:
-
+        if linked:
             obj = bpy.data.objects.new(collection_name, None)
-
             obj.instance_type = 'COLLECTION'
             obj.instance_collection = bpy.data.collections[collection_name]
             bpy.context.collection.objects.link(obj)
+            bpy.ops.object.select_all(action='DESELECT')
+            obj.select_set(True)
+
+            if snap_to_cursor:
+                obj.location = bpy.context.scene.cursor.location
 
 
-        # bpy.ops.wm.append(directory='{}/Collection'.format(filepath),
-        #                   filepath=filepath, filename=collection_name, link=True, instance_collections=True)
 
 def open_file(filepath):
     """
@@ -309,7 +321,7 @@ def export_selected(to_path):
         bpy.ops.export_scene.blend(filepath=to_path, use_selection=True)
 
 
-def create_turntable(length=250, task=False):
+def create_turntable(length=250, task=False, startFrame=1):
     """
     Creates a Turntable of length around the selected object, or around a "task" object.
     This is specific to 3d applications.
@@ -318,19 +330,19 @@ def create_turntable(length=250, task=False):
     :return:
     """
 
-
     selectedObject = bpy.context.object
     objectDimensions = selectedObject.dimensions
     distanceFromObject = objectDimensions[0] * -4
     height = objectDimensions[2] / 2
-    lenght = 250
+    endFrame = startFrame - 1 + length
 
-    #Creates locator top parent camera to
+    # Creates locator top parent camera to
     locator = bpy.data.objects.new('TurnTableLocator', None)
     locator.empty_display_size = 2
     locator.empty_display_type = 'PLAIN_AXES'
     bpy.context.scene.collection.objects.link(locator)
-    #Create camera
+
+    # Create camera
     turnTableCamObj = bpy.data.cameras.new('turnTable')
     turnTable = bpy.data.objects.new("TurnTableCam", turnTableCamObj)
     bpy.context.scene.collection.objects.link(turnTable)
@@ -338,12 +350,15 @@ def create_turntable(length=250, task=False):
 
     turnTable.location = (0, distanceFromObject, height)
     turnTable.rotation_euler = (1.5707963705062866, 0.0, 0.0)
-    #Animates TurnTable
-    locator.keyframe_insert("rotation_euler", frame=1)
+
+    # Animates TurnTable
+    locator.keyframe_insert("rotation_euler", frame=startFrame)
     locator.rotation_euler = (0, 0, 6.2831854820251465)
-    locator.keyframe_insert("rotation_euler", frame=lenght)
+    locator.keyframe_insert("rotation_euler", frame=endFrame)
 
     locator.animation_data.action.fcurves[2].keyframe_points[0].interpolation = 'LINEAR'
+    bpy.context.scene.frame_start = startFrame
+    bpy.context.scene.frame_end = endFrame
     pass
 
 
@@ -357,7 +372,7 @@ def clean_turntable():
 
     for removeName in remove:
         for obj in objs:
-            if obj.name == removeName:
+            if removeName in obj.name:
                 objs.remove(objs[obj.name], do_unlink=True)
     pass
 
@@ -412,17 +427,16 @@ def render():
     renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
     :return:
     """
-    previewRenderTypes = ['anim','rig','mdl']
+    previewRenderTypes = ['anim', 'rig', 'mdl','lay']
     file_out = scene_object().render_path.split('#')[0]
 
-    if scene_object().task in previewRenderTypes :
+    if scene_object().task in previewRenderTypes:
         bpy.context.scene.render.image_settings.file_format = 'JPEG'
-        # bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
         bpy.context.scene.render.filepath = file_out
-        bpy.ops.render.opengl(animation=True)
+        bpy.ops.render.opengl('INVOKE_DEFAULT', animation=True, view_context=True)
 
     else:
-        bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR'
+        bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR_MULTILAYER'
         bpy.context.scene.render.filepath = file_out
         bpy.ops.render.render(animation=True, use_viewport=True)
 
@@ -434,7 +448,7 @@ def review():
     """
     from cgl.core.project import do_review
     padding = scene_object().frame_padding
-    render_files = glob.glob(scene_object().render_path.replace('#'*padding, '*'))
+    render_files = glob.glob(scene_object().render_path.replace('#' * padding, '*'))
     if render_files:
         path_object = LumberObject(scene_object().render_path)
         do_review(progress_bar=None, path_object=path_object)
