@@ -62,7 +62,6 @@ class CGLMenuButton(QtWidgets.QWidget):
                  menu_type='preflights'):
         # TODO - we need to choose better variable names, this is obviously "preflight" specific.
         QtWidgets.QWidget.__init__(self, parent)
-
         try:
             dialog = self.parent().parent().parent()
             self.software = dialog.software_combo.currentText()
@@ -218,16 +217,17 @@ class CGLMenuButton(QtWidgets.QWidget):
             self.create_default_button()
 
     def load_code_text(self):
-        code_path = get_button_path(self.software, self.preflight_name, self.name, menu_type=self.menu_type)
-        if os.path.exists(code_path):
-            try:
-                return open(code_path).read()
-            except IOError:
-                with open(code_path, 'w+') as y:
-                    y.write("")
-            return None
-        else:
-            print('%s does not exist' % code_path)
+        if self.software.lower() != 'unreal':
+            code_path = get_button_path(self.software, self.preflight_name, self.name, menu_type=self.menu_type)
+            if os.path.exists(code_path):
+                try:
+                    return open(code_path).read()
+                except IOError:
+                    with open(code_path, 'w+') as y:
+                        y.write("")
+                return None
+            else:
+                print('%s does not exist' % code_path)
 
     def create_default_button(self):
         create_button_file(software=self.software, menu_name=self.preflight_name, button_name=self.name,
@@ -404,29 +404,50 @@ class CGLMenu(QtWidgets.QWidget):
         self.save_clicked.emit()
 
     def get_command_text(self, button_name, menu_type):
-        return 'import cgl_tools.%s.%s.%s.%s as %s; %s.run()' % (self.software, menu_type, self.menu_name, button_name,
-                                                                 button_name, button_name)
+        if self.software.lower() == 'unreal':
+            return "/cgl_tools/{}/{}/{}/{}.uasset".format(self.software, menu_type, self.menu_name, button_name)
+        else:
+            return 'import cgl_tools.%s.%s.%s.%s as %s; %s.run()' % (self.software, menu_type, self.menu_name, button_name,
+                                                                     button_name, button_name)
 
     def default_preflight_text(self, preflight_name):
         return 'cgl_tools.%s.%s.%s.%s' % (self.software, self.menu_type, self.menu_name, preflight_name)
 
     def load_buttons(self):
-        for i in range(len(self.menu)):
-            for button in self.menu:
-                if button != 'order':
-                    if i == self.menu[button]['order']:
-                        button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
-                                                      preflight_step_name=button,
-                                                      attrs=self.menu[button], preflight_path=self.menu_path,
-                                                      menu_type=self.menu_type)
-                        if 'icon' in self.menu[button].keys():
-                            if self.menu[button]['icon']:
-                                icon = QtGui.QIcon(self.menu[button]['icon'])
-                                self.buttons_tab_widget.addTab(button_widget, icon, self.menu[button]['name'])
+
+        if 'buttons' in self.menu.keys():
+            print(self.menu_name)
+            print(self.menu_path)
+            for button in self.menu['buttons']:
+                button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
+                                              preflight_step_name=button['label'],
+                                              attrs=button, preflight_path=self.menu_path,
+                                              menu_type=self.menu_type)
+                if 'icon' in button.keys():
+                    if button['icon']:
+                        icon = QtGui.QIcon(button['icon'])
+                        self.buttons_tab_widget.addTab(button_widget, icon, button['name'])
+                    else:
+                        self.buttons_tab_widget.addTab(button_widget, button['name'])
+                else:
+                    self.buttons_tab_widget.addTab(button_widget, button['name'])
+        else:
+            for i in range(len(self.menu)):
+                for button in self.menu:
+                    if button != 'order':
+                        if i == self.menu[button]['order']:
+                            button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
+                                                          preflight_step_name=button,
+                                                          attrs=self.menu[button], preflight_path=self.menu_path,
+                                                          menu_type=self.menu_type)
+                            if 'icon' in self.menu[button].keys():
+                                if self.menu[button]['icon']:
+                                    icon = QtGui.QIcon(self.menu[button]['icon'])
+                                    self.buttons_tab_widget.addTab(button_widget, icon, self.menu[button]['name'])
+                                else:
+                                    self.buttons_tab_widget.addTab(button_widget, button)
                             else:
                                 self.buttons_tab_widget.addTab(button_widget, button)
-                        else:
-                            self.buttons_tab_widget.addTab(button_widget, button)
 
 
 def create_button_file(software, menu_name, button_name, menu_type):
@@ -435,14 +456,26 @@ def create_button_file(software, menu_name, button_name, menu_type):
         template_software = 'lumbermill'
     elif software == 'blender':
         template_software = 'blender'
+    elif software.lower() == 'unreal':
+        template_software = 'unreal'
     else:
         template_software = 'default'
-
-    button_template = os.path.join(get_resources_path(), 'pipeline_designer', template_software, 'buttons',
-                                   'for_%s.py' % menu_type)
-    print('Button_template: {}'.format(button_template))
+    if software.lower() == 'unreal':
+        button_template = os.path.join(get_resources_path(), 'pipeline_designer', template_software, 'buttons',
+                                       'for_%s.uasset' % menu_type)
+        dirname = os.path.dirname(button_path)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        # copy button_template to button_path
+        print('Copying {} to {}'.format(button_template, button_path))
+        cgl_copy(button_template, button_path)
+        return
+    else:
+        button_template = os.path.join(get_resources_path(), 'pipeline_designer', template_software, 'buttons',
+                                       'for_%s.py' % menu_type)
+    # print('Button_template: {}'.format(button_template))
     button_lines = load_text_file(button_template)
-    print('Button Lines: {}'.format(button_lines))
+    # print('Button Lines: {}'.format(button_lines))
     changed_lines = []
     for l in button_lines:
         if software == 'blender':
@@ -491,6 +524,9 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
     if menu_file:
         menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name, '%s.py' % menu_name)
     else:
+        print("software: {}".format(software),
+              "menu type: {}".format(menu_type),
+              "menu_name: {}".format(menu_name))
         menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name)
     return menu_folder
 
@@ -504,8 +540,13 @@ def get_button_path(software, menu_name, button_name, menu_type='menus'):
     :param menu_type: menus, preflights, shelves, context-menus
     :return:
     """
+    if isinstance(menu_name, dict):
+        menu_name = menu_name['name']
     menu_folder = get_menu_path(software, menu_name, menu_type=menu_type)
-    button_path = os.path.join(menu_folder, '%s.py' % button_name)
+    if software.lower() == 'unreal':
+        button_path = os.path.join(menu_folder, '%s.uasset' % button_name)
+    else:
+        button_path = os.path.join(menu_folder, '%s.py' % button_name)
     return button_path
 
 
