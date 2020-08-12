@@ -450,23 +450,23 @@ def create_button_file(software, menu_name, button_name, menu_type):
                 new_l = l.replace('ButtonTemplate', button_name)
                 changed_lines.append(new_l)
             elif 'object.button_template' in l:
-                new_l = l.replace('button_template', stringcase.snakecase(button_name).replace(' ',''))
+                new_l = l.replace('button_template', stringcase.snakecase(button_name))
                 changed_lines.append(new_l)
             elif 'bl_label' in l:
-                new_l = l.replace('button_template', stringcase.titlecase(button_name).replace(' ',''))
+                new_l = l.replace('button_template', stringcase.titlecase(button_name))
                 changed_lines.append(new_l)
             elif 'print' in l:
                 new_l = l.replace('button_template', stringcase.titlecase(button_name))
-                new_l = l.replace('PreflightTemplate', stringcase.titlecase(button_name).replace(' ',''))
+                new_l = l.replace('PreflightTemplate', stringcase.titlecase(button_name))
                 changed_lines.append(new_l)
             elif 'PreflightTemplate' in l:
-                new_l = l.replace('PreflightTemplate', stringcase.titlecase(button_name).replace(' ',''))
+                new_l = l.replace('PreflightTemplate', stringcase.titlecase(button_name))
                 changed_lines.append(new_l)
             else:
                 changed_lines.append(l)
         else:
             if 'print' in l:
-                new_l = l.replace('button_template', stringcase.titlecase(button_name).replace(' ',''))
+                new_l = l.replace('button_template', stringcase.titlecase(button_name))
                 changed_lines.append(new_l)
             else:
                 changed_lines.append(l)

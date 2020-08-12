@@ -9,6 +9,8 @@ from cgl.apps.lumbermill.main import CGLumberjackWidget
 from cgl.plugins.blender.main_window import CGLumberjack
 import bpy
 
+
+
 CONFIG = app_config()
 PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
 PADDING = CONFIG['default']['padding']
@@ -187,8 +189,8 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
     """
     imports file into a scene.
     :param type: 'COLLECTION' , 'GROUP', 'ANIM' , 'CAMERA'
-    :param linked:
-    :param append:
+    :param linked: when collection type instanced , links collection to scene
+    :param append: Imports file to scene
     :param collection_name:
     :param filepath:
     :param namespace:
@@ -243,7 +245,7 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
 
 
 def open_file(filepath):
-    """save
+    """
     Open File: filepath
     :param filepath:
     :return:
@@ -370,7 +372,7 @@ def clean_turntable():
 
     for removeName in remove:
         for obj in objs:
-            if obj.name == removeName:
+            if removeName in obj.name:
                 objs.remove(objs[obj.name], do_unlink=True)
     pass
 
@@ -425,18 +427,16 @@ def render():
     renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
     :return:
     """
-    previewRenderTypes = ['anim', 'rig', 'mdl']
+    previewRenderTypes = ['anim', 'rig', 'mdl','lay']
     file_out = scene_object().render_path.split('#')[0]
 
     if scene_object().task in previewRenderTypes:
         bpy.context.scene.render.image_settings.file_format = 'JPEG'
-        # bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
         bpy.context.scene.render.filepath = file_out
-
         bpy.ops.render.opengl('INVOKE_DEFAULT', animation=True, view_context=True)
 
     else:
-        bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR'
+        bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR_MULTILAYER'
         bpy.context.scene.render.filepath = file_out
         bpy.ops.render.render(animation=True, use_viewport=True)
 
