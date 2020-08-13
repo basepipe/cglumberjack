@@ -973,6 +973,7 @@ class CGLumberjack(LJMainWindow):
         Set up the local workstation to work with sync thing and register local workstation to the sheets file.
         :return:
         """
+        import cgl.plugins.syncthing.utils as st_utils
         st_utils.setup_workstation()
         self.change_sync_icon(syncing=True)
 
