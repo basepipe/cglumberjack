@@ -86,10 +86,16 @@ def get_sheets_authentication():
     filepath = GLOBALS['sync']['syncthing']['sheets_config_path']
     if filepath.endswith('.json'):
         url = GLOBALS['sync']['syncthing']['sync_thing_url']
-        r = requests.get(url, allow_redirects=True)
-        with open(filepath, 'w+') as f:
-            f.write(r.content)
-        return filepath
+        try:
+            import urllib.request
+            urllib.request.urlretrieve(url, filepath)
+            return filepath
+        except ImportError:
+            # Python 2 Version
+            r = requests.get(url, allow_redirects=True)
+            with open(filepath, 'w+') as f:
+                f.write(r.content)
+            return filepath
     else:
         print('ERROR in sheets_config_path globals, %s does not match client.json format' % filepath)
 
