@@ -918,10 +918,10 @@ class CGLumberjack(LJMainWindow):
         :return:
         """
         path_object = self.centralWidget().path_widget.path_object
-        try:
-            st_utils.share_files(path_object)
-        except NameError:
-            print("This machine is not set up for syncing!")
+        import cgl.plugins.syncthing.utils as st_utils
+        st_utils.share_files(path_object)
+        # except NameError:
+        # print("This machine is not set up for syncing!")
 
     def set_auto_launch_text(self):
         """
