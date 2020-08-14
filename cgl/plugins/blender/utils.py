@@ -23,10 +23,8 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
     if menu_file:
         if isinstance(menu_name, dict):
             menu_name = menu_name['name']
-        print(2)
         menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name, '%s.py' % menu_name)
     else:
-        print(3)
         menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name)
     return menu_folder
 
@@ -167,35 +165,29 @@ def add_buttons_to_menu(menu_name):
                 break
         i = 0
         while i < biggest:
-            i += 1
             button_name = get_menu_at(menu_object, 'blender', menu_name, i)
+            print('\t\t', button_name)
             button_string = '        self.layout.row().operator("object.%s")\n' % stringcase.snakecase(button_name)
             new_menu_lines.append(button_string)
+            i += 1
 
         read_write.save_text_lines(new_menu_lines, menu_file)
 
 
 def get_last_button_number(menu_dict, software, menu):
-    if menu in menu_dict[software]:
-        buttons = menu_dict[software][menu]
-        biggest = 0
-        for button in buttons:
-            if button != 'order':
-                num = buttons[button]['order']
-                if num > biggest:
-                    biggest = num
-        return biggest
-    else:
-        print('Menu not yet saved')
-        return None
+
+    for m in menu_dict[software]:
+        if m['name'] == menu:
+            return len(m['buttons'])
 
 
 def get_menu_at(menu_dict, software, menu, i):
-    buttons = menu_dict[software][menu]
-    for button in buttons:
-        if button != 'order':
-            if int(buttons[button]['order']) == i:
-                return button
+    for men in menu_dict[software]:
+        if men['name'] == menu:
+            print(i, len(men['buttons']))
+            button_at = men['buttons'][i]
+            return button_at['label']
+
 
 def write_layout(outFile = None):
     from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file
@@ -209,7 +201,6 @@ def write_layout(outFile = None):
     for obj in bpy.data.objects:
         if obj.is_instancer:
             name = obj.name
-            print('___________' + name)
             #            blender_transform = np.array(obj.matrix_world).tolist()
             blender_transform = [obj.matrix_world.to_translation().x,
                                  obj.matrix_world.to_translation().y,
@@ -311,7 +302,6 @@ def setup_preview_viewport_display(color=None, selection=None):
     """
     if selection == None:
         selection = bpy.context.selected_objects
-
 
     for object in selection:
         for material_slot in object.material_slots:
