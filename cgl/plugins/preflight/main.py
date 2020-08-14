@@ -163,11 +163,15 @@ class Preflight(QtWidgets.QWidget):
     def _load_json(self):
         with open(self.json_file, 'r') as stream:
             d = json.load(stream)
-            try:
-                self.modules = d[self.software][self.preflight]
-            except KeyError:
-                print('No preflight for %s found in %s, using default' % (self.preflight, self.json_file))
-                self.modules = d[self.software]['default']
+            print('11111111111')
+            for button in d[self.software]:
+                if button['name'] == self.preflight:
+                    self.modules = button['buttons']
+                    return
+            for button in d[self.software]:
+                if button['name'] == 'default':
+                    self.modules = button['buttons']
+                    print('No preflight for %s found in %s, using default' % (self.preflight, self.json_file))
 
     def populate_table(self):
         import sys
@@ -177,7 +181,7 @@ class Preflight(QtWidgets.QWidget):
         data = []
         for item in self.modules:
             if item != 'order':
-                module = self.modules[item]['module']
+                module = item['module']
                 module_name = module.split('.')[-1]
                 try:
                     loaded_module = __import__(module, globals(), locals(), module_name, -1)
@@ -187,12 +191,12 @@ class Preflight(QtWidgets.QWidget):
                     loaded_module = importlib.import_module(module, module_name)
                 class_ = getattr(loaded_module, module_name)
                 c = class_()
-                self.function_d.update({self.modules[item]['label']: c})
-                data.append([self.modules[item]['label'],
+                self.function_d.update({item['label']: c})
+                data.append([item['label'],
                              'Untested',
-                             self.modules[item]['module'],
-                             self.modules[item]['order'],
-                             self.modules[item]['required']])
+                             item['module'],
+                             item['order'],
+                             item['required']])
         self.table_data = data
         self.preflights.set_item_model(PreflightModel(data, ["Check", "Status", "Path", "Order", "Required"]))
         self.preflights.sortByColumn(3, QtCore.Qt.SortOrder(0))
@@ -213,8 +217,6 @@ class Preflight(QtWidgets.QWidget):
         for each in checks:
             if self.previous_checks_passed(each):
                 class_ = self.function_d[each['Check']]
-                # run_thread = threading.Thread(target=class_.run())
-                # run_thread.start()
                 class_.run()
                 if self.function_d[each['Check']].status:
                     each['Status'] = 'Passed'

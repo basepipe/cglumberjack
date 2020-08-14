@@ -124,8 +124,10 @@ class CustomMenu(object):
         menus = self.menus
         to_pop = []
         for menu in menus:
-            if menus[menu]['active'] == 0:
-                to_pop.append(menu)
+            print(menu['name'])
+
+            # if menus[menu]['active'] == 0:
+            #    to_pop.append(menu)
         for each in to_pop:
             menus.pop(each)
         if menus:
@@ -149,22 +151,22 @@ class CustomMenu(object):
 
     def add_menu_buttons(self, menu, buttons):
         for button in buttons:
-            label = self.menus[menu][button]['label']
-            if 'icon' in self.menus[menu][button].keys():
-                icon_file = self.menus[menu][button]['icon']
+            label = button['label']
+            if 'icon' in button.keys():
+                icon_file = button['icon']
                 if icon_file:
                     label = ''
             else:
                 icon_file = ''
 
-            if 'annotation' in self.menus[menu][button].keys():
-                annotation = self.menus[menu][button]['annotation']
+            if 'annotation' in button.keys():
+                annotation = button['annotation']
             else:
                 annotation = ''
             print(icon_file)
-            self.add_button(menu, label=self.menus[menu][button]['name'],
+            self.add_button(menu, label=button['name'],
                             annotation=annotation,
-                            command=self.menus[menu][button]['module'],
+                            command=button['module'],
                             icon=icon_file,
                             image_overlay_label=label)
 
@@ -182,17 +184,20 @@ class CustomMenu(object):
             menus = self.menus
             pass
 
-        software_menus = self.order_menus(menus)
+        software_menus = menus
         print('menus: %s', software_menus)
         for menu in software_menus:
+            menu_name = menu['name']
+            print('menu')
+            print('\t', menu_name)
             if test:
-                print('menu: ', menu)
-                print('buttons: ', self.order_buttons(menu))
+                print('menu: ', menu_name)
+                print('buttons:', menu['buttons'])
             else:
-                _menu = self.create_menu(menu)
-                self.menu_dict[menu] = _menu
-                buttons = self.order_buttons(menu)
-                self.add_menu_buttons(menu, buttons)
+                _menu = self.create_menu(menu_name)
+                self.menu_dict[menu_name] = _menu
+                buttons = menu['buttons']
+                self.add_menu_buttons(menu_name, buttons)
 
     # When Starting a new shelf, simply copy all of the functions below and fill them in with softwarespecific functions
     # See Nuke and Maya examples: plugins/nuke/custom_menu.py & plugins/maya/custom_menu.py

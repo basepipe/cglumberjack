@@ -21,8 +21,12 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
     :return:
     """
     if menu_file:
+        if isinstance(menu_name, dict):
+            menu_name = menu_name['name']
+        print(2)
         menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name, '%s.py' % menu_name)
     else:
+        print(3)
         menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name)
     return menu_folder
 

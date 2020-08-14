@@ -237,6 +237,7 @@ class Designer(LJDialog):
 
     def save_menus(self):
         # TODO - if you change the label this actually deletes stuff.
+        menu_name = ''
         menu_dict = {}
         menu_array = []
         for mi in range(self.menus.count()):
