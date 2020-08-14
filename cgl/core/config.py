@@ -2,6 +2,7 @@ import os
 import logging
 import sys
 import json
+import click
 from cgl.core.utils.read_write import load_json
 
 GLOBALS_TEMPLATE_PATH = os.path.join(__file__.split('cglumberjack')[0], 'cglumberjack', 'cgl', 'cfg',
@@ -207,6 +208,20 @@ def update_globals(company=True):
             company_globals['rules']['ignore'] = default_globals['rules']['ignore']
             from cgl.core.utils.general import save_json
             save_json(get_user_globals()['globals'], company_globals)
+
+
+@click.command()
+@click.option('--globals_type', '-g', default='company', prompt='Enter "company" or "user", default is "company"',
+              help='returns a dictionary representing the chosen globals')
+def main(globals_type='company'):
+    if globals_type == 'company':
+        if get_user_globals().keys():
+            print(get_user_globals()['globals'])
+    elif globals_type == 'user':
+        print(os.getenv('cgl_user_globals'))
+
+if __name__ == '__main__':
+    main()
 
 
 
