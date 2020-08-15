@@ -1086,8 +1086,9 @@ class CGLumberjack(LJMainWindow):
 
     @staticmethod
     def do_update_check(widget, progress_bar, show_confirmation=False, print_output=True):
-        if not check_for_latest_master(print_output=print_output):
-            progress_bar.hide()
+        updated = check_for_latest_master()
+        progress_bar.hide()
+        if not updated:
             dialog = InputDialog(title='Update Lumbermill',
                                  message='There is a new version of Lumbermill Available, would you like to update?',
                                  buttons=['Cancel', 'Update'])
@@ -1096,12 +1097,7 @@ class CGLumberjack(LJMainWindow):
                 update_master()
                 widget.close()
         else:
-            progress_bar.hide()
-            if show_confirmation:
-                dialog = InputDialog(title='Up to date', message='Lumbermill is up to date!')
-                dialog.exec_()
-                if dialog.button == 'Ok' or dialog.button == 'Cancel':
-                    dialog.accept()
+            print('Lumbermill is Up to Date!')
 
     def report_bug_clicked(self):
         dialog = ReportBugDialog(self)

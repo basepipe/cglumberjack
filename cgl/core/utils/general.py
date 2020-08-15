@@ -419,12 +419,12 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         return run_dict
 
 
-def check_for_latest_master(return_output=True, print_output=False):
+def check_for_latest_master():
     # TODO - probably need something in place to check if git is installed.
     code_root = CONFIG['paths']['code_root']
     command = 'git remote show origin'
     os.chdir(code_root)
-    output = cgl_execute(command, return_output=return_output, print_output=print_output)
+    output = cgl_execute(command, return_output=True, print_output=False)['printout']
 
     for line in output:
         if 'pushes to master' in line:
@@ -433,7 +433,7 @@ def check_for_latest_master(return_output=True, print_output=False):
                 return True
             else:
                 print('cglumberjack code base needs updated')
-    return False
+                return False
 
 
 def update_master():
@@ -526,7 +526,7 @@ def main(edit_cgl, user, job_id, key, value):
 
 if __name__ == '__main__':
     main()
-    # print(get_globals())
+    # check_for_latest_master()
 
 
 
