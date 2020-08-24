@@ -453,7 +453,6 @@ def dump_json(path_object, data, save_copy=True):
     from cgl.plugins.blender import lumbermill as lm
     import json
     jsonFile = path_object.copy(ext='json')
-    print(data)
     outFile = path_object.copy(ext='json').path_root
 
     with open(outFile, "w") as library_data_file:
