@@ -312,7 +312,7 @@ def setup_preview_viewport_display(color=None, selection=None):
     :param color: Value of the color  of the parent menu  FloatProperty 4
     :param selection:
     """
-    if not selection == None:
+    if selection == None:
         selection = bpy.context.selected_objects
 
     for object in selection:
