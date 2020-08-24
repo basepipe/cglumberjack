@@ -501,6 +501,23 @@ def launch_():
     BlenderJack.show()
 
 
+def unlink_asset(selection = None):
+    if selection == None:
+        selection = bpy.context.selected_objects
+
+    for object in selection:
+
+        libname = object.data.library
+        if 'proxy' in bpy.context.object.name:
+            name = bpy.context.object.name.split('_')[0]
+        else:
+            name = bpy.context.object.name
+
+        obj = bpy.data.objects[name]
+        bpy.data.batch_remove(ids=(libname, obj))
+
+
+
 def register_message_box():
     """
     Registers the Messagebox class to be used with : bpy.ops.object.message.messagebox()
