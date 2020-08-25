@@ -196,9 +196,9 @@ def write_layout(outFile=None):
     :return:
     """
     from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file
+    from cgl.core.utils.read_write import save_json
     import bpy
     from pathlib import Path
-    import json
 
     if outFile == None:
         outFile = scene_object().copy(ext='json', task='lay', user='publish').path_root
@@ -225,14 +225,12 @@ def write_layout(outFile=None):
                           'source_path': libObject.path,
                           'blender_transform': blender_transform}
 
-    with open(outFile, "w") as library_data_file:
-        json.dump(data, library_data_file, indent=4, sort_keys=True)
+    save_json(outFile,data)
 
     return (outFile)
 
 
 def read_layout(outFile=None, linked=False, append=False):
-
     """
     Reads layout from json file
     :param outFile: path to json file
@@ -241,6 +239,7 @@ def read_layout(outFile=None, linked=False, append=False):
     :return:
     """
     from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file
+    from cgl.core.utils.read_write import load_json
     import bpy
 
     if outFile == None:
@@ -253,32 +252,34 @@ def read_layout(outFile=None, linked=False, append=False):
         outFile = outFileObject.path_root
     # outFile = scene_object().path_root.replace(scene_object().ext, 'json')
 
-    with open(outFile) as json_file:
-        data = json.load(json_file)
-        for p in data:
-            print(p)
-            data_path = data[p]['source_path']
-            blender_transform = data[p]['blender_transform']
 
-            transform_data = []
-            for value in blender_transform:
-                transform_data.append(value)
 
-            print(transform_data)
+    data = load_json(outFile)
 
-            pathToFile = os.path.join(scene_object().root, data_path)
-            lumberObject = LumberObject(pathToFile)
+    for p in data:
+        print(p)
+        data_path = data[p]['source_path']
+        blender_transform = data[p]['blender_transform']
 
-            if lumberObject.filename not in bpy.data.libraries:
-                import_file(lumberObject.path_root, linked=linked, append=append)
-            if p not in bpy.data.objects:
-                obj = bpy.data.objects.new(p, None)
-                bpy.context.collection.objects.link(obj)
-                obj.instance_type = 'COLLECTION'
-                obj.instance_collection = bpy.data.collections[lumberObject.asset]
-                obj.location = (transform_data[0], transform_data[1], transform_data[2])
-                obj.rotation_euler = (transform_data[3], transform_data[4], transform_data[5])
-                obj.scale = (transform_data[6], transform_data[7], transform_data[8])
+        transform_data = []
+        for value in blender_transform:
+            transform_data.append(value)
+
+        print(transform_data)
+
+        pathToFile = os.path.join(scene_object().root, data_path)
+        lumberObject = LumberObject(pathToFile)
+
+        if lumberObject.filename not in bpy.data.libraries:
+            import_file(lumberObject.path_root, linked=linked, append=append)
+        if p not in bpy.data.objects:
+            obj = bpy.data.objects.new(p, None)
+            bpy.context.collection.objects.link(obj)
+            obj.instance_type = 'COLLECTION'
+            obj.instance_collection = bpy.data.collections[lumberObject.asset]
+            obj.location = (transform_data[0], transform_data[1], transform_data[2])
+            obj.rotation_euler = (transform_data[3], transform_data[4], transform_data[5])
+            obj.scale = (transform_data[6], transform_data[7], transform_data[8])
 
     bpy.ops.file.make_paths_relative()
 
@@ -365,7 +366,7 @@ def read_materials(path_object=None):
     :type path_object: object
     """
     from cgl.plugins.blender import lumbermill as lm
-
+    from cgl.core.utils.read_write import load_json
     """
     Reads the materials on the shdr task from defined from a json file
     :return:
@@ -377,8 +378,7 @@ def read_materials(path_object=None):
     shaders = path_object.copy(task='shdr', user='publish', set_proper_filename=True).latest_version()
     outFile = shaders.copy(ext='json').path_root
 
-    with open(outFile) as json_file:
-        data = json.load(json_file)
+    data = load_json(outFile)
 
     for obj in data.keys():
         object = bpy.data.objects[obj]
@@ -443,25 +443,6 @@ def create_task_on_asset(task, path_object=None):
     return newTask
 
 
-def dump_json(path_object, data, save_copy=True):
-    """
-    Exports json file from blenders and saves file  file in that directory
-    :param path_object: lumber object where the json will dump the info
-    :parm data: Data to add to json file
-
-    """
-    from cgl.plugins.blender import lumbermill as lm
-    import json
-    jsonFile = path_object.copy(ext='json')
-    outFile = path_object.copy(ext='json').path_root
-
-    with open(outFile, "w") as library_data_file:
-        json.dump(data, library_data_file, indent=4, sort_keys=True)
-
-    if save_copy:
-        lm.save_file_as(path_object.copy(ext='blend').path_root)
-
-    return outFile
 
 
 if __name__ == '__main__':
