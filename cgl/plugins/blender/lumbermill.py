@@ -300,14 +300,16 @@ def confirm_prompt(title='Lumber message:', message='This is a message', button=
     :param button: single button is created with a string, multiple buttons created with array
     :return:
     """
+    import bpy
     try:
-        bpy.utils.unregister_class(BlenderConfirmDialog)
-    except RuntimeError:
-        print('no class registered')
-    BlenderConfirmDialog.bl_label = title
-    BlenderConfirmDialog.message = message
-    bpy.utils.register_class(BlenderConfirmDialog)
-    bpy.ops.ui.blender_confirm_dialog('INVOKE_DEFAULT')
+        #bpy.utils.unregister_class(BlenderConfirmDialog)
+        bpy.utils.register_class(BlenderConfirmDialog)
+    except ValueError:
+        print('class already registered')
+
+
+    bpy.ops.message.messagebox('INVOKE_DEFAULT',message=message)
+
 
 
 def select(selection, d=True):
@@ -517,14 +519,6 @@ def unlink_asset(selection = None):
         bpy.data.batch_remove(ids=(libname, obj))
 
 
-
-def register_message_box():
-    """
-    Registers the Messagebox class to be used with : bpy.ops.object.message.messagebox()
-    :return:
-    """
-    import bpy
-    bpy.utils.register_class(BlenderConfirmDialog)
 
 
 if __name__ == "__main__":
