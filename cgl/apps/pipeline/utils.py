@@ -414,40 +414,40 @@ class CGLMenu(QtWidgets.QWidget):
         return 'cgl_tools.%s.%s.%s.%s' % (self.software, self.menu_type, self.menu_name, preflight_name)
 
     def load_buttons(self):
-
-        if 'buttons' in self.menu.keys():
-            print(self.menu_name)
-            print(self.menu_path)
-            for button in self.menu['buttons']:
-                button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
-                                              preflight_step_name=button['label'],
-                                              attrs=button, preflight_path=self.menu_path,
-                                              menu_type=self.menu_type)
-                if 'icon' in button.keys():
-                    if button['icon']:
-                        icon = QtGui.QIcon(button['icon'])
-                        self.buttons_tab_widget.addTab(button_widget, icon, button['name'])
+        if self.menu:
+            if 'buttons' in self.menu.keys():
+                print(self.menu_name)
+                print(self.menu_path)
+                for button in self.menu['buttons']:
+                    button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
+                                                  preflight_step_name=button['label'],
+                                                  attrs=button, preflight_path=self.menu_path,
+                                                  menu_type=self.menu_type)
+                    if 'icon' in button.keys():
+                        if button['icon']:
+                            icon = QtGui.QIcon(button['icon'])
+                            self.buttons_tab_widget.addTab(button_widget, icon, button['name'])
+                        else:
+                            self.buttons_tab_widget.addTab(button_widget, button['name'])
                     else:
                         self.buttons_tab_widget.addTab(button_widget, button['name'])
-                else:
-                    self.buttons_tab_widget.addTab(button_widget, button['name'])
-        else:
-            for i in range(len(self.menu)):
-                for button in self.menu:
-                    if button != 'order':
-                        if i == self.menu[button]['order']:
-                            button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
-                                                          preflight_step_name=button,
-                                                          attrs=self.menu[button], preflight_path=self.menu_path,
-                                                          menu_type=self.menu_type)
-                            if 'icon' in self.menu[button].keys():
-                                if self.menu[button]['icon']:
-                                    icon = QtGui.QIcon(self.menu[button]['icon'])
-                                    self.buttons_tab_widget.addTab(button_widget, icon, self.menu[button]['name'])
+            else:
+                for i in range(len(self.menu)):
+                    for button in self.menu:
+                        if button != 'order':
+                            if i == self.menu[button]['order']:
+                                button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
+                                                              preflight_step_name=button,
+                                                              attrs=self.menu[button], preflight_path=self.menu_path,
+                                                              menu_type=self.menu_type)
+                                if 'icon' in self.menu[button].keys():
+                                    if self.menu[button]['icon']:
+                                        icon = QtGui.QIcon(self.menu[button]['icon'])
+                                        self.buttons_tab_widget.addTab(button_widget, icon, self.menu[button]['name'])
+                                    else:
+                                        self.buttons_tab_widget.addTab(button_widget, button)
                                 else:
                                     self.buttons_tab_widget.addTab(button_widget, button)
-                            else:
-                                self.buttons_tab_widget.addTab(button_widget, button)
 
 
 def create_button_file(software, menu_name, button_name, menu_type):
