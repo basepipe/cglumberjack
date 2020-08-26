@@ -991,8 +991,7 @@ class CGLumberjack(LJMainWindow):
                         self.menu_dict[menu] = _menu
                         buttons = self.order_buttons(menu)
                         self.add_menu_buttons(menu, buttons)
-                else:
-                    logging.debug('No Menus Found')
+                else:                    logging.debug('No Menus Found')
         else:
             logging.debug('No menu file found!')
         pass
@@ -1006,6 +1005,7 @@ class CGLumberjack(LJMainWindow):
         """
         for menu in menus:
             menus[menu]['order'] = menus[menu].get('order', 10)
+
         if menus:
             return sorted(menus, key=lambda key: menus[key]['order'])
 

@@ -8,6 +8,7 @@ from cgl.core.path import get_resources_path
 from cgl.core.project import get_cgl_tools
 
 import json
+
 logger = logging.getLogger('qtutils')
 
 
@@ -175,7 +176,6 @@ def add_buttons_to_menu(menu_name):
 
 
 def get_last_button_number(menu_dict, software, menu):
-
     for m in menu_dict[software]:
         if m['name'] == menu:
             return len(m['buttons'])
@@ -189,11 +189,17 @@ def get_menu_at(menu_dict, software, menu, i):
             return button_at['label']
 
 
-def write_layout(outFile = None):
+def write_layout(outFile=None):
+    """
+
+    :param outFile:
+    :return:
+    """
     from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file
+    from cgl.core.utils.read_write import save_json
     import bpy
     from pathlib import Path
-    import json
+
     if outFile == None:
         outFile = scene_object().copy(ext='json', task='lay', user='publish').path_root
     data = {}
@@ -219,58 +225,66 @@ def write_layout(outFile = None):
                           'source_path': libObject.path,
                           'blender_transform': blender_transform}
 
-    with open(outFile, "w") as library_data_file:
-        json.dump(data, library_data_file, indent=4, sort_keys=True)
+    save_json(outFile,data)
 
     return (outFile)
 
 
-def read_layout(outFile = None ):
+def read_layout(outFile=None, linked=False, append=False):
+    """
+    Reads layout from json file
+    :param outFile: path to json file
+    :param linked:
+    :param append:
+    :return:
+    """
     from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file
+    from cgl.core.utils.read_write import load_json
     import bpy
 
     if outFile == None:
-
         outFileObject = scene_object().copy(ext='json', task='lay', user='publish').latest_version()
         outFileObject.set_attr(filename='%s_%s_%s.%s' % (outFileObject.seq,
-                                                       outFileObject.shot,
-                                                       outFileObject.task,
-                                                       'json'
-                                                       ))
-        outFile= outFileObject.path_root
-    #outFile = scene_object().path_root.replace(scene_object().ext, 'json')
+                                                         outFileObject.shot,
+                                                         outFileObject.task,
+                                                         'json'
+                                                         ))
+        outFile = outFileObject.path_root
+    # outFile = scene_object().path_root.replace(scene_object().ext, 'json')
 
-    with open(outFile) as json_file:
-        data = json.load(json_file)
-        for p in data:
-            print(p)
-            data_path = data[p]['source_path']
-            blender_transform = data[p]['blender_transform']
 
-            transform_data = []
-            for value in blender_transform:
-                transform_data.append(value)
 
-            print(transform_data)
+    data = load_json(outFile)
 
-            pathToFile = os.path.join(scene_object().root, data_path)
-            lumberObject = LumberObject(pathToFile)
+    for p in data:
+        print(p)
+        data_path = data[p]['source_path']
+        blender_transform = data[p]['blender_transform']
 
-            if lumberObject.filename not in bpy.data.libraries:
-                import_file(lumberObject.path_root, linked=False)
-            if p not in bpy.data.objects:
-                obj = bpy.data.objects.new(p, None)
-                bpy.context.collection.objects.link(obj)
-                obj.instance_type = 'COLLECTION'
-                obj.instance_collection = bpy.data.collections[lumberObject.asset]
-                obj.location = (transform_data[0], transform_data[1], transform_data[2])
-                obj.rotation_euler = (transform_data[3], transform_data[4], transform_data[5])
-                obj.scale = (transform_data[6],transform_data[7],transform_data[8])
+        transform_data = []
+        for value in blender_transform:
+            transform_data.append(value)
+
+        print(transform_data)
+
+        pathToFile = os.path.join(scene_object().root, data_path)
+        lumberObject = LumberObject(pathToFile)
+
+        if lumberObject.filename not in bpy.data.libraries:
+            import_file(lumberObject.path_root, linked=linked, append=append)
+        if p not in bpy.data.objects:
+            obj = bpy.data.objects.new(p, None)
+            bpy.context.collection.objects.link(obj)
+            obj.instance_type = 'COLLECTION'
+            obj.instance_collection = bpy.data.collections[lumberObject.asset]
+            obj.location = (transform_data[0], transform_data[1], transform_data[2])
+            obj.rotation_euler = (transform_data[3], transform_data[4], transform_data[5])
+            obj.scale = (transform_data[6], transform_data[7], transform_data[8])
 
     bpy.ops.file.make_paths_relative()
 
 
-def rename_materials(selection = None):
+def rename_materials(selection=None):
     import bpy
     """
     Sequentially renames  materials from given object name if empty , renamed from selected object
@@ -278,7 +292,6 @@ def rename_materials(selection = None):
     """
     if selection == None:
         selection = bpy.context.selected_objects
-
 
         for object in selection:
             for material_slot in object.material_slots:
@@ -326,9 +339,113 @@ def setup_preview_viewport_display(color=None, selection=None):
                 material_slot.material.diffuse_color = color
 
 
+def get_materials_dictionary():
+    """
+    creates a dictionary of the objects and the faces associated with that object
+    :return: list of materials
+    """
+    import bpy
+
+    materials = {}
+
+    for o in bpy.context.selected_objects:
+
+        # Initialize dictionary of all materials applied to object with empty lists
+        # which will contain indices of faces on which these materials are applied
+        materialPolys = {ms.material.name: [] for ms in o.material_slots}
+
+        for i, p in enumerate(o.data.polygons):
+            materialPolys[o.material_slots[p.material_index].name].append(i)
+        materials.update({o.name: materialPolys})
+    return (materials)
+
+
+def read_materials(path_object=None):
+    """
+
+    :type path_object: object
+    """
+    from cgl.plugins.blender import lumbermill as lm
+    from cgl.core.utils.read_write import load_json
+    """
+    Reads the materials on the shdr task from defined from a json file
+    :return:
+    """
+    import bpy
+    if path_object == None:
+        path_object = lm.scene_object()
+
+    shaders = path_object.copy(task='shdr', user='publish', set_proper_filename=True).latest_version()
+    outFile = shaders.copy(ext='json').path_root
+
+    data = load_json(outFile)
+
+    for obj in data.keys():
+        object = bpy.data.objects[obj]
+        # data = object.data
+        index = 0
+
+        for material in data[obj].keys():
+
+            if material not in bpy.data.materials:
+                lm.import_file(shaders.path_root, collection_name=material, type='MATERIAL', linked=False)
+
+            if material not in object.data.materials:
+                object.data.materials.append(bpy.data.materials[material])
+
+            face_list = data[obj][material]
+
+            for face in face_list:
+                object.data.polygons[face].select = True
+
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.context.tool_settings.mesh_select_mode = [False, False, True]
+            object.active_material_index = index
+            bpy.ops.object.material_slot_assign()
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+            index += 1
+
+
+def create_task_on_asset(task, path_object=None):
+    """
+    Creates a task on disk based on path object
+    :param task:
+    :param path_object:
+    :param type: type of task, mdl, shdr,rig etc
+
+    """
+
+    from cgl.plugins.blender import lumbermill as lm
+    if path_object == None:
+        path_object = lm.scene_object()
+
+    newTask = path_object.copy(task=task, version='000.000', user='publish', set_proper_filename=True)
+    print(newTask.path)
+
+    taskFolder = newTask.copy(filename='').path_root
+
+    if not os.path.isdir(taskFolder):
+        os.makedirs(taskFolder)
+
+    else:
+        if os.listdir(taskFolder):
+            print('{} Exists'.format(taskFolder))
+            newTask.next_major_version()
+            newTask = newTask.next_major_version()
+            taskFolder = newTask.copy(filename='').path_root
+            os.makedirs(taskFolder)
+            print(newTask.path)
+
+        else:
+            print('{}  is empty, using version {}'.format(taskFolder, newTask.version))
+
+    return newTask
+
+
+
+
 if __name__ == '__main__':
     # create_menu_file('TomTest', 'Tom Test', r'F:\FSU-CMPA\COMPANIES\_config\cgl_tools\blender\menus\TomTest\TomTest.py')
     # create_button_file('ButtonAaa', 'Button Aaa', 'TomTest')
     add_buttons_to_menu('TomTest')
-
-

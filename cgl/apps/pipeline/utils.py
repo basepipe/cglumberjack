@@ -415,7 +415,7 @@ class CGLMenu(QtWidgets.QWidget):
 
     def load_buttons(self):
 
-        if 'buttons' in self.menu.keys():
+        if 'buttons' in self.menu:
             print(self.menu_name)
             print(self.menu_path)
             for button in self.menu['buttons']:
@@ -423,7 +423,7 @@ class CGLMenu(QtWidgets.QWidget):
                                               preflight_step_name=button['label'],
                                               attrs=button, preflight_path=self.menu_path,
                                               menu_type=self.menu_type)
-                if 'icon' in button.keys():
+                if 'icon' in button:
                     if button['icon']:
                         icon = QtGui.QIcon(button['icon'])
                         self.buttons_tab_widget.addTab(button_widget, icon, button['name'])
@@ -440,7 +440,7 @@ class CGLMenu(QtWidgets.QWidget):
                                                           preflight_step_name=button,
                                                           attrs=self.menu[button], preflight_path=self.menu_path,
                                                           menu_type=self.menu_type)
-                            if 'icon' in self.menu[button].keys():
+                            if 'icon' in self.menu[button]:
                                 if self.menu[button]['icon']:
                                     icon = QtGui.QIcon(self.menu[button]['icon'])
                                     self.buttons_tab_widget.addTab(button_widget, icon, self.menu[button]['name'])
