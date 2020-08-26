@@ -26,18 +26,24 @@ class BlenderJack(CGLumberjack):
 
 
 class BlenderConfirmDialog(bpy.types.Operator):
-    bl_idname = 'ui.blender_confirm_dialog'
-    bl_label = 'Title'
-    message = 'this is the message'
+    bl_idname = "message.messagebox"
+    bl_label = ""
+    message = bpy.props.StringProperty(
+        name="message",
+        description="message",
+        default=''
+    )
+
+    def execute(self, context):
+        self.report({'INFO'}, self.message)
+        print(self.message)
+        return {'FINISHED'}
 
     def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self)
+        return context.window_manager.invoke_props_dialog(self, width=400)
 
     def draw(self, context):
         self.layout.label(text=self.message)
-
-    def execute(self, context):
-        return {"FINISHED"}
 
 
 class LumberObject(PathObject):
@@ -188,6 +194,7 @@ def version_up(vtype='minor'):
 def import_file(filepath='', namespace=None, collection_name=None, append=True, linked=True, type='COLLECTION',snap_to_cursor= False):
     """
     imports file into a scene.
+    :param snap_to_cursor: if true imports the object where the cursor is palced
     :param type: 'COLLECTION' , 'GROUP', 'ANIM' , 'CAMERA'
     :param linked: when collection type instanced , links collection to scene
     :param append: Imports file to scene
@@ -226,10 +233,19 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
                 data_to.actions = data_from.actions
 
         if type == 'CAMERA':
-            print('Camera Import selected')
+
             with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
                 # data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
                 data_to.objects = [c for c in data_from.objects if c.startswith(collection_name)]
+            print('{} Cam imported '.format(collection_name))
+
+        if type == 'MATERIAL':
+
+            with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
+                # data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
+                data_to.materials = [c for c in data_from.materials if c.startswith(collection_name)]
+            print('{} material imported '.format(collection_name))
+
 
         if linked:
             obj = bpy.data.objects.new(collection_name, None)
@@ -267,6 +283,7 @@ def reference_file(filepath='', namespace=None):
     """
     creates a "reference" of a file, this is a convenience function to be used in various software plugins
     to promote continuity accross plugins
+    :param namespace:
     :param filepath:
     :return:
     """
@@ -283,14 +300,16 @@ def confirm_prompt(title='Lumber message:', message='This is a message', button=
     :param button: single button is created with a string, multiple buttons created with array
     :return:
     """
+    import bpy
     try:
-        bpy.utils.unregister_class(BlenderConfirmDialog)
-    except RuntimeError:
-        print('no class registered')
-    BlenderConfirmDialog.bl_label = title
-    BlenderConfirmDialog.message = message
-    bpy.utils.register_class(BlenderConfirmDialog)
-    bpy.ops.ui.blender_confirm_dialog('INVOKE_DEFAULT')
+        #bpy.utils.unregister_class(BlenderConfirmDialog)
+        bpy.utils.register_class(BlenderConfirmDialog)
+    except ValueError:
+        print('class already registered')
+
+
+    bpy.ops.message.messagebox('INVOKE_DEFAULT',message=message)
+
 
 
 def select(selection, d=True):
@@ -325,6 +344,7 @@ def create_turntable(length=250, task=False, startFrame=1):
     """
     Creates a Turntable of length around the selected object, or around a "task" object.
     This is specific to 3d applications.
+    :param startFrame:
     :param length:
     :param task:
     :return:
@@ -481,6 +501,31 @@ def publish():
 
 def launch_():
     BlenderJack.show()
+
+
+def unlink_asset(selection = None):
+    if selection == None:
+        selection = bpy.context.selected_objects
+
+    for object in selection:
+        if object.instance_collection:
+            libname = bpy.context.object.instance_collection.library
+        else:
+            try:
+                libname = object.data.library
+            except AttributeError:
+                print('object doesnt have library asset')
+
+
+        if 'proxy' in bpy.context.object.name:
+            name = bpy.context.object.name.split('_')[0]
+        else:
+            name = bpy.context.object.name
+
+
+        obj = bpy.data.objects[name]
+        bpy.data.batch_remove(ids=(libname, obj))
+
 
 
 if __name__ == "__main__":
