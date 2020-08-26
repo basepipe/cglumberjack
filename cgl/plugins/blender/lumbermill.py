@@ -508,7 +508,15 @@ def unlink_asset(selection = None):
         selection = bpy.context.selected_objects
 
     for object in selection:
-        libname = object.data.library
+        if object.instance_collection:
+            libname = bpy.context.object.instance_collection.library
+        else:
+            try:
+                libname = object.data.library
+            except AttributeError:
+                print('object doesnt have library asset')
+
+
         if 'proxy' in bpy.context.object.name:
             name = bpy.context.object.name.split('_')[0]
         else:
@@ -517,7 +525,6 @@ def unlink_asset(selection = None):
 
         obj = bpy.data.objects[name]
         bpy.data.batch_remove(ids=(libname, obj))
-
 
 
 
