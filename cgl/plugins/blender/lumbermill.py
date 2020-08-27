@@ -453,6 +453,12 @@ def render():
     if scene_object().task in previewRenderTypes:
         bpy.context.scene.render.image_settings.file_format = 'JPEG'
         bpy.context.scene.render.filepath = file_out
+
+        if scene_object().task in ['anim','lay']:
+            bpy.context.scene.render.image_settings.file_format = 'FFMPEG'
+            bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
+            bpy.context.scene.render.ffmpeg.audio_codec = 'MP3'
+
         bpy.ops.render.opengl('INVOKE_DEFAULT', animation=True, view_context=True)
 
     else:
