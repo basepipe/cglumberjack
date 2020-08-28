@@ -442,19 +442,21 @@ def export_usd_layout(to_path, lighting=False):
     pass
 
 
-def render():
+def render(preview=False, audio=False):
     """
     renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
+    :param preview: determines if exr is used or not
+    :param audio: if True renders an  mov and setups the audio settings
     :return:
     """
     previewRenderTypes = ['anim', 'rig', 'mdl','lay']
     file_out = scene_object().render_path.split('#')[0]
 
-    if scene_object().task in previewRenderTypes:
+    if preview:
         bpy.context.scene.render.image_settings.file_format = 'JPEG'
         bpy.context.scene.render.filepath = file_out
 
-        if scene_object().task in ['anim','lay']:
+        if audio:
             bpy.context.scene.render.image_settings.file_format = 'FFMPEG'
             bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
             bpy.context.scene.render.ffmpeg.audio_codec = 'MP3'
