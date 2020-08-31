@@ -213,7 +213,6 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
         if collection_name is None:
             collection = PathObject(filepath)
             collection_name = collection.asset
-        # append, set to true to keep the link to the original file
 
         if type == 'COLLECTION':
             print('collection selected')
@@ -245,7 +244,6 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
                 # data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
                 data_to.materials = [c for c in data_from.materials if c.startswith(collection_name)]
             print('{} material imported '.format(collection_name))
-
 
         if linked:
             obj = bpy.data.objects.new(collection_name, None)
@@ -442,17 +440,25 @@ def export_usd_layout(to_path, lighting=False):
     pass
 
 
-def render():
+def render(preview=False, audio=False):
     """
     renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
+    :param preview: determines if exr is used or not
+    :param audio: if True renders an  mov and setups the audio settings
     :return:
     """
     previewRenderTypes = ['anim', 'rig', 'mdl','lay']
     file_out = scene_object().render_path.split('#')[0]
 
-    if scene_object().task in previewRenderTypes:
+    if preview:
         bpy.context.scene.render.image_settings.file_format = 'JPEG'
         bpy.context.scene.render.filepath = file_out
+
+        if audio:
+            bpy.context.scene.render.image_settings.file_format = 'FFMPEG'
+            bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
+            bpy.context.scene.render.ffmpeg.audio_codec = 'MP3'
+
         bpy.ops.render.opengl('INVOKE_DEFAULT', animation=True, view_context=True)
 
     else:

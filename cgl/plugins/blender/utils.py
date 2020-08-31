@@ -375,7 +375,7 @@ def read_materials(path_object=None):
     if path_object == None:
         path_object = lm.scene_object()
 
-    shaders = path_object.copy(task='shdr', user='publish', set_proper_filename=True).latest_version()
+    shaders = path_object.copy(task='shd', user='publish', set_proper_filename=True).latest_version()
     outFile = shaders.copy(ext='json').path_root
 
     data = load_json(outFile)
