@@ -246,7 +246,6 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
                 data_to.materials = [c for c in data_from.materials if c.startswith(collection_name)]
             print('{} material imported '.format(collection_name))
 
-
         if linked:
             obj = bpy.data.objects.new(collection_name, None)
             obj.instance_type = 'COLLECTION'
