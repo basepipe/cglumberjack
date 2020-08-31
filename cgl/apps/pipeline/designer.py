@@ -236,7 +236,6 @@ class Designer(LJDialog):
             self.software_combo.setCurrentIndex(num)
 
     def save_menus(self):
-        # TODO - if you change the label this actually deletes stuff.
         menu_name = ''
         menu_dict = {}
         menu_array = []
@@ -311,6 +310,10 @@ class Designer(LJDialog):
         self.make_init_for_folders_in_path(dir_)
 
         if button_widget.do_save:
+            if self.software.lower() == 'unreal':
+                if os.path.exists(button_file):
+                    button_widget.do_save = False
+                    return
             with open(button_file, 'w+') as x:
                 x.write(code)
             button_widget.do_save = False
