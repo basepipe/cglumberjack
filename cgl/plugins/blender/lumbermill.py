@@ -213,7 +213,6 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
         if collection_name is None:
             collection = PathObject(filepath)
             collection_name = collection.asset
-        # append, set to true to keep the link to the original file
 
         if type == 'COLLECTION':
             print('collection selected')
