@@ -698,6 +698,14 @@ def share_files(path_object):
     sm_dialog.exec_()
 
 
+def share_project(path_object):
+    from cgl.ui.widgets.sync_master import SharingDialog
+    source = path_object
+    render = path_object.copy(context='render')
+    dialog_ = SharingDialog(publish_objects=[source, render], type_='sendreceive')
+    dialog_.exec_()
+
+
 def share_folders_to_devices(device_ids=[], folder_list=[r'[root]\_config\cgl_tools'], dialog=False):
     """
     Makes all files shareable to all devices found in the config file
@@ -863,6 +871,6 @@ def update_machines():
 
 if __name__ == "__main__":
     #wipe_globals()
-    setup_workstation()
+    #setup_workstation()
     # process_pending_devices()
-    # print(get_config_path())
+    print(get_config_path())

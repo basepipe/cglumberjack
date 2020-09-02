@@ -166,8 +166,10 @@ class ProjectPanel(QtWidgets.QWidget):
         else:
             self.project_filter.data_table.setEnabled(True)
             self.project_filter.add_button.setText('Add Project')
-
-        self.project_filter.setup(ListItemModel(prep_list_for_table(projects, split_for_file=True), ['Name']))
+        self.project_filter.setup(ListItemModel(prep_list_for_table(projects,
+                                                                    split_for_file=True,
+                                                                    size_path=self.path_object.path_root),
+                                                ['Name', 'Total Size', 'Source', 'Render']))
 
         self.update_location(self.path_object)
 
@@ -526,17 +528,38 @@ class ProductionPanel(QtWidgets.QWidget):
         clear_layout(self, layout=layout)
 
 
-def prep_list_for_table(list_, path_filter=None, split_for_file=False):
+def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path=False):
+    from cgl.core.cgl_info import get_cgl_info_size
     list_.sort()
     output_ = []
+    total_size = 0
+    render_size = ''
+    source_size = ''
     for each in list_:
+        temp_obj = PathObject(size_path).copy(project=each)
+        if size_path:
+            print(temp_obj.path_root)
+            total_size = get_cgl_info_size(temp_obj.path_root, source=True, render=True)
+            source_size = get_cgl_info_size(temp_obj.path_root, source=True, render=False)
+            render_size = get_cgl_info_size(temp_obj.path_root, source=False, render=True)
+            print('\tsize: {}'.format(total_size))
+            if not total_size:
+                total_size = 'Not Calculated'
+            else:
+                total_size = total_size
         if path_filter:
             filtered = PathObject(each).data[path_filter]
-            output_.append([filtered])
+            to_append = [filtered]
+            if size_path:
+                to_append = [filtered, total_size, source_size, render_size]
+            output_.append(to_append)
         else:
             if split_for_file:
                 each = os.path.basename(each)
-            output_.append([each])
+            to_append = [each]
+            if size_path:
+                to_append = [each, total_size, source_size, render_size]
+            output_.append(to_append)
     return output_
 
 

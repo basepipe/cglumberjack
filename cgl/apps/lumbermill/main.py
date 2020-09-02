@@ -919,7 +919,11 @@ class CGLumberjack(LJMainWindow):
         """
         path_object = self.centralWidget().path_widget.path_object
         import cgl.plugins.syncthing.utils as st_utils
-        st_utils.share_files(path_object)
+        share_mode = 'full'
+        if share_mode == 'full':
+            print('Full Sync Mode - sync from Projects>Project>Share Project')
+        else:
+            st_utils.share_files(path_object)
         # except NameError:
         # print("This machine is not set up for syncing!")
 
