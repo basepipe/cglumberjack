@@ -7,7 +7,7 @@ import json
 import datetime
 import time
 import cgl.plugins.google.sheets as sheets
-from cgl.core.utils.general import cgl_execute
+from cgl.core.utils.general import cgl_execute, launch_lumber_watch
 from cgl.core.utils.read_write import load_json, save_json
 from cgl.core.path import PathObject
 
@@ -35,6 +35,7 @@ def setup_server(clean=False):
     add_folder_to_config(folder_id, cgl_tools_folder, type_='sendonly')
     share_folders_to_devices()  # only if you're setting up main folders
     launch_syncthing()
+    launch_lumber_watch()
 
 
 def set_machine_type(m_type=""):
@@ -798,7 +799,7 @@ def launch_syncthing():
     # kill_syncthing()
     # print('launching syncthing in background')
     print('Launching Syncthing')
-    command = "syncthing"
+    command = "syncthing -no-browser"
     cgl_execute(command, new_window=True)
     # p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, )
     # # TODO - turn the icon to "syncing"

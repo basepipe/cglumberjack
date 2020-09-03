@@ -969,6 +969,7 @@ class CGLumberjack(LJMainWindow):
         keeps track of all machines being used.
         :return:
         """
+        import cgl.plugins.syncthing.utils as st_utils
         st_utils.setup_server()
         self.change_sync_icon(syncing=True)
 
