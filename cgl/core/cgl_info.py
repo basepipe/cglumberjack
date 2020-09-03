@@ -30,8 +30,12 @@ def get_cgl_info_size(folder_path, source=True, render=True, return_type='best')
                     pass
             if render:
                 try:
-                    render_size = load_json(render_file)[os.path.dirname(render_file)]['total_bytes']
-                    render_size = float(render_size)
+                    cgl_info = load_json(render_file)
+                    if cgl_info:
+                        render_size = cgl_info[os.path.dirname(render_file)]['total_bytes']
+                        render_size = float(render_size)
+                    else:
+                        render_size = 0
                 except KeyError:
                     pass
 
