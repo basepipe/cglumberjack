@@ -372,7 +372,7 @@ def read_materials(path_object=None):
     :return:
     """
     import bpy
-    if path_object == None:
+    if path_object is None:
         path_object = lm.scene_object()
 
     shaders = path_object.copy(task='shd', user='publish', set_proper_filename=True).latest_version()
