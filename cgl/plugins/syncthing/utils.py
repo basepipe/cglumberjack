@@ -115,7 +115,7 @@ def fix_folder_paths():
     launch_syncthing()
 
 
-def process_pending_folders(folder_type='receiveonly'):
+def process_pending_folders(folder_type='sendreceive'):
     # receiveonly, sendonly, sendreceive
     config_path = get_config_path()
     tree = ElemTree.parse(config_path)
@@ -192,7 +192,7 @@ def process_pending_devices():
 
 
 
-def process_folder_naming(kill=False, folder_type='receiveonly'):
+def process_folder_naming(kill=False, folder_type='sendreceive'):
     """
     remaps folders to local root.
     :return:
