@@ -536,8 +536,8 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path
     render_size = ''
     source_size = ''
     for each in list_:
-        temp_obj = PathObject(size_path).copy(project=each)
         if size_path:
+            temp_obj = PathObject(size_path).copy(project=each)
             print(temp_obj.path_root)
             total_size = get_cgl_info_size(temp_obj.path_root, source=True, render=True)
             source_size = get_cgl_info_size(temp_obj.path_root, source=True, render=False)

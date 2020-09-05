@@ -6,9 +6,10 @@
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/cgl/plugins/project_management/shotgun/shotgun_api3" />
       <excludeFolder url="file://$MODULE_DIR$/python27venv" />
+      <excludeFolder url="file://$MODULE_DIR$/venv" />
       <excludeFolder url="file://$MODULE_DIR$/venv38" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.7 (cglumberjack) (2)" jdkType="Python SDK" />
+    <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
