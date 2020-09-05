@@ -157,6 +157,9 @@ QToolButton.add_button{ /* add task */
     padding-right: 15px;
 }
 
+
+
+
 QToolButton.add_button:disabled{ /*add button */
     background-color: #424242;
     font-family: "ArcadeClassic";
@@ -193,7 +196,7 @@ QPushButton.ultra_button{/* Big tasks Buttons */
     border: none;
     font-family: "Karmatic Arcade";
     font-size: 18pt;
-    color: #b0b0b0;
+    color: #888888;
     height: 100px;
     border-radius: 8px;
     padding: 2px;
@@ -322,6 +325,34 @@ QTableView::item:focus{
     background-color:#3C454E;
     color: #b0b0b0;
     outline: 0;
+}
+
+
+QCheckBox {
+   border: none;
+   color: #8E8C8D;
+   font-size: 10pt;
+   selected: red;
+
+}
+
+QCheckBox::indicator {
+    border: 3px solid #5A5A5A;
+    background: none;
+    color: white;
+    border-radius: 10px;
+
+
+}
+QCheckBox::indicator:checked{
+    background:#516A7E;
+    border: 3px solid white;
+}
+
+
+QCheckBox::checked {
+    color: white;
+    background: #3B3D40;
 }
 
 QComboBox{ /* user version resolution bar */
