@@ -401,7 +401,7 @@ def syncthing_synced():
     total_uploads = 0
     uploading_files = False
     try:
-        # TODO - this seems to only pull one value and continue to repeate it.
+        # TODO - this seems to only pull one value and continue to repeat it.
         r = requests.get('%s/events' % URL, headers={'X-API-Key': '%s' % api_key}, timeout=15)
         dict = json.loads(r.content)
         # print(dict)

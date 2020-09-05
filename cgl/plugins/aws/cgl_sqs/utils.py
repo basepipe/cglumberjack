@@ -234,6 +234,7 @@ def main(seconds, delete):
                 print("\t{} @ {}".format('user_name', m))
     else:
         print('Not currently connected to any devices for syncing')
+    print("Ready to Sync.")
     start_time = time.time()
     while True:
         process_messages(force_delete=delete)
