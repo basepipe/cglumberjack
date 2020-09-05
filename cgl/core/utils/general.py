@@ -301,15 +301,17 @@ def save_json(filepath, data):
     try:
         with open(filepath, 'w') as outfile:
             json.dump(data, outfile, indent=4, sort_keys=True)
-    except IOError:
+    except IOError or FileNotFoundError:
         print('Error writing file %s' % filepath)
 
 
 def load_json(filepath):
-    with open(filepath) as jsonfile:
-        data = json.load(jsonfile)
-    return data
-
+    try:
+        with open(filepath) as jsonfile:
+            data = json.load(jsonfile)
+        return data
+    except IOError or FileNotFoundError:
+        return None
 
 def fix_json(filepath):
     """
@@ -347,6 +349,7 @@ def launch_lumber_watch(new_window=False):
     if os.path.isfile(lumber_watch_path):
         print('Starting Lumberwatch Services')
         command = 'python %s -s 60' % lumber_watch_path
+        print(new_window)
         cgl_execute(command, new_window=new_window)
     else:
         print('Lumber Watch Path does not exist: %s' % (lumber_watch_path))

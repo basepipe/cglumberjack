@@ -731,12 +731,13 @@ class CGLumberjack(LJMainWindow):
         manage_sharing_action = QtWidgets.QAction('Share Files', self)
         launch_syncthing = QtWidgets.QAction('Start Syncing', self)
         kill_syncthing = QtWidgets.QAction('Stop Syncing', self)
-        show_sync_thing_browser = QtWidgets.QAction('Show Details', self)
+        show_sync_thing_browser = QtWidgets.QAction('Debug Mode', self)
         self.auto_launch_setting = QtWidgets.QAction('Auto-Launch: Off', self)
         self.current_processing_method = QtWidgets.QMenu('Processing Method: Local', self)
         change_to_local = QtWidgets.QAction('Set to Local', self)
         change_to_smedge = QtWidgets.QAction('Set to Smedge', self)
         change_to_deadline = QtWidgets.QAction('Set to Deadline', self)
+        lumberwatch_launch = QtWidgets.QAction('Start Sync', self)
         # fix_paths = QtWidgets.QAction('Fix File Paths', self)
 
         # add actions to the file menu
@@ -768,8 +769,9 @@ class CGLumberjack(LJMainWindow):
         # self.sync_menu.addAction(pull_from_server)
         # self.sync_menu.addAction(fix_paths)
         self.sync_menu.addSeparator()
-        self.sync_menu.addAction(kill_syncthing)
-        self.sync_menu.addAction(launch_syncthing)
+        #self.sync_menu.addAction(kill_syncthing)
+        #self.sync_menu.addAction(launch_syncthing)
+        self.sync_menu.addAction(lumberwatch_launch)
         self.sync_menu.addAction(show_sync_thing_browser)
         self.sync_menu.addSeparator()
         self.sync_menu.addAction(self.auto_launch_setting)
@@ -780,6 +782,8 @@ class CGLumberjack(LJMainWindow):
         change_to_smedge.triggered.connect(self.change_processing_method)
         kill_syncthing.triggered.connect(self.on_kill_syncthing)
         launch_syncthing.triggered.connect(self.on_launch_syncthing)
+        lumberwatch_launch.triggered.connect(self.on_launch_lumberwatch)
+
         # pull_from_server.triggered.connect(self.enable_server_connection_clicked)
         # check_machines_action.triggered.connect(self.check_for_machines_clicked)
         # add_machines_to_folders.triggered.connect(self.add_machines_to_folders_clicked)
@@ -806,13 +810,14 @@ class CGLumberjack(LJMainWindow):
         # TODO how do i run this as a background process, or a parallell process?
         # TODO - how do i grab the pid so i can close this when lumbermill closes potentially?
         if sync_enabled:
+            import cgl.plugins.syncthing.utils as st_utils
             try:
                 if CONFIG['sync']['syncthing']['sync_thing_url']:
 
                     # TODO - check for user config settings to use syncthing.
                     if "sync_thing_auto_launch" in USERCONFIG.keys():
                         try:
-                            import cgl.plugins.syncthing.utils as st_utils
+
                             if USERCONFIG["sync_thing_auto_launch"] == 'True':
                                 sync = False
                                 st_utils.kill_syncthing()
@@ -892,6 +897,9 @@ class CGLumberjack(LJMainWindow):
         logging.debug('Starting Sync Thing')
         st_utils.launch_syncthing()
 
+    def on_launch_lumberwatch(self):
+        self.lumber_watch = launch_lumber_watch(new_window=True)
+
     def enable_server_connection_clicked(self):
         """
         connects an artist's machine to the server after the server has added them
@@ -919,7 +927,11 @@ class CGLumberjack(LJMainWindow):
         """
         path_object = self.centralWidget().path_widget.path_object
         import cgl.plugins.syncthing.utils as st_utils
-        st_utils.share_files(path_object)
+        share_mode = 'full'
+        if share_mode == 'full':
+            print('Full Sync Mode - sync from Projects>Project>Share Project')
+        else:
+            st_utils.share_files(path_object)
         # except NameError:
         # print("This machine is not set up for syncing!")
 
@@ -956,8 +968,9 @@ class CGLumberjack(LJMainWindow):
         shows the syncthing web gui
         :return:
         """
-        # st_utils.kill_syncthing()
-        st_utils.show_browser()
+        import cgl.plugins.syncthing.utils as st_utils
+        st_utils.kill_syncthing()
+        st_utils.launch_syncthing(verbose=True)
 
     def set_up_st_server_clicked(self):
         """
@@ -965,6 +978,7 @@ class CGLumberjack(LJMainWindow):
         keeps track of all machines being used.
         :return:
         """
+        import cgl.plugins.syncthing.utils as st_utils
         st_utils.setup_server()
         self.change_sync_icon(syncing=True)
 
