@@ -1099,19 +1099,13 @@ class CGLumberjack(LJMainWindow):
                        args=(self, self.centralWidget().progress_bar, True, True), text='Checking For Updates')
 
     @staticmethod
-    def do_update_check(widget, progress_bar, show_confirmation=False, print_output=True):
+    def do_update_check(widget, progress_bar):
         updated = check_for_latest_master()
-        progress_bar.hide()
         if not updated:
-            dialog = InputDialog(title='Update Lumbermill',
-                                 message='There is a new version of Lumbermill Available, would you like to update?',
-                                 buttons=['Cancel', 'Update'])
-            dialog.exec_()
-            if dialog.button == 'Update':
-                update_master()
-                widget.close()
+            update_master(widget)
         else:
             print('Lumbermill is Up to Date!')
+        progress_bar.hide()
 
     def report_bug_clicked(self):
         dialog = ReportBugDialog(self)

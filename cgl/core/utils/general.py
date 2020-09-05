@@ -439,11 +439,13 @@ def check_for_latest_master():
                 return False
 
 
-def update_master():
+def update_master(widget=None):
     code_root = CONFIG['paths']['code_root']
     command = 'git pull'
     os.chdir(code_root)
     cgl_execute(command)
+    if widget:
+        widget.close()
 
 
 def get_end_time(start_time):
