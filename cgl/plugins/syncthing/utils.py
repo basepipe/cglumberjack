@@ -732,7 +732,6 @@ def share_project(path_object):
     dialog_ = SharingDialog(publish_objects=[source, render], type_='sendreceive')
     dialog_.exec_()
     if dialog_.button == 'Ok':
-        kill_syncthing()
         launch_syncthing(verbose=True)
 
 
