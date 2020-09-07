@@ -1,8 +1,8 @@
 import logging
-try:
-    from Queue import Empty
-except ModuleNotFoundError:
-    print('Python3 - Skipping Queue import')
+# try:
+#     from Queue import Empty
+# except ModuleNotFoundError:
+#     print('Python3 - Skipping Queue import')
 from cgl.plugins.project_management.shotgun import shotgun_api3 as sg_api
 from cgl.core.config import app_config
 

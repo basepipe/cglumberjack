@@ -137,45 +137,6 @@ class LJTableWidget(QtWidgets.QTableView):
             print('nothing selected')
             self.nothing_selected.emit()
 
-    def contextMenuEvent(self, event):
-        self.menu = LJMenu(self)
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.menu.create_action('Show in %s' % PROJ_MANAGEMENT, self.show_in_proj)
-        self.menu.create_action('Share Project', self.share_project)
-        self.menu.create_action('Calculate Project Size', self.calculate_project_size)
-        self.menu.popup(QtGui.QCursor.pos())
-
-    def calculate_project_size(self):
-        from cgl.core.cgl_info import create_full_project_cgl_info
-        mdl_index = self.model().mapToSource(self.selectionModel().selectedRows()[0])
-        mdl = self.model().sourceModel()
-        row = mdl_index.row()
-        project = mdl.data_[row][0]
-        company = self.path_object.company
-        create_full_project_cgl_info(company=company, project=project)
-
-    def share_project(self):
-        from cgl.core.path import PathObject
-        from cgl.plugins.syncthing.utils import share_project
-        mdl_index = self.model().mapToSource(self.selectionModel().selectedRows()[0])
-        mdl = self.model().sourceModel()
-        row = mdl_index.row()
-        project = mdl.data_[row]
-        path_object = self.path_object.copy()
-        path_object.set_attr(project=project[0])
-        share_project(path_object)
-
-    def show_in_proj(self):
-        from cgl.core.path import PathObject, show_in_project_management
-        mdl_index = self.model().mapToSource(self.selectionModel().selectedRows()[0])
-        mdl = self.model().sourceModel()
-        row = mdl_index.row()
-        sel = mdl.data_[row]
-        print(sel)
-        path_object = self.path_object.copy(project=sel[0])
-        print(path_object.path_root)
-        show_in_project_management(path_object)
-
     def select_row_by_text(self, text, column=0):
         # search all the items in the table view and select the one that has 'text' in it.
         # .setSelection() is a massive part of figuring this out.

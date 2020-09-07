@@ -203,7 +203,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.set_text(self.path_object.path_root)
 
     def eventFilter(self, widget, event):
-        if widget == self.sync_button and isinstance(event,QtGui.QMouseEvent) and event.buttons() & QtCore.Qt.LeftButton:
+        if widget == self.sync_button and isinstance(event, QtGui.QMouseEvent) and event.buttons() & QtCore.Qt.LeftButton:
             self.leftClicked(event.pos())
             return True
         return False
@@ -978,18 +978,26 @@ class CGLumberjack(LJMainWindow):
         keeps track of all machines being used.
         :return:
         """
-        import cgl.plugins.syncthing.utils as st_utils
-        st_utils.setup_server()
-        self.change_sync_icon(syncing=True)
+        dialog = InputDialog(title='Attention',
+                             message='Setting up Server will wipe all syncing information, you sure?')
+        dialog.exec_()
+        if dialog.button == 'Ok':
+            import cgl.plugins.syncthing.utils as st_utils
+            st_utils.setup_server()
+            self.change_sync_icon(syncing=True)
 
     def set_up_st_workstation_clicked(self):
         """
         Set up the local workstation to work with sync thing and register local workstation to the sheets file.
         :return:
         """
-        import cgl.plugins.syncthing.utils as st_utils
-        st_utils.setup_workstation()
-        self.change_sync_icon(syncing=True)
+        dialog = InputDialog(title='Attention',
+                             message='Setting up Workstation will wipe all syncing information, you sure?')
+        dialog.exec_()
+        if dialog.button == 'Ok':
+            import cgl.plugins.syncthing.utils as st_utils
+            st_utils.setup_workstation()
+            self.change_sync_icon(syncing=True)
 
     def load_pipeline_designer_menus(self):
         import json

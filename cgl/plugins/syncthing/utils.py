@@ -731,6 +731,8 @@ def share_project(path_object):
     render = path_object.copy(context='render')
     dialog_ = SharingDialog(publish_objects=[source, render], type_='sendreceive')
     dialog_.exec_()
+    if dialog_.button == 'Ok':
+        launch_syncthing(verbose=True)
 
 
 def share_folders_to_devices(device_ids=[], folder_list=[r'[root]\_config\cgl_tools'], dialog=False):

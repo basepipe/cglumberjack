@@ -169,7 +169,7 @@ class ProjectPanel(QtWidgets.QWidget):
         self.project_filter.setup(ListItemModel(prep_list_for_table(projects,
                                                                     split_for_file=True,
                                                                     size_path=self.path_object.path_root),
-                                                ['Name', 'Total Size', 'Source', 'Render']))
+                                                ['Name', 'Size']))
 
         self.update_location(self.path_object)
 
@@ -551,7 +551,7 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path
             filtered = PathObject(each).data[path_filter]
             to_append = [filtered]
             if size_path:
-                to_append = [filtered, total_size, source_size, render_size]
+                to_append = [filtered, total_size]
             output_.append(to_append)
         else:
             if split_for_file:
