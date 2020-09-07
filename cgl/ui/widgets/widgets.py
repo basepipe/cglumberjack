@@ -577,6 +577,11 @@ class ProjectWidget(QtWidgets.QWidget):
         self.data_table = LJTableWidget(self, path_object=self.path_object)
         self.data_table.title = title
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.installEventFilter(self)
+
+
+        # can i create a right click menu in this stage?
 
         if pixmap:
             self.icon = QtWidgets.QLabel()
@@ -594,6 +599,49 @@ class ProjectWidget(QtWidgets.QWidget):
         v_layout.setContentsMargins(0, 0, 0, 0)
 
         self.add_button.clicked.connect(self.on_add_button_clicked)
+
+    def eventFilter(self, widget, event):
+        if isinstance(event, QtGui.QContextMenuEvent):
+            # self.leftClicked(event.pos())
+            self.menu = LJMenu(self.data_table)
+            #self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            self.menu.create_action('Show in %s' % PROJECT_MANAGEMENT, self.show_in_proj)
+            self.menu.create_action('Share Project', self.share_project)
+            self.menu.create_action('Calculate Project Size', self.calculate_project_size)
+            self.menu.popup(QtGui.QCursor.pos())
+            return True
+        return False
+
+    def calculate_project_size(self):
+        from cgl.core.cgl_info import create_full_project_cgl_info
+        mdl_index = self.model().mapToSource(self.selectionModel().selectedRows()[0])
+        mdl = self.model().sourceModel()
+        row = mdl_index.row()
+        project = mdl.data_[row][0]
+        company = self.path_object.company
+        create_full_project_cgl_info(company=company, project=project)
+
+    def share_project(self):
+        from cgl.core.path import PathObject
+        from cgl.plugins.syncthing.utils import share_project, kill_syncthing, launch_syncthing
+        mdl_index = self.model().mapToSource(self.selectionModel().selectedRows()[0])
+        mdl = self.model().sourceModel()
+        row = mdl_index.row()
+        project = mdl.data_[row]
+        path_object = self.path_object.copy()
+        path_object.set_attr(project=project[0])
+        share_project(path_object)
+
+    def show_in_proj(self):
+        from cgl.core.path import PathObject, show_in_project_management
+        mdl_index = self.data_table.model().mapToSource(self.data_table.selectionModel().selectedRows()[0])
+        mdl = self.data_table.model().sourceModel()
+        row = mdl_index.row()
+        sel = mdl.data_[row]
+        print(sel)
+        path_object = self.path_object.copy(project=sel[0])
+        print(path_object.path_root)
+        show_in_project_management(path_object)
 
     def setup(self, mdl):
         self.data_table.set_item_model(mdl)
