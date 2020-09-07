@@ -1104,7 +1104,7 @@ class CGLumberjack(LJMainWindow):
 
     def update_lumbermill_clicked(self):
         process_method(self.centralWidget().progress_bar, self.do_update_check,
-                       args=(self, self.centralWidget().progress_bar, True, True), text='Checking For Updates')
+                       args=(self, self.centralWidget().progress_bar), text='Checking For Updates')
 
     @staticmethod
     def do_update_check(widget, progress_bar):
