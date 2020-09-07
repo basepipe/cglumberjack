@@ -156,7 +156,7 @@ class LJTableWidget(QtWidgets.QTableView):
 
     def share_project(self):
         from cgl.core.path import PathObject
-        from cgl.plugins.syncthing.utils import share_project
+        from cgl.plugins.syncthing.utils import share_project, kill_syncthing, launch_syncthing
         mdl_index = self.model().mapToSource(self.selectionModel().selectedRows()[0])
         mdl = self.model().sourceModel()
         row = mdl_index.row()
@@ -164,6 +164,9 @@ class LJTableWidget(QtWidgets.QTableView):
         path_object = self.path_object.copy()
         path_object.set_attr(project=project[0])
         share_project(path_object)
+        # Start Debug Mode (For now)
+        kill_syncthing()
+        launch_syncthing(verbose=True)
 
     def show_in_proj(self):
         from cgl.core.path import PathObject, show_in_project_management
