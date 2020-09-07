@@ -165,8 +165,7 @@ class LJTableWidget(QtWidgets.QTableView):
         path_object.set_attr(project=project[0])
         share_project(path_object)
         # Start Debug Mode (For now)
-        kill_syncthing()
-        launch_syncthing(verbose=True)
+
 
     def show_in_proj(self):
         from cgl.core.path import PathObject, show_in_project_management
