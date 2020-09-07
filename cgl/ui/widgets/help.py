@@ -795,9 +795,15 @@ class ReportBugDialog(LJDialog):
         return self.lineEdit_username.text()
 
     def get_email(self):
-        email = CONFIG['project_management'][PROJECT_MANAGEMENT]['users'][self.lineEdit_username.text()]['email']
-        self.lineEdit_email.setText(email)
-        return self.lineEdit_email.text()
+        print(self.lineEdit_username.text())
+        try:
+            email = CONFIG['project_management'][PROJECT_MANAGEMENT]['users'][self.lineEdit_username.text()]['email']
+            self.lineEdit_email.setText(email)
+            return self.lineEdit_email.text()
+        except KeyError:
+            print("Could not find the email address of "
+                  "{} in globals['project_management'][{}]['users']".format(self.lineEdit_username.text(),
+                                                                            PROJECT_MANAGEMENT))
 
     def get_software(self):
         return self.lineEdit_software.text()
