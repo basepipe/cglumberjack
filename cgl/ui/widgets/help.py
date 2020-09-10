@@ -1,5 +1,9 @@
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 import os
+import requests
+import datetime
+import json
+import base64
 from cgl.core import lj_mail
 from cgl.core.config import app_config
 from cgl.ui.widgets.base import LJDialog
@@ -15,6 +19,8 @@ except ModuleNotFoundError:
 
 CONFIG = app_config()
 PROJECT_MANAGEMENT = CONFIG['account_info']['project_management']
+api_key = "1/1146099184455660:7008b15811cd516eee5036d805c3f3a6"
+authorize = "Bearer %s" % api_key
 
 
 class RequestFeatureDialog(LJDialog):
@@ -842,17 +848,18 @@ class ReportBugDialog(LJDialog):
             self.label_messaging.setText('*All fields must have valid values')
 
     def send_email(self):
-        message = 'Reporter: %s\nContact Email: %s\nSoftware: %s\nMessage: \n%s' % (self.get_username(),
-                                                                                    self.get_email(),
-                                                                                    self.get_software(),
-                                                                                    self.get_message())
-        lj_mail.slack_notification_email(type_='bugs', subject="[bugs] %s" % self.get_subject(), message=message,
-                                         attachments=self.attachments)
-        for each in self.attachments:
-            if 'screen_grab' in each:
-                os.remove(each)
-        self.close()
-        print('Email Sent!')
+        # message = 'Reporter: %s\nContact Email: %s\nSoftware: %s\nMessage: \n%s' % (self.get_username(),
+        #                                                                             self.get_email(),
+        #                                                                             self.get_software(),
+        #                                                                             self.get_message())
+        # lj_mail.slack_notification_email(type_='bugs', subject="[bugs] %s" % self.get_subject(), message=message,
+        #                                  attachments=self.attachments)
+        # for each in self.attachments:
+        #     if 'screen_grab' in each:
+        #         os.remove(each)
+        # self.close()
+        # print('Email Sent!')
+        self.send_bug_to_asana()
 
     def screen_grab(self):
         output_path = screen_grab.run()
@@ -864,3 +871,42 @@ class ReportBugDialog(LJDialog):
         # self.screengrabs_layout.addWidget(label)
         return output_path
 
+    def send_bug_to_asana(self):
+        project_id = 1165122701499189
+        section_id = 1192453937636358
+        message = self.get_message()
+        now = datetime.datetime.now()
+        today = datetime.date.today()
+        current_time = now.strftime("%H:%M%p")
+        current_day = today.strftime("%m/%d/%Y")
+        new_task = {
+            "data":
+                {
+                    "name": "[%s %s] %s" % (current_day, current_time, message),
+                    "memberships": [
+                        {
+                            "project": "%s" % project_id,
+                            "section": "%s" % section_id
+                        }
+                    ],
+                    "tags": ["1166323535187341"],
+                    "workspace": "1145700648005039"
+                }
+        }
+        r = requests.post("https://app.asana.com/api/1.0/tasks", headers={'Authorization': "%s" % authorize}, json=new_task)
+        loaded_json = json.loads(r.content)
+        gid = loaded_json['data']['gid']
+
+        for each in self.attachments:
+            print (each)
+            with open(each, "rb") as imagefile:
+                data = base64.b64decode(imagefile.read())
+                p = requests.post("https://app.asana.com/api/1.0/tasks/%s/attachments" % gid,
+                                  headers={'Authorization': "%s" % authorize}, files={"file": ("@%s" % each, imagefile)})
+
+                print (p.content)
+                print (p.status_code)
+                print (p.request.body)
+                print (p.request.headers)
+
+                #TODO: Fix upload so file properly appears in asana
