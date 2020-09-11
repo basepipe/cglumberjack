@@ -900,13 +900,6 @@ class ReportBugDialog(LJDialog):
         for each in self.attachments:
             print (each)
             with open(each, "rb") as imagefile:
-                data = base64.b64decode(imagefile.read())
+                data = imagefile.read()
                 p = requests.post("https://app.asana.com/api/1.0/tasks/%s/attachments" % gid,
-                                  headers={'Authorization': "%s" % authorize}, files={"file": ("@%s" % each, imagefile)})
-
-                print (p.content)
-                print (p.status_code)
-                print (p.request.body)
-                print (p.request.headers)
-
-                #TODO: Fix upload so file properly appears in asana
+                                  headers={'Authorization': "%s" % authorize}, files={"file": ("@%s" % each, data)})
