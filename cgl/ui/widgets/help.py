@@ -5,10 +5,11 @@ import datetime
 import json
 import base64
 from cgl.core import lj_mail
-from cgl.core.config import app_config
+from cgl.core.config import app_config, get_globals, save_globals
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import current_user
 from cgl.core import screen_grab
+from cgl.core.utils.read_write import save_json
 import cgl.core.path as cglpath
 from cgl.ui.widgets.widgets import AdvComboBox, TagWidget
 try:
@@ -19,9 +20,8 @@ except ModuleNotFoundError:
 
 CONFIG = app_config()
 PROJECT_MANAGEMENT = CONFIG['account_info']['project_management']
-api_key = "1/1146099184455660:7008b15811cd516eee5036d805c3f3a6"
+api_key = CONFIG['helpdesk']['asana_api']
 authorize = "Bearer %s" % api_key
-
 
 class RequestFeatureDialog(LJDialog):
     def __init__(self, parent=None, title='Request Feature'):
@@ -737,6 +737,8 @@ class ReportBugDialog(LJDialog):
         self.label_email = QtWidgets.QLabel('Email')
         self.lineEdit_email = QtWidgets.QLineEdit()
         self.get_email()
+        self.asana_key = self.get_new_api_key()
+        self.authorization = "Bearer %s" % self.asana_key
 
         # define the software area
         self.label_messaging = QtWidgets.QLabel('*All fields must have valid values \nbefore submitting bug report')
@@ -782,6 +784,14 @@ class ReportBugDialog(LJDialog):
         layout.addWidget(self.label_messaging)
         layout.addWidget(self.button_submit)
 
+        if self.check_for_api_key():
+            pass
+        else:
+            dialog = APIKeyDialog(self)
+            dialog.exec_()
+            self.asana_key = self.get_new_api_key()
+            self.authorization = "Bearer %s" % self.asana_key
+
         self.setLayout(layout)
         self.setWindowTitle(title)
 
@@ -810,6 +820,11 @@ class ReportBugDialog(LJDialog):
             print("Could not find the email address of "
                   "{} in globals['project_management'][{}]['users']".format(self.lineEdit_username.text(),
                                                                             PROJECT_MANAGEMENT))
+
+    def get_new_api_key(self):
+        config_json = app_config()
+        asana_key = config_json['helpdesk']['asana_api']
+        return asana_key
 
     def get_software(self):
         return self.lineEdit_software.text()
@@ -861,6 +876,12 @@ class ReportBugDialog(LJDialog):
         # print('Email Sent!')
         self.send_bug_to_asana()
 
+    def check_for_api_key(self):
+        if self.asana_key:
+            return True
+        else:
+            return False
+
     def screen_grab(self):
         output_path = screen_grab.run()
         print('Created Screen Grab: %s' % output_path)
@@ -893,13 +914,57 @@ class ReportBugDialog(LJDialog):
                     "workspace": "1145700648005039"
                 }
         }
-        r = requests.post("https://app.asana.com/api/1.0/tasks", headers={'Authorization': "%s" % authorize}, json=new_task)
+        r = requests.post("https://app.asana.com/api/1.0/tasks", headers={'Authorization': "%s" % self.authorization}, json=new_task)
         loaded_json = json.loads(r.content)
         gid = loaded_json['data']['gid']
 
         for each in self.attachments:
-            print (each)
             with open(each, "rb") as imagefile:
                 data = imagefile.read()
                 p = requests.post("https://app.asana.com/api/1.0/tasks/%s/attachments" % gid,
-                                  headers={'Authorization': "%s" % authorize}, files={"file": ("@%s" % each, data)})
+                                  headers={'Authorization': "%s" % self.authorization}, files={"file": ("@%s" % each, data)})
+
+
+class APIKeyDialog(LJDialog):
+
+    def __init__(self, parent=None, title='Error'):
+        LJDialog.__init__(self, parent)
+        self.setWindowTitle(title)
+        layout = QtWidgets.QVBoxLayout(self)
+
+        error_message_row = QtWidgets.QHBoxLayout()
+        api_row = QtWidgets.QHBoxLayout()
+
+        self.error_label = QtWidgets.QLabel("No Asana Key Found")
+        self.api_label = QtWidgets.QLabel("Api Key:")
+        self.api_line_edit = QtWidgets.QLineEdit()
+
+        error_message_row.addWidget(self.error_label)
+        api_row.addWidget(self.api_label)
+        api_row.addWidget(self.api_line_edit)
+
+        layout.addLayout(error_message_row)
+        layout.addLayout(api_row)
+
+        self.api_line_edit.returnPressed.connect(self.update_asana_global)
+
+    def update_asana_global(self):
+        new_value = self.api_line_edit.text()
+        CONFIG['helpdesk']["asana_api"] = new_value
+        if self.check_api_key(new_value):
+            save_globals(CONFIG)
+            self.close()
+        else:
+            self.error_label.setText("Invalid Key")
+
+    def check_api_key(self, api_key):
+        authorize = "Bearer %s" % api_key
+        r = requests.get("https://app.asana.com/api/1.0/workspaces", headers={'Authorization': "%s" % authorize})
+        response_json = json.loads(r.content)
+        if r.status_code != 200:
+            return False
+        else:
+            for dict in response_json['data']:
+                if dict['name'] == 'CG Lumberjack':
+                    return True
+            return False
