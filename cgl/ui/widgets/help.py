@@ -900,15 +900,19 @@ class ReportBugDialog(LJDialog):
     def send_bug_to_asana(self):
         project_id = 1165122701499189
         section_id = 1192453937636358
+        title = self.get_subject()
         message = self.get_message()
         now = datetime.datetime.now()
         today = datetime.date.today()
         current_time = now.strftime("%H:%M%p")
         current_day = today.strftime("%m/%d/%Y")
+        task_body = "<body><b>Sent By:</b> {}\n" \
+                    "<b>Email Address:</b> {}\n\n" \
+                    "Submission Note: {}\n</body>".format(self.get_username(), self.get_email(), message)
         new_task = {
             "data":
                 {
-                    "name": "[%s %s] %s" % (current_day, current_time, message),
+                    "name": "[%s %s] %s" % (current_day, current_time, title),
                     "memberships": [
                         {
                             "project": "%s" % project_id,
@@ -916,7 +920,8 @@ class ReportBugDialog(LJDialog):
                         }
                     ],
                     "tags": ["1166323535187341"],
-                    "workspace": "1145700648005039"
+                    "workspace": "1145700648005039",
+                    "html_notes": task_body
                 }
         }
         r = requests.post("https://app.asana.com/api/1.0/tasks", headers={'Authorization': "%s" % self.authorization}, json=new_task)
