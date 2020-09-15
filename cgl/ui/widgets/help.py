@@ -7,6 +7,7 @@ import base64
 from cgl.core import lj_mail
 from cgl.core.config import app_config, get_globals, save_globals
 from cgl.ui.widgets.base import LJDialog
+from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.utils.general import current_user
 from cgl.core import screen_grab
 from cgl.core.utils.read_write import save_json
@@ -20,8 +21,6 @@ except ModuleNotFoundError:
 
 CONFIG = app_config()
 PROJECT_MANAGEMENT = CONFIG['account_info']['project_management']
-api_key = CONFIG['helpdesk']['asana_api']
-authorize = "Bearer %s" % api_key
 
 class RequestFeatureDialog(LJDialog):
     def __init__(self, parent=None, title='Request Feature'):
@@ -600,14 +599,12 @@ class RequestFeatureDialog(LJDialog):
             rtf_links = self.rtf_bullet_list('Resources:', links)
         self.rtf_task_text = "<body>%s%s%s%s</body>" % (rtf_task_description, rtf_requirements, rtf_expected_results,
                                                         rtf_links)
-        print(self.rtf_task_text)
         self.text_edit.setAcceptRichText(True)
         self.text_edit.setText(self.rtf_task_text)
 
     def get_relevant_links(self):
         links = []
         for s in self.list_from_bullets(self.message_software):
-            print(s.lower())
             if s.lower() in self.reference_dict.keys():
                 for link_type in self.reference_dict[s.lower()]:
                     for link in self.reference_dict[s.lower()][link_type]:
@@ -798,7 +795,7 @@ class ReportBugDialog(LJDialog):
         self.button_submit.setEnabled(False)
 
         self.lineEdit_software.setText(self.title_)
-        self.button_submit.clicked.connect(self.send_email)
+        self.button_submit.clicked.connect(self.submit_bug)
         self.button_attachment.clicked.connect(self.add_attachments)
         self.lineEdit_username.textChanged.connect(self.ok_to_send)
         self.lineEdit_subject.textChanged.connect(self.ok_to_send)
@@ -811,7 +808,6 @@ class ReportBugDialog(LJDialog):
         return self.lineEdit_username.text()
 
     def get_email(self):
-        print(self.lineEdit_username.text())
         try:
             email = CONFIG['project_management'][PROJECT_MANAGEMENT]['users'][self.lineEdit_username.text()]['email']
             self.lineEdit_email.setText(email)
@@ -823,8 +819,12 @@ class ReportBugDialog(LJDialog):
 
     def get_new_api_key(self):
         config_json = app_config()
-        asana_key = config_json['helpdesk']['asana_api']
-        return asana_key
+        try:
+            asana_key = config_json['helpdesk']['asana_api']
+            return asana_key
+        except KeyError:
+            print('No asana API Key found')
+            return None
 
     def get_software(self):
         return self.lineEdit_software.text()
@@ -862,7 +862,7 @@ class ReportBugDialog(LJDialog):
             self.button_submit.setEnabled(False)
             self.label_messaging.setText('*All fields must have valid values')
 
-    def send_email(self):
+    def submit_bug(self):
         # message = 'Reporter: %s\nContact Email: %s\nSoftware: %s\nMessage: \n%s' % (self.get_username(),
         #                                                                             self.get_email(),
         #                                                                             self.get_software(),
@@ -872,9 +872,14 @@ class ReportBugDialog(LJDialog):
         # for each in self.attachments:
         #     if 'screen_grab' in each:
         #         os.remove(each)
-        # self.close()
-        # print('Email Sent!')
+        dialog = InputDialog(title='Submitting Bug', message='You should receive an email from us shortly')
+        dialog.show()
+        dialog.raise_()
         self.send_bug_to_asana()
+        # send email to the submitter know
+        dialog.accept()
+        self.close()
+        print('Email Sent')
 
     def check_for_api_key(self):
         if self.asana_key:
@@ -895,15 +900,19 @@ class ReportBugDialog(LJDialog):
     def send_bug_to_asana(self):
         project_id = 1165122701499189
         section_id = 1192453937636358
+        title = self.get_subject()
         message = self.get_message()
         now = datetime.datetime.now()
         today = datetime.date.today()
         current_time = now.strftime("%H:%M%p")
         current_day = today.strftime("%m/%d/%Y")
+        task_body = "<body><b>Sent By:</b> {}\n" \
+                    "<b>Email Address:</b> {}\n\n" \
+                    "Submission Note: {}\n</body>".format(self.get_username(), self.get_email(), message)
         new_task = {
             "data":
                 {
-                    "name": "[%s %s] %s" % (current_day, current_time, message),
+                    "name": "[%s %s] %s" % (current_day, current_time, title),
                     "memberships": [
                         {
                             "project": "%s" % project_id,
@@ -911,7 +920,8 @@ class ReportBugDialog(LJDialog):
                         }
                     ],
                     "tags": ["1166323535187341"],
-                    "workspace": "1145700648005039"
+                    "workspace": "1145700648005039",
+                    "html_notes": task_body
                 }
         }
         r = requests.post("https://app.asana.com/api/1.0/tasks", headers={'Authorization': "%s" % self.authorization}, json=new_task)
@@ -931,9 +941,14 @@ class APIKeyDialog(LJDialog):
         LJDialog.__init__(self, parent)
         self.setWindowTitle(title)
         layout = QtWidgets.QVBoxLayout(self)
+        button_row = QtWidgets.QHBoxLayout()
 
         error_message_row = QtWidgets.QHBoxLayout()
         api_row = QtWidgets.QHBoxLayout()
+
+        submit_button = QtWidgets.QPushButton('Submit')
+        button_row.addStretch(1)
+        button_row.addWidget(submit_button)
 
         self.error_label = QtWidgets.QLabel("No Asana Key Found")
         self.api_label = QtWidgets.QLabel("Api Key:")
@@ -945,8 +960,10 @@ class APIKeyDialog(LJDialog):
 
         layout.addLayout(error_message_row)
         layout.addLayout(api_row)
+        layout.addLayout(button_row)
 
         self.api_line_edit.returnPressed.connect(self.update_asana_global)
+        submit_button.clicked.connect(self.update_asana_global)
 
     def update_asana_global(self):
         new_value = self.api_line_edit.text()
@@ -958,6 +975,7 @@ class APIKeyDialog(LJDialog):
             self.error_label.setText("Invalid Key")
 
     def check_api_key(self, api_key):
+        api_key = CONFIG['helpdesk']['asana_api']
         authorize = "Bearer %s" % api_key
         r = requests.get("https://app.asana.com/api/1.0/workspaces", headers={'Authorization': "%s" % authorize})
         response_json = json.loads(r.content)
