@@ -1,13 +1,11 @@
-import re
-import os
-import sys
-import stringcase
 import logging
+import os
+
+import stringcase
+
 import cgl.core.utils.read_write as read_write
 from cgl.core.path import get_resources_path
 from cgl.core.project import get_cgl_tools
-
-import json
 
 logger = logging.getLogger('qtutils')
 
@@ -195,7 +193,7 @@ def write_layout(outFile=None):
     :param outFile:
     :return:
     """
-    from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file
+    from cgl.plugins.blender.lumbermill import scene_object, LumberObject
     from cgl.core.utils.read_write import save_json
     import bpy
     from pathlib import Path
@@ -225,7 +223,7 @@ def write_layout(outFile=None):
                           'source_path': libObject.path,
                           'blender_transform': blender_transform}
 
-    save_json(outFile,data)
+    save_json(outFile, data)
 
     return (outFile)
 
@@ -252,8 +250,6 @@ def read_layout(outFile=None, linked=False, append=False):
         outFile = outFileObject.path_root
     # outFile = scene_object().path_root.replace(scene_object().ext, 'json')
 
-
-
     data = load_json(outFile)
 
     for p in data:
@@ -272,7 +268,13 @@ def read_layout(outFile=None, linked=False, append=False):
 
         if lumberObject.filename not in bpy.data.libraries:
             import_file(lumberObject.path_root, linked=linked, append=append)
-        if p not in bpy.data.objects:
+
+        else:
+            lib = bpy.data.libraries[lumberObject.filename]
+            bpy.data.batch_remove(ids=(lib,))
+            import_file(lumberObject.path_root, linked=linked, append=append)
+
+        if p not in bpy.context.collection.objects:
             obj = bpy.data.objects.new(p, None)
             bpy.context.collection.objects.link(obj)
             obj.instance_type = 'COLLECTION'
@@ -306,37 +308,129 @@ def rename_materials(selection=None):
                 print(object.name, material_slot.name)
 
 
-def setup_preview_viewport_display(color=None, selection=None):
-    import bpy
+def get_valid_meshes_list(objects):
+
+    valid_objects = []
+
+    for object in objects:
+        if object and object.type == "MESH":
+            if object.is_instancer == False:
+                valid_objects.append(object)
+    return valid_objects
+
+
+def get_materials_from_object(object):
+    valid_materials = []
+
+    for material_slot in object.material_slots:
+        material = material_slot.material
+        valid_materials.append(material_slot.material)
+
+    return (valid_materials)
+
+
+def get_selection(selection=None):
+    if selection == None:
+        try:
+            selection = bpy.context.selected_objects
+        except:
+            currentScene = lm.scene_object()
+            assetName = lm.scene_object().shot
+            obj_in_collection = bpy.data.collections[assetName].all_objects
+
+    if not selection:
+        selection = bpy.data.objects
+
+    return selection
+
+
+def get_preview_from_texture(inputs, node_tree):
+    texture = None
+    if inputs:
+        color_input = inputs[1]
+        transparent = inputs[2]
+
+        try:
+            texture = color_input.links[0].from_node
+        except IndexError:
+            print('no texture connected')
+            pass
+
+    if texture:
+
+        if texture.type == 'TEX_IMAGE':
+            preview_color = texture.image.pixels
+            diffuse_color = [preview_color[7004],
+                             preview_color[7005],
+                             preview_color[7006],
+                             1 - transparent.default_value]
+
+        if texture.type == "RGB":
+            simple_color = texture.outputs['Color'].default_value
+            preview_color = [simple_color[1],
+                             simple_color[2],
+                             simple_color[3],
+                             1 - transparent.default_value]
+    else:
+
+        inputs = preview_inputs_from_node_tree(node_tree)
+        if inputs:
+
+            preview_color = [color_input.default_value[0],
+                             color_input.default_value[1],
+                             color_input.default_value[2],
+                             1]
+
+        else:
+            preview_color = [1, 1, 1, 1]
+
+    return preview_color
+
+
+def preview_inputs_from_node_tree(node_tree):
+    color_input = None
+    transparent = None
+    valid_node = None
+    if 'DEFAULTSHADER' in node_tree:
+        color_input = node_tree['DEFAULTSHADER'].inputs['Color']
+        transparent = node_tree['DEFAULTSHADER'].inputs['Transparent']
+        valid_node = node_tree['DEFAULTSHADER']
+        found == True
+    else:
+        found = False
+        for node in node_tree:
+
+            if node.type == 'BSDF_PRINCIPLED' and not found:
+                color_input = node.inputs[0]
+                transparent = node.inputs['Transmission']
+                found = True
+                valid_node = node
+
+    returns = (valid_node, color_input, transparent)
+
+    if found:
+        print('__________Valid Materials And inputs______________')
+        print(returns)
+        return returns
+    else:
+        returns = (1, 1, 1, 1)
+
+
+def setup_preview_viewport_display(object):
     """
     set up the default viewport display color  diffuse_color on materials
     :param color: Value of the color  of the parent menu  FloatProperty 4
     :param selection:
     """
-    if selection == None:
-        selection = bpy.context.selected_objects
+    materials = get_materials_from_object(object)
 
-    for object in selection:
-        for material_slot in object.material_slots:
-            material = material_slot.material
-            node_tree = material.node_tree.nodes
-            if color == None:
-                for node in node_tree:
-                    if node.type == 'OUTPUT_MATERIAL':
-                        for input in node.inputs:
-                            if len(input.links) != 0:
-                                input_surface = input.links[0].from_node
-                                color_input = input_surface.inputs[0]
-                                try:
-                                    color_input_nested = color_input.links[0].from_node
-                                    color_input.default_value = color_input_nested.outputs[0].default_value
-                                except(IndexError):
-                                    print('no color inputs found. Using Default')
-                                    pass
+    for material in materials:
+        node_tree = material.node_tree.nodes
+        inputs = preview_inputs_from_node_tree(node_tree)
+        preview_colors = get_preview_from_texture(inputs, node_tree)
 
-                                material.diffuse_color = color_input.default_value
-            else:
-                material_slot.material.diffuse_color = color
+        for i in range(0, 3):
+            material.diffuse_color[i] = preview_colors[i]
 
 
 def get_materials_dictionary():
@@ -443,9 +537,38 @@ def create_task_on_asset(task, path_object=None):
     return newTask
 
 
+def reorder_list(items, arg=''):
+    """
+    Reorders list in order of importance, putting rig
+    :param items:
+    :return:
+    """
+
+    if arg:
+
+        for i in items:
+            if i == arg:
+                items.remove(i)
+                items.insert(0, arg)
+
+    return items
+
+
+def get_formatted_list(element, first_item):
+    """
+    Formats list for blender search mode
+    """
+    scene = bpy.types.Scene.scene_enum
+
+    path_object = lm.LumberObject(get_asset_from_name(scene))
+    tasks = reorder_list(path_object.glob_project_element(element), arg=first_item)
+    value = [(tasks[i], tasks[i], '') for i in range(len(tasks))]
+
+    return (value)
 
 
 if __name__ == '__main__':
-    # create_menu_file('TomTest', 'Tom Test', r'F:\FSU-CMPA\COMPANIES\_config\cgl_tools\blender\menus\TomTest\TomTest.py')
+    # create_menu_file('TomTest', 'Tom Test',
+    # r'F:\FSU-CMPA\COMPANIES\_config\cgl_tools\blender\menus\TomTest\TomTest.py')
     # create_button_file('ButtonAaa', 'Button Aaa', 'TomTest')
     add_buttons_to_menu('TomTest')
