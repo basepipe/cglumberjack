@@ -624,8 +624,8 @@ class ProjectWidget(QtWidgets.QWidget):
     def share_project(self):
         from cgl.core.path import PathObject
         from cgl.plugins.syncthing.utils import share_project, kill_syncthing, launch_syncthing
-        mdl_index = self.model().mapToSource(self.selectionModel().selectedRows()[0])
-        mdl = self.model().sourceModel()
+        mdl_index = self.data_table.model().mapToSource(self.data_table.selectionModel().selectedRows()[0])
+        mdl = self.data_table.model().sourceModel()
         row = mdl_index.row()
         project = mdl.data_[row]
         path_object = self.path_object.copy()
