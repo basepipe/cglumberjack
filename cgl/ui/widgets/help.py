@@ -13,6 +13,7 @@ from cgl.core import screen_grab
 from cgl.core.utils.read_write import save_json
 import cgl.core.path as cglpath
 from cgl.ui.widgets.widgets import AdvComboBox, TagWidget
+
 try:
     from cgl.plugins.project_management.asana.basic import AsanaJack
 
@@ -863,23 +864,33 @@ class ReportBugDialog(LJDialog):
             self.label_messaging.setText('*All fields must have valid values')
 
     def submit_bug(self):
-        # message = 'Reporter: %s\nContact Email: %s\nSoftware: %s\nMessage: \n%s' % (self.get_username(),
-        #                                                                             self.get_email(),
-        #                                                                             self.get_software(),
-        #                                                                             self.get_message())
-        # lj_mail.slack_notification_email(type_='bugs', subject="[bugs] %s" % self.get_subject(), message=message,
-        #                                  attachments=self.attachments)
-        # for each in self.attachments:
-        #     if 'screen_grab' in each:
-        #         os.remove(each)
         dialog = InputDialog(title='Submitting Bug', message='You should receive an email from us shortly')
         dialog.show()
         dialog.raise_()
         self.send_bug_to_asana()
         # send email to the submitter know
+        # self.send_email()
         dialog.accept()
         self.close()
         print('Email Sent')
+
+    def send_email(self):
+        email = """   
+        We have received your bug report and will begin working on it as soon as possible.
+        
+        Reported By: %s
+        Email Address: %s
+        Submission Note: %s
+        """ % (self.get_username(), self.get_email(), self.get_message())
+        files_ = ""
+        # TODO: to send this to people we need a paig mailgun account
+        return requests.post(CONFIG["email"]["lj_domain"],
+                             auth=("api", CONFIG["email"]['mailgun_key']),
+                             files=files_,
+                             data={"from": "%s <%s>" % (self.get_username(), CONFIG["email"]['from']),
+                                   "to": self.get_email(),
+                                   "subject": "Bug Reported", "text": email},
+                             )
 
     def check_for_api_key(self):
         if self.asana_key:
