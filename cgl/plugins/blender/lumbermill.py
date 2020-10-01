@@ -133,7 +133,9 @@ class LumberObject(PathObject):
 
     def set_render_paths(self):
         padding = '#' * self.frame_padding
-        if self.task == 'anim':
+        previewRenderTypes = ['anim', 'rig', 'mdl', 'lay','remsh']
+
+        if self.task in previewRenderTypes:
             render_path = self.copy(context='render', ext='jpg', set_proper_filename=True).path_root
             self.render_path = render_path.replace('.jpg', '.{}.jpg'.format(padding))
         else:
@@ -378,6 +380,27 @@ def create_turntable(length=250, task=False, startFrame=1):
     bpy.context.scene.frame_start = startFrame
     bpy.context.scene.frame_end = endFrame
     pass
+
+
+
+def set_framerange(start=1, end=1, current=False):
+    bpy.context.scene.frame_start = start
+    bpy.context.scene.frame_end = end
+
+    current = bpy.context.scene.frame_current
+    if current:
+        bpy.context.scene.frame_start = current
+        bpy.context.scene.frame_end = current
+
+def switch_overlays(visible=False):
+    for window in bpy.context.window_manager.windows:
+        screen = window.screen
+
+        for area in screen.areas:
+            if area.type == 'VIEW_3D':
+                for space in area.spaces:
+                    if space.type == 'VIEW_3D':
+                        space.overlay.show_overlays = visible
 
 
 def clean_turntable():
