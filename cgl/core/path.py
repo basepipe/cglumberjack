@@ -797,6 +797,9 @@ class PathObject(object):
                 if PROJ_MANAGEMENT == 'ftrack':
                     prod_data = CreateProductionData(path_object=self)
                     return True
+                elif PROJ_MANAGEMENT == 'shotgun':
+                    prod_data = CreateProductionData(path_object=self)
+                    print('Finished uploading to shotgun')
                 elif PROJ_MANAGEMENT == 'lumbermill':
                     logging.debug('no review process defined for default lumbermill')
             else:

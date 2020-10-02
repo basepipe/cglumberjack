@@ -614,8 +614,8 @@ class ProjectWidget(QtWidgets.QWidget):
 
     def calculate_project_size(self):
         from cgl.core.cgl_info import create_full_project_cgl_info
-        mdl_index = self.model().mapToSource(self.selectionModel().selectedRows()[0])
-        mdl = self.model().sourceModel()
+        mdl_index = self.data_table.model().mapToSource(self.data_table.selectionModel().selectedRows()[0])
+        mdl = self.data_table.model().sourceModel()
         row = mdl_index.row()
         project = mdl.data_[row][0]
         company = self.path_object.company
