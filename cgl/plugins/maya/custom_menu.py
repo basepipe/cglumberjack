@@ -8,7 +8,6 @@ class MayaCustomMenu(CustomMenu):
         CustomMenu.__init__(self, software, type_)
 
     def get_scene_path(self):
-        print(self.path_object)
         return pm.sceneName()
 
     def create_menu(self, name):
@@ -39,9 +38,6 @@ class MayaCustomMenu(CustomMenu):
         return shelf
 
     def delete_menu(self, shelf_name):
-        print('111111111111111111111111')
-        print(shelf_name)
-        print(self.menu_parent)
         shelf_ = self.find_menu_by_name(self.menu_parent, shelf_name)
         if shelf_:
             pm.deleteUI(shelf_)

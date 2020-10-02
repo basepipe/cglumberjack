@@ -5,7 +5,6 @@ import os
 import json
 from .tracking_internal.shotgun_specific import ShotgunQuery
 from cgl.core.config import app_config
-from cgl.ui.widgets.dialog import PlaylistDialog
 
 CONFIG = app_config()
 PROJECTSHORTNAME = CONFIG['project_management']['shotgun']['api']['project_short_name']
@@ -310,12 +309,7 @@ class ProjectManagementData(object):
 
         :return:
         """
-        # print(1)
-        # playlist_chooser = PlaylistDialog(project_name=self.project)
-        # print(2)
-        # playlist_chooser.exec_()
-        # print(3)
-        # project_name = self.project
+        #PlaylistDialog is an option we already have if they want to choose which day to send it to.
         playlist_name = 'Dailies %s' % datetime.date.today()
         filters = [['project', 'is', self.project_data], ['code', 'is', playlist_name]]
         play_list = ShotgunQuery.find_one("Playlist", filters, fields=VERSIONFIELDS)

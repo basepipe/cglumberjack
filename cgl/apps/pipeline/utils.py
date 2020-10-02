@@ -218,8 +218,6 @@ class CGLMenuButton(QtWidgets.QWidget):
 
     def load_code_text(self):
         if self.software.lower() != 'unreal':
-            print('load_code_text')
-            print(self.software, self.preflight_name, self.name)
             code_path = get_button_path(self.software, self.preflight_name, self.name, menu_type=self.menu_type)
             if os.path.exists(code_path):
                 try:
@@ -375,14 +373,9 @@ class CGLMenu(QtWidgets.QWidget):
                              name_example='Name may only contain letters and spaces')
         dialog.exec_()
         if dialog.button == 'Ok':
-            # text_ = dialog.line_edit.text().replace(' ', '_')
             text_ = stringcase.snakecase(dialog.line_edit.text().lower())
-            #print(text_)
             button_name = stringcase.pascalcase(text_)
-            #print('name:', button_name)
             label = stringcase.titlecase(text_)
-            #print('label: ', label)
-
             command = self.get_command_text(button_name=button_name, menu_type=self.menu_type)
             module = self.default_preflight_text(button_name)
             if self.menu_type == 'preflights':
@@ -408,7 +401,6 @@ class CGLMenu(QtWidgets.QWidget):
                 icon = QtGui.QIcon(attrs['icon'])
                 index = self.buttons_tab_widget.addTab(self.new_button_widget, icon, button_name)
             else:
-                print(3)
                 index = self.buttons_tab_widget.addTab(self.new_button_widget, button_name)
             self.buttons_tab_widget.setCurrentIndex(index)
 
@@ -428,8 +420,6 @@ class CGLMenu(QtWidgets.QWidget):
     def load_buttons(self):
         if self.menu:
             if 'buttons' in self.menu.keys():
-                print(self.menu_name)
-                print(self.menu_path)
                 for button in self.menu['buttons']:
                     button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
                                                   preflight_step_name=button['label'],
@@ -444,7 +434,6 @@ class CGLMenu(QtWidgets.QWidget):
                     else:
                         self.buttons_tab_widget.addTab(button_widget, button['name'])
             else:
-                print('333333')
                 for i in range(len(self.menu)):
                     for button in self.menu:
                         if button != 'order':
@@ -486,9 +475,7 @@ def create_button_file(software, menu_name, button_name, menu_type):
     else:
         button_template = os.path.join(get_resources_path(), 'pipeline_designer', template_software, 'buttons',
                                        'for_%s.py' % menu_type)
-    # print('Button_template: {}'.format(button_template))
     button_lines = load_text_file(button_template)
-    # print('Button Lines: {}'.format(button_lines))
     changed_lines = []
     for l in button_lines:
         if software == 'blender':
@@ -519,8 +506,6 @@ def create_button_file(software, menu_name, button_name, menu_type):
     dirname = os.path.dirname(button_path)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-    print(changed_lines)
-    print(button_path)
     save_text_lines(changed_lines, button_path)
     return button_path
 
