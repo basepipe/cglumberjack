@@ -114,6 +114,8 @@ class CustomMenu(object):
     def delete_menus(self):
         if self.menus:
             for menu in self.menus:
+                if isinstance(menu, dict):
+                    menu = menu['name']
                 print('deleting %s' % menu)
                 self.delete_menu(menu)
 

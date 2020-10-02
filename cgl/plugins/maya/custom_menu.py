@@ -39,6 +39,9 @@ class MayaCustomMenu(CustomMenu):
         return shelf
 
     def delete_menu(self, shelf_name):
+        print('111111111111111111111111')
+        print(shelf_name)
+        print(self.menu_parent)
         shelf_ = self.find_menu_by_name(self.menu_parent, shelf_name)
         if shelf_:
             pm.deleteUI(shelf_)

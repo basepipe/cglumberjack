@@ -797,6 +797,11 @@ class PathObject(object):
                 if PROJ_MANAGEMENT == 'ftrack':
                     prod_data = CreateProductionData(path_object=self)
                     return True
+                elif PROJ_MANAGEMENT == 'shotgun':
+                    print('Shotgun Review time sucka!')
+                    # TODO - this is way too black box, i have no idea what this is doing.
+                    prod_data = CreateProductionData(path_object=self)
+                    print('Finished uploading to shotgun')
                 elif PROJ_MANAGEMENT == 'lumbermill':
                     logging.debug('no review process defined for default lumbermill')
             else:

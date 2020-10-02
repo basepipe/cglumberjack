@@ -5,6 +5,7 @@ import os
 import json
 from .tracking_internal.shotgun_specific import ShotgunQuery
 from cgl.core.config import app_config
+from cgl.ui.widgets.dialog import PlaylistDialog
 
 CONFIG = app_config()
 PROJECTSHORTNAME = CONFIG['project_management']['shotgun']['api']['project_short_name']
@@ -49,6 +50,7 @@ class ProjectManagementData(object):
     entity_data = None
     status = None
     server_url = CONFIG['project_management']['shotgun']['api']['server_url']
+    review_session = None
 
     def __init__(self, path_object=None, **kwargs):
         if path_object:
@@ -295,19 +297,49 @@ class ProjectManagementData(object):
             # ShotgunQuery.upload('Version', id_, preview, field_name='sg_latest_quicktime')
             ShotgunQuery.update('Version', entity_id=id_, data=data)
             logging.info('movie uploaded to %s' % self.version_data['code'])
-            pass
         elif self.file_type == 'image':
             ShotgunQuery.upload('Version', self.version_data['id'], preview, 'sg_uploaded_movie')
             ShotgunQuery.update('Version', entity_id=int(self.version_data['id']), data=data)
             logging.info('image uploaded to %s' % self.version_data['code'])
         logging.info('Committing Media to Shotgun')
         self.add_to_dailies()
+        # open the web browser
 
     def create_review_session(self):
         """
 
         :return:
         """
+        # print(1)
+        # playlist_chooser = PlaylistDialog(project_name=self.project)
+        # print(2)
+        # playlist_chooser.exec_()
+        # print(3)
+        # project_name = self.project
+        playlist_name = 'Dailies %s' % datetime.date.today()
+        filters = [['project', 'is', self.project_data], ['code', 'is', playlist_name]]
+        play_list = ShotgunQuery.find_one("Playlist", filters, fields=VERSIONFIELDS)
+        # filepath = self.path_object.path_root
+        append = True
+        project = self.project_data
+        if play_list:
+            versions = play_list['versions']
+        else:
+            versions = []
+        for each in versions:
+            if self.version_data['id'] == each['id']:
+                append = False
+        if append:
+            versions.append(self.version_data)
+        data = {'project': project,
+                'code': playlist_name,
+                'versions': versions}
+        if play_list:
+            logging.info('Adding to Playlist: %s' % playlist_name)
+            self.review_session = ShotgunQuery.update('Playlist', play_list['id'], data)
+        else:
+            logging.info('Creating Playlist: %s' % playlist_name)
+            self.review_session = ShotgunQuery.create('Playlist', data)
         pass
 
     def add_to_dailies(self):
@@ -316,6 +348,11 @@ class ProjectManagementData(object):
         :return:
         """
         logging.debug('Adding to Dailies')
+        if self.version_data:
+            print('creating review session')
+            self.create_review_session()
+            print('going to dailies')
+            self.go_to_dailies()
         pass
 
     def add_project_to_user(self):
@@ -523,16 +560,17 @@ class ProjectManagementData(object):
             logging.info('No version found in Shotgun - Submit Review to Create a Version')
             return self.get_task_url()
 
-    def go_to_dailies(self, playlist=None):
-        if not playlist:
-            list_name = 'Dailies: %s' % datetime.date.today()
-            version_list = self.ftrack.query('AssetVersionList where name is "%s" and project.id is "%s"'
-                                             % (list_name, self.project_data['id'])).first()
-            playlist = version_list['id']
-        url_string = r'%s/widget/#view=freview_webplayer_v1&itemId=freview&entityType=list&entityId=' \
-                     r'%s&controller=widget' % (self.server_url, playlist)
-        webbrowser.open(url_string)
-        logging.debug(url_string)
+    def go_to_dailies(self):
+        """
+
+        :param playlist_id: ID of the playlist you want.
+        :param version:
+        :return:
+        """
+        if self.review_session:
+            playlist_url = r'%s/page/review_app_webview?entity_type=Playlist&entity_id=%s' % (self.server_url,
+                                                                                              self.review_session['id'])
+            webbrowser.open_new_tab(playlist_url)
 
 
 
