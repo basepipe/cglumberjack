@@ -1210,6 +1210,8 @@ class CreateProductionData(object):
     def create_default_file(self):
         if self.path_object.task == 'prev':
             self.copy_default_file('blender', 'blend')
+        if self.path_object.task == 'remsh':
+            self.copy_default_file('blender', 'blend')
         if self.path_object.task == 'lay':
             self.copy_default_file('blender', 'blend')
         if self.path_object.task == 'anim':

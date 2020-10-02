@@ -1,13 +1,11 @@
-import re
-import os
-import sys
-import stringcase
 import logging
+import os
+
+import stringcase
+
 import cgl.core.utils.read_write as read_write
 from cgl.core.path import get_resources_path
 from cgl.core.project import get_cgl_tools
-
-import json
 
 logger = logging.getLogger('qtutils')
 
@@ -195,7 +193,7 @@ def write_layout(outFile=None):
     :param outFile:
     :return:
     """
-    from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file
+    from cgl.plugins.blender.lumbermill import scene_object, LumberObject
     from cgl.core.utils.read_write import save_json
     import bpy
     from pathlib import Path
@@ -225,7 +223,7 @@ def write_layout(outFile=None):
                           'source_path': libObject.path,
                           'blender_transform': blender_transform}
 
-    save_json(outFile,data)
+    save_json(outFile, data)
 
     return (outFile)
 
@@ -252,8 +250,6 @@ def read_layout(outFile=None, linked=False, append=False):
         outFile = outFileObject.path_root
     # outFile = scene_object().path_root.replace(scene_object().ext, 'json')
 
-
-
     data = load_json(outFile)
 
     for p in data:
@@ -272,7 +268,18 @@ def read_layout(outFile=None, linked=False, append=False):
 
         if lumberObject.filename not in bpy.data.libraries:
             import_file(lumberObject.path_root, linked=linked, append=append)
-        if p not in bpy.data.objects:
+
+        else:
+
+            lib = bpy.data.libraries[lumberObject.filename]
+            if lib.filepath == lumberObject.path_root:
+                print('{} in scene'.format(lumberObject.filename))
+            else:
+
+                bpy.data.batch_remove(ids=(lib,))
+                import_file(lumberObject.path_root, linked=linked, append=append)
+
+        if p not in bpy.context.collection.objects:
             obj = bpy.data.objects.new(p, None)
             bpy.context.collection.objects.link(obj)
             obj.instance_type = 'COLLECTION'
@@ -306,37 +313,133 @@ def rename_materials(selection=None):
                 print(object.name, material_slot.name)
 
 
-def setup_preview_viewport_display(color=None, selection=None):
-    import bpy
+def get_valid_meshes_list(objects):
+
+    valid_objects = []
+
+    for object in objects:
+        if object and object.type == "MESH":
+            if object.is_instancer == False:
+                valid_objects.append(object)
+    return valid_objects
+
+
+def get_materials_from_object(object):
+    valid_materials = []
+
+    for material_slot in object.material_slots:
+        material = material_slot.material
+        valid_materials.append(material_slot.material)
+
+    return (valid_materials)
+
+
+def get_selection(selection=None):
+    if selection == None:
+        try:
+            selection = bpy.context.selected_objects
+        except:
+            currentScene = lm.scene_object()
+            assetName = lm.scene_object().shot
+            obj_in_collection = bpy.data.collections[assetName].all_objects
+
+    if not selection:
+        selection = bpy.data.objects
+
+    return selection
+
+
+def get_preview_from_texture(inputs, node_tree):
+    texture = None
+    if inputs:
+        color_input = inputs[1]
+        transparent = inputs[2]
+
+        try:
+            texture = color_input.links[0].from_node
+        except IndexError:
+            print('no texture connected')
+            pass
+
+    if texture:
+
+        if texture.type == 'TEX_IMAGE':
+            preview_color = texture.image.pixels
+            diffuse_color = [preview_color[7004],
+                             preview_color[7005],
+                             preview_color[7006],
+                             1 - transparent.default_value]
+
+        if texture.type == "RGB":
+            simple_color = texture.outputs['Color'].default_value
+            preview_color = [simple_color[1],
+                             simple_color[2],
+                             simple_color[3],
+                             1 - transparent.default_value]
+
+        else:
+            preview_color = [1, 1, 1, 1]
+            print('_______COMPLEX NODES PLEASE SET MANUALLY_______')
+    else:
+
+        inputs = preview_inputs_from_node_tree(node_tree)
+        if inputs:
+
+            preview_color = [color_input.default_value[0],
+                             color_input.default_value[1],
+                             color_input.default_value[2],
+                             1]
+
+        else:
+            preview_color = [1, 1, 1, 1]
+
+    return preview_color
+
+
+def preview_inputs_from_node_tree(node_tree):
+    color_input = None
+    transparent = None
+    valid_node = None
+    if 'DEFAULTSHADER' in node_tree:
+        color_input = node_tree['DEFAULTSHADER'].inputs['Color']
+        transparent = node_tree['DEFAULTSHADER'].inputs['Transparent']
+        valid_node = node_tree['DEFAULTSHADER']
+        found = True
+    else:
+        found = False
+        for node in node_tree:
+
+            if node.type == 'BSDF_PRINCIPLED' and not found:
+                color_input = node.inputs[0]
+                transparent = node.inputs['Transmission']
+                found = True
+                valid_node = node
+
+    returns = (valid_node, color_input, transparent)
+
+    if found:
+        print('__________Valid Materials And inputs______________')
+        print(returns)
+        return returns
+    else:
+        returns = (1, 1, 1, 1)
+
+
+def setup_preview_viewport_display(object):
     """
     set up the default viewport display color  diffuse_color on materials
     :param color: Value of the color  of the parent menu  FloatProperty 4
     :param selection:
     """
-    if selection == None:
-        selection = bpy.context.selected_objects
+    materials = get_materials_from_object(object)
 
-    for object in selection:
-        for material_slot in object.material_slots:
-            material = material_slot.material
-            node_tree = material.node_tree.nodes
-            if color == None:
-                for node in node_tree:
-                    if node.type == 'OUTPUT_MATERIAL':
-                        for input in node.inputs:
-                            if len(input.links) != 0:
-                                input_surface = input.links[0].from_node
-                                color_input = input_surface.inputs[0]
-                                try:
-                                    color_input_nested = color_input.links[0].from_node
-                                    color_input.default_value = color_input_nested.outputs[0].default_value
-                                except(IndexError):
-                                    print('no color inputs found. Using Default')
-                                    pass
+    for material in materials:
+        node_tree = material.node_tree.nodes
+        inputs = preview_inputs_from_node_tree(node_tree)
+        preview_colors = get_preview_from_texture(inputs, node_tree)
 
-                                material.diffuse_color = color_input.default_value
-            else:
-                material_slot.material.diffuse_color = color
+        for i in range(0, 3):
+            material.diffuse_color[i] = preview_colors[i]
 
 
 def get_materials_dictionary():
@@ -443,9 +546,342 @@ def create_task_on_asset(task, path_object=None):
     return newTask
 
 
+def reorder_list(items, arg=''):
+    """
+    Reorders list in order of importance, putting rig
+    :param items:
+    :return:
+    """
 
+    if arg:
+
+        for i in items:
+            if i == arg:
+                items.remove(i)
+                items.insert(0, arg)
+
+    return items
+
+
+def get_formatted_list(element, first_item):
+    """
+    Formats list for blender search mode
+    """
+    scene = bpy.types.Scene.scene_enum
+
+    path_object = lm.LumberObject(get_asset_from_name(scene))
+    tasks = reorder_list(path_object.glob_project_element(element), arg=first_item)
+    value = [(tasks[i], tasks[i], '') for i in range(len(tasks))]
+
+    return (value)
+
+
+
+
+def unlink_asset(object):
+    filepath = None
+
+    try:
+        libname = object.data.library
+    except AttributeError:
+        for lib in bpy.data.libraries:
+            libname = object.instance_collection
+
+    print('_________unlinking__________')
+    print(object)
+
+    if 'proxy' in object.name:
+        name = object.name.split('_')[0]
+    else:
+        name = object.name
+
+    obj = bpy.data.objects[name]
+
+    if not libname:
+        bpy.data.batch_remove(ids=([obj]))
+    else:
+        try:
+            filepath = libname.library.filepath
+
+        except AttributeError:
+            pass
+        if filepath and lm.PathObject(filepath).type == 'env':
+            remove_linked_environment_dependencies(libname.library)
+
+        bpy.data.batch_remove(ids=(libname, obj))
+        remove_unused_libraries()
+
+
+def remove_linked_environment_dependencies(library):
+    env = library
+    bpy.ops.file.make_paths_absolute()
+    env_path = lm.LumberObject(env.filepath)
+    env_layout = env_path.copy(ext='json').path_root
+    env_asset_collection = bpy.data.collections['{}_assets'.format(env_path.asset)]
+    data = load_json(env_layout)
+
+    for i in data:
+        print(i)
+        name = data[i]['name']
+
+        if i in bpy.data.objects:
+            obj = bpy.data.objects[i]
+            unlink_asset(obj)
+    try:
+
+        bpy.data.collections.remove(env_asset_collection)
+    except KeyError:
+        pass
+
+
+def remove_unused_libraries():
+    libraries = bpy.data.libraries
+
+    objects = bpy.data.objects
+    instancers = []
+
+    libraries_in_scene = []
+
+    for obj in objects:
+        if obj.is_instancer:
+            instancers.append(obj)
+
+    try:
+        for i in instancers:
+            lib = i.instance_collection.library
+            if lib not in libraries_in_scene:
+                libraries_in_scene.append(lib)
+
+        for lib in libraries:
+            if lib not in libraries_in_scene:
+                print(lib)
+                # bpy.data.libraries.remove(lib)
+                bpy.data.batch_remove(ids=(lib,))
+    except AttributeError:
+        pass
+
+
+def remove_instancers():
+    for object in bpy.data.objects:
+
+        filepath = None
+
+        try:
+            libname = object.data.library
+        except AttributeError:
+            for lib in bpy.data.libraries:
+                libname = object.instance_collection
+
+        print('_________unlinking__________')
+        print(object)
+
+        if 'proxy' in object.name:
+            name = object.name.split('_')[0]
+        else:
+            name = object.name
+
+        obj = bpy.data.objects[name]
+
+        if not libname:
+            bpy.data.batch_remove(ids=([obj]))
+        else:
+            try:
+                filepath = libname.library.filepath
+
+            except AttributeError:
+                pass
+            remove_unused_libraries()
+
+def reparent_linked_environemnt_assets(library):
+    env = library
+    bpy.ops.file.make_paths_absolute()
+    env_path = lm.LumberObject(env.filepath)
+    env_layout = env_path.copy(ext='json').path_root
+
+    data = load_json(env_layout)
+    assets_collection_name = '{}_assets'.format(env_path.asset)
+    if assets_collection_name not in bpy.data.collections['env'].children:
+
+        assets_collection = bpy.data.collections.new(assets_collection_name)
+        bpy.data.collections['env'].children.link(assets_collection)
+    else:
+        assets_collection = bpy.data.collections[assets_collection_name]
+
+    for i in data:
+        print(i)
+        name = data[i]['name']
+
+        if i in bpy.data.objects:
+            obj = bpy.data.objects[i]
+            if assets_collection not in obj.users_collection:
+                assets_collection.objects.link(obj)
+
+            keep_single_user_collection(obj, assetName=assets_collection_name)
+
+
+def keep_single_user_collection(obj, assetName=None):
+    if not assetName:
+        assetName = lm.scene_object().shot
+
+    try:
+        bpy.data.collections[assetName].objects.link(obj)
+
+    except(RuntimeError):
+        pass
+
+    for collection in obj.users_collection:
+        if collection.name != assetName:
+            collection.objects.unlink(obj)
+
+
+def reparent_collections(view_layer):
+    for obj in view_layer:
+
+        if obj.instance_type == 'COLLECTION':
+            if obj.instance_collection:
+
+                collection = obj.instance_collection
+
+                print(collection)
+                print(collection.library)
+                if collection.library:
+
+                    path_object = lm.LumberObject(collection.library.filepath)
+
+                    create_collection(path_object.type)
+                    for collection in bpy.data.collections:
+
+                        if collection.name == path_object.type:
+                            # print(collection.name )
+
+                            if collection not in obj.users_collection:
+                                collection.objects.link(obj)
+
+                    keep_single_collections(obj, path_object.type)
+
+    for collection in bpy.context.scene.collection.children:
+        if len(collection.objects) < 1:
+            print(collection.name)
+            bpy.context.scene.collection.children.unlink(collection)
+
+
+def keep_single_collections(obj, collection_name):
+    """
+    unlink object from all collections except the one specified
+
+    :param collection_name: name of the collection to keep
+    :type collection_name: string
+    :param obj: object to adjust
+    :type obj: blender object
+
+    """
+    user_collections = obj.users_collection
+    if len(obj.users_collection) > 1:
+        for collection in user_collections:
+            if collection.name != collection_name:
+                try:
+                    print('unlinking {}   {}'.format(obj.name, collection_name))
+                    collection.objects.unlink(obj)
+                except:
+                    pass
+
+
+def create_collection(collection_name: object):
+    """
+    creates a colleciton in current scene
+    :type collection_name: string
+
+    """
+    if type not in bpy.data.collections:
+        bpy.data.collections.new(collection_name)
+
+    collection = bpy.data.collections[collection_name]
+    try:
+
+        bpy.context.scene.collection.children.link(collection)
+    except(RuntimeError):
+        print('{} collection already in scene'.format(collection_name))
+        pass
+
+
+def parent_object(view_layer, collection_name, obj_type):
+    create_collection(collection_name)
+    collection = bpy.data.collections[collection_name]
+    for obj in view_layer:
+        if obj.type == obj_type:
+            try:
+                collection.objects.link(obj)
+            except(RuntimeError):
+                print('{} already in light collection'.format(obj.name))
+
+        unlink_collections(obj, type)
+
+
+
+def return_asset_name(object):
+    if 'proxy' in object.name:
+        name = object.name.split('_')[0]
+        return name
+
+    else:
+        if '.' in object.name:
+
+            name = object.name.split('.')[0]
+        else:
+            name = object.name
+
+        return name
+
+
+def get_lib_from_object(object):
+    if not object.isinstancer:
+        object = bpy.data.object[return_asset_name(object)]
+    library = object.instance_collection.library
+
+    return (library)
+
+
+def return_lib_path(library):
+    print(library)
+    library_path = bpy.path.abspath(library.filepath)
+    filename = Path(bpy.path.abspath(library_path)).__str__()
+    return (filename)
+
+
+def burn_in_image():
+    current = bpy.context.scene
+    mSettings = current.render
+    sceneObject = lm.scene_object()
+    current.name = sceneObject.filename_base
+    scene_info = current.statistics(bpy.context.view_layer)
+    try:
+        mSettings.metadata_input = 'SCENE'
+    except AttributeError:
+        mSettings.use_stamp_strip_meta = 0
+
+    mSettings.stamp_font_size = 26
+    mSettings.use_stamp = 1
+    mSettings.use_stamp_camera = 1
+    mSettings.use_stamp_date = 0
+    mSettings.use_stamp_frame = True
+    mSettings.use_stamp_frame_range = 0
+    mSettings.use_stamp_hostname = 0
+    mSettings.use_stamp_labels = 0
+    mSettings.use_stamp_lens = 1
+    mSettings.use_stamp_marker = 0
+    mSettings.use_stamp_memory = 0
+    mSettings.use_stamp_note = 0
+    mSettings.use_stamp_render_time = 0
+    mSettings.use_stamp_scene = 1
+    mSettings.use_stamp_sequencer_strip = 0
+    mSettings.use_stamp_time = 1
+    mSettings.use_stamp_note = True
+    mSettings.stamp_note_text = scene_info
+
+    print('sucess')
 
 if __name__ == '__main__':
-    # create_menu_file('TomTest', 'Tom Test', r'F:\FSU-CMPA\COMPANIES\_config\cgl_tools\blender\menus\TomTest\TomTest.py')
+    # create_menu_file('TomTest', 'Tom Test',
+    # r'F:\FSU-CMPA\COMPANIES\_config\cgl_tools\blender\menus\TomTest\TomTest.py')
     # create_button_file('ButtonAaa', 'Button Aaa', 'TomTest')
     add_buttons_to_menu('TomTest')
