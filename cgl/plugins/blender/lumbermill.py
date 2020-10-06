@@ -133,7 +133,7 @@ class LumberObject(PathObject):
 
     def set_render_paths(self):
         padding = '#' * self.frame_padding
-        previewRenderTypes = ['anim', 'rig', 'mdl', 'lay','remsh']
+        previewRenderTypes = ['anim', 'rig', 'mdl', 'lay','remsh','grmnt']
 
         if self.task in previewRenderTypes:
             render_path = self.copy(context='render', ext='jpg', set_proper_filename=True).path_root
