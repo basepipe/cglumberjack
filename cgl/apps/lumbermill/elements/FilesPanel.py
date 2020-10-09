@@ -501,8 +501,18 @@ class FilesPanel(QtWidgets.QWidget):
                 editorial_from_template(filepath, title, secondary, template_edit.path_root)
 
     def on_publish_clicked(self):
-        logging.debug('Publishing stuff now')
+        # from cgl.plugins.preflight.main import Preflight
+        # logging.debug('Publishing stuff now')
+        # this = Preflight(self, software='lumbermill',
+        #                  preflight=self.current_location['task'],
+        #                  path_object=self.current_location)
+        # this.show()
+        # # check for preflights for that task.
+        # return
         current = PathObject(self.current_location)
+        if current.task == 'tex':
+            from cgl.plugins.maya.tex_util import txmake
+            txmake(current.path_root)
         current.publish()
         dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
         dialog.exec_()

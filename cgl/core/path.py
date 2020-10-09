@@ -1206,30 +1206,9 @@ class CreateProductionData(object):
             logging.debug('Using Lumbermill built in proj management')
 
     def create_default_file(self):
-        if self.path_object.task == 'prev':
-            self.copy_default_file('blender', 'blend')
-        if self.path_object.task == 'remsh':
-            self.copy_default_file('blender', 'blend')
-        if self.path_object.task == 'lay':
-            self.copy_default_file('blender', 'blend')
-        if self.path_object.task == 'anim':
-            self.copy_default_file('blender', 'blend')
-        if self.path_object.task == 'mdl':
-            self.copy_default_file('blender', 'blend')
-        if self.path_object.task == 'shd':
-            self.copy_default_file('blender', 'blend')
-        if self.path_object.task == 'anim':
-            self.copy_default_file('blender', 'blend')
-        if self.path_object.task == 'lite':
-            self.copy_default_file('blender', 'blend')
-        if self.path_object.task == 'comp':
-            self.copy_default_file('nuke', 'nk')
-        if self.path_object.task == 'key':
-            self.copy_default_file('nuke', 'nk')
-        if self.path_object.task == 'dnoise':
-            self.copy_default_file('nuke', 'nk')
-        if self.path_object.task == 'noise':
-            self.copy_default_file('nuke', 'nk')
+        default_files = CONFIG["default_files"][self.path_object.task]
+        self.copy_default_file(default_files['software'],
+                               default_files['ext'])
 
     def copy_default_file(self, software, ext):
         self.path_object.set_attr(filename='%s_%s_%s.%s' % (self.path_object.seq,
@@ -1240,8 +1219,12 @@ class CreateProductionData(object):
         this = this.replace('\\', '/')
         this = '%scglumberjack/cgl' % this
         default_file = "%s/plugins/%s/templates/default.%s" % (this, software, ext)
-        logging.debug('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
-        cgl_copy(default_file, self.path_object.path_root, methodology='local')
+        if os.path.exists(default_file):
+            logging.debug('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
+            cgl_copy(default_file, self.path_object.path_root, methodology='local')
+        else:
+            logging.error('No Default file found for {} at {}'.format(self.path_object.task,
+                                                                      default_file))
 
 
 class Sequence(object):
