@@ -29,7 +29,7 @@ choco install chocolatey-core.extension -y
 choco install git.install -y
 choco install git -y
 choco install pycharm -y
-choco install python3 -y
+choco install python --version=3.8.1 -y
 choco install ffmpeg -y
 choco install imagemagick.app -y
 choco install awscli -y
