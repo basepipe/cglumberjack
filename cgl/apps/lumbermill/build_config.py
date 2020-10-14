@@ -871,6 +871,62 @@ class QuickSync(QtWidgets.QDialog):
             dialog.exec_()
 
 
+class AWSDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        QtWidgets.QDialog.__init__(self, parent)
+        self.setWindowTitle('Enter AWS Information')
+        self.layout = QtWidgets.QVBoxLayout(self)
+        grid_layout = QtWidgets.QGridLayout()
+        button_layout = QtWidgets.QHBoxLayout()
+
+        self.id_line_edit = QtWidgets.QLineEdit()
+        self.access_key_line_edit = QtWidgets.QLineEdit()
+        self.region_line_edit = QtWidgets.QLineEdit()
+        self.region_line_edit.setText("us-east-1")
+
+
+        id_label = QtWidgets.QLabel('aws_access_key_id: ')
+        access_key_label = QtWidgets.QLabel('aws_secret_access_key: ')
+        region_label = QtWidgets.QLabel('region: ')
+
+
+        self.submit_button = QtWidgets.QPushButton("Submit")
+
+        grid_layout.addWidget(id_label, 0, 0)
+        grid_layout.addWidget(self.id_line_edit, 0, 1)
+        grid_layout.addWidget(access_key_label, 1, 0)
+        grid_layout.addWidget(self.access_key_line_edit, 1, 1)
+        grid_layout.addWidget(region_label, 2, 0)
+        grid_layout.addWidget(self.region_line_edit, 2, 1)
+
+        button_layout.addWidget(self.submit_button)
+
+        self.layout.addLayout(grid_layout)
+        self.layout.addLayout(button_layout)
+
+        self.submit_button.clicked.connect(self.submit_pressed)
+
+    def submit_pressed(self):
+        aws_path = os.path.join(os.path.expanduser("~"), ".aws")
+        if os.path.exists(aws_path):
+            print ("HE EXIST: %s" % aws_path)
+        else:
+            os.mkdir(aws_path)
+            print ("HE GONE KID: %s" % aws_path)
+
+        with open(os.path.join(aws_path, "config"), "w") as openFile:
+            openFile.write("[default]\n")
+            openFile.write("region = %s" % self.region_line_edit.text())
+            openFile.close()
+
+        with open(os.path.join(aws_path, "credentials"), "w") as openFile:
+            openFile.write("[default]\n")
+            openFile.write("aws_access_key_id = %s\n" % self.id_line_edit.text())
+            openFile.write("aws_secret_access_key = %s" % self.access_key_line_edit.text())
+
+        self.hide()
+
+
 def create_user_globals(user_globals, globals_path):
     if user_globals:
         if not os.path.exists(os.path.dirname(user_globals)):
