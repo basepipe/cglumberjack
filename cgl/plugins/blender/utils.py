@@ -204,6 +204,7 @@ def write_layout(outFile=None):
 
     for obj in bpy.data.objects:
         if obj.is_instancer:
+            print(5 * '_' + obj.name + 5 * '_')
             name = obj.name
             #            blender_transform = np.array(obj.matrix_world).tolist()
             blender_transform = [obj.matrix_world.to_translation().x,
@@ -215,18 +216,26 @@ def write_layout(outFile=None):
                                  obj.matrix_world.to_scale().x,
                                  obj.matrix_world.to_scale().y,
                                  obj.matrix_world.to_scale().z]
-            libraryPath = bpy.path.abspath(obj.instance_collection.library.filepath)
-            filename = Path(bpy.path.abspath(libraryPath)).__str__()
-            libObject = LumberObject(filename)
 
-            data[name] = {'name': libObject.asset,
-                          'source_path': libObject.path,
-                          'blender_transform': blender_transform}
+            instanced_collection = obj.instance_collection
+            if instanced_collection:
+                if instanced_collection.library:
+                    libraryPath = bpy.path.abspath(instanced_collection.library.filepath)
+                    filename = Path(bpy.path.abspath(libraryPath)).__str__()
+                    libObject = LumberObject(filename)
+
+                    data[name] = {'name': libObject.asset,
+                                  'source_path': libObject.path,
+                                  'blender_transform': blender_transform}
+                else:
+                    print('{} has no instanced collection'.format(obj.name))
+
+            else:
+                print('{} has no instanced collection'.format(obj.name))
 
     save_json(outFile, data)
 
     return (outFile)
-
 
 def read_layout(outFile=None, linked=False, append=False):
     """
