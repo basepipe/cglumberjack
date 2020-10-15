@@ -13,6 +13,7 @@ DEFAULT_CODE_ROOT = os.path.join(os.path.expanduser("~"), 'PycharmProjects', 'cg
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), 'Documents', 'cglumberjack')
 DEFAULT_USER_GLOBALS = os.path.join(DEFAULT_HOME, 'user_globals.json')
 DEFAULT_GLOBALS = os.path.join(DEFAULT_ROOT, '_config', 'globals.json')
+AWS_PATH = os.path.join(os.path.expanduser("~"), ".aws")
 
 
 class PathItemWidget(QtWidgets.QWidget):
@@ -780,10 +781,22 @@ class QuickSync(QtWidgets.QDialog):
             if web.url_exists(self.aws_globals):
                 self.aws_globals_label.setText('Found Shared Company Globals on Cloud')
                 self.aws_globals_label.setStyleSheet("color: rgb(0, 255, 0);")
+                self.add_aws_credentials()
             else:
                 self.aws_globals_label.setText('No Shared Globals Found - skipping')
                 self.aws_globals_label.setStyleSheet("color: rgb(255, 0, 0);")
             self.aws_globals_label.show()
+
+    def add_aws_credentials(self):
+        """
+
+        :return:
+        """
+        if not os.path.exists(os.path.join(AWS_PATH, 'credentials')):
+            dialog = AWSDialog()
+            dialog.exec_()
+        else:
+            print('Found AWS Credentials!')
 
     def download_globals_from_cloud(self):
 
@@ -834,7 +847,9 @@ class QuickSync(QtWidgets.QDialog):
         globals["cg_lumberjack_dir"] = os.path.join(self.default_root, '_config')
         # TODO - it'd be nice to double check all the sofwtare paths and see if there are newer versions on disk, this will help a ton.
         globals_dir = os.path.dirname(globals["paths"]["globals"])
+        print(globals_dir)
         if not os.path.exists(globals_dir):
+            print('can not find path {}'.format(globals_dir))
             os.makedirs(globals_dir)
         logging.debug('Saving Globals To: %s' % globals["paths"]["globals"])
         read_write.save_json(globals["paths"]["globals"], globals)
@@ -884,11 +899,9 @@ class AWSDialog(QtWidgets.QDialog):
         self.region_line_edit = QtWidgets.QLineEdit()
         self.region_line_edit.setText("us-east-1")
 
-
         id_label = QtWidgets.QLabel('aws_access_key_id: ')
         access_key_label = QtWidgets.QLabel('aws_secret_access_key: ')
         region_label = QtWidgets.QLabel('region: ')
-
 
         self.submit_button = QtWidgets.QPushButton("Submit")
 
@@ -907,19 +920,18 @@ class AWSDialog(QtWidgets.QDialog):
         self.submit_button.clicked.connect(self.submit_pressed)
 
     def submit_pressed(self):
-        aws_path = os.path.join(os.path.expanduser("~"), ".aws")
-        if os.path.exists(aws_path):
-            print ("HE EXIST: %s" % aws_path)
+        if os.path.exists(AWS_PATH):
+            print("HE EXIST: %s" % AWS_PATH)
         else:
-            os.mkdir(aws_path)
-            print ("HE GONE KID: %s" % aws_path)
+            os.mkdir(AWS_PATH)
+            print("HE GONE KID: %s" % AWS_PATH)
 
-        with open(os.path.join(aws_path, "config"), "w") as openFile:
+        with open(os.path.join(AWS_PATH, "config"), "w") as openFile:
             openFile.write("[default]\n")
             openFile.write("region = %s" % self.region_line_edit.text())
             openFile.close()
 
-        with open(os.path.join(aws_path, "credentials"), "w") as openFile:
+        with open(os.path.join(AWS_PATH, "credentials"), "w") as openFile:
             openFile.write("[default]\n")
             openFile.write("aws_access_key_id = %s\n" % self.id_line_edit.text())
             openFile.write("aws_secret_access_key = %s" % self.access_key_line_edit.text())
