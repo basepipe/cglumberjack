@@ -1,15 +1,11 @@
-import os
 import glob
 import logging
-from cgl.core.utils.general import current_user
-from cgl.core.utils.general import create_file_dirs
-from cgl.core.path import PathObject
-from cgl.core.config import app_config, UserConfig
-from cgl.apps.lumbermill.main import CGLumberjackWidget
-from cgl.plugins.blender.main_window import CGLumberjack
+import os
 import bpy
-
-
+from cgl.core.config import app_config, UserConfig
+from cgl.core.path import PathObject
+from cgl.core.utils.general import create_file_dirs
+from cgl.plugins.blender.main_window import CGLumberjack
 
 CONFIG = app_config()
 PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
@@ -133,7 +129,7 @@ class LumberObject(PathObject):
 
     def set_render_paths(self):
         padding = '#' * self.frame_padding
-        previewRenderTypes = ['anim', 'rig', 'mdl', 'lay','remsh','grmnt']
+        previewRenderTypes = ['anim', 'rig', 'mdl', 'lay', 'remsh', 'grmnt']
 
         if self.task in previewRenderTypes:
             render_path = self.copy(context='render', ext='jpg', set_proper_filename=True).path_root
@@ -193,7 +189,8 @@ def version_up(vtype='minor'):
     return save_file_as(new_version.path_root)
 
 
-def import_file(filepath='', namespace=None, collection_name=None, append=True, linked=True, type='COLLECTION',snap_to_cursor= False):
+def import_file(filepath='', namespace=None, collection_name=None, append=True, linked=True, type='COLLECTION',
+                snap_to_cursor=False):
     """
     imports file into a scene.
     :param snap_to_cursor: if true imports the object where the cursor is palced
@@ -217,31 +214,26 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
             collection_name = collection.asset
 
         if type == 'COLLECTION':
-            print('collection selected')
             with bpy.data.libraries.load(filepath, link=append) as (data_from, data_to):
                 data_to.collections = [c for c in data_from.collections if c.startswith(collection_name)]
                 # for obj in data_to.groups[0].objects:
                 #     bpy.context.scene.objects.link(obj)
 
         if type == 'GROUP':
-            print('group Selected')
             with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
                 data_to.node_groups = data_from.node_groups
 
         if type == 'ANIM':
-            print('anim Import selected')
             with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
                 data_to.actions = data_from.actions
 
         if type == 'CAMERA':
-
             with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
                 # data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
                 data_to.objects = [c for c in data_from.objects if c.startswith(collection_name)]
             print('{} Cam imported '.format(collection_name))
 
         if type == 'MATERIAL':
-
             with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
                 # data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
                 data_to.materials = [c for c in data_from.materials if c.startswith(collection_name)]
@@ -257,7 +249,6 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
 
             if snap_to_cursor:
                 obj.location = bpy.context.scene.cursor.location
-
 
 
 def open_file(filepath):
@@ -302,14 +293,12 @@ def confirm_prompt(title='Lumber message:', message='This is a message', button=
     """
     import bpy
     try:
-        #bpy.utils.unregister_class(BlenderConfirmDialog)
+        # bpy.utils.unregister_class(BlenderConfirmDialog)
         bpy.utils.register_class(BlenderConfirmDialog)
     except ValueError:
         print('class already registered')
 
-
-    bpy.ops.message.messagebox('INVOKE_DEFAULT',message=message)
-
+    bpy.ops.message.messagebox('INVOKE_DEFAULT', message=message)
 
 
 def select(selection, d=True):
@@ -382,7 +371,6 @@ def create_turntable(length=250, task=False, startFrame=1):
     pass
 
 
-
 def set_framerange(start=1, end=1, current=False):
     bpy.context.scene.frame_start = start
     bpy.context.scene.frame_end = end
@@ -391,6 +379,7 @@ def set_framerange(start=1, end=1, current=False):
     if current:
         bpy.context.scene.frame_start = current
         bpy.context.scene.frame_end = current
+
 
 def switch_overlays(visible=False):
     for window in bpy.context.window_manager.windows:
@@ -470,7 +459,7 @@ def render(preview=False, audio=False):
     :param audio: if True renders an  mov and setups the audio settings
     :return:
     """
-    previewRenderTypes = ['anim', 'rig', 'mdl','lay']
+    previewRenderTypes = ['anim', 'rig', 'mdl', 'lay']
     file_out = scene_object().render_path.split('#')[0]
 
     if preview:
@@ -532,7 +521,7 @@ def launch_():
     BlenderJack.show()
 
 
-def unlink_asset(selection = None):
+def unlink_asset(selection=None):
     if selection == None:
         selection = bpy.context.selected_objects
 
@@ -545,16 +534,13 @@ def unlink_asset(selection = None):
             except AttributeError:
                 print('object doesnt have library asset')
 
-
         if 'proxy' in bpy.context.object.name:
             name = bpy.context.object.name.split('_')[0]
         else:
             name = bpy.context.object.name
 
-
         obj = bpy.data.objects[name]
         bpy.data.batch_remove(ids=(libname, obj))
-
 
 
 if __name__ == "__main__":
