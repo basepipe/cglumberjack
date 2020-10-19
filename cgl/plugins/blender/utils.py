@@ -186,6 +186,7 @@ def get_menu_at(menu_dict, software, menu, i):
             button_at = men['buttons'][i]
             return button_at['label']
 
+
 def write_layout(outFile=None):
     """
 
@@ -251,7 +252,6 @@ def return_linked_library(collection):
     for i in libraries:
         if collection in i.name:
             return (i)
-
 
 
 def read_layout(outFile=None, linked=False, append=False):
