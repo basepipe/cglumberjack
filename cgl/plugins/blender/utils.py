@@ -202,8 +202,9 @@ def write_layout(outFile=None):
         outFile = scene_object().copy(ext='json', task='lay', user='publish').path_root
     data = {}
 
-    for obj in bpy.data.objects:
+    for obj in bpy.context.view_layer.objects:
         if obj.is_instancer:
+            print(5 * '_' + obj.name + 5 * '_')
             name = obj.name
             #            blender_transform = np.array(obj.matrix_world).tolist()
             blender_transform = [obj.matrix_world.to_translation().x,
@@ -215,17 +216,42 @@ def write_layout(outFile=None):
                                  obj.matrix_world.to_scale().x,
                                  obj.matrix_world.to_scale().y,
                                  obj.matrix_world.to_scale().z]
-            libraryPath = bpy.path.abspath(obj.instance_collection.library.filepath)
-            filename = Path(bpy.path.abspath(libraryPath)).__str__()
-            libObject = LumberObject(filename)
 
-            data[name] = {'name': libObject.asset,
-                          'source_path': libObject.path,
-                          'blender_transform': blender_transform}
+            instanced_collection = obj.instance_collection
+            if instanced_collection:
+                collection_library = return_linked_library(instanced_collection.name)
+
+                if collection_library:
+
+                    libraryPath = bpy.path.abspath(collection_library.filepath)
+                    filename = Path(bpy.path.abspath(libraryPath)).__str__()
+                    libObject = LumberObject(filename)
+
+                    data[name] = {'name': libObject.asset,
+                                  'source_path': libObject.path,
+                                  'blender_transform': blender_transform}
+                else:
+                    print('{} has no instanced collection'.format(obj.name))
+
+            else:
+                print('{} has no instanced collection'.format(obj.name))
 
     save_json(outFile, data)
 
     return (outFile)
+
+
+def return_linked_library(collection):
+    '''
+    retrieves the linked libraries manually
+    '''
+
+    libraries = bpy.data.libraries
+    collection_name = collection.split('.')[0]
+
+    for i in libraries:
+        if collection in i.name:
+            return (i)
 
 
 def read_layout(outFile=None, linked=False, append=False):
@@ -240,55 +266,62 @@ def read_layout(outFile=None, linked=False, append=False):
     from cgl.core.utils.read_write import load_json
     import bpy
 
+    bpy.ops.file.make_paths_absolute()
     if outFile == None:
-        outFileObject = scene_object().copy(ext='json', task='lay', user='publish').latest_version()
-        outFileObject.set_attr(filename='%s_%s_%s.%s' % (outFileObject.seq,
-                                                         outFileObject.shot,
-                                                         outFileObject.task,
-                                                         'json'
-                                                         ))
+        outFileObject = scene_object().copy(ext='json', task='lay', set_proper_filename=True).latest_version()
         outFile = outFileObject.path_root
-    # outFile = scene_object().path_root.replace(scene_object().ext, 'json')
 
     data = load_json(outFile)
 
-    for p in data:
+    for p in sorted(data):
         print(p)
         data_path = data[p]['source_path']
         blender_transform = data[p]['blender_transform']
 
         transform_data = []
         for value in blender_transform:
-            transform_data.append(value)
-
-        print(transform_data)
+            transform_data.append(float(value))
 
         pathToFile = os.path.join(scene_object().root, data_path)
         lumberObject = LumberObject(pathToFile)
 
-        if lumberObject.filename not in bpy.data.libraries:
+        if lumberObject.filename_base in bpy.data.libraries:
+            lib = bpy.data.libraries[lumberObject.filename]
+            bpy.data.batch_remove(ids=([lib]))
+            import_file(lumberObject.path_root, linked=linked, append=append)
+        else:
             import_file(lumberObject.path_root, linked=linked, append=append)
 
-        else:
-
-            lib = bpy.data.libraries[lumberObject.filename]
-            if lib.filepath == lumberObject.path_root:
-                print('{} in scene'.format(lumberObject.filename))
-            else:
-
-                bpy.data.batch_remove(ids=(lib,))
-                import_file(lumberObject.path_root, linked=linked, append=append)
-
-        if p not in bpy.context.collection.objects:
+        if p not in bpy.data.objects:
             obj = bpy.data.objects.new(p, None)
             bpy.context.collection.objects.link(obj)
             obj.instance_type = 'COLLECTION'
             obj.instance_collection = bpy.data.collections[lumberObject.asset]
-            obj.location = (transform_data[0], transform_data[1], transform_data[2])
-            obj.rotation_euler = (transform_data[3], transform_data[4], transform_data[5])
-            obj.scale = (transform_data[6], transform_data[7], transform_data[8])
 
-    bpy.ops.file.make_paths_relative()
+            location = (transform_data[0], transform_data[1], transform_data[2])
+            obj.location = location
+
+            rotation = (transform_data[3], transform_data[4], transform_data[5])
+            obj.rotation_euler = rotation
+
+            scale = (transform_data[6], transform_data[7], transform_data[8])
+            obj.scale = scale
+
+
+        else:
+
+            obj = bpy.data.objects[p]
+            print('updating position')
+            print(obj.name)
+
+            location = (transform_data[0], transform_data[1], transform_data[2])
+            obj.location = location
+
+            rotation = (transform_data[3], transform_data[4], transform_data[5])
+            obj.rotation_euler = rotation
+
+            scale = (transform_data[6], transform_data[7], transform_data[8])
+            obj.scale = scale
 
 
 def rename_materials(selection=None):
@@ -314,7 +347,6 @@ def rename_materials(selection=None):
 
 
 def get_valid_meshes_list(objects):
-
     valid_objects = []
 
     for object in objects:
@@ -576,8 +608,6 @@ def get_formatted_list(element, first_item):
     return (value)
 
 
-
-
 def unlink_asset(object):
     filepath = None
 
@@ -691,6 +721,7 @@ def remove_instancers():
             except AttributeError:
                 pass
             remove_unused_libraries()
+
 
 def reparent_linked_environemnt_assets(library):
     env = library
@@ -817,7 +848,6 @@ def parent_object(view_layer, collection_name, obj_type):
         unlink_collections(obj, type)
 
 
-
 def return_asset_name(object):
     if 'proxy' in object.name:
         name = object.name.split('_')[0]
@@ -879,6 +909,7 @@ def burn_in_image():
     mSettings.stamp_note_text = scene_info
 
     print('sucess')
+
 
 if __name__ == '__main__':
     # create_menu_file('TomTest', 'Tom Test',

@@ -3,6 +3,7 @@ from vfxwindow import VFXWindow
 from cgl.core.config import app_config, UserConfig, user_config
 from cgl.plugins.blender.cgl_browser_widget import BrowserWidget
 from PySide2 import QtWidgets, QtCore, QtGui
+import logging
 
 USERCONFIG = UserConfig().d
 ICON_WIDTH = 24
