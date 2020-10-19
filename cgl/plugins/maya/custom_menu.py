@@ -8,7 +8,6 @@ class MayaCustomMenu(CustomMenu):
         CustomMenu.__init__(self, software, type_)
 
     def get_scene_path(self):
-        print(self.path_object)
         return pm.sceneName()
 
     def create_menu(self, name):

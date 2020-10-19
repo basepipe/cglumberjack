@@ -99,7 +99,11 @@ class Designer(LJDialog):
                              message='Are you sure you want to delete %s' % menu_name)
         dialog.exec_()
         if dialog.button == 'Ok':
+            import shutil
             self.menus.removeTab(index)
+            menu_folder = os.path.join(get_cgl_tools(), self.software, self.menu_type_combo.currentText(), menu_name)
+            print('Removing folder: {}'.format(menu_folder))
+            shutil.rmtree(menu_folder)
 
     def load_software(self):
         self.software_label.show()
@@ -172,6 +176,11 @@ class Designer(LJDialog):
                 self.do_add_menu(menu_name)
 
     def do_add_menu(self, menu_name):
+        # remove spaces from the end of the name:
+        if menu_name.endswith(' '):
+            menu_name = menu_name.strip()
+        if ' ' in menu_name:
+            menu_name = menu_name.replace(' ', '_')
         cgl_file = self.menu_path
         menu_folder = get_menu_path(self.software, menu_name, menu_file=False, menu_type=self.type)
         new_menu = CGLMenu(parent=self, software=self.software, menu_name=menu_name, menu=[],
@@ -239,6 +248,7 @@ class Designer(LJDialog):
         menu_name = ''
         menu_dict = {}
         menu_array = []
+        button_widget = None
         for mi in range(self.menus.count()):
             menu_name = self.menus.tabText(mi)
             menu = self.menus.widget(mi)

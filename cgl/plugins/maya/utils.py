@@ -147,3 +147,4 @@ def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=Fals
         pm.refresh(su=False)
     else:
         print('Playblast not set up for audio yet')
+

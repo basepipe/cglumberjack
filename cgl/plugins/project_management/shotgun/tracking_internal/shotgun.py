@@ -120,7 +120,6 @@ class ShotgunProcess(Process):
                 pass
 
 
-
 class ShotgunQueue(object):
     PROCESSES = []
     LOW_PROCCESSES = []

@@ -7,6 +7,10 @@ import cgl.plugins.syncthing.utils as st_utils
 
 def check_st_config(folder_type='sendreceive'):
     import cgl.apps.lumber_watch.lumber_watch as lw
+    # Check for pending Devices
+    # check for pending folders
+    # process folder naming
+    st_utils.process_pending_folders(folder_type=folder_type)
     if st_utils.syncthing_synced():
         # print('Nothing to Sync')
         if lw.check_syncthing_config():

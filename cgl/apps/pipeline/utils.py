@@ -71,7 +71,7 @@ class CGLMenuButton(QtWidgets.QWidget):
             self.software = dialog.software_combo.currentText()
         self.menu_type = menu_type
         self.attrs = attrs
-        self.name = preflight_step_name
+        self.name = attrs['name']
         self.preflight_name = preflight_name
         self.preflight_path = preflight_path
         # self.menu_name = os.path.split(preflight_path.split(menu_type)[1])[0]
@@ -240,8 +240,13 @@ class CGLMenuButton(QtWidgets.QWidget):
     def on_delete_clicked(self):
         menu_widget = self.parent().parent()
         # delete the file
-        filepath = menu_widget.currentWidget().command_line_edit.text().replace('.', '/')
-        filepath = '{}.py'.format(filepath)
+        filepath = menu_widget.currentWidget().command_line_edit.text().replace('.', '\\')
+        if 'import ' in filepath:
+            filepath = filepath.replace('import ', '')
+            filepath = filepath.split(' as ')[0]
+            filepath = '{}.py'.format(filepath)
+        else:
+            print('not sure what to do with non-python filepath {}'.format(filepath))
         filepath = os.path.join(os.path.dirname(get_cgl_tools()), filepath)
         if os.path.exists(filepath):
             print('Deleting the file: {}'.format(filepath))
@@ -358,7 +363,7 @@ class CGLMenu(QtWidgets.QWidget):
             message = 'Enter a Name for your Menu Button'
         elif self.menu_type == 'shelves':
             title_ = 'Add Shelf'
-            message = 'Enter a Name for your shelf button'
+            message = 'Enter a Name for your Shelf button'
         elif self.menu_type == 'context-menus':
             title_ = 'Add Context Menu Item'
             message = 'Enter a name for your Context Menu Item'
@@ -368,7 +373,6 @@ class CGLMenu(QtWidgets.QWidget):
                              name_example='Name may only contain letters and spaces')
         dialog.exec_()
         if dialog.button == 'Ok':
-            # text_ = dialog.line_edit.text().replace(' ', '_')
             text_ = stringcase.snakecase(dialog.line_edit.text().lower())
             button_name = stringcase.pascalcase(text_)
             label = stringcase.titlecase(text_)
@@ -384,10 +388,11 @@ class CGLMenu(QtWidgets.QWidget):
                          'name': button_name,
                          'module': command}
             elif self.menu_type == 'shelves':
-                attrs = {'label': button_name,
-                         'module': command,
+                attrs = {'label': label,
                          'name': button_name,
+                         'module': command,
                          'icon': ''}
+
             self.new_button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
                                                    preflight_step_name=button_name,
                                                    attrs=attrs, preflight_path=self.menu_path, menu_type=self.menu_type)
@@ -396,7 +401,6 @@ class CGLMenu(QtWidgets.QWidget):
                 icon = QtGui.QIcon(attrs['icon'])
                 index = self.buttons_tab_widget.addTab(self.new_button_widget, icon, button_name)
             else:
-                print(3)
                 index = self.buttons_tab_widget.addTab(self.new_button_widget, button_name)
             self.buttons_tab_widget.setCurrentIndex(index)
 
@@ -416,8 +420,6 @@ class CGLMenu(QtWidgets.QWidget):
     def load_buttons(self):
         if self.menu:
             if 'buttons' in self.menu.keys():
-                print(self.menu_name)
-                print(self.menu_path)
                 for button in self.menu['buttons']:
                     button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
                                                   preflight_step_name=button['label'],
@@ -473,9 +475,7 @@ def create_button_file(software, menu_name, button_name, menu_type):
     else:
         button_template = os.path.join(get_resources_path(), 'pipeline_designer', template_software, 'buttons',
                                        'for_%s.py' % menu_type)
-    # print('Button_template: {}'.format(button_template))
     button_lines = load_text_file(button_template)
-    # print('Button Lines: {}'.format(button_lines))
     changed_lines = []
     for l in button_lines:
         if software == 'blender':
@@ -506,8 +506,6 @@ def create_button_file(software, menu_name, button_name, menu_type):
     dirname = os.path.dirname(button_path)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-    print(changed_lines)
-    print(button_path)
     save_text_lines(changed_lines, button_path)
     return button_path
 
