@@ -20,4 +20,5 @@ matplotlib
 stringcase
 shiboken2
 vfxwindow
+wget
 
