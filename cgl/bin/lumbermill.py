@@ -18,6 +18,7 @@ def load_lumbermill(app, splash=None):
 
 if __name__ == "__main__":
     app, splash = startup.app_init()
+    print(splash)
     project_management, user_info = startup.user_init()
     # TODO tell them to run the setup script if there's not globals file.
     # TODO make this value a globals value

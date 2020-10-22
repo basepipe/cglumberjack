@@ -13,6 +13,7 @@ from cgl.core.config import app_config
 from cgl.core.path import PathObject, icon_path, lj_list_dir, split_sequence_frange, get_file_type
 from cgl.plugins.preflight.main import Preflight
 from cgl.apps.lumbermill.elements.panels import clear_layout
+from cgl.core.project import get_companies, get_projects
 import time
 
 CONFIG = app_config()
@@ -89,6 +90,22 @@ class IOPanel(QtWidgets.QWidget):
         self.pandas_path = ''
         self.io_statuses = ['Imported', 'Tagged', 'Published']
 
+        self.project_label = QtWidgets.QLabel("Project: ")
+        self.company_label = QtWidgets.QLabel("Company: ")
+        self.project_combo = QtWidgets.QComboBox()
+        self.company_combo = QtWidgets.QComboBox()
+
+        self.grid_layout = QtWidgets.QGridLayout()
+        self.grid_layout.addWidget(self.company_label, 0, 0)
+        self.grid_layout.addWidget(self.company_combo, 0, 1)
+        self.grid_layout.addWidget(self.project_label, 1, 0)
+        self.grid_layout.addWidget(self.project_combo, 1, 1)
+
+        self.grid_box = QtWidgets.QHBoxLayout()
+        self.grid_box.addLayout(self.grid_layout)
+        self.grid_box.addStretch(1)
+
+
         self.file_tree = LJTreeWidget(self)
         #self.width_hint = self.file_tree.width_hint
 
@@ -154,6 +171,13 @@ class IOPanel(QtWidgets.QWidget):
         # create buttons row
         self.buttons_row = QtWidgets.QHBoxLayout()
 
+        self.path_row = QtWidgets.QHBoxLayout()
+        self.path_line_edit = QtWidgets.QLineEdit()
+        self.path_button = QtWidgets.QToolButton()
+        self.path_button.setText('^')
+        self.path_row.addWidget(self.path_line_edit)
+        self.path_row.addWidget(self.path_button)
+
         self.publish_button = QtWidgets.QPushButton('Publish Selected')
         self.view_in_lumbermill = QtWidgets.QPushButton('View in Lumbermill')
         self.view_in_lumbermill.setMinimumWidth(220)
@@ -175,6 +199,7 @@ class IOPanel(QtWidgets.QWidget):
 
         h_layout.addWidget(self.source_widget)
         h_layout.addWidget(self.ingest_widget)
+        self.panel.addLayout(self.grid_box)
         self.panel.addLayout(h_layout)
         self.panel.addWidget(self.file_tree)
         self.panel.addWidget(self.empty_state)
@@ -186,6 +211,7 @@ class IOPanel(QtWidgets.QWidget):
         self.panel.addLayout(self.buttons_row)
         self.panel.addWidget(self.feedback_area)
         self.panel.addStretch(1)
+        self.panel.addLayout(self.path_row)
 
         self.load_companies()
         self.ingest_widget.empty_state.show()
@@ -209,9 +235,32 @@ class IOPanel(QtWidgets.QWidget):
         self.ingest_widget.add_button.clicked.connect(self.on_add_ingest_event)
         self.publish_button.clicked.connect(self.publish_selected_asset)
         self.empty_state.files_added.connect(self.new_files_dragged)
+        self.company_combo.currentIndexChanged.connect(self.load_projects)
+        self.project_combo.currentIndexChanged.connect(self.on_project_changed)
         logging.info('Testing the popup')
         # self.on_schema_changed()
         self.on_scope_changed()
+        self.load_default_companies()
+
+    def load_default_companies(self):
+        companies = get_companies()
+        print('Companies:', companies)
+        self.company_combo.clear()
+        self.company_combo.addItems(get_companies())
+
+    def load_projects(self):
+        company = self.company_combo.currentText()
+        print('company', company)
+        self.project_combo.clear()
+        self.project_combo.addItems(get_projects(company))
+
+    def on_project_changed(self):
+        dict_ = {'company': self.company_combo.currentText(),
+                 'project': self.project_combo.currentText(),
+                 'context': 'source',
+                 'scope': 'IO'}
+        self.path_object = PathObject(dict_)
+        self.update_path()
 
     def on_source_add_clicked(self):
         dialog = InputDialog(title='Add Source Company or Gear', message='Add an Import Source:', line_edit=True,
@@ -221,11 +270,19 @@ class IOPanel(QtWidgets.QWidget):
         if dialog.button == 'Add Source':
             root_ = self.path_object.path_root.split(self.path_object.scope)[0]
             new_source = os.path.join(root_, 'IO', dialog.line_edit.text())
+            print(new_source, 'making that')
             if not os.path.exists(new_source):
                 os.makedirs(new_source)
-                self.parent().parent().centralWidget().update_location_to_latest(self.path_object)
+                try:
+                    self.parent().parent().centralWidget().update_location_to_latest(self.path_object)
+                except AttributeError:
+                    self.update_path()
+                    pass
             else:
                 logging.debug('Source %s already exists!' % new_source)
+
+    def update_path(self):
+        self.path_line_edit.setText(self.path_object.path_root)
 
     def file_interaction(self, files, path, to_folder):
         """
@@ -253,6 +310,7 @@ class IOPanel(QtWidgets.QWidget):
             item = self.ingest_widget.list.item(num - 1)
             item.setSelected(True)
             self.parent().parent().centralWidget().update_location_to_latest(self.path_object)
+            self.update_path()
             # self.empty_state.hide()
         self.load_data_frame()
         if os.path.exists(publish_data_csv):
@@ -290,6 +348,7 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.setText('Drag Media Here \nto Create New Ingest Version')
         self.path_object.set_attr(ingest_source=selected)
         self.load_import_events()
+        self.update_path()
         # if selected == 'OBS' or selected == 'ZOOM':
         #     self.load_fixed_events(selected)
         # else:
@@ -344,6 +403,7 @@ class IOPanel(QtWidgets.QWidget):
         self.load_data_frame()
         self.populate_tree()
         self.location_changed.emit(self.path_object)
+        self.update_path()
 
     def populate_tree(self, dir_=None):
         if not dir_:
@@ -369,13 +429,34 @@ class IOPanel(QtWidgets.QWidget):
             dir_ = self.path_object.path_root
         logging.debug('loading %s' % dir_)
         self.pandas_path = os.path.join(dir_, 'publish_data.csv')
+        data = []
+        data = self.append_data_children(data, dir_)
         if os.path.exists(self.pandas_path):
             self.data_frame = pd.read_csv(self.pandas_path)
+            self.update_data_frame(data)
         else:
-            data = []
-            data = self.append_data_children(data, dir_)
             self.data_frame = pd.DataFrame(data, columns=CONFIG['definitions']['ingest_browser_header'])
         self.save_data_frame()
+
+    def update_data_frame(self, data):
+        """
+        compares data to what's contained in the existing csv file, if there are additional files it adds them.
+        :param data:
+        :return:
+        """
+        position = 0
+        print(self.data_frame)
+        for d in data:
+            dict_ = {}
+            value = d[position]
+            exists = False
+            for i, row in self.data_frame.iterrows():
+                if row['Filename'] == value:
+                    exists = True
+            if not exists:
+                print('\tAdding {}\n\t\t{}'.format(value, d))
+                self.data_frame.append(row)
+        print(self.data_frame)
 
     def append_data_children(self, data, directory, parent='self'):
         # regex = r"#{3,}.[aA-zZ]{2,} \d{3,}-\d{3,}$"
@@ -478,7 +559,6 @@ class IOPanel(QtWidgets.QWidget):
                         logging.debug('scope', self.scope_combo.currentText())
                         logging.debug('seq', seq)
                         logging.debug('shot', shot)
-
 
     def go_to_location(self, to_path):
         path_object = PathObject(to_path).copy(context='source', user='', resolution='', filename='', ext='',

@@ -1445,10 +1445,26 @@ def image_path(image=None):
     :param image:
     :return:
     """
+    images_path = replace_env_var_with_string(os.path.join(CONFIG['paths']['code_root'], 'resources', 'images'))
     if image:
-        return os.path.join(CONFIG['paths']['code_root'], 'resources', 'images', image)
+        return os.path.join(images_path, image)
     else:
-        return os.path.join(CONFIG['paths']['code_root'], 'resources', 'images')
+        return images_path
+
+
+def replace_env_var_with_string(path_):
+    """
+    replaces env_var in the style of %USERPROFILE% with the string representing the actual location on disk.
+    :param path_:
+    :return:
+    """
+    if '%' in path_:
+        m = re.findall(r'\%[aA-zZ]*\%', path_)
+        for env_var in m:
+            env_var_string = env_var.replace('%', '')
+            env_var_string = os.environ[env_var_string]
+            path_ = path_.replace(env_var, env_var_string)
+    return path_
 
 
 def icon_path(icon=None):
@@ -1457,10 +1473,11 @@ def icon_path(icon=None):
     :param icon:
     :return:
     """
+    icon_path = replace_env_var_with_string(os.path.join(CONFIG['paths']['code_root'], 'resources', 'icons'))
     if icon:
-        return os.path.join(CONFIG['paths']['code_root'], 'resources', 'icons', icon)
+        return os.path.join(icon_path, icon)
     else:
-        return os.path.join(CONFIG['paths']['code_root'], 'resources', 'icons')
+        return icon_path
 
 
 def font_path():

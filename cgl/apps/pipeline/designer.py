@@ -110,10 +110,13 @@ class Designer(LJDialog):
         self.software_combo.show()
         self.new_software_button.show()
         self.software_combo.clear()
-
         dir_ = self.cgl_tools
         if os.path.exists(dir_):
             softwares = os.listdir(dir_)
+            if not softwares:
+                self.software_combo.setEnabled(False)
+            else:
+                self.software_combo.setEnabled(True)
             for s in softwares:
                 if '.' not in s:
                     if '__' not in s:
@@ -302,7 +305,6 @@ class Designer(LJDialog):
         else:
             self.save_code(menu_name, button_widget)
         json_object = {self.software: menu_array}
-        print('saving json', self.menu_path)
         self.save_json(self.menu_path, json_object)
 
     def create_empty_menu(self):
@@ -310,23 +312,24 @@ class Designer(LJDialog):
         self.save_json(self.menu_path, json_object)
 
     def save_code(self, menu_name, button_widget):
-        button_name = button_widget.name
-        code = button_widget.code_text_edit.document().toPlainText()
-        button_file = get_button_path(software=self.software, menu_name=menu_name, button_name=button_name,
-                                      menu_type=self.type)
-        dir_ = os.path.dirname(button_file)
-        if not os.path.exists(dir_):
-            os.makedirs(dir_)
-        self.make_init_for_folders_in_path(dir_)
+        if button_widget:
+            button_name = button_widget.name
+            code = button_widget.code_text_edit.document().toPlainText()
+            button_file = get_button_path(software=self.software, menu_name=menu_name, button_name=button_name,
+                                          menu_type=self.type)
+            dir_ = os.path.dirname(button_file)
+            if not os.path.exists(dir_):
+                os.makedirs(dir_)
+            self.make_init_for_folders_in_path(dir_)
 
-        if button_widget.do_save:
-            if self.software.lower() == 'unreal':
-                if os.path.exists(button_file):
-                    button_widget.do_save = False
-                    return
-            with open(button_file, 'w+') as x:
-                x.write(code)
-            button_widget.do_save = False
+            if button_widget.do_save:
+                if self.software.lower() == 'unreal':
+                    if os.path.exists(button_file):
+                        button_widget.do_save = False
+                        return
+                with open(button_file, 'w+') as x:
+                    x.write(code)
+                button_widget.do_save = False
 
     def make_init_for_folders_in_path(self, folder):
         config = self.cgl_tools.replace('\\', '/')
@@ -352,7 +355,7 @@ class Designer(LJDialog):
                 i.write("")
 
     def save_json(self, filepath, data):
-        if data:
+        if data and filepath:
             self.make_init_for_folders_in_path(filepath)
             with open(filepath, 'w') as outfile:
                 json.dump(data, outfile, indent=4, sort_keys=True)

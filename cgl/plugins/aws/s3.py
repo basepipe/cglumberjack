@@ -155,5 +155,4 @@ def main(input_file, output_file, bucket):
 
 
 if __name__ == '__main__':
-    # main()
-    upload_lumbermill_installer_zip()
+    main()
