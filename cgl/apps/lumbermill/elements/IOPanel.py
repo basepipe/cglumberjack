@@ -92,6 +92,9 @@ class IOPanel(QtWidgets.QWidget):
 
         self.project_label = QtWidgets.QLabel("Project: ")
         self.company_label = QtWidgets.QLabel("Company: ")
+        self.project_type_label = QtWidgets.QLabel("Ingest Type: ")
+        self.project_type_combo = QtWidgets.QComboBox()
+        self.project_type_combo.addItems(['VFX/Animation', 'Editorial'])
         self.project_combo = QtWidgets.QComboBox()
         self.company_combo = QtWidgets.QComboBox()
 
@@ -100,11 +103,12 @@ class IOPanel(QtWidgets.QWidget):
         self.grid_layout.addWidget(self.company_combo, 0, 1)
         self.grid_layout.addWidget(self.project_label, 1, 0)
         self.grid_layout.addWidget(self.project_combo, 1, 1)
+        self.grid_layout.addWidget(self.project_type_label, 2, 0)
+        self.grid_layout.addWidget(self.project_type_combo, 2, 1)
 
         self.grid_box = QtWidgets.QHBoxLayout()
         self.grid_box.addLayout(self.grid_layout)
         self.grid_box.addStretch(1)
-
 
         self.file_tree = LJTreeWidget(self)
         #self.width_hint = self.file_tree.width_hint
@@ -136,26 +140,26 @@ class IOPanel(QtWidgets.QWidget):
         # self.schema_row.addWidget(self.schema_combo)
         # self.schema_row.addStretch(1)
 
-        self.scope_label = QtWidgets.QLabel('Scope')
+        self.scope_label = QtWidgets.QLabel('Scope: ')
         self.scope_combo = AdvComboBox()
-        self.scope_combo.addItems(['', 'assets', 'shots'])
+        self.scope_combo.addItems(['assets', 'shots'])
         self.seq_row = QtWidgets.QHBoxLayout()
         self.seq_row.addWidget(self.scope_label)
         self.seq_row.addWidget(self.scope_combo)
         self.feedback_area = QtWidgets.QLabel('')
 
-        self.seq_label = QtWidgets.QLabel('Seq ')
+        self.seq_label = QtWidgets.QLabel('Seq: ')
         self.seq_combo = AdvComboBox()
 
         self.seq_row.addWidget(self.seq_label)
         self.seq_row.addWidget(self.seq_combo)
 
-        self.shot_label = QtWidgets.QLabel('Shot')
+        self.shot_label = QtWidgets.QLabel('Shot: ')
         self.shot_combo = AdvComboBox()
         self.seq_row.addWidget(self.shot_label)
         self.seq_row.addWidget(self.shot_combo)
 
-        self.task_label = QtWidgets.QLabel('Task')
+        self.task_label = QtWidgets.QLabel('Task: ')
         self.task_combo = AdvComboBox()
         self.task_combo.setEditable(False)
         self.seq_row.addWidget(self.task_label)
@@ -235,22 +239,53 @@ class IOPanel(QtWidgets.QWidget):
         self.ingest_widget.add_button.clicked.connect(self.on_add_ingest_event)
         self.publish_button.clicked.connect(self.publish_selected_asset)
         self.empty_state.files_added.connect(self.new_files_dragged)
+        self.file_tree.files_added.connect(self.new_files_dragged)
         self.company_combo.currentIndexChanged.connect(self.load_projects)
         self.project_combo.currentIndexChanged.connect(self.on_project_changed)
+        self.project_type_combo.currentIndexChanged.connect(self.project_type_changed)
         logging.info('Testing the popup')
         # self.on_schema_changed()
         self.on_scope_changed()
         self.load_default_companies()
+        self.project_type_changed()
+
+    def project_type_changed(self):
+        """
+        when you change project type
+        :return:
+        """
+        # change labels of stuff
+        self.scope_combo.clear()
+        if self.project_type_combo.currentText() == 'Editorial':
+            self.scope_combo.addItems(['assets', 'edit'])
+        else:
+            self.scope_combo.addItems(['assets', 'shots'])
+        self.update_labels()
+
+    def update_labels(self):
+        if self.project_type_combo.currentText() == 'Editorial':
+            if self.scope_combo.currentText() == 'assets':
+                self.seq_label.setText('Date: ')
+                self.shot_label.setText('Clip: ')
+            elif self.scope_combo.currentText() == 'edit':
+                self.seq_label.setText('Category: ')
+                self.shot_label.setText('Title: ')
+        else:
+            if self.scope_combo.currentText() == 'assets':
+                self.seq_label.setText('Category: ')
+                self.shot_label.setText('Asset Name: ')
+            if self.scope_combo.currentText() == 'shots':
+                self.seq_label.setText('Seq: ')
+                self.shot_label.setText('Shot: ')
+
 
     def load_default_companies(self):
         companies = get_companies()
-        print('Companies:', companies)
         self.company_combo.clear()
         self.company_combo.addItems(get_companies())
 
     def load_projects(self):
         company = self.company_combo.currentText()
-        print('company', company)
         self.project_combo.clear()
         self.project_combo.addItems(get_projects(company))
 
@@ -270,7 +305,6 @@ class IOPanel(QtWidgets.QWidget):
         if dialog.button == 'Add Source':
             root_ = self.path_object.path_root.split(self.path_object.scope)[0]
             new_source = os.path.join(root_, 'IO', dialog.line_edit.text())
-            print(new_source, 'making that')
             if not os.path.exists(new_source):
                 os.makedirs(new_source)
                 try:
@@ -412,6 +446,7 @@ class IOPanel(QtWidgets.QWidget):
         if os.listdir(dir_):
             # self.empty_state.hide()
             self.version = self.path_object.version
+            self.empty_state.hide()
             self.empty_state.setText('Drag Files To Add To Ingest %s' % self.version)
             self.file_tree.show()
             self.file_tree.directory = self.path_object.path_root
@@ -445,18 +480,19 @@ class IOPanel(QtWidgets.QWidget):
         :return:
         """
         position = 0
-        print(self.data_frame)
+        filenames = []
+        rows_list = []
+        for i, row in self.data_frame.iterrows():
+            filenames.append(row['Filename'])
         for d in data:
-            dict_ = {}
             value = d[position]
-            exists = False
-            for i, row in self.data_frame.iterrows():
-                if row['Filename'] == value:
-                    exists = True
-            if not exists:
-                print('\tAdding {}\n\t\t{}'.format(value, d))
-                self.data_frame.append(row)
-        print(self.data_frame)
+            if value not in filenames:
+                dict_ = {}
+                for i, key in enumerate(CONFIG['definitions']['ingest_browser_header']):
+                    dict_[key] = d[i]
+                rows_list.append(dict_)
+        temp_df = pd.DataFrame(rows_list)
+        self.data_frame = pd.concat([self.data_frame, temp_df])
 
     def append_data_children(self, data, directory, parent='self'):
         # regex = r"#{3,}.[aA-zZ]{2,} \d{3,}-\d{3,}$"
@@ -493,72 +529,75 @@ class IOPanel(QtWidgets.QWidget):
             self.save_data_frame()
 
     def edit_data_frame(self):
-        if self.current_selection[0][STATUS] == 'Published':
-            return
-        if self.seq_combo.currentText():
-            seq = str(self.seq_combo.currentText())
-            self.tags_title.setText('CGL:> Choose a %s Name or Type to Create a New One' %
-                                    self.shot_label.text().title())
-            if self.shot_combo.currentText():
-                schema = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
-                if self.scope_combo.currentText():
-                    proj_man_tasks = schema['long_to_short'][self.scope_combo.currentText()]
-                else:
-                    return
-                shot = str(self.shot_combo.currentText())
-                logging.debug(shot, '-------------------------------------------------------------')
-                self.tags_title.setText('CGL:> Which Task will this be published to?')
-                if self.task_combo.currentText():
-                    try:
-                        task = proj_man_tasks[str(self.task_combo.currentText())]
-                        to_object = self.path_object.copy(scope=self.scope_combo.currentText(),
-                                                          seq=seq,
-                                                          shot=shot,
-                                                          task=task,
-                                                          context='render',
-                                                          version='000.000',
-                                                          user='publish',
-                                                          resolution='high')
-                        logging.debug(to_object.path_root)
-                        logging.debug(to_object.filename)
-                        logging.debug(to_object.__dict__)
-                        status = ''
-                        for f in self.current_selection:
-                            row = self.data_frame.loc[(self.data_frame['Filename'] == f[FILENAME]) &
-                                                      (self.data_frame['Parent'] == f[PARENT])].index[0]
-                            status = self.data_frame.at[row, 'Status']
-                            if status == 'Imported':
-                                status = 'Tagged'
-                            to_path = os.path.join(to_object.path_root, f[FILENAME])
-                            if status == 'Published':
-                                self.tags_title.setText('CGL:>  Published!')
-                                # self.tags_button.clicked.connect(lambda: self.go_to_location(to_path))
-                                # self.tags_button.show()
-                                # self.publish_button.hide()
-                            else:
-                                self.tags_title.setText('CGL:>  Tagged & Ready For Publish!')
-                                self.publish_button.setEnabled(True)
-                            self.data_frame.at[row, 'Scope'] = self.scope_combo.currentText()
-                            self.data_frame.at[row, 'Seq'] = seq
-                            self.data_frame.at[row, 'Shot'] = shot
-                            self.data_frame.at[row, 'Task'] = task
-                            self.data_frame.at[row, 'Publish_Filepath'] = to_path
-                            self.data_frame.at[row, 'Status'] = status
-                        for each in self.file_tree.selectionModel().selectedRows():
-                            self.file_tree.set_text(each, PUBLISH_FILEPATH, to_path)
-                            self.file_tree.set_text(each, STATUS, status)
-                            self.file_tree.set_text(each, SCOPE, self.scope_combo.currentText())
-                            self.file_tree.set_text(each, SEQ, seq)
-                            self.file_tree.set_text(each, SHOT, shot)
-                            self.file_tree.set_text(each, TASK, task)
-                        self.save_data_frame()
+        if self.current_selection:
+            if self.current_selection[0][STATUS] == 'Published':
+                return
+            if self.seq_combo.currentText():
+                seq = str(self.seq_combo.currentText())
+                self.tags_title.setText('CGL:> Choose a %s Name or Type to Create a New One' %
+                                        self.shot_label.text().title())
+                if self.shot_combo.currentText():
+                    schema = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
+                    if self.scope_combo.currentText():
+                        proj_man_tasks = schema['long_to_short'][self.scope_combo.currentText()]
+                    else:
+                        return
+                    shot = str(self.shot_combo.currentText())
+                    logging.debug(shot, '-------------------------------------------------------------')
+                    self.tags_title.setText('CGL:> Which Task will this be published to?')
+                    if self.task_combo.currentText():
+                        try:
+                            task = proj_man_tasks[str(self.task_combo.currentText())]
+                            to_object = self.path_object.copy(scope=self.scope_combo.currentText(),
+                                                              seq=seq,
+                                                              shot=shot,
+                                                              task=task,
+                                                              context='render',
+                                                              version='000.000',
+                                                              user='publish',
+                                                              resolution='high')
+                            logging.debug(to_object.path_root)
+                            logging.debug(to_object.filename)
+                            logging.debug(to_object.__dict__)
+                            status = ''
+                            for f in self.current_selection:
+                                row = self.data_frame.loc[(self.data_frame['Filename'] == f[FILENAME]) &
+                                                          (self.data_frame['Parent'] == f[PARENT])].index[0]
+                                status = self.data_frame.at[row, 'Status']
+                                if status == 'Imported':
+                                    status = 'Tagged'
+                                to_path = os.path.join(to_object.path_root, f[FILENAME])
+                                if status == 'Published':
+                                    self.tags_title.setText('CGL:>  Published!')
+                                    # self.tags_button.clicked.connect(lambda: self.go_to_location(to_path))
+                                    # self.tags_button.show()
+                                    # self.publish_button.hide()
+                                else:
+                                    self.tags_title.setText('CGL:>  Tagged & Ready For Publish!')
+                                    self.publish_button.setEnabled(True)
+                                self.data_frame.at[row, 'Scope'] = self.scope_combo.currentText()
+                                self.data_frame.at[row, 'Seq'] = seq
+                                self.data_frame.at[row, 'Shot'] = shot
+                                self.data_frame.at[row, 'Task'] = task
+                                self.data_frame.at[row, 'Publish_Filepath'] = to_path
+                                self.data_frame.at[row, 'Status'] = status
+                            for each in self.file_tree.selectionModel().selectedRows():
+                                self.file_tree.set_text(each, PUBLISH_FILEPATH, to_path)
+                                self.file_tree.set_text(each, STATUS, status)
+                                self.file_tree.set_text(each, SCOPE, self.scope_combo.currentText())
+                                self.file_tree.set_text(each, SEQ, seq)
+                                self.file_tree.set_text(each, SHOT, shot)
+                                self.file_tree.set_text(each, TASK, task)
+                            self.save_data_frame()
 
-                        # how do i edit the text only on the selected item?
-                    except KeyError:
-                        logging.debug('Error with something:')
-                        logging.debug('scope', self.scope_combo.currentText())
-                        logging.debug('seq', seq)
-                        logging.debug('shot', shot)
+                            # how do i edit the text only on the selected item?
+                        except KeyError:
+                            logging.debug('Error with something:')
+                            logging.debug('scope', self.scope_combo.currentText())
+                            logging.debug('seq', seq)
+                            logging.debug('shot', shot)
+        else:
+            print('No Valid Selection')
 
     def go_to_location(self, to_path):
         path_object = PathObject(to_path).copy(context='source', user='', resolution='', filename='', ext='',
@@ -644,7 +683,7 @@ class IOPanel(QtWidgets.QWidget):
                         self.set_combo_to_text(self.task_combo, task)
 
     def hide_tags(self):
-        self.tags_title.setText("<b>Select File(s) or Folder(s) to tag</b>")
+        self.tags_title.setText("Select File(s) or Folder(s) to tag")
         self.tags_title.hide()
         self.scope_label.hide()
         self.scope_combo.hide()
@@ -676,13 +715,16 @@ class IOPanel(QtWidgets.QWidget):
         self.task_combo.clear()
         ignore = ['default_steps', '', 'cgl_info.json']
         schema = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
-        tasks = schema['long_to_short'][self.scope_combo.currentText()]
-        self.populate_seq()
-        task_names = ['']
-        for each in tasks:
-            if each not in ignore:
-                task_names.append(each)
-        self.task_combo.addItems(sorted(task_names))
+        try:
+            tasks = schema['long_to_short'][self.scope_combo.currentText()]
+            self.populate_seq()
+            task_names = ['']
+            for each in tasks:
+                if each not in ignore:
+                    task_names.append(each)
+            self.task_combo.addItems(sorted(task_names))
+        except KeyError:
+            print('Did not find {} in tasks schema in globals, skipping')
 
     def populate_seq(self):
         self.seq_combo.clear()
@@ -710,12 +752,7 @@ class IOPanel(QtWidgets.QWidget):
     def on_scope_changed(self):
         # see if we can set scope based off the data_frame
         if self.scope_combo.currentText():
-            if self.scope_combo.currentText() == 'assets':
-                self.seq_label.setText('Type')
-                self.shot_label.setText('Asset')
-            elif self.scope_combo.currentText() == 'shots':
-                self.seq_label.setText('Sequence')
-                self.shot_label.setText('Shot')
+            self.update_labels()
             self.tags_title.setText("<b>CGL:></b>  Type to Create a %s or Choose it from the list" %
                                     (self.seq_label.text()))
             self.populate_seq()
@@ -777,7 +814,7 @@ class IOPanel(QtWidgets.QWidget):
         # deselect everything in the event
         # change the file path to reflect no selection
         self.path_object = self.path_object.next_major_version()
-        self.empty_state.setText('Drag Media Here to  %s' % self.path_object.version)
+        self.empty_state.setText('Drag Media Here to create version %s' % self.path_object.version)
         self.hide_tags()
         self.file_tree.hide()
         self.empty_state.show()

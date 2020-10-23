@@ -16,6 +16,7 @@ class ProgressGif(QtWidgets.QWidget):
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.progress_bar = QtWidgets.QLabel()
         self.progress_bar.setAlignment(QtCore.Qt.AlignCenter)
+        print(image_path('chopping_wood.gif'))
         self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
         self.movie.setScaledSize(self.gif_height)
         self.progress_bar.setMovie(self.movie)

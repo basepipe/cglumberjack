@@ -1,6 +1,7 @@
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 import apps.lumbermill.elements.IOPanel as IoP
 from cgl.core.path import PathObject
+from cgl.core.utils.general import load_style_sheet
 
 
 class IngestDialog(QtWidgets.QDialog):
@@ -16,6 +17,6 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication([])
     form = IngestDialog()
     form.show()
-    # style_sheet = load_style_sheet()
-    # app.setStyleSheet(style_sheet)
+    style_sheet = load_style_sheet()
+    app.setStyleSheet(style_sheet)
     app.exec_()

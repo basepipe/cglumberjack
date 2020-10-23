@@ -69,7 +69,6 @@ class LJTreeWidget(QtWidgets.QTreeView):
         self.model = LJTreeModel()
         self.setModel(self.model)
         self.setAcceptDrops(True)
-        self.setDropIndicatorShown(True)
         self.setUniformRowHeights(True)
         # connect items
         if parents:
@@ -228,18 +227,31 @@ class LJTreeWidget(QtWidgets.QTreeView):
     # def sizeHint(self):
     #     return QtCore.QSize(self.height_hint, self.width_hint)
 
-    def dropEvent(self, event):
-        print('dropping like its hot')
-        print(self.height_hint)
-        print(event.mimeData())
-        # if e.mimeData().hasUrls:
-        #     e.setDropAction(QtCore.Qt.CopyAction)
-        #     e.accept()
-        #     file_list = []
-        #     for url in e.mimeData().urls():
-        #         file_list.append(str(url.toLocalFile()))
-        #     self.files_added.emit(file_list)
-        # else:
-        #     e.ignore()
+    def mouseReleaseEvent(self, e):
+        super(LJTreeWidget, self).mouseReleaseEvent(e)
+
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasUrls:
+            e.accept()
+        else:
+            e.ignore()
+
+    def dragMoveEvent(self, e):
+        if e.mimeData().hasUrls:
+            e.setDropAction(QtCore.Qt.CopyAction)
+            e.accept()
+        else:
+            e.ignore()
+
+    def dropEvent(self, e):
+        if e.mimeData().hasUrls:
+            e.setDropAction(QtCore.Qt.CopyAction)
+            e.accept()
+            file_list = []
+            for url in e.mimeData().urls():
+                file_list.append(str(url.toLocalFile()))
+            self.files_added.emit(file_list)
+        else:
+            e.ignore()
 
 
