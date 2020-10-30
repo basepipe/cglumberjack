@@ -12,9 +12,12 @@ print(output['job_id'])
 print(output['file_out'])
 
 # Create the Video File
-output = convert_to_mp4(filein=file_in, processing_method='smedge', dependent_job=output['job_id'])
+output = convert_to_mp4(filein=file_in, processing_method='smedge', dependent_job=None)
+prores_output = create_prores_mov(file_in, processing_method='smedge', dependent_job=None)
 print(output['job_id'])
 print(output['file_out'])
+print(prores_output['job_id'])
+print(prores_output['file_out'])
 
 # Create The Transcript
 t_file_name = os.path.basename(file_in).replace('.mkv', '.json')
