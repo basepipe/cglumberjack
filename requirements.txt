@@ -21,4 +21,5 @@ stringcase
 shiboken2
 vfxwindow
 wget
+reportlab
 
