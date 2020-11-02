@@ -2,7 +2,8 @@ import os
 from reportlab.lib.units import inch
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import PageBreak
-from src.core.util import load_json
+from cgl.core.utils.general import load_json
+from cgl.core.config import app_config
 import click
 
 
@@ -46,6 +47,7 @@ class Shot(object):
 
         # Creates the thumbnail
         path = template_path
+        print("attempting to create {}".format(path))
         canvas.drawImage(path, 0.5 * inch, 1.7 * inch, width=3.2 * inch, height=2.5 * inch)
 
         # Notes section and vector lines
@@ -119,7 +121,7 @@ def create_shot_pdfs(json):
     shotList = []
     i = 1
     for scene in json_dict['Setup']:
-        file_out = r"C:\Users\malao\PycharmProjects\robogary\src\shot_%s.pdf" % str(i)
+        file_out = r"{}/shot_{}.pdf".format(os.path.dirname(json_dict['Setup'][scene]['Thumbnail_Path']), str(i))
         Shot(filmback=json_dict['Setup'][scene]['Filmback'],
              focal=json_dict['Setup'][scene]['lens'],
              camera_move=json_dict['Setup'][scene]['Camera_Move'],
@@ -146,8 +148,9 @@ def convert_shot_pdfs_to_png(path_list):
         filein = path
         fileout = path.replace('pdf', 'png')
         # TODO - we should be pulling this from globals
-        magick = "C:\\PROGRA~1\\ImageMagick-7.0.10-Q16\\magick.exe"
-        command = '%s -density 300 %s %s' % (magick, filein, fileout)
+        magick = app_config()['paths']['magick']
+        command = '%s -density 300 "%s" "%s"' % (magick, filein, fileout)
+        print('CONVERSION -------\n\t', command)
         os.system(command)
         convert_list.append(fileout)
     return convert_list
@@ -159,8 +162,11 @@ def convert_shot_pdfs_to_png(path_list):
 @click.option('--project_title', '-p', default=None)
 def main(json, output, director='Not Defined', project_title='Not Defined'):
     if json:
+        print('Creating Thumb Info for Each Shot...')
         PathList = create_shot_pdfs(json)
+        print('Create Individual Pages...')
         ConvertList = convert_shot_pdfs_to_png(path_list=PathList)
+        print('Creating Storyboard PDF...')
         StoryBoard(ConvertList, director, project_title, output)
     else:
         print('No json file defined')
