@@ -507,21 +507,13 @@ class FilesPanel(QtWidgets.QWidget):
         this = Preflight(software='lumbermill', preflight=self.current_location['task'],
                          path_object=self.current_location, auto_show=False)
         if this.preflight == 'default':
-            print('doing normal publish')
-            # current.publish()
-            # dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
-            # dialog.exec_()
+            current.publish()
+            dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
+            dialog.exec_()
         else:
             this.show()
-
-        # # check for preflights for that task.
-        # return
-        # current = PathObject(self.current_location)
-        # if current.task == 'tex':
-        #     from cgl.plugins.maya.tex_util import tx_make
-        #     tx_make(current.path_root)
-        #
-
+            dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
+            dialog.exec_()
 
     def on_task_info_changed(self):
         """
