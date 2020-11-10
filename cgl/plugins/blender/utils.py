@@ -4,7 +4,7 @@ import os
 import stringcase
 
 import cgl.core.utils.read_write as read_write
-from cgl.core.path import get_resources_path
+from cgl.core.path import get_cgl_resources_path
 from cgl.core.project import get_cgl_tools
 
 logger = logging.getLogger('qtutils')
@@ -90,7 +90,7 @@ def create_menu_file(class_name):
     """
     # read in the menu file
     menu_path = get_menu_path('blender', class_name, menu_file=True)
-    menu_template = os.path.join(get_resources_path(), 'pipeline_designer',
+    menu_template = os.path.join(get_cgl_resources_path(), 'pipeline_designer',
                                  'blender', 'PanelTemplate.py')
     menu_lines = read_write.load_text_file(menu_template)
     changed_lines = []
@@ -118,7 +118,7 @@ def create_button_file(class_name, label, menu_name):
     :return:
     """
     button_path = get_button_path('blender', menu_name, class_name)
-    button_template = os.path.join(get_resources_path(), 'pipeline_designer',
+    button_template = os.path.join(get_cgl_resources_path(), 'pipeline_designer',
                                    'blender', 'buttonTemplate.py')
     button_lines = read_write.load_text_file(button_template)
     changed_lines = []

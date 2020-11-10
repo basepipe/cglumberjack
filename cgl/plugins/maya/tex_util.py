@@ -7,7 +7,7 @@ CONFIG = app_config()
 EXT_MAP = CONFIG['ext_map']
 
 
-def txmake(directory):
+def tx_make(directory):
     """
     parses a directory and creates .tx files for everything in it.
     :param directory:
@@ -15,6 +15,7 @@ def txmake(directory):
     """
     directory = (os.path.dirname(directory))
     list_of_files = list()
+    file_type = None
     for (dirpath, dirnames, filenames) in os.walk(directory):
         list_of_files += [os.path.join(dirpath, file) for file in filenames]
     for f in list_of_files:

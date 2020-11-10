@@ -511,8 +511,8 @@ class FilesPanel(QtWidgets.QWidget):
         # return
         current = PathObject(self.current_location)
         if current.task == 'tex':
-            from cgl.plugins.maya.tex_util import txmake
-            txmake(current.path_root)
+            from cgl.plugins.maya.tex_util import tx_make
+            tx_make(current.path_root)
         current.publish()
         dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
         dialog.exec_()

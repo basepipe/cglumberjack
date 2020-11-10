@@ -660,7 +660,7 @@ class CGLumberjack(LJMainWindow):
         LJMainWindow.__init__(self)
 
         if start_time:
-            logging.debug('Finished Loading Lumbermill in %s seconds' % (time.time() - start_time))
+            logging.debug('Finished Loading Magic Browser in %s seconds' % (time.time() - start_time))
         self.user_config = UserConfig().d
         if previous_path:
             self.previous_path = previous_path
@@ -689,9 +689,9 @@ class CGLumberjack(LJMainWindow):
                                                  show_import=show_import))
         if user_info:
             if user_info['first']:
-                self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['first'])
+                self.setWindowTitle('Magic Browser - Logged in as %s' % user_info['first'])
             else:
-                self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['login'])
+                self.setWindowTitle('Magic Browser - Logged in as %s' % user_info['login'])
         self.status_bar = QtWidgets.QStatusBar()
         self.setStatusBar(self.status_bar)
 
@@ -720,6 +720,7 @@ class CGLumberjack(LJMainWindow):
         settings = QtWidgets.QAction('Settings', self)
         open_globals = QtWidgets.QAction('Go to Company Globals', self)
         open_user_globals = QtWidgets.QAction('Go to User Globals', self)
+        open_default_files = QtWidgets.QAction("Go to Default Files", self)
         create_project = QtWidgets.QAction('Import .csv', self)
         settings.setShortcut('Ctrl+,')
         pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
@@ -744,6 +745,7 @@ class CGLumberjack(LJMainWindow):
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
         tools_menu.addAction(open_user_globals)
+        tools_menu.addAction(open_default_files)
         tools_menu.addSeparator()
         tools_menu.addMenu(self.current_processing_method)
         tools_menu.addSeparator()
@@ -794,6 +796,7 @@ class CGLumberjack(LJMainWindow):
         set_up_sync_thing_workstation.triggered.connect(self.set_up_st_workstation_clicked)
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
+        open_default_files.triggered.connect(self.open_default_files)
         create_project.triggered.connect(self.open_create_project_dialog)
         settings.triggered.connect(self.on_settings_clicked)
         pipeline_designer.triggered.connect(self.on_menu_designer_clicked)
@@ -1145,6 +1148,12 @@ class CGLumberjack(LJMainWindow):
     def open_user_globals():
         logging.debug(os.path.dirname(user_config()))
         cglpath.start(os.path.dirname(user_config()))
+
+    @staticmethod
+    def open_default_files():
+        location = os.path.join(CONFIG['paths']['resources'], 'default_files')
+        logging.debug(location)
+        cglpath.start(location)
 
     def load_user_config(self):
         user_config = UserConfig()
