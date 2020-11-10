@@ -501,11 +501,19 @@ class FilesPanel(QtWidgets.QWidget):
                 editorial_from_template(filepath, title, secondary, template_edit.path_root)
 
     def on_publish_clicked(self):
+        from cgl.plugins.preflight.main import Preflight
         logging.debug('Publishing stuff now')
-        current = PathObject(self.current_location)
-        current.publish()
-        dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
-        dialog.exec_()
+        print("Checking for {} preflight".format(self.current_location['task']))
+        this = Preflight(software='lumbermill', preflight=self.current_location['task'],
+                         path_object=self.current_location, auto_show=False)
+        if this.preflight == 'default':
+            current.publish()
+            dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
+            dialog.exec_()
+        else:
+            this.show()
+            dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
+            dialog.exec_()
 
     def on_task_info_changed(self):
         """

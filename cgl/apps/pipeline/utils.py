@@ -4,7 +4,7 @@ from cgl.core.utils.general import cgl_copy
 from cgl.core.utils.read_write import load_text_file, save_text_lines
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.dialog import InputDialog
-from cgl.core.path import start, icon_path, get_resources_path
+from cgl.core.path import start, icon_path, get_cgl_resources_path
 from cgl.core.project import get_cgl_tools
 from cgl.ui.widgets.text import Highlighter
 
@@ -463,7 +463,7 @@ def create_button_file(software, menu_name, button_name, menu_type):
     else:
         template_software = 'default'
     if software.lower() == 'unreal':
-        button_template = os.path.join(get_resources_path(), 'pipeline_designer', template_software, 'buttons',
+        button_template = os.path.join(get_cgl_resources_path(), 'pipeline_designer', template_software, 'buttons',
                                        'for_%s.uasset' % menu_type)
         dirname = os.path.dirname(button_path)
         if not os.path.exists(dirname):
@@ -473,7 +473,7 @@ def create_button_file(software, menu_name, button_name, menu_type):
         cgl_copy(button_template, button_path)
         return
     else:
-        button_template = os.path.join(get_resources_path(), 'pipeline_designer', template_software, 'buttons',
+        button_template = os.path.join(get_cgl_resources_path(), 'pipeline_designer', template_software, 'buttons',
                                        'for_%s.py' % menu_type)
     button_lines = load_text_file(button_template)
     changed_lines = []
