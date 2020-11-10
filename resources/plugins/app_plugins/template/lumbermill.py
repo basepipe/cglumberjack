@@ -40,7 +40,7 @@ class BrowserWidget(CGLumberjackWidget):
 class AppMainWindow(CGLumberjack):
     def __init__(self, parent=None, path=None, user_info=None):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
-        print 'Application Path path is %s' % path
+        print('Application Path path is %s' % path)
         self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
 
 
@@ -129,7 +129,7 @@ class LumberObject(PathObject):
         command line locally.  smedge/deadline - submit the job to a render manager for farm rendering.
         :return:
         """
-        print 'what is my render path?'
+        print('what is my render path?')
         pass
 
 
@@ -359,4 +359,4 @@ def launch_():
 
 
 if __name__ == "__main__":
-    print SOFTWARE
+    print(SOFTWARE)
