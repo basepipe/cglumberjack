@@ -1217,28 +1217,11 @@ class CreateProductionData(object):
                                                                     self.path_object.shot,
                                                                     self.path_object.task,
                                                                     ext))
-                print(default_file)
-                print(self.path_object.path_root)
                 cgl_copy(default_file, self.path_object.path_root, methodology='local')
         else:
-            logging.error('No Default file found for {} at {}, skipping file creation'.format(self.path_object.task,
-                                                                                              default_file))
-
-    # def copy_default_file(self, software, ext):
-    #     self.path_object.set_attr(filename='%s_%s_%s.%s' % (self.path_object.seq,
-    #                                                         self.path_object.shot,
-    #                                                         self.path_object.task,
-    #                                                         ext))
-    #     this = __file__.split('cglumberjack')[0]
-    #     this = this.replace('\\', '/')
-    #     this = '%scglumberjack/cgl' % this
-    #     default_file = "%s/plugins/%s/templates/default.%s" % (this, software, ext)
-    #     if os.path.exists(default_file):
-    #         logging.debug('Creating Default %s file: %s' % (self.path_object.task, self.path_object.path_root))
-    #         cgl_copy(default_file, self.path_object.path_root, methodology='local')
-    #     else:
-    #         logging.error('No Default file found for {} at {}'.format(self.path_object.task,
-    #                                                                   default_file))
+            logging.error('No Default file found for {} at {}, skipping file creation\n'
+                          'You can Create a default file for your task by clicking the \n'
+                          'Go to Default Files button from the Tools menu'.format(self.path_object.task, default_file))
 
 
 class Sequence(object):

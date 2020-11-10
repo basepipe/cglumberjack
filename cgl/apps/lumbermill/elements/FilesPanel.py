@@ -501,21 +501,27 @@ class FilesPanel(QtWidgets.QWidget):
                 editorial_from_template(filepath, title, secondary, template_edit.path_root)
 
     def on_publish_clicked(self):
-        # from cgl.plugins.preflight.main import Preflight
-        # logging.debug('Publishing stuff now')
-        # this = Preflight(self, software='lumbermill',
-        #                  preflight=self.current_location['task'],
-        #                  path_object=self.current_location)
-        # this.show()
+        from cgl.plugins.preflight.main import Preflight
+        logging.debug('Publishing stuff now')
+        print("Checking for {} preflight".format(self.current_location['task']))
+        this = Preflight(software='lumbermill', preflight=self.current_location['task'],
+                         path_object=self.current_location, auto_show=False)
+        if this.preflight == 'default':
+            print('doing normal publish')
+            # current.publish()
+            # dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
+            # dialog.exec_()
+        else:
+            this.show()
+
         # # check for preflights for that task.
         # return
-        current = PathObject(self.current_location)
-        if current.task == 'tex':
-            from cgl.plugins.maya.tex_util import tx_make
-            tx_make(current.path_root)
-        current.publish()
-        dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
-        dialog.exec_()
+        # current = PathObject(self.current_location)
+        # if current.task == 'tex':
+        #     from cgl.plugins.maya.tex_util import tx_make
+        #     tx_make(current.path_root)
+        #
+
 
     def on_task_info_changed(self):
         """

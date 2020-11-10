@@ -86,16 +86,16 @@ class Preflight(QtWidgets.QWidget):
     signal_one = QtCore.Signal(object)
 
     def __init__(self, parent=None, software='lumbermill', preflight='', model=None, path_object=None,
-                 current_selection=None, **kwargs):
+                 current_selection=None, auto_show=True, **kwargs):
         QtWidgets.QWidget.__init__(self, parent)
         self.software = software
         self.preflight = preflight
         self.software_dir = os.path.join(CONFIG['paths']['cgl_tools'], software)
         self.preflight_dir = os.path.join(self.software_dir, 'preflights')
         if self.preflight not in os.listdir(self.preflight_dir):
-            print(self.preflight_dir, self.preflight)
-            self.preflight = 'default'
+            print(self.preflight_dir, 'looking for :', self.preflight)
             print('no {} preflight found, using default'.format(self.preflight))
+            self.preflight = 'default'
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.json_file = os.path.join(self.software_dir, 'preflights.cgl')
         self.modules = {}
@@ -103,7 +103,7 @@ class Preflight(QtWidgets.QWidget):
         self.selected_checks = []
         self.function_d = {}
         self.table_data = []
-        self.setWindowTitle('%s Preflights' % self.preflight)
+        self.setWindowTitle('%s Publish Preflights' % self.preflight.title())
         PreflightCheck.shared_data['path_object'] = PathObject(path_object)
         PreflightCheck.shared_data['current_selection'] = current_selection
         PreflightCheck.shared_data['preflight_dialog'] = self
@@ -138,10 +138,6 @@ class Preflight(QtWidgets.QWidget):
         # construct the GUI
         combo_layout.addWidget(self.software_label)
         combo_layout.addStretch(1)
-        ##combo_layout.addWidget(self.software_selector)
-        #c#ombo_layout.addWidget(self.preflight_label)
-        #c#ombo_layout.addWidget(self.preflight_selector)
-        #combo_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         button_bar = QtWidgets.QHBoxLayout(self)
         button_bar.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         button_bar.addWidget(self.run_selected)
@@ -157,13 +153,12 @@ class Preflight(QtWidgets.QWidget):
         self.preflights.item_selected.connect(self.update_selection)
         self.run_selected.clicked.connect(self.run_selected_clicked)
         self.run_all.clicked.connect(self.run_all_clicked)
-
-        self.show()
+        if auto_show:
+            self.show()
 
     def _load_json(self):
         with open(self.json_file, 'r') as stream:
             d = json.load(stream)
-            print('11111111111')
             for button in d[self.software]:
                 if button['name'] == self.preflight:
                     self.modules = button['buttons']
@@ -172,6 +167,8 @@ class Preflight(QtWidgets.QWidget):
                 if button['name'] == 'default':
                     self.modules = button['buttons']
                     print('No preflight for %s found in %s, using default' % (self.preflight, self.json_file))
+                    self.preflight = 'default'
+                    return
 
     def populate_table(self):
         import sys
