@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shelfDocument>
+  <!-- This file contains definitions of shelves, toolbars, and tools.
+ It should not be hand-edited when it is being used by the application.
+ Note, that two definitions of the same element are not allowed in
+ a single file. -->
+  <tool name="guillermo" label="guillermo" icon="hicon:/SVGIcons.index?IM_NewViewport.svg">
+    <script scriptType="python"><![CDATA[print("shelf_works")]]></script>
+  </tool>
+  <toolshelf name="GuilleTools" label="GuilleTools">
+    <memberTool name="LoadDependencies"/>
+    <memberTool name="Version Up"/>
+  </toolshelf>
+</shelfDocument>

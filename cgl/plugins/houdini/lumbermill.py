@@ -14,6 +14,7 @@ PADDING = CONFIG['default']['padding']
 PROCESSING_METHOD = UserConfig().d['methodology']
 SOFTWARE = os.path.basename(os.path.dirname(__file__))
 
+
 class BrowserWidget(CGLumberjackWidget):
     def __init__(self, parent=None, path=None,
                  show_import=False):
@@ -40,8 +41,6 @@ class AppMainWindow(CGLumberjack):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
         print('Application Path path is %s' % path)
         self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
-
-
 
 
 class LumberObject(PathObject):
