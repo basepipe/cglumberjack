@@ -1,80 +1,66 @@
 import os
-import bpy
-import importlib
+import hou
 from cgl.plugins.CustomMenu import CustomMenu
-from .utils import get_button_path, get_menu_path
+
+shelf_path = os.path.join(os.environ['HOUDINI_USER_PREF_DIR'], 'toolbar', 'cg_lumberjack.shelf')
 
 
-class LumberMenu(CustomMenu):
-    def __init__(self, software='blender', type_='menus'):
+class HoudiniMenu(CustomMenu):
+    def __init__(self, software='houdini', type_='shelves'):
         CustomMenu.__init__(self, software, type_)
+        print(self.scene_path)
+        print('-------------')
 
-    def create_menu(self, name, menu_type='panel'):
+    def get_scene_path(self):
+        return hou.hipFile.path()
+
+    def create_menu(self, name):
         """
-        creates a menu with title of 'name'
+        Create a Houdini Shelf
         :param name:
-        :param menu_type:
-        :return:
-        """
-        menu_class = self.find_menu_by_name(name)
-        try:
-            bpy.utils.register_class(menu_class)
-        except ValueError:
-            print('%s already registered' % name)
-
-    def add_button(self, menu, label, annotation='', command='', icon='', image_overlay_label='', hot_key=''):
-        """
-        add a button to a menu
-        :param menu:
         :param label:
-        :param annotation:
-        :param command:
-        :param icon: not required
-        :param image_overlay_label: not required
-        :param hot_key: not required
         :return:
         """
-        menu_path = get_button_path('blender', menu, label)
-        module = menu_path.split('cgl_tools\\')[-1].replace('\\', '.').replace('.py', '')
-        module = 'cgl_tools.%s' % module
-        try:
-            module_result = importlib.import_module(module)
-            button_class = getattr(module_result, label)
-            try:
-                bpy.utils.register_class(button_class)
-            except ValueError:
-                print('%s already registered' % label)
-        except ModuleNotFoundError:
-            print('module: {0} not found'.format(module))
+        all_shelves = list(self.menu_parent.shelves())
+        my_shelf = hou.shelves.newShelf(file_path=shelf_path, name=name, label=name)
+        all_shelves.append(my_shelf)
+        self.menu_parent.setShelves(all_shelves)
+        return my_shelf
 
-    @staticmethod
-    def find_menu_by_name(menu_name):
-        """
-        finds menu in software package given its string name
-        :param parent:
-        :param menu_name:
-        :return:
-        """
-        if isinstance(menu_name, dict):
-            menu_name = menu_name['name']
-        menu_path = get_menu_path('blender', menu_name, menu_file=True)
-        module = menu_path.split('cgl_tools\\')[-1].replace('\\', '.').replace('.py', '')
-        module = 'cgl_tools.%s' % module
-        module_result = importlib.import_module(module)
-        menu_class = getattr(module_result, menu_name)
-        return menu_class
-
-    def delete_menu(self, menu_name):
-        """
-        deletes menu by "menu_name"
-        :param menu_name:
-        :return:
-        """
-        menu_class = self.find_menu_by_name(menu_name)
+    def set_menu_parent(self):
         try:
-            bpy.utils.unregister_class(menu_class)
-        except RuntimeError:
-            print('bpy.utils.unregister_class could not find {0}'.format(menu_class))
+            self.menu_parent = hou.shelves.shelfSets()['cg_lumberjack']
+        except KeyError:
+            self.menu_parent = hou.shelves.newShelfSet(name='cg_lumberjack', label='CG Lumberjack')
+        return self.menu_parent
+
+    def add_button(self, menu_name, label='', annotation='', command='', icon='',
+                   image_overlay_label='', name=''):
+        shelf = self.find_menu_by_name(menu_name)
+        button = hou.shelves.newTool(file_path=shelf_path, name=label, label=label, script=command, icon=icon)
+        all_buttons = list(shelf.tools())
+        all_buttons.append(button)
+        shelf.setTools(all_buttons)
+        return button
+
+    def find_menu_by_name(self, menu_name):
+        print('finding menu {}'.format(menu_name))
+        print(self.menu_parent)
+        shelves = list(self.menu_parent.shelves())
+        print('shelves:')
+        print(shelves)
+        for sh in shelves:
+            print('\t', sh.name())
+            if sh.name() == menu_name:
+                return sh
+
+    def delete_menu(self, shelf_name):
+        shelf_ = self.find_menu_by_name(shelf_name)
+        if shelf_:
+            shelf_.destroy()
+
+    def delete_after_menus(self):
+        self.menu_parent.destroy()
 
 
 

@@ -23,17 +23,21 @@ class CustomMenu(object):
     """
 
     def __init__(self, software, type_):
+        print(1)
         self.path_object = None
         self.software = software
         self.type = type_
         self.scene_path = self.get_scene_path()
         self.menu_parent = self.set_menu_parent()
+        self.shelf_set_name = None
+        self.shelf_path = None
+        self.shelf_set = None
         self.set_path_object()
         if self.scene_path:
             self.path_object = PathObject(str(self.scene_path))
         else:
             print('No Valid Scene Path')
-        self.company_config = os.path.dirname(get_cgl_config())
+        self.company_config = os.path.dirname(get_cgl_tools())
         print('Company Config is: %s' % self.company_config)
         if not os.path.exists(self.company_config):
             print('Company Config %s: does no exist' % self.company_config)
@@ -118,6 +122,7 @@ class CustomMenu(object):
                     menu = menu['name']
                 print('deleting %s' % menu)
                 self.delete_menu(menu)
+        self.delete_after_menus()
 
     def delete_menu(self, menu_name):
         pass
@@ -178,8 +183,8 @@ class CustomMenu(object):
         :param test:
         :return:
         """
-        if test:
-            self.delete_menus()
+        # if test:
+        #     self.delete_menus()
         try:
             menus = self.remove_inactive_menus()
         except KeyError:
@@ -218,6 +223,9 @@ class CustomMenu(object):
 
     @staticmethod
     def find_menu_by_name(**kwargs):
+        pass
+
+    def delete_after_menus(self):
         pass
 
 
