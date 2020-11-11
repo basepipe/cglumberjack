@@ -504,14 +504,19 @@ class FilesPanel(QtWidgets.QWidget):
         from cgl.plugins.preflight.main import Preflight
         logging.debug('Publishing stuff now')
         print("Checking for {} preflight".format(self.current_location['task']))
-        this = Preflight(software='lumbermill', preflight=self.current_location['task'],
-                         path_object=self.current_location, auto_show=False)
-        if this.preflight == 'default':
+        try:
+            this = Preflight(software='lumbermill', preflight=self.current_location['task'],
+                             path_object=self.current_location, auto_show=False)
+            if this.preflight == 'default':
+                current.publish()
+                dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
+                dialog.exec_()
+            else:
+                this.show()
+                dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
+                dialog.exec_()
+        except TypeError:
             current.publish()
-            dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
-            dialog.exec_()
-        else:
-            this.show()
             dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
             dialog.exec_()
 
