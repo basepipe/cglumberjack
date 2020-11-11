@@ -1163,10 +1163,7 @@ class CGLumberjack(LJMainWindow):
             self.user_name = str(config['user_info']['local'])
             self.user_email = str(config['user_info'][self.project_management]['login'])
             self.company = str(config['company'])
-            try:
-                self.previous_path = str(config['previous_path'])
-            except KeyError:
-                self.previous_path = '%s%s/source' % (CONFIG['paths']['root'], self.company)
+            self.previous_path = '%s%s/source/%s' % (CONFIG['paths']['root'], self.company, self.project)
             if self.user_name in self.previous_path:
                 self.filter = 'My Assignments'
             elif 'publish' in self.previous_path:
