@@ -662,12 +662,13 @@ class CGLumberjack(LJMainWindow):
         if start_time:
             logging.debug('Finished Loading Magic Browser in %s seconds' % (time.time() - start_time))
         self.user_config = UserConfig().d
-        if previous_path:
-            self.previous_path = previous_path
-            self.previous_paths = []
-        else:
-            self.previous_path = self.user_config['previous_path']
-            self.previous_paths = self.user_config['previous_paths']
+        self.previous_path = previous_path
+        # if previous_path:
+        #     self.previous_path = previous_path
+        #     self.previous_paths = []
+        # else:
+        #     self.previous_path = self.user_config['previous_path']
+        #     self.previous_paths = self.user_config['previous_paths']
         self.filter = 'Everything'
         self.project_management = CONFIG['account_info']['project_management']
         self.user_info = ''
@@ -1162,10 +1163,7 @@ class CGLumberjack(LJMainWindow):
             self.user_name = str(config['user_info']['local'])
             self.user_email = str(config['user_info'][self.project_management]['login'])
             self.company = str(config['company'])
-            try:
-                self.previous_path = str(config['previous_path'])
-            except KeyError:
-                self.previous_path = '%s%s/source' % (CONFIG['paths']['root'], self.company)
+            self.previous_path = '%s%s/source/%s' % (CONFIG['paths']['root'], self.company, self.project)
             if self.user_name in self.previous_path:
                 self.filter = 'My Assignments'
             elif 'publish' in self.previous_path:
