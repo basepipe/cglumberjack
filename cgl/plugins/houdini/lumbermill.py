@@ -7,6 +7,7 @@ import json
 from cgl.core.path import PathObject
 from cgl.core.config import app_config, UserConfig
 from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
+from cgl.plugins.Qt import QtCore, QtWidgets
 
 CONFIG = app_config()
 PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
