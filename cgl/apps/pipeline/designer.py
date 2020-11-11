@@ -310,7 +310,10 @@ class Designer(LJDialog):
         self.save_json(self.menu_path, json_object)
 
     def save_code(self, menu_name, button_widget):
-        button_name = button_widget.name
+        try:
+            button_name = button_widget.name
+        except AttributeError:
+            return
         code = button_widget.code_text_edit.document().toPlainText()
         button_file = get_button_path(software=self.software, menu_name=menu_name, button_name=button_name,
                                       menu_type=self.type)
