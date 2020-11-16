@@ -605,12 +605,16 @@ class ProjectWidget(QtWidgets.QWidget):
             # self.leftClicked(event.pos())
             self.menu = LJMenu(self.data_table)
             #self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            self.menu.create_action("Mark as Default Project", self.mark_as_favorite)
             self.menu.create_action('Show in %s' % PROJECT_MANAGEMENT, self.show_in_proj)
             self.menu.create_action('Share Project', self.share_project)
             self.menu.create_action('Calculate Project Size', self.calculate_project_size)
             self.menu.popup(QtGui.QCursor.pos())
             return True
         return False
+
+    def mark_as_favorite(self):
+        print('I will add this to the user_preferences as the favorited project')
 
     def calculate_project_size(self):
         from cgl.core.cgl_info import create_full_project_cgl_info

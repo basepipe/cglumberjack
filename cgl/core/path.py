@@ -1333,13 +1333,15 @@ class Sequence(object):
         start_frame, end_frame, middle_frame, frame_range are all set by this function
         :return:
         """
+        sframe = None
+        eframe = None
         seq_match = r'\s[\d]+-[\d]+$'
         regex = re.compile(r'\s[\d]+-[\d]+$')
         current_sel = self.sequence
         frange = re.search(regex, current_sel)
         if frange:
-            sframe,eframe = frange.group(0).split('-')
-            sframe = sframe.replace(' ','')
+            sframe, eframe = frange.group(0).split('-')
+            sframe = sframe.replace(' ', '')
         else:
             # This requires the # form of the sequence
             glob_string = ''

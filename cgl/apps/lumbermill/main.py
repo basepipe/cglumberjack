@@ -358,7 +358,7 @@ class NavigationWidget(QtWidgets.QFrame):
 class CGLumberjackWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None, project_management=None, user_email=None, company=None,
-                 path=None, radio_filter=None, show_import=False):
+                 path=None, radio_filter=None, show_import=False, default_project=None):
         QtWidgets.QWidget.__init__(self, parent)
         try:
             font_db = QtGui.QFontDatabase()
@@ -402,7 +402,22 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 logging.error('Path is not set')
                 pass
         else:
-            self.path_object = cglpath.PathObject(self.root)
+            if self.company:
+                if default_project:
+                    proj = default_project
+                    scp = '*'
+                else:
+                    proj = '*'
+                    scp = None
+                d_ = {"company": self.company,
+                      "root": self.root,
+                      "context": 'source',
+                      "project": proj,
+                      "scope": scp
+                      }
+                self.path_object = cglpath.PathObject(d_)
+            else:
+                self.path_object = cglpath.PathObject(self.root)
         # self.project = '*'
         self.scope = 'assets'
         self.shot = '*'
@@ -662,6 +677,7 @@ class CGLumberjack(LJMainWindow):
         if start_time:
             logging.debug('Finished Loading Magic Browser in %s seconds' % (time.time() - start_time))
         self.user_config = UserConfig().d
+
         self.previous_path = previous_path
         # if previous_path:
         #     self.previous_path = previous_path
@@ -678,13 +694,19 @@ class CGLumberjack(LJMainWindow):
             if user_info['login']:
                 self.user_email = user_info['login']
         self.user_name = ''
-        self.company = ''
+        if 'default_company' in self.user_config.keys():
+            self.company = self.user_config['default_company']
+        else:
+            self.company = ''
+        if 'default_project' in self.user_config.keys():
+            self.project = self.user_config['default_project']
         self.pd_menus = {}
         self.menu_dict = {}
         self.menus = {}
         self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
                                                  user_email=self.user_info,
                                                  company=self.company,
+                                                 default_project=self.project,
                                                  path=self.previous_path,
                                                  radio_filter=self.filter,
                                                  show_import=show_import))
