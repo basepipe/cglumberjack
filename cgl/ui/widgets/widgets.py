@@ -1,5 +1,6 @@
 import os
 from cgl.plugins.Qt import QtGui, QtCore, QtWidgets
+from cgl.core.utils import read_write
 from cgl.core import path
 from cgl.ui.util import drop_handler, define_palettes
 from cgl.ui.widgets.containers.table import LJTableWidget
@@ -605,7 +606,7 @@ class ProjectWidget(QtWidgets.QWidget):
             # self.leftClicked(event.pos())
             self.menu = LJMenu(self.data_table)
             #self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-            self.menu.create_action("Mark as Default Project", self.mark_as_favorite)
+            self.menu.create_action("Mark as Favorite", self.mark_as_favorite)
             self.menu.create_action('Show in %s' % PROJECT_MANAGEMENT, self.show_in_proj)
             self.menu.create_action('Share Project', self.share_project)
             self.menu.create_action('Calculate Project Size', self.calculate_project_size)
@@ -614,7 +615,23 @@ class ProjectWidget(QtWidgets.QWidget):
         return False
 
     def mark_as_favorite(self):
-        print('I will add this to the user_preferences as the favorited project')
+
+        print(os.environ['cgl_user_globals'])
+        u_globals = read_write.load_json(os.environ['cgl_user_globals'])
+        if self.parent().title == 'Companies':
+            default = 'default_company'
+        elif self.parent().title == 'Projects':
+            default = 'default_project'
+        print('Setting {} to: {}'.format(default, self.current_selection()))
+        u_globals[default] = self.current_selection()
+        read_write.save_json(os.environ['cgl_user_globals'], u_globals)
+
+    def current_selection(self):
+        from cgl.core.cgl_info import create_full_project_cgl_info
+        mdl_index = self.data_table.model().mapToSource(self.data_table.selectionModel().selectedRows()[0])
+        mdl = self.data_table.model().sourceModel()
+        row = mdl_index.row()
+        return mdl.data_[row][0]
 
     def calculate_project_size(self):
         from cgl.core.cgl_info import create_full_project_cgl_info
@@ -696,6 +713,7 @@ class AssetWidget(QtWidgets.QWidget):
         self.assets_icon = QtGui.QPixmap(path.icon_path('assets24px.png'))
 
         self.v_layout = QtWidgets.QVBoxLayout(self)
+
         v_list = QtWidgets.QVBoxLayout()
         self.scope_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object

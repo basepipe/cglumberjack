@@ -355,6 +355,30 @@ class NavigationWidget(QtWidgets.QFrame):
         return new_path
 
 
+class LocationWidget(QtWidgets.QWidget):
+
+    def __init__(self, parent=None, path_object=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.path_object = path_object
+        self.label_row = QtWidgets.QHBoxLayout(self)
+        self.current_project_label = QtWidgets.QLabel()
+        self.current_project_label.setProperty('class', 'xlarge')
+        self.label_row.addWidget(self.current_project_label)
+        self.label_row.addStretch(1)
+        self.path_changed(self.path_object)
+
+    def path_changed(self, path_object):
+        if path_object.project:
+            if path_object.shot:
+                if path_object.scope == 'assets':
+                    text = " {}: {}".format(path_object.project, path_object.shot)
+                elif path_object.scope == 'shots':
+                    text = " {}: {}_{}".format(path_object.project, path_object.seq, path_object.shot)
+            else:
+                text = " {}".format(path_object.project)
+            self.current_project_label.setText(text)
+
+
 class CGLumberjackWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None, project_management=None, user_email=None, company=None,
@@ -437,6 +461,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.resolution = ''
         self.in_file_tree = None
         self.nav_widget = NavigationWidget(path_object=self.path_object)
+        self.label_widget = LocationWidget(path_object=self.path_object)
         self.path_widget = PathWidget(path_object=self.path_object)
         self.progress_bar = ProgressGif()
         self.progress_bar.hide()
@@ -448,6 +473,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.nav_widget.my_tasks_clicked.connect(self.show_my_tasks)
         self.nav_widget.location_changed.connect(self.path_widget.update_path)
         self.layout.addWidget(self.nav_widget)
+        self.layout.addWidget(self.label_widget)
         self.update_location(self.path_object)
 
     def show_my_tasks(self):
@@ -465,10 +491,20 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def update_render_location(self, data):
         logging.debug('updating the render location')
 
+    def update_title(self):
+        project = ""
+        shot = ""
+        print(self.path_object.path_root)
+        if self.path_object.asset:
+            if self.path_object.asset != '*':
+                shot = self.path_object.asset
+        if self.path_object.project:
+            if self.path_object.project != '*':
+                project = self.path_object.project
+                self.title_label.setText(" {}: {}".format(project, shot))
+
     def update_location(self, data):
         self.nav_widget.search_box.setText('')
-        # TODO - if we're in the project set the search box to the default project
-        # TODO - if we're in the companies set the search box to the default company
         try:
             if self.sender().force_clear:
                 if self.panel:
@@ -483,6 +519,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             path_object = cglpath.PathObject(data)
         if path_object.frame_range:
             self.frame_range = path_object.frame_range
+        self.label_widget.path_changed(path_object)
         self.nav_widget.set_text(path_object.path_root)
         self.nav_widget.update_buttons(path_object=path_object)
         last = path_object.get_last_attr()
@@ -590,7 +627,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.layout.addWidget(self.panel)
         to_delete = []
         for i in range(self.layout.count()):
-            if i == 2:
+            if i == 3:
                 child = self.layout.takeAt(i - 1)
                 to_delete.append(child)
         for each in to_delete:
@@ -679,12 +716,6 @@ class CGLumberjack(LJMainWindow):
         self.user_config = UserConfig().d
 
         self.previous_path = previous_path
-        # if previous_path:
-        #     self.previous_path = previous_path
-        #     self.previous_paths = []
-        # else:
-        #     self.previous_path = self.user_config['previous_path']
-        #     self.previous_paths = self.user_config['previous_paths']
         self.filter = 'Everything'
         self.project_management = CONFIG['account_info']['project_management']
         self.user_info = ''
@@ -700,6 +731,8 @@ class CGLumberjack(LJMainWindow):
             self.company = ''
         if 'default_project' in self.user_config.keys():
             self.project = self.user_config['default_project']
+        else:
+            self.project = None
         self.pd_menus = {}
         self.menu_dict = {}
         self.menus = {}
