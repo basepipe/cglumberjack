@@ -180,6 +180,23 @@ def import_file(filepath=''):
         hou.hipFile.merge(filepath)
 
 
+def import_alembic(filepath='', namespace=None):
+    """
+    creates a "reference" of a file, this is a convenience function to be used in various software plugins
+    to promote continuity accross plugins
+    :param namespace:
+    :param filepath:
+    :return:
+    """
+
+    path_object = LumberObject(filepath)
+    objects = hou.node('obj')
+
+    alembic = objects.createNode('alembicarchive', path_object.asset)
+    alembic.parm('alembicarchive').set(filepath)
+    alembic.parm('buildHierarchy').pressButton()
+
+
 def reference_file(filepath='', namespace=None):
     """
     creates a "reference" of a file, this is a convenience function to be used in various software plugins
