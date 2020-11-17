@@ -164,7 +164,7 @@ def open_file(filepath):
     :param filepath:
     :return:
     """
-    hou.hipFile.load(filepath=filepath)
+    hou.hipFile.load(filepath)
     return filepath
 
 def import_file(filepath=''):
@@ -176,8 +176,8 @@ def import_file(filepath=''):
 
     if filepath.endswith('fbx'):
         hou.hipFile.importFBX(filepath)
-    elif filepath.endswith('hip'):
-        hou.Node.loadItemsFromFile()
+    elif filepath.endswith('hip') or filepath.endswith('hiplc'):
+        hou.hipFile.merge(filepath)
 
 
 def reference_file(filepath='', namespace=None):
@@ -189,7 +189,14 @@ def reference_file(filepath='', namespace=None):
     :return:
     """
     print(filepath)
-    pass
+
+    path_object = LumberObject(filepath)
+    objects = hou.node('obj')
+
+    geometry = objects.createNode('geo', path_object.asset)
+    fileParm = geometry.createNode('file')
+    fileParm.parm('file').set(filepath)
+
 
 def save_file(filepath=''):
     """
@@ -271,6 +278,125 @@ def launch_():
     app.exec_()
 
 
+def create_cam_constraint():
+    if locals().get("hou_parent") is None:
+        hou_parent = hou.node("/obj/turntable")
+
+    # Code for /obj/turntable/constraints
+    hou_node = hou_parent.createNode("chopnet", "constraints",
+                                     run_init_scripts=False,
+                                     load_contents=True,
+                                     exact_type_name=True)
+    hou_node.move(hou.Vector2(0.18, 1.5))
+    hou_node.hide(False)
+    hou_node.setSelected(True)
+
+    hou_parm_template_group = hou.ParmTemplateGroup()
+    # Code for parameter template
+    hou_parm_template = hou.FloatParmTemplate("chopnet_rate",
+                                              "CHOP Rate", 1,
+                                              default_value=([24]),
+                                              min=1, max=100,
+                                              min_is_strict=True,
+                                              max_is_strict=False,
+                                              look=hou.parmLook.Regular,
+                                              naming_scheme=hou.parmNamingScheme.Base1)
+    hou_parm_template_group.append(hou_parm_template)
+
+    # Code for parameter template
+    hou_parm_template = hou.FloatParmTemplate("motionsamples", "CHOP Motion Samples", 1,
+                                              default_value=([1]),
+                                              min=1, max=20,
+                                              min_is_strict=True, max_is_strict=False,
+                                              look=hou.parmLook.Regular,
+                                              naming_scheme=hou.parmNamingScheme.Base1)
+    hou_parm_template_group.append(hou_parm_template)
+    hou_node.setParmTemplateGroup(hou_parm_template_group)
+    # Code for /obj/turntable/constraints/chopnet_rate parm
+    if locals().get("hou_node") is None:
+        hou_node = hou.node("/obj/turntable/constraints")
+    hou_parm = hou_node.parm("chopnet_rate")
+    hou_parm.deleteAllKeyframes()
+    hou_parm.set(240)
+
+    # Code for first keyframe.
+    # Code for keyframe.
+    hou_keyframe = hou.Keyframe()
+    hou_keyframe.setTime(0)
+    hou_keyframe.interpretAccelAsRatio(False)
+    hou_keyframe.setExpression("$FEND", hou.exprLanguage.Hscript)
+    hou_parm.setKeyframe(hou_keyframe)
+
+    # Code for /obj/turntable/constraints/motionsamples parm
+    if locals().get("hou_node") is None:
+        hou_node = hou.node("/obj/turntable/constraints")
+    hou_parm = hou_node.parm("motionsamples")
+    hou_parm.deleteAllKeyframes()
+    hou_parm.set(10)
+
+    # Code for keyframe.
+    hou_keyframe = hou.Keyframe()
+    hou_keyframe.setTime(0)
+    hou_keyframe.interpretAccelAsRatio(False)
+    hou_keyframe.setExpression("$CHOPMOTIONSAMPLES", hou.exprLanguage.Hscript)
+    hou_parm.setKeyframe(hou_keyframe)
+
+    hou_node.setExpressionLanguage(hou.exprLanguage.Hscript)
+
+    if hasattr(hou_node, "syncNodeVersionIfNeeded"):
+        hou_node.syncNodeVersionIfNeeded("18.5.351")
+
+def create_turntable():
+    import hou
+    clean_turntable()
+
+    selection = hou.selectedNodes()
+    if not selection:
+        hou.ui.displayMessage('please select an object')
+        return
+
+    objects = hou.node('obj/')
+
+    cam = objects.createNode('cam', 'turntable')
+    guide = objects.createNode('geo', 'turntable_guide')
+
+    guide.setPosition((2, 0))
+    circle = guide.createNode('circle')
+
+    circle.parm('type').set(2)
+    circle.parm('orient').set(2)
+    circle.parm('arc').set(1)
+
+    create_cam_constraint()
+
+    cam.parm('constraints_on').set(True)
+    cam.parm('constraints_path').set('constraints')
+
+    constraints = cam.node('constraints')
+    world_space = constraints.createNode('constraintgetworldspace')
+
+    object_to_constraint = constraints.createNode('constraintobject')
+    object_to_constraint.parm('obj_path').set('../../../{}'.format(selection[0].name()))
+
+    follow_path = constraints.createNode('constraintpath', 'Follow_Path')
+    follow_path.parm('pos').setExpression('$FF/$RFEND')
+    follow_path.parm('soppath').set('/obj/turntable_guide')
+    follow_path.setInput(0, world_space)
+    follow_path.setInput(1, object_to_constraint)
+    follow_path.setGenericFlag(hou.nodeFlag.Audio, 1)
+
+
+
+
+
+def clean_turntable():
+    import hou
+    turntable_objects = ['turntable', 'turntable_guide']
+
+    for obj in turntable_objects:
+        node = hou.node('obj/{}'.format(obj))
+        if node:
+            node.destroy()
 
 """"
 
