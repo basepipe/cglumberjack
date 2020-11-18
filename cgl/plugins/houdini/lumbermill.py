@@ -363,7 +363,33 @@ def create_cam_constraint():
     if hasattr(hou_node, "syncNodeVersionIfNeeded"):
         hou_node.syncNodeVersionIfNeeded("18.5.351")
 
-def create_turntable():
+
+def create_turntable(lenght=180):
+    clean_turntable()
+    selected_objects = hou.selectedNodes()
+
+    if not selected_objects:
+        hou.ui.displayMessage('please select an object')
+        return
+
+    selection = selected_objects[0]
+
+    objs = hou.node('obj')
+    turntable_null = objs.createNode('null', 'TurnTableNull')
+    turntable_null.setPosition((selection.position()[0],
+                                selection.position()[1] + 2))
+    ry = turntable_null.parm('ry')
+    ry.setExpression('fit($FF,1,{},0,360)'.format(lenght))
+    hou.playbar.setPlaybackRange(1, lenght)
+
+    selection.setInput(0, turntable_null)
+
+    camera = objs.createNode('cam', 'TurnTableCam')
+    camera.parm('tz').set(10)
+    camera.setPosition((5, 0))
+
+
+def create_turntable_around_object():
     import hou
     clean_turntable()
 
@@ -405,10 +431,9 @@ def create_turntable():
 
 
 
-
 def clean_turntable():
     import hou
-    turntable_objects = ['turntable', 'turntable_guide']
+    turntable_objects = ['turntable', 'turntable_guide','TurnTableCam','TurnTableNull']
 
     for obj in turntable_objects:
         node = hou.node('obj/{}'.format(obj))
