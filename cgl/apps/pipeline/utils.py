@@ -61,7 +61,7 @@ class CGLMenuButton(QtWidgets.QWidget):
     menu_button_save_clicked = QtCore.Signal()
 
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path='',
-                 menu_type='preflights', menu=None):
+                 menu_type='preflights', menu=None, reference_path=None):
         # TODO - we need to choose better variable names, this is obviously "preflight" specific.
         QtWidgets.QWidget.__init__(self, parent)
         try:
@@ -79,6 +79,7 @@ class CGLMenuButton(QtWidgets.QWidget):
         # self.menu_name = os.path.split(preflight_path.split(menu_type)[1])[0]
         self.dirty = False
         self.menu = menu
+        self.reference_path = reference_path
         # Create the Layouts
         layout = QtWidgets.QVBoxLayout(self)
         grid_layout = QtWidgets.QGridLayout()
@@ -120,6 +121,8 @@ class CGLMenuButton(QtWidgets.QWidget):
 
         # Text Edit
         self.code_text_edit = QtWidgets.QPlainTextEdit()
+        if reference_path:
+            self.code_text_edit.setEnabled(False)
         metrics = QtGui.QFontMetrics(self.code_text_edit.font())
         self.code_text_edit.setTabStopWidth(4 * metrics.width(' '))
         Highlighter(self.code_text_edit.document())
@@ -190,30 +193,32 @@ class CGLMenuButton(QtWidgets.QWidget):
         self.on_menu_button_save_clicked()
 
     def on_menu_button_save_clicked(self):
-        button_name = self.name
-
-        menu_name = self.menu.menu_name
-        menu_type = self.menu.menu_type
-        button_file = get_button_path(software=self.software, menu_name=menu_name, button_name=button_name,
-                                      menu_type=menu_type)
-
-        dir_ = os.path.dirname(button_file)
-        if not os.path.exists(dir_):
-            os.makedirs(dir_)
-        make_init_for_folders_in_path(dir_)
-
-        if self.dirty:
-            print('Saving {}: {}'.format(button_name, button_file))
-            code = self.code_text_edit.document().toPlainText()
-            if self.software.lower() == 'unreal':
-                if os.path.exists(button_file):
-                    self.dirty = False
-                    return
-            with open(button_file, 'w+') as x:
-                x.write(code)
-            self.dirty = False
+        if self.reference_path:
+            return
         else:
-            print('No Changes to Save')
+            button_name = self.name
+            menu_name = self.menu.menu_name
+            menu_type = self.menu.menu_type
+            button_file = get_button_path(software=self.software, menu_name=menu_name, button_name=button_name,
+                                          menu_type=menu_type)
+
+            dir_ = os.path.dirname(button_file)
+            if not os.path.exists(dir_):
+                os.makedirs(dir_)
+            make_init_for_folders_in_path(dir_)
+
+            if self.dirty:
+                print('Saving {}: {}'.format(button_name, button_file))
+                code = self.code_text_edit.document().toPlainText()
+                if self.software.lower() == 'unreal':
+                    if os.path.exists(button_file):
+                        self.dirty = False
+                        return
+                with open(button_file, 'w+') as x:
+                    x.write(code)
+                self.dirty = False
+            else:
+                print('No Changes to Save')
 
     def on_open_clicked(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), self.menu_type, self.preflight_name,
@@ -246,7 +251,13 @@ class CGLMenuButton(QtWidgets.QWidget):
 
     def load_code_text(self):
         if self.software.lower() != 'unreal':
-            code_path = get_button_path(self.software, self.preflight_name, self.name, menu_type=self.menu_type)
+            if not self.reference_path:
+                code_path = get_button_path(self.software, self.preflight_name, self.name, menu_type=self.menu_type)
+                print(1)
+                print(code_path)
+            else:
+                code_path = self.reference_path
+                print('loading code from reference {}'.format(self.reference_path))
             if os.path.exists(code_path):
                 try:
                     return open(code_path).read()
@@ -256,6 +267,8 @@ class CGLMenuButton(QtWidgets.QWidget):
                 return None
             else:
                 print('%s does not exist' % code_path)
+        else:
+            print('Not loading for Unreal Buttons')
 
     def create_default_button(self):
         create_button_file(software=self.software, menu_name=self.preflight_name, button_name=self.name,
@@ -402,29 +415,40 @@ class CGLMenu(QtWidgets.QWidget):
         dialog = NewButtonDialog(software=self.software, menu_type=self.menu_type)
         dialog.exec_()
         if dialog.button == 'Ok':
-            text_ = stringcase.snakecase(dialog.line_edit.text().lower())
+            text_ = stringcase.snakecase(dialog.button_name_line_edit.text().lower())
             button_name = stringcase.pascalcase(text_)
             label = stringcase.titlecase(text_)
-            command = self.get_command_text(button_name=button_name, menu_type=self.menu_type)
-            module = self.default_preflight_text(button_name)
+            if dialog.cgl_button_type == 'New Button':
+                command = self.get_command_text(button_name=button_name, menu_type=self.menu_type)
+                module = self.default_preflight_text(button_name)
+                module_path = None
+            elif dialog.cgl_button_type == 'Referenced Button':
+                command = dialog.command
+                module = dialog.module
+                module_path = dialog.button_path
+
             if self.menu_type == 'preflights':
                 attrs = {'label': button_name,
                          'name': button_name,
                          'required': 'True',
-                         'module': module}
+                         'module': module,
+                         'reference_path': module_path}
             elif self.menu_type == 'menus' or self.menu_type == 'context-menus':
                 attrs = {'label': button_name,
                          'name': button_name,
-                         'module': command}
+                         'module': command,
+                         'reference_path': module_path}
             elif self.menu_type == 'shelves':
                 attrs = {'label': label,
                          'name': button_name,
                          'module': command,
-                         'icon': ''}
+                         'icon': '',
+                         'reference_path': module_path}
 
             self.new_button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
                                                    preflight_step_name=button_name,
-                                                   attrs=attrs, preflight_path=self.menu_path, menu_type=self.menu_type)
+                                                   attrs=attrs, preflight_path=self.menu_path, menu_type=self.menu_type,
+                                                   reference_path=module_path)
             if 'icon' in attrs.keys():
                 icon = QtGui.QIcon(attrs['icon'])
                 index = self.buttons_tab_widget.addTab(self.new_button_widget, icon, button_name)
@@ -446,10 +470,14 @@ class CGLMenu(QtWidgets.QWidget):
         if self.menu:
             if 'buttons' in self.menu.keys():
                 for button in self.menu['buttons']:
+                    try:
+                        ref_path = button['reference_path']
+                    except KeyError:
+                        ref_path = None
                     button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
                                                   preflight_step_name=button['label'],
                                                   attrs=button, preflight_path=self.menu_path,
-                                                  menu_type=self.menu_type, menu=self)
+                                                  menu_type=self.menu_type, menu=self, reference_path=ref_path)
                     if 'icon' in button.keys():
                         if button['icon']:
                             icon = QtGui.QIcon(button['icon'])
@@ -603,8 +631,14 @@ class NewButtonDialog(LJDialog):
         self.software = software
         self.cgl_button_type = 'New Button'
         self.menu_type = menu_type
+        self.module = None
+        self.command = None
+        self.button_path = None
         layout = QtWidgets.QVBoxLayout(self)
         self.setWindowTitle('New Pipeline Button')
+        self.reference_button_label = QtWidgets.QLabel()
+        self.reference_button_label.setProperty('class', 'title')
+        self.reference_button_label.hide()
         combo_label = QtWidgets.QLabel("Button Type: ")
         self.button_type = QtWidgets.QComboBox()
         self.menu_types = ['menus', 'context-menus', 'shelves', 'preflights']
@@ -627,6 +661,7 @@ class NewButtonDialog(LJDialog):
         button_row.addWidget(self.ok_button)
 
         layout.addLayout(type_row)
+        layout.addWidget(self.reference_button_label)
         layout.addWidget(self.new_button_message)
         layout.addWidget(self.button_name_line_edit)
         layout.addLayout(button_row)
@@ -656,11 +691,13 @@ class NewButtonDialog(LJDialog):
                         splitted.pop(0)
                     filename = splitted[-1].replace('.py', '')
                     module = '.'.join(splitted).replace('.py', '')
-                    module = 'import {} as {}; {}.run()'.format(module, filename, filename)
+                    from_label = "Referencing: {}".format(module)
+                    command = 'import {} as {}; {}.run()'.format(module, filename, filename)
+                    self.reference_button_label.setText(from_label)
+                    self.reference_button_label.show()
                     self.button_path = button_path
-                    self.mondule = module
-                    print(button_path)
-                    print(module)
+                    self.module = module
+                    self.command = command
 
     def on_ok_clicked(self):
         self.button = 'Ok'

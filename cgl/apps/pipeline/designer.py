@@ -268,6 +268,7 @@ class Designer(LJDialog):
             for bi in range(menu.buttons_tab_widget.count()):
                 button_dict = {}
                 button_widget = menu.buttons_tab_widget.widget(bi)
+                reference_path = button_widget.reference_path
                 if button_widget.dirty:
                     button_widget.on_menu_button_save_clicked()
                 if button_widget.name_line_edit.text():
@@ -294,7 +295,8 @@ class Designer(LJDialog):
                                      'label': button_widget.label_line_edit.text(),
                                      'order': bi + 1,
                                      'icon': icon_text,
-                                     'name': button_name
+                                     'name': button_name,
+                                     'reference_path': reference_path
                                     }
                 else:
                     button_dict = {
@@ -318,18 +320,35 @@ class Designer(LJDialog):
 
     @staticmethod
     def save_json(filepath, data):
-        if data:
+        """
+        saves a json file
+        :param filepath:
+        :param data:
+        :return:
+        """
+        try:
             with open(filepath, 'w') as outfile:
                 json.dump(data, outfile, indent=4, sort_keys=True)
+        except TypeError:
+            pass
 
     @staticmethod
     def load_json(filepath):
+        """
+        loads a .json file and returns a dictionary: data
+        :param filepath:
+        :return:
+        """
         with open(filepath) as jsonfile:
             data = json.load(jsonfile)
         return data
 
     def closeEvent(self, event):
-        #TODO - i'd like to save this only if it's actually got problems.
+        """
+        what happens when the app is closed using the "x' button
+        :param event:
+        :return:
+        """
         if event:
             self.save_menus()
 
