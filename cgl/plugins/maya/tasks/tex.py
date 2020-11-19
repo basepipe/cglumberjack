@@ -26,13 +26,15 @@ class Task(SmartTask):
         load_plugin('mtoa')
         # turn off render thumbnail update in hypershade!
         pm.renderThumbnailUpdate(False)
+        # if i get a path - i need to pull the asset name out of it.
         assign_shaders_to_asset(model_ref)
 
 
-def assign_shaders_to_asset(asset, res='high'):
-    res = '%s:%s' % (asset, res)
-    mdl_path = pm.referenceQuery('%s:mdl' % asset, filename=True, wcn=True)
-    mdl_object = LumberObject(mdl_path)
+def assign_shaders_to_asset(mdl_path, res='high'):
+
+    # mdl_path = pm.referenceQuery('%s:mdl' % asset, filename=True, wcn=True)
+    mdl_object = LumberObject(str(mdl_path))
+    res = '%s:%s' % (mdl_object.asset, res)
     tex_object = mdl_object.copy(task='tex', context='render', latest=True, set_proper_filename=True)
     tex_path = os.path.dirname(tex_object.path_root)
     if os.path.exists(tex_path):

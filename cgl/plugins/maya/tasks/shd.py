@@ -12,5 +12,11 @@ class Task(SmartTask):
             self.path_object = scene_object()
 
     def build(self):
-        pass
+        """
+        1. Reference the latest model for this asset
+        2. Import latest textures for this asset (and assemble a shader network)
+        :return:
+        """
+        ref_path = lm.import_task(task='mdl', reference=True)
+        lm.import_task(task='tex', model_ref=ref_path)
 
