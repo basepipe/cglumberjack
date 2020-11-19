@@ -153,6 +153,20 @@ def app_config(company=None, proj_management=None):
     return get_globals()
 
 
+def shader_config():
+    try:
+        if get_user_globals().keys():
+            globals_path = get_user_globals()['globals']
+            shader_config_path = globals_path.replace('globals.json', 'shaders.json')
+            print(shader_config_path)
+            if shader_config_path:
+                return load_json(shader_config_path)
+            else:
+                print('No shader globals found at %s' % user_config())
+    except AttributeError:
+        print('No shader globals found at %s' % user_config())
+
+
 def user_config():
     """
     get the location of the user_config()

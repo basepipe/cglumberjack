@@ -365,7 +365,7 @@ class PathObject(object):
         path_string = ''
         for attr in self.template:
             if attr:
-                # build an array based off the template
+                # tasks an array based off the template
                 if attr in keep_if:
                     path_string = os.path.join(path_string, attr)
                 elif attr == 'filename.ext':

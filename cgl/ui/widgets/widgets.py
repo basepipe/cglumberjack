@@ -745,7 +745,7 @@ class AssetWidget(QtWidgets.QWidget):
         # self.setProperty('class', 'basic')
 
 
-        # build the filter options row
+        # tasks the filter options row
         self.assets_radio = QtWidgets.QRadioButton('Assets')
         self.shots_radio = QtWidgets.QRadioButton('Shots')
         self.tasks_radio = QtWidgets.QRadioButton('My Tasks')

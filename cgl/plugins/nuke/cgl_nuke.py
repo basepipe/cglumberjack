@@ -471,7 +471,7 @@ def connect_z_nodes(connect_from_node='ANIM ZDefocus', connect_to_node='ENV ZDef
 def create_scene_write_node():
     """
     This function specifically assumes the current file is in the pipeline and that you want to make a write node for
-    that.  We can get more complicated and build from here for sure.
+    that.  We can get more complicated and tasks from here for sure.
     :return:
     """
     padding = '#'*get_biggest_read_padding()

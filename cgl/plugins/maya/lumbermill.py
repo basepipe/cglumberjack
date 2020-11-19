@@ -123,7 +123,6 @@ class LumberObject(PathObject):
         else:
             logging.error('type: %s not expected' % type(path_object))
 
-
     def render(self, processing_method=PROCESSING_METHOD):
         """
         :param processing_method: app, local, smedge, or deadline.  App - render in gui.  local - render through
@@ -189,6 +188,22 @@ def import_file(filepath, namespace=None):
         namespace = get_namespace(filepath)
     if os.path.isfile(filepath):
         return pm.importFile(filepath, namespace=namespace)
+
+
+def import_task(task=None, reference=False, **kwargs):
+    """
+    imports the latest version of the specified task into the scene.
+    :param task:
+    :param reference:
+    :return:
+    """
+    if not task:
+        task = scene_object().task
+    class_ = get_task_class(task)
+    if reference:
+        return class_().import_latest(task=task, reference=reference, **kwargs)
+    else:
+        return class_().import_latest(**kwargs)
 
 
 def reference_file(filepath, namespace=None):
@@ -331,7 +346,7 @@ def export_usd_layout(to_path, lighting=False):
 
 def render(preview=False):
     if preview:
-        basic_playblast(path_object=LumberObject(pm.sceneName()))
+        basic_playblast(path_object=scene_object())
     else:
         print('Rendering to Farm Now')
 
@@ -381,3 +396,39 @@ def launch_():
         main_window.show()
         main_window.raise_()
     app.exec_()
+
+
+def build(path_object=None):
+    """
+    runs build command for the specified task.
+    :param task:
+    :return:
+    """
+    if not path_object:
+        path_object = scene_object()
+    task = path_object.task
+    task_class = get_task_class(task)
+    task_class(path_object).build()
+
+
+def get_task_class(task):
+    """
+    gets the class that relates to the specified task, if no task is specified the task for the current scene will
+    be used.
+    :param task:
+    :return:
+    """
+    import importlib
+    module = 'cgl.plugins.maya.tasks.{}'.format(task)
+    print(module)
+    module_name = task
+    print(task)
+    try:
+        # python 2.7 method
+        loaded_module = __import__(module, globals(), locals(), module_name, -1)
+    except ValueError:
+        import importlib
+        # Python 3+
+        loaded_module = importlib.import_module(module, module_name)
+    class_ = getattr(loaded_module, 'Task')
+    return class_
