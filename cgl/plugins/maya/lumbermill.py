@@ -276,14 +276,18 @@ def export_selected(to_path, ext='mb'):
 
 
 def create_turntable(length=180, task=False):
-
+    """
+    Creates a turntable around the given "task" object (for example 'mdl')
+    :param length:
+    :param task: if True creates a turntable around existing geo that bears the task's name. Rig or mdl for example.
+    :return:
+    """
     if task:
-        current_task = LumberObject(pm.sceneName()).task
         if not pm.objExists(task):
             confirm_prompt('No object %s found')
             return
         else:
-            selected = task
+            pm.select(task)
     if not pm.ls(sl=True):
         confirm_prompt(title='Turntable', message='Nothing Selected. \nSelect an object and try again')
         return
@@ -294,6 +298,10 @@ def create_turntable(length=180, task=False):
 
 
 def clean_turntable():
+    """
+    removes the turntable from the scene
+    :return:
+    """
     po = LumberObject(pm.sceneName())
     clean_tt(po.task)
     pass
