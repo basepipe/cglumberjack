@@ -167,6 +167,7 @@ def open_file(filepath):
     hou.hipFile.load(filepath)
     return filepath
 
+
 def import_file(filepath=''):
     """
     imports file into a scene.
@@ -215,6 +216,7 @@ def reference_file(filepath='', namespace=None):
     fileParm.parm('file').set(filepath)
 
 
+
 def save_file(filepath=''):
     """
     Save Current File
@@ -222,6 +224,7 @@ def save_file(filepath=''):
     :return:
     """
     return hou.hipFile.save()
+
 
 def save_file_as(filepath):
     """

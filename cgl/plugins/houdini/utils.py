@@ -44,6 +44,24 @@ def hdri_widget():
     # pm.showWindow(window)
 
 
+def import_bundle(bundle_path):
+    """
+    imports all geometry for the bundle, and places it according to the matrix.
+    :param bundle_path: path to bundle.json file.
+    :return:
+    """
+    pass
+
+
+def import_layout(layout_path):
+    """
+    parses a layout.json and imports and places all models as well as bundles.
+    :param layout_path:
+    :return:
+    """
+    pass
+
+
 def create_env_light(tex_name):
     """
     creates an env light with texture: tex_name
