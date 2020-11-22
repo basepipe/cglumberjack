@@ -16,32 +16,6 @@ PROCESSING_METHOD = UserConfig().d['methodology']
 SOFTWARE = os.path.basename(os.path.dirname(__file__))
 
 
-class BrowserWidget(CGLumberjackWidget):
-    def __init__(self, parent=None, path=None,
-                 show_import=False):
-        super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
-
-    def open_clicked(self):
-        print('Opening: %s' % self.path_object.path_root)
-
-    def import_clicked(self):
-        for selection in self.source_selection:
-            base_, ext = os.path.splitext(selection)
-            import_file(selection, namespace=None)
-        self.parent().parent().accept()
-
-    def reference_clicked(self):
-        for selection in self.source_selection:
-            base_, ext = os.path.splitext(selection)
-            reference_file(selection, namespace=None)
-        self.parent().parent().accept()
-
-
-class AppMainWindow(CGLumberjack):
-    def __init__(self, parent=None, path=None, user_info=None):
-        CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
-        print('Application Path path is %s' % path)
-        self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
 
 
 class LumberObject(PathObject):
@@ -281,21 +255,43 @@ def review():
         do_review(progress_bar=None, path_object=playblast_seq)
 
 
-def launch_():
-    scene_name = get_scene_name()
-    scene = LumberObject(scene_name)
-    location = '%s/*' % scene.split_after('shot')
-    project_management = CONFIG['account_info']['project_management']
-    users = CONFIG['project_management'][project_management]['users']
-    if current_user() in users:
-        user_info = users[current_user()]
-        app = QtWidgets.QApplication.instance()
-        main_window = AppMainWindow(user_info=user_info, path=location)
-        main_window.setWindowTitle('Lumbermill: Maya')
-        main_window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        main_window.show()
-        main_window.raise_()
-    app.exec_()
+
+class BrowserWidget(CGLumberjackWidget):
+    def __init__(self, parent=None, path=None,
+                 show_import=False):
+        super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
+
+    def open_clicked(self):
+        print('Opening: %s' % self.path_object.path_root)
+
+    def import_clicked(self):
+        for selection in self.source_selection:
+            base_, ext = os.path.splitext(selection)
+            import_file(selection, namespace=None)
+        self.parent().parent().accept()
+
+    def reference_clicked(self):
+        for selection in self.source_selection:
+            base_, ext = os.path.splitext(selection)
+            reference_file(selection, namespace=None)
+        self.parent().parent().accept()
+
+
+class AppMainWindow(CGLumberjack):
+    def __init__(self, parent=None, path=None, user_info=None):
+        CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
+        print('Application Path path is %s' % path)
+        self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
+        # self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
+
+
+def launch():
+    import hou
+    main_window = AppMainWindow()
+    main_window.setParent(hou.qt.mainWindow(), QtCore.Qt.Window)
+    main_window.setWindowTitle('Magic Browser : Houdini')
+    main_window.resize(1100, 1400)
+    main_window.show()
 
 
 def create_cam_constraint():
@@ -449,5 +445,4 @@ publish()
 render()
 export_selected()
 launch_preflight()
-launch_()
 """
