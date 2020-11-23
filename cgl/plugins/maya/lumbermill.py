@@ -455,6 +455,3 @@ def get_task_class(task):
     class_ = getattr(loaded_module, 'Task')
     return class_
 
-
-if __name__ == '__main__':
-    get_task_class('mdl')
