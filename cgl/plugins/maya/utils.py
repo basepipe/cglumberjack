@@ -1,8 +1,11 @@
 import re
 import os
-import pymel.core as pm
-import maya.mel as mel
-import mtoa.core as aicore
+try:
+    import pymel.core as pm
+    import maya.mel as mel
+    import mtoa.core as aicore
+except ModuleNotFoundError:
+    print('Skipping pymel.core - outside of maya')
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.config import app_config
 from cgl.core.utils.read_write import load_json

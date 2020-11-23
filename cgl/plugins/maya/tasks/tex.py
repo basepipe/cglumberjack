@@ -364,3 +364,139 @@ class ShaderSetup(LJDialog):
 
         self.accept()
 
+
+# all the new stuff goes below this line -----------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------------------------------------------------
+
+
+def get_latest_tex_publish_from_filepath(filepath):
+    """
+    given an asset filepath return the latest published textures for the asset.
+    :param filepath:
+    :return:
+    """
+    # TODO - could i do this from just the asset name alone?
+    path_object = LumberObject(filepath).copy(task='tex', context='render', user='publish',
+                                              latest=True, resolution='high')
+    return os.path.dirname(path_object.path_root)
+
+
+def import_textures(filepath):
+    """
+    Main Parent Function for importing textures.  In a Production Alchemy Context importing textures consists of a
+    full usable series of events that leads to a useable baseline of textures.  In this instance that would be:
+    1) Create A Shader for the Material Group
+    2) Import and connect relevant textures to material group
+    3) Set any default values based off our shader dictionaries.
+    :param filepath:
+    :return:
+    """
+    tex_root = get_latest_tex_publish_from_filepath(filepath)
+    print('tex_root {}'.format(tex_root))
+    shading_dict = get_shading_dict(tex_root)  # these should be made at texture publish time.
+    for mtl_group in shading_dict:
+        attach_textures_to_geometry(mtl_group, shading_dict)
+
+
+def get_shading_dict(tex_root):
+    """
+    Expects a Folder with the following structure:
+    ../{resolution}/{material_group}/texture_file_{channel_name}.ext
+
+    Produces a shading dictionary with the following structure:
+    Material Group
+        Channel Name
+            Extension
+                Texture Path (Relative)
+    :param tex_root:
+    :return:
+    """
+    udim_pattern = r"[0-9]{4}"
+    ignore = ['cgl_info.json']
+    ignore_ext = ['json']
+    mtl_groups = os.listdir(tex_root)
+    dict_ = {}
+    for g in mtl_groups:
+        if g in ignore:
+            mtl_groups.remove(g)
+        else:
+            dict_[g] = {}
+            for tex in os.listdir(os.path.join(tex_root, g)):
+                channel_name = tex.split("_")[-1].split('.')[0]
+                if channel_name not in dict_[g].keys():
+                    dict_[g][channel_name] = {}
+                ext = os.path.splitext(tex)[-1].replace('.', '')
+                if ext not in ignore_ext:
+                    if re.search(udim_pattern, tex):
+                        new_t = re.sub(udim_pattern, '<UDIM>', tex)
+                        tex = os.path.join(tex_root, g, new_t).replace('\\', '/')
+                    dict_[g][channel_name][ext] = tex
+    return dict_
+
+
+def attach_textures_to_geometry(mtl_group, dict_, ext='tx'):
+    """
+    Creates a Shader, attaches that to gemoetry group.
+    Imports all textures relevant to this geometry, and connects them to the shader.
+
+    :param mtl_group:
+    :param dict_:
+    :param ext:
+    :return:
+    """
+    shader = create_and_attach_shader(mtl_group)
+    for tex_channel in dict_[mtl_group]:
+        if list(dict_[mtl_group][tex_channel].keys()):
+            if ext not in list(dict_[mtl_group][tex_channel].keys()):
+                ext = list(dict_[mtl_group][tex_channel].keys())[0]
+            connect_textures(mtl_group, tex_channel, dict_[mtl_group][tex_channel][ext])
+            edit_additional_parameters(shader, tex_channel)
+            # TODO  - set any additional per parameter values determined by our shader globals
+
+
+def create_and_attach_shader(mtl_group):
+    """
+    Creates a Shader for the mtl_group and attaches it to said group.
+    :param mtl_group:
+    :return:
+    """
+    print('Creating Shader for {}'.format(mtl_group))
+    return(mtl_group)
+
+
+def get_shader_parameter_for_tex_channel(tex_channel):
+    """
+    queries the current texture channel against our shader dictionaries, returns the proper channel
+    to plug the texture into.
+    :param shader:
+    :param parameter:
+    :return:
+    """
+    # TODO - this would be the place to allow for people to add to the dictionary.
+    print('\tQuerying Shader Parameter for {}'.format(tex_channel))
+    return tex_channel
+
+
+def edit_additional_parameters(shader_node, tex_channel):
+    """
+    sets additional parameters depending on defaults for the tex channel
+    :param shader_node:
+    :param tex_channel:
+    :return:
+    """
+    print('\tSetting additional parameters for {} on shader_node {}'.format(tex_channel, shader_node))
+
+
+def connect_textures(shader_node, tex_channel, texture_path):
+    """
+    creates the proper texture nodes for the texture_path in the scene.
+    :param shader_node:
+    :param tex_channel:
+    :param texture_path:
+    :return:
+    """
+    print('\tImporting {} into scene'.format(texture_path))
+    parameter = get_shader_parameter_for_tex_channel(tex_channel)
+    print('\tAttaching texture {} to shader {} at parameter {}'.format(texture_path, shader_node, parameter))
+

@@ -39,14 +39,20 @@ class SmartTask(object):
             file_path = self.path_object.path_root
         from cgl.plugins.maya.lumbermill import import_file, reference_file
         if reference:
+            print(3)
             return reference_file(filepath=file_path)
         else:
+            print(4)
             return import_file(filepath=file_path)
 
     def import_latest(self, task=None, reference=False):
+        print(2)
         if not task:
             task = self.path_object.task
-        new_obj = self.path_object.copy(task=task, user='publish', latest=True, set_proper_filename=True)
+        new_obj = self.path_object.copy(task=task, context='render', user='publish',
+                                        latest=True,
+                                        set_proper_filename=True)
+        print(new_obj.path_root)
         import_obj = self._import(new_obj.path_root, reference=reference)
         return import_obj
 

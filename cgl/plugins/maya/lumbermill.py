@@ -8,7 +8,10 @@ from cgl.core.utils.general import create_file_dirs
 from cgl.core.path import PathObject
 from cgl.core.config import app_config, UserConfig
 from cgl.plugins.maya.utils import get_namespace, create_tt, clean_tt, basic_playblast
-import pymel.core as pm
+try:
+    import pymel.core as pm
+except ModuleNotFoundError:
+    print('Skipping pymel.core, outside of maya')
 
 CONFIG = app_config()
 PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
@@ -112,8 +115,12 @@ class LumberObject(PathObject):
         self.path_template = []
         self.version_template = []
 
-        if isinstance(path_object, unicode):
-            path_object = str(path_object)
+        try:
+            if isinstance(path_object, unicode):
+                path_object = str(path_object)
+        except NameError:
+            pass
+
         if isinstance(path_object, dict):
             self.process_info(path_object)
         elif isinstance(path_object, str):
@@ -200,9 +207,12 @@ def import_task(task=None, reference=False, **kwargs):
     if not task:
         task = scene_object().task
     class_ = get_task_class(task)
+    print(class_)
     if reference:
+        print(1)
         return class_().import_latest(task=task, reference=reference, **kwargs)
     else:
+        print(2)
         return class_().import_latest(**kwargs)
 
 
@@ -213,12 +223,17 @@ def reference_file(filepath, namespace=None):
     :param filepath:
     :return:
     """
+    print(5)
     if not namespace:
         namespace = get_namespace(filepath)
-
-    if os.path.isfile(filepath):
+    print(6)
+    print(filepath)
+    if os.path.exists(filepath):
+        print(7)
         print('filepath: ', filepath)
         return pm.createReference(filepath, namespace=namespace, ignoreVersion=True, loadReferenceDepth='all')
+    else:
+        print('File does not exist: {}'.format(filepath))
 
 
 def confirm_prompt(title='title', message='message', button='Ok'):
