@@ -142,7 +142,7 @@ def open_file(filepath):
     return filepath
 
 
-def import_file(filepath=''):
+def import_file(filepath='', namespace=None):
     """
     imports file into a scene.
     :param filepath:
@@ -262,6 +262,9 @@ class BrowserWidget(CGLumberjackWidget):
         super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
 
     def open_clicked(self):
+        for selection in self.source_selection:
+            base_, ext = os.path.splitext(selection)
+            open_file(selection)
         print('Opening: %s' % self.path_object.path_root)
 
     def import_clicked(self):
