@@ -442,10 +442,9 @@ def get_task_class(task):
     :return:
     """
     import importlib
-    module = 'cgl.plugins.maya.tasks.{}'.format(task)
-    print(module)
+    software = os.path.split(os.path.dirname(__file__))[-1]
+    module = 'cgl.plugins.{}.tasks.{}'.format(software, task)
     module_name = task
-    print(task)
     try:
         # python 2.7 method
         loaded_module = __import__(module, globals(), locals(), module_name, -1)
@@ -455,3 +454,7 @@ def get_task_class(task):
         loaded_module = importlib.import_module(module, module_name)
     class_ = getattr(loaded_module, 'Task')
     return class_
+
+
+if __name__ == '__main__':
+    get_task_class('mdl')
