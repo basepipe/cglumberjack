@@ -1,7 +1,13 @@
 import re
+import os
 import pymel.core as pm
 import maya.mel as mel
+import mtoa.core as aicore
 from cgl.ui.widgets.dialog import InputDialog
+from cgl.core.config import app_config
+from cgl.core.utils.read_write import load_json
+
+CONFIG = app_config()
 
 
 def get_namespace(filepath):
@@ -147,4 +153,77 @@ def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=Fals
         pm.refresh(su=False)
     else:
         print('Playblast not set up for audio yet')
+
+
+def get_hdri_json_path():
+    hdri_json = CONFIG['paths']['resources']
+    return os.path.join(hdri_json, 'hdri', 'settings.json')
+
+
+def hdri_widget():
+    d = load_json(get_hdri_json_path())
+    window = pm.window()
+    pm.columnLayout()
+    pm.optionMenu(label='Colors', changeCommand=create_env_light)
+    for each in d.keys():
+        pm.menuItem(label=each)
+    pm.showWindow(window)
+
+
+def create_env_light(tex_name):
+    d = load_json(get_hdri_json_path())
+    rotation = 0
+    delete_existing = True
+    rotate_set = False
+    rotate_ = None
+
+    for key in d:
+        print key
+        if key in tex_name:
+            print key
+            rotate_ = d[key]
+            rotate_set = True
+    if rotate_set:
+        rotation = rotate_
+    if delete_existing:
+        env_lights = pm.ls('env_light*', type='transform')
+        pm.delete(env_lights)
+    tex_path = r'Z:\Projects\VFX\PLUGINS\substance_painter\ibl\%s.tx' % tex_name
+    tex_path2 = r'Z:\Projects\VFX\PLUGINS\substance_painter\ibl\%s.exr' % tex_name
+    if not os.path.exists(tex_path):
+        if os.path.exists(tex_path2):
+            command = '%s %s -v -u -oiio -o %s' % (CONFIG['paths']['maketx'], tex_path2, tex_path)
+            # should probably run the txmake command here and make the .tx file.
+            p = subprocess.Popen(command, shell=True)
+            p.communicate()
+        else:
+            print 'Can not find file: %s' % tex_path2
+            return
+    skydome = aicore.createArnoldNode('aiSkyDomeLight', name='env_lightShape')
+    file_node = pm.shadingNode('file', asTexture=True, isColorManaged=True)
+    place_tex = pm.shadingNode('place2dTexture', asUtility=True)
+    pm.connectAttr(place_tex.coverage, file_node.coverage, force=True)
+    pm.connectAttr(place_tex.translateFrame, file_node.translateFrame, force=True)
+    pm.connectAttr(place_tex.rotateFrame, file_node.rotateFrame, force=True)
+    pm.connectAttr(place_tex.mirrorV, file_node.mirrorV, force=True)
+    pm.connectAttr(place_tex.stagger, file_node.stagger, force=True)
+    pm.connectAttr(place_tex.wrapU, file_node.wrapU, force=True)
+    pm.connectAttr(place_tex.wrapV, file_node.wrapV, force=True)
+    pm.connectAttr(place_tex.repeatUV, file_node.repeatUV, force=True)
+    pm.connectAttr(place_tex.offset, file_node.offset, force=True)
+    pm.connectAttr(place_tex.rotateUV, file_node.rotateUV, force=True)
+    pm.connectAttr(place_tex.noiseUV, file_node.noiseUV, force=True)
+    pm.connectAttr(place_tex.vertexUvOne, file_node.vertexUvOne, force=True)
+    pm.connectAttr(place_tex.vertexUvTwo, file_node.vertexUvTwo, force=True)
+    pm.connectAttr(place_tex.vertexUvThree, file_node.vertexUvThree, force=True)
+    pm.connectAttr(place_tex.vertexCameraOne, file_node.vertexCameraOne, force=True)
+    pm.connectAttr(place_tex.outUV, file_node.uv)
+    pm.connectAttr(place_tex.outUvFilterSize, file_node.uvFilterSize)
+    pm.setAttr(file_node.fileTextureName, tex_path)
+    pm.connectAttr(file_node.outColor, '%s.%s' % (skydome, 'color'), force=True)
+    pm.setAttr('%s.rotateY' % skydome, rotation)
+    print 'rotation = %s' % rotation
+
+
+
 
