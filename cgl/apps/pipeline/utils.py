@@ -1,5 +1,7 @@
 import os
+import logging
 import stringcase
+from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import cgl_copy
 from cgl.core.utils.read_write import load_text_file, save_text_lines
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
@@ -56,10 +58,10 @@ class CGLMenuButton(QtWidgets.QWidget):
     """
     Represents the "Button" within the parent "Menu".
     """
-    save_all_signal = QtCore.Signal()
+    menu_button_save_clicked = QtCore.Signal()
 
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path='',
-                 menu_type='preflights'):
+                 menu_type='preflights', menu=None, reference_path=None):
         # TODO - we need to choose better variable names, this is obviously "preflight" specific.
         QtWidgets.QWidget.__init__(self, parent)
         try:
@@ -75,7 +77,9 @@ class CGLMenuButton(QtWidgets.QWidget):
         self.preflight_name = preflight_name
         self.preflight_path = preflight_path
         # self.menu_name = os.path.split(preflight_path.split(menu_type)[1])[0]
-        self.do_save = True
+        self.dirty = False
+        self.menu = menu
+        self.reference_path = reference_path
         # Create the Layouts
         layout = QtWidgets.QVBoxLayout(self)
         grid_layout = QtWidgets.QGridLayout()
@@ -112,11 +116,13 @@ class CGLMenuButton(QtWidgets.QWidget):
         delete_button.setProperty('class', 'basic')
         open_button = QtWidgets.QPushButton('Open in Editor')
         open_button.setProperty('class', 'basic')
-        self.save_button = QtWidgets.QPushButton('Save All')
+        self.save_button = QtWidgets.QPushButton('Save')
         self.save_button.setProperty('class', 'basic')
 
         # Text Edit
         self.code_text_edit = QtWidgets.QPlainTextEdit()
+        if reference_path:
+            self.code_text_edit.setEnabled(False)
         metrics = QtGui.QFontMetrics(self.code_text_edit.font())
         self.code_text_edit.setTabStopWidth(4 * metrics.width(' '))
         Highlighter(self.code_text_edit.document())
@@ -161,9 +167,11 @@ class CGLMenuButton(QtWidgets.QWidget):
         icon_button.clicked.connect(self.on_icon_button_clicked)
         delete_button.clicked.connect(self.on_delete_clicked)
         open_button.clicked.connect(self.on_open_clicked)
-        self.save_button.clicked.connect(self.on_save_clicked)
+        self.save_button.clicked.connect(self.on_menu_button_save_clicked)
         self.load_attrs()
         self.label_line_edit.textChanged.connect(self.on_code_changed)
+        self.dirty = False
+        self.save_button.hide()
 
     def on_icon_button_clicked(self):
         default_folder = os.path.join(get_cgl_tools(), self.software, self.menu_type, self.preflight_name)
@@ -182,10 +190,35 @@ class CGLMenuButton(QtWidgets.QWidget):
         index_ = tab_.currentIndex()
         tab_.setTabIcon(index_, icon)
         # # display the icon?
-        self.on_save_clicked()
+        self.on_menu_button_save_clicked()
 
-    def on_save_clicked(self):
-        self.save_all_signal.emit()
+    def on_menu_button_save_clicked(self):
+        if self.reference_path:
+            return
+        else:
+            button_name = self.name
+            menu_name = self.menu.menu_name
+            menu_type = self.menu.menu_type
+            button_file = get_button_path(software=self.software, menu_name=menu_name, button_name=button_name,
+                                          menu_type=menu_type)
+
+            dir_ = os.path.dirname(button_file)
+            if not os.path.exists(dir_):
+                os.makedirs(dir_)
+            make_init_for_folders_in_path(dir_)
+
+            if self.dirty:
+                print('Saving {}: {}'.format(button_name, button_file))
+                code = self.code_text_edit.document().toPlainText()
+                if self.software.lower() == 'unreal':
+                    if os.path.exists(button_file):
+                        self.dirty = False
+                        return
+                with open(button_file, 'w+') as x:
+                    x.write(code)
+                self.dirty = False
+            else:
+                print('No Changes to Save')
 
     def on_open_clicked(self):
         code_path = os.path.join(os.path.dirname(self.preflight_path), self.menu_type, self.preflight_name,
@@ -193,7 +226,8 @@ class CGLMenuButton(QtWidgets.QWidget):
         start(code_path)
 
     def on_code_changed(self):
-        self.do_save = True
+        self.save_button.show()
+        self.dirty = True
 
     def load_attrs(self):
         """
@@ -212,13 +246,18 @@ class CGLMenuButton(QtWidgets.QWidget):
         code_text = self.load_code_text()
         if code_text:
             self.code_text_edit.setPlainText(code_text)
-            self.do_save = False
         else:
             self.create_default_button()
 
     def load_code_text(self):
         if self.software.lower() != 'unreal':
-            code_path = get_button_path(self.software, self.preflight_name, self.name, menu_type=self.menu_type)
+            if not self.reference_path:
+                code_path = get_button_path(self.software, self.preflight_name, self.name, menu_type=self.menu_type)
+                print(1)
+                print(code_path)
+            else:
+                code_path = self.reference_path
+                print('loading code from reference {}'.format(self.reference_path))
             if os.path.exists(code_path):
                 try:
                     return open(code_path).read()
@@ -228,6 +267,8 @@ class CGLMenuButton(QtWidgets.QWidget):
                 return None
             else:
                 print('%s does not exist' % code_path)
+        else:
+            print('Not loading for Unreal Buttons')
 
     def create_default_button(self):
         create_button_file(software=self.software, menu_name=self.preflight_name, button_name=self.name,
@@ -235,7 +276,6 @@ class CGLMenuButton(QtWidgets.QWidget):
         code_text = self.load_code_text()
         if code_text:
             self.code_text_edit.setPlainText(code_text)
-            self.do_save = False
 
     def on_delete_clicked(self):
         menu_widget = self.parent().parent()
@@ -262,7 +302,7 @@ class CGLMenu(QtWidgets.QWidget):
     "Preflights", "Context-menus" and anything else in the future that fits the structure we've got here.
 
     """
-    save_clicked = QtCore.Signal()
+    menu_button_save_clicked = QtCore.Signal(object)
 
     def __init__(self, parent=None, software=None, menu_type='menus', menu_name='', menu=None, menu_path=''):
         QtWidgets.QWidget.__init__(self, parent)
@@ -368,44 +408,53 @@ class CGLMenu(QtWidgets.QWidget):
             title_ = 'Add Context Menu Item'
             message = 'Enter a name for your Context Menu Item'
 
-        dialog = InputDialog(title=title_, message=message,
-                             line_edit=True, regex='^([aA-zZ ]+)+$',
-                             name_example='Name may only contain letters and spaces')
+        # new button dialog
+        # dialog = InputDialog(title=title_, message=message,
+        #                      line_edit=True, regex='^([aA-zZ ]+)+$',
+        #                      name_example='Name may only contain letters and spaces')
+        dialog = NewButtonDialog(software=self.software, menu_type=self.menu_type)
         dialog.exec_()
         if dialog.button == 'Ok':
-            text_ = stringcase.snakecase(dialog.line_edit.text().lower())
+            text_ = stringcase.snakecase(dialog.button_name_line_edit.text().lower())
             button_name = stringcase.pascalcase(text_)
             label = stringcase.titlecase(text_)
-            command = self.get_command_text(button_name=button_name, menu_type=self.menu_type)
-            module = self.default_preflight_text(button_name)
+            if dialog.cgl_button_type == 'New Button':
+                command = self.get_command_text(button_name=button_name, menu_type=self.menu_type)
+                module = self.default_preflight_text(button_name)
+                module_path = None
+            elif dialog.cgl_button_type == 'Referenced Button':
+                command = dialog.command
+                module = dialog.module
+                module_path = dialog.button_path
+
             if self.menu_type == 'preflights':
                 attrs = {'label': button_name,
                          'name': button_name,
                          'required': 'True',
-                         'module': module}
+                         'module': module,
+                         'reference_path': module_path}
             elif self.menu_type == 'menus' or self.menu_type == 'context-menus':
                 attrs = {'label': button_name,
                          'name': button_name,
-                         'module': command}
+                         'module': command,
+                         'reference_path': module_path}
             elif self.menu_type == 'shelves':
                 attrs = {'label': label,
                          'name': button_name,
                          'module': command,
-                         'icon': ''}
+                         'icon': '',
+                         'reference_path': module_path}
 
             self.new_button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
                                                    preflight_step_name=button_name,
-                                                   attrs=attrs, preflight_path=self.menu_path, menu_type=self.menu_type)
-            self.new_button_widget.save_all_signal.connect(self.on_save_clicked)
+                                                   attrs=attrs, preflight_path=self.menu_path, menu_type=self.menu_type,
+                                                   reference_path=module_path)
             if 'icon' in attrs.keys():
                 icon = QtGui.QIcon(attrs['icon'])
                 index = self.buttons_tab_widget.addTab(self.new_button_widget, icon, button_name)
             else:
                 index = self.buttons_tab_widget.addTab(self.new_button_widget, button_name)
             self.buttons_tab_widget.setCurrentIndex(index)
-
-    def on_save_clicked(self):
-        self.save_clicked.emit()
 
     def get_command_text(self, button_name, menu_type):
         if self.software.lower() == 'unreal':
@@ -421,10 +470,14 @@ class CGLMenu(QtWidgets.QWidget):
         if self.menu:
             if 'buttons' in self.menu.keys():
                 for button in self.menu['buttons']:
+                    try:
+                        ref_path = button['reference_path']
+                    except KeyError:
+                        ref_path = None
                     button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
                                                   preflight_step_name=button['label'],
                                                   attrs=button, preflight_path=self.menu_path,
-                                                  menu_type=self.menu_type)
+                                                  menu_type=self.menu_type, menu=self, reference_path=ref_path)
                     if 'icon' in button.keys():
                         if button['icon']:
                             icon = QtGui.QIcon(button['icon'])
@@ -441,7 +494,7 @@ class CGLMenu(QtWidgets.QWidget):
                                 button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
                                                               preflight_step_name=button,
                                                               attrs=self.menu[button], preflight_path=self.menu_path,
-                                                              menu_type=self.menu_type)
+                                                              menu_type=self.menu_type, menu=self)
                                 if 'icon' in self.menu[button].keys():
                                     if self.menu[button]['icon']:
                                         icon = QtGui.QIcon(self.menu[button]['icon'])
@@ -522,9 +575,9 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
     if menu_file:
         menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name, '%s.py' % menu_name)
     else:
-        print("software: {}".format(software),
-              "menu type: {}".format(menu_type),
-              "menu_name: {}".format(menu_name))
+        logging.debug("software: {}".format(software),
+                      "menu type: {}".format(menu_type),
+                      "menu_name: {}".format(menu_name))
         menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name)
     return menu_folder
 
@@ -546,5 +599,117 @@ def get_button_path(software, menu_name, button_name, menu_type='menus'):
     else:
         button_path = os.path.join(menu_folder, '%s.py' % button_name)
     return button_path
+
+
+def make_init_for_folders_in_path(folder):
+    config = get_cgl_tools().replace('\\', '/')
+    if folder:
+        folder = folder.replace('\\', '/')
+        folder = folder.replace(config, '')
+        parts = folder.split('/')
+        if '' in parts:
+            parts.remove('')
+        string = config
+        for p in parts:
+            if ':' not in p:
+                if '.' not in p:
+                    string = '%s/%s' % (string, p)
+                    init = '%s/__init__.py' % string
+                    if not os.path.exists(init):
+                        make_init(os.path.dirname(init))
+
+
+def make_init(folder):
+    if '*' not in folder:
+        with open(os.path.join(folder, '__init__.py'), 'w+') as i:
+            i.write("")
+
+
+class NewButtonDialog(LJDialog):
+    def __init__(self, parent=None, software=None, menu_type=None):
+        LJDialog.__init__(self, parent)
+        self.software = software
+        self.cgl_button_type = 'New Button'
+        self.menu_type = menu_type
+        self.module = None
+        self.command = None
+        self.button_path = None
+        layout = QtWidgets.QVBoxLayout(self)
+        self.setWindowTitle('New Pipeline Button')
+        self.reference_button_label = QtWidgets.QLabel()
+        self.reference_button_label.setProperty('class', 'title')
+        self.reference_button_label.hide()
+        combo_label = QtWidgets.QLabel("Button Type: ")
+        self.button_type = QtWidgets.QComboBox()
+        self.menu_types = ['menus', 'context-menus', 'shelves', 'preflights']
+
+        self.button_type.addItems(['New Button', 'Referenced Button'])
+        self.new_button_message = QtWidgets.QLabel()
+        self.button_name_line_edit = QtWidgets.QLineEdit()
+        self.ok_button = QtWidgets.QPushButton('Ok')
+        self.cancel_button = QtWidgets.QPushButton('Cancel')
+        self.button = 'Cancel'
+
+        type_row = QtWidgets.QHBoxLayout()
+        type_row.addWidget(combo_label)
+        type_row.addWidget(self.button_type)
+        type_row.addStretch(0)
+
+        button_row = QtWidgets.QHBoxLayout()
+        button_row.addStretch(1)
+        button_row.addWidget(self.cancel_button)
+        button_row.addWidget(self.ok_button)
+
+        layout.addLayout(type_row)
+        layout.addWidget(self.reference_button_label)
+        layout.addWidget(self.new_button_message)
+        layout.addWidget(self.button_name_line_edit)
+        layout.addLayout(button_row)
+
+        self.ok_button.clicked.connect(self.on_ok_clicked)
+        self.cancel_button.clicked.connect(self.on_cancel_clicked)
+        self.button_type.currentIndexChanged.connect(self.on_type_changed)
+        self.on_type_changed()
+
+    def on_type_changed(self):
+        """
+        when the type changes, change the text
+        :return:
+        """
+        self.new_button_message.setText('Type a Name for your {}'.format(self.button_type.currentText()))
+        self.cgl_button_type = self.button_type.currentText()
+        if self.cgl_button_type == 'Referenced Button':
+            dialog = QtWidgets.QFileDialog()
+            dialog.title = 'Choose a Button To Reference'
+            dialog.setDirectory(os.path.join(get_cgl_tools(), self.software, self.menu_type))
+            if dialog.exec_():
+                file_names = dialog.selectedFiles()
+                if file_names:
+                    button_path = file_names[0]
+                    splitted = button_path.split('_config')[-1].split('/')
+                    if splitted[0] == '':
+                        splitted.pop(0)
+                    filename = splitted[-1].replace('.py', '')
+                    module = '.'.join(splitted).replace('.py', '')
+                    from_label = "Referencing: {}".format(module)
+                    command = 'import {} as {}; {}.run()'.format(module, filename, filename)
+                    self.reference_button_label.setText(from_label)
+                    self.reference_button_label.show()
+                    self.button_path = button_path
+                    self.module = module
+                    self.command = command
+
+    def on_ok_clicked(self):
+        self.button = 'Ok'
+        self.accept()
+
+    def on_cancel_clicked(self):
+        self.accept()
+
+    def load_buttons(self):
+        print(self.menu_types_combo.currentText())
+
+
+
 
 

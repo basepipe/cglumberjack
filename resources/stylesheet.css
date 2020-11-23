@@ -208,6 +208,13 @@ QLabel.large{
     color: #707070;
 }
 
+QLabel.xlarge{
+    font-family: "Courier New";
+    font-size: 18pt;
+    color: #707070;
+    font-weight: bold;
+}
+
 QLabel{
     font-family: "Courier New";
     font-size: 10pt;

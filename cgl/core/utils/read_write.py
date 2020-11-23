@@ -92,3 +92,4 @@ def save_text_lines(text_array, file_path):
     file_object = open(file_path, "w")
     file_object.writelines(text_array)
     file_object.close()
+

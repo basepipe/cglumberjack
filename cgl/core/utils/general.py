@@ -313,6 +313,7 @@ def load_json(filepath):
     except IOError or FileNotFoundError:
         return None
 
+
 def fix_json(filepath):
     """
     Function to fix json file if there's no newlines

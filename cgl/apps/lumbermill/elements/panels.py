@@ -372,7 +372,7 @@ class ProductionPanel(QtWidgets.QWidget):
         self.root = CONFIG['paths']['root']
         self.radio_filter = 'Everything'
         self.clear_layout()
-        self.assets = AssetWidget(self, title="", search_box=search_box)
+        self.assets = AssetWidget(self, title="", path_object=self.path_object, search_box=search_box)
 
         self.assets.add_button.show()
         self.set_scope_radio()

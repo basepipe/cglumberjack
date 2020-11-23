@@ -8,7 +8,7 @@ from core.utils.general import cgl_execute
 
 CONFIG = app_config()
 CODE_ROOT = os.path.join(CONFIG['paths']['code_root'])
-HTML_ROOT = os.path.join(CODE_ROOT, 'docs', 'build', 'html')
+HTML_ROOT = os.path.join(CODE_ROOT, 'docs', 'tasks', 'html')
 
 
 def setup_path():
