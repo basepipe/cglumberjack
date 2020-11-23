@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from cgl.plugins.Qt import QtWidgets
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
@@ -185,20 +186,16 @@ class Designer(LJDialog):
         menu_folder = get_menu_path(self.software, menu_name, menu_file=False, menu_type=self.type)
         new_menu = CGLMenu(parent=self, software=self.software, menu_name=menu_name, menu=[],
                            menu_path=cgl_file, menu_type=self.type)
-        new_menu.save_clicked.connect(self.on_save_clicked)
         index = self.menus.addTab(new_menu, menu_name)
         self.menus.setCurrentIndex(index)
         if not os.path.exists(menu_folder):
             os.makedirs(menu_folder)
-            self.make_init_for_folders_in_path(menu_folder)
+            # self.make_init_for_folders_in_path(menu_folder)
         self.save_menus()
         if self.software == 'blender':
             if self.type == 'menus':
                 from cgl.plugins.blender.utils import create_menu_file
                 create_menu_file(menu_name)
-
-    def on_save_clicked(self):
-        self.save_menus()
 
     def load_menus(self):
         menu_dict = {}
@@ -216,7 +213,7 @@ class Designer(LJDialog):
                             if i == menu_dict[self.software][menu]['order']:
                                 buttons = CGLMenu(parent=self, software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
                                                   menu_path=self.menu_path, menu_type=self.type)
-                                buttons.save_clicked.connect(self.on_save_clicked)
+                                buttons.menu_button_save_clicked.connect(self.on_save_clicked)
                                 self.menus.addTab(buttons, menu)
                 elif isinstance(menu_dict[self.software], list):
                     for menu in menu_dict[self.software]:
@@ -225,7 +222,7 @@ class Designer(LJDialog):
                         buttons = CGLMenu(parent=self, software=self.software, menu_name=menu_name,
                                           menu=menu,
                                           menu_path=self.menu_path, menu_type=self.type)
-                        buttons.save_clicked.connect(self.on_save_clicked)
+                        # buttons.menu_button_save_clicked.connect(self.on_save_clicked)
                         self.menus.addTab(buttons, menu_name)
 
             else:
@@ -244,7 +241,17 @@ class Designer(LJDialog):
             num = self.software_combo.count()
             self.software_combo.setCurrentIndex(num)
 
+    def save_button(self, button_widget):
+        print('Saving All Dirty Buttons')
+        if button_widget.dirty:
+            print('Saving {}'.format(button_widget.name))
+
     def save_menus(self):
+        """
+        Saves the .json files for the menus in the current session.
+        Also saves all "dirty" or changed buttons from the current session.
+        :return:
+        """
         menu_name = ''
         menu_dict = {}
         menu_array = []
@@ -261,6 +268,9 @@ class Designer(LJDialog):
             for bi in range(menu.buttons_tab_widget.count()):
                 button_dict = {}
                 button_widget = menu.buttons_tab_widget.widget(bi)
+                reference_path = button_widget.reference_path
+                if button_widget.dirty:
+                    button_widget.on_menu_button_save_clicked()
                 if button_widget.name_line_edit.text():
                     button_name = button_widget.name_line_edit.text()
                 else:
@@ -285,7 +295,8 @@ class Designer(LJDialog):
                                      'label': button_widget.label_line_edit.text(),
                                      'order': bi + 1,
                                      'icon': icon_text,
-                                     'name': button_name
+                                     'name': button_name,
+                                     'reference_path': reference_path
                                     }
                 else:
                     button_dict = {
@@ -299,75 +310,45 @@ class Designer(LJDialog):
             menu_array.append(mi_dict)
         if self.software.lower() == 'unreal':
             print('Unreal Engine')
-        else:
-            self.save_code(menu_name, button_widget)
         json_object = {self.software: menu_array}
-        print('saving json', self.menu_path)
+        print('saving menu json', self.menu_path)
         self.save_json(self.menu_path, json_object)
 
     def create_empty_menu(self):
         json_object = {self.software: {}}
         self.save_json(self.menu_path, json_object)
 
-    def save_code(self, menu_name, button_widget):
-        try:
-            button_name = button_widget.name
-        except AttributeError:
-            return
-        code = button_widget.code_text_edit.document().toPlainText()
-        button_file = get_button_path(software=self.software, menu_name=menu_name, button_name=button_name,
-                                      menu_type=self.type)
-        dir_ = os.path.dirname(button_file)
-        if not os.path.exists(dir_):
-            os.makedirs(dir_)
-        self.make_init_for_folders_in_path(dir_)
-
-        if button_widget.do_save:
-            if self.software.lower() == 'unreal':
-                if os.path.exists(button_file):
-                    button_widget.do_save = False
-                    return
-            with open(button_file, 'w+') as x:
-                x.write(code)
-            button_widget.do_save = False
-
-    def make_init_for_folders_in_path(self, folder):
-        config = self.cgl_tools.replace('\\', '/')
-        if folder:
-            folder = folder.replace('\\', '/')
-            folder = folder.replace(config, '')
-            parts = folder.split('/')
-            if '' in parts:
-                parts.remove('')
-            string = config
-            for p in parts:
-                if ':' not in p:
-                    if '.' not in p:
-                        string = '%s/%s' % (string, p)
-                        init = '%s/__init__.py' % string
-                        if not os.path.exists(init):
-                            self.make_init(os.path.dirname(init))
-
     @staticmethod
-    def make_init(folder):
-        if '*' not in folder:
-            with open(os.path.join(folder, '__init__.py'), 'w+') as i:
-                i.write("")
-
-    def save_json(self, filepath, data):
-        if data:
-            self.make_init_for_folders_in_path(filepath)
+    def save_json(filepath, data):
+        """
+        saves a json file
+        :param filepath:
+        :param data:
+        :return:
+        """
+        try:
             with open(filepath, 'w') as outfile:
                 json.dump(data, outfile, indent=4, sort_keys=True)
+        except TypeError:
+            pass
 
     @staticmethod
     def load_json(filepath):
+        """
+        loads a .json file and returns a dictionary: data
+        :param filepath:
+        :return:
+        """
         with open(filepath) as jsonfile:
             data = json.load(jsonfile)
         return data
 
     def closeEvent(self, event):
-        #TODO - i'd like to save this only if it's actually got problems.
+        """
+        what happens when the app is closed using the "x' button
+        :param event:
+        :return:
+        """
         if event:
             self.save_menus()
 

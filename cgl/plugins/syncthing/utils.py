@@ -76,7 +76,7 @@ def setup_workstation():
     USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
     GLOBALS = load_json(USER_GLOBALS['globals'])
     set_machine_type("remote workstation")
-    kill_syncthing()
+    # kill_syncthing()
     print(1, get_my_device_info())
     device_info = get_my_device_info()
     print('Setting Up Workstation for Syncing')
@@ -811,7 +811,7 @@ def write_globals(tree, kill=True):
     launch_syncthing()
 
 
-def wipe_globals():
+def wipe_globals(verbose=False):
     # TODO - Clean up SHEETS - remove the device from the list.
     # TODO - is there a way to remove the device from syncthing?
     # TODO -
@@ -820,7 +820,7 @@ def wipe_globals():
     config_path = get_config_path()
     if os.path.exists(config_path):
         os.remove(config_path)
-    launch_syncthing()
+    launch_syncthing(verbose=verbose)
 
 
 def launch_syncthing(verbose=False):
@@ -901,8 +901,9 @@ def update_machines():
 
 if __name__ == "__main__":
     #wipe_globals()
-    #setup_workstation()
+    setup_workstation()
+    #kill_syncthing()
     # process_pending_devices()
-    print(get_all_devices_from_config())
-    print(get_my_device_info()['name'])
+    # print(get_all_devices_from_config())
+    # print(get_my_device_info()['name'])
 

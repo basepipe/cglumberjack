@@ -1,8 +1,11 @@
 import re
 import os
-import pymel.core as pm
-import maya.mel as mel
-import mtoa.core as aicore
+try:
+    import pymel.core as pm
+    import maya.mel as mel
+    import mtoa.core as aicore
+except ModuleNotFoundError:
+    print('Skipping pymel.core - outside of maya')
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.config import app_config
 from cgl.core.utils.read_write import load_json
@@ -11,8 +14,8 @@ CONFIG = app_config()
 
 
 def get_namespace(filepath):
-    from lumbermill import MayaPathObject
-    po = MayaPathObject(filepath)
+    from .lumbermill import LumberObject
+    po = LumberObject(filepath)
     if po.task == 'cam':
         namespace = 'cam'
     elif po.scope == 'assets':
@@ -178,9 +181,7 @@ def create_env_light(tex_name):
     rotate_ = None
 
     for key in d:
-        print key
         if key in tex_name:
-            print key
             rotate_ = d[key]
             rotate_set = True
     if rotate_set:
@@ -197,7 +198,7 @@ def create_env_light(tex_name):
             p = subprocess.Popen(command, shell=True)
             p.communicate()
         else:
-            print 'Can not find file: %s' % tex_path2
+            print('Can not find file: %s' % tex_path2)
             return
     skydome = aicore.createArnoldNode('aiSkyDomeLight', name='env_lightShape')
     file_node = pm.shadingNode('file', asTexture=True, isColorManaged=True)
@@ -222,7 +223,19 @@ def create_env_light(tex_name):
     pm.setAttr(file_node.fileTextureName, tex_path)
     pm.connectAttr(file_node.outColor, '%s.%s' % (skydome, 'color'), force=True)
     pm.setAttr('%s.rotateY' % skydome, rotation)
-    print 'rotation = %s' % rotation
+    print('rotation = %s' % rotation)
+
+
+def get_maya_window():
+    from maya import OpenMayaUI as omui
+    from shiboken2 import wrapInstance
+    from cgl.plugins.Qt import QtWidgets
+
+    ptr = omui.MQtUtil.mainWindow()
+    main_maya_window = None
+    if ptr is not None:
+        main_maya_window = wrapInstance(long(ptr), QtWidgets.QWidget)
+    return main_maya_window
 
 
 

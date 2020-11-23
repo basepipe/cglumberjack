@@ -503,6 +503,7 @@ class FilesPanel(QtWidgets.QWidget):
     def on_publish_clicked(self):
         from cgl.plugins.preflight.main import Preflight
         logging.debug('Publishing stuff now')
+        current = PathObject(self.current_location)
         print("Checking for {} preflight".format(self.current_location['task']))
         try:
             this = Preflight(software='lumbermill', preflight=self.current_location['task'],
