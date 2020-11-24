@@ -6,8 +6,13 @@ from .smart_task import SmartTask
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
 from cgl.plugins.maya.lumbermill import LumberObject
-from cgl.core.config import shader_config
+from cgl.core.config import shader_config, app_config
 from cgl.ui.widgets.widgets import AdvComboBox
+
+DEFAULT_SHADER = 'aiStandardSurface'  # TODO - add this in the globals.
+DEFAULT_EXT = 'tx'
+SHADER_CONFIG = shader_config()['shaders']
+ROOT = app_config()['paths']['root']
 
 
 class Task(SmartTask):
@@ -18,48 +23,29 @@ class Task(SmartTask):
             self.path_object = scene_object()
 
     def build(self):
+        print('No Build Script defined for textures, this would belong in Substance Painter most likely')
         pass
 
-    def import_latest(self, model_ref=None):
-        from cgl.plugins.maya.lumbermill import import_task
-        from cgl.plugins.maya.utils import load_plugin
-        load_plugin('mtoa')
-        # turn off render thumbnail update in hypershade!
-        pm.renderThumbnailUpdate(False)
-        # if i get a path - i need to pull the asset name out of it.
-        assign_shaders_to_asset(model_ref)
+    def _import(self, ref_node):
+        """
+        Main Parent Function for importing textures.  In a Production Alchemy Context importing textures consists of a
+        full usable series of events that leads to a useable baseline of textures.  In this instance that would be:
+        1) Create A Shader for the Material Group
+        2) Import and connect relevant textures to material group
+        3) Set any default values based off our shader dictionaries.
+        :param filepath:
+        :return:
+        """
+        filepath = str(ref_node)
+        name_space = ref_node.namespace
+        tex_root = get_latest_tex_publish_from_filepath(filepath)
+        shading_dict = get_shading_dict(tex_root)  # these should be made at texture publish time.
+        for mtl_group in shading_dict:
+            shader = create_and_attach_shader(mtl_group, name_space=name_space)
+            import_and_connect_textures(shader, shading_dict=shading_dict)
 
-
-def assign_shaders_to_asset(mdl_path, res='high'):
-
-    # mdl_path = pm.referenceQuery('%s:mdl' % asset, filename=True, wcn=True)
-    mdl_object = LumberObject(str(mdl_path))
-    res = '%s:%s' % (mdl_object.asset, res)
-    tex_object = mdl_object.copy(task='tex', context='render', latest=True, set_proper_filename=True)
-    tex_path = os.path.dirname(tex_object.path_root)
-    if os.path.exists(tex_path):
-        for mat in pm.listRelatives(res, children=True):
-            pm.select(d=True)
-            pm.select(mat)
-            sel = pm.ls(sl=True)[0]
-            d_ = ShaderSetup(material=sel, tex_root=tex_path, tx_only=True)
-            d_.exec_()
-    else:
-        print('Could not find tex path %s' % tex_path)
-
-
-def assign_shader_to_selected_mtl_group():
-    sel = pm.ls(sl=True)
-    for s in sel:
-        if '_mtl' in str(s):
-            asset = s.split(':')[0]
-            mdl_path = pm.referenceQuery('%s:mdl' % asset, filename=True, wcn=True)
-            mdl_object = LumberObject(mdl_path)
-            tex_object = mdl_object.copy(context='render', task='tex', resolution='high', latest=True)
-            tex_path = os.path.dirname(tex_object.path_root)
-            dialog.ShaderSetup(material=s, tex_root=tex_path, tx_only=True).exec_()
-        else:
-            print('%s is not a proper _mtl group' % s)
+    def import_latest(self, ref_node):
+        self._import(ref_node)
 
 
 def tag_shaders():
@@ -119,6 +105,19 @@ def tag_attr(obj, attr, value, type_='bool', is_ref=True):
 
 
 def assign_texture_to_shader(tex_path, shader, attr, channel=False, normal=False, color_space=None, shader_attrs=None):
+    """
+    connects a texture to a shader and is smart about various kinds of textures
+    :param tex_path:
+    :param shader:
+    :param attr:
+    :param channel:
+    :param normal:
+    :param color_space:
+    :param shader_attrs:
+    :return:
+    """
+
+    # print('\tAttaching texture {} to shader {} at attr {}'.format(tex_path, shader, attr))
     tex_path = r'%s' % tex_path
     file_node = pm.shadingNode('file', asTexture=True, isColorManaged=True)
     place_tex = pm.shadingNode('place2dTexture', asUtility=True)
@@ -174,202 +173,6 @@ def assign_texture_to_shader(tex_path, shader, attr, channel=False, normal=False
         pm.setAttr(file_node.colorSpace, color_space)
 
 
-def apply_shader_attrs(shader, shader_attrs):
-    if shader_attrs:
-        for each in shader_attrs:
-            attr = '%s.%s' % (shader, each)
-            value = shader_attrs[each]
-            try:
-                pm.setAttr(attr, value)
-            except:
-                print('Could not find {}, skipping'.format(attr))
-
-
-class ShaderSetup(LJDialog):
-
-    def __init__(self, parent=None, material=None, tex_root=None, tx_only=False, default_shader='aiStandardSurface'):
-        LJDialog.__init__(self, parent)
-        from cgl.plugins.maya.utils import get_maya_window
-
-        main_maya_window = get_maya_window()
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-        self.parent = main_maya_window
-        self.material = material
-        self.width = 500
-        self.shader_dict = shader_config()['shaders']
-        udim_pattern = r"[0-9]{4}"
-        textures = []
-        tex_root_material = r'%s' % os.path.join(tex_root, self.material.split(':')[-1].split('_')[0])
-        if os.path.exists(tex_root_material):
-            tex_root = tex_root_material
-        for t in os.listdir(tex_root):
-            if tx_only:
-                if t.endswith('tx'):
-                    if re.search(udim_pattern, t):
-                        _, ext_ = os.path.splitext(t)
-                        new_t = re.sub(udim_pattern, '<UDIM>', t)
-                        t = new_t
-                    if t not in textures:
-                        textures.append(t)
-            else:
-                textures.append(t)
-        self.tex_root = tex_root
-        shaders = ['']
-        for each in self.shader_dict:
-            shaders.append(each)
-        if len(shaders) == 2:
-            shaders.pop(0)
-        self.create_shader = QtWidgets.QPushButton('Create Shader')
-        v_layout = QtWidgets.QVBoxLayout()
-        self.button_row = QtWidgets.QHBoxLayout()
-        self.button_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                      QtWidgets.QSizePolicy.Minimum))
-        self.button_row.addWidget(self.create_shader)
-        self.material_row = QtWidgets.QHBoxLayout()
-        if ":" in material:
-            material = material.split(':')[-1]
-        self.mat_name = QtWidgets.QLabel("<b>%s</b>" % material)
-        self.mat_label = QtWidgets.QLabel("Choose a Shader:")
-        self.textures_label = QtWidgets.QLabel("<b>Connect Textures</b>")
-        self.mat_combo = AdvComboBox()
-        self.mat_shaders = shaders
-        self.mat_combo.addItems(self.mat_shaders)
-
-        self.material_row.addWidget(self.mat_name)
-        self.material_row.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding,
-                                                        QtWidgets.QSizePolicy.Minimum))
-        self.material_row.addWidget(self.mat_label)
-        self.material_row.addWidget(self.mat_combo)
-        v_layout.addLayout(self.material_row)
-        v_layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
-        v_layout.addWidget(self.textures_label)
-        self.row_dict = {}
-        for each in textures:
-            self.label = QtWidgets.QLabel('%s' % each)
-            combo = AdvComboBox()
-            # combo.currentIndexChanged.connect(self.on_parameter_changed)
-            if len(shaders) == 1:
-                combo.addItems(shaders)
-            # find a match in shaders for to_match
-            item_row = QtWidgets.QHBoxLayout()
-            item_row.addWidget(self.label)
-            item_row.addWidget(combo)
-            self.row_dict.update({self.label: combo})
-            v_layout.addLayout(item_row)
-        v_layout.addLayout(self.button_row)
-        self.setLayout(v_layout)
-        self.setWindowTitle("Assign Textures to Shader Attr")
-        self.mat_combo.currentIndexChanged.connect(self.on_shader_changed)
-        if default_shader:
-            index = self.mat_combo.findText(default_shader)
-            if index != -1:
-                self.mat_combo.setCurrentIndex(index)
-        self.create_shader.clicked.connect(self.on_create_shader)
-        if default_shader:
-            self.on_shader_changed()
-        else:
-            self.hide_textures()
-
-    def hide_textures(self, show=False):
-        if show:
-            self.textures_label.show()
-            self.create_shader.show()
-        else:
-            self.textures_label.hide()
-            self.create_shader.hide()
-        for key in self.row_dict:
-            if show:
-                key.show()
-                self.row_dict[key].show()
-            else:
-                key.hide()
-                self.row_dict[key].hide()
-
-    def on_shader_changed(self):
-
-        shader_name = self.mat_combo.currentText()
-        print(shader_name)
-        params = self.shader_dict[shader_name]['parameters']
-        for key in self.row_dict:
-            item_num = 'Null'
-            to_match = key.text().split("_")[-1].split('.')[0]
-            self.row_dict[key].clear()
-            i = -1
-            for p in params:
-                i += 1
-                try:
-                    if str(to_match) in params[p]['name_match']:
-                        item_num = i
-                except KeyError:
-                    pass
-                self.row_dict[key].addItem(p)
-            if item_num != 'Null':
-                self.row_dict[key].setCurrentIndex(item_num)
-            else:
-                self.row_dict[key].insertItem(0, '')
-                self.row_dict[key].setCurrentIndex(0)
-        self.hide_textures(show=True)
-
-    def on_parameter_changed(self):
-        text = self.sender().currentText()
-        for key in self.row_dict:
-            if self.row_dict[key] == self.sender():
-                print(key.text().split(':  ')[-1], text)
-
-    def on_create_shader(self):
-        source_shader = self.mat_combo.currentText()
-        shader_name = '%s_shd' % self.material.name().split(':')[-1].split('_mtl')[0]
-        if pm.objExists(shader_name):
-            shader = shader_name
-        else:
-            shader = pm.shadingNode(str(source_shader), asShader=True, name=shader_name)
-        default_attrs = self.shader_dict[self.mat_combo.currentText()]['default_shader_attrs']
-        if default_attrs:
-            apply_shader_attrs(shader, shader_attrs=default_attrs)
-        sg_name = shader_name.replace('shd', 'SG')
-        if not pm.objExists(sg_name):
-            sg = pm.sets(renderable=True, noSurfaceShader=True, empty=True, name=sg_name)
-            pm.connectAttr('%s.outColor' % shader, '%s.surfaceShader' % sg)
-        pm.select(self.material)
-        pm.sets(sg_name, forceElement=True)
-        self.accept()
-        testy = ['diffuse', 'normal', 'specRough', 'metalness']
-        # testy = ['specRough']
-        for key in self.row_dict:
-            file_name = key
-            attr = self.row_dict[key]
-            if attr.currentText() != '':
-                if attr.currentText() in testy:
-                    full_path = os.path.join(self.tex_root, file_name.text())
-                    channel_ = self.shader_dict[self.mat_combo.currentText()]['parameters'][attr.currentText()]
-                    attr_ = channel_['attr']
-                    try:
-                        normal = channel_['normal']
-                    except KeyError:
-                        normal = False
-                    try:
-                        channel = channel_['channel']
-                    except KeyError:
-                        channel = None
-                    try:
-                        shader_attrs = channel_['shader_attrs']
-                    except KeyError:
-                        shader_attrs = None
-                    try:
-                        color_space = channel_['colorspace']
-                    except KeyError:
-                        color_space = None
-                    assign_texture_to_shader(full_path, shader, attr_, channel=channel, normal=normal,
-                                             color_space=color_space, shader_attrs=shader_attrs)
-
-        self.accept()
-
-
-# all the new stuff goes below this line -----------------------------------------------------------------------------
-
-# --------------------------------------------------------------------------------------------------------------------
-
-
 def get_latest_tex_publish_from_filepath(filepath):
     """
     given an asset filepath return the latest published textures for the asset.
@@ -382,7 +185,7 @@ def get_latest_tex_publish_from_filepath(filepath):
     return os.path.dirname(path_object.path_root)
 
 
-def import_textures(filepath):
+def import_textures(ref_node):
     """
     Main Parent Function for importing textures.  In a Production Alchemy Context importing textures consists of a
     full usable series of events that leads to a useable baseline of textures.  In this instance that would be:
@@ -392,11 +195,14 @@ def import_textures(filepath):
     :param filepath:
     :return:
     """
+    filepath = str(ref_node)
+    name_space = ref_node.namespace
     tex_root = get_latest_tex_publish_from_filepath(filepath)
-    print('tex_root {}'.format(tex_root))
     shading_dict = get_shading_dict(tex_root)  # these should be made at texture publish time.
     for mtl_group in shading_dict:
-        attach_textures_to_geometry(mtl_group, shading_dict)
+
+        shader = create_and_attach_shader(mtl_group, name_space=name_space)
+        import_and_connect_textures(shader, shading_dict=shading_dict)
 
 
 def get_shading_dict(tex_root):
@@ -405,9 +211,9 @@ def get_shading_dict(tex_root):
     ../{resolution}/{material_group}/texture_file_{channel_name}.ext
 
     Produces a shading dictionary with the following structure:
-    Material Group
-        Channel Name
-            Extension
+    Material Group ("material_mtl")
+        Channel Name ("BaseColor")
+            Extension ("exr", "tx")
                 Texture Path (Relative)
     :param tex_root:
     :return:
@@ -435,37 +241,47 @@ def get_shading_dict(tex_root):
     return dict_
 
 
-def attach_textures_to_geometry(mtl_group, dict_, ext='tx'):
-    """
-    Creates a Shader, attaches that to gemoetry group.
-    Imports all textures relevant to this geometry, and connects them to the shader.
-
-    :param mtl_group:
-    :param dict_:
-    :param ext:
-    :return:
-    """
-    shader = create_and_attach_shader(mtl_group)
-    for tex_channel in dict_[mtl_group]:
-        if list(dict_[mtl_group][tex_channel].keys()):
-            if ext not in list(dict_[mtl_group][tex_channel].keys()):
-                ext = list(dict_[mtl_group][tex_channel].keys())[0]
-            connect_textures(mtl_group, tex_channel, dict_[mtl_group][tex_channel][ext])
-            edit_additional_parameters(shader, tex_channel)
-            # TODO  - set any additional per parameter values determined by our shader globals
-
-
-def create_and_attach_shader(mtl_group):
+def create_and_attach_shader(mtl_group, name_space=None, source_shader=DEFAULT_SHADER):
     """
     Creates a Shader for the mtl_group and attaches it to said group.
-    :param mtl_group:
+    :param mtl_group: string representing mtl group - comes from the texture publish
+    :param name_space: string representing namespace of asset we're working with.
+    :param source_shader: string representing the shader we're creating (aiStandard, blinn, lambert. etc...)
     :return:
     """
-    print('Creating Shader for {}'.format(mtl_group))
-    return(mtl_group)
+    print("Found Published Textures for {}: Creating Shader".format(mtl_group))
+    material = '{}:{}_mtl'.format(name_space, mtl_group)
+    shader_name = "{}_shd".format(mtl_group)
+    sg_name = "{}_SG".format(mtl_group)
+    if pm.objExists(shader_name):
+        shader = shader_name
+    else:
+        shader = pm.shadingNode(str(source_shader), asShader=True, name=shader_name)
+    if not pm.objExists(sg_name):
+        pm.sets(renderable=True, noSurfaceShader=True, empty=True, name=sg_name)
+        pm.connectAttr('%s.outColor' % shader, '%s.surfaceShader' % sg_name)
+    pm.select(d=True)
+    pm.select(material)
+    pm.sets(sg_name, forceElement=True)
+    pm.select(d=True)
+    return shader_name
 
 
-def get_shader_parameter_for_tex_channel(tex_channel):
+def get_selected_namespace():
+    """
+    gets the namespace of the selected object.
+    :return:
+    """
+    sel = pm.ls(sl=True)[0]
+    if ':' in sel:
+        name_space = sel.split(':')
+    else:
+        print('{} has no namespace'.format(sel))
+        return None
+    return name_space
+
+
+def get_attr_dict_for_tex_channel(tex_channel, shader=DEFAULT_SHADER):
     """
     queries the current texture channel against our shader dictionaries, returns the proper channel
     to plug the texture into.
@@ -474,29 +290,53 @@ def get_shader_parameter_for_tex_channel(tex_channel):
     :return:
     """
     # TODO - this would be the place to allow for people to add to the dictionary.
-    print('\tQuerying Shader Parameter for {}'.format(tex_channel))
-    return tex_channel
+    for parameter in SHADER_CONFIG[shader]['parameters']:
+        if tex_channel in SHADER_CONFIG[shader]['parameters'][parameter]['name_match']:
+            return SHADER_CONFIG[shader]['parameters'][parameter]
+    print("\tNo match found for {}".format(tex_channel))
+    return None
 
 
-def edit_additional_parameters(shader_node, tex_channel):
-    """
-    sets additional parameters depending on defaults for the tex channel
-    :param shader_node:
-    :param tex_channel:
-    :return:
-    """
-    print('\tSetting additional parameters for {} on shader_node {}'.format(tex_channel, shader_node))
-
-
-def connect_textures(shader_node, tex_channel, texture_path):
+def import_and_connect_textures(shader_node, shading_dict, mtl_group=None,
+                                ext=DEFAULT_EXT):
     """
     creates the proper texture nodes for the texture_path in the scene.
     :param shader_node:
-    :param tex_channel:
-    :param texture_path:
+    :param mtl_group:
+    :param shading_dict:
+    :param ext:
+    :param shader:
     :return:
     """
-    print('\tImporting {} into scene'.format(texture_path))
-    parameter = get_shader_parameter_for_tex_channel(tex_channel)
-    print('\tAttaching texture {} to shader {} at parameter {}'.format(texture_path, shader_node, parameter))
+    if not mtl_group:
+        mtl_group = shader_node.replace('_shd', '')
+    for tex_channel in shading_dict[mtl_group]:
+        if list(shading_dict[mtl_group][tex_channel].keys()):
+            if ext not in list(shading_dict[mtl_group][tex_channel].keys()):
+                ext = list(shading_dict[mtl_group][tex_channel].keys())[0]
+            texture_path = shading_dict[mtl_group][tex_channel][ext]
+            # TODO - take relative path and make it absolute
+            # full_path = os.path.join(ROOT, texture_path)
+            full_path = texture_path
+            channel_ = get_attr_dict_for_tex_channel(tex_channel)
+            if channel_:
+                attr_ = channel_['attr']
+                try:
+                    normal = channel_['normal']
+                except KeyError:
+                    normal = False
+                try:
+                    channel = channel_['channel']
+                except KeyError:
+                    channel = None
+                try:
+                    shader_attrs = channel_['shader_attrs']
+                except KeyError:
+                    shader_attrs = None
+                try:
+                    color_space = channel_['colorspace']
+                except KeyError:
+                    color_space = None
+                assign_texture_to_shader(full_path, shader_node, attr_, channel=channel,
+                                         normal=normal, color_space=color_space, shader_attrs=shader_attrs)
 
