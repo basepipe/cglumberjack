@@ -23,31 +23,29 @@ class Task(SmartTask):
             self.path_object = scene_object()
 
     def build(self):
+        print('No Build Script defined for textures, this would belong in Substance Painter most likely')
         pass
 
-    def _import(self, file_path, reference=False):
+    def _import(self, ref_node):
         """
-            Main Parent Function for importing textures.  In a Production Alchemy Context importing textures consists of a
-            full usable series of events that leads to a useable baseline of textures.  In this instance that would be:
-            1) Create A Shader for the Material Group
-            2) Import and connect relevant textures to material group
-            3) Set any default values based off our shader dictionaries.
-            :param filepath:
-            :return:
-            """
+        Main Parent Function for importing textures.  In a Production Alchemy Context importing textures consists of a
+        full usable series of events that leads to a useable baseline of textures.  In this instance that would be:
+        1) Create A Shader for the Material Group
+        2) Import and connect relevant textures to material group
+        3) Set any default values based off our shader dictionaries.
+        :param filepath:
+        :return:
+        """
+        filepath = str(ref_node)
+        name_space = ref_node.namespace
         tex_root = get_latest_tex_publish_from_filepath(filepath)
         shading_dict = get_shading_dict(tex_root)  # these should be made at texture publish time.
         for mtl_group in shading_dict:
-            attach_textures_to_geometry(mtl_group, shading_dict)
+            shader = create_and_attach_shader(mtl_group, name_space=name_space)
+            import_and_connect_textures(shader, shading_dict=shading_dict)
 
-    def import_latest(self, model_ref=None):
-        from cgl.plugins.maya.lumbermill import import_task
-        from cgl.plugins.maya.utils import load_plugin
-        load_plugin('mtoa')
-        # turn off render thumbnail update in hypershade!
-        pm.renderThumbnailUpdate(False)
-        # if i get a path - i need to pull the asset name out of it.
-        assign_shaders_to_asset(model_ref)
+    def import_latest(self, ref_node):
+        self._import(ref_node)
 
 
 def tag_shaders():

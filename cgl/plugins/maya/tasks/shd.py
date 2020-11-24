@@ -17,6 +17,9 @@ class Task(SmartTask):
         2. Import latest textures for this asset (and assemble a shader network)
         :return:
         """
-        ref_path = lm.import_task(task='mdl', reference=True)
-        lm.import_task(task='tex', model_ref=ref_path)
+        model_ref = lm.import_task(task='mdl', reference=True)
+        lm.import_task(task='tex', ref_node=model_ref)
+
+    def _import(self, filepath):
+        pass
 
