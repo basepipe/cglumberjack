@@ -25,6 +25,16 @@ def get_namespace(filepath):
     return get_next_namespace(namespace)
 
 
+def get_selected_namespace():
+    """
+    returns namespace of selected object.
+    :return:
+    """
+    namespace = pm.ls(sl=True)[0]
+    if namespace:
+        return namespace.split(':')[0]
+
+
 def get_next_namespace(ns):
     pattern = '[0-9]+'
     next = False
