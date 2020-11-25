@@ -26,7 +26,7 @@ class Task(SmartTask):
         """
         bundle_import(filepath, layout_group)
 
-    def import_latest(self, task='bndl', category='*', asset=None):
+    def import_latest(self, asset, task='bndl', category='*'):
         """
         imports the latest publish file for the given seq/shot combination
         :param task:
