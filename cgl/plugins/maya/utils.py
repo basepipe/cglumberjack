@@ -35,6 +35,13 @@ def get_selected_namespace():
         return namespace.split(':')[0]
 
 
+def select_reference(ref_node):
+    # This assumes we're talking about a published reference
+    object_ = pm.ls(regex='%s:[a-z]{3}|%s:CAMERAS' % (ref_node.namespace, ref_node.namespace))[0]
+    pm.select(object_)
+    return object_
+
+
 def get_next_namespace(ns):
     pattern = '[0-9]+'
     next = False
