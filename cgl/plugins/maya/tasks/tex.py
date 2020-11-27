@@ -10,7 +10,7 @@ from cgl.core.config import shader_config, app_config
 from cgl.ui.widgets.widgets import AdvComboBox
 
 DEFAULT_SHADER = 'aiStandardSurface'  # TODO - add this in the globals.
-DEFAULT_EXT = 'tx'
+DEFAULT_EXT = 'tx'  # TODO - add this in the globals
 SHADER_CONFIG = shader_config()['shaders']
 ROOT = app_config()['paths']['root']
 
@@ -28,7 +28,7 @@ class Task(SmartTask):
 
     def _import(self, ref_node):
         """
-        Main Parent Function for importing textures.  In a Production Alchemy Context importing textures consists of a
+        Main Parent Function for importing textures.  In our context importing textures consists of a
         full usable series of events that leads to a useable baseline of textures.  In this instance that would be:
         1) Create A Shader for the Material Group
         2) Import and connect relevant textures to material group
@@ -36,141 +36,51 @@ class Task(SmartTask):
         :param filepath:
         :return:
         """
-        filepath = str(ref_node)
-        name_space = ref_node.namespace
-        tex_root = get_latest_tex_publish_from_filepath(filepath)
-        shading_dict = get_shading_dict(tex_root)  # these should be made at texture publish time.
-        for mtl_group in shading_dict:
-            shader = create_and_attach_shader(mtl_group, name_space=name_space)
-            import_and_connect_textures(shader, shading_dict=shading_dict)
+        main_import(ref_node)
 
     def import_latest(self, ref_node):
         self._import(ref_node)
 
 
-def tag_shaders():
-    this_file = pm.sceneName()
-    pub_version = PathParser().get_next_version_number(this_file, pub=True)
-    pub_location = PathParser().copy_path(this_file, user='publish', version=pub_version)
-    sg_list = pm.ls(type='shadingEngine')
-    for sg in sg_list:
-        shaderobjects = []
-        attached = pm.sets(sg, query=1)
-        if attached:
-            for mesh in attached:
-                shaderobjects.append(mesh.getParent())
-            stamp_attr(sg, 'assigned_to', shaderobjects)
-            stamp_attr(sg, 'published_at', pub_location)
+"""
+Files Required to make the textures pipeline work.
+
+config_/shaders.json - 
+    this is a config file containing shader settings for specific shaders, this allows us
+    to be software agnostic with our shader assembly.
+    
+get_shading_dict() - this gives us a dictionary to work with that makes it easy to process textures. Eventually this 
+will likely become a file that is published with a texture publish.  
+
+Basic order for these functions:
+
+1) get_latest_tex_publish_from_filepath() - gets the latest published textures file based off a filepath
+2) get_shading_dict() - gets a dictionary describing the published textures that we use later.
+3) create_and_attach_shader() creates a shader and attaches it to the mtl_group of an asset
+4) import_and_connect_textures() creates all texture nodes, and connects them to the proper slot, with the proper 
+    Settings on the mtl_group shader. 
+
+"""
 
 
-def stamp_attr(node, attr, value_):
-    check = pm.attributeQuery(attr, n=node, ex=True)
-    attrname = '%s.%s' % (node, attr)
-    try:
-        if check:
-            if isinstance(value_, list):
-                pm.setAttr(attrname, l=False)
-                pm.setAttr(attrname, value_, type='stringArray')
-                pm.setAttr(attrname, l=True)
-            else:
-                pm.setAttr(attrname, l=False)
-                pm.setAttr(attrname, value_, type='string')
-                pm.setAttr(attrname, l=True)
-        else:
-            if isinstance(value_, list):
-                pm.addAttr(node, ln=attr, dt='stringArray')
-                pm.setAttr(attrname, value_)
-                pm.setAttr(attrname, l=True)
-            else:
-                pm.addAttr(node, ln=attr, dt='string')
-                pm.setAttr(attrname, value_)
-                pm.setAttr(attrname, l=True)
-    except RuntimeError:
-        print('%s is from a referenced shader %s' % (attr, node))
-
-
-def tag_attr(obj, attr, value, type_='bool', is_ref=True):
-    if is_ref:
-        top_node = obj.nodes()[0]
-    else:
-        top_node = obj
-    types = ['string', 'stringArray']
-    if not pm.hasAttr(top_node, attr):
-        if type_ in types:
-            pm.addAttr(top_node, ln=attr, dt=type_)
-        else:
-            pm.addAttr(top_node, ln=attr, at=type_)
-    pm.setAttr('%s.%s' % (top_node.name(), attr), value)
-    return top_node.attr(attr)
-
-
-def assign_texture_to_shader(tex_path, shader, attr, channel=False, normal=False, color_space=None, shader_attrs=None):
+def main_import(ref_node):
     """
-    connects a texture to a shader and is smart about various kinds of textures
-    :param tex_path:
-    :param shader:
-    :param attr:
-    :param channel:
-    :param normal:
-    :param color_space:
-    :param shader_attrs:
+    Main Parent Function for importing textures.  In a Production Alchemy Context importing textures consists of a
+    full usable series of events that leads to a useable baseline of textures.  In this instance that would be:
+    1) Create A Shader for the Material Group
+    2) Import and connect relevant textures to material group
+    3) Set any default values based off our shader dictionaries.
+    :param ref_node: takes a reference node from maya
     :return:
     """
+    filepath = str(ref_node)
+    name_space = ref_node.namespace
+    tex_root = get_latest_tex_publish_from_filepath(filepath)
+    shading_dict = get_shading_dict(tex_root)  # these should be made at texture publish time.
+    for mtl_group in shading_dict:
 
-    # print('\tAttaching texture {} to shader {} at attr {}'.format(tex_path, shader, attr))
-    tex_path = r'%s' % tex_path
-    file_node = pm.shadingNode('file', asTexture=True, isColorManaged=True)
-    place_tex = pm.shadingNode('place2dTexture', asUtility=True)
-    pm.connectAttr(place_tex.coverage, file_node.coverage, force=True)
-    pm.connectAttr(place_tex.translateFrame, file_node.translateFrame, force=True)
-    pm.connectAttr(place_tex.rotateFrame, file_node.rotateFrame, force=True)
-    pm.connectAttr(place_tex.mirrorV, file_node.mirrorV, force=True)
-    pm.connectAttr(place_tex.stagger, file_node.stagger, force=True)
-    pm.connectAttr(place_tex.wrapU, file_node.wrapU, force=True)
-    pm.connectAttr(place_tex.wrapV, file_node.wrapV, force=True)
-    pm.connectAttr(place_tex.repeatUV, file_node.repeatUV, force=True)
-    pm.connectAttr(place_tex.offset, file_node.offset, force=True)
-    pm.connectAttr(place_tex.rotateUV, file_node.rotateUV, force=True)
-    pm.connectAttr(place_tex.noiseUV, file_node.noiseUV, force=True)
-    pm.connectAttr(place_tex.vertexUvOne, file_node.vertexUvOne, force=True)
-    pm.connectAttr(place_tex.vertexUvTwo, file_node.vertexUvTwo, force=True)
-    pm.connectAttr(place_tex.vertexUvThree, file_node.vertexUvThree, force=True)
-    pm.connectAttr(place_tex.vertexCameraOne, file_node.vertexCameraOne, force=True)
-    pm.connectAttr(place_tex.outUV, file_node.uv)
-    pm.connectAttr(place_tex.outUvFilterSize, file_node.uvFilterSize)
-    # pm.defaultNavigation -force true -connectToExisting -source file_node -destination shd.outColor)
-    #  window -e -vis false createRenderNodeWindow)
-    if not normal:
-        if not channel:
-            pm.connectAttr(file_node.outColor, '%s.%s' % (shader, attr), force=True)
-        elif channel == 'r':
-            # TODO - fix single channel .txmake stuff - it errors out with the current settings.
-            tex_path = tex_path.replace('.tx', '.exr')
-            pm.connectAttr(file_node.outColor.outColorR, '%s.%s' % (shader, attr), force=True)
-        elif channel == 'g':
-            pm.connectAttr(file_node.outColor.outColorG, '%s.%s' % (shader, attr), force=True)
-        elif channel == 'b':
-            pm.connectAttr(file_node.outColor.outColorB, '%s.%s' % (shader, attr), force=True)
-    else:
-        bump_node = pm.shadingNode('bump2d', asUtility=True)
-        pm.setAttr('%s.alphaIsLuminance' % file_node, True)
-        pm.connectAttr(file_node.outAlpha, '%s.bumpValue' % bump_node)
-        pm.connectAttr('%s.outNormal' % bump_node, '%s.normalCamera' % shader)
-        pm.setAttr('%s.aiFlipR' % bump_node, 0)
-        pm.setAttr('%s.aiFlipG' % bump_node, 0)
-        pm.setAttr('%s.bumpInterp' % bump_node, 1)
-        #
-        if shader_attrs:
-            shader = bump_node
-
-    pm.setAttr(file_node.fileTextureName, tex_path)
-    if shader_attrs:
-        for each in shader_attrs:
-            attr = '%s.%s' % (shader, each)
-            value = shader_attrs[each]
-            pm.setAttr(attr, value)
-    if color_space:
-        pm.setAttr(file_node.colorSpace, color_space)
+        shader = create_and_attach_shader(mtl_group, name_space=name_space)
+        import_and_connect_textures(shader, shading_dict=shading_dict)
 
 
 def get_latest_tex_publish_from_filepath(filepath):
@@ -183,26 +93,6 @@ def get_latest_tex_publish_from_filepath(filepath):
     path_object = LumberObject(filepath).copy(task='tex', context='render', user='publish',
                                               latest=True, resolution='high')
     return os.path.dirname(path_object.path_root)
-
-
-def import_textures(ref_node):
-    """
-    Main Parent Function for importing textures.  In a Production Alchemy Context importing textures consists of a
-    full usable series of events that leads to a useable baseline of textures.  In this instance that would be:
-    1) Create A Shader for the Material Group
-    2) Import and connect relevant textures to material group
-    3) Set any default values based off our shader dictionaries.
-    :param filepath:
-    :return:
-    """
-    filepath = str(ref_node)
-    name_space = ref_node.namespace
-    tex_root = get_latest_tex_publish_from_filepath(filepath)
-    shading_dict = get_shading_dict(tex_root)  # these should be made at texture publish time.
-    for mtl_group in shading_dict:
-
-        shader = create_and_attach_shader(mtl_group, name_space=name_space)
-        import_and_connect_textures(shader, shading_dict=shading_dict)
 
 
 def get_shading_dict(tex_root):
@@ -285,15 +175,15 @@ def get_attr_dict_for_tex_channel(tex_channel, shader=DEFAULT_SHADER):
     """
     queries the current texture channel against our shader dictionaries, returns the proper channel
     to plug the texture into.
+    :param tex_channel:
     :param shader:
-    :param parameter:
     :return:
     """
     # TODO - this would be the place to allow for people to add to the dictionary.
     for parameter in SHADER_CONFIG[shader]['parameters']:
         if tex_channel in SHADER_CONFIG[shader]['parameters'][parameter]['name_match']:
             return SHADER_CONFIG[shader]['parameters'][parameter]
-    print("\tNo match found for {}".format(tex_channel))
+    print("\tshading.json - No shading config match found for texture channel: {}".format(tex_channel))
     return None
 
 
@@ -339,4 +229,74 @@ def import_and_connect_textures(shader_node, shading_dict, mtl_group=None,
                     color_space = None
                 assign_texture_to_shader(full_path, shader_node, attr_, channel=channel,
                                          normal=normal, color_space=color_space, shader_attrs=shader_attrs)
+
+
+def assign_texture_to_shader(tex_path, shader, attr, channel=False, normal=False, color_space=None, shader_attrs=None):
+    """
+    Creates texture nodes and connects them to shaders.  Works with the Shader.json config file to understand
+    what to do with various types of shaders.
+    :param tex_path:
+    :param shader:
+    :param attr:
+    :param channel:
+    :param normal:
+    :param color_space:
+    :param shader_attrs:
+    :return:
+    """
+
+    # print('\tAttaching texture {} to shader {} at attr {}'.format(tex_path, shader, attr))
+    tex_path = r'%s' % tex_path
+    file_node = pm.shadingNode('file', asTexture=True, isColorManaged=True)
+    place_tex = pm.shadingNode('place2dTexture', asUtility=True)
+    pm.connectAttr(place_tex.coverage, file_node.coverage, force=True)
+    pm.connectAttr(place_tex.translateFrame, file_node.translateFrame, force=True)
+    pm.connectAttr(place_tex.rotateFrame, file_node.rotateFrame, force=True)
+    pm.connectAttr(place_tex.mirrorV, file_node.mirrorV, force=True)
+    pm.connectAttr(place_tex.stagger, file_node.stagger, force=True)
+    pm.connectAttr(place_tex.wrapU, file_node.wrapU, force=True)
+    pm.connectAttr(place_tex.wrapV, file_node.wrapV, force=True)
+    pm.connectAttr(place_tex.repeatUV, file_node.repeatUV, force=True)
+    pm.connectAttr(place_tex.offset, file_node.offset, force=True)
+    pm.connectAttr(place_tex.rotateUV, file_node.rotateUV, force=True)
+    pm.connectAttr(place_tex.noiseUV, file_node.noiseUV, force=True)
+    pm.connectAttr(place_tex.vertexUvOne, file_node.vertexUvOne, force=True)
+    pm.connectAttr(place_tex.vertexUvTwo, file_node.vertexUvTwo, force=True)
+    pm.connectAttr(place_tex.vertexUvThree, file_node.vertexUvThree, force=True)
+    pm.connectAttr(place_tex.vertexCameraOne, file_node.vertexCameraOne, force=True)
+    pm.connectAttr(place_tex.outUV, file_node.uv)
+    pm.connectAttr(place_tex.outUvFilterSize, file_node.uvFilterSize)
+    # pm.defaultNavigation -force true -connectToExisting -source file_node -destination shd.outColor)
+    #  window -e -vis false createRenderNodeWindow)
+    if not normal:
+        if not channel:
+            pm.connectAttr(file_node.outColor, '%s.%s' % (shader, attr), force=True)
+        elif channel == 'r':
+            # TODO - fix single channel .txmake stuff - it errors out with the current settings.
+            tex_path = tex_path.replace('.tx', '.exr')
+            pm.connectAttr(file_node.outColor.outColorR, '%s.%s' % (shader, attr), force=True)
+        elif channel == 'g':
+            pm.connectAttr(file_node.outColor.outColorG, '%s.%s' % (shader, attr), force=True)
+        elif channel == 'b':
+            pm.connectAttr(file_node.outColor.outColorB, '%s.%s' % (shader, attr), force=True)
+    else:
+        bump_node = pm.shadingNode('bump2d', asUtility=True)
+        pm.setAttr('%s.alphaIsLuminance' % file_node, True)
+        pm.connectAttr(file_node.outAlpha, '%s.bumpValue' % bump_node)
+        pm.connectAttr('%s.outNormal' % bump_node, '%s.normalCamera' % shader)
+        pm.setAttr('%s.aiFlipR' % bump_node, 0)
+        pm.setAttr('%s.aiFlipG' % bump_node, 0)
+        pm.setAttr('%s.bumpInterp' % bump_node, 1)
+        #
+        if shader_attrs:
+            shader = bump_node
+
+    pm.setAttr(file_node.fileTextureName, tex_path)
+    if shader_attrs:
+        for each in shader_attrs:
+            attr = '%s.%s' % (shader, each)
+            value = shader_attrs[each]
+            pm.setAttr(attr, value)
+    if color_space:
+        pm.setAttr(file_node.colorSpace, color_space)
 
