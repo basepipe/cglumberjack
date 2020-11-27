@@ -59,6 +59,10 @@ Basic order for these functions:
 3) create_and_attach_shader() creates a shader and attaches it to the mtl_group of an asset
 4) import_and_connect_textures() creates all texture nodes, and connects them to the proper slot, with the proper 
     Settings on the mtl_group shader. 
+    
+main_import() - this is a convenience function - it makes testing in the application incredibly easy because
+you can just reload tex.py in the app rather than all the other dependencies.   This isn't necessary but it's easier 
+for writing/testing code than to include the coe in TaskObject()._import()
 
 """
 
