@@ -10,7 +10,7 @@ from cgl.core.config import shader_config, app_config
 from cgl.ui.widgets.widgets import AdvComboBox
 
 DEFAULT_SHADER = 'aiStandardSurface'  # TODO - add this in the globals.
-DEFAULT_EXT = 'tx'
+DEFAULT_EXT = 'tx'  # TODO - add this in the globals
 SHADER_CONFIG = shader_config()['shaders']
 ROOT = app_config()['paths']['root']
 
@@ -21,10 +21,6 @@ class Task(SmartTask):
         if not path_object:
             from cgl.plugins.maya.lumbermill import scene_object
             self.path_object = scene_object()
-
-    def build(self):
-        print('No Build Script defined for textures, this would belong in Substance Painter most likely')
-        pass
 
     def _import(self, ref_node):
         """

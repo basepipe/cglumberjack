@@ -255,5 +255,89 @@ def get_maya_window():
     return main_maya_window
 
 
+def update_reference(reference):
+    path = reference[1].path
+    filename = os.path.basename(path)
+    latest_version = PathParser().get_latest_version_number(path, pub=True, return_path=True)
+    lv_filename = os.path.basename(latest_version)
+    latest_version = latest_version.replace(lv_filename, filename)
+    path = path.replace('\\', '/')
+    latest_version = latest_version.replace('\\', '/')
+    print('Comparing Reference: \n\t%s to \n\t%s' % (path, latest_version))
+    if path != latest_version:
+        print('REPLACING REFERENCE: %s ---- %s' % (reference[0], latest_version))
+        try:
+            reference[1].replaceWith(latest_version)
+            return 1
+        except RuntimeError:
+            return 0
+            print('cannot load latest version %s ' % latest_version)
+    else:
+        return 0
+
+
+def update_all_references():
+    refs = pm.listReferences(refNodes=True)
+    total_count = 0
+    for ref in refs:
+        updated = update_reference(ref)
+        total_count += updated
+    print('{} References updated'.format(total_count))
+    return total_count
+
+
+def get_selected_reference():
+    """
+    Returns a list of references representing the currently selected items.
+    :return:
+    """
+    ns = None
+    references = pm.listReferences(refNodes=True)
+    selected = pm.ls(sl=True)
+    if selected:
+        reference_nodes = []
+        for s in selected:
+            if ':' in s:
+                ns = s.split(':')[0]
+                for r in references:
+                    namespace_ = str(r[0].replace('RN', ''))
+                    if ns == namespace_:
+                        reference_nodes.append(r)
+        if not reference_nodes:
+            print("Could not find Namespace %s in references.  It's not in the scene, or there's a namespace error" % ns)
+        return reference_nodes
+    else:
+        print('No Reference Selected, Select a Reference and Try again')
+        return None
+
+
+def get_bundles():
+    """
+    retrieves all "bundles" in a scene
+    :return: list of bundles
+    """
+
+    bundles = []
+    sel = pm.ls(type='transform')
+    for obj in sel:
+        if obj.hasAttr('BundlePath'):
+            bundles.append(obj)
+    return bundles
+
+
+def remove_selected_bundle():
+    bndl = pm.ls(sl=True)[0]
+    if bndl:
+        if pm.attributeQuery('BundlePath', node=bndl, exists=True):
+            # return the children of the bundle node
+            for each in pm.listRelatives(bndl, children=True):
+                ref = pm.referenceQuery(each, rfn=True)
+                pm.FileReference(ref).remove()
+            pm.delete(bndl)
+        else:
+            print('ERROR: no BundlePath attr found')
+    else:
+        print('ERROR: Nothing Selected')
+
 
 

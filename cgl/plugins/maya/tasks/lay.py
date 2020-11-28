@@ -14,9 +14,6 @@ class Task(SmartTask):
         if not path_object:
             self.path_object = scene_object()
 
-    def build(self):
-        pass
-
     def _import(self, filepath):
         """
         imports a bundle file
@@ -24,7 +21,7 @@ class Task(SmartTask):
         :param layout_group:
         :return:
         """
-        layout_import(filepath)
+        main_import(filepath)
 
     def import_latest(self, seq, shot):
         """
@@ -46,7 +43,7 @@ class Task(SmartTask):
             print('Could not glob layout path at {}'.format(layout_obj.path))
 
 
-def layout_import(filepath):
+def main_import(filepath):
     """
 
     :param filepath:

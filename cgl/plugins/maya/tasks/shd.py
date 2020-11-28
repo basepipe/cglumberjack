@@ -2,6 +2,7 @@ from .smart_task import SmartTask
 from cgl.ui.widgets.dialog import InputDialog
 import pymel.core as pm
 from cgl.plugins.maya.utils import load_plugin
+import cgl.plugins.maya.lumbermill as lm
 
 
 class Task(SmartTask):

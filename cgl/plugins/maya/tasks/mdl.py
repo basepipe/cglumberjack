@@ -14,6 +14,7 @@ class Task(SmartTask):
         task = 'mdl'
         pm.select(cl=True)
         if pm.objExists(task):
+            print('mdl already exists')
             pass
         else:
             create_material_groups()

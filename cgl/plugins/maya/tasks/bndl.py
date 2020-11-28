@@ -13,9 +13,7 @@ class Task(SmartTask):
     def __init__(self, path_object=None):
         if not path_object:
             self.path_object = scene_object()
-
-    def build(self):
-        pass
+        print('Bndl, {}'.format(self.path_object))
 
     def _import(self, filepath, layout_group=None):
         """
@@ -46,6 +44,24 @@ class Task(SmartTask):
             bundle_import(filepath=bundle_path)
         else:
             print('Could not glob bundle path at {}'.format(bundle_obj.path))
+
+
+def get_latest_publish(filepath, task='bndl', ext='.json'):
+    """
+    gets the latest published version of the path_object.
+    :return:
+    """
+    bundle_path = None
+    bndl_obj = LumberObject(filepath).copy(task=task, context='render',
+                                           user='publish', latest=True, filename='*', ext=None)
+    for each in glob.glob(bndl_obj.path_root):
+        if ext in each:
+            bundle_path = each
+    if bundle_path:
+        return bundle_path
+    else:
+        print('Could not glob bundle path at {}'.format(bundle_obj.path))
+        return None
 
 
 def bundle_import(filepath, layout_group=None):

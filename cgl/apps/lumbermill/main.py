@@ -779,7 +779,7 @@ class CGLumberjack(LJMainWindow):
         open_default_files = QtWidgets.QAction("Go to Default Files", self)
         create_project = QtWidgets.QAction('Import .csv', self)
         settings.setShortcut('Ctrl+,')
-        pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
+        pipeline_designer = QtWidgets.QAction('Production Cookbook', self)
         set_up_sync_thing_server = QtWidgets.QAction('Set up Server', self)
         set_up_sync_thing_workstation = QtWidgets.QAction('Set Up Workstation', self)
         # check_machines_action = QtWidgets.QAction('Check for new Machines', self)
