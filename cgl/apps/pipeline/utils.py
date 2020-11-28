@@ -9,6 +9,8 @@ from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.path import start, icon_path, get_cgl_resources_path
 from cgl.core.project import get_cgl_tools
 from cgl.ui.widgets.text import Highlighter
+from cgl.ui.widgets.widgets import AdvComboBox
+
 
 
 GUI_DICT = {'shelves.yaml': ['button name', 'command', 'icon', 'order', 'annotation', 'label'],
@@ -116,6 +118,8 @@ class CGLMenuButton(QtWidgets.QWidget):
         delete_button.setProperty('class', 'basic')
         open_button = QtWidgets.QPushButton('Open in Editor')
         open_button.setProperty('class', 'basic')
+        copy_button = QtWidgets.QPushButton('Copy Test Code'.format(self.software))
+        copy_button.setProperty('class', 'basic')
         self.save_button = QtWidgets.QPushButton('Save')
         self.save_button.setProperty('class', 'basic')
 
@@ -153,6 +157,7 @@ class CGLMenuButton(QtWidgets.QWidget):
 
         # Layout the tool row
         tool_row.addStretch(1)
+        tool_row.addWidget(copy_button)
         tool_row.addWidget(open_button)
         tool_row.addWidget(delete_button)
         tool_row.addWidget(self.save_button)
@@ -167,11 +172,25 @@ class CGLMenuButton(QtWidgets.QWidget):
         icon_button.clicked.connect(self.on_icon_button_clicked)
         delete_button.clicked.connect(self.on_delete_clicked)
         open_button.clicked.connect(self.on_open_clicked)
+        copy_button.clicked.connect(self.on_copy_button_clicked)
         self.save_button.clicked.connect(self.on_menu_button_save_clicked)
         self.load_attrs()
         self.label_line_edit.textChanged.connect(self.on_code_changed)
         self.dirty = False
         self.save_button.hide()
+
+    def on_copy_button_clicked(self):
+        import pyperclip
+
+        name = self.name
+        text = 'import cgl_tools.{}.preflights.{}.{} as {}\nreload({})\n\n{}.{}().run()'.format(self.software,
+                                                                                                self.preflight_name,
+                                                                                                name,
+                                                                                                name,
+                                                                                                name,
+                                                                                                name,
+                                                                                                name)
+        pyperclip.copy(text)
 
     def on_icon_button_clicked(self):
         default_folder = os.path.join(get_cgl_tools(), self.software, self.menu_type, self.preflight_name)
@@ -197,6 +216,7 @@ class CGLMenuButton(QtWidgets.QWidget):
             return
         else:
             button_name = self.name
+            print(self.menu)
             menu_name = self.menu.menu_name
             menu_type = self.menu.menu_type
             button_file = get_button_path(software=self.software, menu_name=menu_name, button_name=button_name,
@@ -253,8 +273,6 @@ class CGLMenuButton(QtWidgets.QWidget):
         if self.software.lower() != 'unreal':
             if not self.reference_path:
                 code_path = get_button_path(self.software, self.preflight_name, self.name, menu_type=self.menu_type)
-                print(1)
-                print(code_path)
             else:
                 code_path = self.reference_path
                 print('loading code from reference {}'.format(self.reference_path))
@@ -412,17 +430,17 @@ class CGLMenu(QtWidgets.QWidget):
         # dialog = InputDialog(title=title_, message=message,
         #                      line_edit=True, regex='^([aA-zZ ]+)+$',
         #                      name_example='Name may only contain letters and spaces')
-        dialog = NewButtonDialog(software=self.software, menu_type=self.menu_type)
+        dialog = NewButtonDialog(software=self.software, menu_type=self.menu_type, menu_name=self.menu_name)
         dialog.exec_()
         if dialog.button == 'Ok':
             text_ = stringcase.snakecase(dialog.button_name_line_edit.text().lower())
             button_name = stringcase.pascalcase(text_)
             label = stringcase.titlecase(text_)
-            if dialog.cgl_button_type == 'New Button':
+            if dialog.cgl_button_type == 'New':
                 command = self.get_command_text(button_name=button_name, menu_type=self.menu_type)
                 module = self.default_preflight_text(button_name)
                 module_path = None
-            elif dialog.cgl_button_type == 'Referenced Button':
+            elif dialog.cgl_button_type == 'Referenced':
                 command = dialog.command
                 module = dialog.module
                 module_path = dialog.button_path
@@ -446,7 +464,7 @@ class CGLMenu(QtWidgets.QWidget):
                          'reference_path': module_path}
 
             self.new_button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name=self.menu_name,
-                                                   preflight_step_name=button_name,
+                                                   preflight_step_name=button_name, menu=self,
                                                    attrs=attrs, preflight_path=self.menu_path, menu_type=self.menu_type,
                                                    reference_path=module_path)
             if 'icon' in attrs.keys():
@@ -626,7 +644,7 @@ def make_init(folder):
 
 
 class NewButtonDialog(LJDialog):
-    def __init__(self, parent=None, software=None, menu_type=None):
+    def __init__(self, parent=None, software=None, menu_type=None, menu_name=None):
         LJDialog.__init__(self, parent)
         self.software = software
         self.cgl_button_type = 'New Button'
@@ -640,64 +658,117 @@ class NewButtonDialog(LJDialog):
         self.reference_button_label.setProperty('class', 'title')
         self.reference_button_label.hide()
         combo_label = QtWidgets.QLabel("Button Type: ")
+        self.reference_combo_label = QtWidgets.QLabel('Reference :')
         self.button_type = QtWidgets.QComboBox()
+        self.reference_buttons = AdvComboBox()
+        self.menu_name = menu_name
         self.menu_types = ['menus', 'context-menus', 'shelves', 'preflights']
-
-        self.button_type.addItems(['New Button', 'Referenced Button'])
-        self.new_button_message = QtWidgets.QLabel()
+        self.menu_directory = os.path.join(get_cgl_tools(), self.software, self.menu_type)
+        self.button_type.addItems(['New', 'Referenced'])
+        self.new_button_label = QtWidgets.QLabel()
         self.button_name_line_edit = QtWidgets.QLineEdit()
         self.ok_button = QtWidgets.QPushButton('Ok')
         self.cancel_button = QtWidgets.QPushButton('Cancel')
         self.button = 'Cancel'
 
-        type_row = QtWidgets.QHBoxLayout()
-        type_row.addWidget(combo_label)
-        type_row.addWidget(self.button_type)
-        type_row.addStretch(0)
+        grid = QtWidgets.QGridLayout()
+
+        grid.addWidget(combo_label, 0, 0)
+        grid.addWidget(self.button_type, 0, 1)
+        grid.addWidget(self.reference_combo_label, 1, 0)
+        grid.addWidget(self.reference_buttons, 1, 1)
+        grid.addWidget(self.new_button_label, 2, 0)
+        grid.addWidget(self.button_name_line_edit, 2, 1)
 
         button_row = QtWidgets.QHBoxLayout()
         button_row.addStretch(1)
         button_row.addWidget(self.cancel_button)
         button_row.addWidget(self.ok_button)
 
-        layout.addLayout(type_row)
-        layout.addWidget(self.reference_button_label)
-        layout.addWidget(self.new_button_message)
-        layout.addWidget(self.button_name_line_edit)
+        layout.addLayout(grid)
         layout.addLayout(button_row)
+
+        self.reference_buttons.hide()
+        self.reference_combo_label.hide()
 
         self.ok_button.clicked.connect(self.on_ok_clicked)
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.button_type.currentIndexChanged.connect(self.on_type_changed)
+        self.reference_buttons.currentTextChanged.connect(self.on_reference_button_selected)
         self.on_type_changed()
+        self.load_buttons_for_reference()
+
+    def load_buttons_for_reference(self):
+        """
+        loads all available buttons into the adv combo box.
+        :return:
+        """
+        self.reference_buttons.clear()
+        self.reference_buttons.addItem('')
+        print('loading buttons from {}'.format(self.menu_directory))
+        for root, dirs, files in os.walk(self.menu_directory):
+            for name in files:
+                if self.menu_name not in root:
+                    if name.endswith('.py'):
+                        if '__init__' not in name:
+                            button_name = '{}/{}'.format(os.path.basename(root), name)
+                            self.reference_buttons.addItem(button_name)
+
+    def on_reference_button_selected(self):
+        """
+
+        :return:
+        """
+        button_text = self.reference_buttons.currentText()
+        if '.py' in button_text:
+            menu, button = os.path.split(button_text)
+            button_name = button.replace('.py', '')
+            full_button_path = os.path.join(self.menu_directory, menu, button)
+            splitted = full_button_path.split('_config')[-1].split('\\')
+            if splitted[0] == '':
+                splitted.pop(0)
+            module = '.'.join(splitted).replace('.py', '')
+            command = 'import {} as {}; {}.run()'.format(module, button_name, button_name)
+            self.button_path = full_button_path
+            self.module = module
+            self.command = command
+            self.button_name_line_edit.setText(button_name)
+            print(self.button_path)
+            print(self.module)
+            print(self.command)
 
     def on_type_changed(self):
         """
         when the type changes, change the text
         :return:
         """
-        self.new_button_message.setText('Type a Name for your {}'.format(self.button_type.currentText()))
+        self.new_button_label.setText('Button Name'.format(self.button_type.currentText()))
         self.cgl_button_type = self.button_type.currentText()
-        if self.cgl_button_type == 'Referenced Button':
-            dialog = QtWidgets.QFileDialog()
-            dialog.title = 'Choose a Button To Reference'
-            dialog.setDirectory(os.path.join(get_cgl_tools(), self.software, self.menu_type))
-            if dialog.exec_():
-                file_names = dialog.selectedFiles()
-                if file_names:
-                    button_path = file_names[0]
-                    splitted = button_path.split('_config')[-1].split('/')
-                    if splitted[0] == '':
-                        splitted.pop(0)
-                    filename = splitted[-1].replace('.py', '')
-                    module = '.'.join(splitted).replace('.py', '')
-                    from_label = "Referencing: {}".format(module)
-                    command = 'import {} as {}; {}.run()'.format(module, filename, filename)
-                    self.reference_button_label.setText(from_label)
-                    self.reference_button_label.show()
-                    self.button_path = button_path
-                    self.module = module
-                    self.command = command
+        if self.cgl_button_type == 'Referenced':
+            self.reference_buttons.show()
+            self.reference_combo_label.show()
+            # dialog = QtWidgets.QFileDialog()
+            # dialog.title = 'Choose a Button To Reference'
+            # dialog.setDirectory(os.path.join(get_cgl_tools(), self.software, self.menu_type))
+            # if dialog.exec_():
+            #     file_names = dialog.selectedFiles()
+            #     if file_names:
+            #         button_path = file_names[0]
+            #         splitted = button_path.split('_config')[-1].split('/')
+            #         if splitted[0] == '':
+            #             splitted.pop(0)
+            #         filename = splitted[-1].replace('.py', '')
+            #         module = '.'.join(splitted).replace('.py', '')
+            #         from_label = "Referencing: {}".format(module)
+            #         command = 'import {} as {}; {}.run()'.format(module, filename, filename)
+            #         self.reference_button_label.setText(from_label)
+            #         self.reference_button_label.show()
+            #         self.button_path = button_path
+            #         self.module = module
+            #         self.command = command
+        else:
+            self.reference_buttons.hide()
+            self.reference_combo_label.hide()
 
     def on_ok_clicked(self):
         self.button = 'Ok'

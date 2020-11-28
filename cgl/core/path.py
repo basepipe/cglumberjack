@@ -957,21 +957,6 @@ class PathObject(object):
         cgl_copy(current_render, publish_render)
         logging.debug('--------- Finished Publishing')
         return publish_render_object
-        # if UserConfig().d["sync_thing_machine_type"] == 'remote workstation':
-        #     from cgl.ui.widgets.sync_master import SharingDialog
-        #     dialog_sharing = SharingDialog([publish, publish_render_object])
-        #     dialog_sharing.exec_()
-        #     if dialog_sharing.button == 'Ok':
-        #         all_device_id = dialog_sharing.device_list
-        #         logging.debug('Sharing Folders to: %s' % all_device_id)
-        #         logging.debug(publish.path_root)
-        #         logging.debug(publish_render_object.path_root)
-        #         return publish_render_object
-        #     else:
-        #         logging.debug('skipping remote publish')
-        #         return publish_render_object
-        # else:
-
 
     def show_in_folder(self):
         """

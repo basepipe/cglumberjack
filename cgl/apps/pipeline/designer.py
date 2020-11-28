@@ -18,7 +18,7 @@ class Designer(LJDialog):
 
         self.menu_path = menu_path
         self.software = ''
-        self.setWindowTitle('Pipeline Designer')
+        self.setWindowTitle("Production Cookbook")
         self.schema = pm_tasks
         self.task_list = []
         try:

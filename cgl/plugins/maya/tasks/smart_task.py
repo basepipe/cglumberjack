@@ -5,6 +5,7 @@ class SmartTask(object):
     This is a template for a "task" within the pipeline.  It covers common areas when dealing with digital assets
     specific to different tasks.
     """
+    path_object = None
 
     def __init__(self, path_object=None):
         """
@@ -19,7 +20,6 @@ class SmartTask(object):
         if not isinstance(path_object, LumberObject):
             print("{} is not instance LumberObject")
             return
-        print(path_object.path_root)
         # check if it's a PathObject instance
 
     def build(self):
@@ -27,7 +27,16 @@ class SmartTask(object):
         the tasks code associated with this task.
         :return:
         """
-        pass
+        from cgl.ui.widgets.dialog import InputDialog
+        message = 'No build() Function Defined for Task() {}\n' \
+                  'Edit or add it in the Production Cookbook:\n\n' \
+                  'Software: maya\n' \
+                  'Menu Type: Smart Tasks\n' \
+                  'Task: {} or\n' \
+                  'Create new SmartTask: {}'.format(self.path_object.task,
+                                                    self.path_object.task, self.path_object.task)
+        dialog = InputDialog(title='build() function Not Found', message=message)
+        dialog.exec_()
 
     def _import(self, file_path, reference=False):
         """

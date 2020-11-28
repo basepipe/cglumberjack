@@ -22,10 +22,6 @@ class Task(SmartTask):
             from cgl.plugins.maya.lumbermill import scene_object
             self.path_object = scene_object()
 
-    def build(self):
-        print('No Build Script defined for textures, this would belong in Substance Painter most likely')
-        pass
-
     def _import(self, ref_node):
         """
         Main Parent Function for importing textures.  In our context importing textures consists of a

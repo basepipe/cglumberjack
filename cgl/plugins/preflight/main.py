@@ -8,6 +8,7 @@ from cgl.ui.startup import do_gui_init
 from cgl.ui.widgets.widgets import GifWidget
 from .preflight_check import PreflightCheck
 
+
 CONFIG = app_config()
 
 
@@ -93,9 +94,15 @@ class Preflight(QtWidgets.QWidget):
         self.software_dir = os.path.join(CONFIG['paths']['cgl_tools'], software)
         self.preflight_dir = os.path.join(self.software_dir, 'preflights')
         if self.preflight not in os.listdir(self.preflight_dir):
+            from cgl.ui.widgets.dialog import InputDialog
             print(self.preflight_dir, 'looking for :', self.preflight)
-            print('no {} preflight found, using default'.format(self.preflight))
-            self.preflight = 'default'
+            message = 'no {} preflight found, create one in the Production Cookbook:\n' \
+                      'Software: {}\n' \
+                      'Menu Type: Preflights\n' \
+                      'Create new Preflight: {}'.format(self.preflight, self.software, self.preflight)
+            dialog = InputDialog(title='Preflight Not Found', message=message)
+            dialog.exec_()
+            return
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.json_file = os.path.join(self.software_dir, 'preflights.cgl')
         self.modules = {}
