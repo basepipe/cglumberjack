@@ -122,15 +122,12 @@ def get_scene_name():
 
     return hou.hipFile.path()
 
-
-
 def scene_object():
     """
     returns LumberObject of curent scene
     :return:
     """
     return LumberObject(get_scene_name())
-
 
 def open_file(filepath):
     """
@@ -140,7 +137,6 @@ def open_file(filepath):
     """
     hou.hipFile.load(filepath)
     return filepath
-
 
 def import_file(filepath='', namespace=None):
     """
@@ -153,7 +149,6 @@ def import_file(filepath='', namespace=None):
         hou.hipFile.importFBX(filepath)
     elif filepath.endswith('hip') or filepath.endswith('hiplc'):
         hou.hipFile.merge(filepath)
-
 
 def import_alembic(filepath='', namespace=None):
     """
@@ -171,7 +166,6 @@ def import_alembic(filepath='', namespace=None):
     alembic.parm('alembicarchive').set(filepath)
     alembic.parm('buildHierarchy').pressButton()
 
-
 def reference_file(filepath='', namespace=None):
     """
     creates a "reference" of a file, this is a convenience function to be used in various software plugins
@@ -180,15 +174,18 @@ def reference_file(filepath='', namespace=None):
     :param filepath:
     :return:
     """
-    print(filepath)
+
 
     path_object = LumberObject(filepath)
-    objects = hou.node('obj')
 
-    geometry = objects.createNode('geo', path_object.asset)
-    fileParm = geometry.createNode('file')
-    fileParm.parm('file').set(filepath)
+    if filepath.endswith('fbx') or filepath.endswith('bgeo') or filepath.endswith('obj'):
+        objects = hou.node('obj')
+        geometry = objects.createNode('geo', path_object.asset)
+        fileParm = geometry.createNode('file')
+        fileParm.parm('file').set(filepath)
 
+    elif filepath.endswith('hip') or filepath.endswith('hiplc'):
+        hou.hipFile.merge(filepath)
 
 
 def save_file(filepath=''):
@@ -199,7 +196,6 @@ def save_file(filepath=''):
     """
     return hou.hipFile.save()
 
-
 def save_file_as(filepath):
     """
     save current file as
@@ -208,7 +204,6 @@ def save_file_as(filepath):
     """
     hou.hipFile.save(filepath)
     return filepath
-
 
 def version_up(vtype='minor'):
     """
@@ -237,8 +232,6 @@ def create_file_dirs(file_path):
     if not os.path.exists(dirname):
         os.makedirs(dirname)
 
-
-
 def current_user():
     """
     find the currently logged in user
@@ -254,8 +247,6 @@ def review():
     if glob.glob(playblast_seq.path_root.replace('####', '*')):
         print('exists - reviewing')
         do_review(progress_bar=None, path_object=playblast_seq)
-
-
 
 class BrowserWidget(CGLumberjackWidget):
     def __init__(self, parent=None, path=None,
@@ -280,14 +271,12 @@ class BrowserWidget(CGLumberjackWidget):
             reference_file(selection, namespace=None)
         self.parent().parent().accept()
 
-
 class AppMainWindow(CGLumberjack):
     def __init__(self, parent=None, path=None, user_info=None):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
         print('Application Path path is %s' % path)
         self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
         # self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
-
 
 def launch():
     import hou
@@ -296,7 +285,6 @@ def launch():
     main_window.setWindowTitle('Magic Browser : Houdini')
     main_window.resize(1100, 1400)
     main_window.show()
-
 
 def create_cam_constraint():
     if locals().get("hou_parent") is None:
@@ -366,7 +354,6 @@ def create_cam_constraint():
     if hasattr(hou_node, "syncNodeVersionIfNeeded"):
         hou_node.syncNodeVersionIfNeeded("18.5.351")
 
-
 def create_turntable(lenght=180):
     clean_turntable()
     selected_objects = hou.selectedNodes()
@@ -390,7 +377,6 @@ def create_turntable(lenght=180):
     camera = objs.createNode('cam', 'TurnTableCam')
     camera.parm('tz').set(10)
     camera.setPosition((5, 0))
-
 
 def create_turntable_around_object():
     import hou
@@ -431,9 +417,6 @@ def create_turntable_around_object():
     follow_path.setInput(1, object_to_constraint)
     follow_path.setGenericFlag(hou.nodeFlag.Audio, 1)
 
-
-
-
 def clean_turntable():
     import hou
     turntable_objects = ['turntable', 'turntable_guide','TurnTableCam','TurnTableNull']
@@ -442,6 +425,60 @@ def clean_turntable():
         node = hou.node('obj/{}'.format(obj))
         if node:
             node.destroy()
+
+
+def import_task(task=None, reference=False, **kwargs):
+    """
+    imports the latest version of the specified task into the scene.
+    :param task:
+    :param reference:
+    :return:
+    """
+    if not task:
+        task = scene_object().task
+    class_ = get_task_class(task)
+    print(class_)
+    if reference:
+        print(1)
+        return class_().import_latest(task=task, reference=reference, **kwargs)
+    else:
+        print(2)
+        return class_().import_latest(**kwargs)
+
+def get_task_class(task):
+    """
+    gets the class that relates to the specified task, if no task is specified the task for the current scene will
+    be used.
+    :param task:
+    :return:
+    """
+    import importlib
+    software = os.path.split(os.path.dirname(__file__))[-1]
+    module = 'cgl.plugins.{}.tasks.{}'.format(software, task)
+    module_name = task
+    try:
+        # python 2.7 method
+        loaded_module = __import__(module, globals(), locals(), module_name, -1)
+    except ValueError:
+        import importlib
+        # Python 3+
+        loaded_module = importlib.import_module(module, module_name)
+    class_ = getattr(loaded_module, 'Task')
+    return class_
+
+
+def build(path_object=None):
+    """
+    runs build command for the specified task.
+    :param task:
+    :return:
+    """
+    if not path_object:
+        path_object = scene_object()
+    task = path_object.task
+    task_class = get_task_class(task)
+    task_class(path_object).build()
+
 
 """"
 
