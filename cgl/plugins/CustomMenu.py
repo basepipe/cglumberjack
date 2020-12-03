@@ -23,17 +23,21 @@ class CustomMenu(object):
     """
 
     def __init__(self, software, type_):
+        print(1)
         self.path_object = None
         self.software = software
         self.type = type_
         self.scene_path = self.get_scene_path()
         self.menu_parent = self.set_menu_parent()
+        self.shelf_set_name = None
+        self.shelf_path = None
+        self.shelf_set = None
         self.set_path_object()
         if self.scene_path:
             self.path_object = PathObject(str(self.scene_path))
         else:
             print('No Valid Scene Path')
-        self.company_config = os.path.dirname(get_cgl_config())
+        self.company_config = os.path.dirname(get_cgl_tools())
         print('Company Config is: %s' % self.company_config)
         if not os.path.exists(self.company_config):
             print('Company Config %s: does no exist' % self.company_config)
@@ -114,8 +118,11 @@ class CustomMenu(object):
     def delete_menus(self):
         if self.menus:
             for menu in self.menus:
+                if isinstance(menu, dict):
+                    menu = menu['name']
                 print('deleting %s' % menu)
                 self.delete_menu(menu)
+        self.delete_after_menus()
 
     def delete_menu(self, menu_name):
         pass
@@ -124,8 +131,10 @@ class CustomMenu(object):
         menus = self.menus
         to_pop = []
         for menu in menus:
-            if menus[menu]['active'] == 0:
-                to_pop.append(menu)
+            print(menu['name'])
+
+            # if menus[menu]['active'] == 0:
+            #    to_pop.append(menu)
         for each in to_pop:
             menus.pop(each)
         if menus:
@@ -149,22 +158,22 @@ class CustomMenu(object):
 
     def add_menu_buttons(self, menu, buttons):
         for button in buttons:
-            label = self.menus[menu][button]['label']
-            if 'icon' in self.menus[menu][button].keys():
-                icon_file = self.menus[menu][button]['icon']
+            label = button['label']
+            if 'icon' in button.keys():
+                icon_file = button['icon']
                 if icon_file:
                     label = ''
             else:
                 icon_file = ''
 
-            if 'annotation' in self.menus[menu][button].keys():
-                annotation = self.menus[menu][button]['annotation']
+            if 'annotation' in button.keys():
+                annotation = button['annotation']
             else:
                 annotation = ''
             print(icon_file)
-            self.add_button(menu, label=self.menus[menu][button]['name'],
+            self.add_button(menu, label=button['name'],
                             annotation=annotation,
-                            command=self.menus[menu][button]['module'],
+                            command=button['module'],
                             icon=icon_file,
                             image_overlay_label=label)
 
@@ -174,25 +183,28 @@ class CustomMenu(object):
         :param test:
         :return:
         """
-        if test:
-            self.delete_menus()
+        # if test:
+        #     self.delete_menus()
         try:
             menus = self.remove_inactive_menus()
         except KeyError:
             menus = self.menus
             pass
 
-        software_menus = self.order_menus(menus)
+        software_menus = menus
         print('menus: %s', software_menus)
         for menu in software_menus:
+            menu_name = menu['name']
+            print('menu')
+            print('\t', menu_name)
             if test:
-                print('menu: ', menu)
-                print('buttons: ', self.order_buttons(menu))
+                print('menu: ', menu_name)
+                print('buttons:', menu['buttons'])
             else:
-                _menu = self.create_menu(menu)
-                self.menu_dict[menu] = _menu
-                buttons = self.order_buttons(menu)
-                self.add_menu_buttons(menu, buttons)
+                _menu = self.create_menu(menu_name)
+                self.menu_dict[menu_name] = _menu
+                buttons = menu['buttons']
+                self.add_menu_buttons(menu_name, buttons)
 
     # When Starting a new shelf, simply copy all of the functions below and fill them in with softwarespecific functions
     # See Nuke and Maya examples: plugins/nuke/custom_menu.py & plugins/maya/custom_menu.py
@@ -211,6 +223,9 @@ class CustomMenu(object):
 
     @staticmethod
     def find_menu_by_name(**kwargs):
+        pass
+
+    def delete_after_menus(self):
         pass
 
 

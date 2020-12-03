@@ -201,7 +201,9 @@ def do_review(progress_bar=None, path_object=None):
         return
     if selection.context == 'render':
         # If selection context is render submit the review
-
+        # this command pushes the quicktime to the project management service
+        # it also creates a dailies entry
+        # it also takes you to the dailies entry automatically so you can view it.
         selection.review()
     else:
         # if selection context is source prep for review

@@ -1,12 +1,19 @@
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 import os
+import requests
+import datetime
+import json
+import base64
 from cgl.core import lj_mail
-from cgl.core.config import app_config
+from cgl.core.config import app_config, get_globals, save_globals
 from cgl.ui.widgets.base import LJDialog
+from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.utils.general import current_user
 from cgl.core import screen_grab
+from cgl.core.utils.read_write import save_json
 import cgl.core.path as cglpath
 from cgl.ui.widgets.widgets import AdvComboBox, TagWidget
+
 try:
     from cgl.plugins.project_management.asana.basic import AsanaJack
 
@@ -15,7 +22,6 @@ except ModuleNotFoundError:
 
 CONFIG = app_config()
 PROJECT_MANAGEMENT = CONFIG['account_info']['project_management']
-
 
 class RequestFeatureDialog(LJDialog):
     def __init__(self, parent=None, title='Request Feature'):
@@ -594,14 +600,12 @@ class RequestFeatureDialog(LJDialog):
             rtf_links = self.rtf_bullet_list('Resources:', links)
         self.rtf_task_text = "<body>%s%s%s%s</body>" % (rtf_task_description, rtf_requirements, rtf_expected_results,
                                                         rtf_links)
-        print(self.rtf_task_text)
         self.text_edit.setAcceptRichText(True)
         self.text_edit.setText(self.rtf_task_text)
 
     def get_relevant_links(self):
         links = []
         for s in self.list_from_bullets(self.message_software):
-            print(s.lower())
             if s.lower() in self.reference_dict.keys():
                 for link_type in self.reference_dict[s.lower()]:
                     for link in self.reference_dict[s.lower()][link_type]:
@@ -731,6 +735,8 @@ class ReportBugDialog(LJDialog):
         self.label_email = QtWidgets.QLabel('Email')
         self.lineEdit_email = QtWidgets.QLineEdit()
         self.get_email()
+        self.asana_key = self.get_new_api_key()
+        self.authorization = "Bearer %s" % self.asana_key
 
         # define the software area
         self.label_messaging = QtWidgets.QLabel('*All fields must have valid values \nbefore submitting bug report')
@@ -776,13 +782,21 @@ class ReportBugDialog(LJDialog):
         layout.addWidget(self.label_messaging)
         layout.addWidget(self.button_submit)
 
+        if self.check_for_api_key():
+            pass
+        else:
+            dialog = APIKeyDialog(self)
+            dialog.exec_()
+            self.asana_key = self.get_new_api_key()
+            self.authorization = "Bearer %s" % self.asana_key
+
         self.setLayout(layout)
         self.setWindowTitle(title)
 
         self.button_submit.setEnabled(False)
 
         self.lineEdit_software.setText(self.title_)
-        self.button_submit.clicked.connect(self.send_email)
+        self.button_submit.clicked.connect(self.submit_bug)
         self.button_attachment.clicked.connect(self.add_attachments)
         self.lineEdit_username.textChanged.connect(self.ok_to_send)
         self.lineEdit_subject.textChanged.connect(self.ok_to_send)
@@ -795,9 +809,23 @@ class ReportBugDialog(LJDialog):
         return self.lineEdit_username.text()
 
     def get_email(self):
-        email = CONFIG['project_management'][PROJECT_MANAGEMENT]['users'][self.lineEdit_username.text()]['email']
-        self.lineEdit_email.setText(email)
-        return self.lineEdit_email.text()
+        try:
+            email = CONFIG['project_management'][PROJECT_MANAGEMENT]['users'][self.lineEdit_username.text()]['email']
+            self.lineEdit_email.setText(email)
+            return self.lineEdit_email.text()
+        except KeyError:
+            print("Could not find the email address of "
+                  "{} in globals['project_management'][{}]['users']".format(self.lineEdit_username.text(),
+                                                                            PROJECT_MANAGEMENT))
+
+    def get_new_api_key(self):
+        config_json = app_config()
+        try:
+            asana_key = config_json['helpdesk']['asana_api']
+            return asana_key
+        except KeyError:
+            print('No asana API Key found')
+            return None
 
     def get_software(self):
         return self.lineEdit_software.text()
@@ -835,18 +863,40 @@ class ReportBugDialog(LJDialog):
             self.button_submit.setEnabled(False)
             self.label_messaging.setText('*All fields must have valid values')
 
-    def send_email(self):
-        message = 'Reporter: %s\nContact Email: %s\nSoftware: %s\nMessage: \n%s' % (self.get_username(),
-                                                                                    self.get_email(),
-                                                                                    self.get_software(),
-                                                                                    self.get_message())
-        lj_mail.slack_notification_email(type_='bugs', subject="[bugs] %s" % self.get_subject(), message=message,
-                                         attachments=self.attachments)
-        for each in self.attachments:
-            if 'screen_grab' in each:
-                os.remove(each)
+    def submit_bug(self):
+        dialog = InputDialog(title='Submitting Bug', message='You should receive an email from us shortly')
+        dialog.show()
+        dialog.raise_()
+        self.send_bug_to_asana()
+        # send email to the submitter know
+        # self.send_email()
+        dialog.accept()
         self.close()
-        print('Email Sent!')
+        print('Email Sent')
+
+    def send_email(self):
+        email = """   
+        We have received your bug report and will begin working on it as soon as possible.
+        
+        Reported By: %s
+        Email Address: %s
+        Submission Note: %s
+        """ % (self.get_username(), self.get_email(), self.get_message())
+        files_ = ""
+        # TODO: to send this to people we need a paig mailgun account
+        return requests.post(CONFIG["email"]["lj_domain"],
+                             auth=("api", CONFIG["email"]['mailgun_key']),
+                             files=files_,
+                             data={"from": "%s <%s>" % (self.get_username(), CONFIG["email"]['from']),
+                                   "to": self.get_email(),
+                                   "subject": "Bug Reported", "text": email},
+                             )
+
+    def check_for_api_key(self):
+        if self.asana_key:
+            return True
+        else:
+            return False
 
     def screen_grab(self):
         output_path = screen_grab.run()
@@ -858,3 +908,92 @@ class ReportBugDialog(LJDialog):
         # self.screengrabs_layout.addWidget(label)
         return output_path
 
+    def send_bug_to_asana(self):
+        project_id = 1165122701499189
+        section_id = 1192453937636358
+        title = self.get_subject()
+        message = self.get_message()
+        now = datetime.datetime.now()
+        today = datetime.date.today()
+        current_time = now.strftime("%H:%M%p")
+        current_day = today.strftime("%m/%d/%Y")
+        task_body = "<body><b>Sent By:</b> {}\n" \
+                    "<b>Email Address:</b> {}\n\n" \
+                    "Submission Note: {}\n</body>".format(self.get_username(), self.get_email(), message)
+        new_task = {
+            "data":
+                {
+                    "name": "[%s %s] %s" % (current_day, current_time, title),
+                    "memberships": [
+                        {
+                            "project": "%s" % project_id,
+                            "section": "%s" % section_id
+                        }
+                    ],
+                    "tags": ["1166323535187341"],
+                    "workspace": "1145700648005039",
+                    "html_notes": task_body
+                }
+        }
+        r = requests.post("https://app.asana.com/api/1.0/tasks", headers={'Authorization': "%s" % self.authorization}, json=new_task)
+        loaded_json = json.loads(r.content)
+        gid = loaded_json['data']['gid']
+
+        for each in self.attachments:
+            with open(each, "rb") as imagefile:
+                data = imagefile.read()
+                p = requests.post("https://app.asana.com/api/1.0/tasks/%s/attachments" % gid,
+                                  headers={'Authorization': "%s" % self.authorization}, files={"file": ("@%s" % each, data)})
+
+
+class APIKeyDialog(LJDialog):
+
+    def __init__(self, parent=None, title='Error'):
+        LJDialog.__init__(self, parent)
+        self.setWindowTitle(title)
+        layout = QtWidgets.QVBoxLayout(self)
+        button_row = QtWidgets.QHBoxLayout()
+
+        error_message_row = QtWidgets.QHBoxLayout()
+        api_row = QtWidgets.QHBoxLayout()
+
+        submit_button = QtWidgets.QPushButton('Submit')
+        button_row.addStretch(1)
+        button_row.addWidget(submit_button)
+
+        self.error_label = QtWidgets.QLabel("No Asana Key Found")
+        self.api_label = QtWidgets.QLabel("Api Key:")
+        self.api_line_edit = QtWidgets.QLineEdit()
+
+        error_message_row.addWidget(self.error_label)
+        api_row.addWidget(self.api_label)
+        api_row.addWidget(self.api_line_edit)
+
+        layout.addLayout(error_message_row)
+        layout.addLayout(api_row)
+        layout.addLayout(button_row)
+
+        self.api_line_edit.returnPressed.connect(self.update_asana_global)
+        submit_button.clicked.connect(self.update_asana_global)
+
+    def update_asana_global(self):
+        new_value = self.api_line_edit.text()
+        CONFIG['helpdesk']["asana_api"] = new_value
+        if self.check_api_key(new_value):
+            save_globals(CONFIG)
+            self.close()
+        else:
+            self.error_label.setText("Invalid Key")
+
+    def check_api_key(self, api_key):
+        api_key = CONFIG['helpdesk']['asana_api']
+        authorize = "Bearer %s" % api_key
+        r = requests.get("https://app.asana.com/api/1.0/workspaces", headers={'Authorization': "%s" % authorize})
+        response_json = json.loads(r.content)
+        if r.status_code != 200:
+            return False
+        else:
+            for dict in response_json['data']:
+                if dict['name'] == 'CG Lumberjack':
+                    return True
+            return False

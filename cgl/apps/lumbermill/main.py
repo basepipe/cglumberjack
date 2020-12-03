@@ -174,7 +174,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.projects_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
         self.current_location_line_edit = QtWidgets.QLineEdit()
         self.current_location_line_edit.setReadOnly(True)
-        self.current_location_line_edit.setMinimumHeight(ICON_WIDTH*1.28)
+        self.current_location_line_edit.setMinimumHeight(ICON_WIDTH * 1.28)
         self.current_location_line_edit.hide()
         self.search_box = LJSearchEdit(self)
 
@@ -229,17 +229,17 @@ class NavigationWidget(QtWidgets.QFrame):
         self.current_location_line_edit.setText(text.replace('\\', '/'))
         if self.current_location_line_edit.text():
             self.path_object = cglpath.PathObject(self.current_location_line_edit.text())
-            
+
     def show_company(self):
         self.companies_button.show()
         self.projects_button.hide()
         self.my_tasks_button.hide()
-        
+
     def show_projects(self):
         self.companies_button.show()
         self.projects_button.show()
         self.my_tasks_button.hide()
-        
+
     def show_production(self):
         self.companies_button.show()
         self.projects_button.show()
@@ -250,7 +250,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.my_tasks_button.hide()
         self.companies_button.hide()
         self.projects_button.hide()
-            
+
     def update_buttons(self, path_object=None):
         if not path_object:
             if self.path_object:
@@ -355,10 +355,34 @@ class NavigationWidget(QtWidgets.QFrame):
         return new_path
 
 
+class LocationWidget(QtWidgets.QWidget):
+
+    def __init__(self, parent=None, path_object=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.path_object = path_object
+        self.label_row = QtWidgets.QHBoxLayout(self)
+        self.current_project_label = QtWidgets.QLabel()
+        self.current_project_label.setProperty('class', 'xlarge')
+        self.label_row.addWidget(self.current_project_label)
+        self.label_row.addStretch(1)
+        self.path_changed(self.path_object)
+
+    def path_changed(self, path_object):
+        if path_object.project:
+            if path_object.shot:
+                if path_object.scope == 'assets':
+                    text = " {}: {}".format(path_object.project, path_object.shot)
+                elif path_object.scope == 'shots':
+                    text = " {}: {}_{}".format(path_object.project, path_object.seq, path_object.shot)
+            else:
+                text = " {}".format(path_object.project)
+            self.current_project_label.setText(text)
+
+
 class CGLumberjackWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None, project_management=None, user_email=None, company=None,
-                 path=None, radio_filter=None, show_import=False):
+                 path=None, radio_filter=None, show_import=False, default_project=None):
         QtWidgets.QWidget.__init__(self, parent)
         try:
             font_db = QtGui.QFontDatabase()
@@ -402,7 +426,22 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 logging.error('Path is not set')
                 pass
         else:
-            self.path_object = cglpath.PathObject(self.root)
+            if self.company:
+                if default_project:
+                    proj = default_project
+                    scp = '*'
+                else:
+                    proj = '*'
+                    scp = None
+                d_ = {"company": self.company,
+                      "root": self.root,
+                      "context": 'source',
+                      "project": proj,
+                      "scope": scp
+                      }
+                self.path_object = cglpath.PathObject(d_)
+            else:
+                self.path_object = cglpath.PathObject(self.root)
         # self.project = '*'
         self.scope = 'assets'
         self.shot = '*'
@@ -422,6 +461,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.resolution = ''
         self.in_file_tree = None
         self.nav_widget = NavigationWidget(path_object=self.path_object)
+        self.label_widget = LocationWidget(path_object=self.path_object)
         self.path_widget = PathWidget(path_object=self.path_object)
         self.progress_bar = ProgressGif()
         self.progress_bar.hide()
@@ -433,6 +473,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.nav_widget.my_tasks_clicked.connect(self.show_my_tasks)
         self.nav_widget.location_changed.connect(self.path_widget.update_path)
         self.layout.addWidget(self.nav_widget)
+        self.layout.addWidget(self.label_widget)
         self.update_location(self.path_object)
 
     def show_my_tasks(self):
@@ -450,10 +491,20 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def update_render_location(self, data):
         logging.debug('updating the render location')
 
+    def update_title(self):
+        project = ""
+        shot = ""
+        print(self.path_object.path_root)
+        if self.path_object.asset:
+            if self.path_object.asset != '*':
+                shot = self.path_object.asset
+        if self.path_object.project:
+            if self.path_object.project != '*':
+                project = self.path_object.project
+                self.title_label.setText(" {}: {}".format(project, shot))
+
     def update_location(self, data):
         self.nav_widget.search_box.setText('')
-        # TODO - if we're in the project set the search box to the default project
-        # TODO - if we're in the companies set the search box to the default company
         try:
             if self.sender().force_clear:
                 if self.panel:
@@ -468,6 +519,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             path_object = cglpath.PathObject(data)
         if path_object.frame_range:
             self.frame_range = path_object.frame_range
+        self.label_widget.path_changed(path_object)
         self.nav_widget.set_text(path_object.path_root)
         self.nav_widget.update_buttons(path_object=path_object)
         last = path_object.get_last_attr()
@@ -498,7 +550,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if path_object.data['my_tasks']:
                     go_ahead = True
             if go_ahead:
-                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box,
+                self.panel = ProductionPanel(parent=self, path_object=path_object,
+                                             search_box=self.nav_widget.search_box,
                                              my_tasks=True)
                 if self.panel:
                     if self.panel.load_tasks():
@@ -527,7 +580,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if path_object.project == '*':
                 self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box)
             else:
-                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProductionPanel(parent=self, path_object=path_object,
+                                             search_box=self.nav_widget.search_box)
         if last == 'scope':
             if path_object.scope == '*':
                 self.panel = ScopePanel(path_object=path_object)
@@ -535,16 +589,19 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if DO_IOP:
                     self.panel = IoP.IOPanel(path_object=path_object)
             else:
-                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProductionPanel(parent=self, path_object=path_object,
+                                             search_box=self.nav_widget.search_box)
         elif last in shot_attrs:
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
-                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProductionPanel(parent=self, path_object=path_object,
+                                             search_box=self.nav_widget.search_box)
             else:
                 self.panel = TaskPanel(path_object=path_object, element='task')
                 self.panel.add_button.connect(self.add_task)
         elif last in seq_attrs:
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
-                self.panel = ProductionPanel(parent=self, path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProductionPanel(parent=self, path_object=path_object,
+                                             search_box=self.nav_widget.search_box)
         elif last == 'ingest_source':
             if DO_IOP:
                 self.panel = IoP.IOPanel(path_object=path_object)
@@ -570,7 +627,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.layout.addWidget(self.panel)
         to_delete = []
         for i in range(self.layout.count()):
-            if i == 2:
+            if i == 3:
                 child = self.layout.takeAt(i - 1)
                 to_delete.append(child)
         for each in to_delete:
@@ -601,7 +658,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             sequence_path = self.path_widget.path_line_edit.text()
             sequence = cglpath.Sequence(sequence_path)
             file_seq = sequence.num_sequence.split()[0]
-            command = ('{} -start_number {} {}'.format(CONFIG['paths']['ffplay'],sequence.start_frame, file_seq))
+            command = ('{} -start_number {} {}'.format(CONFIG['paths']['ffplay'], sequence.start_frame, file_seq))
             os.system(command)
             logging.info('Nothing set for sequences yet')
         else:
@@ -655,14 +712,10 @@ class CGLumberjack(LJMainWindow):
         LJMainWindow.__init__(self)
 
         if start_time:
-            logging.debug('Finished Loading Lumbermill in %s seconds' % (time.time() - start_time))
+            logging.debug('Finished Loading Magic Browser in %s seconds' % (time.time() - start_time))
         self.user_config = UserConfig().d
-        if previous_path:
-            self.previous_path = previous_path
-            self.previous_paths = []
-        else:
-            self.previous_path = self.user_config['previous_path']
-            self.previous_paths = self.user_config['previous_paths']
+
+        self.previous_path = previous_path
         self.filter = 'Everything'
         self.project_management = CONFIG['account_info']['project_management']
         self.user_info = ''
@@ -672,21 +725,29 @@ class CGLumberjack(LJMainWindow):
             if user_info['login']:
                 self.user_email = user_info['login']
         self.user_name = ''
-        self.company = ''
+        if 'default_company' in self.user_config.keys():
+            self.company = self.user_config['default_company']
+        else:
+            self.company = ''
+        if 'default_project' in self.user_config.keys():
+            self.project = self.user_config['default_project']
+        else:
+            self.project = None
         self.pd_menus = {}
         self.menu_dict = {}
         self.menus = {}
         self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
                                                  user_email=self.user_info,
                                                  company=self.company,
+                                                 default_project=self.project,
                                                  path=self.previous_path,
                                                  radio_filter=self.filter,
                                                  show_import=show_import))
         if user_info:
             if user_info['first']:
-                self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['first'])
+                self.setWindowTitle('Magic Browser - Logged in as %s' % user_info['first'])
             else:
-                self.setWindowTitle('Lumbermill - Logged in as %s' % user_info['login'])
+                self.setWindowTitle('Magic Browser - Logged in as %s' % user_info['login'])
         self.status_bar = QtWidgets.QStatusBar()
         self.setStatusBar(self.status_bar)
 
@@ -715,6 +776,7 @@ class CGLumberjack(LJMainWindow):
         settings = QtWidgets.QAction('Settings', self)
         open_globals = QtWidgets.QAction('Go to Company Globals', self)
         open_user_globals = QtWidgets.QAction('Go to User Globals', self)
+        open_default_files = QtWidgets.QAction("Go to Default Files", self)
         create_project = QtWidgets.QAction('Import .csv', self)
         settings.setShortcut('Ctrl+,')
         pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
@@ -726,20 +788,20 @@ class CGLumberjack(LJMainWindow):
         manage_sharing_action = QtWidgets.QAction('Share Files', self)
         launch_syncthing = QtWidgets.QAction('Start Syncing', self)
         kill_syncthing = QtWidgets.QAction('Stop Syncing', self)
-        show_sync_thing_browser = QtWidgets.QAction('Show Details', self)
+        show_sync_thing_browser = QtWidgets.QAction('Debug Mode', self)
         self.auto_launch_setting = QtWidgets.QAction('Auto-Launch: Off', self)
         self.current_processing_method = QtWidgets.QMenu('Processing Method: Local', self)
         change_to_local = QtWidgets.QAction('Set to Local', self)
         change_to_smedge = QtWidgets.QAction('Set to Smedge', self)
         change_to_deadline = QtWidgets.QAction('Set to Deadline', self)
+        lumberwatch_launch = QtWidgets.QAction('Start Sync', self)
         # fix_paths = QtWidgets.QAction('Fix File Paths', self)
-
-
 
         # add actions to the file menu
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
         tools_menu.addAction(open_user_globals)
+        tools_menu.addAction(open_default_files)
         tools_menu.addSeparator()
         tools_menu.addMenu(self.current_processing_method)
         tools_menu.addSeparator()
@@ -765,8 +827,9 @@ class CGLumberjack(LJMainWindow):
         # self.sync_menu.addAction(pull_from_server)
         # self.sync_menu.addAction(fix_paths)
         self.sync_menu.addSeparator()
-        self.sync_menu.addAction(kill_syncthing)
-        self.sync_menu.addAction(launch_syncthing)
+        #self.sync_menu.addAction(kill_syncthing)
+        #self.sync_menu.addAction(launch_syncthing)
+        self.sync_menu.addAction(lumberwatch_launch)
         self.sync_menu.addAction(show_sync_thing_browser)
         self.sync_menu.addSeparator()
         self.sync_menu.addAction(self.auto_launch_setting)
@@ -777,6 +840,8 @@ class CGLumberjack(LJMainWindow):
         change_to_smedge.triggered.connect(self.change_processing_method)
         kill_syncthing.triggered.connect(self.on_kill_syncthing)
         launch_syncthing.triggered.connect(self.on_launch_syncthing)
+        lumberwatch_launch.triggered.connect(self.on_launch_lumberwatch)
+
         # pull_from_server.triggered.connect(self.enable_server_connection_clicked)
         # check_machines_action.triggered.connect(self.check_for_machines_clicked)
         # add_machines_to_folders.triggered.connect(self.add_machines_to_folders_clicked)
@@ -787,6 +852,7 @@ class CGLumberjack(LJMainWindow):
         set_up_sync_thing_workstation.triggered.connect(self.set_up_st_workstation_clicked)
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
+        open_default_files.triggered.connect(self.open_default_files)
         create_project.triggered.connect(self.open_create_project_dialog)
         settings.triggered.connect(self.on_settings_clicked)
         pipeline_designer.triggered.connect(self.on_menu_designer_clicked)
@@ -803,13 +869,14 @@ class CGLumberjack(LJMainWindow):
         # TODO how do i run this as a background process, or a parallell process?
         # TODO - how do i grab the pid so i can close this when lumbermill closes potentially?
         if sync_enabled:
+            import cgl.plugins.syncthing.utils as st_utils
             try:
                 if CONFIG['sync']['syncthing']['sync_thing_url']:
 
                     # TODO - check for user config settings to use syncthing.
                     if "sync_thing_auto_launch" in USERCONFIG.keys():
                         try:
-                            import cgl.plugins.syncthing.utils as st_utils
+
                             if USERCONFIG["sync_thing_auto_launch"] == 'True':
                                 sync = False
                                 st_utils.kill_syncthing()
@@ -889,6 +956,9 @@ class CGLumberjack(LJMainWindow):
         logging.debug('Starting Sync Thing')
         st_utils.launch_syncthing()
 
+    def on_launch_lumberwatch(self):
+        self.lumber_watch = launch_lumber_watch(new_window=True)
+
     def enable_server_connection_clicked(self):
         """
         connects an artist's machine to the server after the server has added them
@@ -915,10 +985,14 @@ class CGLumberjack(LJMainWindow):
         :return:
         """
         path_object = self.centralWidget().path_widget.path_object
-        try:
+        import cgl.plugins.syncthing.utils as st_utils
+        share_mode = 'full'
+        if share_mode == 'full':
+            print('Full Sync Mode - sync from Projects>Project>Share Project')
+        else:
             st_utils.share_files(path_object)
-        except NameError:
-            print("This machine is not set up for syncing!")
+        # except NameError:
+        # print("This machine is not set up for syncing!")
 
     def set_auto_launch_text(self):
         """
@@ -953,8 +1027,9 @@ class CGLumberjack(LJMainWindow):
         shows the syncthing web gui
         :return:
         """
-        # st_utils.kill_syncthing()
-        st_utils.show_browser()
+        import cgl.plugins.syncthing.utils as st_utils
+        st_utils.kill_syncthing()
+        st_utils.launch_syncthing(verbose=True)
 
     def set_up_st_server_clicked(self):
         """
@@ -962,16 +1037,26 @@ class CGLumberjack(LJMainWindow):
         keeps track of all machines being used.
         :return:
         """
-        st_utils.setup_server()
-        self.change_sync_icon(syncing=True)
+        dialog = InputDialog(title='Attention',
+                             message='Setting up Server will wipe all syncing information, you sure?')
+        dialog.exec_()
+        if dialog.button == 'Ok':
+            import cgl.plugins.syncthing.utils as st_utils
+            st_utils.setup_server()
+            self.change_sync_icon(syncing=True)
 
     def set_up_st_workstation_clicked(self):
         """
         Set up the local workstation to work with sync thing and register local workstation to the sheets file.
         :return:
         """
-        st_utils.setup_workstation()
-        self.change_sync_icon(syncing=True)
+        dialog = InputDialog(title='Attention',
+                             message='Setting up Workstation will wipe all syncing information, you sure?')
+        dialog.exec_()
+        if dialog.button == 'Ok':
+            import cgl.plugins.syncthing.utils as st_utils
+            st_utils.setup_workstation()
+            self.change_sync_icon(syncing=True)
 
     def load_pipeline_designer_menus(self):
         import json
@@ -987,8 +1072,7 @@ class CGLumberjack(LJMainWindow):
                         self.menu_dict[menu] = _menu
                         buttons = self.order_buttons(menu)
                         self.add_menu_buttons(menu, buttons)
-                else:
-                    logging.debug('No Menus Found')
+                else:                    logging.debug('No Menus Found')
         else:
             logging.debug('No menu file found!')
         pass
@@ -1002,6 +1086,7 @@ class CGLumberjack(LJMainWindow):
         """
         for menu in menus:
             menus[menu]['order'] = menus[menu].get('order', 10)
+
         if menus:
             return sorted(menus, key=lambda key: menus[key]['order'])
 
@@ -1078,26 +1163,16 @@ class CGLumberjack(LJMainWindow):
 
     def update_lumbermill_clicked(self):
         process_method(self.centralWidget().progress_bar, self.do_update_check,
-                       args=(self, self.centralWidget().progress_bar, True, True), text='Checking For Updates')
+                       args=(self, self.centralWidget().progress_bar), text='Checking For Updates')
 
     @staticmethod
-    def do_update_check(widget, progress_bar, show_confirmation=False, print_output=True):
-        if not check_for_latest_master(print_output=print_output):
-            progress_bar.hide()
-            dialog = InputDialog(title='Update Lumbermill',
-                                 message='There is a new version of Lumbermill Available, would you like to update?',
-                                 buttons=['Cancel', 'Update'])
-            dialog.exec_()
-            if dialog.button == 'Update':
-                update_master()
-                widget.close()
+    def do_update_check(widget, progress_bar):
+        updated = check_for_latest_master()
+        if not updated:
+            update_master(widget)
         else:
-            progress_bar.hide()
-            if show_confirmation:
-                dialog = InputDialog(title='Up to date', message='Lumbermill is up to date!')
-                dialog.exec_()
-                if dialog.button == 'Ok' or dialog.button == 'Cancel':
-                    dialog.accept()
+            print('Lumbermill is Up to Date!')
+        progress_bar.hide()
 
     def report_bug_clicked(self):
         dialog = ReportBugDialog(self)
@@ -1130,6 +1205,12 @@ class CGLumberjack(LJMainWindow):
         logging.debug(os.path.dirname(user_config()))
         cglpath.start(os.path.dirname(user_config()))
 
+    @staticmethod
+    def open_default_files():
+        location = os.path.join(CONFIG['paths']['resources'], 'default_files')
+        logging.debug(location)
+        cglpath.start(location)
+
     def load_user_config(self):
         user_config = UserConfig()
         if 'd' in user_config.__dict__:
@@ -1137,10 +1218,7 @@ class CGLumberjack(LJMainWindow):
             self.user_name = str(config['user_info']['local'])
             self.user_email = str(config['user_info'][self.project_management]['login'])
             self.company = str(config['company'])
-            try:
-                self.previous_path = str(config['previous_path'])
-            except KeyError:
-                self.previous_path = '%s%s/source' % (CONFIG['paths']['root'], self.company)
+            self.previous_path = '%s%s/source/%s' % (CONFIG['paths']['root'], self.company, self.project)
             if self.user_name in self.previous_path:
                 self.filter = 'My Assignments'
             elif 'publish' in self.previous_path:

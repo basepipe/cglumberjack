@@ -8,7 +8,10 @@ from cgl.core.utils.general import create_file_dirs
 from cgl.core.path import PathObject
 from cgl.core.config import app_config, UserConfig
 from cgl.plugins.maya.utils import get_namespace, create_tt, clean_tt, basic_playblast
-import pymel.core as pm
+try:
+    import pymel.core as pm
+except ModuleNotFoundError:
+    print('Skipping pymel.core, outside of maya')
 
 CONFIG = app_config()
 PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
@@ -112,8 +115,12 @@ class LumberObject(PathObject):
         self.path_template = []
         self.version_template = []
 
-        if isinstance(path_object, unicode):
-            path_object = str(path_object)
+        try:
+            if isinstance(path_object, unicode):
+                path_object = str(path_object)
+        except NameError:
+            pass
+
         if isinstance(path_object, dict):
             self.process_info(path_object)
         elif isinstance(path_object, str):
@@ -122,7 +129,6 @@ class LumberObject(PathObject):
             self.process_info(path_object.data)
         else:
             logging.error('type: %s not expected' % type(path_object))
-
 
     def render(self, processing_method=PROCESSING_METHOD):
         """
@@ -191,6 +197,25 @@ def import_file(filepath, namespace=None):
         return pm.importFile(filepath, namespace=namespace)
 
 
+def import_task(task=None, reference=False, **kwargs):
+    """
+    imports the latest version of the specified task into the scene.
+    :param task:
+    :param reference:
+    :return:
+    """
+    if not task:
+        task = scene_object().task
+    class_ = get_task_class(task)
+    print(class_)
+    if reference:
+        print(1)
+        return class_().import_latest(task=task, reference=reference, **kwargs)
+    else:
+        print(2)
+        return class_().import_latest(**kwargs)
+
+
 def reference_file(filepath, namespace=None):
     """
     creates a "reference" of a file, this is a convenience function to be used in various software plugins
@@ -198,12 +223,17 @@ def reference_file(filepath, namespace=None):
     :param filepath:
     :return:
     """
+    print(5)
     if not namespace:
         namespace = get_namespace(filepath)
-
-    if os.path.isfile(filepath):
+    print(6)
+    print(filepath)
+    if os.path.exists(filepath):
+        print(7)
         print('filepath: ', filepath)
         return pm.createReference(filepath, namespace=namespace, ignoreVersion=True, loadReferenceDepth='all')
+    else:
+        print('File does not exist: {}'.format(filepath))
 
 
 def confirm_prompt(title='title', message='message', button='Ok'):
@@ -261,14 +291,18 @@ def export_selected(to_path, ext='mb'):
 
 
 def create_turntable(length=180, task=False):
-
+    """
+    Creates a turntable around the given "task" object (for example 'mdl')
+    :param length:
+    :param task: if True creates a turntable around existing geo that bears the task's name. Rig or mdl for example.
+    :return:
+    """
     if task:
-        current_task = LumberObject(pm.sceneName()).task
         if not pm.objExists(task):
             confirm_prompt('No object %s found')
             return
         else:
-            selected = task
+            pm.select(task)
     if not pm.ls(sl=True):
         confirm_prompt(title='Turntable', message='Nothing Selected. \nSelect an object and try again')
         return
@@ -279,6 +313,10 @@ def create_turntable(length=180, task=False):
 
 
 def clean_turntable():
+    """
+    removes the turntable from the scene
+    :return:
+    """
     po = LumberObject(pm.sceneName())
     clean_tt(po.task)
     pass
@@ -331,7 +369,7 @@ def export_usd_layout(to_path, lighting=False):
 
 def render(preview=False):
     if preview:
-        basic_playblast(path_object=LumberObject(pm.sceneName()))
+        basic_playblast(path_object=scene_object())
     else:
         print('Rendering to Farm Now')
 
@@ -381,3 +419,39 @@ def launch_():
         main_window.show()
         main_window.raise_()
     app.exec_()
+
+
+def build(path_object=None):
+    """
+    runs build command for the specified task.
+    :param task:
+    :return:
+    """
+    if not path_object:
+        path_object = scene_object()
+    task = path_object.task
+    task_class = get_task_class(task)
+    task_class(path_object).build()
+
+
+def get_task_class(task):
+    """
+    gets the class that relates to the specified task, if no task is specified the task for the current scene will
+    be used.
+    :param task:
+    :return:
+    """
+    import importlib
+    software = os.path.split(os.path.dirname(__file__))[-1]
+    module = 'cgl.plugins.{}.tasks.{}'.format(software, task)
+    module_name = task
+    try:
+        # python 2.7 method
+        loaded_module = __import__(module, globals(), locals(), module_name, -1)
+    except ValueError:
+        import importlib
+        # Python 3+
+        loaded_module = importlib.import_module(module, module_name)
+    class_ = getattr(loaded_module, 'Task')
+    return class_
+

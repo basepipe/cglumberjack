@@ -5,13 +5,22 @@ import time
 import cgl.plugins.syncthing.utils as st_utils
 
 
-def check_st_config():
+def check_st_config(folder_type='sendreceive'):
     import cgl.apps.lumber_watch.lumber_watch as lw
+    # Check for pending Devices
+    # check for pending folders
+    # process folder naming
+    st_utils.process_pending_folders(folder_type=folder_type)
     if st_utils.syncthing_synced():
-        print('Safe To Sync - no BG processes')
+        # print('Nothing to Sync')
         if lw.check_syncthing_config():
             print('Detected Changes in Config - Syncing Lumbermill')
-            st_utils.process_st_config()
+            st_utils.kill_syncthing()  # do i have to kill it to process pending folders and devices?
+            print('Processing syncthing config')
+            st_utils.process_pending_devices()
+            st_utils.process_pending_folders(folder_type=folder_type)
+            st_utils.process_folder_naming()
+            st_utils.launch_syncthing()
 
 
 def send_message(message_attrs='', message_body=''):
@@ -101,7 +110,7 @@ def process_messages(max_messages=1,
                     ReceiptHandle=receipt_handle
                 )
             else:
-                print('\t -->> message not processed, skipping delete')
+                pass
     else:
         print('CGL Events: No Events To Process')
 
@@ -220,6 +229,16 @@ def machine_added_message(device_id, device_name, message, **kwargs):
 @click.option('--delete', '-d', default=False,
               help='Forces Deletion of messages no matter what.  Useful in testing.')
 def main(seconds, delete):
+    my_device = st_utils.get_my_device_info()['name']
+    devices = st_utils.get_all_devices_from_config()
+    if devices:
+        print("Connected to:")
+        for m in st_utils.get_all_devices_from_config():
+            if my_device != m:
+                print("\t{} @ {}".format('user_name', m))
+    else:
+        print('Not currently connected to any devices for syncing')
+    print("Ready to Sync.")
     start_time = time.time()
     while True:
         process_messages(force_delete=delete)

@@ -331,9 +331,10 @@ class SharingDialog(LJDialog):
     """
     Allows someone to choose who they will share a folder with.
     """
-    def __init__(self, publish_objects):
+    def __init__(self, publish_objects, type_='sendonly'):
         LJDialog.__init__(self)
         self.setWindowTitle('Sharing Options')
+        self.type_ = type_
         self.publish_objects = publish_objects
         layout = QtWidgets.QVBoxLayout(self)
         grid = QtWidgets.QGridLayout()
@@ -399,7 +400,7 @@ class SharingDialog(LJDialog):
                 for p in self.publish_objects:
                     folder_id = '[root]\\%s' % p.path.replace('/', '\\')
                     folder = p.path_root.replace('/', '\\')
-                    add_folder_to_config(folder_id, folder, self.device_list, type_='sendonly')
+                    add_folder_to_config(folder_id, folder, self.device_list, type_=self.type_)
             else:
                 print('no publish objects')
             launch_syncthing()

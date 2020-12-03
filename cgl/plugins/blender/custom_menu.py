@@ -55,6 +55,8 @@ class LumberMenu(CustomMenu):
         :param menu_name:
         :return:
         """
+        if isinstance(menu_name, dict):
+            menu_name = menu_name['name']
         menu_path = get_menu_path('blender', menu_name, menu_file=True)
         module = menu_path.split('cgl_tools\\')[-1].replace('\\', '.').replace('.py', '')
         module = 'cgl_tools.%s' % module

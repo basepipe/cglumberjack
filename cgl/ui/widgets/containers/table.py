@@ -137,23 +137,6 @@ class LJTableWidget(QtWidgets.QTableView):
             print('nothing selected')
             self.nothing_selected.emit()
 
-    def contextMenuEvent(self, event):
-        self.menu = LJMenu(self)
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.menu.create_action('Show in %s' % PROJ_MANAGEMENT, self.show_in_proj)
-        self.menu.popup(QtGui.QCursor.pos())
-
-    def show_in_proj(self):
-        from cgl.core.path import PathObject, show_in_project_management
-        mdl_index = self.model().mapToSource(self.selectionModel().selectedRows()[0])
-        mdl = self.model().sourceModel()
-        row = mdl_index.row()
-        sel = mdl.data_[row]
-        print(sel)
-        path_object = self.path_object.copy(project=sel[0])
-        print(path_object.path_root)
-        show_in_project_management(path_object)
-
     def select_row_by_text(self, text, column=0):
         # search all the items in the table view and select the one that has 'text' in it.
         # .setSelection() is a massive part of figuring this out.

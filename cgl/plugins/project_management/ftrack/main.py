@@ -375,7 +375,7 @@ class ProjectManagementData(object):
         self.version_data['thumbnail'] = thumb_component
         # we may need a qualifier for this to make sure it works.
         self.task_data['status'] = self.task_status_dict['Pending Review']
-        logging.info('Committing Media')
+        logging.info('Committing Media to Ftrack')
         component.session.commit()
         thumb_component.session.commit()
         self.add_to_dailies()

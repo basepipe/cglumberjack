@@ -2,7 +2,8 @@ import os
 import logging
 import sys
 import json
-from cgl.core.utils.read_write import load_json
+import click
+from cgl.core.utils.read_write import load_json, save_json
 
 GLOBALS_TEMPLATE_PATH = os.path.join(__file__.split('cglumberjack')[0], 'cglumberjack', 'cgl', 'cfg',
                                      'globals_template.json')
@@ -152,6 +153,20 @@ def app_config(company=None, proj_management=None):
     return get_globals()
 
 
+def shader_config():
+    try:
+        if get_user_globals().keys():
+            globals_path = get_user_globals()['globals']
+            shader_config_path = globals_path.replace('globals.json', 'shaders.json')
+            print(shader_config_path)
+            if shader_config_path:
+                return load_json(shader_config_path)
+            else:
+                print('No shader globals found at %s' % user_config())
+    except AttributeError:
+        print('No shader globals found at %s' % user_config())
+
+
 def user_config():
     """
     get the location of the user_config()
@@ -207,6 +222,30 @@ def update_globals(company=True):
             company_globals['rules']['ignore'] = default_globals['rules']['ignore']
             from cgl.core.utils.general import save_json
             save_json(get_user_globals()['globals'], company_globals)
+
+
+def get_globals_path():
+    globals_path = get_user_globals()['globals']
+    return globals_path
+
+
+def save_globals(data):
+    globals_path = get_globals_path()
+    save_json(globals_path, data)
+
+
+@click.command()
+@click.option('--globals_type', '-g', default='company', prompt='Enter "company" or "user", default is "company"',
+              help='returns a dictionary representing the chosen globals')
+def main(globals_type='company'):
+    if globals_type == 'company':
+        if get_user_globals().keys():
+            print(get_user_globals()['globals'])
+    elif globals_type == 'user':
+        print(os.getenv('cgl_user_globals'))
+
+if __name__ == '__main__':
+    main()
 
 
 

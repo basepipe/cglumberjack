@@ -3,6 +3,7 @@ from vfxwindow import VFXWindow
 from cgl.core.config import app_config, UserConfig, user_config
 from cgl.plugins.blender.cgl_browser_widget import BrowserWidget
 from PySide2 import QtWidgets, QtCore, QtGui
+import logging
 
 USERCONFIG = UserConfig().d
 ICON_WIDTH = 24
@@ -439,16 +440,15 @@ class CGLumberjack(VFXWindow):
     @staticmethod
     def do_update_check(widget, progress_bar, show_confirmation=False, print_output=True):
         if not check_for_latest_master(print_output=print_output):
-            progress_bar.hide()
-            dialog = InputDialog(title='Update Lumbermill',
-                                 message='There is a new version of Lumbermill Available, would you like to update?',
-                                 buttons=['Cancel', 'Update'])
-            dialog.exec_()
-            if dialog.button == 'Update':
-                update_master()
-                widget.close()
+            # progress_bar.hide()
+            # dialog = InputDialog(title='Update Lumbermill',
+            #                      message='There is a new version of Lumbermill Available, would you like to update?',
+            #                      buttons=['Cancel', 'Update'])
+            # dialog.exec_()
+            # if dialog.button == 'Update':
+            print('updating master, not!')
         else:
-            progress_bar.hide()
+            # progress_bar.hide()
             if show_confirmation:
                 dialog = InputDialog(title='Up to date', message='Lumbermill is up to date!')
                 dialog.exec_()

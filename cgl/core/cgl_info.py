@@ -30,8 +30,12 @@ def get_cgl_info_size(folder_path, source=True, render=True, return_type='best')
                     pass
             if render:
                 try:
-                    render_size = load_json(render_file)[os.path.dirname(render_file)]['total_bytes']
-                    render_size = float(render_size)
+                    cgl_info = load_json(render_file)
+                    if cgl_info:
+                        render_size = cgl_info[os.path.dirname(render_file)]['total_bytes']
+                        render_size = float(render_size)
+                    else:
+                        render_size = 0
                 except KeyError:
                     pass
 
@@ -50,8 +54,9 @@ def get_cgl_info_size(folder_path, source=True, render=True, return_type='best')
             elif return_type == 'bytes':
                 return size
         else:
+            print('No cgl_info.json file found: %s' % cgl_info_file)
             return None
-            print('No cgl_info.json file found, creating: %s' % cgl_info_file)
+
     else:
         return None
 
@@ -112,13 +117,12 @@ def get_cgl_info_files(path_object, scope='assets', seq='*', shot='*', task='*',
 
 
 def build_folder_info(root_folder, force=False):
-    # Goes through and builds cgl_info files for
+    # Goes through and builds cgl_info files for everything in the root folder
     for root, dirs, files in os.walk(root_folder):
         try:
             temp_object = PathObject(root)
             last_attr = temp_object.get_last_attr()
-            if temp_object.seq:
-                create_cgl_info(root, last_attr, dirs, files, force=force)
+            create_cgl_info(root, last_attr, dirs, files, force=force)
         except ValueError:
             # TODO - need to add anything that falls into this to some kind of "not in pipeline"
             #  list of stuff to be deleted.
@@ -139,6 +143,21 @@ def create_all_cgl_info_files(company, project, source=True, render=True, force=
     end_time = time.time()-start_time
     print('print(finished processing in %s minutes' % "{:.2f}".format(end_time/60))
 
+
+def create_full_project_cgl_info(company, project):
+    start_time = time.time()
+    # source
+    d = {"company": company, "project": project, "context": 'source'}
+    path_object = PathObject(d)
+    print(path_object.path_root)
+    build_folder_info(path_object.path_root, force=True)
+    # render
+    d = {"company": company, "project": project, "context": 'render'}
+    path_object = PathObject(d)
+    print(path_object.path_root)
+    build_folder_info(path_object.path_root, force=True)
+    end_time = time.time()-start_time
+    print('print(finished processing in %s minutes' % "{:.2f}".format(end_time/60))
 
 if __name__ == "__main__":
     create_all_cgl_info_files('loneCoconut', 'ILUCIA', force=True)

@@ -5,8 +5,8 @@ from cgl.ui.widgets.dialog import InputDialog
 
 
 def get_namespace(filepath):
-    from lumbermill import MayaPathObject
-    po = MayaPathObject(filepath)
+    from lumbermill import LumberObject
+    po = LumberObject(filepath)
     if po.task == 'cam':
         namespace = 'cam'
     elif po.scope == 'assets':

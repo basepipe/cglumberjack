@@ -301,14 +301,17 @@ def save_json(filepath, data):
     try:
         with open(filepath, 'w') as outfile:
             json.dump(data, outfile, indent=4, sort_keys=True)
-    except IOError:
+    except IOError or FileNotFoundError:
         print('Error writing file %s' % filepath)
 
 
 def load_json(filepath):
-    with open(filepath) as jsonfile:
-        data = json.load(jsonfile)
-    return data
+    try:
+        with open(filepath) as jsonfile:
+            data = json.load(jsonfile)
+        return data
+    except IOError or FileNotFoundError:
+        return None
 
 
 def fix_json(filepath):
@@ -347,6 +350,7 @@ def launch_lumber_watch(new_window=False):
     if os.path.isfile(lumber_watch_path):
         print('Starting Lumberwatch Services')
         command = 'python %s -s 60' % lumber_watch_path
+        print(new_window)
         cgl_execute(command, new_window=new_window)
     else:
         print('Lumber Watch Path does not exist: %s' % (lumber_watch_path))
@@ -419,12 +423,12 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         return run_dict
 
 
-def check_for_latest_master(return_output=True, print_output=False):
+def check_for_latest_master():
     # TODO - probably need something in place to check if git is installed.
     code_root = CONFIG['paths']['code_root']
     command = 'git remote show origin'
     os.chdir(code_root)
-    output = cgl_execute(command, return_output=return_output, print_output=print_output)
+    output = cgl_execute(command, return_output=True, print_output=False)['printout']
 
     for line in output:
         if 'pushes to master' in line:
@@ -433,14 +437,16 @@ def check_for_latest_master(return_output=True, print_output=False):
                 return True
             else:
                 print('cglumberjack code base needs updated')
-    return False
+                return False
 
 
-def update_master():
+def update_master(widget=None):
     code_root = CONFIG['paths']['code_root']
     command = 'git pull'
     os.chdir(code_root)
     cgl_execute(command)
+    if widget:
+        widget.close()
 
 
 def get_end_time(start_time):
@@ -477,12 +483,13 @@ def write_to_cgl_data(process_info):
 def has_approved_frame_padding(filename):
     hashes = re.compile("#+")
     m = re.search(hashes, filename)
-    this_padding = int(len(m.group()))
-    studio_padding = int(CONFIG['default']['padding'])
-    if this_padding == studio_padding:
-        return 0
-    else:
-        return [this_padding, studio_padding]
+    if m:
+        this_padding = int(len(m.group()))
+        studio_padding = int(CONFIG['default']['padding'])
+        if this_padding == studio_padding:
+            return 0
+        else:
+            return [this_padding, studio_padding]
 
 
 def edit_cgl_data(job_id, key, value=None, user=None):
@@ -525,7 +532,7 @@ def main(edit_cgl, user, job_id, key, value):
 
 if __name__ == '__main__':
     main()
-    # print(get_globals())
+    # check_for_latest_master()
 
 
 
