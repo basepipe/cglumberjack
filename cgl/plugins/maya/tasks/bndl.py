@@ -127,3 +127,33 @@ def bundle_import(filepath, layout_group=None):
         if layout_group:
             pm.parent(group, layout_group)
         pm.select(d=True)
+
+
+def get_bundles():
+    """
+    retrieves all "bundles" in a scene
+    :return: list of bundles
+    """
+
+    bundles = []
+    sel = pm.ls(type='transform')
+    for obj in sel:
+        if obj.hasAttr('BundlePath'):
+            bundles.append(obj)
+    return bundles
+
+
+def remove_selected_bundle():
+    bndl = pm.ls(sl=True)[0]
+    if bndl:
+        if pm.attributeQuery('BundlePath', node=bndl, exists=True):
+            # return the children of the bundle node
+            for each in pm.listRelatives(bndl, children=True):
+                ref = pm.referenceQuery(each, rfn=True)
+                pm.FileReference(ref).remove()
+            pm.delete(bndl)
+        else:
+            print('ERROR: no BundlePath attr found')
+    else:
+        print('ERROR: Nothing Selected')
+

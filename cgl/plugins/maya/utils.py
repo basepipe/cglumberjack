@@ -1,26 +1,30 @@
 import re
 import os
+from cgl.ui.widgets.dialog import InputDialog, FrameRange
+from cgl.core.config import app_config
+from cgl.core.utils.read_write import load_json
+import cgl.core.assetcore as assetcore
+from cgl.ui.widgets.dialog import MagicList
+
 try:
     import pymel.core as pm
     import maya.mel as mel
     import mtoa.core as aicore
 except ModuleNotFoundError:
     print('Skipping pymel.core - outside of maya')
-from cgl.ui.widgets.dialog import InputDialog
-from cgl.core.config import app_config
-from cgl.core.utils.read_write import load_json
+
 
 CONFIG = app_config()
 
 
 def get_namespace(filepath):
-    from .lumbermill import LumberObject
-    po = LumberObject(filepath)
-    if po.task == 'cam':
+    from lumbermill import LumberObject
+    path_object = LumberObject(filepath)
+    if path_object.task == 'cam':
         namespace = 'cam'
-    elif po.scope == 'assets':
-        namespace = po.shot
-    elif po.scope == 'shots':
+    elif path_object.scope == 'assets':
+        namespace = path_object.shot
+    elif path_object.scope == 'shots':
         namespace = 'tempNS'
     return get_next_namespace(namespace)
 
@@ -258,21 +262,25 @@ def get_maya_window():
 def update_reference(reference):
     path = reference[1].path
     filename = os.path.basename(path)
-    latest_version = PathParser().get_latest_version_number(path, pub=True, return_path=True)
-    lv_filename = os.path.basename(latest_version)
-    latest_version = latest_version.replace(lv_filename, filename)
+    print(filename)
+    lobj = LumberObject(path).copy(latest=True)
+    latest_version = lobj.path_root
     path = path.replace('\\', '/')
     latest_version = latest_version.replace('\\', '/')
-    print('Comparing Reference: \n\t%s to \n\t%s' % (path, latest_version))
-    if path != latest_version:
-        print('REPLACING REFERENCE: %s ---- %s' % (reference[0], latest_version))
-        try:
-            reference[1].replaceWith(latest_version)
-            return 1
-        except RuntimeError:
+    if os.path.exists(latest_version):
+        print('Comparing Reference: \n\t%s to \n\t%s' % (path, latest_version))
+        if path != latest_version:
+            print('REPLACING REFERENCE: %s ---- %s' % (reference[0], latest_version))
+            try:
+                reference[1].replaceWith(latest_version)
+                return 1
+            except RuntimeError:
+                return 0
+                print('cannot load latest version %s ' % latest_version)
+        else:
             return 0
-            print('cannot load latest version %s ' % latest_version)
     else:
+        print('file: {} does not exist'.format(latest_version))
         return 0
 
 
@@ -311,33 +319,186 @@ def get_selected_reference():
         return None
 
 
-def get_bundles():
+def get_matrix(obj=None, query=False):
     """
-    retrieves all "bundles" in a scene
-    :return: list of bundles
+    Returns a matrix of values relating to translate, scale, rotate.
+    :param obj:
+    :param query:
+    :return:
     """
-
-    bundles = []
-    sel = pm.ls(type='transform')
-    for obj in sel:
-        if obj.hasAttr('BundlePath'):
-            bundles.append(obj)
-    return bundles
-
-
-def remove_selected_bundle():
-    bndl = pm.ls(sl=True)[0]
-    if bndl:
-        if pm.attributeQuery('BundlePath', node=bndl, exists=True):
-            # return the children of the bundle node
-            for each in pm.listRelatives(bndl, children=True):
-                ref = pm.referenceQuery(each, rfn=True)
-                pm.FileReference(ref).remove()
-            pm.delete(bndl)
+    if not query:
+        if pm.objExists(obj):
+            if 'rig' in obj:
+                translate = '%s:translate' % obj.split(':')[0]
+                scale = '%s:scale' % obj.split(':')[0]
+                rotate = '%s:rotate' % obj.split(':')[0]
+                relatives = pm.listRelatives(obj)
+                if translate and scale in relatives:
+                    if rotate in pm.listRelatives(translate):
+                        matrix_rotate = pm.getAttr('%s.matrix' % rotate)[0:3]
+                        matrix_scale = pm.getAttr('%s.matrix' % scale)[0:3]
+                        matrix = matrix_scale * matrix_rotate
+                        matrix.append(pm.getAttr('%s.matrix' % translate)[3])
+                    else:
+                        attr = "%s.%s" % (obj, 'matrix')
+                        if pm.attributeQuery('matrix', n=obj, ex=True):
+                            matrix = pm.getAttr(attr)
+                        else:
+                            matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0],
+                                      [0.0, 0.0, 0.0, 1.0]]
+                else:
+                    attr = "%s.%s" % (obj, 'matrix')
+                    if pm.attributeQuery('matrix', n=obj, ex=True):
+                        matrix = pm.getAttr(attr)
+                    else:
+                        matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0],
+                                  [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+            else:
+                attr = "%s.%s" % (obj, 'matrix')
+                if pm.attributeQuery('matrix', n=obj, ex=True):
+                    matrix = pm.getAttr(attr)
+                else:
+                    matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
         else:
-            print('ERROR: no BundlePath attr found')
+            matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+        return matrix
     else:
-        print('ERROR: Nothing Selected')
+        return [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+
+
+def set_matrix(obj, matrix=None):
+    """
+    Sets translate, rotate, scale values according to matrix value given
+    :param obj:
+    :param matrix:
+    :return:
+    """
+    r_matrix = []
+    if not matrix:
+        matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+    for manip in matrix:
+        for val in manip:
+            r_matrix.append(val)
+    if pm.objExists(obj):
+        pm.xform(obj, m=r_matrix)
+
+
+def compare_matrix(matrix_a, matrix_b):
+    for num, t in enumerate(matrix_a):
+        a = float(matrix_b[num])
+        if round(t, 3) != round(a, 3):
+            return False
+    return True
+
+
+def remove_namespace(ns):
+    try:
+        children = pm.namespaceInfo(ns, listOnlyNamespaces=1)
+        if children:
+            for child in children:
+                remove_namespace(child)
+        pm.namespace(moveNamespace=(ns, ":"), f=1)
+        pm.namespace(removeNamespace=ns)
+    except RuntimeError:
+        print 'No namespace "cam" found'
+
+
+def remove_all_namespaces():
+    namespaces = get_namespaces()
+    for ns in namespaces:
+        remove_namespace(ns)
+
+
+def export_asset_json(json_path, name, task, type_, uid=None, mb_path=None, fbx_path=None, abc_path=None,
+                      unity_path=None,
+                      matrix=None):
+    """
+    exports a .json file describing the maya asset, this is typically used on publish.
+    :param json_path: path where json will be saved
+    :param path: path pointing to the asset (this is required as a minimum)
+    :param name: name of the asset
+    :param task: task asset belongs to
+    :param uid: unique identifier
+    :param mb_path: path to the maya binary file if there is one
+    :param fbx_path: path to an fbx file if there is one
+    :param abc_path: path to abc file if there is one
+    :param unity_path: path to file within unity project
+    :param matrix: transforms for the object in question if any - most publishes will be set to the default
+    :return:
+    """
+    from lumbermill import LumberObject, scene_object
+    name = str(name)
+    source_path = scene_object().path
+    mb_obj = LumberObject(mb_path)
+    fbx_obj = mb_obj.copy(ext='fbx')
+    abc_obj = mb_obj.copy(ext='obj')
+    json_obj = LumberObject(json_path)
+
+    if not uid:
+        uid = name
+    asset_meta = assetcore.MetaObject()
+    if not matrix:
+        matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+    asset_meta.add(_type=type_,
+                   uid=name,
+                   name=uid,
+                   task=task,
+                   source_path=source_path,
+                   mb_path=mb_obj.path,
+                   fbx_path=fbx_obj.path,
+                   abc_path=abc_obj.path,
+                   unity_path='',
+                   json_path=json_obj.path,
+                   transform=matrix)
+    asset_meta.save(json_path)
+
+
+def export_fbx(filepath, start_frame=False, end_frame=False):
+    load_plugin('fbxmaya')
+    if not start_frame:
+        start_frame = int(pm.playbackOptions(query=True, animationStartTime=True))
+    if not end_frame:
+        end_frame = int(pm.playbackOptions(query=True, animationEndTime=True))
+    if start_frame:
+        command = 'FBXExportBakeComplexAnimation -v true; FBXExportInputConnections -v false; ' \
+                   'FBXExportBakeComplexEnd -v %s; FBXExportBakeComplexStart -v %s; FBXExport -f "%s" -s' \
+                   % (str(int(end_frame)), str(int(start_frame)), filepath)
+        mel.eval(command)
+    else:
+        pm.exportSelected(filepath, typ='FBX export')
+
+
+def export_abc(filepath, start_frame=False, end_frame=False):
+    load_plugin('AbcExport')
+    load_plugin('AbcImport')
+    command = 'AbcExport -j "-frameRange %s %s -uvWrite -uvWrite -worldSpace -attrPrefix pxm' \
+              '  -attrPrefix PXM -dataFormat ogawa  -sl  -file %s";' \
+              % (start_frame, end_frame, filepath)
+    mel.eval(command)
+
+
+def set_shot_frame_range(shot_name, project):
+    # throw up the Frame Range Dialog
+    sframe = int(pm.playbackOptions(query=True, animationStartTime=True))
+    eframe = int(pm.playbackOptions(query=True, animationEndTime=True))
+    dialog2 = FrameRange(sframe=sframe,
+                         eframe=eframe,
+                         minframe=int(pm.playbackOptions(query=True, min=True)),
+                         maxframe=int(pm.playbackOptions(query=True, max=True)),
+                         message='Optional: Set Shotgun Frame Range for %s' % shot_name,
+                         both=True)
+    dialog2.exec_()
+    total_frames = int(dialog2.eframe)-int(dialog2.sframe)
+    # tracking.update_frame_range(project_name=project, shot_name=shot_name,
+    #                             head_in=dialog2.sframe,
+    #                             head_out=dialog2.eframe,
+    #                             cut_in=int(dialog2.cut_in_line_edit.text()),
+    #                             cut_out=int(dialog2.cut_out_line_edit.text()))
+    print 'setting sg start frame to: %s' % dialog2.sframe
+    print 'setting sg end frame to: %s' % dialog2.eframe
+    print 'setting sg total frames to: %s' % str(total_frames)
+    return dialog2.sframe, dialog2.eframe
+
 
 
 

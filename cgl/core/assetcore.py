@@ -87,6 +87,8 @@ class MetaObject(object):
         data = {}
         for metaitem in self._metaItems:
             data[metaitem.uid] = self.item_to_json(metaitem.data.uid)
+        print('data--------------------')
+        print(data)
         writeJson(path, data)
 
     def item_to_json(self, obj):
