@@ -57,6 +57,12 @@ def add_matching_files(filepath, dictionary):
 
 
 def get_transform_arrays(obj):
+    """
+    convenience function, it gets all the transfors (translate, rotate, scale) as seperate entities
+    so we can add that to the scene description, it can be convenient to have in some 3d packages.
+    :param obj: object to find transform arrays for
+    :return: translate, rotate, scale arrays
+    """
     translate = pm.getAttr('%s.t' % obj)
     scale = pm.getAttr('%s.s' % obj)
     rotate = pm.getAttr('%s.r' % obj)
@@ -198,6 +204,7 @@ def publish_layout():
 def export_bndl():
     """
     exports a bundle of the current scene, this is designed for the actual 'bndl' task.
+    a bundle can contain assets as children.  A layout can contain bundles as children.
     :return:
     """
     # TODO - i should make sure the tag on the object is updated when i do this.
@@ -210,6 +217,12 @@ def export_bndl():
 
 
 def create_scene_description(sd_path, ignore_bundles=True):
+    """
+    Creates the scene description file.   This can be used for a layout or a bundle
+    :param sd_path:
+    :param ignore_bundles:
+    :return:
+    """
     json_render_path = sd_path
     excluded_bundle_refs = []
     if json_render_path:
@@ -266,6 +279,11 @@ def get_bundles():
 
 
 def get_bundle_ref_children():
+    """
+    Returns a list of all the children of bundles.  This is used when avoiding adding bundle children to a layout
+    scene description.
+    :return:
+    """
     bundle_ref_children = []
     bundles = get_bundles()
     for b in bundles:
