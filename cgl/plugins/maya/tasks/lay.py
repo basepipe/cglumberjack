@@ -6,7 +6,8 @@ from cgl.plugins.maya.lumbermill import LumberObject, scene_object
 from cgl.ui.widgets.dialog import InputDialog
 import cgl.core.assetcore as assetcore
 import bndl as task_bndl
-reload(task_bndl)
+
+TASKNAME = os.path.basename(__file__).split('.py')[0]
 
 
 class Task(SmartTask):
@@ -42,6 +43,12 @@ class Task(SmartTask):
             self._import(filepath=layout_path)
         else:
             print('Could not glob layout path at {}'.format(layout_obj.path))
+
+
+def get_latest(ext='json'):
+    this_obj = scene_object().copy(task=TASKNAME, context='render',
+                                   user='publish', latest=True, set_proper_filename=True, ext=ext)
+    return this_obj
 
 
 def main_import(filepath):
@@ -94,7 +101,7 @@ def add_bundles_to_layout(layout_json=None, next_version=False):
                        added_from=PathParser.relative_path(pm.sceneName()),
                        json=PathParser.relative_path(bundle_json),
                        transform=matrix)
-    print 'Adding Bundles to layout: %s' % layout_json
+    print('Adding Bundles to layout: %s' % layout_json)
     asset_meta.save(layout_json)
     return True
 
@@ -117,7 +124,7 @@ def add_link_to_layout(top_node, task, asset_json, layout_json=False, next_versi
         if not namespace:
             namespace = top_node.name()
     else:
-        print 'node: %s does not exist' % top_node
+        print('node: %s does not exist' % top_node)
         return
     if not layout_json:
         layout_obj = scene_object().copy(task='lay', user='publish', latest=True, set_proper_filename=True, ext='json')
@@ -147,81 +154,9 @@ def add_link_to_layout(top_node, task, asset_json, layout_json=False, next_versi
                    transform=None,
                    scope=asset_json_object.scope
                    )
-    print 'Adding %s to layout: %s' % (top_node, layout_json)
+    print('Adding %s to layout: %s' % (top_node, layout_json))
     asset_meta.save(layout_json)
 
 
-def export_layout(next_version=True):
-    """
-    exports a layout of the current scene
-    :return:
-    """
-    lobj = scene_object().copy(task='lay', latest=True, set_proper_filename=True, ext='json', user='publish',
-                               context='render')
-    if next_version:
-        lobj = lobj.next_major_version()
-        os.makedirs(os.path.dirname(lobj.path_root))
-    json_render_path = lobj.path_root
 
-    if json_render_path:
-        asset_meta = assetcore.MetaObject()
-        excluded_bundle_refs = []
-        # add bundles
-        sel = pm.ls(type='transform')
-        # TODO: I need a function to return bundles
-        for obj in sel:
-            if obj.hasAttr('BundlePath'):
-                top_node = obj.name()
-                matrix = get_matrix(top_node)
-                matrix = str(matrix).replace('[', '').replace(']', '').replace(',', '')
-                namespace = obj.namespace()[:-1]
-                json_path = pm.getAttr('%s.BundlePath' % obj.name())
-                json_path_obj = LumberObject(json_path)
 
-                asset_meta.add(_type='bundle',
-                               bundlename=json_path_obj.shot,
-                               uid=namespace,
-                               source_path=scene_object().path,
-                               bundle_path=json_path_obj.path,
-                               transform=matrix)
-
-                # exclude children references from the bundle
-                children = pm.listRelatives(obj, ad=True)
-                for child in children:
-                    try:
-                        ref = pm.referenceQuery(child, filename=True, wcn=True)
-                        excluded_bundle_refs.append(ref)
-                    except RuntimeError:
-                        logging.info('%s is not a reference' % child)
-        # add all references
-        sel = pm.listReferences()
-        assets = {}
-
-        for obj in sel:
-            if obj.isLoaded():
-                top_node = obj.nodes()[0]
-                temp_obj = LumberObject(obj.path)
-                tag_volume_movable = False
-                if top_node.hasAttr('static_volume_object'):
-                    if pm.getAttr('%s.static_volume_object' % top_node):
-                        tag_volume_movable = True
-
-                matrix = get_matrix(top_node)
-                matrix = str(matrix).replace('[', '').replace(']', '').replace(',', '')
-                namespace = top_node.namespace()[:-1]
-                path = pm.referenceQuery(obj, filename=True, wcn=True)
-                path_obj = LumberObject(path)
-                if namespace:
-                    if path not in excluded_bundle_refs:
-                        asset_meta.add(_type='asset',
-                                       uid=namespace,
-                                       name=temp_obj.shot,
-                                       assetname=temp_obj.shot,
-                                       task=temp_obj.task,
-                                       source_path=path_obj.path,
-                                       transform=matrix)
-        asset_meta.save(json_render_path)
-
-        return json_render_path
-    else:
-        return False

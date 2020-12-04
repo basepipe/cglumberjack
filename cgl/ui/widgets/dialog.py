@@ -468,6 +468,18 @@ class FrameRange(LJDialog):
     def __init__(self, parent=None, title="Frame Range", sframe=None, eframe=None, minframe=None,
                  maxframe=None, camera=None,
                  message='Animation Frame Range to Publish', both=False):
+        """
+        Frame Range Dialog.
+        :param parent:
+        :param title:
+        :param sframe:
+        :param eframe:
+        :param minframe:
+        :param maxframe:
+        :param camera:
+        :param message:
+        :param both:
+        """
         LJDialog.__init__(self, parent)
         layout = QtWidgets.QFormLayout()
         hlayout = QtWidgets.QHBoxLayout()
@@ -476,6 +488,10 @@ class FrameRange(LJDialog):
         self.message = QtWidgets.QLabel(message)
         self.sframe = sframe
         self.eframe = eframe
+        self.minframe = minframe
+        self.maxframe = maxframe
+        print('minframe {}'.format(minframe))
+        print('maxframe {}'.format(maxframe))
         self.both = both
         if camera:
             self.title = '%s for: %s' % (title, camera)
@@ -495,9 +511,10 @@ class FrameRange(LJDialog):
             self.eframe_line_edit.setText(str(eframe))
         if minframe:
             self.cut_in_line_edit.setText(str(minframe))
+        else:
+            self.cut_in_line_edit.setText('0')
         if maxframe:
             self.cut_out_line_edit.setText(str(maxframe))
-
         if both:
             grid.addWidget(self.sframe_line_edit, 1, 0)
             grid.addWidget(self.cut_in_line_edit, 1, 1)
@@ -550,6 +567,8 @@ class FrameRange(LJDialog):
         self.button = True
         sframe = self.sframe_line_edit.text()
         eframe = self.eframe_line_edit.text()
+        self.maxframe = self.cut_out_line_edit.text()
+        self.minframe = self.cut_in_line_edit.text()
         if sframe:
             if eframe:
                 self.eframe = eframe

@@ -46,6 +46,9 @@ class Task(SmartTask):
             print('Could not glob bundle path at {}'.format(bundle_obj.path))
 
 
+
+
+
 def get_latest_publish(filepath, task='bndl', ext='.json'):
     """
     gets the latest published version of the path_object.
@@ -129,18 +132,7 @@ def bundle_import(filepath, layout_group=None):
         pm.select(d=True)
 
 
-def get_bundles():
-    """
-    retrieves all "bundles" in a scene
-    :return: list of bundles
-    """
 
-    bundles = []
-    sel = pm.ls(type='transform')
-    for obj in sel:
-        if obj.hasAttr('BundlePath'):
-            bundles.append(obj)
-    return bundles
 
 
 def remove_selected_bundle():

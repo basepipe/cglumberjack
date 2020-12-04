@@ -141,14 +141,14 @@ class PathObject(object):
         self.unpack_path(path_object)
         self.set_data_from_attrs()
         self.set_project_config()
-        # self.set_json()
+        self.set_json()
 
     def process_dict(self, path_object):
         self.set_attrs_from_dict(path_object)
         self.set_path()
         self.set_project_config()
         self.set_preview_path()
-        # self.set_json()
+        self.set_json()
 
     @staticmethod
     def get_attrs_from_config():
@@ -1725,6 +1725,13 @@ def get_file_icon(filepath):
     if '###' in filepath:
         ip = icon_path('sequence24px.png')
     return ip
+
+
+def remove_root(filepath):
+    root = CONFIG['paths']['root']
+    filepath = filepath.replace('\\', '/')
+    root = root.replace('\\', '/')
+    return filepath.replace(root, '')
 
 
 def hd_proxy_exists(hd_proxy_path, frame_range):

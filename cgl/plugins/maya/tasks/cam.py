@@ -4,12 +4,11 @@ from .smart_task import SmartTask
 from cgl.plugins.maya.lumbermill import LumberObject, scene_object
 from cgl.core.config import app_config
 from cgl.ui.widgets.dialog import MagicList, InputDialog
-from cgl.plugins.maya.utils import get_shape_name, set_shot_frame_range, export_abc, export_asset_json, export_fbx
-import lay
-reload(lay)
+from cgl.plugins.maya.utils import get_shape_name, set_shot_frame_range, export_abc, export_fbx
+import cgl.plugins.maya.scene_description as sd
+reload(sd)
 
 TASKNAME = os.path.basename(__file__).split('.py')[0]
-print('TASKNAME:', TASKNAME)
 
 
 class Task(SmartTask):
@@ -41,6 +40,12 @@ class Task(SmartTask):
             self._import(filepath=this_obj.path_root)
         else:
             print('Could not glob layout path at {}'.format(this_obj.path))
+
+
+def get_latest(seq, shot, task=TASKNAME, ext='mb'):
+    this_obj = scene_object().copy(task=TASKNAME, seq=seq, shot=shot, context='render',
+                                   user='publish', latest=True, set_proper_filename=True, ext=ext)
+    return this_obj
 
 
 def main_import(filepath):
@@ -80,17 +85,9 @@ class RenameCameraDialog(MagicList):
     def on_item_selected(self, data):
         print(data)
 
-    # def on_selected(self, data):
-    #     self.selected = []
-    #     pm.select(d=True)
-    #     for each in data:
-    #         self.selected.append(each[0])
-    #         pm.select(each, add=True)
-
     def on_button_clicked(self):
         for each in self.selected:
             names = []
-            print 'each', each
             if '|' in each:
                 names = each.split('|')
                 child_name = names[-1]
@@ -109,7 +106,7 @@ class RenameCameraDialog(MagicList):
                     new_name = '|'.join(names)
                 else:
                     new_name = self.rename_it.line_edit.text()
-                    print 'renaming %s to %s' % (each, new_name)
+                    print('renaming %s to %s' % (each, new_name))
                     pm.rename(each, new_name)
         self.close()
 
@@ -154,10 +151,10 @@ def publish_selected_camera(camera=None, mb=True, abc=False, fbx=False, unity=Fa
             fbx_output = pub_obj.copy(ext='fbx').path_root
             abc_output = pub_obj.copy(ext='abc').path_root
             json_path = pub_obj.copy(ext='json').path_root
-            print(next_pub_output_version)
-            print(fbx_output)
-            print(abc_output)
-            print(json_path)
+            # print(next_pub_output_version)
+            # print(fbx_output)
+            # print(abc_output)
+            # print(json_path)
 
             # make dirs if they don't exist
             if not os.path.exists(os.path.dirname(next_pub_source_version)):
@@ -165,26 +162,22 @@ def publish_selected_camera(camera=None, mb=True, abc=False, fbx=False, unity=Fa
             if not os.path.exists(os.path.dirname(next_pub_output_version)):
                 os.makedirs(os.path.dirname(next_pub_output_version))
             #
-            sframe, eframe = set_shot_frame_range('%s_%s' % (seq_, shot_), project=scene_object().project)
+            sframe, eframe, minframe, maxframe = set_shot_frame_range('%s_%s' % (seq_, shot_),
+                                                                      project=scene_object().project)
             if mb:
                 pm.exportSelected(next_pub_source_version, typ='mayaBinary')
                 pm.exportSelected(next_pub_output_version, typ='mayaBinary')
-            if fbx:
-                export_fbx(fbx_output, start_frame=sframe, end_frame=eframe)
-            if abc:
-                export_abc(abc_output, start_frame=sframe, end_frame=eframe)
+            # if fbx:
+            #     export_fbx(fbx_output, start_frame=sframe, end_frame=eframe)
+            # if abc:
+            #     export_abc(abc_output, start_frame=sframe, end_frame=eframe)
             if json:
-                print('exporting asset json')
-                export_asset_json(json_path,
-                                  name=selection,
-                                  task='cam',
-                                  type_='cam',
-                                  mb_path=next_pub_output_version,
-                                  fbx_path=fbx_output,
-                                  abc_path=abc_output,
-                                  unity_path='')
-                print('adding to published layout')
-                lay.add_link_to_layout(top_node=selection, task='cam', asset_json=json_path, get_matrix=False)
+                sd.create_camera_description(camera=selection, frame_start=sframe, frame_end=eframe,
+                                             handle_start=minframe,
+                                             handle_end=maxframe, add_to_scene_layout=True)
     except IndexError:
-        print 'No Camera Selected'
+        print('No Camera Selected')
+
+
+
 
