@@ -435,6 +435,20 @@ class ProjectManagementData(object):
                    ]
         return ShotgunQuery.find_one("Version", filters, fields=VERSIONFIELDS)
 
+    def get_frame_range(self):
+        """
+
+        :return:
+        """
+        pass
+
+    def set_frame_range(self):
+        """
+
+        :return:
+        """
+        pass
+
     def set_status(self, force=False):
         """
         given a data object set the status for it.

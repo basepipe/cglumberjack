@@ -1,11 +1,13 @@
+import os
 import pymel.core as pm
 from cgl.core.utils.read_write import load_json
 from .smart_task import SmartTask
 from cgl.plugins.maya.lumbermill import LumberObject, scene_object
-from cgl.plugins.maya.utils import get_next_namespace, select_reference
 from cgl.ui.widgets.dialog import InputDialog
-from cgl.plugins.maya.utils import load_plugin
-from cgl.core.config import app_config
+import cgl.core.assetcore as assetcore
+import bndl as task_bndl
+
+TASKNAME = os.path.basename(__file__).split('.py')[0]
 
 
 class Task(SmartTask):
@@ -43,6 +45,12 @@ class Task(SmartTask):
             print('Could not glob layout path at {}'.format(layout_obj.path))
 
 
+def get_latest(ext='json'):
+    this_obj = scene_object().copy(task=TASKNAME, context='render',
+                                   user='publish', latest=True, set_proper_filename=True, ext=ext)
+    return this_obj
+
+
 def main_import(filepath):
     """
 
@@ -53,17 +61,7 @@ def main_import(filepath):
     print(layout_dict)
 
 
-def general_import(ext):
-    if ext == '.mb':
-        print('.mb')
-    elif ext == '.ma':
-        print('.ma')
-    elif ext == '.fbx':
-        print('.fbx')
-    elif ext == '.abc':
-        print('.abc')
-    elif ext == '.json':
-        print('.json')
-    elif ext == '.obj':
-        print('.obj')
+
+
+
 

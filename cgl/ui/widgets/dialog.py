@@ -376,7 +376,7 @@ class MagicList(LJDialog):
         self.button_functions = button_functions
         self.user_buttons = buttons
         self.combo_defaults = combo_box
-        self.root_path = CONFIG['paths']['root']
+        self.root_path = app_config()['paths']['root']
         self.v_layout = QtWidgets.QVBoxLayout(self)
         self.combo_row = QtWidgets.QHBoxLayout(self)
         self.combo_label = QtWidgets.QLabel("<b>%s</b>" % combo_label)
@@ -399,7 +399,7 @@ class MagicList(LJDialog):
 
         self.data_table = LJTableWidget(self)
         self.data_table.set_item_model(FileTableModel([], [""]))
-        self.data_table.clicked.connect(self.on_selected)
+        self.data_table.selected.connect(self.on_selected)
 
         self.v_layout.addLayout(self.combo_row)
         self.v_layout.addWidget(self.data_table)
@@ -452,48 +452,111 @@ class MagicList(LJDialog):
         self.combo_changed_signal.emit()
 
     def on_selected(self, data):
+        self.get_data_info(data)
         self.selection = data
         self.item_selected.emit(data)
+
+    @staticmethod
+    def get_data_info(data):
+        print(data)
 
 
 class FrameRange(LJDialog):
     cancel_signal = QtCore.Signal()
     button = True
 
-    def __init__(self, parent=None, title="Frame Range", sframe=None, eframe=None, camera=None):
+    def __init__(self, parent=None, title="Frame Range", sframe=None, eframe=None, minframe=None,
+                 maxframe=None, camera=None,
+                 message='Animation Frame Range to Publish', both=False):
+        """
+        Frame Range Dialog.
+        :param parent:
+        :param title:
+        :param sframe:
+        :param eframe:
+        :param minframe:
+        :param maxframe:
+        :param camera:
+        :param message:
+        :param both:
+        """
         LJDialog.__init__(self, parent)
         layout = QtWidgets.QFormLayout()
         hlayout = QtWidgets.QHBoxLayout()
         blayout = QtWidgets.QHBoxLayout()
+        grid = QtWidgets.QGridLayout()
+        self.message = QtWidgets.QLabel(message)
         self.sframe = sframe
         self.eframe = eframe
+        self.minframe = minframe
+        self.maxframe = maxframe
+        print('minframe {}'.format(minframe))
+        print('maxframe {}'.format(maxframe))
+        self.both = both
         if camera:
             self.title = '%s for: %s' % (title, camera)
         else:
             self.title = title
-        self.sframe_label = QtWidgets.QLabel('Start Frame')
-        self.eframe_label = QtWidgets.QLabel('End Frame')
+        self.sframe_label = QtWidgets.QLabel('Header Frame In')
+        self.eframe_label = QtWidgets.QLabel('Tail Frame Out')
+        self.cut_in_label = QtWidgets.QLabel('Cut In')
+        self.cut_out_label = QtWidgets.QLabel('Cut Out')
+        self.cut_in_line_edit = QtWidgets.QLineEdit()
+        self.cut_out_line_edit = QtWidgets.QLineEdit()
         self.sframe_line_edit = QtWidgets.QLineEdit()
         self.eframe_line_edit = QtWidgets.QLineEdit()
         if sframe:
             self.sframe_line_edit.setText(str(sframe))
         if eframe:
             self.eframe_line_edit.setText(str(eframe))
-        hlayout.addWidget(self.sframe_label)
-        hlayout.addWidget(self.sframe_line_edit)
-        hlayout.addWidget(self.eframe_label)
-        hlayout.addWidget(self.eframe_line_edit)
+        if minframe:
+            self.cut_in_line_edit.setText(str(minframe))
+        else:
+            self.cut_in_line_edit.setText('0')
+        if maxframe:
+            self.cut_out_line_edit.setText(str(maxframe))
+        if both:
+            grid.addWidget(self.sframe_line_edit, 1, 0)
+            grid.addWidget(self.cut_in_line_edit, 1, 1)
+            grid.addWidget(self.cut_out_line_edit, 1, 2)
+            grid.addWidget(self.eframe_line_edit, 1, 3)
+            grid.addWidget(self.sframe_label, 2, 0)
+            grid.addWidget(self.cut_in_label, 2, 1)
+            grid.addWidget(self.cut_out_label, 2, 2)
+            grid.addWidget(self.eframe_label, 2, 3)
+        else:
+            grid.addWidget(self.sframe_line_edit, 1, 0)
+            grid.addWidget(self.eframe_line_edit, 1, 1)
+            grid.addWidget(self.sframe_label, 2, 0)
+            grid.addWidget(self.eframe_label, 2, 1)
+
         self.button_cancel = QtWidgets.QPushButton('Cancel')
         self.button = QtWidgets.QPushButton('Confirm Frame Range')
         blayout.addWidget(self.button_cancel)
         blayout.addWidget(self.button)
-        layout.addRow(hlayout)
+        layout.addWidget(self.message)
+        layout.addRow(grid)
         layout.addRow(blayout)
         self.setLayout(layout)
         self.setWindowTitle(self.title)
 
         self.button.clicked.connect(self.on_button_clicked)
         self.button_cancel.clicked.connect(self.cancel_clicked)
+        self.cut_out_line_edit.textChanged.connect(self.line_edit_changed)
+        self.sframe_line_edit.textChanged.connect(self.line_edit_changed)
+        self.eframe_line_edit.textChanged.connect(self.line_edit_changed)
+        self.cut_in_line_edit.textChanged.connect(self.line_edit_changed)
+        self.button.setEnabled(False)
+        self.line_edit_changed()
+
+    def line_edit_changed(self):
+        if self.both:
+            if self.cut_out_line_edit.text() and self.cut_in_line_edit.text() and self.sframe_line_edit.text() \
+                    and self.eframe_line_edit.text():
+                self.button.setEnabled(True)
+        else:
+            if self.sframe_line_edit.text() and self.eframe_line_edit.text():
+                self.button.setEnabled(True)
 
     def cancel_clicked(self):
         self.button = False
@@ -504,6 +567,8 @@ class FrameRange(LJDialog):
         self.button = True
         sframe = self.sframe_line_edit.text()
         eframe = self.eframe_line_edit.text()
+        self.maxframe = self.cut_out_line_edit.text()
+        self.minframe = self.cut_in_line_edit.text()
         if sframe:
             if eframe:
                 self.eframe = eframe
