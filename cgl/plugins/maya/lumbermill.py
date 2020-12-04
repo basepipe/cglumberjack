@@ -21,30 +21,29 @@ PROCESSING_METHOD = UserConfig().d['methodology']
 
 class BrowserWidget(CGLumberjackWidget):
     def __init__(self, parent=None, path=None,
-                 show_import=False):
-        super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
+                 show_import=False, show_reference=False):
+        super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import,
+                                            show_reference=show_reference)
 
     def open_clicked(self):
         print('Opening: %s' % self.path_object.path_root)
 
     def import_clicked(self):
         for selection in self.source_selection:
-            base_, ext = os.path.splitext(selection)
+            # base_, ext = os.path.splitext(selection)
             import_file(selection, namespace=None)
-        self.parent().parent().accept()
 
     def reference_clicked(self):
         for selection in self.source_selection:
-            base_, ext = os.path.splitext(selection)
+            # base_, ext = os.path.splitext(selection)
             reference_file(selection, namespace=None)
-        self.parent().parent().accept()
 
 
 class AppMainWindow(CGLumberjack):
     def __init__(self, parent=None, path=None, user_info=None):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
         print('Application Path path is %s' % path)
-        self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
+        self.setCentralWidget(BrowserWidget(self, show_import=True, show_reference=True, path=path))
 
 
 class LumberObject(PathObject):
@@ -223,15 +222,13 @@ def reference_file(filepath, namespace=None):
     :param filepath:
     :return:
     """
-    print(5)
     if not namespace:
         namespace = get_namespace(filepath)
-    print(6)
     print(filepath)
     if os.path.exists(filepath):
-        print(7)
         print('filepath: ', filepath)
-        return pm.createReference(filepath, namespace=namespace, ignoreVersion=True, loadReferenceDepth='all')
+        if filepath.endswith('.mb') or filepath.endswith('.ma'):
+            return pm.createReference(filepath, namespace=namespace, ignoreVersion=True, loadReferenceDepth='all')
     else:
         print('File does not exist: {}'.format(filepath))
 

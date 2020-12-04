@@ -382,7 +382,7 @@ class LocationWidget(QtWidgets.QWidget):
 class CGLumberjackWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None, project_management=None, user_email=None, company=None,
-                 path=None, radio_filter=None, show_import=False, default_project=None):
+                 path=None, radio_filter=None, show_import=False, show_reference=False, default_project=None):
         QtWidgets.QWidget.__init__(self, parent)
         try:
             font_db = QtGui.QFontDatabase()
@@ -393,6 +393,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
         # Environment Stuff
         self.show_import = show_import
+        self.show_reference = show_reference
         self.user_email = user_email
         self.company = company
         self.project_management = project_management
@@ -642,9 +643,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(path_object.data)
 
     def load_files_panel(self, path_object):
-        self.panel = FilesPanel(path_object=path_object, show_import=self.show_import)
+        self.panel = FilesPanel(path_object=path_object, show_import=self.show_import,
+                                show_reference=self.show_reference)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
+        self.panel.reference_signal.connect(self.reference_clicked)
         # self.panel.new_version_signal.connect(self.new_version_clicked)
         self.panel.review_signal.connect(self.review_clicked)
         self.panel.publish_signal.connect(self.publish_clicked)
@@ -668,6 +671,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     @staticmethod
     def import_clicked():
         logging.debug('import clicked')
+
+    @staticmethod
+    def reference_clicked():
+        print('reference clicked')
+        logging.debug('reference clicked')
 
     def review_clicked(self):
 

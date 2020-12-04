@@ -22,12 +22,14 @@ class FilesPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
     render_location_changed = QtCore.Signal(object)
     open_signal = QtCore.Signal()
+    reference_signal = QtCore.Signal()
     import_signal = QtCore.Signal()
     new_version_signal = QtCore.Signal()
     review_signal = QtCore.Signal()
     publish_signal = QtCore.Signal()
 
-    def __init__(self, parent=None, path_object=None, user_email='', machine_user=None, show_import=False):
+    def __init__(self, parent=None, path_object=None, user_email='', machine_user=None, show_import=False,
+                 show_reference=False):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
         self.work_files = []
@@ -39,6 +41,7 @@ class FilesPanel(QtWidgets.QWidget):
         self.task = path_object.task
         self.task_widgets_dict = {}
         self.show_import = show_import
+        self.show_reference = show_reference
         self.path_object = path_object
         self.project_management = CONFIG['account_info']['project_management']
         self.schema = CONFIG['project_management'][self.project_management]['api']['default_schema']
@@ -95,7 +98,8 @@ class FilesPanel(QtWidgets.QWidget):
                 return
             task_widget = TaskWidget(parent=self,
                                      title=title,
-                                     path_object=current, show_import=self.show_import)
+                                     path_object=current, show_import=self.show_import,
+                                     show_reference=self.show_reference)
             task_widget.task = self.task
             self.render_files_widget = task_widget.files_area.export_files_table
             task_widget.files_area.export_files_table.hide()
@@ -150,6 +154,7 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget.files_area.work_files_table.doubleClicked.connect(self.on_open_clicked)
             task_widget.files_area.open_button.clicked.connect(self.on_open_clicked)
             task_widget.files_area.import_button.clicked.connect(self.on_import_clicked)
+            task_widget.files_area.reference_button.clicked.connect(self.on_reference_clicked)
             task_widget.versions.currentIndexChanged.connect(self.on_task_info_changed)
             task_widget.users.currentIndexChanged.connect(self.on_task_info_changed)
             task_widget.resolutions.currentIndexChanged.connect(self.on_task_info_changed)
@@ -476,6 +481,9 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_import_clicked(self):
         self.import_signal.emit()
+
+    def on_reference_clicked(self):
+        self.reference_signal.emit()
 
     def on_review_clicked(self):
         self.review_signal.emit()

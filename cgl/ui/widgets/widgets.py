@@ -193,6 +193,7 @@ class FileTableModel(ListItemModel):
 class FilesWidget(QtWidgets.QFrame):
     open_button_clicked = QtCore.Signal()
     import_button_clicked = QtCore.Signal()
+    reference_button_clicked = QtCore.Signal()
     new_version_clicked = QtCore.Signal()
     review_button_clicked = QtCore.Signal()
     publish_button_clicked = QtCore.Signal()
@@ -201,9 +202,10 @@ class FilesWidget(QtWidgets.QFrame):
     copy_selected_version = QtCore.Signal()
     create_edit_clicked = QtCore.Signal()
 
-    def __init__(self, parent, show_import=False):
+    def __init__(self, parent, show_import=False, show_reference=False):
         QtWidgets.QFrame.__init__(self, parent)
         self.show_import = show_import
+        self.show_reference = show_reference
         layout = QtWidgets.QVBoxLayout(self)
         table_layout = QtWidgets.QVBoxLayout()
         table_layout.setSpacing(0)
@@ -229,6 +231,9 @@ class FilesWidget(QtWidgets.QFrame):
         self.open_button.setText('Open')
         self.import_button = LJButton()
         self.import_button.setText('Import')
+        self.reference_button = LJButton()
+        self.reference_button.setText('Reference')
+        self.reference_button.hide()
         self.new_version_button = VersionButton(self)
         self.review_button = LJButton()
         self.review_button.setText('Review')
@@ -242,6 +247,7 @@ class FilesWidget(QtWidgets.QFrame):
         tool_button_layout.addWidget(self.open_button)
         tool_button_layout.addWidget(self.create_edit_button)
         tool_button_layout.addWidget(self.import_button)
+        tool_button_layout.addWidget(self.reference_button)
         tool_button_layout.addWidget(self.new_version_button)
         tool_button_layout.addWidget(self.review_button)
         tool_button_layout.addWidget(self.publish_button)
@@ -259,9 +265,12 @@ class FilesWidget(QtWidgets.QFrame):
         self.review_button.clicked.connect(self.on_review_button_clicked)
         self.publish_button.clicked.connect(self.on_publish_button_clicked)
         self.import_button.clicked.connect(self.on_import_clicked)
+        self.reference_button.clicked.connect(self.on_reference_clicked)
         self.create_edit_button.clicked.connect(self.on_create_edit_button_clicked)
         if self.show_import:
             self.import_button.show()
+        if self.show_reference:
+            self.reference_button.show()
 
     def clear(self):
         self.export_files_table.clear()
@@ -306,6 +315,9 @@ class FilesWidget(QtWidgets.QFrame):
     def on_import_clicked(self):
         self.import_button_clicked.emit()
 
+    def on_reference_clicked(self):
+        self.reference_button_clicked.emit()
+
     def on_open_button_clicked(self):
         self.open_button_clicked.emit()
 
@@ -341,11 +353,12 @@ class TaskWidget(QtWidgets.QWidget):
     copy_latest_version = QtCore.Signal()
     copy_selected_version = QtCore.Signal()
 
-    def __init__(self, parent, title, filter_string=None, path_object=None, show_import=False):
+    def __init__(self, parent, title, filter_string=None, path_object=None, show_import=False, show_reference=False):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         task_row = QtWidgets.QHBoxLayout()
         self.show_import = show_import
+        self.show_reference = show_reference
         self.path_object = path_object
         self.tool_button_layout = QtWidgets.QHBoxLayout()
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -399,7 +412,7 @@ class TaskWidget(QtWidgets.QWidget):
 
         self.empty_state = EmptyStateWidget(path_object=self.path_object)
         self.empty_state.hide()
-        self.files_area = FilesWidget(self, show_import=self.show_import)
+        self.files_area = FilesWidget(self, show_import=self.show_import, show_reference=self.show_reference)
 
         v_layout.addLayout(self.title_row)
         v_layout.addLayout(self.info_layout)
