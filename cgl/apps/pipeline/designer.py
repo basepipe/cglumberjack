@@ -18,7 +18,7 @@ class Designer(LJDialog):
 
         self.menu_path = menu_path
         self.software = ''
-        self.setWindowTitle('Pipeline Designer')
+        self.setWindowTitle("Alchemist's Cookbook")
         self.schema = pm_tasks
         self.task_list = []
         try:
@@ -46,7 +46,7 @@ class Designer(LJDialog):
         self.software_label = QtWidgets.QLabel('Software:')
         self.software_label.setProperty('class', 'title')
         self.software_combo = QtWidgets.QComboBox()
-        self.menu_type_label = QtWidgets.QLabel('Menu Type:')
+        self.menu_type_label = QtWidgets.QLabel('Recipe Type:')
         self.menu_type_label.setProperty('class', 'title')
         self.menu_type_combo = QtWidgets.QComboBox()
         self.menu_type_combo.addItems(['', 'menus', 'context-menus', 'shelves', 'preflights'])

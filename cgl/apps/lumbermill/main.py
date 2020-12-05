@@ -382,7 +382,7 @@ class LocationWidget(QtWidgets.QWidget):
 class CGLumberjackWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None, project_management=None, user_email=None, company=None,
-                 path=None, radio_filter=None, show_import=False, default_project=None):
+                 path=None, radio_filter=None, show_import=False, show_reference=False, default_project=None):
         QtWidgets.QWidget.__init__(self, parent)
         try:
             font_db = QtGui.QFontDatabase()
@@ -393,6 +393,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
         # Environment Stuff
         self.show_import = show_import
+        self.show_reference = show_reference
         self.user_email = user_email
         self.company = company
         self.project_management = project_management
@@ -642,9 +643,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(path_object.data)
 
     def load_files_panel(self, path_object):
-        self.panel = FilesPanel(path_object=path_object, show_import=self.show_import)
+        self.panel = FilesPanel(path_object=path_object, show_import=self.show_import,
+                                show_reference=self.show_reference)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
+        self.panel.reference_signal.connect(self.reference_clicked)
         # self.panel.new_version_signal.connect(self.new_version_clicked)
         self.panel.review_signal.connect(self.review_clicked)
         self.panel.publish_signal.connect(self.publish_clicked)
@@ -668,6 +671,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     @staticmethod
     def import_clicked():
         logging.debug('import clicked')
+
+    @staticmethod
+    def reference_clicked():
+        print('reference clicked')
+        logging.debug('reference clicked')
 
     def review_clicked(self):
 
@@ -779,7 +787,7 @@ class CGLumberjack(LJMainWindow):
         open_default_files = QtWidgets.QAction("Go to Default Files", self)
         create_project = QtWidgets.QAction('Import .csv', self)
         settings.setShortcut('Ctrl+,')
-        pipeline_designer = QtWidgets.QAction('Pipeline Designer', self)
+        alchemy_cookbook = QtWidgets.QAction("Alchemist's Cookbook", self)
         set_up_sync_thing_server = QtWidgets.QAction('Set up Server', self)
         set_up_sync_thing_workstation = QtWidgets.QAction('Set Up Workstation', self)
         # check_machines_action = QtWidgets.QAction('Check for new Machines', self)
@@ -798,6 +806,8 @@ class CGLumberjack(LJMainWindow):
         # fix_paths = QtWidgets.QAction('Fix File Paths', self)
 
         # add actions to the file menu
+        tools_menu.addAction(alchemy_cookbook)
+        tools_menu.addSeparator()
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
         tools_menu.addAction(open_user_globals)
@@ -806,7 +816,6 @@ class CGLumberjack(LJMainWindow):
         tools_menu.addMenu(self.current_processing_method)
         tools_menu.addSeparator()
         tools_menu.addAction(create_project)
-        tools_menu.addAction(pipeline_designer)
         tools_menu.addSeparator()
         tools_menu.addAction(update_button)
         tools_menu.addAction(report_bug_button)
@@ -855,7 +864,7 @@ class CGLumberjack(LJMainWindow):
         open_default_files.triggered.connect(self.open_default_files)
         create_project.triggered.connect(self.open_create_project_dialog)
         settings.triggered.connect(self.on_settings_clicked)
-        pipeline_designer.triggered.connect(self.on_menu_designer_clicked)
+        alchemy_cookbook.triggered.connect(self.on_menu_designer_clicked)
         login.triggered.connect(self.on_login_clicked)
         proj_man.triggered.connect(self.on_proj_man_menu_clicked)
         update_button.triggered.connect(self.update_lumbermill_clicked)

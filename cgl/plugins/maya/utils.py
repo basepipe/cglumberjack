@@ -1,26 +1,29 @@
 import re
 import os
+from cgl.ui.widgets.dialog import InputDialog, FrameRange
+from cgl.core.config import app_config
+from cgl.core.utils.read_write import load_json
+from cgl.ui.widgets.dialog import MagicList
+
 try:
     import pymel.core as pm
     import maya.mel as mel
     import mtoa.core as aicore
 except ModuleNotFoundError:
     print('Skipping pymel.core - outside of maya')
-from cgl.ui.widgets.dialog import InputDialog
-from cgl.core.config import app_config
-from cgl.core.utils.read_write import load_json
+
 
 CONFIG = app_config()
 
 
 def get_namespace(filepath):
-    from .lumbermill import LumberObject
-    po = LumberObject(filepath)
-    if po.task == 'cam':
+    from lumbermill import LumberObject
+    path_object = LumberObject(filepath)
+    if path_object.task == 'cam':
         namespace = 'cam'
-    elif po.scope == 'assets':
-        namespace = po.shot
-    elif po.scope == 'shots':
+    elif path_object.scope == 'assets':
+        namespace = path_object.shot
+    elif path_object.scope == 'shots':
         namespace = 'tempNS'
     return get_next_namespace(namespace)
 
@@ -33,6 +36,13 @@ def get_selected_namespace():
     namespace = pm.ls(sl=True)[0]
     if namespace:
         return namespace.split(':')[0]
+
+
+def select_reference(ref_node):
+    # This assumes we're talking about a published reference
+    object_ = pm.ls(regex='%s:[a-z]{3}|%s:CAMERAS' % (ref_node.namespace, ref_node.namespace))[0]
+    pm.select(object_)
+    return object_
 
 
 def get_next_namespace(ns):
@@ -246,6 +256,125 @@ def get_maya_window():
     if ptr is not None:
         main_maya_window = wrapInstance(long(ptr), QtWidgets.QWidget)
     return main_maya_window
+
+
+def update_reference(reference):
+    path = reference[1].path
+    filename = os.path.basename(path)
+    print(filename)
+    lobj = LumberObject(path).copy(latest=True)
+    latest_version = lobj.path_root
+    path = path.replace('\\', '/')
+    latest_version = latest_version.replace('\\', '/')
+    if os.path.exists(latest_version):
+        print('Comparing Reference: \n\t%s to \n\t%s' % (path, latest_version))
+        if path != latest_version:
+            print('REPLACING REFERENCE: %s ---- %s' % (reference[0], latest_version))
+            try:
+                reference[1].replaceWith(latest_version)
+                return 1
+            except RuntimeError:
+                return 0
+                print('cannot load latest version %s ' % latest_version)
+        else:
+            return 0
+    else:
+        print('file: {} does not exist'.format(latest_version))
+        return 0
+
+
+def update_all_references():
+    refs = pm.listReferences(refNodes=True)
+    total_count = 0
+    for ref in refs:
+        updated = update_reference(ref)
+        total_count += updated
+    print('{} References updated'.format(total_count))
+    return total_count
+
+
+def get_selected_reference():
+    """
+    Returns a list of references representing the currently selected items.
+    :return:
+    """
+    ns = None
+    references = pm.listReferences(refNodes=True)
+    selected = pm.ls(sl=True)
+    if selected:
+        reference_nodes = []
+        for s in selected:
+            if ':' in s:
+                ns = s.split(':')[0]
+                for r in references:
+                    namespace_ = str(r[0].replace('RN', ''))
+                    if ns == namespace_:
+                        reference_nodes.append(r)
+        if not reference_nodes:
+            print("Could not find Namespace %s in references.  It's not in the scene, or there's a namespace error" % ns)
+        return reference_nodes
+    else:
+        print('No Reference Selected, Select a Reference and Try again')
+        return None
+
+
+def remove_namespace(ns):
+    try:
+        children = pm.namespaceInfo(ns, listOnlyNamespaces=1)
+        if children:
+            for child in children:
+                remove_namespace(child)
+        pm.namespace(moveNamespace=(ns, ":"), f=1)
+        pm.namespace(removeNamespace=ns)
+    except RuntimeError:
+        print('No namespace "{}" found'.format(ns))
+
+
+def remove_all_namespaces():
+    namespaces = get_namespaces()
+    for ns in namespaces:
+        remove_namespace(ns)
+
+
+def export_fbx(filepath, start_frame=False, end_frame=False):
+    load_plugin('fbxmaya')
+    if not start_frame:
+        start_frame = int(pm.playbackOptions(query=True, animationStartTime=True))
+    if not end_frame:
+        end_frame = int(pm.playbackOptions(query=True, animationEndTime=True))
+    if start_frame:
+        command = 'FBXExportBakeComplexAnimation -v true; FBXExportInputConnections -v false; ' \
+                   'FBXExportBakeComplexEnd -v %s; FBXExportBakeComplexStart -v %s; FBXExport -f "%s" -s' \
+                   % (str(int(end_frame)), str(int(start_frame)), filepath)
+        mel.eval(command)
+    else:
+        pm.exportSelected(filepath, typ='FBX export')
+
+
+def export_abc(filepath, start_frame=False, end_frame=False):
+    load_plugin('AbcExport')
+    load_plugin('AbcImport')
+    command = 'AbcExport -j "-frameRange %s %s -uvWrite -uvWrite -worldSpace -attrPrefix pxm' \
+              '  -attrPrefix PXM -dataFormat ogawa  -sl  -file %s";' \
+              % (start_frame, end_frame, filepath)
+    mel.eval(command)
+
+
+def set_shot_frame_range(shot_name, project):
+    # throw up the Frame Range Dialog
+    sframe = int(pm.playbackOptions(query=True, animationStartTime=True))
+    eframe = int(pm.playbackOptions(query=True, animationEndTime=True))
+    minframe = int(pm.playbackOptions(query=True, min=True))
+    maxframe = int(pm.playbackOptions(query=True, max=True))
+    dialog2 = FrameRange(sframe=sframe,
+                         eframe=eframe,
+                         minframe=minframe,
+                         maxframe=maxframe,
+                         message='Optional: Set Shotgun Frame Range for %s' % shot_name,
+                         both=True)
+    dialog2.exec_()
+    total_frames = int(dialog2.eframe)-int(dialog2.sframe)
+    return dialog2.sframe, dialog2.eframe, dialog2.minframe, dialog2.maxframe
 
 
 

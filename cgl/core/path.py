@@ -141,14 +141,14 @@ class PathObject(object):
         self.unpack_path(path_object)
         self.set_data_from_attrs()
         self.set_project_config()
-        # self.set_json()
+        self.set_json()
 
     def process_dict(self, path_object):
         self.set_attrs_from_dict(path_object)
         self.set_path()
         self.set_project_config()
         self.set_preview_path()
-        # self.set_json()
+        self.set_json()
 
     @staticmethod
     def get_attrs_from_config():
@@ -957,21 +957,6 @@ class PathObject(object):
         cgl_copy(current_render, publish_render)
         logging.debug('--------- Finished Publishing')
         return publish_render_object
-        # if UserConfig().d["sync_thing_machine_type"] == 'remote workstation':
-        #     from cgl.ui.widgets.sync_master import SharingDialog
-        #     dialog_sharing = SharingDialog([publish, publish_render_object])
-        #     dialog_sharing.exec_()
-        #     if dialog_sharing.button == 'Ok':
-        #         all_device_id = dialog_sharing.device_list
-        #         logging.debug('Sharing Folders to: %s' % all_device_id)
-        #         logging.debug(publish.path_root)
-        #         logging.debug(publish_render_object.path_root)
-        #         return publish_render_object
-        #     else:
-        #         logging.debug('skipping remote publish')
-        #         return publish_render_object
-        # else:
-
 
     def show_in_folder(self):
         """
@@ -1740,6 +1725,13 @@ def get_file_icon(filepath):
     if '###' in filepath:
         ip = icon_path('sequence24px.png')
     return ip
+
+
+def remove_root(filepath):
+    root = CONFIG['paths']['root']
+    filepath = filepath.replace('\\', '/')
+    root = root.replace('\\', '/')
+    return filepath.replace(root, '')
 
 
 def hd_proxy_exists(hd_proxy_path, frame_range):

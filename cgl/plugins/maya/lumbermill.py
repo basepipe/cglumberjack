@@ -21,30 +21,29 @@ PROCESSING_METHOD = UserConfig().d['methodology']
 
 class BrowserWidget(CGLumberjackWidget):
     def __init__(self, parent=None, path=None,
-                 show_import=False):
-        super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import)
+                 show_import=False, show_reference=False):
+        super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import,
+                                            show_reference=show_reference)
 
     def open_clicked(self):
         print('Opening: %s' % self.path_object.path_root)
 
     def import_clicked(self):
         for selection in self.source_selection:
-            base_, ext = os.path.splitext(selection)
+            # base_, ext = os.path.splitext(selection)
             import_file(selection, namespace=None)
-        self.parent().parent().accept()
 
     def reference_clicked(self):
         for selection in self.source_selection:
-            base_, ext = os.path.splitext(selection)
+            # base_, ext = os.path.splitext(selection)
             reference_file(selection, namespace=None)
-        self.parent().parent().accept()
 
 
 class AppMainWindow(CGLumberjack):
     def __init__(self, parent=None, path=None, user_info=None):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
         print('Application Path path is %s' % path)
-        self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
+        self.setCentralWidget(BrowserWidget(self, show_import=True, show_reference=True, path=path))
 
 
 class LumberObject(PathObject):
@@ -223,15 +222,13 @@ def reference_file(filepath, namespace=None):
     :param filepath:
     :return:
     """
-    print(5)
     if not namespace:
         namespace = get_namespace(filepath)
-    print(6)
     print(filepath)
     if os.path.exists(filepath):
-        print(7)
         print('filepath: ', filepath)
-        return pm.createReference(filepath, namespace=namespace, ignoreVersion=True, loadReferenceDepth='all')
+        if filepath.endswith('.mb') or filepath.endswith('.ma'):
+            return pm.createReference(filepath, namespace=namespace, ignoreVersion=True, loadReferenceDepth='all')
     else:
         print('File does not exist: {}'.format(filepath))
 
@@ -371,7 +368,7 @@ def render(preview=False):
     if preview:
         basic_playblast(path_object=scene_object())
     else:
-        print('Rendering to Farm Now')
+        launch_preflight(task='render')
 
 
 def review():
@@ -382,16 +379,20 @@ def review():
         do_review(progress_bar=None, path_object=playblast_seq)
 
 
-def launch_preflight(task=None):
+def launch_preflight(path_object=None, task=None):
     """
     Launches preflight window.
     :param task:
+    :param path_object:
     :return:
     """
     from cgl.plugins.preflight.main import Preflight
+    if not path_object:
+        path_object = scene_object()
     if not task:
-        task = scene_object().task
-    pf_mw = Preflight(parent=None, software='maya', preflight=task, path_object=scene_object())
+        task = path_object.task
+    print(task)
+    pf_mw = Preflight(parent=None, software='maya', preflight=task, path_object=path_object)
     pf_mw.show()
 
 
@@ -400,8 +401,12 @@ def publish():
 
     :return:
     """
-    publish_object = scene_object().publish()
-    return publish_object
+    # Try a Preflight First
+    launch_preflight()
+    # If no preflight - let them know that we need one.
+    # Check if there is a preflight publish option under the tasks
+    # publish_object = scene_object().publish()
+    # return publish_object
 
 
 def launch_():
@@ -431,7 +436,7 @@ def build(path_object=None):
         path_object = scene_object()
     task = path_object.task
     task_class = get_task_class(task)
-    task_class(path_object).build()
+    task_class().build()
 
 
 def get_task_class(task):
