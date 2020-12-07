@@ -262,7 +262,7 @@ def read_layout(outFile=None, linked=False, append=False):
     :param append:
     :return:
     """
-    from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file
+    from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file_old
     from cgl.core.utils.read_write import load_json
     import bpy
 
@@ -288,9 +288,9 @@ def read_layout(outFile=None, linked=False, append=False):
         if lumberObject.filename_base in bpy.data.libraries:
             lib = bpy.data.libraries[lumberObject.filename]
             bpy.data.batch_remove(ids=([lib]))
-            import_file(lumberObject.path_root, linked=linked, append=append)
+            import_file_old(lumberObject.path_root, linked=linked, append=append)
         else:
-            import_file(lumberObject.path_root, linked=linked, append=append)
+            import_file_old(lumberObject.path_root, linked=linked, append=append)
 
         if p not in bpy.data.objects:
             obj = bpy.data.objects.new(p, None)
@@ -324,12 +324,19 @@ def read_layout(outFile=None, linked=False, append=False):
             obj.scale = scale
 
 
-def rename_materials(selection=None):
-    import bpy
+def rename_materials(selection=None, material_name=None):
     """
+
     Sequentially renames  materials from given object name if empty , renamed from selected object
-    :param name:
+    :param selection: name of the selection object
+    :type selection:
+    :param material_name:
+    :type material_name:
     """
+    import bpy
+
+    if material_name == None:
+        material_name = object.name
     if selection == None:
         selection = bpy.context.selected_objects
 
@@ -342,7 +349,7 @@ def rename_materials(selection=None):
         selection = [bpy.data.objects[selection]]
         for object in selection:
             for material_slot in object.material_slots:
-                material_slot.material.name = object.name
+                material_slot.material.name = material_name
                 print(object.name, material_slot.name)
 
 
@@ -523,7 +530,7 @@ def read_materials(path_object=None):
         for material in data[obj].keys():
 
             if material not in bpy.data.materials:
-                lm.import_file(shaders.path_root, collection_name=material, type='MATERIAL', linked=False)
+                lm.import_file_old(shaders.path_root, collection_name=material, type='MATERIAL', linked=False)
 
             if material not in object.data.materials:
                 object.data.materials.append(bpy.data.materials[material])
@@ -817,19 +824,27 @@ def keep_single_collections(obj, collection_name):
                     pass
 
 
-def create_collection(collection_name: object):
+def create_collection(collection_name, parent=None):
+    import bpy
     """
     creates a colleciton in current scene
     :type collection_name: string
 
     """
-    if type not in bpy.data.collections:
+    if collection_name not in bpy.data.collections:
         bpy.data.collections.new(collection_name)
 
     collection = bpy.data.collections[collection_name]
+
+    if parent == None:
+        parent = bpy.context.scene.collection
+
+    else:
+        parent = bpy.data.collections[parent]
+
     try:
 
-        bpy.context.scene.collection.children.link(collection)
+        parent.children.link(collection)
     except(RuntimeError):
         print('{} collection already in scene'.format(collection_name))
         pass
@@ -845,20 +860,29 @@ def parent_object(view_layer, collection_name, obj_type):
             except(RuntimeError):
                 print('{} already in light collection'.format(obj.name))
 
-        unlink_collections(obj, type)
+
+def parent_to_collection(obj, collection_name):
+    collection = bpy.data.collections[collection_name]
+    if not collection:
+        create_collection(collection_name)
+
+    try:
+        collection.objects.link(obj)
+    except RuntimeError:
+        print('{} already in light collection'.format(obj.name))
 
 
-def return_asset_name(object):
-    if 'proxy' in object.name:
-        name = object.name.split('_')[0]
+def return_asset_name(obj):
+    if 'proxy' in obj.name:
+        name = obj.name.split('_')[0]
         return name
 
     else:
-        if '.' in object.name:
+        if '.' in obj.name:
 
-            name = object.name.split('.')[0]
+            name = obj.name.split('.')[0]
         else:
-            name = object.name
+            name = obj.name
 
         return name
 
@@ -879,6 +903,8 @@ def return_lib_path(library):
 
 
 def burn_in_image():
+    import bpy
+    from cgl.plugins.blender import lumbermill as lm
     current = bpy.context.scene
     mSettings = current.render
     sceneObject = lm.scene_object()
@@ -909,6 +935,67 @@ def burn_in_image():
     mSettings.stamp_note_text = scene_info
 
     print('sucess')
+
+
+def create_object(name, type=None, parent=None):
+    import bpy
+    object = bpy.data.objects.new(name, object_data=type, )
+    object.parent = parent
+    bpy.context.scene.collection.objects.link(object)
+    return object
+
+
+def material_dictionaries(task='mdl'):
+    mdl = bpy.data.objects[task]
+    resolutions = mdl.children
+
+    material_MSD = {}
+    material_MSD[task] = {}
+    for res in resolutions:
+        material_MSD[task][res.name] = {}
+        for mat in res.children:
+            objects = []
+            for obj in mat.children:
+                objects.append(obj.name)
+            material_MSD[task][res.name][mat.name] = objects
+
+    return material_MSD
+
+
+def get_object_list(materials_dic):
+    dic = materials_dic
+    obj = bpy.data.objects
+    object_list = []
+    for task in dic:
+        task_null = obj[task]
+        print(task_null)
+        for res in dic[task]:
+            resolution_null = obj[res]
+            print(resolution_null)
+            for material in dic[task][res]:
+                print(material)
+                children = bpy.data.objects[material].children
+
+                for obj in children:
+                    object_list.append(obj)
+    return object_list
+
+
+def parent_object(child, parent, keep_transform=True):
+    child.parent = parent
+    child.matrix_parent_inverse = parent.matrix_world.inverted()
+
+
+def clear_parent(objects=None):
+    if objects == None:
+        objects = bpy.context.selected_objects
+
+    for obj in objects:
+        parent = obj.parent
+        children = obj.children
+        if children:
+            for child in children:
+                parent_object(child, parent)
 
 
 if __name__ == '__main__':
