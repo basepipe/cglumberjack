@@ -1,8 +1,7 @@
 import os
 import copy
 import glob
-
-from lumbermill import LumberObject, scene_object
+from cgl.plugins.blender.lumbermill import LumberObject, scene_object, objExists
 import cgl.core.assetcore as assetcore
 from cgl.core.config import app_config
 from cgl.core.utils.read_write import load_json, save_json
@@ -18,12 +17,17 @@ def create_asset_description(ref):
     :return:
     """
     asset_dict = CONFIG['layout']['asset']
-    top_node = ref.nodes()[0]
-    ref_obj = LumberObject(ref.path)
-    add_matching_files(ref.path, asset_dict)
-    matrix = get_matrix(top_node)
+
+    top_node = ref
+
+    print(ref['BundlePath'])
+    ref_obj = LumberObject(ref['BundlePath'])
+
+    add_matching_files(ref['BundlePath'], asset_dict)
+
+    matrix = get_matrix(ref)
     matrix = str(matrix).replace('[', '').replace(']', '').replace(',', '')
-    namespace = top_node.namespace()[:-1]
+    namespace = ref_obj.asset
     translate, scale, rotate = get_transform_arrays(top_node)
     asset_dict['name'] = ref_obj.shot
     asset_dict['source_path'] = ref_obj.path
@@ -33,6 +37,7 @@ def create_asset_description(ref):
     asset_dict['translate'] = [translate[0], translate[1], translate[2]]
     asset_dict['rotate'] = [rotate[0], rotate[1], rotate[2]]
     asset_dict['scale'] = [scale[0], scale[1], scale[2]]
+    print(asset_dict)
     return namespace, asset_dict
 
 
@@ -43,8 +48,10 @@ def add_matching_files(filepath, dictionary):
     :param dictionary:
     :return:
     """
+    import importlib
+
     import cgl.core.path as path
-    reload(path)
+    importlib.reload(path)
     ignore = ['.json']
     no_ext_path, ext = os.path.splitext(filepath)
     files = glob.glob('{}*'.format(no_ext_path))
@@ -64,22 +71,9 @@ def get_transform_arrays(obj):
     :return: translate, rotate, scale arrays
     """
 
-    #translate = pm.getAttr('%s.t' % obj)
-    #scale = pm.getAttr('%s.s' % obj)
-    #rotate = pm.getAttr('%s.r' % obj)
-
-    translate = [obj.matrix_world.to_translation().x,
-                obj.matrix_world.to_translation().y,
-                obj.matrix_world.to_translation().z]
-
-    scale = [obj.matrix_world.to_euler().x,
-             obj.matrix_world.to_euler().y,
-             obj.matrix_world.to_euler().z]
-
-    rotate = [obj.matrix_world.to_euler().x,
-            obj.matrix_world.to_euler().y,
-            obj.matrix_world.to_euler().z]
-
+    translate = obj.matrix_world.to_translation()
+    scale = obj.matrix_world.to_scale()
+    rotate = obj.matrix_world.to_euler()
     t_array = [translate[0], translate[1], translate[2]]
     r_array = [rotate[0], rotate[1], rotate[2]]
     s_array = [scale[0], scale[1], scale[2]]
@@ -98,7 +92,7 @@ def create_camera_description(camera, frame_start=0, frame_end=0,
     :param add_to_scene_layout:
     :return: returns a key/value pair
     """
-    from cgl.plugins.maya.tasks.cam import get_latest
+    from cgl.plugins.blender.tasks.cam import get_latest
 
     translate, scale, rotate = get_transform_arrays(camera)
     seq, shot = camera.split('_')
@@ -139,7 +133,8 @@ def get_matrix(obj=None, query=False):
     :return:
     """
     if not query:
-        if pm.objExists(obj):
+
+        if objExists(obj.name):
             if 'rig' in obj:
                 translate = '%s:translate' % obj.split(':')[0]
                 scale = '%s:scale' % obj.split(':')[0]
@@ -166,11 +161,19 @@ def get_matrix(obj=None, query=False):
                         matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0],
                                   [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
             else:
-                attr = "%s.%s" % (obj, 'matrix')
-                if pm.attributeQuery('matrix', n=obj, ex=True):
-                    matrix = pm.getAttr(attr)
-                else:
-                    matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+                attr = "%s.%s".format(obj, 'matrix')
+
+                matrix = [[obj.matrix_world.to_translation().x,
+                           obj.matrix_world.to_translation().y,
+                           obj.matrix_world.to_translation().z],
+                          [obj.matrix_world.to_euler().x,
+                           obj.matrix_world.to_euler().y,
+                           obj.matrix_world.to_euler().z],
+                          [obj.matrix_world.to_scale().x,
+                           obj.matrix_world.to_scale().y,
+                           obj.matrix_world.to_scale().z]]
+        #                else:
+        #                    matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
         else:
             matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
         return matrix
@@ -237,20 +240,30 @@ def create_scene_description(sd_path, ignore_bundles=True):
     :param ignore_bundles:
     :return:
     """
+
+    assign_bundlePath()
     json_render_path = sd_path
     excluded_bundle_refs = []
     if json_render_path:
         layout_dict = {}
         if ignore_bundles:
             excluded_bundle_refs = get_bundle_ref_children()
-        references = pm.listReferences()
+        references = get_bundles()
+
         for obj in references:
-            if obj.path not in excluded_bundle_refs:
-                if obj.isLoaded():
+
+            filepath_library = get_lib_from_object(obj)
+            if filepath_library not in excluded_bundle_refs:
+                if obj.users >= 1:
                     asset, description = create_asset_description(obj)
-                    layout_dict[asset] = copy.copy(description)
+                    if asset:
+                        layout_dict[asset] = copy.copy(description)
                 else:
                     print('adding bundle to layout')
+        # print(layout_dict)
+        print(json_render_path.replace('msd', 'json'))
+        import pprint
+        pprint.pprint(layout_dict)
         save_json(json_render_path, layout_dict)
         print('Saved scene description to: {}'.format(json_render_path))
         return json_render_path
@@ -285,9 +298,11 @@ def get_bundles():
     """
 
     bundles = []
-    sel = pm.ls(type='transform')
+
+    sel = bpy.data.objects
+
     for obj in sel:
-        if obj.hasAttr('BundlePath'):
+        if 'BundlePath' in obj.keys():
             bundles.append(obj)
     return bundles
 
@@ -301,13 +316,64 @@ def get_bundle_ref_children():
     bundle_ref_children = []
     bundles = get_bundles()
     for b in bundles:
-        children = pm.listRelatives(b, ad=True)
+        children = b.children
         for child in children:
             try:
-                ref = pm.referenceQuery(child, filename=True, wcn=True)
+                ref = get_lib_from_object(child)
                 bundle_ref_children.append(ref)
             except RuntimeError:
                 logging.info('%s is not a reference' % child)
     return bundle_ref_children
 
 
+def assign_bundlePath():
+    for obj in bpy.data.objects:
+
+        if obj.type == 'EMPTY':
+
+            if obj.is_instancer:
+                lib = get_lib_from_object(obj)
+                if lib:
+                    obj['BundlePath'] = return_lib_path(lib)
+                else:
+                    obj['BundlePath'] = 'NOT BUNDLED'
+
+
+def return_asset_name(obj):
+    if 'proxy' in obj.name:
+        name = obj.name.split('_')[0]
+        return name
+
+    else:
+        if '.' in obj.name:
+
+            name = obj.name.split('.')[0]
+        else:
+            name = obj.name
+
+        return name
+
+
+def get_lib_from_object(object):
+    if not object.is_instancer:
+        object = bpy.data.object[return_asset_name(object)]
+    library = object.instance_collection.library
+
+    return (library)
+
+
+def return_lib_path(library):
+    from pathlib import Path
+
+    print(library)
+    library_path = library.filepath
+    # filename = Path(bpy.path.abspath(library_path)).__str__()
+    return (library_path)
+
+
+
+if __name__ == '__main__':
+    assign_bundlePath()
+
+    scene = scene_object().copy(ext='msd')
+    create_scene_description(scene.path_root)

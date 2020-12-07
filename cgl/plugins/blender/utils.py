@@ -335,15 +335,19 @@ def rename_materials(selection=None, material_name=None):
     """
     import bpy
 
-    if material_name == None:
-        material_name = object.name
     if selection == None:
         selection = bpy.context.selected_objects
 
-        for object in selection:
-            for material_slot in object.material_slots:
-                material_slot.material.name = object.name
-                print(object.name, material_slot.name)
+    if material_name == None:
+        if selection.parent:
+            material_name = selection.parent.name
+        else:
+            material_name = selection.name
+
+    for object in selection:
+        for material_slot in object.material_slots:
+            material_slot.material.name = object.name
+            print(object.name, material_slot.name)
 
     if selection:
         selection = [bpy.data.objects[selection]]
@@ -352,6 +356,7 @@ def rename_materials(selection=None, material_name=None):
                 material_slot.material.name = material_name
                 print(object.name, material_slot.name)
 
+    cleanup_scene_data(bpy.data.materials)
 
 def get_valid_meshes_list(objects):
     valid_objects = []
@@ -491,7 +496,7 @@ def get_materials_dictionary():
     materials = {}
 
     for o in bpy.context.selected_objects:
-
+        bpy.ops.object.material_slot_remove_unused()
         # Initialize dictionary of all materials applied to object with empty lists
         # which will contain indices of faces on which these materials are applied
         materialPolys = {ms.material.name: [] for ms in o.material_slots}
@@ -896,6 +901,7 @@ def get_lib_from_object(object):
 
 
 def return_lib_path(library):
+    from pathlib import Path
     print(library)
     library_path = bpy.path.abspath(library.filepath)
     filename = Path(bpy.path.abspath(library_path)).__str__()
@@ -996,6 +1002,29 @@ def clear_parent(objects=None):
         if children:
             for child in children:
                 parent_object(child, parent)
+
+
+def cleanup_scene_data(data_type):
+    """
+    Deletes data that's not currently linked to any object in scene , takes in bpy.data.type ie
+    bpy.data.materials
+    :param data_type:
+    :type data_type:
+    """
+    for child in data_type:
+        if child.users == 0:
+            print(child.name)
+            data_type.remove(child)
+
+
+def return_object_list(task):
+    object_list = []
+
+    for res in bpy.data.objects[task].children:
+        for materials in res.children:
+            for obj in materials.children:
+                object_list.append(obj)
+    return object_list
 
 
 if __name__ == '__main__':

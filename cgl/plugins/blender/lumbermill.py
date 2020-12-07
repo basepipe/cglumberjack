@@ -799,5 +799,30 @@ def get_task_class(task):
     return class_
 
 
+def selection(object=None, clear=False):
+    if clear:
+
+        for ob in bpy.context.selected_objects:
+            ob.select_set(False)
+
+    if object:
+        object.select_set(True)
+
+def current_selection(single = False):
+
+    if single:
+        return bpy.context.object
+
+    return  bpy.context.selected_objects
+
+def get_object(name):
+    obj = bpy.data.objects[name]
+    return obj
+
+def objExists(obj):
+    obj = bpy.data.objects[obj]
+    if obj:
+        return True
+
 if __name__ == "__main__":
     print(SOFTWARE)
