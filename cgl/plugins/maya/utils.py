@@ -18,6 +18,7 @@ CONFIG = app_config()
 
 def get_namespace(filepath):
     from lumbermill import LumberObject
+    namespace = ''
     path_object = LumberObject(filepath)
     if path_object.task == 'cam':
         namespace = 'cam'

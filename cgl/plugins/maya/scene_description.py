@@ -24,7 +24,7 @@ def create_asset_description(ref):
     matrix = get_matrix(top_node)
     matrix = str(matrix).replace('[', '').replace(']', '').replace(',', '')
     namespace = top_node.namespace()[:-1]
-    translate, scale, rotate = get_transform_arrays(top_node)
+    translate, rotate, scale = get_transform_arrays(top_node)
     asset_dict['name'] = ref_obj.shot
     asset_dict['source_path'] = ref_obj.path
     asset_dict['task'] = ref_obj.task
@@ -86,7 +86,7 @@ def create_camera_description(camera, frame_start=0, frame_end=0,
     """
     from cgl.plugins.maya.tasks.cam import get_latest
 
-    translate, scale, rotate = get_transform_arrays(camera)
+    translate, rotate, scale = get_transform_arrays(top_node)
     seq, shot = camera.split('_')
     seq = seq.replace('cam', '')
     camera_dict = CONFIG['layout']['asset']
