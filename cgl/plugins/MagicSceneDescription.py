@@ -38,8 +38,8 @@ class MagicSceneDescription(object):
     def create_msd(self):
         self.load_description_classes()
         self.set_scene_file()
-        self.set_path_object_details()
         self.set_scene_data()
+        self.set_path_object_details()
 
     def add_asset(self, asset_description):
         self.data[asset_description.asset_name] = copy.copy(asset_description.data)
@@ -56,9 +56,9 @@ class MagicSceneDescription(object):
 
     def set_path_object_details(self):
         self.output_msd = self.path_object.copy(context='render', set_proper_filename=True, ext='msd').path_root
-        self.data['name'] = self.path_object.shot
-        self.data['source_path'] = self.path_object.path
-        self.data['task'] = self.path_object.task
+        # self.data['name'] = self.path_object.shot
+        # self.data['source_path'] = self.path_object.path
+        # self.data['task'] = self.path_object.task
 
     def set_scene_data(self):
         """
@@ -70,7 +70,12 @@ class MagicSceneDescription(object):
             for b in bundles:
                 b_desc = self.ad_class(b, asset_type='bndl')
                 self.add_asset(b_desc)
-        assets = self.get_assets(ignore=[])
+        animated_assets, anim_ignore = self.get_anim()
+        if animated_assets:
+            for aa in animated_assets:
+                aa_desc = self.ad_class(aa, asset_type='anim')
+                self.add_asset(aa_desc)
+        assets = self.get_assets(ignore=children+anim_ignore)
         if assets:
             for a in assets:
                 a_desc = self.ad_class(mesh_object=a)
@@ -87,6 +92,16 @@ class MagicSceneDescription(object):
     def get_assets(ignore=[]):
         """
         Gets the assets in the scene
+        :param ignore:
+        :return:
+        """
+        # This must be customized for each application
+        pass
+
+    @staticmethod
+    def get_anim(ignore=[]):
+        """
+        Gets the animated assets in the scene
         :param ignore:
         :return:
         """

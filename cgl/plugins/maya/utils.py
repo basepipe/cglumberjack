@@ -1,6 +1,6 @@
 import re
 import os
-from cgl.ui.widgets.dialog import InputDialog, FrameRange
+from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.config import app_config
 from cgl.core.utils.read_write import load_json
 from cgl.ui.widgets.dialog import MagicList
@@ -260,15 +260,14 @@ def get_maya_window():
 
 
 def update_reference(reference):
+    from cgl.plugins.maya.lumbermill import LumberObject
     path = reference[1].path
     filename = os.path.basename(path)
-    print(filename)
     lobj = LumberObject(path).copy(latest=True)
     latest_version = lobj.path_root
     path = path.replace('\\', '/')
     latest_version = latest_version.replace('\\', '/')
     if os.path.exists(latest_version):
-        print('Comparing Reference: \n\t%s to \n\t%s' % (path, latest_version))
         if path != latest_version:
             print('REPLACING REFERENCE: %s ---- %s' % (reference[0], latest_version))
             try:
@@ -337,45 +336,6 @@ def remove_all_namespaces():
         remove_namespace(ns)
 
 
-def export_fbx(filepath, start_frame=False, end_frame=False):
-    load_plugin('fbxmaya')
-    if not start_frame:
-        start_frame = int(pm.playbackOptions(query=True, animationStartTime=True))
-    if not end_frame:
-        end_frame = int(pm.playbackOptions(query=True, animationEndTime=True))
-    if start_frame:
-        command = 'FBXExportBakeComplexAnimation -v true; FBXExportInputConnections -v false; ' \
-                   'FBXExportBakeComplexEnd -v %s; FBXExportBakeComplexStart -v %s; FBXExport -f "%s" -s' \
-                   % (str(int(end_frame)), str(int(start_frame)), filepath)
-        mel.eval(command)
-    else:
-        pm.exportSelected(filepath, typ='FBX export')
-
-
-def export_abc(filepath, start_frame=False, end_frame=False):
-    load_plugin('AbcExport')
-    load_plugin('AbcImport')
-    command = 'AbcExport -j "-frameRange %s %s -uvWrite -uvWrite -worldSpace -attrPrefix pxm' \
-              '  -attrPrefix PXM -dataFormat ogawa  -sl  -file %s";' \
-              % (start_frame, end_frame, filepath)
-    mel.eval(command)
-
-
-def set_shot_frame_range(shot_name, project):
-    # throw up the Frame Range Dialog
-    sframe = int(pm.playbackOptions(query=True, animationStartTime=True))
-    eframe = int(pm.playbackOptions(query=True, animationEndTime=True))
-    minframe = int(pm.playbackOptions(query=True, min=True))
-    maxframe = int(pm.playbackOptions(query=True, max=True))
-    dialog2 = FrameRange(sframe=sframe,
-                         eframe=eframe,
-                         minframe=minframe,
-                         maxframe=maxframe,
-                         message='Optional: Set Shotgun Frame Range for %s' % shot_name,
-                         both=True)
-    dialog2.exec_()
-    total_frames = int(dialog2.eframe)-int(dialog2.sframe)
-    return dialog2.sframe, dialog2.eframe, dialog2.minframe, dialog2.maxframe
 
 
 

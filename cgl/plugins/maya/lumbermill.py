@@ -227,8 +227,7 @@ def reference_file(filepath, namespace=None):
     print(filepath)
     if os.path.exists(filepath):
         print('filepath: ', filepath)
-        if filepath.endswith('.mb') or filepath.endswith('.ma'):
-            return pm.createReference(filepath, namespace=namespace, ignoreVersion=True, loadReferenceDepth='all')
+        return pm.createReference(filepath, namespace=namespace, ignoreVersion=True, loadReferenceDepth='all')
     else:
         print('File does not exist: {}'.format(filepath))
 
@@ -267,6 +266,15 @@ def version_up(vtype='minor'):
         new_version = path_object.new_minor_version_object()
     elif vtype == 'major':
         new_version = path_object.next_major_version()
+
+    if new_version.context == 'source':
+        new_context = 'render'
+    else:
+        new_context = 'source'
+    new_version_other = new_version.copy(context=new_context)
+    print(new_version_other.path_root)
+    print(new_version.path_root)
+    create_file_dirs(new_version_other.path_root)
     create_file_dirs(new_version.path_root)
     return save_file_as(new_version.path_root)
 
@@ -459,4 +467,8 @@ def get_task_class(task):
         loaded_module = importlib.import_module(module, module_name)
     class_ = getattr(loaded_module, 'Task')
     return class_
+
+
+def import_and_attach_shaders():
+    pass
 

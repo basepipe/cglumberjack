@@ -128,9 +128,6 @@ def bundle_import(filepath, layout_group=None):
         pm.select(d=True)
 
 
-
-
-
 def remove_selected_bundle():
     bndl = pm.ls(sl=True)[0]
     if bndl:
