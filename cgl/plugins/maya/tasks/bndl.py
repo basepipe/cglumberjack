@@ -46,9 +46,6 @@ class Task(SmartTask):
             print('Could not glob bundle path at {}'.format(bundle_obj.path))
 
 
-
-
-
 def get_latest_publish(filepath, task='bndl', ext='.json'):
     """
     gets the latest published version of the path_object.
@@ -103,8 +100,7 @@ def bundle_import(filepath, layout_group=None):
             # TODO - look at what's going on here.
             relative_path = layout_data[each]['source_path']
             transforms = layout_data[each]['transform'].split(' ')
-        company = scene_object().company
-        reference_path = "%s/%s%s" % (app_config()['paths']['root'], company, relative_path)
+        reference_path = "%s/%s" % (app_config()['paths']['root'], relative_path)
         float_transforms = [float(x) for x in transforms]
         d2 = LumberObject(reference_path)
         ns2 = get_next_namespace(d2.shot)
