@@ -336,6 +336,19 @@ def remove_all_namespaces():
         remove_namespace(ns)
 
 
+def get_namespaces():
+    namespaces = pm.namespaceInfo(listOnlyNamespaces=1)
+    if len(namespaces) == 2:
+        return None
+    else:
+        pm.namespace(set=":")
+        ns = []
+        for name in namespaces:
+            if name not in ('UI', 'shared'):
+                ns.append(name)
+        return ns
+
+
 
 
 

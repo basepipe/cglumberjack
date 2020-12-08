@@ -469,6 +469,3 @@ def get_task_class(task):
     return class_
 
 
-def import_and_attach_shaders():
-    pass
-
