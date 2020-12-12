@@ -175,7 +175,6 @@ def set_comp_default_settings():
         selectedFormat = readNode['format'].value()
         firstFrame = int(readNode.knob('first').getValue())
         lastFrame = int(readNode.knob('last').getValue())
-
         proxy_width = proxy_res.split('x')[0]
         proxy_height = proxy_res.split('x')[1]
 
