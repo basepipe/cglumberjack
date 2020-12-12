@@ -94,8 +94,9 @@ class Preflight(QtWidgets.QWidget):
         self.software_dir = os.path.join(CONFIG['paths']['cgl_tools'], software)
         self.preflight_dir = os.path.join(self.software_dir, 'preflights')
         if self.preflight not in os.listdir(self.preflight_dir):
-            from cgl.ui.widgets.dialog import InputDialog
+            print('test')
             if software == 'maya':
+                from cgl.ui.widgets.dialog import InputDialog
                 print(self.preflight_dir, 'looking for :', self.preflight)
                 message = 'no {} preflight found, create one in the Production Cookbook:\n' \
                           'Software: {}\n' \
@@ -103,7 +104,9 @@ class Preflight(QtWidgets.QWidget):
                           'Create new Preflight: {}'.format(self.preflight, self.software, self.preflight)
                 dialog = InputDialog(title='Preflight Not Found', message=message)
                 dialog.exec_()
-                return
+                return None
+            self.preflight = None
+            return None
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
         self.json_file = os.path.join(self.software_dir, 'preflights.cgl')
         self.modules = {}
