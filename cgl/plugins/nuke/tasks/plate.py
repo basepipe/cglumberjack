@@ -17,7 +17,7 @@ class Task(SmartTask):
         2. Import latest textures for this asset (and assemble a shader network)
         :return:
         """
-        prin('building plate')
+        print('building plate')
 
     def _import(self, filepath):
         prin('importing Plate')

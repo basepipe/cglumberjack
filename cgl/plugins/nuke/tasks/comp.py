@@ -1,12 +1,14 @@
 from cgl.plugins.nuke.tasks.smart_task import SmartTask
 from cgl.ui.widgets.dialog import InputDialog
 import cgl.plugins.nuke.alchemy as alc
-
 import nuke
 from cgl.core.path import PathObject, lj_list_dir, find_latest_publish_objects
 from cgl.core.config import app_config
 from cgl.plugins.nuke.alchemy import PathObject, import_directory, import_media, set_comp_default_settings
 import os
+
+
+
 class Task(SmartTask):
 
     def __init__(self, path_object=None):
