@@ -82,7 +82,6 @@ class NukePathObject(PathObject):
         self.path_template = []
         self.version_template = []
 
-
         if isinstance(path_object, bytes):
             path_object = str(path_object)
         if isinstance(path_object, dict):
@@ -96,7 +95,241 @@ class NukePathObject(PathObject):
         self.set_frame_range()
         self.set_proxy_resolution()
 
+    def set_proxy_resolution(self):
+        """
+        sets nuke proxy resolution according to project globals
+        :return:
+        """
 
+        if str(self.project).lower() in CONFIG['default']['proxy_resolution'].keys():
+            proxy_resolution = CONFIG['default']['proxy_resolution'][self.project.lower()]
+        else:
+            proxy_resolution = CONFIG['default']['proxy_resolution']['default']
+        self.proxy_resolution = proxy_resolution
+
+    def set_frame_range(self):
+        """
+        sets frame range of the PATH_OBJECT based off the current nuke script's frame range
+        :return:
+        """
+        sframe = nuke.knob("root.first_frame")
+        eframe = nuke.knob("root.last_frame")
+        self.frame_range = '%s-%s' % (sframe, eframe)
+
+    def render(self, selected=True, processing_method=PROCESSING_METHOD):
+        """
+        :param selected: If True render selected, if False, give use a choice as to which one to render.
+        :param processing_method: app, local, smedge, or deadline.  App - render in gui.  local - render through
+        command line locally.  smedge/deadline - submit the job to a render manager for farm rendering.
+        :return:
+        """
+        process_info_list = []
+        process_info = {'command': 'cgl_nuke.NukePathObject().render()',
+                        'command_name': 'Nuke GUI Render',
+                        'start_time': time.time(),
+                        'methodology': PROCESSING_METHOD,
+                        'farm_processing_end': '',
+                        'farm_processing_time': '',
+                        'job_id': None}
+        if selected:
+            if not nuke.selectedNodes():
+                print('render() set to selected, please select a write node and try again')
+                return
+            for s in nuke.selectedNodes():
+                if s.Class() == 'Write':
+                    node_name = s.name()
+                    file_name = s['file'].value()
+                    dir_ = os.path.dirname(file_name)
+                    CreateProductionData(dir_, project_management='lumbermill')
+                    sequence = Sequence(file_name)
+                    if sequence.is_valid_sequence():
+                        file_name = sequence.hash_sequence
+                    if processing_method == 'local':
+                        from cgl.plugins.nuke.gui import render_node
+                        render_node(s)
+                        process_info['file_out'] = file_name
+                        process_info['artist_time'] = time.time() - process_info['start_time']
+                        process_info['end_time'] = time.time()
+                        write_to_cgl_data(process_info)
+                        process_info_list.append(process_info)
+                    else:
+                        # add write node to the command
+                        command = '%s -F %s -sro -x %s %s' % (CONFIG['paths']['nuke'], self.frame_range,
+                                                              node_name, self.path_root)
+                        command_name = '"%s: NukePathObject.render()"' % self.command_base
+                        if processing_method == 'local':
+                            process_info = cgl_execute(command, methodology=processing_method,
+                                                       command_name=command_name,
+                                                       new_window=True)
+                        elif processing_method == 'smedge':
+                            command = "-Type Nuke -Name %s -Range %s -Scene %s -WriteNode %s" % (command_name,
+                                                                                                 self.frame_range,
+                                                                                                 self.path_root,
+                                                                                                 node_name)
+                            process_info = cgl_execute(command, methodology=processing_method,
+                                                       command_name=command_name)
+                        process_info['file_out'] = file_name
+                        process_info['artist_time'] = time.time() - process_info['start_time']
+                        process_info['end_time'] = time.time()
+                        try:
+                            write_to_cgl_data(process_info)
+                        except ValueError:
+                            print('CGL_data file too big, skipping for now')
+                        process_info_list.append(process_info)
+            return process_info_list
+        else:
+            print('this is what happens when selected is set to False')
+
+
+def scene_object():
+    """
+    returns PathObject of curent scene
+    :return:
+    """
+    return PathObject(nuke.root().name())
+
+
+'___________________SCENE_________________'
+
+
+def open_file(filepath):
+    return nuke.scriptOpen(filepath)
+
+
+def save_file(filepath=None):
+    if not filepath:
+        filepath = get_file_name()
+    return nuke.scriptSave(filepath)
+
+
+def save_file_as(filepath):
+    return nuke.scriptSaveAs(filepath)
+
+
+def version_up(write_nodes=True):
+    from cgl.ui.widgets.dialog import InputDialog
+    path_object = PathObject(nuke.Root().name())
+    next_minor = path_object.new_minor_version_object()
+    message = ('Versioning Up From v%s ->  v%s' % (path_object.version, next_minor.version))
+    dialog = InputDialog(title='Version Up', message=message)
+    dialog.exec_()
+    if dialog.button == 'Ok':
+        CreateProductionData(next_minor, project_management='lumbermill')
+        nuke.scriptSaveAs(next_minor.path_root)
+        if write_nodes:
+            match_scene_version()
+
+
+def get_scene_name():
+    return nuke.Root().name()
+
+
+def create_scene_write_node():
+    """
+    This function specifically assumes the current file is in the pipeline and that you want to make a write node for
+    that.  We can get more complicated and tasks from here for sure.
+    :return:
+    """
+    padding = '#' * get_biggest_read_padding()
+    path_object = PathObject(get_file_name())
+    path_object.set_attr(context='render')
+    path_object.set_attr(ext='%s.exr' % padding)
+    write_node = nuke.createNode('Write')
+    write_node.knob('file').fromUserText(path_object.path_root)
+    return write_node
+
+
+def get_main_window():
+    return QtWidgets.QApplication.activeWindow()
+
+
+''''___________________IMPORT______________________'''
+
+
+def import_media(filepath, name=None):
+    """
+    imports the filepath.  This assumes that sequences are formated as follows:
+    [sequence] [sframe]-[eframe]
+    sequence.####.dpx 1-234
+    regular files are simply listed as a string with no frame numbers requred:
+    bob.jpg
+    this will also look for an HD proxy file, first jpgs and then exrs.
+    :param filepath:
+    :return:
+    """
+    read_node = nuke.createNode('Read')
+    if name:
+        read_node.knob('name').setValue(name)
+    read_node.knob('file').fromUserText(filepath)
+    path_object = NukePathObject(filepath)
+    proxy_object = PathObject(filepath).copy(resolution=path_object.proxy_resolution, ext='exr')
+    dir_ = os.path.dirname(proxy_object.path_root)
+    if os.path.exists(dir_):
+        read_node.knob('proxy').fromUserText(proxy_object.path_root)
+    return read_node
+
+
+def import_script(filepath):
+    return nuke.nodePaste(filepath)
+
+
+def import_geo(filepath):
+    n = nuke.createNode("ReadGeo")  # should maybe be readGeo2
+    n.knob('file').setText(filepath)
+
+
+def import_directory(filepath):
+    path_object = NukePathObject(filepath)
+    if path_object.task == 'lite':
+        import_lighting_renders(filepath)
+    else:
+        for root, dirs, files in os.walk(filepath):
+            for name in dirs:
+                for sequence in lj_list_dir(os.path.join(root, name)):
+                    node_path = os.path.join(root, name, sequence)
+                    if not os.path.isdir(node_path):
+                        temp_object = NukePathObject(node_path)
+                        if temp_object.aov:
+                            name = temp_object.aov
+                        elif temp_object.shotname:
+                            name = temp_object.shotname
+                        else:
+                            name = None
+                        import_media(node_path, temp_object.aov)
+
+
+def import_task(task=None, reference=False, **kwargs):
+    """
+    imports the latest version of the specified task into the scene.
+    :param task:
+    :param reference:
+    :return:
+    """
+    if not task:
+        task = scene_object().task
+    class_ = get_task_class(task)
+    print(class_)
+    if reference:
+        print(1)
+        return class_().import_latest(task=task, reference=reference, **kwargs)
+    else:
+        print(2)
+        return class_().import_latest(**kwargs)
+
+
+''''____________________UI_______________'''
+
+
+def confirm_prompt(title='title', message='message', button=None):
+    p = nuke.Panel(title)
+    p.addNotepad('', message)
+    if button:
+        for b in button:
+            p.addButton(b)
+    else:
+        p.addButton('OK')
+        p.addButton('Cancel')
+    return p.show()
 
 
 def build(path_object=None):
@@ -133,42 +366,14 @@ def get_task_class(task):
     class_ = getattr(loaded_module, 'Task')
     return class_
 
-def import_task(task=None, reference=False, **kwargs):
-    """
-    imports the latest version of the specified task into the scene.
-    :param task:
-    :param reference:
-    :return:
-    """
-    if not task:
-        task = scene_object().task
-    class_ = get_task_class(task)
-    print(class_)
-    if reference:
-        print(1)
-        return class_().import_latest(task=task, reference=reference, **kwargs)
-    else:
-        print(2)
-        return class_().import_latest(**kwargs)
-
-
-def scene_object():
-    """
-    returns PathObject of curent scene
-    :return:
-    """
-    return PathObject(nuke.root().name())
-
 
 def set_comp_default_settings():
-
     proxy_res = get_proxy_resolution()
     readNode = nuke.toNode('plate_Read')
 
     if not readNode:
         if nuke.selectedNode():
             readNode = nuke.selectedNode()
-
 
     if readNode:
 
@@ -203,51 +408,6 @@ def set_comp_default_settings():
         nuke.frame(firstFrame)
 
         nuke.alert("Comp Size, duration and proxy set")
-
-
-def import_media(filepath, name=None):
-    """
-    imports the filepath.  This assumes that sequences are formated as follows:
-    [sequence] [sframe]-[eframe]
-    sequence.####.dpx 1-234
-    regular files are simply listed as a string with no frame numbers requred:
-    bob.jpg
-    this will also look for an HD proxy file, first jpgs and then exrs.
-    :param filepath:
-    :return:
-    """
-    read_node = nuke.createNode('Read')
-    if name:
-        read_node.knob('name').setValue(name)
-    read_node.knob('file').fromUserText(filepath)
-    path_object = NukePathObject(filepath)
-    proxy_object = PathObject(filepath).copy(resolution=path_object.proxy_resolution, ext='exr')
-    dir_ = os.path.dirname(proxy_object.path_root)
-    if os.path.exists(dir_):
-        read_node.knob('proxy').fromUserText(proxy_object.path_root)
-    return read_node
-
-
-
-def import_directory(filepath):
-    path_object = NukePathObject(filepath)
-    if path_object.task == 'lite':
-        import_lighting_renders(filepath)
-    else:
-        for root, dirs, files in os.walk(filepath):
-            for name in dirs:
-                for sequence in lj_list_dir(os.path.join(root, name)):
-                    node_path = os.path.join(root, name, sequence)
-                    if not os.path.isdir(node_path):
-                        temp_object = NukePathObject(node_path)
-                        if temp_object.aov:
-                            name = temp_object.aov
-                        elif temp_object.shotname:
-                            name = temp_object.shotname
-                        else:
-                            name = None
-                        import_media(node_path, temp_object.aov)
-
 
 
 def get_proxy_resolution():
