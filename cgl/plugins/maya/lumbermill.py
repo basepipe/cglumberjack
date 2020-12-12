@@ -3,6 +3,7 @@ import glob
 from cgl.plugins.Qt import QtCore, QtWidgets
 from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 from cgl.core.utils.general import current_user
+from cgl.ui.widgets.dialog import InputDialog
 import logging
 from cgl.core.utils.general import create_file_dirs
 from cgl.core.path import PathObject
@@ -21,9 +22,9 @@ PROCESSING_METHOD = UserConfig().d['methodology']
 
 class BrowserWidget(CGLumberjackWidget):
     def __init__(self, parent=None, path=None,
-                 show_import=False, show_reference=False):
+                 show_import=False, show_reference=False, set_to_publish=True):
         super(BrowserWidget, self).__init__(parent=parent, path=path, show_import=show_import,
-                                            show_reference=show_reference)
+                                            show_reference=show_reference, set_to_publish=set_to_publish)
 
     def open_clicked(self):
         print('Opening: %s' % self.path_object.path_root)
@@ -190,10 +191,28 @@ def import_file(filepath, namespace=None):
     :param namespace:
     :return:
     """
+    print(filepath)
+    file_object = LumberObject(filepath)
+    if file_object.context == 'source':
+        dialog = InputDialog(message='Are you sure you want to import a source file? This is not recommended')
+        if dialog.button == 'Cancel':
+            return
     if not namespace:
         namespace = get_namespace(filepath)
     if os.path.isfile(filepath):
-        return pm.importFile(filepath, namespace=namespace)
+        if file_object.task == 'bndl':
+            if filepath.endswith('.json') or filepath.endwith('.msa'):
+                from cgl.plugins.maya.tasks.bndl import bundle_import
+                bundle_import(filepath)
+                return filepath
+        if file_object.task == 'lay':
+            if filepath.endswith('.json') or filepath.endswith('.msa'):
+                from cgl.plugins.maya.tasks.lay import main_import
+                main_import(filepath)
+                return filepath
+        if filepath.endswith('.mb') or filepath.endswith('.ma'):
+            return pm.importFile(filepath, namespace=namespace)
+
 
 
 def import_task(task=None, reference=False, **kwargs):
@@ -227,8 +246,7 @@ def reference_file(filepath, namespace=None):
     print(filepath)
     if os.path.exists(filepath):
         print('filepath: ', filepath)
-        if filepath.endswith('.mb') or filepath.endswith('.ma'):
-            return pm.createReference(filepath, namespace=namespace, ignoreVersion=True, loadReferenceDepth='all')
+        return pm.createReference(filepath, namespace=namespace, ignoreVersion=True, loadReferenceDepth='all')
     else:
         print('File does not exist: {}'.format(filepath))
 
@@ -267,6 +285,15 @@ def version_up(vtype='minor'):
         new_version = path_object.new_minor_version_object()
     elif vtype == 'major':
         new_version = path_object.next_major_version()
+
+    if new_version.context == 'source':
+        new_context = 'render'
+    else:
+        new_context = 'source'
+    new_version_other = new_version.copy(context=new_context)
+    print(new_version_other.path_root)
+    print(new_version.path_root)
+    create_file_dirs(new_version_other.path_root)
     create_file_dirs(new_version.path_root)
     return save_file_as(new_version.path_root)
 
@@ -459,4 +486,5 @@ def get_task_class(task):
         loaded_module = importlib.import_module(module, module_name)
     class_ = getattr(loaded_module, 'Task')
     return class_
+
 

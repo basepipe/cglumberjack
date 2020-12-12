@@ -2,7 +2,8 @@ import pymel.core as pm
 from cgl.core.utils.read_write import load_json
 from .smart_task import SmartTask
 from cgl.plugins.maya.lumbermill import LumberObject, scene_object
-from cgl.plugins.maya.utils import get_next_namespace, select_reference
+import cgl.plugins.maya.utils as utils
+reload(utils)
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.plugins.maya.utils import load_plugin
 from cgl.core.config import app_config
@@ -46,9 +47,6 @@ class Task(SmartTask):
             print('Could not glob bundle path at {}'.format(bundle_obj.path))
 
 
-
-
-
 def get_latest_publish(filepath, task='bndl', ext='.json'):
     """
     gets the latest published version of the path_object.
@@ -67,6 +65,19 @@ def get_latest_publish(filepath, task='bndl', ext='.json'):
         return None
 
 
+def get_bundles():
+    """
+    get s alist of bundles in the scene.
+    :return:
+    """
+    bundles = []
+    sel = pm.ls(type='transform')
+    for obj in sel:
+        if obj.hasAttr('BundlePath'):
+            bundles.append(obj)
+    return bundles
+
+
 def bundle_import(filepath, layout_group=None):
     """
     Accepts a 'bndl.json' file, processes it and imports all parts and reassembles it into the maya scene.
@@ -76,12 +87,14 @@ def bundle_import(filepath, layout_group=None):
     """
     relative_path = None
     d = LumberObject(filepath)
-    ns = d.shot
+    og_ns = d.shot
+    ns = utils.get_namespace(filepath)
     try:
         pm.namespace(addNamespace=ns)
     except RuntimeError:
         # TODO - this needs to remove namespaces that are not wanted.
         print('Namespace %s exists, skipping creation' % ns)
+        return
     pm.namespace(set=ns)
     pm.select(d=True)
     group = pm.group(name='bndl')
@@ -103,11 +116,13 @@ def bundle_import(filepath, layout_group=None):
             # TODO - look at what's going on here.
             relative_path = layout_data[each]['source_path']
             transforms = layout_data[each]['transform'].split(' ')
-        company = scene_object().company
-        reference_path = "%s/%s%s" % (app_config()['paths']['root'], company, relative_path)
+        reference_path = "%s/%s%s" % (app_config()['paths']['root'], d.company, relative_path)
         float_transforms = [float(x) for x in transforms]
         d2 = LumberObject(reference_path)
-        ns2 = get_next_namespace(d2.shot)
+        print(reference_path)
+        print d2.path_root
+        print d2.shot
+        ns2 = utils.get_next_namespace(d2.shot)
         ref = pm.createReference(reference_path, namespace=ns2, ignoreVersion=True, loadReferenceDepth='all')
         namespace_ = pm.referenceQuery(ref, ns=True)  # ref.namespace
         object_ = '%s:mdl' % namespace_
@@ -123,16 +138,14 @@ def bundle_import(filepath, layout_group=None):
                 ts = child_transforms[child].split(' ')
                 fl_transforms = [float(x) for x in ts]
                 pm.xform(child2, m=fl_transforms)
-        ref_node = select_reference(ref)
+        ref_node = utils.select_reference(ref)
         pm.select(d=True)
         pm.parent(ref_node, group)
         pm.select(d=True)
         if layout_group:
             pm.parent(group, layout_group)
         pm.select(d=True)
-
-
-
+    return group
 
 
 def remove_selected_bundle():

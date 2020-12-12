@@ -3,10 +3,15 @@ import pymel.core as pm
 from .smart_task import SmartTask
 from cgl.plugins.maya.lumbermill import LumberObject, scene_object
 from cgl.core.config import app_config
-from cgl.ui.widgets.dialog import MagicList, InputDialog
-from cgl.plugins.maya.utils import get_shape_name, set_shot_frame_range, export_abc, export_fbx
-import cgl.plugins.maya.scene_description as sd
-reload(sd)
+from cgl.ui.widgets.dialog import MagicList, InputDialog, FrameRange
+from cgl.plugins.maya.utils import get_shape_name, load_plugin
+import cgl.plugins.maya.msd as msd
+reload(msd)
+try:
+    import pymel.core as pm
+    import maya.mel as mel
+except ModuleNotFoundError:
+    print('Skipping pymel.core - outside of maya')
 
 TASKNAME = os.path.basename(__file__).split('.py')[0]
 
@@ -26,7 +31,7 @@ class Task(SmartTask):
         """
         pass
 
-    def import_latest(self, seq, shot, ext='mb'):
+    def import_latest(self):
         """
         imports the latest camera for a shot.
         :param seq: sequence
@@ -34,12 +39,13 @@ class Task(SmartTask):
         :param ext:
         :return:
         """
-        this_obj = scene_object().copy(task=TASKNAME, seq=seq, shot=shot, context='render',
-                                       user='publish', latest=True, set_proper_filename=True, ext=ext)
+        from cgl.plugins.maya.lumbermill import reference_file
+        this_obj = scene_object().copy(task='cam', context='render',
+                                       user='publish', latest=True, set_proper_filename=True, ext='mb')
         if os.path.exists(this_obj.path_root):
-            self._import(filepath=this_obj.path_root)
+            reference_file(filepath=this_obj.path_root)
         else:
-            print('Could not glob layout path at {}'.format(this_obj.path))
+            print('Could not find camera at {}'.format(this_obj.path))
 
 
 def get_latest(seq, shot, task=TASKNAME, ext='mb'):
@@ -132,7 +138,7 @@ def get_camera_names(visible=True, renderable=False):
     return cams
 
 
-def publish_selected_camera(camera=None, mb=True, abc=False, fbx=False, unity=False, shotgun=True, json=False):
+def publish_selected_camera(camera=None, mb=True, abc=False, fbx=True, shotgun=False):
 
     if camera:
         pm.select(d=True)
@@ -150,12 +156,6 @@ def publish_selected_camera(camera=None, mb=True, abc=False, fbx=False, unity=Fa
             next_pub_output_version = pub_obj.path_root
             fbx_output = pub_obj.copy(ext='fbx').path_root
             abc_output = pub_obj.copy(ext='abc').path_root
-            json_path = pub_obj.copy(ext='json').path_root
-            # print(next_pub_output_version)
-            # print(fbx_output)
-            # print(abc_output)
-            # print(json_path)
-
             # make dirs if they don't exist
             if not os.path.exists(os.path.dirname(next_pub_source_version)):
                 os.makedirs(os.path.dirname(next_pub_source_version))
@@ -167,17 +167,54 @@ def publish_selected_camera(camera=None, mb=True, abc=False, fbx=False, unity=Fa
             if mb:
                 pm.exportSelected(next_pub_source_version, typ='mayaBinary')
                 pm.exportSelected(next_pub_output_version, typ='mayaBinary')
-            # if fbx:
-            #     export_fbx(fbx_output, start_frame=sframe, end_frame=eframe)
-            # if abc:
-            #     export_abc(abc_output, start_frame=sframe, end_frame=eframe)
-            if json:
-                sd.create_camera_description(camera=selection, frame_start=sframe, frame_end=eframe,
-                                             handle_start=minframe,
-                                             handle_end=maxframe, add_to_scene_layout=True)
+            if fbx:
+                export_fbx(fbx_output, start_frame=sframe, end_frame=eframe)
+            if abc:
+                export_abc(abc_output, start_frame=sframe, end_frame=eframe)
+            msd.CameraDescription(mesh_name=camera, start_frame=sframe, end_frame=eframe, handle_start=minframe,
+                                  handle_end=maxframe).export()
     except IndexError:
         print('No Camera Selected')
 
 
+def export_fbx(filepath, start_frame=False, end_frame=False):
+    load_plugin('fbxmaya')
+    if not start_frame:
+        start_frame = int(pm.playbackOptions(query=True, animationStartTime=True))
+    if not end_frame:
+        end_frame = int(pm.playbackOptions(query=True, animationEndTime=True))
+    if start_frame:
+        command = 'FBXExportBakeComplexAnimation -v true; FBXExportInputConnections -v false; ' \
+                   'FBXExportBakeComplexEnd -v %s; FBXExportBakeComplexStart -v %s; FBXExport -f "%s" -s' \
+                   % (str(int(end_frame)), str(int(start_frame)), filepath)
+        mel.eval(command)
+    else:
+        pm.exportSelected(filepath, typ='FBX export')
+
+
+def export_abc(filepath, start_frame=False, end_frame=False):
+    load_plugin('AbcExport')
+    load_plugin('AbcImport')
+    command = 'AbcExport -j "-frameRange %s %s -uvWrite -uvWrite -worldSpace -attrPrefix pxm' \
+              '  -attrPrefix PXM -dataFormat ogawa  -sl  -file %s";' \
+              % (start_frame, end_frame, filepath)
+    mel.eval(command)
+
+
+def set_shot_frame_range(shot_name, project):
+    # throw up the Frame Range Dialog
+    sframe = int(pm.playbackOptions(query=True, animationStartTime=True))
+    eframe = int(pm.playbackOptions(query=True, animationEndTime=True))
+    minframe = int(pm.playbackOptions(query=True, min=True))
+    maxframe = int(pm.playbackOptions(query=True, max=True))
+    dialog2 = FrameRange(sframe=sframe,
+                         eframe=eframe,
+                         minframe=minframe,
+                         maxframe=maxframe,
+                         message='Optional: Set Shotgun Frame Range for %s' % shot_name,
+                         both=True)
+    dialog2.exec_()
+    total_frames = int(dialog2.eframe)-int(dialog2.sframe)
+    return dialog2.sframe, dialog2.eframe, dialog2.minframe, dialog2.maxframe
 
 
