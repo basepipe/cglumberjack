@@ -167,6 +167,7 @@ class LumberObject(PathObject):
         self.context_list = CONFIG['rules']['context_list']
         self.path = None  # string of the properly formatted path
         self.path_root = None  # this gives the full path with the root
+        self.path_relative = None
         self.thumb_path = None
         self.playblast_path = None
         self.render_path = None
@@ -200,6 +201,23 @@ class LumberObject(PathObject):
         self.path_template = []
         self.version_template = []
 
+        def process_string(self, path_object):
+            path_object = path_object.replace('\\', '/')
+            self.get_company(path_object)
+            self.unpack_path(path_object)
+            self.set_data_from_attrs()
+            self.set_project_config()
+            self.set_json()
+            self.set_relative_path()
+
+        def process_dict(self, path_object):
+            self.set_attrs_from_dict(path_object)
+            self.set_path()
+            self.set_project_config()
+            self.set_preview_path()
+            self.set_json()
+            self.set_relative_path()
+
         try:
             if isinstance(path_object, unicode):
                 path_object = str(path_object)
@@ -214,6 +232,11 @@ class LumberObject(PathObject):
         else:
             logging.error('type: %s not expected' % type(path_object))
         self.set_render_paths()
+
+    def set_relative_path(self):
+        import os
+        from cgl.plugins.blender.lumbermill import scene_object
+        self.path_relative = os.path.relpath( self.path_root, scene_object().path_root)
 
     def set_render_paths(self):
         padding = '#' * self.frame_padding
@@ -274,6 +297,7 @@ def version_up(vtype='minor'):
     elif vtype == 'major':
         new_version = path_object.next_major_version()
     create_file_dirs(new_version.path_root)
+    create_file_dirs(new_version.copy(context = 'render').path_root)
     return save_file_as(new_version.path_root)
 
 
@@ -346,7 +370,7 @@ def import_file(filepath, namespace=None, collection_name=None):
     path_object = lm.LumberObject(filepath)
 
     if collection_name == None:
-        collection_name = 'Collection'
+        collection_name = path_object.asset
 
     with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
         # data_to.collections = [c for c in data_from.collections if c == collection_name]
@@ -358,7 +382,19 @@ def import_file(filepath, namespace=None, collection_name=None):
 
     imported_collection = bpy.data.collections[collection_name]
     bpy.context.scene.collection.children.link(imported_collection)
-    imported_collection.name = path_object.asset
+    imported_collection.name = path_object.task
+
+    if namespace:
+        imported_collection.name = '{}:{}'.format(namespace,path_object.task )
+        for obj in imported_collection.objects:
+            obj.name = '{}:{}'.format(namespace,obj.name)
+            obj['source_path'] = path_object.path
+
+            if obj.type =='MESH':
+                obj.data.name = '{}:{}'.format(namespace, obj.data.name)
+                material = obj.material_slots[0].material
+                if ':' not in material.name:
+                    material.name = '{}:{}'.format(namespace,material.name)
 
 
 def reference_file(filepath, namespace=None, collection_name=None):
@@ -369,20 +405,25 @@ def reference_file(filepath, namespace=None, collection_name=None):
     path_object = lm.LumberObject(filepath)
 
     if collection_name == None:
-        collection_name = 'Collection'
+        collection_name = path_object.asset
 
     with bpy.data.libraries.load(filepath, link=True) as (data_from, data_to):
         for c in data_from.collections:
             if c == collection_name:
                 print(c)
                 data_to.collections = [c]
-
-    obj = bpy.data.objects.new(collection_name, None)
+    if namespace:
+        object_name = '{}:{}'.format(namespace, path_object.task)
+    else:
+        object_name = path_object.task
+    obj = bpy.data.objects.new(object_name, None)
     obj.instance_type = 'COLLECTION'
+    obj['source_path'] = path_object.path
     obj.instance_collection = bpy.data.collections[collection_name]
     bpy.context.collection.objects.link(obj)
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
+    return obj
 
 
 def open_file(filepath):
@@ -758,11 +799,13 @@ def import_task(task=None, reference=False, **kwargs):
     class_ = get_task_class(task)
     print(class_)
     if reference:
-        print(1)
+        print(11111111111111111)
+        print(reference)
         return class_().import_latest(task=task, reference=reference, **kwargs)
     else:
         print(2)
-        return class_().import_latest(task=task,**kwargs)
+        return class_().import_latest(**kwargs)
+
 
 def build(path_object=None):
     """
@@ -802,7 +845,7 @@ def get_task_class(task):
 def selection(object=None, clear=False):
     if clear:
 
-        for ob in bpy.context.selected_objects:
+        for ob in bpy.data.objects:
             ob.select_set(False)
 
     if object:
@@ -820,7 +863,11 @@ def get_object(name):
     return obj
 
 def objExists(obj):
-    obj = bpy.data.objects[obj]
+
+    if isinstance(obj, str):
+
+        obj = bpy.data.objects[obj]
+
     if obj:
         return True
 

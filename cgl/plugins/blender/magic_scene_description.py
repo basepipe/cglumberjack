@@ -328,9 +328,7 @@ def get_bundle_ref_children():
 
 def assign_bundlePath():
     for obj in bpy.data.objects:
-
         if obj.type == 'EMPTY':
-
             if obj.is_instancer:
                 lib = get_lib_from_object(obj)
                 if lib:

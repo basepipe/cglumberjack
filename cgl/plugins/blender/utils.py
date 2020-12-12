@@ -242,6 +242,7 @@ def write_layout(outFile=None):
 
 
 def return_linked_library(collection):
+    import bpy
     '''
     retrieves the linked libraries manually
     '''
@@ -854,20 +855,22 @@ def create_collection(collection_name, parent=None):
         print('{} collection already in scene'.format(collection_name))
         pass
 
+    return collection
 
-def parent_object(view_layer, collection_name, obj_type):
-    create_collection(collection_name)
-    collection = bpy.data.collections[collection_name]
-    for obj in view_layer:
-        if obj.type == obj_type:
-            try:
-                collection.objects.link(obj)
-            except(RuntimeError):
-                print('{} already in light collection'.format(obj.name))
+
 
 
 def parent_to_collection(obj, collection_name):
+    """
+
+    :param obj: blender object
+    :type obj: bpy.data.object
+    :param collection_name: str
+    :type collection_name: takes in name of the collection
+    """
+    import bpy
     collection = bpy.data.collections[collection_name]
+
     if not collection:
         create_collection(collection_name)
 
@@ -943,15 +946,25 @@ def burn_in_image():
     print('sucess')
 
 
-def create_object(name, type=None, parent=None):
+def create_object(name, type=None, parent=None,collection = None):
     import bpy
-    object = bpy.data.objects.new(name, object_data=type, )
+    if collection == None:
+        collection  = 'Collection'
+
+    if name in bpy.data.objects:
+        object = bpy.data.objects[name]
+        print('{} object already exists'.format(name))
+    else:
+        object = bpy.data.objects.new(name, object_data=type )
+
     object.parent = parent
-    bpy.context.scene.collection.objects.link(object)
+    parent_to_collection(collection_name=collection,obj=object)
+
     return object
 
 
 def material_dictionaries(task='mdl'):
+    import bpy
     mdl = bpy.data.objects[task]
     resolutions = mdl.children
 
@@ -968,7 +981,14 @@ def material_dictionaries(task='mdl'):
     return material_MSD
 
 
-def get_object_list(materials_dic):
+def get_object_list(materials_dic = None):
+    from cgl.plugins.blender.lumbermill import scene_object
+    import bpy
+
+    if not materials_dic:
+        task = scene_object().task
+        materials_dic = material_dictionaries(task)
+
     dic = materials_dic
     obj = bpy.data.objects
     object_list = []
@@ -1018,6 +1038,8 @@ def cleanup_scene_data(data_type):
 
 
 def return_object_list(task):
+    import bpy
+
     object_list = []
 
     for res in bpy.data.objects[task].children:
@@ -1025,6 +1047,41 @@ def return_object_list(task):
             for obj in materials.children:
                 object_list.append(obj)
     return object_list
+
+def objects_in_scene():
+    import bpy
+    return bpy.data.objects
+
+
+def get_next_namespace(ns):
+    pattern = '[0-9]+'
+    next = False
+    sel = pm.listReferences(namespaces=True)
+    latest = 0
+    for ref in sel:
+        if ns in ref[0]:
+            num = re.findall(pattern, ref[0])
+            if num:
+                if int(num[-1]) > latest:
+                    latest = int(num[-1])
+                    next = True
+    if next:
+        return '%s%s' % (ns, latest + 1)
+    else:
+        return ns
+
+
+
+def read_matrix(obj, transform_data):
+
+    location = (transform_data[0], transform_data[1], transform_data[2])
+    obj.location = location
+
+    rotation = (transform_data[3], transform_data[4], transform_data[5])
+    obj.rotation_euler = rotation
+
+    scale = (transform_data[6], transform_data[7], transform_data[8])
+    obj.scale = scale
 
 
 if __name__ == '__main__':

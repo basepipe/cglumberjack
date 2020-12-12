@@ -29,7 +29,7 @@ class SmartTask(object):
         """
         pass
 
-    def _import(self, file_path, reference=False, collection_name=None):
+    def _import(self, file_path, reference=False):
         """
         Imports the file into the scene - this function should be smart enough to handle various file types
         as well as
@@ -37,22 +37,22 @@ class SmartTask(object):
         """
         if not file_path:
             file_path = self.path_object.path_root
-        from cgl.plugins.blender.lumbermill import import_file
-        import_file(filepath=file_path, collection_name=collection_name)
-        return  file_path
+        from cgl.plugins.blender.lumbermill import import_file, reference_file,LumberObject
 
-    def import_latest(self, task=None, **kwargs):
+        path_object = LumberObject(file_path)
+        if reference:
+            return reference_file(filepath=file_path,namespace=path_object.asset)
+        else:
+            return import_file(filepath=file_path,namespace=path_object.asset)
+
+    def import_latest(self, task=None, reference=False, **kwargs):
         if not task:
-            print('no task arrived')
             task = self.path_object.task
         new_obj = self.path_object.copy(task=task, context='render', user='publish',
                                         latest=True,
                                         set_proper_filename=True)
-        import_obj = self._import(new_obj.path_root, collection_name=self.path_object.asset)
-        print(new_obj.path)
+        import_obj = self._import(new_obj.path_root, reference=reference)
         return import_obj
-
-        pass
 
     def publish(self):
         """

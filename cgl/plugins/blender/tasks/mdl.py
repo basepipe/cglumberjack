@@ -26,7 +26,8 @@ class Task(SmartTask):
             pass
         else:
             print('please_create_material_groups')
-            create_material_groups()
+
+        create_material_groups()
 
         #bpy.ops.object.fix_collection_name()
         bpy.ops.object.correct_file_name()
@@ -36,6 +37,7 @@ class Task(SmartTask):
 
 
 class CreateMaterialsGroups(bpy.types.Operator):
+    import bpy
     bl_idname = "object.create_material_groups"
     bl_label = "create material groups"
 
@@ -56,7 +58,7 @@ class CreateMaterialsGroups(bpy.types.Operator):
         if bpy.types.Scene.inputDialogSelectionRegex[1]['default']:
 
             cleaned_list = []
-
+            full_list = ['mdl','high']
             materials = bpy.types.Scene.inputDialogText.split(',')
 
             print(materials)
@@ -72,20 +74,38 @@ class CreateMaterialsGroups(bpy.types.Operator):
             print(materials)
             root = None
             high = None
-
+            asset = lm.scene_object().asset
             if self.mdl:
-                root = utils.create_object('mdl')
-                res = root
 
+                root = utils.create_object('mdl',collection=asset)
+                res = bpy.data.objects['mdl']
+                root.empty_display_size = 1
 
             if self.high:
-                res = utils.create_object('high', parent=root)
-
+                utils.create_object('high', parent=root,collection=asset)
+                res = bpy.data.objects['high']
+                res.empty_display_size = 0.001
 
             for element in cleaned_list:
                 print(element)
-                utils.create_object(element, parent=res)
-                utils.parent_to_collection(lm.scene_object().asset)
+                elem = utils.create_object(element, parent=res,collection=asset)
+                elem.empty_display_size = 0.001
+
+            for material in res.children:
+                if material.name not in cleaned_list:
+                    cleaned_list.append(material.name)
+                    print('existing materials')
+                    print('material.name')
+                    material.empty_display_size = 0.001
+
+            full_list += cleaned_list
+            for element in full_list:
+                print(asset)
+                utils.parent_to_collection(obj = lm.get_object(element),
+                                           collection_name= asset)
+
+
+
             lm.confirm_prompt(message='Material Groups created, please move geometries to groups')
 
             return {'FINISHED'}

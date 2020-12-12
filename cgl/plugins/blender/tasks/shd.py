@@ -1,6 +1,6 @@
 from .smart_task import SmartTask
 from cgl.ui.widgets.dialog import InputDialog
-from cgl.plugins.blender.utils import load_plugin
+from cgl.plugins.blender.utils import load_plugin, get_object_list
 from cgl.plugins.blender import lumbermill as lm
 import bpy
 
@@ -23,7 +23,7 @@ class Task(SmartTask):
 
 
 
-def get_materials_dictionary():
+def get_materials_dictionary(objects = None):
     """
     creates a dictionary of the objects and the faces associated with that object
     :return: list of materials
@@ -31,9 +31,12 @@ def get_materials_dictionary():
     import bpy
 
     materials = {}
+    if not objects:
+        objects = get_object_list()
 
-    for o in bpy.context.selected_objects:
-        bpy.ops.object.material_slot_remove_unused()
+
+    for o in objects:
+
         # Initialize dictionary of all materials applied to object with empty lists
         # which will contain indices of faces on which these materials are applied
         materialPolys = {ms.material.name: [] for ms in o.material_slots}
@@ -54,7 +57,7 @@ def check_material_count(max_count = 1 ):
         materials = dic[item].keys()
 
         if len(materials) > max_count:
-            material = '{} {}'.format(len(materials), items)
+            material = '{} {}'.format(len(materials), item)
             material_count.append(material)
 
     return material_count

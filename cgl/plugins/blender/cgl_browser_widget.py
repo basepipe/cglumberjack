@@ -9,14 +9,16 @@ class BrowserWidget(CGLumberjackWidget):
                  company=None,
                  path=None,
                  radio_filter=None,
-                 show_import=True):
+                 show_import=True,
+                 show_reference=True):
         super(BrowserWidget, self).__init__(parent=parent,
                                             project_management=project_management,
                                             user_email=user_email,
                                             company=company,
                                             path=path,
                                             radio_filter=radio_filter,
-                                            show_import=True)
+                                            show_import=True,
+                                            show_reference=True)
 
 
     def open_clicked(self):
@@ -39,10 +41,11 @@ class BrowserWidget(CGLumberjackWidget):
         in this plugin.
         :return:
         """
-        from cgl.plugins.blender.lumbermill import import_file
+        from cgl.plugins.blender.lumbermill import import_file, LumberObject
         selection = self.path_widget.path_line_edit.text()
+        path_object = LumberObject(selection)
         if os.path.exists(selection):
-            import_file(selection, namespace=None)
+            import_file(selection, namespace=path_object.asset)
         else:
             logging.info('{0} does not exist!'.format(selection))
         # close lumbermill.
@@ -56,6 +59,13 @@ class BrowserWidget(CGLumberjackWidget):
         :return:
         """
         print('reference clicked! Referencing not yet implemented in Blender.')
+        from cgl.plugins.blender.lumbermill import reference_file, LumberObject
+        selection = self.path_widget.path_line_edit.text()
+        path_object = LumberObject(selection)
+        if os.path.exists(selection):
+            reference_file(selection, namespace=path_object.asset)
+        else:
+            logging.info('{0} does not exist!'.format(selection))
         # selection = self.path_widget.path_line_edit.text()
         # if os.path.exists(selection)::
         #     reference_file(selection, namespace=None)
