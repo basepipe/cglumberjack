@@ -3,6 +3,7 @@ from cgl.core.path import PathObject
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.config import app_config, UserConfig
 from datetime import datetime, date
+from cgl.core.path import start
 
 import glob
 import os
@@ -15,6 +16,8 @@ LABEL_MAP = {'Animation': 'anim',
 STATUS_COLORS = {'Not Started': 'grey',
                  'In Progress': 'yellow',
                  'Published': 'green'}
+
+FILE_TYPES = {'maya': {'defaults': ['.mb', '.ma']}}
 
 
 class ScopeList(QtWidgets.QWidget):
@@ -35,13 +38,14 @@ class MagicButtonWidget(QtWidgets.QWidget):
     path_object = None
     published_path = None
     newest_version_folder = None
-    newest_version_files = None
+    newest_version_files = []
     status = 'Not Started'
     latest_date = None
     publish_date = None
     date_format = "%m-%d-%Y"
     last_updated = None
     last_published = None
+    newest_version_file = None
 
     def __init__(self, parent=None, button_label='Default Text', info_label=None, task=None):
         QtWidgets.QWidget.__init__(self, parent)
@@ -80,6 +84,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
                                                    resolution='high', version='*')
         versions = glob.glob(latest_glob_object.path_root)
         if versions:
+            self.newest_version_files = []
             latest = 0
             latest_folder = ''
             if not self.published_path:
@@ -92,7 +97,12 @@ class MagicButtonWidget(QtWidgets.QWidget):
                     latest_folder = each
             self.latest_date = datetime.fromtimestamp(latest).strftime(self.date_format)
             self.newest_version_folder = latest_folder
-            self.newest_version_files = os.listdir(latest_folder)
+            for f in os.listdir(latest_folder):
+                _, ext = os.path.splitext(f)
+                if ext in FILE_TYPES['maya']['defaults']:
+                    self.newest_version_files.append(f)
+            if len(self.newest_version_files) == 1:
+                self.newest_version_file = self.newest_version_files[0]
             self.set_time_stuff()
         else:
             self.status = 'Not Started'
@@ -117,6 +127,16 @@ class MagicButtonWidget(QtWidgets.QWidget):
         print('\tLast Publish {} days ago'.format(self.last_published))
         print('\t{}'.format(self.newest_version_folder))
         print('\tLast updated {} days ago'.format(self.last_updated))
+        if self.newest_version_file:
+            print('\tNewest File: {}'.format(self.newest_version_file))
+            if self.status == 'In Progress':
+                filepath = (os.path.join(self.newest_version_folder, self.newest_version_file))
+                cmd = "cmd /c start {}".format(filepath)
+                os.system(cmd)
+        else:
+            print('\tNewest Files: {}'.format(self.newest_version_files))
+        if self.status == 'In Progress':
+            start(os.path.join(self.newest_version_folder, self.newest_version_file))
 
 
 class MagicToDo(LJDialog):
@@ -144,7 +164,7 @@ class MagicToDo(LJDialog):
         LJDialog.__init__(self, parent)
         self.user_config = UserConfig().d
         print(self.user_config)
-        self.setWindowTitle('Mystic - To Do')
+        self.setWindowTitle("Alchemical Overview")
         layout = QtWidgets.QVBoxLayout(self)
         self.scope_list = ScopeList()
         self.grid_layout = QtWidgets.QGridLayout()
