@@ -14,13 +14,17 @@ CONFIG = app_config()
 
 class MagicSceneDescription(msd.MagicSceneDescription):
 
-    def __init__(self):
+    def __init__(self, single_asset=None, single_asset_path=None, single_asset_name=None, single_asset_type=None):
         """
 
         :param software:
         :param type_:
         :param scene_description_path:
         """
+        self.single_asset_path = single_asset_path
+        self.single_asset = single_asset
+        self.single_asset_name = single_asset_name
+        self.single_asset_type = single_asset_type
         self.create_msd()
 
     def load_description_classes(self):
@@ -36,14 +40,16 @@ class MagicSceneDescription(msd.MagicSceneDescription):
         pass
 
     @staticmethod
-    def get_assets(ignore=[]):
-        print(ignore)
+    def get_assets(ignore=None):
         meshes = []
-        references = pm.listReferences()
+        references = pm.listReferences(namespaces=True)
         for ref in references:
-            print(ref)
-            if ref not in ignore:
-                meshes.append(ref)
+            if not pm.system.referenceQuery(ref[-1], isLoaded=True):
+                print('removing unloaded reference {}'.format(ref))
+                pm.system.FileReference(ref[-1]).remove()
+            else:
+                if ref[-1].path not in ignore:
+                    meshes.append(ref)
         return meshes
 
     def get_anim(self):
@@ -103,9 +109,24 @@ class AssetDescription(object):
     asset_name = ''
     path_object = None
     object_type = None
+    single_asset_name = None
 
-    def __init__(self, mesh_name=None, mesh_object=None, selected=False, asset_type='asset'):
+    def __init__(self, mesh_name=None, mesh_object=None, asset_type=None, path_root=None, single_asset_name=False,
+                 single_asset_type=None):
+        """
+
+        :param mesh_name:
+        :param mesh_object:
+        :param asset_type:
+        :param path_root:
+        :param single_asset_name:
+        """
+        pm.select(d=True)
+        self.single_asset_type = single_asset_type
+        self.scene_object = scene_object()
+        self.single_asset_name = single_asset_name
         self.mesh_name = mesh_name
+        self.path_root = path_root
         self.data = CONFIG['layout']['asset']
         self.asset_type = asset_type
         if not mesh_object:
@@ -114,7 +135,10 @@ class AssetDescription(object):
             self.mesh_object = mesh_object
         if not self.mesh_name:
             self.get_mesh_name_from_object()
-        self.create_msd()
+        if pm.getAttr('{}.visibility'.format(self.mesh_name)):
+            self.create_msd()
+        else:
+            print('{} not visible, skipping msd creation')
 
     def create_msd(self):
         self.get_asset_name()
@@ -130,7 +154,9 @@ class AssetDescription(object):
         :return:
         """
         if self.asset_type == 'asset':
-            self.path_root = self.mesh_object.path
+            print(self.mesh_object)
+            if not self.path_root:
+                self.path_root = self.mesh_object[-1].path
         elif self.asset_type == 'bndl':
             self.path_root = pm.getAttr(self.mesh_object.BundlePath)
         self.path_object = LumberObject(self.path_root)
@@ -140,7 +166,14 @@ class AssetDescription(object):
         get the mesh name (name of asset in scene) from the mesh_object
         :return:
         """
-        self.mesh_name = self.mesh_object.nodes()[0]
+        print('---------------------------')
+        print(self.mesh_object)
+        try:
+            self.mesh_name = self.mesh_object[-1].nodes()[0]
+        except IndexError:
+            pm.select(self.mesh_object)
+            self.mesh_name = pm.ls(sl=True)[0]
+            print(self.mesh_object, 'doesnt have nodes fool')
 
     def get_asset_name(self):
         """
@@ -213,13 +246,16 @@ class AssetDescription(object):
         :return:
         """
         # see if it's animated (is it in the ANIM group)
+        data_temp = copy.copy(self.data)
         if self.asset_type == 'asset':
-            self.add_matching_files_to_dict(self.path_object.copy(context='render').path_root, self.data)
+            self.data = self.add_matching_files_to_dict(self.path_object.copy(context='render').path_root, data_temp)
         elif self.asset_type == 'anim':
             anim_obj = LumberObject(pm.referenceQuery(self.mesh_object, filename=True))
             filename = '{}_{}*'.format(anim_obj.seq, anim_obj.shot)
             filepath = self.path_object.copy(context='render', filename=filename).path_root
-            self.add_matching_files_to_dict(filepath, self.data)
+            print('Adding to dict------------------------------')
+            print('\t{}'.format(filepath))
+            self.data = self.add_matching_files_to_dict(filepath, data_temp)
         self.set_path_object_details()
         matrix = self.get_matrix()
         matrix = str(matrix).replace('[', '').replace(']', '').replace(',', '')
@@ -230,8 +266,7 @@ class AssetDescription(object):
         self.data['rotate'] = [rotate[0], rotate[1], rotate[2]]
         self.data['scale'] = [scale[0], scale[1], scale[2]]
 
-    @staticmethod
-    def add_matching_files_to_dict(file_path, dictionary):
+    def add_matching_files_to_dict(self, file_path, dictionary):
         """
         adds file that match filepath.* to the dictionary, this is useful when there are multiple file types
         for the same asset as with a model file that has .mb, .ma, .obj, .blend, etc...
@@ -240,15 +275,24 @@ class AssetDescription(object):
         :return:
         """
         from cgl.core.path import remove_root
-        ignore = ['.json']
-        no_ext_path, ext = os.path.splitext(file_path)
-        files = glob.glob('{}*'.format(no_ext_path))
+        ignore = ['.json', '.msd']
+        if not self.single_asset_name:
+            no_ext_path, ext = os.path.splitext(file_path)
+            glob_pattern = '{}'.format(no_ext_path)
+        else:
+            directory = os.path.dirname(self.scene_object.copy(context='render').path_root)
+            glob_pattern = '{}/{}.*'.format(directory, self.single_asset_name)
+        print('\tlooking for {}'.format(glob_pattern))
+        files = glob.glob(glob_pattern)
         for f in files:
-            for i in ignore:
-                if i not in f:
-                    _, ext = os.path.splitext(f)
-                    ext = ext.replace('.', '')
-                    dictionary[ext] = copy.copy(remove_root(f))
+            f = f.replace('\\', '/')
+            _, ext = os.path.splitext(f)
+            ext = ext.replace('.', '')
+            dictionary[str(ext)] = remove_root(f)
+        for key in dictionary:
+            print('\t\t{}: {}'.format(key, dictionary[key]))
+        return dictionary
+
 
     def set_path_object_details(self):
         self.data['name'] = self.path_object.shot
@@ -261,7 +305,7 @@ class AssetDescription(object):
         :return:
         """
         print('Exporting .msd to: {}'.format(self.path_root))
-        save_json(self.path_root, self.data)
+        # save_json(self.path_root, self.data)
 
 
 class CameraDescription(AssetDescription):
@@ -301,7 +345,9 @@ class CameraDescription(AssetDescription):
         else:
             self.handle_end = int(pm.playbackOptions(query=True, max=True))
         self.set_frame_range()
-        self.add_matching_files_to_dict(self.path_object.path_root, self.data)
+        data = copy.copy(self.data)
+        self.add_matching_files_to_dict(self.path_object.path_root, data)
+        self.data = data
 
     def set_path_object_details(self):
         self.data['name'] = self.mesh_name
@@ -343,6 +389,7 @@ def load_msd(msd_path):
     for asset in msd_:
         namespace = asset
         if msd_[asset]['type'] == 'anim':
+            print('Importing Anim')
             load_plugin('AbcImport')
             if not pm.objExists('ANIM'):
                 group = pm.group(name='ANIM')
@@ -351,12 +398,14 @@ def load_msd(msd_path):
             pm.select(d=True)
             reference_path = "%s%s" % (app_config()['paths']['root'], msd_[asset]['abc'])
         elif msd_[asset]['type'] == 'asset':
+            print('Importing Layout')
             if not pm.objExists('LAYOUT'):
                 group = pm.group(name='LAYOUT')
             else:
                 group = 'LAYOUT'
             reference_path = "%s%s" % (app_config()['paths']['root'], msd_[asset]['mb'])
         elif msd_[asset]['type'] == 'camera':
+            print('Importing Camera')
             if not pm.objExists('CAMERA'):
                 group = pm.group(name='CAMERA')
             else:

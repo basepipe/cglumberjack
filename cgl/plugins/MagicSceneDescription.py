@@ -17,8 +17,11 @@ class MagicSceneDescription(object):
     software = None
     ad_class = None
     lgt_class = None
+    single_asset = None
+    single_asset_path = None
+    single_asset_name = None
 
-    def __init__(self):
+    def __init__(self, single_asset=None, single_asset_name=None, single_asset_path=None, single_asset_type=None):
         """
         This is the base code for the Production Alchemy "Mystic Scene Description" file or 'msd'.
         Essentially this is a template for setting up different 3d packages in the .msd universe.
@@ -30,6 +33,10 @@ class MagicSceneDescription(object):
         :param type_:
         :param scene_description_path:
         """
+        self.single_asset = single_asset
+        self.single_asset_name = single_asset_name
+        self.single_asset_path = single_asset_path
+        self.single_asset_type = single_asset_type
         self.create_msd()
 
     def load_description_classes(self):
@@ -38,11 +45,21 @@ class MagicSceneDescription(object):
     def create_msd(self):
         self.load_description_classes()
         self.set_scene_file()
-        self.set_scene_data()
         self.set_path_object_details()
+        self.set_scene_data()
 
     def add_asset(self, asset_description):
-        self.data[asset_description.asset_name] = copy.copy(asset_description.data)
+        if asset_description.asset_name:
+            self.data[asset_description.asset_name] = copy.copy(asset_description.data)
+
+    def add_asset_to_existing_msd(self, asset_description):
+        if os.path.exists(self.output_msd):
+            data = load_json(self.output_msd)
+            data[self.single_asset_name] = copy.copy(asset_description.data)
+            self.data = data
+        else:
+            self.add_asset(asset_description)
+        print('adding {} to {}'.format(asset_description.asset_name, self.output_msd))
 
     def set_scene_file(self):
         """
@@ -56,30 +73,36 @@ class MagicSceneDescription(object):
 
     def set_path_object_details(self):
         self.output_msd = self.path_object.copy(context='render', set_proper_filename=True, ext='msd').path_root
-        # self.data['name'] = self.path_object.shot
-        # self.data['source_path'] = self.path_object.path
-        # self.data['task'] = self.path_object.task
 
     def set_scene_data(self):
         """
         sets self.data with all information about the scene, this is
         :return:
         """
-        bundles, children = self.get_bundles(children=True)
-        if bundles:
-            for b in bundles:
-                b_desc = self.ad_class(b, asset_type='bndl')
-                self.add_asset(b_desc)
-        animated_assets, anim_ignore = self.get_anim()
-        if animated_assets:
-            for aa in animated_assets:
-                aa_desc = self.ad_class(aa, asset_type='anim')
-                self.add_asset(aa_desc)
-        assets = self.get_assets(ignore=children+anim_ignore)
-        if assets:
-            for a in assets:
-                a_desc = self.ad_class(mesh_object=a)
-                self.add_asset(a_desc)
+        if not self.single_asset:
+            bundles, children = self.get_bundles(children=True)
+            if bundles:
+                for b in bundles:
+                    b_desc = self.ad_class(b, asset_type='bndl')
+                    self.add_asset(b_desc)
+            animated_assets, anim_ignore = self.get_anim()
+            if animated_assets:
+                for aa in animated_assets:
+                    print(aa, 'animated')
+                    aa_desc = self.ad_class(aa, asset_type='anim')
+                    self.add_asset(aa_desc)
+            assets = self.get_assets(ignore=children+anim_ignore)
+            if assets:
+                for a in assets:
+                    print(a, 'assets')
+                    a_desc = self.ad_class(mesh_object=a, asset_type='asset')
+                    self.add_asset(a_desc)
+        else:
+            single_desc = self.ad_class(mesh_name=self.single_asset,
+                                        path_root=self.single_asset_path,
+                                        single_asset_name=self.single_asset_name,
+                                        asset_type=self.single_asset_type)
+            self.add_asset_to_existing_msd(single_desc)
 
     def get_lights(self):
         """

@@ -29,9 +29,10 @@ class FilesPanel(QtWidgets.QWidget):
     publish_signal = QtCore.Signal()
 
     def __init__(self, parent=None, path_object=None, user_email='', machine_user=None, show_import=False,
-                 show_reference=False):
+                 show_reference=False, set_to_publish=False):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
+        self.set_to_publish = set_to_publish
         self.work_files = []
         self.in_current_folder = False
         self.render_files_widget = None
@@ -106,7 +107,7 @@ class FilesPanel(QtWidgets.QWidget):
             self.task_widgets_dict[self.task] = task_widget
 
             # find the version information for the task:
-            user = self.populate_users_combo(task_widget, current, self.task)
+            user = self.populate_users_combo(task_widget, current, self.task, set_to_publish=self.set_to_publish)
             self.current_location['user'] = user
             version = self.populate_versions_combo(task_widget, current, self.task)
             self.current_location['version'] = version
@@ -234,7 +235,7 @@ class FilesPanel(QtWidgets.QWidget):
             dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
             dialog.exec_()
 
-    def populate_users_combo(self, widget, path_object, task):
+    def populate_users_combo(self, widget, path_object, task, set_to_publish=False):
         if path_object.user:
             self.user = path_object.user
         object_ = path_object.copy(user='*', task=task)
@@ -242,7 +243,7 @@ class FilesPanel(QtWidgets.QWidget):
         for each in users:
             widget.users.addItem(each)
         # self.set_user_from_radio_buttons()
-        if self.user == 'publish':
+        if self.user == 'publish' or set_to_publish:
             index_ = widget.users.findText('publish')
             if index_ != -1:
                 widget.users.setCurrentIndex(index_)

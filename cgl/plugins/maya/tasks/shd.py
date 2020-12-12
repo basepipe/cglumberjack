@@ -68,7 +68,10 @@ def import_and_attach_shaders_for_references(selected=False):
             if pm.referenceQuery(ref[-1], isLoaded=True):
                 asset_obj = lm.LumberObject(str(ref[-1]))
                 if asset_obj.ext == 'abc':
-                    asset_obj.seq, asset_obj.shot = asset_obj.filename.replace('.abc', '').split('_')
+                    try:
+                        asset_obj.seq, asset_obj.shot = asset_obj.filename.replace('.abc', '').split('_')
+                    except ValueError:
+                        print('ERROR: {} is a non-standard name, skipping auto-shader attachment')
                 asset_obj.shot = re.sub('[0-9]+', '', asset_obj.shot)
                 if asset_obj.scope == 'assets' or asset_obj.ext == 'abc':
                     if '{' in str(ref[-1]):

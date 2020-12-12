@@ -1,6 +1,5 @@
 import re
 import os
-from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.config import app_config
 from cgl.core.utils.read_write import load_json
 from cgl.ui.widgets.dialog import MagicList
@@ -9,6 +8,7 @@ try:
     import pymel.core as pm
     import maya.mel as mel
     import mtoa.core as aicore
+    import maya.cmds as cmds
 except ModuleNotFoundError:
     print('Skipping pymel.core - outside of maya')
 
@@ -48,20 +48,20 @@ def select_reference(ref_node):
 
 def get_next_namespace(ns):
     pattern = '[0-9]+'
-    next = False
-    sel = pm.listReferences(namespaces=True)
+    exists = False
+    namespaces = pm.namespaceInfo(listNamespace=True)
     latest = 0
-    for ref in sel:
-        if ns in ref[0]:
-            num = re.findall(pattern, ref[0])
+    for ref in namespaces:
+        if ns in ref:
+            exists = True
+            num = re.findall(pattern, ref)
             if num:
                 if int(num[-1]) > latest:
                     latest = int(num[-1])
-                    next = True
-    if next:
+    if exists:
         return '%s%s' % (ns, latest + 1)
     else:
-        return ns
+        return '%s' % ns
 
 
 def get_shape_name(geo):
@@ -262,8 +262,10 @@ def get_maya_window():
 def update_reference(reference):
     from cgl.plugins.maya.lumbermill import LumberObject
     path = reference[1].path
+    if '{' in path:
+        path = path.split('{')[0]
     filename = os.path.basename(path)
-    lobj = LumberObject(path).copy(latest=True)
+    lobj = LumberObject(path).copy(context='render', user='publish', latest=True)
     latest_version = lobj.path_root
     path = path.replace('\\', '/')
     latest_version = latest_version.replace('\\', '/')
@@ -347,6 +349,23 @@ def get_namespaces():
             if name not in ('UI', 'shared'):
                 ns.append(name)
         return ns
+
+
+def is_reference(mesh=None, return_namespaces=False):
+    refs = pm.listReferences(namespaces=True)
+    scene_namespaces = ['PROP']
+    for ref in refs:
+        scene_namespaces.append(ref[0])
+    if return_namespaces:
+        return scene_namespaces
+    ns = str(mesh).split(':')[0]
+    if ns in scene_namespaces:
+        return True
+    else:
+        return False
+
+
+
 
 
 
