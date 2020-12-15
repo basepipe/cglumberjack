@@ -382,7 +382,8 @@ class LocationWidget(QtWidgets.QWidget):
 class CGLumberjackWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None, project_management=None, user_email=None, company=None,
-                 path=None, radio_filter=None, show_import=False, show_reference=False, default_project=None):
+                 path=None, radio_filter=None, show_import=False, show_reference=False, default_project=None,
+                 set_to_publish=False):
         QtWidgets.QWidget.__init__(self, parent)
         try:
             font_db = QtGui.QFontDatabase()
@@ -392,6 +393,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             logging.error('Skipping Loading Fonts - possible Pyside2 issue')
 
         # Environment Stuff
+        self.set_to_publish = set_to_publish
         self.show_import = show_import
         self.show_reference = show_reference
         self.user_email = user_email
@@ -644,7 +646,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def load_files_panel(self, path_object):
         self.panel = FilesPanel(path_object=path_object, show_import=self.show_import,
-                                show_reference=self.show_reference)
+                                show_reference=self.show_reference, set_to_publish=self.set_to_publish)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
         self.panel.reference_signal.connect(self.reference_clicked)

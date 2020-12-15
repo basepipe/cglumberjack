@@ -703,6 +703,8 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state.show()
 
     def publish_selected_asset(self):
+        print('Publishing Ingested thing')
+        print('pandas path = {}'.format(self.pandas_path))
         task = self.schema_dict['long_to_short'][self.scope_combo.currentText()][self.task_combo.currentText()]
         # TODO - would be nice to figure out a more elegant way of doing this.  Perhaps handle the exception
         # within the Preflight itself?
@@ -719,6 +721,8 @@ class IOPanel(QtWidgets.QWidget):
                                selected_rows=self.file_tree.selectionModel().selectedRows(),
                                ingest_browser_header=CONFIG['definitions']['ingest_browser_header'])
         dialog.show()
+        print('i guess i showed it')
+
 
     # noinspection PyListCreation
     @staticmethod

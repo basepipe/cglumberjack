@@ -1,6 +1,5 @@
 import re
 import os
-from cgl.ui.widgets.dialog import InputDialog, FrameRange
 from cgl.core.config import app_config
 from cgl.core.utils.read_write import load_json
 from cgl.ui.widgets.dialog import MagicList
@@ -9,6 +8,7 @@ try:
     import pymel.core as pm
     import maya.mel as mel
     import mtoa.core as aicore
+    import maya.cmds as cmds
 except ModuleNotFoundError:
     print('Skipping pymel.core - outside of maya')
 
@@ -48,20 +48,20 @@ def select_reference(ref_node):
 
 def get_next_namespace(ns):
     pattern = '[0-9]+'
-    next = False
-    sel = pm.listReferences(namespaces=True)
+    exists = False
+    namespaces = pm.namespaceInfo(listNamespace=True)
     latest = 0
-    for ref in sel:
-        if ns in ref[0]:
-            num = re.findall(pattern, ref[0])
+    for ref in namespaces:
+        if ns in ref:
+            exists = True
+            num = re.findall(pattern, ref)
             if num:
                 if int(num[-1]) > latest:
                     latest = int(num[-1])
-                    next = True
-    if next:
+    if exists:
         return '%s%s' % (ns, latest + 1)
     else:
-        return ns
+        return '%s' % ns
 
 
 def get_shape_name(geo):
@@ -260,15 +260,16 @@ def get_maya_window():
 
 
 def update_reference(reference):
+    from cgl.plugins.maya.lumbermill import LumberObject
     path = reference[1].path
+    if '{' in path:
+        path = path.split('{')[0]
     filename = os.path.basename(path)
-    print(filename)
-    lobj = LumberObject(path).copy(latest=True)
+    lobj = LumberObject(path).copy(context='render', user='publish', latest=True)
     latest_version = lobj.path_root
     path = path.replace('\\', '/')
     latest_version = latest_version.replace('\\', '/')
     if os.path.exists(latest_version):
-        print('Comparing Reference: \n\t%s to \n\t%s' % (path, latest_version))
         if path != latest_version:
             print('REPLACING REFERENCE: %s ---- %s' % (reference[0], latest_version))
             try:
@@ -337,45 +338,36 @@ def remove_all_namespaces():
         remove_namespace(ns)
 
 
-def export_fbx(filepath, start_frame=False, end_frame=False):
-    load_plugin('fbxmaya')
-    if not start_frame:
-        start_frame = int(pm.playbackOptions(query=True, animationStartTime=True))
-    if not end_frame:
-        end_frame = int(pm.playbackOptions(query=True, animationEndTime=True))
-    if start_frame:
-        command = 'FBXExportBakeComplexAnimation -v true; FBXExportInputConnections -v false; ' \
-                   'FBXExportBakeComplexEnd -v %s; FBXExportBakeComplexStart -v %s; FBXExport -f "%s" -s' \
-                   % (str(int(end_frame)), str(int(start_frame)), filepath)
-        mel.eval(command)
+def get_namespaces():
+    namespaces = pm.namespaceInfo(listOnlyNamespaces=1)
+    if len(namespaces) == 2:
+        return None
     else:
-        pm.exportSelected(filepath, typ='FBX export')
+        pm.namespace(set=":")
+        ns = []
+        for name in namespaces:
+            if name not in ('UI', 'shared'):
+                ns.append(name)
+        return ns
 
 
-def export_abc(filepath, start_frame=False, end_frame=False):
-    load_plugin('AbcExport')
-    load_plugin('AbcImport')
-    command = 'AbcExport -j "-frameRange %s %s -uvWrite -uvWrite -worldSpace -attrPrefix pxm' \
-              '  -attrPrefix PXM -dataFormat ogawa  -sl  -file %s";' \
-              % (start_frame, end_frame, filepath)
-    mel.eval(command)
+def is_reference(mesh=None, return_namespaces=False):
+    refs = pm.listReferences(namespaces=True)
+    scene_namespaces = ['PROP']
+    for ref in refs:
+        scene_namespaces.append(ref[0])
+    if return_namespaces:
+        return scene_namespaces
+    ns = str(mesh).split(':')[0]
+    if ns in scene_namespaces:
+        return True
+    else:
+        return False
 
 
-def set_shot_frame_range(shot_name, project):
-    # throw up the Frame Range Dialog
-    sframe = int(pm.playbackOptions(query=True, animationStartTime=True))
-    eframe = int(pm.playbackOptions(query=True, animationEndTime=True))
-    minframe = int(pm.playbackOptions(query=True, min=True))
-    maxframe = int(pm.playbackOptions(query=True, max=True))
-    dialog2 = FrameRange(sframe=sframe,
-                         eframe=eframe,
-                         minframe=minframe,
-                         maxframe=maxframe,
-                         message='Optional: Set Shotgun Frame Range for %s' % shot_name,
-                         both=True)
-    dialog2.exec_()
-    total_frames = int(dialog2.eframe)-int(dialog2.sframe)
-    return dialog2.sframe, dialog2.eframe, dialog2.minframe, dialog2.maxframe
+
+
+
 
 
 
