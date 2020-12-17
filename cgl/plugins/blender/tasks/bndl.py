@@ -3,8 +3,10 @@ from cgl.plugins.blender import lumbermill as lm
 import bpy
 from cgl.core.utils.read_write import load_json
 from cgl.plugins.blender.tasks.smart_task import SmartTask
-from cgl.plugins.blender.lumbermill import LumberObject, scene_object, import_task, reference_file
+from cgl.plugins.blender.alchemy import PathObject, scene_object, import_task, reference_file
 from cgl.plugins.blender.utils import create_object, parent_object, read_matrix
+from importlib import reload
+
 # from cgl.plugins.blender.utils import get_next_namespace, select_reference
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.plugins.blender.utils import load_plugin
@@ -63,7 +65,7 @@ def get_latest_publish(filepath, task='bndl', ext='.json'):
     :return:
     """
     bundle_path = None
-    bndl_obj = LumberObject(filepath).copy(task=task, context='render',
+    bndl_obj = PathObject(filepath).copy(task=task, context='render',
                                            user='publish', latest=True, filename='*', ext=None)
     for each in glob.glob(bndl_obj.path_root):
         if ext in each:
@@ -74,7 +76,6 @@ def get_latest_publish(filepath, task='bndl', ext='.json'):
         print('Could not glob bundle path at {}'.format(bundle_obj.path))
         return None
 
-
 def bundle_import(filepath, layout_group=None):
     """
     Accepts a 'bndl.json' file, processes it and imports all parts and reassembles it into the maya scene.
@@ -84,7 +85,7 @@ def bundle_import(filepath, layout_group=None):
     """
     relative_path = None
     root = app_config()['paths']['root']
-    d = LumberObject(filepath)
+    d = PathObject(filepath)
     ns = d.shot
     #    try:
     #        pm.namespace(addNamespace=ns)
@@ -92,7 +93,8 @@ def bundle_import(filepath, layout_group=None):
     #        # TODO - this needs to remove namespaces that are not wanted.
     #        print('Namespace %s exists, skipping creation' % ns)
 
-    group = create_object('{}:bndl'.format(d.asset),collection = 'Collection')
+
+    group = create_object('{}:bndl'.format(d.asset),collection = scene_object().filename_base)
 
     if 'COMPANIES/' in filepath:
         source_path = filepath.split("COMPANIES/")[1]
@@ -123,7 +125,7 @@ def bundle_import(filepath, layout_group=None):
             reference_path= relative_path
         float_transforms = [float(x) for x in transforms]
 
-        d2 = LumberObject(reference_path)
+        d2 = PathObject(reference_path)
         ns2 = get_next_namespace(d2.shot)
         print('namespace______')
         print(ns2)
@@ -136,7 +138,6 @@ def bundle_import(filepath, layout_group=None):
 
     if layout_group:
         parent_object(group,layout_group)
-
 
 def get_next_namespace(ns):
     import re
@@ -159,6 +160,7 @@ def get_next_namespace(ns):
         return name
     else:
         return ns
+
 def remove_selected_bundle():
     bndl = pm.ls(sl=True)[0]
     if bndl:

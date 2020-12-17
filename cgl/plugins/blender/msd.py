@@ -123,6 +123,7 @@ class MagicSceneDescription(msd.MagicSceneDescription):
             return bundles
 
 
+
 class AssetDescription(object):
     name = None
     namespace = ''
@@ -209,13 +210,14 @@ class AssetDescription(object):
         s_array = [scale[0], scale[1], scale[2]]
         return t_array, r_array, s_array
 
-    def get_matrix(self, obj=None, query=False):
+    def get_matrix(self, obj=None, query=False,rig_root = 'c_pos'):
         """
         Returns a matrix of values relating to translate, scale, rotate.
         :param obj:
         :param query:
         :return:
         """
+        from cgl.plugins.blender.alchemy import PathObject
         print('___________OBJECT MATRIX')
         print(obj)
 
@@ -223,19 +225,27 @@ class AssetDescription(object):
         if not query:
             #TODO: check with tom distinction on rig objects.
 
+            path_root = PathObject(obj['source_path'])
             if objExists(obj):
+
+                obj_matrix = obj.matrix_world
+
+                if path_root.task == 'rig':
+                    obj = bpy.data.obj.pose.bones[rig_root]
+                    obj_matrix = obj.matrix_basis
+
 
                 attr = "%s.%s".format(obj, 'matrix')
 
-                matrix = [[obj.matrix_world.to_translation().x,
-                           obj.matrix_world.to_translation().y,
-                           obj.matrix_world.to_translation().z],
-                          [obj.matrix_world.to_euler().x,
-                           obj.matrix_world.to_euler().y,
-                           obj.matrix_world.to_euler().z],
-                          [obj.matrix_world.to_scale().x,
-                           obj.matrix_world.to_scale().y,
-                           obj.matrix_world.to_scale().z]]
+                matrix = [[obj_matrix.to_translation().x,
+                           obj_matrix.to_translation().y,
+                           obj_matrix.to_translation().z],
+                          [obj_matrix.to_euler().x,
+                           obj_matrix.to_euler().y,
+                           obj_matrix.to_euler().z],
+                          [obj_matrix.to_scale().x,
+                           obj_matrix.to_scale().y,
+                           obj_matrix.to_scale().z]]
         #
             else:
                 matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
@@ -297,7 +307,7 @@ class CameraDescription(AssetDescription):
         pass
 
 
-def set_matrix(mesh, matrix=None):
+def set_matrix(obj, transform_data):
     """
     Sets translate, rotate, scale values according to matrix value given
     :param mesh:
@@ -306,16 +316,12 @@ def set_matrix(mesh, matrix=None):
     """
     r_matrix = []
 
-    if not matrix:
-        matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
 
-    obj = bpy.data.objects[mesh]
     location = (transform_data[0], transform_data[1], transform_data[2])
+    obj.location = location
+
     rotation = (transform_data[3], transform_data[4], transform_data[5])
+    obj.rotation_euler = rotation
+
     scale = (transform_data[6], transform_data[7], transform_data[8])
-
-    if obj:
-        obj.location = location
-        obj.rotation_euler = rotation
-        obj.scale = scale
-
+    obj.scale = scale

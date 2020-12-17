@@ -3,11 +3,6 @@ from cgl.plugins.blender import utils
 from cgl.plugins.blender import lumbermill as lm
 import bpy
 
-
-def clear_selection():
-    for obj in bpy.data.objects:
-        obj.select_set(False)
-
 class Task(SmartTask):
 
     def __init__(self, path_object=None):
@@ -33,8 +28,6 @@ class Task(SmartTask):
         bpy.ops.object.correct_file_name()
         utils.burn_in_image()
         defaultShotSettings()
-
-
 
 class CreateMaterialsGroups(bpy.types.Operator):
     import bpy
@@ -114,28 +107,24 @@ class CreateMaterialsGroups(bpy.types.Operator):
             self.report({'INFO'}, 'no valid Material Names')
             return {'CANCELLED'}
 
-
 def defaultShotSettings():
     scene = bpy.context.scene
     scene.eevee.taa_render_samples = 1
     scene.eevee.taa_samples = 1
     scene.eevee.shadow_cube_size = '2048'
 
-
 def create_high_group(materials):
-    clear_selection()
 
+    from cgl.plugins.blender.utils import selection
+    selection(clear=True)
     for m in materials:
         print('selecting material')
         # pm.select(m, tgl=True)
     print('create group high')
     # pm.group(name='high')
 
-
 def create_mdl_group(res='high'):
     utils.create_collection('mdl')
-
-
 
 def create_material_groups(do_high=True, do_mdl=True):
     try:

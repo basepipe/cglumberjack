@@ -9,7 +9,6 @@ from cgl.core.project import get_cgl_tools
 
 logger = logging.getLogger('qtutils')
 
-
 def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
     """
     returns the menu path for a menu with the given name
@@ -27,7 +26,6 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
         menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name)
     return menu_folder
 
-
 def get_button_path(software, menu_name, button_name, menu_type='menus'):
     """
 
@@ -41,7 +39,6 @@ def get_button_path(software, menu_name, button_name, menu_type='menus'):
     button_path = os.path.join(menu_folder, '%s.py' % button_name)
     return button_path
 
-
 def create_tt(length, tt_object):
     """
     Creates a turntable with frame range of 0-length, around the selected object.
@@ -51,14 +48,11 @@ def create_tt(length, tt_object):
     """
     pass
 
-
 def clean_tt(task=None):
     pass
 
-
 def get_current_camera():
     pass
-
 
 def confirm_prompt(title='title', message='message', button='Ok'):
     """
@@ -71,14 +65,11 @@ def confirm_prompt(title='title', message='message', button='Ok'):
     """
     pass
 
-
 def load_plugin(plugin_name):
     pass
 
-
 def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=False):
     pass
-
 
 def create_menu_file(class_name):
     """
@@ -107,7 +98,6 @@ def create_menu_file(class_name):
     # change class_name and lables
     # write out the menu file to desired location
     pass
-
 
 def create_button_file(class_name, label, menu_name):
     """
@@ -140,7 +130,6 @@ def create_button_file(class_name, label, menu_name):
     read_write.save_text_lines(changed_lines, button_path)
     # Add a row to the Menu File
 
-
 def add_buttons_to_menu(menu_name):
     """
     adds buttons from a cgl menu config file to a blender menu
@@ -172,12 +161,10 @@ def add_buttons_to_menu(menu_name):
 
         read_write.save_text_lines(new_menu_lines, menu_file)
 
-
 def get_last_button_number(menu_dict, software, menu):
     for m in menu_dict[software]:
         if m['name'] == menu:
             return len(m['buttons'])
-
 
 def get_menu_at(menu_dict, software, menu, i):
     for men in menu_dict[software]:
@@ -185,7 +172,6 @@ def get_menu_at(menu_dict, software, menu, i):
             print(i, len(men['buttons']))
             button_at = men['buttons'][i]
             return button_at['label']
-
 
 def write_layout(outFile=None):
     """
@@ -240,7 +226,6 @@ def write_layout(outFile=None):
 
     return (outFile)
 
-
 def return_linked_library(collection):
     import bpy
     '''
@@ -253,7 +238,6 @@ def return_linked_library(collection):
     for i in libraries:
         if collection in i.name:
             return (i)
-
 
 def read_layout(outFile=None, linked=False, append=False):
     """
@@ -324,7 +308,6 @@ def read_layout(outFile=None, linked=False, append=False):
             scale = (transform_data[6], transform_data[7], transform_data[8])
             obj.scale = scale
 
-
 def rename_materials(selection=None, material_name=None):
     """
 
@@ -368,7 +351,6 @@ def get_valid_meshes_list(objects):
                 valid_objects.append(object)
     return valid_objects
 
-
 def get_materials_from_object(object):
     valid_materials = []
 
@@ -377,7 +359,6 @@ def get_materials_from_object(object):
         valid_materials.append(material_slot.material)
 
     return (valid_materials)
-
 
 def get_selection(selection=None):
     if selection == None:
@@ -392,7 +373,6 @@ def get_selection(selection=None):
         selection = bpy.data.objects
 
     return selection
-
 
 def get_preview_from_texture(inputs, node_tree):
     texture = None
@@ -440,7 +420,6 @@ def get_preview_from_texture(inputs, node_tree):
 
     return preview_color
 
-
 def preview_inputs_from_node_tree(node_tree):
     color_input = None
     transparent = None
@@ -469,7 +448,6 @@ def preview_inputs_from_node_tree(node_tree):
     else:
         returns = (1, 1, 1, 1)
 
-
 def setup_preview_viewport_display(object):
     """
     set up the default viewport display color  diffuse_color on materials
@@ -485,7 +463,6 @@ def setup_preview_viewport_display(object):
 
         for i in range(0, 3):
             material.diffuse_color[i] = preview_colors[i]
-
 
 def get_materials_dictionary():
     """
@@ -506,7 +483,6 @@ def get_materials_dictionary():
             materialPolys[o.material_slots[p.material_index].name].append(i)
         materials.update({o.name: materialPolys})
     return (materials)
-
 
 def read_materials(path_object=None):
     """
@@ -554,7 +530,6 @@ def read_materials(path_object=None):
             bpy.ops.object.mode_set(mode='OBJECT')
             index += 1
 
-
 def create_task_on_asset(task, path_object=None):
     """
     Creates a task on disk based on path object
@@ -590,7 +565,6 @@ def create_task_on_asset(task, path_object=None):
 
     return newTask
 
-
 def reorder_list(items, arg=''):
     """
     Reorders list in order of importance, putting rig
@@ -607,7 +581,6 @@ def reorder_list(items, arg=''):
 
     return items
 
-
 def get_formatted_list(element, first_item):
     """
     Formats list for blender search mode
@@ -619,7 +592,6 @@ def get_formatted_list(element, first_item):
     value = [(tasks[i], tasks[i], '') for i in range(len(tasks))]
 
     return (value)
-
 
 def unlink_asset(object):
     filepath = None
@@ -654,7 +626,6 @@ def unlink_asset(object):
         bpy.data.batch_remove(ids=(libname, obj))
         remove_unused_libraries()
 
-
 def remove_linked_environment_dependencies(library):
     env = library
     bpy.ops.file.make_paths_absolute()
@@ -675,7 +646,6 @@ def remove_linked_environment_dependencies(library):
         bpy.data.collections.remove(env_asset_collection)
     except KeyError:
         pass
-
 
 def remove_unused_libraries():
     libraries = bpy.data.libraries
@@ -702,7 +672,6 @@ def remove_unused_libraries():
                 bpy.data.batch_remove(ids=(lib,))
     except AttributeError:
         pass
-
 
 def remove_instancers():
     for object in bpy.data.objects:
@@ -735,7 +704,6 @@ def remove_instancers():
                 pass
             remove_unused_libraries()
 
-
 def reparent_linked_environemnt_assets(library):
     env = library
     bpy.ops.file.make_paths_absolute()
@@ -762,7 +730,6 @@ def reparent_linked_environemnt_assets(library):
 
             keep_single_user_collection(obj, assetName=assets_collection_name)
 
-
 def keep_single_user_collection(obj, assetName=None):
     if not assetName:
         assetName = lm.scene_object().shot
@@ -776,7 +743,6 @@ def keep_single_user_collection(obj, assetName=None):
     for collection in obj.users_collection:
         if collection.name != assetName:
             collection.objects.unlink(obj)
-
 
 def reparent_collections(view_layer):
     for obj in view_layer:
@@ -808,7 +774,6 @@ def reparent_collections(view_layer):
             print(collection.name)
             bpy.context.scene.collection.children.unlink(collection)
 
-
 def keep_single_collections(obj, collection_name):
     """
     unlink object from all collections except the one specified
@@ -828,7 +793,6 @@ def keep_single_collections(obj, collection_name):
                     collection.objects.unlink(obj)
                 except:
                     pass
-
 
 def create_collection(collection_name, parent=None):
     import bpy
@@ -857,9 +821,6 @@ def create_collection(collection_name, parent=None):
 
     return collection
 
-
-
-
 def parent_to_collection(obj, collection_name):
     """
 
@@ -879,7 +840,6 @@ def parent_to_collection(obj, collection_name):
     except RuntimeError:
         print('{} already in light collection'.format(obj.name))
 
-
 def return_asset_name(obj):
     if 'proxy' in obj.name:
         name = obj.name.split('_')[0]
@@ -894,14 +854,12 @@ def return_asset_name(obj):
 
         return name
 
-
 def get_lib_from_object(object):
     if not object.isinstancer:
         object = bpy.data.object[return_asset_name(object)]
     library = object.instance_collection.library
 
     return (library)
-
 
 def return_lib_path(library):
     from pathlib import Path
@@ -910,15 +868,14 @@ def return_lib_path(library):
     filename = Path(bpy.path.abspath(library_path)).__str__()
     return (filename)
 
-
-def burn_in_image():
+def create_shot_mask_info():
     import bpy
-    from cgl.plugins.blender import lumbermill as lm
+    from .alchemy import scene_object
     current = bpy.context.scene
     mSettings = current.render
-    sceneObject = lm.scene_object()
+    sceneObject = scene_object()
     current.name = sceneObject.filename_base
-    scene_info = current.statistics(bpy.context.view_layer)
+    scene_info = bpy.context.scene.statistics(bpy.context.view_layer)
     try:
         mSettings.metadata_input = 'SCENE'
     except AttributeError:
@@ -943,11 +900,11 @@ def burn_in_image():
     mSettings.use_stamp_note = True
     mSettings.stamp_note_text = scene_info
 
-    print('sucess')
-
+    print('shot_mask_created')
 
 def create_object(name, type=None, parent=None,collection = None):
     import bpy
+    from cgl.plugins.blender.alchemy import scene_object
     if collection == None:
         collection  = 'Collection'
 
@@ -961,7 +918,6 @@ def create_object(name, type=None, parent=None,collection = None):
     parent_to_collection(collection_name=collection,obj=object)
 
     return object
-
 
 def material_dictionaries(task='mdl'):
     import bpy
@@ -979,7 +935,6 @@ def material_dictionaries(task='mdl'):
             material_MSD[task][res.name][mat.name] = objects
 
     return material_MSD
-
 
 def get_object_list(materials_dic = None):
     from cgl.plugins.blender.lumbermill import scene_object
@@ -1006,11 +961,9 @@ def get_object_list(materials_dic = None):
                     object_list.append(obj)
     return object_list
 
-
 def parent_object(child, parent, keep_transform=True):
     child.parent = parent
     child.matrix_parent_inverse = parent.matrix_world.inverted()
-
 
 def clear_parent(objects=None):
     if objects == None:
@@ -1023,7 +976,6 @@ def clear_parent(objects=None):
             for child in children:
                 parent_object(child, parent)
 
-
 def cleanup_scene_data(data_type):
     """
     Deletes data that's not currently linked to any object in scene , takes in bpy.data.type ie
@@ -1035,7 +987,6 @@ def cleanup_scene_data(data_type):
         if child.users == 0:
             print(child.name)
             data_type.remove(child)
-
 
 def return_object_list(task):
     import bpy
@@ -1052,25 +1003,106 @@ def objects_in_scene():
     import bpy
     return bpy.data.objects
 
-
 def get_next_namespace(ns):
+    import re
+    import bpy
     pattern = '[0-9]+'
     next = False
-    sel = pm.listReferences(namespaces=True)
+    sel = bpy.data.objects
     latest = 0
-    for ref in sel:
-        if ns in ref[0]:
-            num = re.findall(pattern, ref[0])
+
+    for i in sel:
+
+        if ns in i.name:
+            num = re.findall(pattern, i.name)
             if num:
                 if int(num[-1]) > latest:
                     latest = int(num[-1])
-                    next = True
+            next = True
+
     if next:
-        return '%s%s' % (ns, latest + 1)
+        name = '{}{}'.format(ns, latest + 1)
+        return name
     else:
         return ns
 
+def set_framerange(start=1, end=1, current=False):
+    import bpy
+    bpy.context.scene.frame_start = start
+    bpy.context.scene.frame_end = end
 
+    current = bpy.context.scene.frame_current
+    if current:
+        bpy.context.scene.frame_start = current
+        bpy.context.scene.frame_end = current
+
+def render(preview=False, audio=False):
+    """
+    renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
+    :param preview: determines if exr is used or not
+    :param audio: if True renders an  mov and setups the audio settings
+    :return:
+    """
+    previewRenderTypes = ['anim', 'rig', 'mdl', 'lay']
+    file_out = scene_object().render_path.split('#')[0]
+
+    if preview:
+        bpy.context.scene.render.image_settings.file_format = 'JPEG'
+        bpy.context.scene.render.filepath = file_out
+
+        if audio:
+            bpy.context.scene.render.image_settings.file_format = 'FFMPEG'
+            bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
+            bpy.context.scene.render.ffmpeg.audio_codec = 'MP3'
+
+        bpy.ops.render.opengl('INVOKE_DEFAULT', animation=True, view_context=True)
+
+    else:
+        bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR_MULTILAYER'
+        bpy.context.scene.render.filepath = file_out
+        bpy.ops.render.render(animation=True, use_viewport=True)
+
+def get_framerange():
+    import bpy
+    start = bpy.context.scene.frame_start
+    end  = bpy.context.scene.frame_end
+
+    return(start,end)
+
+
+
+
+def set_framerange(start,end):
+    import bpy
+    bpy.context.scene.frame_start = start
+    bpy.context.scene.frame_end =  end
+    bpy.context.scene.frame_current = start
+
+def selection(object=None, clear=False):
+    if clear:
+
+        for ob in bpy.data.objects:
+            ob.select_set(False)
+
+    if object:
+        object.select_set(True)
+
+def current_selection(single = False):
+    import bpy
+    if single:
+        return bpy.context.object
+
+    return  bpy.context.selected_objects
+
+def switch_overlays(visible=False):
+    for window in bpy.context.window_manager.windows:
+        screen = window.screen
+
+        for area in screen.areas:
+            if area.type == 'VIEW_3D':
+                for space in area.spaces:
+                    if space.type == 'VIEW_3D':
+                        space.overlay.show_overlays = visible
 
 def read_matrix(obj, transform_data):
 
@@ -1082,6 +1114,29 @@ def read_matrix(obj, transform_data):
 
     scale = (transform_data[6], transform_data[7], transform_data[8])
     obj.scale = scale
+
+def set_collection_name():
+    from .alchemy import scene_object
+    import bpy
+    if scene_object().scope == 'assets':
+        name = scene_object().asset
+    else:
+        name = scene_object().filename_base
+
+    obj = bpy.context.object
+
+    if obj:
+        if scene_object().asset in bpy.data.collections:
+            print('collection exist ')
+        object = bpy.context.object
+        object.users_collection[0].name = name
+
+    else:
+        if scene_object().asset in bpy.data.collections:
+            print('collection exist')
+
+        else:
+            bpy.data.collections['Collection'].name = name
 
 
 if __name__ == '__main__':

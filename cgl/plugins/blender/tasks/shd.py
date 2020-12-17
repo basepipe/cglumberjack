@@ -61,6 +61,7 @@ def check_material_count(max_count = 1 ):
             material_count.append(material)
 
     return material_count
+
 def split_materials():
 
     dic = get_materials_dictionary()
@@ -76,8 +77,6 @@ def split_materials():
             bpy.ops.mesh.separate(type='MATERIAL')
 
         lm.selection(clear=True)
-
-
 
 def read_materials(path_object=None):
     """
