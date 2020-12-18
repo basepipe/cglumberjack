@@ -5,7 +5,7 @@ from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
 from cgl.core.utils.general import current_user
 from cgl.ui.widgets.dialog import InputDialog
 import logging
-from cgl.core.utils.general import create_file_dirs
+from cgl.core.utils.general import create_file_dirs, cgl_copy
 from cgl.core.path import PathObject
 from cgl.core.config import app_config, UserConfig
 from cgl.plugins.maya.utils import get_namespace, create_tt, clean_tt, basic_playblast
@@ -114,7 +114,7 @@ class LumberObject(PathObject):
         self.proxy_resolution = '1920x1080'
         self.path_template = []
         self.version_template = []
-
+        self.name = None
         try:
             if isinstance(path_object, unicode):
                 path_object = str(path_object)
@@ -166,10 +166,9 @@ def open_file(filepath):
         return pm.openFile(filepath, f=True, loadReferenceDepth='all')
 
 
-def save_file(filepath=None):
+def save_file():
     """
     Save Current File
-    :param filepath:
     :return:
     """
     return pm.saveFile()
@@ -212,7 +211,6 @@ def import_file(filepath, namespace=None):
                 return filepath
         if filepath.endswith('.mb') or filepath.endswith('.ma'):
             return pm.importFile(filepath, namespace=namespace)
-
 
 
 def import_task(task=None, reference=False, **kwargs):
@@ -274,28 +272,37 @@ def select(nodes=None, d=True):
     pm.select(nodes)
 
 
-def version_up(vtype='minor'):
+def version_up(vtype='minor', copy_render=False):
     """
     versions up the current scene
     :param vtype: minor or major
+    :param copy_render: if True it copies everything in the render folder as part of the version up.
     :return:
     """
-    path_object = LumberObject(pm.sceneName())
+    path_object = scene_object()
+    current_render_folder = path_object.copy(context='render', filename=None, ext=None).path_root
     if vtype == 'minor':
         new_version = path_object.new_minor_version_object()
     elif vtype == 'major':
         new_version = path_object.next_major_version()
 
     if new_version.context == 'source':
-        new_context = 'render'
+        new_source = new_version.copy()
+        new_render = new_version.copy(context='render')
     else:
-        new_context = 'source'
-    new_version_other = new_version.copy(context=new_context)
-    print(new_version_other.path_root)
-    print(new_version.path_root)
-    create_file_dirs(new_version_other.path_root)
-    create_file_dirs(new_version.path_root)
-    return save_file_as(new_version.path_root)
+        new_render = new_version.copy()
+        new_source = new_version.copy(context='source')
+
+    new_render_folder = os.path.dirname(new_render.path_root)
+    new_source_folder = os.path.dirname(new_source.path_root)
+    print('Creating Version Dirs: {}'.format(new_source_folder))
+    print('Creating Version Dirs: {}'.format(new_render_folder))
+    create_file_dirs(new_source.path_root)
+    create_file_dirs(new_render_folder)
+    if copy_render:
+        print('Copying {} to {}'.format(current_render_folder, new_render_folder))
+        cgl_copy(current_render_folder, new_render_folder)
+    return save_file_as(new_source.path_root)
 
 
 def export_selected(to_path, ext='mb'):
@@ -343,51 +350,6 @@ def clean_turntable():
     """
     po = LumberObject(pm.sceneName())
     clean_tt(po.task)
-    pass
-
-
-def export_usd_model(to_path):
-    """
-
-    :param to_path:
-    :return:
-    """
-    pass
-
-
-def export_usd_rig(to_path):
-    """
-
-    :param to_path:
-    :return:
-    """
-    pass
-
-
-def export_usd_asset(to_path):
-    """
-
-    :param to_path:
-    :return:
-    """
-    pass
-
-
-def export_usd_bundle(to_path):
-    """
-
-    :param to_path:
-    :return:
-    """
-    pass
-
-
-def export_usd_layout(to_path, lighting=False):
-    """
-    exports the layout of an entire scene, can include models, assets, rigged assets, bundles and lighting.
-    :param to_path:
-    :return:
-    """
     pass
 
 
