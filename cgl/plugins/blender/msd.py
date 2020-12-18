@@ -218,21 +218,19 @@ class AssetDescription(object):
         :return:
         """
         from cgl.plugins.blender.alchemy import PathObject
-        print('___________OBJECT MATRIX')
-        print(obj)
-
 
         if not query:
             #TODO: check with tom distinction on rig objects.
-
-            path_root = PathObject(obj['source_path'])
+            root = app_config()['paths']['root']
+            source_path = obj['source_path']
+            reference_path = "%s\%s" % (root, source_path)
+            path_root = PathObject(reference_path)
             if objExists(obj):
 
                 obj_matrix = obj.matrix_world
-
                 if path_root.task == 'rig':
-                    obj = bpy.data.obj.pose.bones[rig_root]
-                    obj_matrix = obj.matrix_basis
+                    proxy = bpy.data.objects['{}_proxy'.format(obj.name)]
+                    obj_matrix = proxy.pose.bones[rig_root].matrix_basis
 
 
                 attr = "%s.%s".format(obj, 'matrix')
@@ -296,6 +294,9 @@ class AssetDescription(object):
         self.data['name'] = self.path_object.shot
         self.data['source_path'] = self.path_object.path
         self.data['task'] = self.path_object.task
+        if self.path_object.task == 'rig':
+
+            self.data['rig_root'] = 'c_pos' #TODO this sholdn't be hardcoded move to globals
 
 
 class CameraDescription(AssetDescription):

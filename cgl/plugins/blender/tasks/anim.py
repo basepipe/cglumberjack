@@ -62,7 +62,6 @@ def move_keyframes(obj, offset):
 
 def make_proxy(path_object,obj):
     import bpy
-    print(0000000000000)
     rig_name = '{}_rig'.format(path_object.asset)
     objects = bpy.context.view_layer.objects
     objects.active =  obj

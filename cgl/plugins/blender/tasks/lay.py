@@ -50,9 +50,7 @@ class Task(SmartTask):
 
         layout_obj = scene_object().copy(task='lay', seq=self.seq, shot=self.shot, context='render',
                                          user='publish', latest=True, filename='*', ext=None)
-        print(scene_object().path_root)
-        print(scene_object().shot)
-        print(layout_obj.path_root)
+
         for each in glob.glob(layout_obj.path_root):
             if '.msd' in each:
                 layout_path = each
@@ -86,7 +84,8 @@ def main_import(filepath):
     d = PathObject(filepath)
 
     layout_data = load_json(filepath)
-    group = create_object('{}:lay'.format(scene_object().asset))
+
+    group = create_object('{}_{}:lay'.format(scene_object().seq,scene_object().asset))
     pprint(layout_data)
     for each in layout_data:
         if 'source_path' in layout_data[each]:
@@ -106,151 +105,21 @@ def main_import(filepath):
 
         d2 = PathObject(reference_path)
         ns2 = get_next_namespace(d2.shot)
-        print(ns2)
         ref = reference_file(namespace=ns2, filepath=reference_path)
+        parent_object(child=ref,parent=group)
 
 
         if task == 'rig':
+            print('________IMPORTING RIG_____________')
             rig = make_proxy(d2, ref)
             rig_root = layout_data[each]['rig_root']
-            ref = rig.pose.bones[rig_root]
+            proxy = bpy.data.objects['{}:rig_proxy'.format(ns2)]
+            ref = proxy.pose.bones[rig_root]
+            parent_object(proxy,group)
 
         set_matrix(ref, float_transforms)
 
-        #parent_object(ref, group)
 
-
-def write_layout(outFile=None):
-    """
-
-    :param outFile:
-    :return:
-    """
-    from cgl.plugins.blender.lumbermill import scene_object, PathObject
-    from cgl.core.utils.read_write import save_json
-    import bpy
-    from pathlib import Path
-
-    if outFile == None:
-        outFile = scene_object().copy(ext='json', task='lay', user='publish').path_root
-    data = {}
-
-    for obj in bpy.context.view_layer.objects:
-        if obj.is_instancer:
-            print(5 * '_' + obj.name + 5 * '_')
-            name = obj.name
-            #            blender_transform = np.array(obj.matrix_world).tolist()
-            blender_transform = [obj.matrix_world.to_translation().x,
-                                 obj.matrix_world.to_translation().y,
-                                 obj.matrix_world.to_translation().z,
-                                 obj.matrix_world.to_euler().x,
-                                 obj.matrix_world.to_euler().y,
-                                 obj.matrix_world.to_euler().z,
-                                 obj.matrix_world.to_scale().x,
-                                 obj.matrix_world.to_scale().y,
-                                 obj.matrix_world.to_scale().z]
-
-            instanced_collection = obj.instance_collection
-            if instanced_collection:
-                collection_library = return_linked_library(instanced_collection.name)
-
-                if collection_library:
-
-                    libraryPath = bpy.path.abspath(collection_library.filepath)
-                    filename = Path(bpy.path.abspath(libraryPath)).__str__()
-                    libObject = PathObject(filename)
-
-                    data[name] = {'name': libObject.asset,
-                                  'source_path': libObject.path,
-                                  'blender_transform': blender_transform}
-                else:
-                    print('{} has no instanced collection'.format(obj.name))
-
-            else:
-                print('{} has no instanced collection'.format(obj.name))
-
-    save_json(outFile, data)
-
-    return (outFile)
-
-
-def read_layout(outFile=None, linked=False, append=False):
-    """
-    Reads layout from json file
-    :param outFile: path to json file
-    :param linked:
-    :param append:
-    :return:
-    """
-    from cgl.plugins.blender.alchemy import scene_object, PathObject, import_file_old,reference_file
-    from cgl.core.utils.read_write import load_json
-    from cgl.plugins.blender.alchemy import set_relative_paths
-    import bpy
-
-    set_relative_paths(False)
-
-    if outFile == None:
-        outFileObject = scene_object().copy(ext='json', task='lay', set_proper_filename=True).latest_version()
-        outFile = outFileObject.path_root
-
-    data = load_json(outFile)
-
-    for p in sorted(data):
-        print(p)
-        data_path = data[p]['source_path']
-        blender_transform = data[p]['blender_transform']
-
-        transform_data = []
-        for value in blender_transform:
-            transform_data.append(float(value))
-
-        pathToFile = os.path.join(scene_object().root, data_path)
-        PathObject = PathObject(pathToFile)
-
-        if PathObject.filename_base in bpy.data.libraries:
-            lib = bpy.data.libraries[PathObject.filename]
-            bpy.data.batch_remove(ids=([lib]))
-
-
-        reference_file(PathObject.path_root)
-
-        print(5555555555555555555555555)
-        if p not in bpy.data.objects:
-            obj = bpy.data.objects.new(p, None)
-            bpy.context.collection.objects.link(obj)
-            obj.instance_type = 'COLLECTION'
-            obj.instance_collection = bpy.data.collections[PathObject.asset]
-
-            print(222222222222222222222222)
-            print(data[p]['task'])
-            if data[p]['task'] == 'rig':
-                obj = make_proxy(PathObject,obj)
-
-
-            location = (transform_data[0], transform_data[1], transform_data[2])
-            obj.location = location
-
-            rotation = (transform_data[3], transform_data[4], transform_data[5])
-            obj.rotation_euler = rotation
-
-            scale = (transform_data[6], transform_data[7], transform_data[8])
-            obj.scale = scale
-
-
-        else:
-
-            obj = bpy.data.objects[p]
-            print('updating position')
-            print(obj.name)
-
-            location = (transform_data[0], transform_data[1], transform_data[2])
-            obj.location = location
-
-            rotation = (transform_data[3], transform_data[4], transform_data[5])
-            obj.rotation_euler = rotation
-
-            scale = (transform_data[6], transform_data[7], transform_data[8])
-            obj.scale = scale
 
 def check_reference_attribute(attribute,reference_path = None):
     from cgl.plugins.blender.alchemy import scene_object,PathObject, set_relative_paths

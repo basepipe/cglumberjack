@@ -1115,28 +1115,33 @@ def read_matrix(obj, transform_data):
     scale = (transform_data[6], transform_data[7], transform_data[8])
     obj.scale = scale
 
-def set_collection_name():
+def set_collection_name(obj = None):
     from .alchemy import scene_object
     import bpy
     if scene_object().scope == 'assets':
         name = scene_object().asset
-    else:
+    elif scene_object().scope == 'shots':
         name = scene_object().filename_base
 
-    obj = bpy.context.object
 
-    if obj:
+    if obj == None:
+        if name in bpy.data.collections:
+            print('collection exist')
+        else:
+            if 'Collection' in bpy.data.collections:
+                bpy.data.collections['Collection'].name = name
+
+            else:
+                print('default Collection not found')
+                bpy.context.collection.name = name
+ 
+
+    else:
         if scene_object().asset in bpy.data.collections:
             print('collection exist ')
         object = bpy.context.object
         object.users_collection[0].name = name
 
-    else:
-        if scene_object().asset in bpy.data.collections:
-            print('collection exist')
-
-        else:
-            bpy.data.collections['Collection'].name = name
 
 
 if __name__ == '__main__':

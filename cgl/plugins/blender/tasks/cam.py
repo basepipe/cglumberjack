@@ -22,7 +22,6 @@ class Task(SmartTask):
             filepath = self.path_object.path_root
 
         camFile = alc.PathObject(filepath)
-        print(788888888888888)
         print(filepath)
 
         fbx = camFile.copy(ext = 'fbx')
