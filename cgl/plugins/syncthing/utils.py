@@ -318,9 +318,11 @@ def get_sheet():
     print('Syncing with %s' % name_)
     sheet_obj = None
     if not os.path.exists(client_file):
+        print('No Sheets Client File {} - grabbing it'.format(client_file))
         sheets.get_sheets_authentication()
     else:
         sheet_obj = sheets.authorize_sheets()
+        print(sheet_obj)
     return sheet_obj
 
 
@@ -901,7 +903,8 @@ def update_machines():
 
 if __name__ == "__main__":
     #wipe_globals()
-    setup_workstation()
+    # setup_workstation()
+    get_sheet()
     #kill_syncthing()
     # process_pending_devices()
     # print(get_all_devices_from_config())

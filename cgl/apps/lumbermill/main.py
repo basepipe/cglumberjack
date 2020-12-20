@@ -790,6 +790,9 @@ class CGLumberjack(LJMainWindow):
         create_project = QtWidgets.QAction('Import .csv', self)
         settings.setShortcut('Ctrl+,')
         alchemy_cookbook = QtWidgets.QAction("Alchemist's Cookbook", self)
+        project_overview = QtWidgets.QAction("Project Status", self)
+        process_map = QtWidgets.QAction("Map a Process", self)
+        ingest_tool = QtWidgets.QAction("Ingest Media", self)
         set_up_sync_thing_server = QtWidgets.QAction('Set up Server', self)
         set_up_sync_thing_workstation = QtWidgets.QAction('Set Up Workstation', self)
         # check_machines_action = QtWidgets.QAction('Check for new Machines', self)
@@ -809,6 +812,9 @@ class CGLumberjack(LJMainWindow):
 
         # add actions to the file menu
         tools_menu.addAction(alchemy_cookbook)
+        tools_menu.addAction(project_overview)
+        tools_menu.addAction(process_map)
+        tools_menu.addAction(ingest_tool)
         tools_menu.addSeparator()
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
@@ -867,6 +873,9 @@ class CGLumberjack(LJMainWindow):
         create_project.triggered.connect(self.open_create_project_dialog)
         settings.triggered.connect(self.on_settings_clicked)
         alchemy_cookbook.triggered.connect(self.on_menu_designer_clicked)
+        project_overview.triggered.connect(self.on_project_overview_clicked)
+        process_map.triggered.connect(self.on_process_map_clicked)
+        ingest_tool.triggered.connect(self.on_ingest_tool_clicked)
         login.triggered.connect(self.on_login_clicked)
         proj_man.triggered.connect(self.on_proj_man_menu_clicked)
         update_button.triggered.connect(self.update_lumbermill_clicked)
@@ -1245,7 +1254,34 @@ class CGLumberjack(LJMainWindow):
     def on_settings_clicked():
         logging.debug('settings clicked')
 
-    def on_designer_clicked(self):
+    def on_project_overview_clicked(self):
+        """
+        Launches "Magic To Do" window.
+        :return:
+        """
+        from cgl.apps.magic_to_do.main import MagicToDo
+        dialog = MagicToDo()
+        dialog.exec_()
+
+    def on_process_map_clicked(self):
+        """
+        launches mapping tool
+        :return:
+        """
+        import sys
+        code_root = CONFIG['paths']['code_root'].replace('cglumberjack', '')
+        pipe_builder_root = os.path.join(code_root, 'pipe_builder')
+        sys.path.insert(0, code_root)
+        sys.path.insert(0, pipe_builder_root)
+        print('Opening Process Map tool')
+        from pipe_builder.src.pipe_builder.pipebuilderUI import PipeBuilder
+        dialog = PipeBuilder()
+        dialog.exec_()
+
+    def on_ingest_tool_clicked(self):
+        print('Opening Ingest Tool')
+
+    def on_menu_designer_clicked(self):
         pm = CONFIG['account_info']['project_management']
         def_schema = CONFIG['project_management'][pm]['api']['default_schema']
         schema = CONFIG['project_management'][pm]['tasks'][def_schema]
@@ -1254,9 +1290,6 @@ class CGLumberjack(LJMainWindow):
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)
         dialog.exec_()
-
-    def on_menu_designer_clicked(self):
-        self.on_designer_clicked()
 
     def closeEvent(self, event):
         # set the current path so that it works on the load better.

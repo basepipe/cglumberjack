@@ -365,7 +365,6 @@ class MagicToDo(LJDialog):
             for i, key in enumerate(LABEL_MAP):
                 self.grid_layout.addWidget(QtWidgets.QLabel(key), 0, i+1)
 
-
 if __name__ == "__main__":
     from cgl.ui.startup import do_gui_init
     app = do_gui_init()
