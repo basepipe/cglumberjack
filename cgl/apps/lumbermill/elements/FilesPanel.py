@@ -515,13 +515,23 @@ class FilesPanel(QtWidgets.QWidget):
         current = PathObject(self.current_location)
         print("Checking for {} preflight".format(self.current_location['task']))
         try:
+            print(1)
+            print(self.current_location['task'])
+            print(current.path_root)
             this = Preflight(software='lumbermill', preflight=self.current_location['task'],
                              path_object=self.current_location, auto_show=False)
             if this.preflight == 'default':
+                print(2)
                 current.publish()
                 dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
                 dialog.exec_()
+            elif not this.preflight:
+                current.publish()
+                dialog = InputDialog(title='Publish Successful',
+                                     message='Publish Files at: \n%s' % current.publish_render)
+                dialog.exec_()
             else:
+                print(3, this.preflight)
                 this.show()
                 dialog = InputDialog(title='Publish Successful', message='Publish Files at: \n%s' % current.publish_render)
                 dialog.exec_()

@@ -597,6 +597,7 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
                       "menu type: {}".format(menu_type),
                       "menu_name: {}".format(menu_name))
         menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name)
+        print(menu_folder)
     return menu_folder
 
 
