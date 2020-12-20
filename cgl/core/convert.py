@@ -174,11 +174,12 @@ def create_title(file_path='sample_image.png', title_text="Sample Title Text", s
                 new_window=False)
 
 
-def create_quicktime_mov():
+def create_quicktime_mov(move_file):
     """
     Creates quicktime movie with shotgun's prefferred settings.
     :return:
     """
+    pass
 
 
 def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], output_frame_rate=None,

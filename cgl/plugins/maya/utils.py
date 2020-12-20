@@ -1,5 +1,6 @@
 import re
 import os
+import glob
 from cgl.core.config import app_config
 from cgl.core.utils.read_write import load_json
 from cgl.ui.widgets.dialog import MagicList
@@ -40,10 +41,16 @@ def get_selected_namespace():
 
 
 def select_reference(ref_node):
-    # This assumes we're talking about a published reference
-    object_ = pm.ls(regex='%s:[a-z]{3}|%s:CAMERAS' % (ref_node.namespace, ref_node.namespace))[0]
-    pm.select(object_)
-    return object_
+    # TODO - this needs to be more robust to handle some of the strange things that happen in production.
+    objects = pm.ls(regex='%s:[a-z]{3}|%s:CAMERAS' % (ref_node.namespace, ref_node.namespace))
+    pm.select(objects[0])
+
+    return objects[0]
+
+
+def get_ref_node(reference):
+    node = pm.FileReference(pm.referenceQuery(reference, referenceNode=True))
+    return node
 
 
 def get_next_namespace(ns):
@@ -154,15 +161,37 @@ def load_plugin(plugin_name):
         pm.system.loadPlugin(plugin_name)
 
 
-def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=False):
-    scene = pm.sceneName()
-    pm.select(cl=True)
+def get_playblast_path(path_object):
     playblast_file = path_object.copy(context='render', filename='playblast', ext='').path_root
+    return playblast_file
+
+
+def playblast_exists(path_object):
+    playblast_file = get_playblast_path(path_object)
+    playblast_files = glob.glob('{}*'.format(playblast_file))
+    if playblast_files:
+        return playblast_files
+    else:
+        return False
+
+
+def review_exists(path_object):
+    path_, ext = os.path.splitext(path_object.preview_path)
+    print(path_)
+    files = glob.glob('{}*'.format(path_))
+    if files:
+        return files
+    else:
+        return False
+
+
+def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=False):
+    pm.select(cl=True)
+    playblast_file = get_playblast_path(path_object)
     if not cam:
         cam = get_current_camera()
     editor = pm.getPanel(wf=True)
     pm.modelEditor(editor, edit=True, displayAppearance=appearance, camera=cam)
-    # TODO - make this source something from globals for the resolution
     w, h = path_object.proxy_resolution.split('x')
     w = int(w)
     h = int(h)
@@ -363,6 +392,93 @@ def is_reference(mesh=None, return_namespaces=False):
         return True
     else:
         return False
+
+
+def default_matrix():
+    dm = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+    return dm
+
+
+def get_matrix(obj, query=False):
+    """
+    Returns a matrix of values relating to translate, scale, rotate.
+    :param obj:
+    :param query:
+    :return:
+    """
+    if not query:
+        if pm.objExists(obj):
+            if 'rig' in obj:
+                translate = '%s:translate' % obj.split(':')[0]
+                scale = '%s:scale' % obj.split(':')[0]
+                rotate = '%s:rotate' % obj.split(':')[0]
+                relatives = pm.listRelatives(obj)
+                if translate and scale in relatives:
+                    if rotate in pm.listRelatives(translate):
+                        matrix_rotate = pm.getAttr('%s.matrix' % rotate)[0:3]
+                        matrix_scale = pm.getAttr('%s.matrix' % scale)[0:3]
+                        matrix = matrix_scale * matrix_rotate
+                        matrix.append(pm.getAttr('%s.matrix' % translate)[3])
+                    else:
+                        attr = "%s.%s" % (obj, 'matrix')
+                        if pm.attributeQuery('matrix', n=obj, ex=True):
+                            matrix = pm.getAttr(attr)
+                        else:
+                            matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0],
+                                      [0.0, 0.0, 0.0, 1.0]]
+                else:
+                    attr = "%s.%s" % (obj, 'matrix')
+                    if pm.attributeQuery('matrix', n=obj, ex=True):
+                        matrix = pm.getAttr(attr)
+                    else:
+                        matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0],
+                                  [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+            else:
+                attr = "%s.%s" % (obj, 'matrix')
+                if pm.attributeQuery('matrix', n=obj, ex=True):
+                    matrix = pm.getAttr(attr)
+                else:
+                    matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0],
+                              [0.0, 0.0, 0.0, 1.0]]
+        else:
+            matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+        return matrix
+    else:
+        return [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+
+
+def get_frame_start():
+    """
+    gets starting frame from render frame range
+    :return:
+    """
+    return int(pm.playbackOptions(query=True, min=True))
+
+
+def get_frame_end():
+    """
+    gets end frame from render frame range
+    :return:
+    """
+    return int(pm.playbackOptions(query=True, max=True))
+
+
+def get_handle_start():
+    """
+    gets the handle before the animation starts
+    :return:
+    """
+    return int(pm.playbackOptions(query=True, animationStartTime=True))
+
+
+def get_handle_end():
+    """
+    gets the handle after the animation ends.
+    :return:
+    """
+    return int(pm.playbackOptions(query=True, animationEndTime=True))
+
+
 
 
 
