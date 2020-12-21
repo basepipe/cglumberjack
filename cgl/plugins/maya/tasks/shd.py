@@ -35,7 +35,7 @@ class Task(SmartTask):
 
 def get_latest_shader(path):
     shader_object = lm.LumberObject(path).copy(task='shd', context='render', name='shaders',
-                                               latest=True, set_proper_filename=True)
+                                               latest=True, set_proper_filename=True, ext='mb')
     return shader_object.path_root
 
 
@@ -62,7 +62,6 @@ def import_and_attach_shaders_for_references(selected=False):
     else:
         refs = pm.listReferences(refNodes=True)
     # for each reference figure out the shader publish
-    print refs
     if refs:
         for ref in refs:
             if pm.referenceQuery(ref[-1], isLoaded=True):
@@ -93,13 +92,11 @@ def import_and_attach_shaders_for_references(selected=False):
                         else:
                             shader_pub = get_latest_shader(ref_path)
                         if os.path.exists(shader_pub):
-                            print 'importing published shader for %s: %s' % (shd_ns, shader_pub)
+                            print('importing published shader for %s: %s' % (shd_ns, shader_pub))
                             pm.importFile(shader_pub, namespace=shd_ns)
                         else:
                             print('No Published Shaders at: %s' % shader_pub)
-                    print 4
                     sg_list = pm.ls(regex='%s.*' % shd_ns, type='shadingEngine')
-                    print sg_list
                     for sg in sg_list:
                         this = pm.PyNode(sg)
                         assigned_to_geo = pm.getAttr('%s.assigned_to' % this)

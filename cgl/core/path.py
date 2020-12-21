@@ -107,6 +107,7 @@ class PathObject(object):
         self.template_type = 'version'
         self.path_template = []
         self.version_template = []
+        self.name = None
         # TODO python 3 doesn't like unicode
         try:
             if isinstance(path_object, unicode):
@@ -409,7 +410,7 @@ class PathObject(object):
             try:
                 CONFIG['rules']['path_variables'][attr]['regex']
             except KeyError:
-                logging.debug('Could not find regex for %s: %s in config, skipping' % (attr, value))
+                print('Could not find regex for %s: %s in config, skipping' % (attr, value))
                 return
             if value == '*':
                 self.__dict__[attr] = value
@@ -729,16 +730,20 @@ class PathObject(object):
                 self.preview_seq = self.preview_path.replace(ext, '.####%s' % ext)
                 self.set_thumb_path()
                 self.data['preview_path'] = self.preview_path
+            self.preview_path.replace('source', 'render')
 
     def set_proper_filename(self):
         """
         function that sets filename according to patterns in globals.
         :return:
         """
-        # TODO - this needs to be basted off formulas like the path object.  Curses.
         self.filename_base = '%s_%s_%s' % (self.seq, self.shot, self.task)
+        if self.name:
+            self.filename_base = '%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.name)
         if self.ext:
             self.filename = '%s.%s' % (self.filename_base, self.ext)
+        else:
+            self.filename = self.filename_base
         self.set_path()
 
     def set_shotname(self):
@@ -1203,6 +1208,7 @@ class CreateProductionData(object):
                                                                     self.path_object.task,
                                                                     ext))
                 cgl_copy(default_file, self.path_object.path_root, methodology='local')
+                return self.path_object.path_root
         else:
             logging.error('No Default file found for {} at {}, skipping file creation\n'
                           'You can Create a default file for your task by clicking the \n'

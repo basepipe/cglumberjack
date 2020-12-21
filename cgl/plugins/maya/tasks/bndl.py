@@ -5,7 +5,6 @@ from cgl.plugins.maya.lumbermill import LumberObject, scene_object
 import cgl.plugins.maya.utils as utils
 reload(utils)
 from cgl.ui.widgets.dialog import InputDialog
-from cgl.plugins.maya.utils import load_plugin
 from cgl.core.config import app_config
 
 
@@ -78,9 +77,18 @@ def get_bundles():
     return bundles
 
 
+def get_bundle_children():
+    bundles = get_bundles()
+    bundle_children = []
+    for b in bundles:
+        for child in pm.listRelatives(b, children=True):
+            bundle_children.append(child)
+    return bundle_children
+
+
 def bundle_import(filepath, layout_group=None):
     """
-    Accepts a 'bndl.json' file, processes it and imports all parts and reassembles it into the maya scene.
+    Accepts a 'bndl.json' or bndl.msd file, processes it and imports all parts and reassembles it into the maya scene.
     :param filepath: path to the bndl.json
     :param layout_group: layout group to which to parent the bundle.
     :return:
@@ -104,7 +112,6 @@ def bundle_import(filepath, layout_group=None):
     pm.setAttr('%s.useOutlinerColor' % group, True)
     pm.setAttr('%s.outlinerColor' % group, (1, 1, 0))
     layout_data = load_json(filepath)
-    print(layout_data)
     child_transforms = []
     for each in layout_data:
         if 'attributes' in layout_data[each].keys():
@@ -119,9 +126,6 @@ def bundle_import(filepath, layout_group=None):
         reference_path = "%s/%s%s" % (app_config()['paths']['root'], d.company, relative_path)
         float_transforms = [float(x) for x in transforms]
         d2 = LumberObject(reference_path)
-        print(reference_path)
-        print d2.path_root
-        print d2.shot
         ns2 = utils.get_next_namespace(d2.shot)
         ref = pm.createReference(reference_path, namespace=ns2, ignoreVersion=True, loadReferenceDepth='all')
         namespace_ = pm.referenceQuery(ref, ns=True)  # ref.namespace
