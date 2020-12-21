@@ -5,7 +5,8 @@ import bpy
 from cgl.core.config import app_config, UserConfig
 from cgl.core.path import PathObject
 from cgl.core.utils.general import create_file_dirs
-from cgl.plugins.blender.main_window import CGLumberjack
+from cgl.plugins.blender.main_window import CGLumberjack as MagicBrowser
+from cgl.apps.lumbermill.main import CGLumberjackWidget
 
 CONFIG = app_config()
 PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
@@ -14,14 +15,85 @@ PROCESSING_METHOD = UserConfig().d['methodology']
 SOFTWARE = os.path.basename(os.path.dirname(__file__))
 
 
-class BlenderJack(CGLumberjack):
+class MagicBrowser(MagicBrowser):
     def __init__(self, parent=None, path=None, user_info=None):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
         print('Application Path path is %s' % path)
         # self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
 
+class BrowserWidget(CGLumberjackWidget):
+    def __init__(self, parent=None,
+                 project_management=None,
+                 user_email=None,
+                 company=None,
+                 path=None,
+                 radio_filter=None,
+                 show_import=True,
+                 show_reference=True):
+        super(BrowserWidget, self).__init__(parent=parent,
+                                            project_management=project_management,
+                                            user_email=user_email,
+                                            company=company,
+                                            path=path,
+                                            radio_filter=radio_filter,
+                                            show_import=True,
+                                            show_reference=True)
 
-class BlenderConfirmDialog(bpy.types.Operator):
+
+    def open_clicked(self):
+        """
+        Re-implementation of the open_clicked function in lumbermill.  This allows us to customize it to
+        this app's specific needs
+        :return:
+        """
+        from cgl.plugins.blender.lumbermill import open_file
+        selection = self.path_widget.path_line_edit.text()
+        if os.path.exists(selection):
+            open_file(selection)
+        else:
+            logging.info('{0} does not exist!'.format(selection))
+
+    def import_clicked(self):
+        """
+        Re-implemenation of the import_clicked function in lumbermill.  This allows us to customize it to
+        this app's specific needs.  Typically the default will work if you've defined the import_file() function
+        in this plugin.
+        :return:
+        """
+        from cgl.plugins.blender.lumbermill import import_file, LumberObject
+        selection = self.path_widget.path_line_edit.text()
+        path_object = LumberObject(selection)
+        if os.path.exists(selection):
+            import_file(selection, namespace=path_object.asset)
+        else:
+            logging.info('{0} does not exist!'.format(selection))
+        # close lumbermill.
+        # self.parent().parent().accept()
+
+    def reference_clicked(self):
+        """
+        Re-implemenation of the reference_clicked function in lumbermill.  This allows us to customize it to
+        this app's specific needs.  Typically the default will work if you've defined the reference_file() function
+        in this plugin.
+        :return:
+        """
+        print('reference clicked! Referencing not yet implemented in Blender.')
+        from cgl.plugins.blender.lumbermill import reference_file, LumberObject
+        selection = self.path_widget.path_line_edit.text()
+        path_object = LumberObject(selection)
+        if os.path.exists(selection):
+            reference_file(selection, namespace=path_object.asset)
+        else:
+            logging.info('{0} does not exist!'.format(selection))
+        # selection = self.path_widget.path_line_edit.text()
+        # if os.path.exists(selection)::
+        #     reference_file(selection, namespace=None)
+        # else:
+        #     logging.info('{0} does not exist!'.format(selection))
+        ## close lumbermill
+        # self.parent().parent().accept()
+
+class ConfirmDialog(bpy.types.Operator):
     bl_idname = "message.messagebox"
     bl_label = ""
     message = bpy.props.StringProperty(
@@ -41,8 +113,7 @@ class BlenderConfirmDialog(bpy.types.Operator):
     def draw(self, context):
         self.layout.label(text=self.message)
 
-
-class BlenderInputDialog(bpy.types.Operator):
+class InputDialog(bpy.types.Operator):
     bl_idname = "message.inputdialog"
     bl_label = "Enter input"
     bl_context = "scene"
@@ -129,8 +200,7 @@ class BlenderInputDialog(bpy.types.Operator):
 
         row3 = col2.row()
 
-
-class LumberObject(PathObject):
+class PathObject(PathObject):
 
     def __init__(self, path_object=None):
         if not path_object:
@@ -258,151 +328,49 @@ class LumberObject(PathObject):
         print('what is my render path?')
         pass
 
-
-def get_scene_name():
-    """
-    get current scene name
-    :return:
-    """
-    return bpy.data.filepath
-
-
-def scene_object():
-    """
-    returns LumberObject of curent scene
-    :return:
-    """
-    return LumberObject(get_scene_name())
-
-
-def save_file_as(filepath):
-    """
-    save current file as
-    :param filepath:
-    :return:
-    """
-    bpy.ops.wm.save_as_mainfile(filepath=filepath)
-    return filepath
-
-
-def version_up(vtype='minor'):
-    """
-    versions up the current scene
-    :param vtype: minor or major
-    :return:
-    """
-    path_object = LumberObject(get_scene_name())
-    if vtype == 'minor':
-        new_version = path_object.new_minor_version_object()
-    elif vtype == 'major':
-        new_version = path_object.next_major_version()
-    create_file_dirs(new_version.path_root)
-    create_file_dirs(new_version.copy(context = 'render').path_root)
-    return save_file_as(new_version.path_root)
-
-
-def import_file_old(filepath='', namespace=None, collection_name=None, append=True, linked=True, type='COLLECTION',
-                snap_to_cursor=False):
-    """
-    imports file into a scene.
-    :param snap_to_cursor: if true imports the object where the cursor is palced
-    :param type: 'COLLECTION' , 'GROUP', 'ANIM' , 'CAMERA'
-    :param linked: when collection type instanced , links collection to scene
-    :param append: Imports file to scene
-    :param collection_name:
-    :param filepath:
-    :param namespace:
-    :return:
-    """
-
-    if filepath.endswith('fbx'):
-        bpy.ops.import_scene.fbx(filepath=filepath)
-    elif filepath.endswith('obj'):
-        bpy.ops.import_scene.obj(filepath=filepath)
-    elif filepath.endswith('blend'):
-
-        if collection_name is None:
-            collection = PathObject(filepath)
-            collection_name = collection.asset
-
-        if type == 'COLLECTION':
-            with bpy.data.libraries.load(filepath, link=append) as (data_from, data_to):
-                data_to.collections = [c for c in data_from.collections if c.startswith(collection_name)]
-                # for obj in data_to.groups[0].objects:
-                #     bpy.context.scene.objects.link(obj)
-
-        if type == 'GROUP':
-            with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
-                data_to.node_groups = data_from.node_groups
-
-        if type == 'ANIM':
-            with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
-                data_to.actions = data_from.actions
-
-        if type == 'CAMERA':
-            with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
-                # data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
-                data_to.objects = [c for c in data_from.objects if c.startswith(collection_name)]
-            print('{} Cam imported '.format(collection_name))
-
-        if type == 'MATERIAL':
-            with bpy.data.libraries.load(filepath, link=linked) as (data_from, data_to):
-                # data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
-                data_to.materials = [c for c in data_from.materials if c.startswith(collection_name)]
-            print('{} material imported '.format(collection_name))
-
-        if linked:
-            obj = bpy.data.objects.new(collection_name, None)
-            obj.instance_type = 'COLLECTION'
-            obj.instance_collection = bpy.data.collections[collection_name]
-            bpy.context.collection.objects.link(obj)
-            bpy.ops.object.select_all(action='DESELECT')
-            obj.select_set(True)
-
-            if snap_to_cursor:
-                obj.location = bpy.context.scene.cursor.location
-
-
 def import_file(filepath, namespace=None, collection_name=None):
     from cgl.plugins.blender import lumbermill as lm
     import bpy
 
-    path_object = lm.LumberObject(filepath)
+    if filepath.endswith('fbx'):
+        bpy.ops.import_scene.fbx(filepath=filepath)
+    elif filepath.endswith('blend'):
 
-    if collection_name == None:
-        collection_name = path_object.asset
+        path_object = lm.PathObject(filepath)
 
-    with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
-        # data_to.collections = [c for c in data_from.collections if c == collection_name]
+        if collection_name == None:
+            collection_name = path_object.asset
 
-        for c in data_from.collections:
-            if c == collection_name:
-                print(c)
-                data_to.collections = [c]
+        with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
+            # data_to.collections = [c for c in data_from.collections if c == collection_name]
 
-    imported_collection = bpy.data.collections[collection_name]
-    bpy.context.scene.collection.children.link(imported_collection)
-    imported_collection.name = path_object.task
+            for c in data_from.collections:
+                if c == collection_name:
+                    print(c)
+                    data_to.collections = [c]
 
-    if namespace:
-        imported_collection.name = '{}:{}'.format(namespace,path_object.task )
-        for obj in imported_collection.objects:
-            obj.name = '{}:{}'.format(namespace,obj.name)
-            obj['source_path'] = path_object.path
+        imported_collection = bpy.data.collections[collection_name]
+        bpy.context.scene.collection.children.link(imported_collection)
+        imported_collection.name = path_object.task
 
-            if obj.type =='MESH':
-                obj.data.name = '{}:{}'.format(namespace, obj.data.name)
-                material = obj.material_slots[0].material
-                if ':' not in material.name:
-                    material.name = '{}:{}'.format(namespace,material.name)
+        if namespace:
+            imported_collection.name = '{}:{}'.format(namespace,path_object.task )
+            for obj in imported_collection.objects:
+                obj.name = '{}:{}'.format(namespace,obj.name)
+                obj['source_path'] = path_object.path
 
+                if obj.type =='MESH':
+                    obj.data.name = '{}:{}'.format(namespace, obj.data.name)
+                    material = obj.material_slots[0].material
+                    if ':' not in material.name:
+                        material.name = '{}:{}'.format(namespace,material.name)
 
 def reference_file(filepath, namespace=None, collection_name=None):
     from cgl.plugins.blender import lumbermill as lm
 
     import bpy
 
-    path_object = lm.LumberObject(filepath)
+    path_object = lm.PathObject(filepath)
 
     if collection_name == None:
         collection_name = path_object.asset
@@ -425,7 +393,6 @@ def reference_file(filepath, namespace=None, collection_name=None):
     obj.select_set(True)
     return obj
 
-
 def open_file(filepath):
     """
     Open File: filepath
@@ -435,7 +402,6 @@ def open_file(filepath):
     bpy.ops.wm.open_mainfile(filepath=filepath)
     return filepath
 
-
 def save_file(filepath=''):
     """
     Save Current File
@@ -443,64 +409,6 @@ def save_file(filepath=''):
     :return:
     """
     return bpy.ops.wm.save_mainfile()
-
-
-
-
-def confirm_prompt(title='Lumber message:', message='This is a message', button='Ok'):
-    """
-    standard confirm prompt, this is an easy wrapper that allows us to do
-    confirm prompts in the native language of the application while keeping conventions
-    :param title:
-    :param message:
-    :param button: single button is created with a string, multiple buttons created with array
-    :return:
-    """
-    import bpy
-    try:
-        # bpy.utils.unregister_class(BlenderConfirmDialog)
-        bpy.utils.register_class(BlenderConfirmDialog)
-    except ValueError:
-        print('class already registered')
-
-    bpy.ops.message.messagebox('INVOKE_DEFAULT', message=message)
-
-
-def InputDialog(parent=None, title='Attention:', message="message",
-                buttons=None, line_edit=False, line_edit_text=False, combo_box_items=None,
-                combo_box2_items=None, regex=None, name_example=None, button_a='ok', button_b='cancel', command=None):
-    import bpy
-
-    try:
-        bpy.utils.register_class(BlenderInputDialog)
-    except ValueError:
-        print('class already registered')
-
-    if buttons:
-        button_a = buttons[0]
-        button_b = buttons[1]
-        buttons = buttons[0]
-    else:
-        buttons = ''
-
-    bpy.types.Scene.inputDialogText = bpy.props.StringProperty(default='')
-    bpy.types.Scene.inputDialogSelection = bpy.props.StringProperty(default='ok')
-    bpy.types.Scene.inputDialogSelectionRegex = bpy.props.BoolProperty(default=False)
-    value = bpy.ops.message.inputdialog('INVOKE_DEFAULT', message=message, example=name_example, title=title,
-                                        operator=command)
-
-def select(selection, d=True):
-    """
-    allows us to select something in the scene.
-    :param selection: node to select (or string)
-    :param d: if true - deselect everything
-    :return:
-    """
-    if isinstance(nodes, list):
-        print('{0} is a list'.format(selection))
-    elif isinstance(nodes, string):
-        bpy.data.objects[object_name].select_set(True)
-
 
 def export_selected(to_path):
     """
@@ -521,6 +429,34 @@ def export_selected(to_path):
     elif to_path.endswith('blend'):
         bpy.ops.export_scene.blend(filepath=to_path, use_selection=True)
 
+def save_file_as(filepath):
+    """
+    save current file as
+    :param filepath:
+    :return:
+    """
+    bpy.ops.wm.save_as_mainfile(filepath=filepath)
+    return filepath
+
+def get_scene_name():
+    """
+    get current scene name
+    :return:
+    """
+    return bpy.data.filepath
+
+def set_relative_paths(set = True):
+    if set:
+        bpy.ops.file.make_paths_relative()
+    else:
+        bpy.ops.file.make_paths_absolute()
+
+def scene_object():
+    """
+    returns PathObject of curent scene
+    :return:
+    """
+    return PathObject(get_scene_name())
 
 def create_turntable(length=250, task=False, startFrame=1):
     """
@@ -563,28 +499,6 @@ def create_turntable(length=250, task=False, startFrame=1):
     bpy.context.scene.frame_end = endFrame
     pass
 
-
-def set_framerange(start=1, end=1, current=False):
-    bpy.context.scene.frame_start = start
-    bpy.context.scene.frame_end = end
-
-    current = bpy.context.scene.frame_current
-    if current:
-        bpy.context.scene.frame_start = current
-        bpy.context.scene.frame_end = current
-
-
-def switch_overlays(visible=False):
-    for window in bpy.context.window_manager.windows:
-        screen = window.screen
-
-        for area in screen.areas:
-            if area.type == 'VIEW_3D':
-                for space in area.spaces:
-                    if space.type == 'VIEW_3D':
-                        space.overlay.show_overlays = visible
-
-
 def clean_turntable():
     """
     cleans up the turntable
@@ -599,79 +513,6 @@ def clean_turntable():
                 objs.remove(objs[obj.name], do_unlink=True)
     pass
 
-
-def export_usd_model(to_path):
-    """
-
-    :param to_path:
-    :return:
-    """
-    pass
-
-
-def export_usd_rig(to_path):
-    """
-
-    :param to_path:
-    :return:
-    """
-    pass
-
-
-def export_usd_asset(to_path):
-    """
-
-    :param to_path:
-    :return:
-    """
-    pass
-
-
-def export_usd_bundle(to_path):
-    """
-
-    :param to_path:
-    :return:
-    """
-    pass
-
-
-def export_usd_layout(to_path, lighting=False):
-    """
-    exports the layout of an entire scene, can include models, assets, rigged assets, bundles and lighting.
-    :param to_path:
-    :return:
-    """
-    pass
-
-
-def render(preview=False, audio=False):
-    """
-    renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
-    :param preview: determines if exr is used or not
-    :param audio: if True renders an  mov and setups the audio settings
-    :return:
-    """
-    previewRenderTypes = ['anim', 'rig', 'mdl', 'lay']
-    file_out = scene_object().render_path.split('#')[0]
-
-    if preview:
-        bpy.context.scene.render.image_settings.file_format = 'JPEG'
-        bpy.context.scene.render.filepath = file_out
-
-        if audio:
-            bpy.context.scene.render.image_settings.file_format = 'FFMPEG'
-            bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
-            bpy.context.scene.render.ffmpeg.audio_codec = 'MP3'
-
-        bpy.ops.render.opengl('INVOKE_DEFAULT', animation=True, view_context=True)
-
-    else:
-        bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR_MULTILAYER'
-        bpy.context.scene.render.filepath = file_out
-        bpy.ops.render.render(animation=True, use_viewport=True)
-
-
 def review():
     """
     submit a review of the current scene.  (Requires a render to be present)
@@ -681,9 +522,8 @@ def review():
     padding = scene_object().frame_padding
     render_files = glob.glob(scene_object().render_path.replace('#' * padding, '*'))
     if render_files:
-        path_object = LumberObject(scene_object().render_path)
+        path_object = PathObject(scene_object().render_path)
         do_review(progress_bar=None, path_object=path_object)
-
 
 def launch_preflight(task=None, software=None):
     """
@@ -698,94 +538,6 @@ def launch_preflight(task=None, software=None):
         print('no class registered')
     bpy.utils.register_class(PreflightOperator)
     bpy.ops.screen.preflight()
-
-
-def publish():
-    """
-
-    :return:
-    """
-    publish_object = scene_object().publish()
-    # TODO - i'd like to have a lumbermill controlled popup here.  The blender one doesn't work.
-    return publish_object
-
-
-def launch_():
-    BlenderJack.show()
-
-
-def unlink_asset(selection=None):
-    if selection == None:
-        selection = bpy.context.selected_objects
-
-    for object in selection:
-        if object.instance_collection:
-            libname = bpy.context.object.instance_collection.library
-        else:
-            try:
-                libname = object.data.library
-            except AttributeError:
-                print('object doesnt have library asset')
-
-        if 'proxy' in bpy.context.object.name:
-            name = bpy.context.object.name.split('_')[0]
-        else:
-            name = bpy.context.object.name
-
-        obj = bpy.data.objects[name]
-        bpy.data.batch_remove(ids=(libname, obj))
-
-
-def get_framerange():
-    start = bpy.context.scene.frame_start
-    end  = bpy.context.scene.frame_end
-
-    return(start,end)
-
-
-def get_keyframes(obj, ends=False):
-    import math
-    '''
-        returns list with first and last keyframe of the camera
-    '''
-    keyframes = []
-    anim = obj.animation_data
-    if anim is not None and anim.action is not None:
-        for fcu in anim.action.fcurves:
-            for keyframe in fcu.keyframe_points:
-                x, y = keyframe.co
-                if x not in keyframes:
-                    keyframes.append((math.ceil(x)))
-
-    if ends :
-        return (keyframes[0], keyframes[-1])
-    else:
-
-        return keyframes
-
-
-def move_keyframes(obj, offset):
-    """
-
-    :param obj: object to move animation
-    :type obj: bpy.data.object
-    :param offset: how many frames forwards or backwards to move
-    :type offset: int
-    """
-    keyframes = []
-    anim = obj.animation_data
-    if anim is not None and anim.action is not None:
-        for fcu in anim.action.fcurves:
-            for keyframe in fcu.keyframe_points:
-                x, y = keyframe.co
-                keyframe.co = (x + offset, y)
-
-
-def set_framerange(start,end):
-    bpy.context.scene.frame_start = start
-    bpy.context.scene.frame_end =  end
-    bpy.context.scene.frame_current = start
-
 
 def import_task(task=None, reference=False, **kwargs):
     """
@@ -806,7 +558,6 @@ def import_task(task=None, reference=False, **kwargs):
         print(2)
         return class_().import_latest(**kwargs)
 
-
 def build(path_object=None):
     """
     runs build command for the specified task.
@@ -818,7 +569,6 @@ def build(path_object=None):
     task = path_object.task
     task_class = get_task_class(task)
     task_class(path_object).build()
-
 
 def get_task_class(task):
     """
@@ -841,28 +591,68 @@ def get_task_class(task):
     class_ = getattr(loaded_module, 'Task')
     return class_
 
+def publish():
+    """
 
-def selection(object=None, clear=False):
-    if clear:
+    :return:
+    """
+    publish_object = scene_object().publish()
+    # TODO - i'd like to have a lumbermill controlled popup here.  The blender one doesn't work.
+    return publish_object
 
-        for ob in bpy.data.objects:
-            ob.select_set(False)
+def version_up(vtype='minor'):
+    """
+    versions up the current scene
+    :param vtype: minor or major
+    :return:
+    """
+    path_object = PathObject(get_scene_name())
+    if vtype == 'minor':
+        new_version = path_object.new_minor_version_object()
+    elif vtype == 'major':
+        new_version = path_object.next_major_version()
+    create_file_dirs(new_version.path_root)
+    create_file_dirs(new_version.copy(context = 'render').path_root)
+    return save_file_as(new_version.path_root)
 
-    if object:
-        object.select_set(True)
+def select(selection, d=True):
+    """
+    allows us to select something in the scene.
+    :param selection: node to select (or string)
+    :param d: if true - deselect everything
+    :return:
+    """
+    if isinstance(nodes, list):
+        print('{0} is a list'.format(selection))
+    elif isinstance(nodes, string):
+        bpy.data.objects[object_name].select_set(True)
 
-def current_selection(single = False):
+def unlink_asset(selection=None):
+    if selection == None:
+        selection = bpy.context.selected_objects
 
-    if single:
-        return bpy.context.object
+    for object in selection:
+        if object.instance_collection:
+            libname = bpy.context.object.instance_collection.library
+        else:
+            try:
+                libname = object.data.library
+            except AttributeError:
+                print('object doesnt have library asset')
 
-    return  bpy.context.selected_objects
+        if 'proxy' in bpy.context.object.name:
+            name = bpy.context.object.name.split('_')[0]
+        else:
+            name = bpy.context.object.name
+
+        obj = bpy.data.objects[name]
+        bpy.data.batch_remove(ids=(libname, obj))
 
 def get_object(name):
     obj = bpy.data.objects[name]
     return obj
 
-def objExists(obj):
+def check_obj_exists(obj):
 
     if isinstance(obj, str):
 
@@ -870,6 +660,52 @@ def objExists(obj):
 
     if obj:
         return True
+
+def launch():
+    BlenderJack.show()
+
+def confirm_prompt(title='Lumber message:', message='This is a message', button='Ok'):
+    """
+    standard confirm prompt, this is an easy wrapper that allows us to do
+    confirm prompts in the native language of the application while keeping conventions
+    :param title:
+    :param message:
+    :param button: single button is created with a string, multiple buttons created with array
+    :return:
+    """
+    import bpy
+    try:
+        # bpy.utils.unregister_class(BlenderConfirmDialog)
+        bpy.utils.register_class(BlenderConfirmDialog)
+    except ValueError:
+        print('class already registered')
+
+    bpy.ops.message.messagebox('INVOKE_DEFAULT', message=message)
+
+def input_dialog(parent=None, title='Attention:', message="message",
+                buttons=None, line_edit=False, line_edit_text=False, combo_box_items=None,
+                combo_box2_items=None, regex=None, name_example=None, button_a='ok', button_b='cancel', command=None):
+    import bpy
+
+    try:
+        bpy.utils.register_class(BlenderInputDialog)
+    except ValueError:
+        print('class already registered')
+
+    if buttons:
+        button_a = buttons[0]
+        button_b = buttons[1]
+        buttons = buttons[0]
+    else:
+        buttons = ''
+
+    bpy.types.Scene.inputDialogText = bpy.props.StringProperty(default='')
+    bpy.types.Scene.inputDialogSelection = bpy.props.StringProperty(default='ok')
+    bpy.types.Scene.inputDialogSelectionRegex = bpy.props.BoolProperty(default=False)
+    value = bpy.ops.message.inputdialog('INVOKE_DEFAULT', message=message, example=name_example, title=title,
+                                        operator=command)
+
+
 
 if __name__ == "__main__":
     print(SOFTWARE)
