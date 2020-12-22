@@ -914,7 +914,8 @@ def create_object(name, type=None, parent=None,collection = None):
     else:
         object = bpy.data.objects.new(name, object_data=type )
 
-    object.parent = parent
+    if parent:
+        object.parent = parent
     parent_to_collection(collection_name=collection,obj=object)
 
     return object
@@ -1143,6 +1144,29 @@ def set_collection_name(obj = None):
         object.users_collection[0].name = name
 
 
+
+def rename_collection(current_scene):
+    import bpy
+    if current_scene.scope == 'assets':
+        name = current_scene.asset
+    else:
+        name = current_scene.filename_base
+
+
+    obj = bpy.context.object
+
+    if obj:
+        if current_scene.asset in bpy.data.collections:
+            print('collection exist ')
+        object = bpy.context.object
+        object.users_collection[0].name = name
+
+    else:
+        if current_scene.asset in bpy.data.collections:
+            print('collection exist')
+
+        else:
+            bpy.data.collections['Collection'].name = name
 
 if __name__ == '__main__':
     # create_menu_file('TomTest', 'Tom Test',

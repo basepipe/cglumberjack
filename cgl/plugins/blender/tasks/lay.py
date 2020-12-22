@@ -84,8 +84,9 @@ def main_import(filepath):
     d = PathObject(filepath)
 
     layout_data = load_json(filepath)
+    layout = create_object('{}_{}:lay'.format(scene_object().seq,scene_object().asset))
+    group = create_object('{}_{}:FG'.format(scene_object().seq,scene_object().asset),parent=layout)
 
-    group = create_object('{}_{}:lay'.format(scene_object().seq,scene_object().asset))
     pprint(layout_data)
     for each in layout_data:
         if 'source_path' in layout_data[each]:
@@ -106,7 +107,8 @@ def main_import(filepath):
         d2 = PathObject(reference_path)
         ns2 = get_next_namespace(d2.shot)
         ref = reference_file(namespace=ns2, filepath=reference_path)
-        parent_object(child=ref,parent=group)
+        layout_group = create_object(('{}_{}:FG'.format(scene_object().seq,scene_object().asset)))
+        parent_object(child=ref,parent=layout_group)
 
 
         if task == 'rig':

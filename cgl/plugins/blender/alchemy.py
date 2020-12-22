@@ -3,7 +3,7 @@ import logging
 import os
 import bpy
 from cgl.core.config import app_config, UserConfig
-from cgl.core.path import PathObject
+from cgl.core.path import PathObject as CorePathObject
 from cgl.core.utils.general import create_file_dirs
 from cgl.plugins.blender.main_window import CGLumberjack as MagicBrowser
 from cgl.apps.lumbermill.main import CGLumberjackWidget
@@ -200,7 +200,7 @@ class InputDialog(bpy.types.Operator):
 
         row3 = col2.row()
 
-class PathObject(PathObject):
+class PathObject(CorePathObject):
 
     def __init__(self, path_object=None):
         if not path_object:
@@ -270,6 +270,7 @@ class PathObject(PathObject):
         self.proxy_resolution = '1920x1080'
         self.path_template = []
         self.version_template = []
+        self.name = None
 
         def process_string(self, path_object):
             path_object = path_object.replace('\\', '/')

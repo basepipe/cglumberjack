@@ -14,11 +14,16 @@ class Task(SmartTask):
         2. Import Camera
         :return:
         """
-        print('IMPORTING CAMERA____________________')
+        from cgl.plugins.blender.utils import create_shot_mask_info , rename_collection
+        from cgl.plugins.blender.alchemy import scene_object
+
+
         camfile = alc.scene_object().copy(task = 'cam')
         alc.import_task(file_path = camfile,  task='cam')
-
         alc.import_task(task='lay')
+
+        rename_collection(scene_object())
+        create_shot_mask_info()
 
     def _import(self, filepath):
         pass
