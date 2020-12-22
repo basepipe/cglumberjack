@@ -39,11 +39,38 @@ class Task(SmartTask):
         move_keyframes(camera,start_frame)
         start,end = get_keyframes(camera,ends=True)
         set_framerange(start,end)
-
+        
+        set_shot_from_camera(cam = camera)
         pass
 
 
+def set_shot_from_camera(cam = None):
+    import bpy 
 
+    for area in bpy.context.screen.areas:
+        if area.type == 'DOPESHEET_EDITOR':
+            for region in area.regions:
+                if region.type == 'WINDOW':
+                    ctx = bpy.context.copy()
+                    ctx['area'] = area
+                    ctx['region'] = region
+                    ctx['mode'] = 'TIMELINE'
+                    bpy.ops.action.view_all(ctx)
+
+    bpy.ops.object.select_by_type(type='CAMERA')
+
+    if cam == None:
+        cam = bpy.context.selected_objects[0]
+        cam.select_set(state=True)
+        
+    bpy.context.view_layer.objects.active = cam
+
+    bpy.context.scene.camera = bpy.context.scene.objects[cam.name]
+
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            area.spaces[0].region_3d.view_perspective = 'CAMERA'
+            
 def get_selected_camera():
     camera = bpy.context.object
 

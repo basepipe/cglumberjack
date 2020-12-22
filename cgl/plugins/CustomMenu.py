@@ -112,6 +112,7 @@ class CustomMenu(object):
             menus.pop(each)
         if menus:
             return menus
+
         else:
             return {}
 

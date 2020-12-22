@@ -393,8 +393,6 @@ def render(preview=False, audio=False):
         bpy.context.scene.render.filepath = file_out
         bpy.ops.render.render(animation=True, use_viewport=True)
 
-
-
 def reference_file(filepath, namespace=None, collection_name=None):
     from cgl.plugins.blender import lumbermill as lm
 

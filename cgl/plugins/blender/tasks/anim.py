@@ -64,7 +64,6 @@ def move_keyframes(obj, offset):
                 x, y = keyframe.co
                 keyframe.co = (x + offset, y)
 
-
 def make_proxy(path_object,obj):
     import bpy
     rig_name = '{}_rig'.format(path_object.asset)
