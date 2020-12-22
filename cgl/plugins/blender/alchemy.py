@@ -366,6 +366,35 @@ def import_file(filepath, namespace=None, collection_name=None):
                     if ':' not in material.name:
                         material.name = '{}:{}'.format(namespace,material.name)
 
+
+def render(preview=False, audio=False):
+    """
+    renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
+    :param preview: determines if exr is used or not
+    :param audio: if True renders an  mov and setups the audio settings
+    :return:
+    """
+    previewRenderTypes = ['anim', 'rig', 'mdl', 'lay']
+    file_out = scene_object().render_path.split('#')[0]
+
+    if preview:
+        bpy.context.scene.render.image_settings.file_format = 'JPEG'
+        bpy.context.scene.render.filepath = file_out
+
+        if audio:
+            bpy.context.scene.render.image_settings.file_format = 'FFMPEG'
+            bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
+            bpy.context.scene.render.ffmpeg.audio_codec = 'MP3'
+
+        bpy.ops.render.opengl('INVOKE_DEFAULT', animation=True, view_context=True)
+
+    else:
+        bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR_MULTILAYER'
+        bpy.context.scene.render.filepath = file_out
+        bpy.ops.render.render(animation=True, use_viewport=True)
+
+
+
 def reference_file(filepath, namespace=None, collection_name=None):
     from cgl.plugins.blender import lumbermill as lm
 
@@ -677,7 +706,7 @@ def confirm_prompt(title='Lumber message:', message='This is a message', button=
     import bpy
     try:
         # bpy.utils.unregister_class(BlenderConfirmDialog)
-        bpy.utils.register_class(BlenderConfirmDialog)
+        bpy.utils.register_class(ConfirmDialog)
     except ValueError:
         print('class already registered')
 
@@ -689,7 +718,7 @@ def input_dialog(parent=None, title='Attention:', message="message",
     import bpy
 
     try:
-        bpy.utils.register_class(BlenderInputDialog)
+        bpy.utils.register_class(InputDialog)
     except ValueError:
         print('class already registered')
 
