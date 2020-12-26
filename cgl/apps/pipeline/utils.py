@@ -14,7 +14,7 @@ from cgl.ui.widgets.widgets import AdvComboBox
 
 
 GUI_DICT = {'shelves.yaml': ['button name', 'command', 'icon', 'order', 'annotation', 'label'],
-            'preflights.yaml': ['order', 'module', 'name', 'required'],
+            'pre_publish.yaml': ['order', 'module', 'name', 'required'],
             'menus.yaml': ['order', 'name']}
 
 
@@ -63,7 +63,7 @@ class CGLMenuButton(QtWidgets.QWidget):
     menu_button_save_clicked = QtCore.Signal()
 
     def __init__(self, parent=None, preflight_name='', preflight_step_name='', attrs=None, preflight_path='',
-                 menu_type='preflights', menu=None, reference_path=None):
+                 menu_type='pre_publish', menu=None, reference_path=None):
         # TODO - we need to choose better variable names, this is obviously "preflight" specific.
         QtWidgets.QWidget.__init__(self, parent)
         try:
@@ -183,7 +183,7 @@ class CGLMenuButton(QtWidgets.QWidget):
         import pyperclip
 
         name = self.name
-        text = 'import cgl_tools.{}.preflights.{}.{} as {}\nreload({})\n\n{}.{}().run()'.format(self.software,
+        text = 'import cgl_tools.{}.pre_publish.{}.{} as {}\nreload({})\n\n{}.{}().run()'.format(self.software,
                                                                                                 self.preflight_name,
                                                                                                 name,
                                                                                                 name,
@@ -317,7 +317,7 @@ class CGLMenuButton(QtWidgets.QWidget):
 class CGLMenu(QtWidgets.QWidget):
     """
     This creates the top level "Menu" Tab with the "buttons" within it.  Menu is a catch all for "Menus", "Shelves",
-    "Preflights", "Context-menus" and anything else in the future that fits the structure we've got here.
+    "pre_publish", "Context-menus" and anything else in the future that fits the structure we've got here.
 
     """
     menu_button_save_clicked = QtCore.Signal(object)
@@ -330,7 +330,7 @@ class CGLMenu(QtWidgets.QWidget):
             self.singular = 'shelf'
         elif self.menu_type == 'menus':
             self.singular = 'menu'
-        elif self.menu_type == 'preflights':
+        elif self.menu_type == 'pre_publish':
             self.singular = 'preflight'
         elif self.menu_type == 'context-menus':
             self.singular = 'context-menu'
@@ -355,7 +355,7 @@ class CGLMenu(QtWidgets.QWidget):
         self.title = ''
         if self.menu_type == 'menus':
             self.title = QtWidgets.QLabel('%s %s Buttons: (Drag to Reorder)' % (self.menu_name, self.menu_type.title()))
-        elif self.menu_type == 'preflights':
+        elif self.menu_type == 'pre_publish':
             self.title = QtWidgets.QLabel('%s %s Steps: (Drag to Reorder)' % (self.menu_name, self.menu_type.title()))
         elif self.menu_type == 'shelves':
             self.title = QtWidgets.QLabel('%s Shelf Buttons: (Drag to Reorder)' % self.menu_name)
@@ -365,7 +365,7 @@ class CGLMenu(QtWidgets.QWidget):
         if self.menu_type == 'shelves':
             self.add_button = QtWidgets.QPushButton('add shelf button')
             self.import_menu_button = QtWidgets.QPushButton('import shelf button')
-        elif self.menu_type == 'preflights':
+        elif self.menu_type == 'pre_publish':
             self.add_button = QtWidgets.QPushButton('add preflight step')
             self.import_menu_button = QtWidgets.QPushButton('import preflight step')
         else:
@@ -399,7 +399,7 @@ class CGLMenu(QtWidgets.QWidget):
     @staticmethod
     def on_import_menu_button_clicked():
         dialog = InputDialog(title="Feature In Progress",
-                             message="This button will allow you to import buttons/preflights from other menus")
+                             message="This button will allow you to import buttons/pre_publish from other menus")
         dialog.exec_()
         if dialog.button == 'Ok' or dialog.button == 'Cancel':
             dialog.accept()
@@ -413,7 +413,7 @@ class CGLMenu(QtWidgets.QWidget):
             dialog.accept()
 
     def on_add_menu_button(self):
-        if self.menu_type == 'preflights':
+        if self.menu_type == 'pre_publish':
             title_ = 'Add Preflight Step'
             message = 'Enter a Name for your Preflight Step'
         elif self.menu_type == 'menus':
@@ -445,7 +445,7 @@ class CGLMenu(QtWidgets.QWidget):
                 module = dialog.module
                 module_path = dialog.button_path
 
-            if self.menu_type == 'preflights':
+            if self.menu_type == 'pre_publish':
                 attrs = {'label': button_name,
                          'name': button_name,
                          'required': 'True',
@@ -587,7 +587,7 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
     :param software: software package to get the menu path for.
     :param menu_name: CamelCase string - all menus created with pipeline designer are CamelCase
     :param menu_file: if True returns a menu path with a menu_name.py file.
-    :param menu_type: menus, preflights, shelves, context-menus
+    :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
     if menu_file:
@@ -607,7 +607,7 @@ def get_button_path(software, menu_name, button_name, menu_type='menus'):
     :param software: software as it appears in pipeline designer.
     :param menu_name: CamelCase menu name
     :param button_name: CamelCase button name
-    :param menu_type: menus, preflights, shelves, context-menus
+    :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
     if isinstance(menu_name, dict):
@@ -663,7 +663,7 @@ class NewButtonDialog(LJDialog):
         self.button_type = QtWidgets.QComboBox()
         self.reference_buttons = AdvComboBox()
         self.menu_name = menu_name
-        self.menu_types = ['menus', 'context-menus', 'shelves', 'preflights']
+        self.menu_types = ['menus', 'context-menus', 'shelves', 'pre_publish']
         self.menu_directory = os.path.join(get_cgl_tools(), self.software, self.menu_type)
         self.button_type.addItems(['New', 'Referenced'])
         self.new_button_label = QtWidgets.QLabel()

@@ -56,7 +56,7 @@ class CustomMenu(object):
 
     def load_cgl(self):
         """
-        returns all the shelves, menus, or preflights from the json file
+        returns all the shelves, menus, or pre_publish from the json file
         :return:
         """
         if os.path.exists(self.menus_file):

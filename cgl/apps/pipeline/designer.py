@@ -49,7 +49,7 @@ class Designer(LJDialog):
         self.menu_type_label = QtWidgets.QLabel('Recipe Type:')
         self.menu_type_label.setProperty('class', 'title')
         self.menu_type_combo = QtWidgets.QComboBox()
-        self.menu_type_combo.addItems(['', 'menus', 'context-menus', 'shelves', 'preflights'])
+        self.menu_type_combo.addItems(['', 'menus', 'context-menus', 'shelves', 'pre_publish'])
 
         self.new_software_button = QtWidgets.QPushButton('Add Software')
         self.new_software_button.setProperty('class', 'add_button')
@@ -139,7 +139,7 @@ class Designer(LJDialog):
             self.singular = 'shelf'
         elif self.type == 'menus':
             self.singular = 'menu'
-        elif self.type == 'preflights':
+        elif self.type == 'pre_publish':
             self.singular = 'preflight'
         elif self.type == 'context-menus':
             self.singular = 'context-menu'
@@ -147,8 +147,8 @@ class Designer(LJDialog):
             self.singular = 'not defined'
 
     def on_add_menu_clicked(self):
-        if self.type == 'preflights' or self.type == 'context-menus':
-            if self.type == 'preflights':
+        if self.type == 'pre_publish' or self.type == 'context-menus':
+            if self.type == 'pre_publish':
                 singular = 'preflight'
             elif self.type == 'context-menus':
                 singular = 'Context Menu'
@@ -277,7 +277,7 @@ class Designer(LJDialog):
                     split = button_widget.command_line_edit.text().split()
                     print('setting name to module name: %s' % split[-1].split('.run()')[0])
                     button_name = split[-1].split('.run()')[0]
-                if self.type == 'preflights':
+                if self.type == 'pre_publish':
                     button_dict = {
                                         'module': button_widget.command_line_edit.text(),
                                         'label': button_widget.label_line_edit.text(),
@@ -356,7 +356,7 @@ class Designer(LJDialog):
 if __name__ == "__main__":
     from cgl.ui.startup import do_gui_init
     app = do_gui_init()
-    mw = Designer(type_='preflights')
+    mw = Designer(type_='pre_publish')
     # mw = Designer(type_='menus')
     mw.setWindowTitle('Preflight Designer')
     mw.setMinimumWidth(1200)

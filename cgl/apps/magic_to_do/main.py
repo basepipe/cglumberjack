@@ -15,9 +15,9 @@ LABEL_MAP = {'Animation': 'anim',
              'Lighting': 'lite',
              'FX': 'fx',
              'Comp': 'comp'}
-STATUS_COLORS = {'Not Started': 'grey',
-                 'In Progress': 'yellow',
-                 'Published': 'green'}
+STATUS_COLORS = {'Not Started': '#BFBFBF',
+                 'In Progress': '#F3D886',
+                 'Published': '#52B434'}
 
 FILE_TYPES = {'maya': {'defaults': ['.mb', '.ma']},
               'houdini': {'defaults': ['']}}
@@ -39,7 +39,8 @@ class ScopeList(QtWidgets.QWidget):
         self.row.addWidget(self.key_label)
         for status in STATUS_COLORS:
             button = QtWidgets.QPushButton(status)
-            button.setStyleSheet("background-color: {}".format(STATUS_COLORS[status]))
+            button_css = 'background-color: {}'.format(STATUS_COLORS[status])
+            button.setStyleSheet(button_css)
             self.button_dict[status] = button
             self.row.addWidget(button)
         self.shots.setChecked(True)
@@ -73,8 +74,10 @@ class MagicButtonWidget(QtWidgets.QWidget):
         self.row.setContentsMargins(0, 0, 0, 0)
 
         self.button = QtWidgets.QPushButton()
+        # self.button.setProperty('class', 'grey_border')
         self.button.setText(button_label)
-        self.button.setStyleSheet("background-color: {}".format(STATUS_COLORS[self.status]))
+
+        self.set_button_look()
         self.button.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.button.customContextMenuRequested.connect(self.on_context_menu)
         # self.check_box = QtWidgets.QCheckBox()
@@ -127,6 +130,18 @@ class MagicButtonWidget(QtWidgets.QWidget):
         # self.context_menu.addSeparator()
         self.button.clicked.connect(self.button_clicked)
 
+    def set_button_look(self):
+        border_color = '#808080'
+        border_px = 4
+        bg_color = STATUS_COLORS[self.status]
+        font_color = '#383838'
+        height = 120
+        width = 100
+        button_css = 'background-color: {}; border: {}px solid {}; font-family: "Karmatic Arcade"; ' \
+                     'font-size: 8pt; color: {};width: {}px;' \
+                     'border-radius: 8px; padding: 6px;'.format(bg_color, border_px, border_color, font_color, width, height)
+        self.button.setStyleSheet(button_css)
+
     def create_default_file(self):
         print('Creating tmikota version for task {}'.format(self.task))
         print(self.path_object.path_root)
@@ -176,7 +191,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 raw_time = os.path.getctime(published_path_object.path_root)
                 self.publish_date = datetime.fromtimestamp(raw_time).strftime(self.date_format)
                 self.status = 'Published'
-                self.button.setStyleSheet("background-color: {}".format(STATUS_COLORS[self.status]))
+                self.set_button_look()
                 self.published_folder = published_path_object.path_root
 
     def get_newest_version(self):
@@ -189,7 +204,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
             latest_folder = ''
             if not self.published_folder:
                 self.status = 'In Progress'
-                self.button.setStyleSheet("background-color: {}".format(STATUS_COLORS[self.status]))
+                self.set_button_look()
             for each in versions:
                 raw_time = os.path.getctime(each)
                 if raw_time > latest:
@@ -217,7 +232,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
             self.set_time_stuff()
         else:
             self.status = 'Not Started'
-            self.button.setStyleSheet("background-color: {}".format(STATUS_COLORS[self.status]))
+            self.set_button_look()
 
     def set_time_stuff(self):
         today = date.today()

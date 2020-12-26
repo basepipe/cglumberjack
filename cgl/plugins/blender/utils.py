@@ -15,7 +15,7 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
     :param software: software package to get the menu path for.
     :param menu_name: CamelCase string - all menus created with pipeline designer are CamelCase
     :param menu_file: if True returns a menu path with a menu_name.py file.
-    :param menu_type: menus, preflights, shelves, context-menus
+    :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
     if menu_file:
@@ -32,7 +32,7 @@ def get_button_path(software, menu_name, button_name, menu_type='menus'):
     :param software: software as it appears in pipeline designer.
     :param menu_name: CamelCase menu name
     :param button_name: CamelCase button name
-    :param menu_type: menus, preflights, shelves, context-menus
+    :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
     menu_folder = get_menu_path(software, menu_name, menu_type=menu_type)
