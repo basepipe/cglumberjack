@@ -10,6 +10,7 @@ from cgl.core.path import start, icon_path, get_cgl_resources_path
 from cgl.core.project import get_cgl_tools
 from cgl.ui.widgets.text import Highlighter
 from cgl.ui.widgets.widgets import AdvComboBox
+from cgl.core.config import app_config
 
 
 
@@ -116,7 +117,7 @@ class CGLMenuButton(QtWidgets.QWidget):
         # tool buttons
         delete_button = QtWidgets.QPushButton('Delete')
         delete_button.setProperty('class', 'basic')
-        open_button = QtWidgets.QPushButton('Open in Editor')
+        open_button = QtWidgets.QPushButton('Edit')
         open_button.setProperty('class', 'basic')
         copy_button = QtWidgets.QPushButton('Copy Test Code'.format(self.software))
         copy_button.setProperty('class', 'basic')
@@ -357,6 +358,10 @@ class CGLMenu(QtWidgets.QWidget):
             self.title = QtWidgets.QLabel('%s %s Buttons: (Drag to Reorder)' % (self.menu_name, self.menu_type.title()))
         elif self.menu_type == 'pre_publish':
             self.title = QtWidgets.QLabel('%s %s Steps: (Drag to Reorder)' % (self.menu_name, self.menu_type.title()))
+        elif self.menu_type == 'pre_render':
+            self.title = QtWidgets.QLabel('%s %s Steps: (Drag to Reorder)' % (self.menu_name, self.menu_type.title()))
+        elif self.menu_type == 'tasks':
+            self.title = QtWidgets.QLabel('')
         elif self.menu_type == 'shelves':
             self.title = QtWidgets.QLabel('%s Shelf Buttons: (Drag to Reorder)' % self.menu_name)
         elif self.menu_type == 'context-menus':
@@ -366,8 +371,14 @@ class CGLMenu(QtWidgets.QWidget):
             self.add_button = QtWidgets.QPushButton('add shelf button')
             self.import_menu_button = QtWidgets.QPushButton('import shelf button')
         elif self.menu_type == 'pre_publish':
-            self.add_button = QtWidgets.QPushButton('add preflight step')
-            self.import_menu_button = QtWidgets.QPushButton('import preflight step')
+            self.add_button = QtWidgets.QPushButton('add step')
+            self.import_menu_button = QtWidgets.QPushButton('import pre_publish step')
+        elif self.menu_type == 'pre_render':
+            self.add_button = QtWidgets.QPushButton('add step')
+            self.import_menu_button = QtWidgets.QPushButton('import pre_render step')
+        elif self.menu_type == 'tasks':
+            self.add_button = QtWidgets.QPushButton('add task')
+            self.import_menu_button = QtWidgets.QPushButton('import task')
         else:
             self.add_button = QtWidgets.QPushButton('add %s button' % self.singular)
             self.import_menu_button = QtWidgets.QPushButton('import %s button' % self.singular)
@@ -413,7 +424,28 @@ class CGLMenu(QtWidgets.QWidget):
             dialog.accept()
 
     def on_add_menu_button(self):
-        if self.menu_type == 'pre_publish':
+        if self.menu_type == 'tasks':
+            self.schema = get_schema()
+            singular = 'Task'
+            dialog = InputDialog(title='Add %s' % singular,
+                                 message='Choose Task to Create a %s Recipe For\n '
+                                         'Or Type to Create Your Own' % singular,
+                                 line_edit=False, combo_box_items=task_list(), regex='[a-zA-Z]',
+                                 name_example='Only letters & Numbers Allowed in %s Names' % singular)
+            dialog.exec_()
+            if dialog.button == 'Ok':
+                long_name = dialog.combo_box.currentText()
+                task_name = ''
+                if long_name in self.schema['long_to_short']['assets']:
+                    task_name = self.schema['long_to_short']['assets'][long_name]
+                elif long_name in self.schema['long_to_short']['shots']:
+                    task_name = self.schema['long_to_short']['shots'][long_name]
+                else:
+                    task_name = long_name
+                if task_name:
+                    self.do_add_task(task_name)
+            return
+        elif self.menu_type == 'pre_publish':
             title_ = 'Add Preflight Step'
             message = 'Enter a Name for your Preflight Step'
         elif self.menu_type == 'menus':
@@ -426,10 +458,6 @@ class CGLMenu(QtWidgets.QWidget):
             title_ = 'Add Context Menu Item'
             message = 'Enter a name for your Context Menu Item'
 
-        # new button dialog
-        # dialog = InputDialog(title=title_, message=message,
-        #                      line_edit=True, regex='^([aA-zZ ]+)+$',
-        #                      name_example='Name may only contain letters and spaces')
         dialog = NewButtonDialog(software=self.software, menu_type=self.menu_type, menu_name=self.menu_name)
         dialog.exec_()
         if dialog.button == 'Ok':
@@ -445,14 +473,14 @@ class CGLMenu(QtWidgets.QWidget):
                 module = dialog.module
                 module_path = dialog.button_path
 
-            if self.menu_type == 'pre_publish':
-                attrs = {'label': button_name,
+            if self.menu_type == 'pre_publish' or self.menu_type == 'pre_render':
+                attrs = {'label': label,
                          'name': button_name,
                          'required': 'True',
                          'module': module,
                          'reference_path': module_path}
             elif self.menu_type == 'menus' or self.menu_type == 'context-menus':
-                attrs = {'label': button_name,
+                attrs = {'label': label,
                          'name': button_name,
                          'module': command,
                          'reference_path': module_path}
@@ -473,6 +501,33 @@ class CGLMenu(QtWidgets.QWidget):
             else:
                 index = self.buttons_tab_widget.addTab(self.new_button_widget, button_name)
             self.buttons_tab_widget.setCurrentIndex(index)
+
+    def do_add_task(self, task_name):
+        print('Adding Task {}'.format(task_name))
+        module = 'cgl_tools.%s.tasks.tasks.%s' % (self.software, task_name)
+        attrs = {'label': task_name,
+                 'name': task_name,
+                 'module': module
+                 }
+        self.new_button_widget = CGLMenuButton(parent=self.buttons_tab_widget, preflight_name='tasks',
+                                               preflight_step_name=task_name, menu=self,
+                                               attrs=attrs, preflight_path=self.menu_path, menu_type=self.menu_type)
+        # TODO - make sure that a smart_task.py file exists in the folder.
+        smart_task_path = self.menu_path.replace('.cgl', '\\tasks\\smart_task.py')
+        if not os.path.exists(smart_task_path):
+            template_path = (os.path.join(get_cgl_resources_path(), 'alchemists_cookbook', 'default', 'smart_task.py'))
+            template_lines = load_text_file(template_path)
+            changed_lines = []
+            for l in template_lines:
+                if 'SOFTWARE' in l:
+                    new_l = l.replace('SOFTWARE', self.software)
+                    changed_lines.append(new_l)
+                else:
+                    changed_lines.append(l)
+            save_text_lines(changed_lines, smart_task_path)
+            # TODO - replace 'SOFTWARE' with self.software in the smart_task.py file.
+        index = self.buttons_tab_widget.addTab(self.new_button_widget, task_name)
+        self.buttons_tab_widget.setCurrentIndex(index)
 
     def get_command_text(self, button_name, menu_type):
         if self.software.lower() == 'unreal':
@@ -534,7 +589,7 @@ def create_button_file(software, menu_name, button_name, menu_type):
     else:
         template_software = 'default'
     if software.lower() == 'unreal':
-        button_template = os.path.join(get_cgl_resources_path(), 'pipeline_designer', template_software, 'buttons',
+        button_template = os.path.join(get_cgl_resources_path(), 'alchemists_cookbook', template_software, 'buttons',
                                        'for_%s.uasset' % menu_type)
         dirname = os.path.dirname(button_path)
         if not os.path.exists(dirname):
@@ -544,7 +599,7 @@ def create_button_file(software, menu_name, button_name, menu_type):
         cgl_copy(button_template, button_path)
         return
     else:
-        button_template = os.path.join(get_cgl_resources_path(), 'pipeline_designer', template_software, 'buttons',
+        button_template = os.path.join(get_cgl_resources_path(), 'alchemists_cookbook', template_software, 'buttons',
                                        'for_%s.py' % menu_type)
     button_lines = load_text_file(button_template)
     changed_lines = []
@@ -571,6 +626,12 @@ def create_button_file(software, menu_name, button_name, menu_type):
         else:
             if 'print' in l:
                 new_l = l.replace('button_template', stringcase.titlecase(button_name))
+                changed_lines.append(new_l)
+            elif 'PreflightTemplate' in l:
+                new_l = l.replace('PreflightTemplate', button_name)
+                changed_lines.append(new_l)
+            elif 'SOFTWARE' in l:
+                new_l = l.replace('SOFTWARE', software)
                 changed_lines.append(new_l)
             else:
                 changed_lines.append(l)
@@ -780,6 +841,32 @@ class NewButtonDialog(LJDialog):
 
     def load_buttons(self):
         print(self.menu_types_combo.currentText())
+
+
+def get_schema():
+    config = app_config()
+    proj_man = config['account_info']['project_management']
+    def_schema = config['project_management'][proj_man]['api']['default_schema']
+    schema = app_config()['project_management'][proj_man]['tasks'][def_schema]
+    return schema
+
+
+def task_list():
+    schema = get_schema()
+    task_list = []
+    try:
+        for each in schema['long_to_short']['assets']:
+            if each not in task_list:
+                task_list.append(each)
+        for each in schema['long_to_short']['shots']:
+            if each not in task_list:
+                task_list.append(each)
+    except TypeError:
+        print('Problems found in your globals "schema"')
+        return
+    task_list.sort()
+    task_list.insert(0, '')
+    return task_list
 
 
 

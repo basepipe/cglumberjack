@@ -10,7 +10,7 @@ import maya.cmds as cmds
 # noinspection PyUnresolvedReferences
 import pymel.core as pm
 from cgl.core.path import PathObject
-import cgl.plugins.maya.lumbermill as lm
+import cgl.plugins.maya.alchemy as lm
 from cgl.plugins.maya.tasks.cam import get_camera_names
 from cgl.plugins.maya.tasks.lite import get_render_folder
 from cgl.core.utils.general import current_user

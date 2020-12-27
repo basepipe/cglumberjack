@@ -5,7 +5,7 @@ import pymel.core as pm
 from .smart_task import SmartTask
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
-from cgl.plugins.maya.lumbermill import LumberObject
+from cgl.plugins.maya.alchemy import PathObject
 from cgl.core.config import shader_config, app_config
 from cgl.ui.widgets.widgets import AdvComboBox
 
@@ -19,7 +19,7 @@ class Task(SmartTask):
 
     def __init__(self, path_object=None):
         if not path_object:
-            from cgl.plugins.maya.lumbermill import scene_object
+            from cgl.plugins.maya.alchemy import scene_object
             self.path_object = scene_object()
 
     def _import(self, ref_node):
@@ -90,8 +90,8 @@ def get_latest_tex_publish_from_filepath(filepath):
     :return:
     """
     # TODO - could i do this from just the asset name alone?
-    path_object = LumberObject(filepath).copy(task='tex', context='render', user='publish',
-                                              latest=True, resolution='high')
+    path_object = PathObject(filepath).copy(task='tex', context='render', user='publish',
+                                            latest=True, resolution='high')
     return os.path.dirname(path_object.path_root)
 
 

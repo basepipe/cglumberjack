@@ -6,7 +6,7 @@ import cgl.plugins.MagicSceneDescription as msd
 reload(msd)
 from cgl.core.config import app_config
 from cgl.core.utils.read_write import load_json, save_json
-from cgl.plugins.maya.lumbermill import get_scene_name, LumberObject, scene_object
+from cgl.plugins.maya.alchemy import get_scene_name, PathObject, scene_object
 from cgl.plugins.maya.utils import load_plugin, select_reference
 
 CONFIG = app_config()
@@ -36,7 +36,7 @@ class MagicSceneDescription(msd.MagicSceneDescription):
         :return:
         """
         self.scene_file = get_scene_name()
-        self.path_object = LumberObject(self.scene_file)
+        self.path_object = PathObject(self.scene_file)
         pass
 
     @staticmethod
@@ -159,7 +159,7 @@ class AssetDescription(object):
                 self.path_root = self.mesh_object[-1].path
         elif self.asset_type == 'bndl':
             self.path_root = pm.getAttr(self.mesh_object.BundlePath)
-        self.path_object = LumberObject(self.path_root)
+        self.path_object = PathObject(self.path_root)
 
     def get_mesh_name_from_object(self):
         """
@@ -250,7 +250,7 @@ class AssetDescription(object):
         if self.asset_type == 'asset':
             self.data = self.add_matching_files_to_dict(self.path_object.copy(context='render').path_root, data_temp)
         elif self.asset_type == 'anim':
-            anim_obj = LumberObject(pm.referenceQuery(self.mesh_object, filename=True))
+            anim_obj = PathObject(pm.referenceQuery(self.mesh_object, filename=True))
             filename = '{}_{}*'.format(anim_obj.seq, anim_obj.shot)
             filepath = self.path_object.copy(context='render', filename=filename).path_root
             print('Adding to dict------------------------------')
@@ -304,7 +304,7 @@ class AssetDescription(object):
         :return:
         """
         print('Exporting .msd to: {}'.format(self.path_root))
-        from cgl.plugins.maya.lumbermill import create_file_dirs
+        from cgl.plugins.maya.alchemy import create_file_dirs
         create_file_dirs(self.path_root)
         save_json(self.path_root, self.data)
 
@@ -364,7 +364,7 @@ class CameraDescription(AssetDescription):
         # seq, shot = self.mesh_name.split('_')
         # seq = seq.replace('cam', '')
         cam_path = get_latest()
-        self.path_object = LumberObject(cam_path).copy(ext='msd')
+        self.path_object = PathObject(cam_path).copy(ext='msd')
         self.path_root = self.path_object.path_root
 
     def set_frame_range(self, ):
@@ -385,7 +385,7 @@ class CameraDescription(AssetDescription):
 
 def load_msd(msd_path):
     pm.select(d=True)
-    import cgl.plugins.maya.lumbermill as lumbermill
+    import cgl.plugins.maya.alchemy as lumbermill
     reload(lumbermill)
     msd_ = load_json(msd_path)
     for asset in msd_:

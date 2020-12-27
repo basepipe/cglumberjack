@@ -1,7 +1,7 @@
 import os
 import pymel.core as pm
 from .smart_task import SmartTask
-from cgl.plugins.maya.lumbermill import LumberObject, scene_object
+from cgl.plugins.maya.alchemy import PathObject, scene_object
 from cgl.core.config import app_config
 from cgl.ui.widgets.dialog import MagicList, InputDialog, FrameRange
 from cgl.plugins.maya.utils import get_shape_name, load_plugin
@@ -29,7 +29,7 @@ class Task(SmartTask):
         :param layout_group:
         :return:
         """
-        from cgl.plugins.maya.lumbermill import reference_file
+        from cgl.plugins.maya.alchemy import reference_file
         reference_file(filepath=filepath)
 
     def import_latest(self):

@@ -11,12 +11,12 @@ class SmartTask(object):
 
         :param path_object: must be a "PathObject"
         """
-        from cgl.plugins.maya.lumbermill import LumberObject, scene_object
+        from cgl.plugins.maya.alchemy import PathObject, scene_object
         if not path_object:
             self.path_object = scene_object()
         else:
             self.path_object = path_object
-        if not isinstance(path_object, LumberObject):
+        if not isinstance(path_object, PathObject):
             print("{} is not instance LumberObject")
             return
         print(path_object.path_root)
@@ -60,6 +60,6 @@ class SmartTask(object):
         this allows us to customize at a more granular level if needed.
         :return:
         """
-        from cgl.plugins.maya.lumbermill import publish
+        from cgl.plugins.maya.alchemy import publish
         publish()
 

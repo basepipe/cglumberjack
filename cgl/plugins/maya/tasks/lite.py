@@ -2,7 +2,7 @@ import os
 from .smart_task import SmartTask
 from .shd import import_and_attach_shaders_for_references
 from .cam import get_camera_names
-import cgl.plugins.maya.lumbermill as lm
+import cgl.plugins.maya.alchemy as lm
 from cgl.plugins.maya.utils import load_plugin, get_shape_name, get_frame_end, get_frame_start
 from cgl.core.utils.general import cgl_copy
 from cgl.ui.widgets.base import LJDialog
@@ -26,7 +26,7 @@ class Task(SmartTask):
 
     def __init__(self, path_object=None):
         if not path_object:
-            from cgl.plugins.maya.lumbermill import scene_object
+            from cgl.plugins.maya.alchemy import scene_object
             self.path_object = scene_object()
 
     def build(self):
@@ -129,20 +129,20 @@ def publish_light_rig(global_rig=False):
     current_light_rig = get_light_rig_path()
     if os.path.exists(current_light_rig):
         # TODO - this is a bug in the core system.  Need to fix it. these should be identical.
-        seq_light_publish_source = lm.LumberObject(current_light_rig).copy(context='source', shot='0000',
-                                                                           user='publish', filename='light_rig.mb')
-        seq_light_publish_render = lm.LumberObject(current_light_rig).copy(context='render', shot='0000',
-                                                                           user='publish')
+        seq_light_publish_source = lm.PathObject(current_light_rig).copy(context='source', shot='0000',
+                                                                         user='publish', filename='light_rig.mb')
+        seq_light_publish_render = lm.PathObject(current_light_rig).copy(context='render', shot='0000',
+                                                                         user='publish')
         cgl_copy(current_light_rig, seq_light_publish_source.path_root)
         cgl_copy(current_light_rig, seq_light_publish_render.path_root)
         if global_rig:
-            global_light_publish_source = lm.LumberObject(current_light_rig).copy(context='source', seq='000',
-                                                                                  shot='0000', latest=True,
-                                                                                  user='publish',
-                                                                                  filename='light_rig.mb')
-            global_light_publish_render = lm.LumberObject(current_light_rig).copy(context='render', seq='000',
-                                                                                  shot='0000', latest=True,
-                                                                                  user='publish')
+            global_light_publish_source = lm.PathObject(current_light_rig).copy(context='source', seq='000',
+                                                                                shot='0000', latest=True,
+                                                                                user='publish',
+                                                                                filename='light_rig.mb')
+            global_light_publish_render = lm.PathObject(current_light_rig).copy(context='render', seq='000',
+                                                                                shot='0000', latest=True,
+                                                                                user='publish')
             cgl_copy(current_light_rig, global_light_publish_source.path_root)
             cgl_copy(current_light_rig, global_light_publish_render.path_root)
 

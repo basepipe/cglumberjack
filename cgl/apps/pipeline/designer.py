@@ -49,7 +49,7 @@ class Designer(LJDialog):
         self.menu_type_label = QtWidgets.QLabel('Recipe Type:')
         self.menu_type_label.setProperty('class', 'title')
         self.menu_type_combo = QtWidgets.QComboBox()
-        self.menu_type_combo.addItems(['', 'menus', 'context-menus', 'shelves', 'pre_publish'])
+        self.menu_type_combo.addItems(['', 'menus', 'shelves', 'pre_publish', 'pre_render', 'tasks'])
 
         self.new_software_button = QtWidgets.QPushButton('Add Software')
         self.new_software_button.setProperty('class', 'add_button')
@@ -125,6 +125,12 @@ class Designer(LJDialog):
     def update_menu_path(self):
         self.software = self.software_combo.currentText()
         self.type = self.menu_type_combo.currentText()
+        if self.type == 'tasks':
+            self.add_menu_button.hide()
+            self.delete_menu_button.hide()
+        else:
+            self.add_menu_button.show()
+            self.delete_menu_button.show()
         self.get_singular(self.type)
         if self.type:
             self.menu_path = os.path.join(self.cgl_tools, self.software, '%s.cgl' % self.type)
@@ -140,22 +146,29 @@ class Designer(LJDialog):
         elif self.type == 'menus':
             self.singular = 'menu'
         elif self.type == 'pre_publish':
-            self.singular = 'preflight'
+            self.singular = 'pre_publish'
+        elif self.type == 'pre_render':
+            self.singular = 'pre_render'
+        elif self.type == 'tasks':
+            self.singular = 'task'
         elif self.type == 'context-menus':
             self.singular = 'context-menu'
         else:
             self.singular = 'not defined'
 
     def on_add_menu_clicked(self):
-        if self.type == 'pre_publish' or self.type == 'context-menus':
+        if self.type == 'pre_publish' or self.type == 'context-menus' or self.type == 'pre_render':
             if self.type == 'pre_publish':
-                singular = 'preflight'
+                singular = 'Pre-Publish'
+            elif self.type == 'pre_render':
+                singular = 'Pre-Render'
             elif self.type == 'context-menus':
                 singular = 'Context Menu'
             elif self.type == 'shelves':
                 singular = 'Shelf'
             dialog = InputDialog(title='Add %s' % singular,
-                                 message='Choose Task to Create a %s For\n Or Type to Create Your Own' % singular,
+                                 message='Choose Task to Create a %s Recipe For\n '
+                                         'Or Type to Create Your Own' % singular,
                                  line_edit=False, combo_box_items=self.task_list, regex='[a-zA-Z]',
                                  name_example='Only letters & Numbers Allowed in %s Names' % singular)
             dialog.exec_()
@@ -175,6 +188,25 @@ class Designer(LJDialog):
             if dialog.button == 'Ok':
                 menu_name = dialog.line_edit.text()
                 self.do_add_menu(menu_name)
+        elif self.type == 'tasks':
+            singular = 'Task'
+            dialog = InputDialog(title='Add %s' % singular,
+                                 message='Choose Task to Create a %s Recipe For\n '
+                                         'Or Type to Create Your Own' % singular,
+                                 line_edit=False, combo_box_items=self.task_list, regex='[a-zA-Z]',
+                                 name_example='Only letters & Numbers Allowed in %s Names' % singular)
+            dialog.exec_()
+            if dialog.button == 'Ok':
+                long_name = dialog.combo_box.currentText()
+                task_name = ''
+                if long_name in self.schema['long_to_short']['assets']:
+                    task_name = self.schema['long_to_short']['assets'][long_name]
+                elif long_name in self.schema['long_to_short']['shots']:
+                    task_name = self.schema['long_to_short']['shots'][long_name]
+                else:
+                    task_name = long_name
+                if task_name:
+                    self.do_add_task(task_name)
 
     def do_add_menu(self, menu_name):
         # remove spaces from the end of the name:
@@ -203,6 +235,9 @@ class Designer(LJDialog):
         self.title_widget.show()
         self.title_label.setText('%s %s' % (self.software_combo.currentText(), self.type))
         self.software = self.software_combo.currentText()
+        # if self.sender().currentText() == 'tasks':
+        #     self.load_tasks()
+        #     return
         if os.path.exists(self.menu_path):
             menu_dict = self.load_json(self.menu_path)
         if menu_dict:
@@ -228,9 +263,16 @@ class Designer(LJDialog):
             else:
                 print('%s not found in %s' % (self.softwre, self.menu_path))
 
+    def load_tasks(self):
+        ignore = ['__init__.py']
+        tasks_path = self.menu_path.replace('.cgl', '')
+        if os.path.exists(tasks_path):
+            for each in os.listdir(tasks_path):
+                print(each)
+
     def on_new_software_clicked(self):
         dialog = InputDialog(title='Add Software', message='Enter or Choose Software',
-                             combo_box_items=['', 'lumbermill', 'nuke', 'maya'],
+                             combo_box_items=['', 'lumbermill', 'nuke', 'maya', 'blender', 'houdini', 'unreal'],
                              regex='[a-zA-Z0-0]{3,}', name_example='Only letters & Numbers Allowed Software Names')
         dialog.exec_()
         if dialog.button == 'Ok':
@@ -316,6 +358,11 @@ class Designer(LJDialog):
 
     def create_empty_menu(self):
         json_object = {self.software: {}}
+        if self.type == 'tasks':
+            tasks_path = self.menu_path.replace('.cgl', '\\tasks')
+            print(tasks_path)
+            json_object = {self.software: [{'buttons': [], 'name': 'tasks'}]}
+
         self.save_json(self.menu_path, json_object)
 
     @staticmethod
@@ -358,7 +405,7 @@ if __name__ == "__main__":
     app = do_gui_init()
     mw = Designer(type_='pre_publish')
     # mw = Designer(type_='menus')
-    mw.setWindowTitle('Preflight Designer')
+    mw.setWindowTitle('Alchemists Cookbook')
     mw.setMinimumWidth(1200)
     mw.setMinimumHeight(500)
     mw.show()

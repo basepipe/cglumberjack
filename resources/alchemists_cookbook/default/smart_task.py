@@ -1,3 +1,4 @@
+from cgl.plugins.SOFTWARE.alchemy import publish, import_file, reference_file, PathObject, scene_object
 
 
 class SmartTask(object):
@@ -12,7 +13,6 @@ class SmartTask(object):
 
         :param path_object: must be a "PathObject"
         """
-        from cgl.plugins.maya.alchemy import PathObject, scene_object
         if not path_object:
             self.path_object = scene_object()
         else:
@@ -46,7 +46,6 @@ class SmartTask(object):
         """
         if not file_path:
             file_path = self.path_object.path_root
-        from cgl.plugins.maya.alchemy import import_file, reference_file
         if reference:
             return reference_file(filepath=file_path)
         else:
@@ -67,6 +66,5 @@ class SmartTask(object):
         this allows us to customize at a more granular level if needed.
         :return:
         """
-        from cgl.plugins.maya.alchemy import publish
         publish()
 

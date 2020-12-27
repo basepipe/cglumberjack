@@ -289,12 +289,12 @@ def get_maya_window():
 
 
 def update_reference(reference):
-    from cgl.plugins.maya.lumbermill import LumberObject
+    from cgl.plugins.maya.alchemy import PathObject
     path = reference[1].path
     if '{' in path:
         path = path.split('{')[0]
     filename = os.path.basename(path)
-    lobj = LumberObject(path).copy(context='render', user='publish', latest=True)
+    lobj = PathObject(path).copy(context='render', user='publish', latest=True)
     latest_version = lobj.path_root
     path = path.replace('\\', '/')
     latest_version = latest_version.replace('\\', '/')

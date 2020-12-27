@@ -47,7 +47,7 @@ class AppMainWindow(CGLumberjack):
         self.setCentralWidget(BrowserWidget(self, show_import=True, show_reference=True, path=path))
 
 
-class LumberObject(PathObject):
+class PathObject(PathObject):
 
     def __init__(self, path_object=None):
         if not path_object:
@@ -153,7 +153,7 @@ def scene_object():
     returns PathObject of curent scene
     :return:
     """
-    return LumberObject(pm.sceneName())
+    return PathObject(pm.sceneName())
 
 
 def open_file(filepath):
@@ -191,7 +191,7 @@ def import_file(filepath, namespace=None):
     :return:
     """
     print(filepath)
-    file_object = LumberObject(filepath)
+    file_object = PathObject(filepath)
     if file_object.context == 'source':
         dialog = InputDialog(message='Are you sure you want to import a source file? This is not recommended')
         if dialog.button == 'Cancel':
@@ -348,7 +348,7 @@ def clean_turntable():
     removes the turntable from the scene
     :return:
     """
-    po = LumberObject(pm.sceneName())
+    po = PathObject(pm.sceneName())
     clean_tt(po.task)
     pass
 
@@ -400,7 +400,7 @@ def publish():
 
 def launch_():
     scene_name = get_scene_name()
-    scene = LumberObject(scene_name)
+    scene = PathObject(scene_name)
     location = '%s/*' % scene.split_after('shot')
     project_management = CONFIG['account_info']['project_management']
     users = CONFIG['project_management'][project_management]['users']

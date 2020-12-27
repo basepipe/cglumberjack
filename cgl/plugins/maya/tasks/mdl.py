@@ -8,7 +8,7 @@ class Task(SmartTask):
 
     def __init__(self, path_object=None):
         if not path_object:
-            from cgl.plugins.maya.lumbermill import scene_object
+            from cgl.plugins.maya.alchemy import scene_object
             self.path_object = scene_object()
 
     def build(self):
