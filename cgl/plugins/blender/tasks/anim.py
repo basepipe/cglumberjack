@@ -24,6 +24,7 @@ class Task(SmartTask):
 
         rename_collection(scene_object())
         create_shot_mask_info()
+        reset_lock_cursor()
 
     def _import(self, filepath):
         from cgl.plugins.blender.alchemy import import_file, scene_object
