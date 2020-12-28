@@ -42,8 +42,14 @@ def get_keyframes(obj, ends=False):
                 if x not in keyframes:
                     keyframes.append((math.ceil(x)))
 
-    if ends :
-        return (keyframes[0], keyframes[-1])
+    if ends:
+        if len(keyframes)>1:
+
+            return (keyframes[0], keyframes[-1])
+        else:
+
+            print('no keyframes on camera')
+            return(1,200)
     else:
 
         return keyframes
@@ -71,3 +77,13 @@ def make_proxy(path_object,obj):
     objects.active =  obj
     bpy.ops.object.proxy_make(object=rig_name)
     return bpy.data.objects[rig_name]
+
+
+def reset_lock_cursor():
+    import bpy
+
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            for space in area.spaces:
+                if space.type == 'VIEW_3D':
+                    space.lock_cursor = False

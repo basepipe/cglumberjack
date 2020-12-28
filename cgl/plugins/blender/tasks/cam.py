@@ -37,7 +37,10 @@ class Task(SmartTask):
         #Set Offset for the camera
         move_keyframes(camera,int(camDic[camFile.shot]['frame_start'])*-1)
         move_keyframes(camera,start_frame)
-        start,end = get_keyframes(camera,ends=True)
+        camera_keyframes = get_keyframes(camera,ends=True)
+        start,end = camera_keyframes
+
+
         set_framerange(start,end)
         
         set_shot_from_camera(cam = camera)
