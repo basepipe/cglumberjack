@@ -17,7 +17,7 @@ class Task(SmartTask):
         if not path_object:
             self.path_object = scene_object()
 
-    def _import(self, filepath):
+    def _import(self, filepath, import_rigs = True):
         """
         imports a bundle file
         :param filepath:
@@ -25,7 +25,7 @@ class Task(SmartTask):
         :return:
         """
         from cgl.plugins.blender.alchemy import  set_relative_paths
-        main_import(filepath)
+        main_import(filepath,import_rigs)
         set_relative_paths(True)
 
     def build(self):
@@ -34,7 +34,7 @@ class Task(SmartTask):
         set_collection_name()
 
 
-    def import_latest(self, seq=None, shot= None):
+    def import_latest(self, seq=None, shot= None, import_rigs = True):
         """
         imports the latest layout for a shot.
         :param seq:
@@ -55,7 +55,7 @@ class Task(SmartTask):
             if '.msd' in each:
                 layout_path = each
         if layout_path:
-            self._import(filepath=layout_path)
+            self._import(filepath=layout_path, import_rigs= import_rigs)
         else:
             print('Could not glob layout path at {}'.format(layout_obj.path))
 
@@ -66,7 +66,7 @@ def get_latest(ext='msd'):
     return this_obj
 
 
-def main_import(filepath):
+def main_import(filepath, import_rigs = True):
     """
 
     :param filepath:
@@ -112,12 +112,16 @@ def main_import(filepath):
 
 
         if task == 'rig':
-            print('________IMPORTING RIG_____________')
-            rig = make_proxy(d2, ref)
-            rig_root = layout_data[each]['rig_root']
-            proxy = bpy.data.objects['{}:rig_proxy'.format(ns2)]
-            ref = proxy.pose.bones[rig_root]
-            parent_object(proxy,group)
+            if import_rigs:
+
+                print('________IMPORTING RIG_____________')
+                rig = make_proxy(d2, ref)
+                rig_root = layout_data[each]['rig_root']
+                proxy = bpy.data.objects['{}:rig_proxy'.format(ns2)]
+                ref = proxy.pose.bones[rig_root]
+                parent_object(proxy,group)
+            else:
+                print('________IMPORT Rig set to false_____________')
 
         set_matrix(ref, float_transforms)
 

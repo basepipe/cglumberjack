@@ -7,7 +7,7 @@ class Task(SmartTask):
         if not path_object:
             from cgl.plugins.blender.alchemy import scene_object
             self.path_object = scene_object()
-
+            self.path_object.render_path = scene_object().copy(context = 'render', ext = 'abc')
     def build(self):
         """
         1. Read layout for file
@@ -26,6 +26,8 @@ class Task(SmartTask):
         create_shot_mask_info()
 
     def _import(self, filepath):
+        from cgl.plugins.blender.alchemy import import_file, scene_object
+        import_file(self.path_object.render_path)
         pass
 
 def get_keyframes(obj, ends=False):
@@ -77,6 +79,50 @@ def make_proxy(path_object,obj):
     objects.active =  obj
     bpy.ops.object.proxy_make(object=rig_name)
     return bpy.data.objects[rig_name]
+
+def get_rigs_in_scene(scene=None):
+    """
+    takes in view layer and returns the rigs in that scene
+    :param scene:
+    :type scene: view_layer
+    :return:
+    :rtype:
+    """
+    import bpy
+    if scene == None:
+        scene = bpy.context
+
+    scene_objects = scene.view_layer.objects
+
+    rigs = []
+    for object in scene_objects:
+        if ':rig' in object.name and object.type == 'EMPTY':
+            rigs.append(object)
+
+    return rigs
+
+def export_rigs():
+    """
+    exports all the rigs in the scene
+    :return:
+    :rtype:
+    """
+    from cgl.plugins.blender.alchemy import export_selected, scene_object, selection
+
+    selection(clear=True)
+
+    for obj in get_rigs_in_scene():
+        selection(object=obj)
+
+    render_path = scene_object().copy(context = 'render', ext = 'abc')
+
+    export_selected(render_path.path_root)
+    print(render_path.path_root)
+    print(get_rigs_in_scene())
+
+
+
+
 
 
 def reset_lock_cursor():

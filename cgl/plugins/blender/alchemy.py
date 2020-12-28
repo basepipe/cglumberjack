@@ -457,6 +457,9 @@ def export_selected(to_path):
     elif to_path.endswith('blend'):
         bpy.ops.export_scene.blend(filepath=to_path, use_selection=True)
 
+    elif to_path.endswith('abc'):
+        bpy.ops.wm.alembic_export(filepath = to_path,selected = True)
+
 def save_file_as(filepath):
     """
     save current file as
@@ -643,17 +646,15 @@ def version_up(vtype='minor'):
     create_file_dirs(new_version.copy(context = 'render').path_root)
     return save_file_as(new_version.path_root)
 
-def select(selection, d=True):
-    """
-    allows us to select something in the scene.
-    :param selection: node to select (or string)
-    :param d: if true - deselect everything
-    :return:
-    """
-    if isinstance(nodes, list):
-        print('{0} is a list'.format(selection))
-    elif isinstance(nodes, string):
-        bpy.data.objects[object_name].select_set(True)
+def selection(object=None, clear=False):
+    if clear:
+
+        for ob in bpy.data.objects:
+            ob.select_set(False)
+
+    if object:
+        object.select_set(True)
+
 
 def unlink_asset(selection=None):
     if selection == None:
