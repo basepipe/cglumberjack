@@ -122,6 +122,21 @@ def export_rigs():
     print(get_rigs_in_scene())
 
 
+def renanme_action():
+    objects = bpy.context.selected_objects
+    # selected_object = bpy.context.object
+    for selected_object in objects:
+        action = selected_object.animation_data.action
+        if action:
+
+            currentScene = lm.scene_object()
+
+            newActionName = '_'.join([currentScene.filename_base, selected_object.name, currentScene.version])
+            action.name = newActionName
+            print(newActionName)
+
+        else:
+            lm.confirm_prompt(message='No action linked to object')
 
 
 

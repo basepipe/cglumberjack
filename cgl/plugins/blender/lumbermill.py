@@ -200,7 +200,7 @@ class LumberObject(PathObject):
         self.proxy_resolution = '1920x1080'
         self.path_template = []
         self.version_template = []
-
+        self.name = None
         def process_string(self, path_object):
             path_object = path_object.replace('\\', '/')
             self.get_company(path_object)

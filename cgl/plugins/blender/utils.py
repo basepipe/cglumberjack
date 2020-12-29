@@ -1070,8 +1070,13 @@ def get_framerange():
 
     return(start,end)
 
+def scene_elem(elem):
+    import bpy
+    return eval('bpy.data.{}'.format(elem))
 
-
+def get_object(name):
+    import bpy
+    return bpy.data.objects[name]
 
 def set_framerange(start,end):
     import bpy

@@ -11,8 +11,10 @@ class Task(SmartTask):
             self.path_object = scene_object()
 
     def build(self):
+        from cgl.plugins.blender.alchemy import selection
+        from cgl.plugins.blender.utils import create_shot_mask_info
         task = 'mdl'
-        clear_selection()
+        selection(clear=True)
 
         objects = bpy.data.objects
 
@@ -26,7 +28,7 @@ class Task(SmartTask):
 
         #bpy.ops.object.fix_collection_name()
         bpy.ops.object.correct_file_name()
-        utils.burn_in_image()
+        utils.create_shot_mask_info()
         defaultShotSettings()
 
 class CreateMaterialsGroups(bpy.types.Operator):
@@ -137,3 +139,21 @@ def create_material_groups(do_high=True, do_mdl=True):
                             regex='^([a-z]{3,}, *)*[a-z]{3,}', name_example='ex: wood, metal',
                             command='bpy.ops.object.create_material_groups()')
 
+def get_mdl_objects(group= 'high'):
+    """
+    returns a list of tuples with the objects and it's material group
+    :param group:
+    :type group:
+    :return:
+    :rtype:
+    """
+    from cgl.plugins.blender import  utils
+    from importlib import  reload
+    reload(utils)
+    mdl_objects = []
+    geo_group = utils.get_object(group)
+    for mtl in geo_group.children:
+        for obj in mtl.children:
+            mdl_objects.append((obj, mtl.name))
+
+    return mdl_objects
