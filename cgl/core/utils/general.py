@@ -340,11 +340,10 @@ def launch_lumber_watch(new_window=False):
         print('Lumber Watch Path does not exist: %s' % (lumber_watch_path))
 
 
-def cgl_execute(path_object, command, return_output=False, print_output=True, methodology='local', verbose=True,
+def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=True,
                 command_name='cgl_execute', do_system=False, new_window=False, **kwargs):
     """
     Wrapper for any command line tool.   Should be used in place of various command line execution tools.
-    :param path_object:
     :param command:
     :param return_output:
     :param print_output:
@@ -356,7 +355,7 @@ def cgl_execute(path_object, command, return_output=False, print_output=True, me
     :param kwargs:
     :return:
     """
-    CONFIG = app_config(path_object)
+    CONFIG = ProjectConfig().project_config  # TODO - ideally we could just get this in some easy way or another.
     run_dict = {'command': command,
                 'command_name': command_name,
                 'start_time': time.time(),

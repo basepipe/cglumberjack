@@ -223,6 +223,14 @@ class ProjectConfig(object):
         """
         return self.app_font_folder
 
+    def get_cgl_resources_path(self):
+        """
+        get the resources path
+        :return: path string
+        """
+        return os.path.join(self.project_config['paths']['code_root'], 'resources')
+
+
 
 def check_for_latest_master(path_object=None):
     # TODO - need to look at this and make it require cfg if possible.

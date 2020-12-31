@@ -5,15 +5,20 @@ from cgl.plugins.Qt import QtWidgets
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import load_style_sheet
-from cgl.core.project import get_cgl_tools
 from cgl.apps.pipeline.utils import CGLMenu, get_menu_path, get_button_path
+from cgl.core.config.config import ProjectConfig
 
 
 class Designer(LJDialog):
-    def __init__(self, parent=None, type_=None, menu_path=None, pm_tasks=None):
+    def __init__(self, parent=None, type_=None, menu_path=None, pm_tasks=None, cfg=None, path_object=None):
         LJDialog.__init__(self, parent)
         self.type = type_
-        self.cgl_tools = get_cgl_tools()
+        if cfg:
+            self.cfg = cfg
+        else:
+            print('Designer')
+            self.cfg = ProjectConfig(path_object)
+        self.cgl_tools = self.cfg.cookbook_folder
         self.singular = ''
 
         self.menu_path = menu_path
@@ -102,7 +107,7 @@ class Designer(LJDialog):
         if dialog.button == 'Ok':
             import shutil
             self.menus.removeTab(index)
-            menu_folder = os.path.join(get_cgl_tools(), self.software, self.menu_type_combo.currentText(), menu_name)
+            menu_folder = os.path.join(self.cgl_tools, self.software, self.menu_type_combo.currentText(), menu_name)
             print('Removing folder: {}'.format(menu_folder))
             shutil.rmtree(menu_folder)
 
@@ -215,9 +220,9 @@ class Designer(LJDialog):
         if ' ' in menu_name:
             menu_name = menu_name.replace(' ', '_')
         cgl_file = self.menu_path
-        menu_folder = get_menu_path(self.software, menu_name, menu_file=False, menu_type=self.type)
+        menu_folder = get_menu_path(self.software, menu_name, menu_file=False, menu_type=self.type, cfg=self.cfg)
         new_menu = CGLMenu(parent=self, software=self.software, menu_name=menu_name, menu=[],
-                           menu_path=cgl_file, menu_type=self.type)
+                           menu_path=cgl_file, menu_type=self.type, cfg=self.cfg)
         index = self.menus.addTab(new_menu, menu_name)
         self.menus.setCurrentIndex(index)
         if not os.path.exists(menu_folder):
@@ -246,8 +251,9 @@ class Designer(LJDialog):
                     for i in range(len(menu_dict[self.software])+1):
                         for menu in menu_dict[self.software]:
                             if i == menu_dict[self.software][menu]['order']:
-                                buttons = CGLMenu(parent=self, software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
-                                                  menu_path=self.menu_path, menu_type=self.type)
+                                buttons = CGLMenu(parent=self, software=self.software, menu_name=menu,
+                                                  menu=menu_dict[self.software][menu],
+                                                  menu_path=self.menu_path, menu_type=self.type, cfg=self.cfg)
                                 buttons.menu_button_save_clicked.connect(self.on_save_clicked)
                                 self.menus.addTab(buttons, menu)
                 elif isinstance(menu_dict[self.software], list):
@@ -256,7 +262,7 @@ class Designer(LJDialog):
                         # buttons = menu['buttons']
                         buttons = CGLMenu(parent=self, software=self.software, menu_name=menu_name,
                                           menu=menu,
-                                          menu_path=self.menu_path, menu_type=self.type)
+                                          menu_path=self.menu_path, menu_type=self.type, cfg=self.cfg)
                         # buttons.menu_button_save_clicked.connect(self.on_save_clicked)
                         self.menus.addTab(buttons, menu_name)
 

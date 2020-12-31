@@ -1272,7 +1272,7 @@ class CGLumberjack(LJMainWindow):
         def_schema = self.cfg.project_config['project_management'][pm]['api']['default_schema']
         schema = self.cfg.project_config['project_management'][pm]['tasks'][def_schema]
         from cgl.apps.pipeline.designer import Designer
-        dialog = Designer(self, pm_tasks=schema)
+        dialog = Designer(self, pm_tasks=schema, cfg=self.cfg)
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)
         dialog.exec_()
@@ -1281,8 +1281,9 @@ class CGLumberjack(LJMainWindow):
         self.on_designer_clicked()
 
     def closeEvent(self, event):
+        print('closing')
         # set the current path so that it works on the load better.
-        self.cfg.edit_user_config(['current_path'], self.centralWidget().path_widget.text)
+        # self.cfg.edit_user_config(['current_path'], self.centralWidget().path_widget.text)
         #user_config = UserConfig(current_path=self.centralWidget().path_widget.text)
         #user_config.update_all()
 
