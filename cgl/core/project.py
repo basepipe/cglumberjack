@@ -1,41 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
-from cgl.core.config import app_config, UserConfig
 from cgl.core.path import PathObject, CreateProductionData
-
-CONFIG = app_config()
-PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
-ROOT = CONFIG['paths']['root']
-
-
-def get_projects(company):
-    """
-    returns projects for "company"
-    :param company:
-    :return:
-    """
-    d = {'root': ROOT,
-         'company': company,
-         'project': '*',
-         'context': 'source'}
-    path_object = PathObject(d)
-    return path_object.glob_project_element('project')
-
-
-def get_companies():
-    """
-    returns all companies the system is aware of.
-    :return:
-    """
-    d = {'root': ROOT,
-         'company': '*'
-         }
-    path_object = PathObject(d)
-    companies = path_object.glob_project_element('company')
-    if '_config' in companies:
-        companies.remove('_config')
-    return companies
+from cgl.core.config.config import ProjectConfig
 
 
 def get_task_info(path_object, force=False):
@@ -45,12 +12,13 @@ def get_task_info(path_object, force=False):
     :param force:
     :return:
     """
-    logging.debug(UserConfig().d)
+    cfg = ProjectConfig(path_object)
+    logging.debug(cfg.user_config)
     logging.debug(path_object.company, path_object.project)
     logging.debug(path_object.path_root)
-    if path_object.company in UserConfig().d['my_tasks'].keys():
-        if path_object.project in UserConfig().d['my_tasks'].keys():
-            all_tasks = UserConfig().d['my_tasks'][path_object.company][path_object.project]
+    if path_object.company in cfg.user_config['my_tasks'].keys():
+        if path_object.project in cfg.user_config['my_tasks'].keys():
+            all_tasks = cfg.user_config['my_tasks'][path_object.company][path_object.project]
         else:
             return
     else:

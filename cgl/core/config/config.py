@@ -1,0 +1,239 @@
+import os
+from cgl.core.utils.read_write import load_json, save_json
+
+
+class ProjectConfig(object):
+    user_config_file = os.getenv('cgl_user_globals')
+    user_config = {}
+    project_config = {}
+    shaders_config = {}
+    globals_root = None
+    master_globals_root = None
+    default_files_folder = None
+    hdri_folder = None
+    cookbook_folder = None
+    css_folder = None
+    root_folder = None
+    hdri_settings_file = None
+    project_config_file = None
+    shaders_config_file = None
+    images_folder = None
+
+    def __init__(self, path_object=None, company='master', project='master'):
+        if not path_object:
+            self.company = company
+            self.project = project
+        if path_object:
+            self.company = path_object.company
+            self.project = path_object.project
+        self.get_user_config()
+        self.set_globals_path()
+        self.get_project_config()
+        self.images_folder = os.path.join(self.project_config['paths']['code_root'], 'resources', 'images')
+        self.app_font_folder = os.path.join(self.project_config['paths']['code_root'], 'resources', 'fonts')
+
+    def set_globals_path(self):
+        try:
+            self.root_folder = self.user_config['root'][self.company]
+        except KeyError:
+            self.root_folder = self.user_config['root']['master']
+
+        self.master_globals_root = os.path.join(self.root_folder, 'master', 'config', 'master')
+        self.globals_root = os.path.join(self.root_folder, self.company, 'config', self.project)
+        if not os.path.exists(self.globals_root):
+            self.globals_root = self.master_globals_root
+        self.css_folder = os.path.join(self.globals_root, 'css')
+        self.default_files_folder = os.path.join(self.globals_root, 'default_files')
+        self.hdri_folder = os.path.join(self.globals_root, 'hdri')
+        self.cookbook_folder = os.path.join(self.globals_root, 'cookbook')
+        self.project_config_file = os.path.join(self.globals_root, 'globals.json')
+        self.shaders_config_file = os.path.join(self.globals_root, 'shaders.json')
+
+    def print_variables(self):
+        for elem in self.__dict__:
+            print('{}: {}'.format(elem, self.__dict__[elem]))
+
+    def get_user_globals(self):
+        # do they have an env variable
+        try:
+
+            if os.path.exists(self.user_config_file):
+                self.user_config = load_json(self.user_config_file)
+        except TypeError:
+            print('No cgl_user_globals ENV variable found. Assuming location.')
+            if os.path.exists(os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack', 'user_globals.json')):
+                self.user_config = load_json(os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack', 'user_globals.json'))
+            else:
+                print('No Globals Found at %s:' % os.path.join(os.path.expanduser('~\\Documents'), 'cglumberjack',
+                                                               'user_globals.json'))
+
+    def edit_project_config(self, key_list, value):
+        """
+        edits the current globals file given a key list and a value.
+        :param key_list: list of strings representing a possibly nested key
+        :param value:
+        :return:
+        """
+        temp_dict = self.project_config
+        last = key_list[-1]
+        for each in key_list:
+            if each == last:
+                temp_dict[each] = value
+            temp_dict = temp_dict[each]
+        self.save_project_config()
+
+    def edit_user_config(self, key_list, value):
+        """
+
+        :param key_list:
+        :param value:
+        :return:
+        """
+        temp_dict = self.user_config
+        last = key_list[-1]
+        for each in key_list:
+            if each == last:
+                temp_dict[each] = value
+            temp_dict = temp_dict[each]
+        self.save_user_config()
+
+    def edit_shader_config(self, key_list, value):
+        """
+
+        :param key_list:
+        :param value:
+        :return:
+        """
+        temp_dict = self.shaders_config
+        last = key_list[-1]
+        for each in key_list:
+            if each == last:
+                temp_dict[each] = value
+            temp_dict = temp_dict[each]
+        self.save_shader_config()
+
+    def save_project_config(self, project_config_dict=None):
+        if not project_config_dict:
+            project_config_dict = self.project_config
+        save_json(self.project_config_file, project_config_dict)
+
+    def save_user_config(self, user_config_dict=None):
+        if not user_config_dict:
+            user_config_dict = self.user_config
+        save_json(self.user_config_file, user_config_dict)
+
+    def save_shader_config(self, shader_config_dict=None):
+        if not shader_config_dict:
+            shader_config_dict = self.shaders_config
+        save_json(self.shader_config_file, shader_config_dict)
+
+    def get_user_config(self):
+        self.user_config = load_json(self.user_config_file)
+        return self.user_config
+
+    def get_project_config(self):
+        """
+        returns a dictionary for the current project config globals.
+        :return:
+        """
+        self.project_config = load_json(self.project_config_file)
+        return self.project_config
+
+    def get_shaders_config(self):
+        """
+        returns a shader ditionary for use in shading tools.
+        :return:
+        """
+        self.shaders_config = load_json(self.shaders_config_file)
+        return self.shaders_config
+
+    def test_string_against_rules(self, test_string, rule, effected_label=None):
+        """
+        Test for any string to see if it passes any regex "rule" from the global.yaml file.
+        :param test_string: string to be tested against regex
+        :param rule: regex pattern to test against
+        :param effected_label: PySide Label Object to effect color of.
+        :return:
+        """
+        self.project_config()
+        regex = re.compile(r'%s' % self.project_config_dict['paths']['rules'][rule])
+        if re.findall(regex, test_string):
+            if effected_label:
+                effected_label.setStyleSheet("color: rgb(255, 255, 255);")
+            return False
+        else:
+            if effected_label:
+                effected_label.setStyleSheet("color: rgb(255, 50, 50);")
+            return self.project_config_dict['paths']['rules']['%s_example' % rule]
+
+    def update_user_paths(self, current_path):
+        """
+        this will update the list of paths as well as the current path in the user globals
+        """
+        pass
+
+    def update_user_tasks(self, tasks):
+        """
+        updates the tasks section of the user globals.
+        :param tasks:
+        :return:
+        """
+        pass
+
+
+
+
+def app_config(path_object):
+    """
+    convenience function making transition from old "app_config" to the new ProjectConfig() architecture.
+
+    Returns: dict
+
+    """
+    config = ProjectConfig(path_object=path_object)
+    return config.project_config
+
+
+def user_config():
+    return ProjectConfig().user_config
+
+
+def check_for_latest_master(path_object=None):
+    # TODO - probably need something in place to check if git is installed.
+    cfg = ProjectConfig(path_object)
+    code_root = cfg.project_config['paths']['code_root']
+    command = 'git remote show origin'
+    os.chdir(code_root)
+    output = cgl_execute(command, return_output=True, print_output=False)['printout']
+
+    for line in output:
+        if 'pushes to master' in line:
+            if 'up to date' in line:
+                print('cglumberjack code base up to date')
+                return True
+            else:
+                print('cglumberjack code base needs updated')
+                return False
+
+
+def update_master(path_object=None, widget=None):
+    cfg = ProjectConfig(path_object)
+    code_root = cfg.project_config['paths']['code_root']
+    command = 'git pull'
+    os.chdir(code_root)
+    cgl_execute(command)
+    if widget:
+        widget.close()
+
+
+if __name__ == '__main__':
+    project_config = ProjectConfig(project='bob')
+    # these return file paths
+    # print(project_config.globals_file)
+    # print(project_config.shaders_file)
+    # print(project_config.user_globals_file)
+    # # these return dictionaries for common things
+    # print(project_config.user_config)
+    # print(project_config.project_config)
+    # # this will return a dictionary for the shaders.
+    # print(project_config.get_shaders_config())

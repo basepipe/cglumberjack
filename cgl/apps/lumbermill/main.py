@@ -8,8 +8,10 @@ from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
-from cgl.core.utils.general import current_user, check_for_latest_master, update_master, launch_lumber_watch, save_json
-from cgl.core.config import app_config, UserConfig, user_config
+from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master
+from cgl.core.utils.general import current_user, launch_lumber_watch, save_json
+from cgl.core.config.config import app_config, ProjectConfig
+# from cgl.core.config import app_config, UserConfig, user_config
 from cgl.apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
 from cgl.apps.lumbermill.elements.FilesPanel import FilesPanel
 from cgl.ui.widgets.help import ReportBugDialog, RequestFeatureDialog
@@ -23,8 +25,6 @@ except ImportError:
     DO_IOP = False
 
 ICON_WIDTH = 24
-CONFIG = app_config()
-USERCONFIG = UserConfig().d
 
 
 class FunctionRow(QtWidgets.QFrame):
@@ -383,12 +383,16 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None, project_management=None, user_email=None, company=None,
                  path=None, radio_filter=None, show_import=False, show_reference=False, default_project=None,
-                 set_to_publish=False):
+                 set_to_publish=False, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
+        if not cfg:
+            self.cfg = ProjectConfig(company=company, project=default_project)
+        else:
+            self.cfg = cfg
         try:
             font_db = QtGui.QFontDatabase()
-            font_db.addApplicationFont(os.path.join(cglpath.font_path(), 'ARCADECLASSIC.TTF'))
-            font_db.addApplicationFont(os.path.join(cglpath.font_path(), 'ka1.ttf'))
+            font_db.addApplicationFont(os.path.join(cfg.app_font_folder, 'ARCADECLASSIC.TTF'))
+            font_db.addApplicationFont(os.path.join(cfg.app_font_folder, 'ka1.ttf'))
         except AttributeError:
             logging.error('Skipping Loading Fonts - possible Pyside2 issue')
 
@@ -399,8 +403,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.user_email = user_email
         self.company = company
         self.project_management = project_management
-        self.root = CONFIG['paths']['root']  # Company Specific
-        self.user_root = CONFIG['cg_lumberjack_dir']
+        self.root = self.cfg.project_config['paths']['root']  # Company Specific
+        self.user_root = self.cfg.project_config['cg_lumberjack_dir']
         self.context = 'source'
         self.path_object = None
         self.panel = None
@@ -442,6 +446,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                       "project": proj,
                       "scope": scp
                       }
+                print('---------------')
+                print(self.company)
+                print(self.root)
+                print('source')
+                print(proj)
+                print(scp)
+                print(d_)
                 self.path_object = cglpath.PathObject(d_)
             else:
                 self.path_object = cglpath.PathObject(self.root)
@@ -507,6 +518,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.title_label.setText(" {}: {}".format(project, shot))
 
     def update_location(self, data):
+        self.update_cfg()
         self.nav_widget.search_box.setText('')
         try:
             if self.sender().force_clear:
@@ -555,7 +567,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             if go_ahead:
                 self.panel = ProductionPanel(parent=self, path_object=path_object,
                                              search_box=self.nav_widget.search_box,
-                                             my_tasks=True)
+                                             my_tasks=True, cfg=self.cfg)
                 if self.panel:
                     if self.panel.load_tasks():
                         self.update_panel(set_tasks_radio=True)
@@ -581,10 +593,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.load_files_panel(path_object)
         if last == 'project':
             if path_object.project == '*':
-                self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box)
+                self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box, cfg=self.cfg)
             else:
                 self.panel = ProductionPanel(parent=self, path_object=path_object,
-                                             search_box=self.nav_widget.search_box)
+                                             search_box=self.nav_widget.search_box, cfg=self.cfg)
         if last == 'scope':
             if path_object.scope == '*':
                 self.panel = ScopePanel(path_object=path_object)
@@ -593,18 +605,18 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                     self.panel = IoP.IOPanel(path_object=path_object)
             else:
                 self.panel = ProductionPanel(parent=self, path_object=path_object,
-                                             search_box=self.nav_widget.search_box)
+                                             search_box=self.nav_widget.search_box, cfg=self.cfg)
         elif last in shot_attrs:
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(parent=self, path_object=path_object,
-                                             search_box=self.nav_widget.search_box)
+                                             search_box=self.nav_widget.search_box, cfg=self.cfg)
             else:
                 self.panel = TaskPanel(path_object=path_object, element='task')
                 self.panel.add_button.connect(self.add_task)
         elif last in seq_attrs:
             if path_object.shot == '*' or path_object.asset == '*' or path_object.seq == '*' or path_object.type == '*':
                 self.panel = ProductionPanel(parent=self, path_object=path_object,
-                                             search_box=self.nav_widget.search_box)
+                                             search_box=self.nav_widget.search_box, cfg=self.cfg)
         elif last == 'ingest_source':
             if DO_IOP:
                 self.panel = IoP.IOPanel(path_object=path_object)
@@ -615,11 +627,15 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             else:
                 self.load_files_panel(path_object)
         elif last == 'company':
-            self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box, title='Companies')
+            self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box, title='Companies',
+                                      cfg=self.cfg)
         if self.panel:
             self.update_panel()
         self.layout.addWidget(self.progress_bar)
         self.layout.addWidget(self.path_widget)
+
+    def update_cfg(self):
+        self.cfg = ProjectConfig(self.path_object)
 
     def update_panel(self, set_tasks_radio=False):
         self.panel.location_changed.connect(self.update_location)
@@ -663,7 +679,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             sequence_path = self.path_widget.path_line_edit.text()
             sequence = cglpath.Sequence(sequence_path)
             file_seq = sequence.num_sequence.split()[0]
-            command = ('{} -start_number {} {}'.format(CONFIG['paths']['ffplay'], sequence.start_frame, file_seq))
+            command = ('{} -start_number {} {}'.format(self.cfg.project_config['paths']['ffplay'], sequence.start_frame, file_seq))
             os.system(command)
             logging.info('Nothing set for sequences yet')
         else:
@@ -718,16 +734,21 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
 
 class CGLumberjack(LJMainWindow):
-    def __init__(self, show_import=False, user_info=None, start_time=None, previous_path=None, sync_enabled=True):
+    def __init__(self, show_import=False, user_info=None, start_time=None, previous_path=None, sync_enabled=True,
+                 cfg=None):
         LJMainWindow.__init__(self)
 
         if start_time:
             logging.debug('Finished Loading Magic Browser in %s seconds' % (time.time() - start_time))
-        self.user_config = UserConfig().d
+        if cfg:
+            self.cfg = cfg
+        else:
+            self.cfg = ProjectConfig()  # we don't know the company or project at this stage.
+        self.user_config = self.cfg.user_config
 
         self.previous_path = previous_path
         self.filter = 'Everything'
-        self.project_management = CONFIG['account_info']['project_management']
+        self.project_management = self.cfg.project_config['account_info']['project_management']
         self.user_info = ''
         self.user_email = ''
         if user_info:
@@ -882,13 +903,13 @@ class CGLumberjack(LJMainWindow):
         if sync_enabled:
             import cgl.plugins.syncthing.utils as st_utils
             try:
-                if CONFIG['sync']['syncthing']['sync_thing_url']:
+                if self.cfg.user_config['sync']['syncthing']['sync_thing_url']:
 
                     # TODO - check for user config settings to use syncthing.
-                    if "sync_thing_auto_launch" in USERCONFIG.keys():
+                    if "sync_thing_auto_launch" in USERself.cfg.project_config.keys():
                         try:
 
-                            if USERCONFIG["sync_thing_auto_launch"] == 'True':
+                            if self.cfg.user_config["sync_thing_auto_launch"] == 'True':
                                 sync = False
                                 st_utils.kill_syncthing()
                                 if st_utils.syncthing_running():
@@ -914,14 +935,16 @@ class CGLumberjack(LJMainWindow):
                     else:
                         self.load_syncthing = False
                         self.change_sync_icon(syncing=False)
-                        USERCONFIG["sync_thing_auto_launch"] = False
-                        USERCONFIG["sync_thing_machine_type"] = ""
+                        self.cfg.user_config["sync_thing_auto_launch"] = False
+                        self.cfg.user_config["sync_thing_machine_type"] = ""
                         logging.debug('Syncthing Auto Launch setting not set in globals.  Skipping sync operations')
 
             except KeyError:
                 logging.debug('Skipping, Syncthing Not Set up')
 
-    def set_processing_method_text(self, method=USERCONFIG['methodology']):
+    def set_processing_method_text(self, method=None):
+        if not method:
+            method = self.cfg.user_config['methodology']
         self.current_processing_method.setTitle('Processing Method: %s' % method.title())
 
     def change_processing_method(self):
@@ -936,8 +959,7 @@ class CGLumberjack(LJMainWindow):
             method = "Deadline"
         else:
             return
-        USERCONFIG['methodology'] = method.lower()
-        save_json(user_config(), USERCONFIG)
+        self.cfg.edit_user_config(['methodology'], method.lower())
         self.set_processing_method_text(method)
 
     def change_sync_icon(self, syncing=True):
@@ -1010,8 +1032,8 @@ class CGLumberjack(LJMainWindow):
         reads syncthing_auto_launch setting from globals and sets text accordingly.
         :return:
         """
-        if "sync_thing_auto_launch" in USERCONFIG.keys():
-            if USERCONFIG["sync_thing_auto_launch"] == 'True':
+        if "sync_thing_auto_launch" in self.cfg.user_config.keys():
+            if self.cfg.user_config["sync_thing_auto_launch"] == 'True':
                 self.auto_launch_setting.setText('Auto-Launch: On')
             else:
                 self.auto_launch_setting.setText('Auto-Launch: Off')
@@ -1021,14 +1043,14 @@ class CGLumberjack(LJMainWindow):
         Turns Auto-Launch of Lumberwatch/Syncthing on/off by toggling.
         :return:
         """
-        if "sync_thing_auto_launch" in USERCONFIG.keys():
-            if USERCONFIG["sync_thing_auto_launch"] == 'True':
-                USERCONFIG["sync_thing_auto_launch"] = 'False'
-                save_json(user_config(), USERCONFIG)
+        if "sync_thing_auto_launch" in self.cfg.user_config.keys():
+            if self.cfg.user_config["sync_thing_auto_launch"] == 'True':
+                self.cfg.user_config["sync_thing_auto_launch"] = 'False'
+                save_json(user_config(), self.cfg.user_config)
                 logging.debug('Setting Auto Launch of LumberSync Off - Restart to see effects')
             else:
-                USERCONFIG["sync_thing_auto_launch"] = 'True'
-                save_json(user_config(), USERCONFIG)
+                self.cfg.user_config["sync_thing_auto_launch"] = 'True'
+                save_json(user_config(), self.cfg.user_config)
                 logging.debug('Setting Auto Launch of LumberSync On - Restart to see effects')
         self.set_auto_launch_text()
 
@@ -1072,7 +1094,7 @@ class CGLumberjack(LJMainWindow):
     def load_pipeline_designer_menus(self):
         import json
         #
-        menus_json = os.path.join(CONFIG['paths']['cgl_tools'], 'lumbermill', 'menus.cgl')
+        menus_json = os.path.join(self.cfg.project_config['paths']['cgl_tools'], 'lumbermill', 'menus.cgl')
         if os.path.exists(menus_json):
             with open(menus_json, 'r') as stream:
                 self.pd_menus = json.load(stream)['lumbermill']
@@ -1199,7 +1221,7 @@ class CGLumberjack(LJMainWindow):
         dialog.exec_()
 
     def on_proj_man_menu_clicked(self):
-        link = CONFIG['project_management'][self.project_management]['api']['server_url']
+        link = self.cfg.project_config['project_management'][self.project_management]['api']['server_url']
         cglpath.start_url(link)
 
     @staticmethod
@@ -1208,8 +1230,8 @@ class CGLumberjack(LJMainWindow):
 
     @staticmethod
     def open_company_globals():
-        logging.debug(os.path.dirname(CONFIG['paths']['globals']))
-        cglpath.start(os.path.dirname(CONFIG['paths']['globals']))
+        logging.debug(os.path.dirname(self.cfg.project_config['paths']['globals']))
+        cglpath.start(os.path.dirname(self.cfg.project_config['paths']['globals']))
 
     @staticmethod
     def open_user_globals():
@@ -1218,18 +1240,18 @@ class CGLumberjack(LJMainWindow):
 
     @staticmethod
     def open_default_files():
-        location = os.path.join(CONFIG['paths']['resources'], 'default_files')
+        location = os.path.join(self.cfg.project_config['paths']['resources'], 'default_files')
         logging.debug(location)
         cglpath.start(location)
 
     def load_user_config(self):
-        user_config = UserConfig()
+        user_config = self.cfg.user_config
         if 'd' in user_config.__dict__:
             config = user_config.d
             self.user_name = str(config['user_info']['local'])
             self.user_email = str(config['user_info'][self.project_management]['login'])
             self.company = str(config['company'])
-            self.previous_path = '%s%s/source/%s' % (CONFIG['paths']['root'], self.company, self.project)
+            self.previous_path = '%s%s/source/%s' % (self.cfg.project_config['paths']['root'], self.company, self.project)
             if self.user_name in self.previous_path:
                 self.filter = 'My Assignments'
             elif 'publish' in self.previous_path:
@@ -1246,9 +1268,9 @@ class CGLumberjack(LJMainWindow):
         logging.debug('settings clicked')
 
     def on_designer_clicked(self):
-        pm = CONFIG['account_info']['project_management']
-        def_schema = CONFIG['project_management'][pm]['api']['default_schema']
-        schema = CONFIG['project_management'][pm]['tasks'][def_schema]
+        pm = self.cfg.project_config['account_info']['project_management']
+        def_schema = self.cfg.project_config['project_management'][pm]['api']['default_schema']
+        schema = self.cfg.project_config['project_management'][pm]['tasks'][def_schema]
         from cgl.apps.pipeline.designer import Designer
         dialog = Designer(self, pm_tasks=schema)
         dialog.setMinimumWidth(1200)
@@ -1260,6 +1282,7 @@ class CGLumberjack(LJMainWindow):
 
     def closeEvent(self, event):
         # set the current path so that it works on the load better.
+        self.cfg.edit_user_config(['current_path'], self.centralWidget().path_widget.text)
         user_config = UserConfig(current_path=self.centralWidget().path_widget.text)
         user_config.update_all()
 
@@ -1272,10 +1295,11 @@ def sleeper():
 
 if __name__ == "__main__":
     import sys
-    project_management = CONFIG['account_info']['project_management']
-    users = CONFIG['project_management'][project_management]['users']
+    cfg_ = ProjectConfig()
+    project_management = cfg_.project_config['account_info']['project_management']
+    users = cfg_.project_config['project_management'][project_management]['users']
     app = QtWidgets.QApplication(sys.argv)
-    main_window = CGLumberjack(user_info=users[current_user()])
+    main_window = CGLumberjack(user_info=users[current_user()], cfg=cfg_)
     main_window.setWindowTitle('CG Lumberjack: Nuke')
     main_window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
     main_window.show()

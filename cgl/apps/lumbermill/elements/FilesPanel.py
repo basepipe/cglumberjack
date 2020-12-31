@@ -2,7 +2,6 @@ import os
 import logging
 import glob
 from cgl.plugins.Qt import QtCore, QtWidgets
-from cgl.core.config import app_config
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.utils.general import current_user, cgl_copy, clean_file_list
 from cgl.ui.widgets.progress_gif import process_method
@@ -11,10 +10,6 @@ from cgl.core.path import replace_illegal_filename_characters, show_in_folder
 from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 from cgl.ui.widgets.containers.model import FilesModel
 from cgl.apps.lumbermill.elements.panels import clear_layout
-
-# TODO - this appears to be the main offender when it comes to calling the globals through app_config()
-
-CONFIG = app_config()
 
 
 class FilesPanel(QtWidgets.QWidget):
@@ -27,11 +22,23 @@ class FilesPanel(QtWidgets.QWidget):
     new_version_signal = QtCore.Signal()
     review_signal = QtCore.Signal()
     publish_signal = QtCore.Signal()
+    cfg = None
+    schema = None
+    user_info = None
+    proj_man_tasks = None
+    proj_man_tasks_short_to_long = None
+    project_management = None
+    path_object = None
 
     def __init__(self, parent=None, path_object=None, user_email='', machine_user=None, show_import=False,
-                 show_reference=False, set_to_publish=False):
+                 show_reference=False, set_to_publish=False, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
+        from cgl.core.config.config import ProjectConfig
+        if cfg:
+            self.cfg = cfg
+        else:
+            self.cfg = ProjectConfig(path_object)
         self.set_to_publish = set_to_publish
         self.work_files = []
         self.in_current_folder = False
@@ -44,13 +51,7 @@ class FilesPanel(QtWidgets.QWidget):
         self.show_import = show_import
         self.show_reference = show_reference
         self.path_object = path_object
-        self.project_management = CONFIG['account_info']['project_management']
-        self.schema = CONFIG['project_management'][self.project_management]['api']['default_schema']
-        schema = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
-        self.user_info = CONFIG['project_management'][self.project_management]['users'][current_user()]
-        self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
-        self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
-
+        self.set_config_data()
         self.current_location = path_object.data
         self.panel = QtWidgets.QVBoxLayout(self)
         self.tasks = QtWidgets.QHBoxLayout()
@@ -61,13 +62,20 @@ class FilesPanel(QtWidgets.QWidget):
             self.user = machine_user
         else:
             self.user = current_user()
-        self.project_management = CONFIG['account_info']['project_management']
         self.on_task_selected(self.path_object)
         self.panel.addLayout(self.tasks)
         self.panel.addStretch(1)
 
         self.force_clear = False
         self.auto_publish_tasks = ['plate', 'element']
+
+    def set_config_data(self):
+        self.project_management = self.cfg.project_config['account_info']['project_management']
+        self.schema = self.cfg.project_config['project_management'][self.project_management]['api']['default_schema']
+        schema = self.cfg.project_config['project_management'][self.project_management]['tasks'][self.schema]
+        self.user_info = self.cfg.project_config['project_management'][self.project_management]['users'][current_user()]
+        self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
+        self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
 
     def on_task_selected(self, data):
         try:
@@ -100,7 +108,8 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget = TaskWidget(parent=self,
                                      title=title,
                                      path_object=current, show_import=self.show_import,
-                                     show_reference=self.show_reference)
+                                     show_reference=self.show_reference,
+                                     cfg=self.cfg)
             task_widget.task = self.task
             self.render_files_widget = task_widget.files_area.export_files_table
             task_widget.files_area.export_files_table.hide()

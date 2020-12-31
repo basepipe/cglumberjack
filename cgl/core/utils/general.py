@@ -9,8 +9,8 @@ import time
 import logging
 import re
 import xmltodict
-from cgl.core.config import app_config, update_globals
-CONFIG = app_config()
+from cgl.core.config.config import ProjectConfig, app_config
+# from cgl.core.config import app_config, update_globals
 
 
 def pretty(obj):
@@ -63,35 +63,18 @@ def current_user():
     return getpass.getuser().lower()
 
 
-def test_string_against_rules(test_string, rule, effected_label=None):
-    """
-    Test for any string to see if it passes any regex "rule" from the global.yaml file.
-    :param test_string: string to be tested against regex
-    :param rule: regex pattern to test against
-    :param effected_label: PySide Label Object to effect color of.
-    :return:
-    """
-    regex = re.compile(r'%s' % CONFIG['paths']['rules'][rule])
-    if re.findall(regex, test_string):
-        if effected_label:
-            effected_label.setStyleSheet("color: rgb(255, 255, 255);")
-        return False
-    else:
-        if effected_label:
-            effected_label.setStyleSheet("color: rgb(255, 50, 50);")
-        return CONFIG['paths']['rules']['%s_example' % rule]
-
-
-def clean_file_list(file_list):
+def clean_file_list(file_list, path_object, cfg=None):
     """
     removes items we don't want to display in the GUI based off what's listed in the globals.
     :param file_list:
     :return:
     """
-    if 'ignore' in app_config()['rules'].keys():
-        ignore_matches = app_config()['rules']['ignore']['matches']
-        ignore_contains = app_config()['rules']['ignore']['contains']
-        ignore_endswith = app_config()['rules']['ignore']['endswith']
+    if not cfg:
+        cfg = ProjectConfig(path_object)
+    if 'ignore' in cfg.project_config['rules'].keys():
+        ignore_matches = cfg.project_config['rules']['ignore']['matches']
+        ignore_contains = cfg.project_config['rules']['ignore']['contains']
+        ignore_endswith = cfg.project_config['rules']['ignore']['endswith']
     else:
         update_globals()
         print('Found Missing Globals and updated them.  Try Launching again')
@@ -356,8 +339,23 @@ def launch_lumber_watch(new_window=False):
         print('Lumber Watch Path does not exist: %s' % (lumber_watch_path))
 
 
-def cgl_execute(command, return_output=False, print_output=True, methodology='local', verbose=True,
+def cgl_execute(path_object, command, return_output=False, print_output=True, methodology='local', verbose=True,
                 command_name='cgl_execute', do_system=False, new_window=False, **kwargs):
+    """
+    Wrapper for any command line tool.   Should be used in place of various command line execution tools.
+    :param path_object:
+    :param command:
+    :param return_output:
+    :param print_output:
+    :param methodology:
+    :param verbose:
+    :param command_name:
+    :param do_system:
+    :param new_window:
+    :param kwargs:
+    :return:
+    """
+    CONFIG = app_config(path_object)
     run_dict = {'command': command,
                 'command_name': command_name,
                 'start_time': time.time(),
@@ -423,32 +421,6 @@ def cgl_execute(command, return_output=False, print_output=True, methodology='lo
         return run_dict
 
 
-def check_for_latest_master():
-    # TODO - probably need something in place to check if git is installed.
-    code_root = CONFIG['paths']['code_root']
-    command = 'git remote show origin'
-    os.chdir(code_root)
-    output = cgl_execute(command, return_output=True, print_output=False)['printout']
-
-    for line in output:
-        if 'pushes to master' in line:
-            if 'up to date' in line:
-                print('cglumberjack code base up to date')
-                return True
-            else:
-                print('cglumberjack code base needs updated')
-                return False
-
-
-def update_master(widget=None):
-    code_root = CONFIG['paths']['code_root']
-    command = 'git pull'
-    os.chdir(code_root)
-    cgl_execute(command)
-    if widget:
-        widget.close()
-
-
 def get_end_time(start_time):
     return time.time() - start_time
 
@@ -457,82 +429,10 @@ def get_job_id():
     return str(time.time()).replace('.', '')
 
 
-def write_to_cgl_data(process_info):
-    job_id = None
-    if 'job_id' in process_info.keys():
-        if process_info['job_id']:
-            job_id = process_info['job_id']
-        else:
-            process_info['job_id'] = get_job_id()
-    user = current_user()
-    cgl_data = os.path.join(os.path.dirname(CONFIG['paths']['globals']), 'cgl_data.json')
-    if os.path.exists(cgl_data):
-        data = load_json(cgl_data)
-    else:
-        data = {}
-    if user not in data.keys():
-        data[user] = {}
-    if job_id not in data[user].keys():
-        data[user][process_info['job_id']] = process_info
-    else:
-        print('%s already exists in %s dict' % (process_info['job_id'], user))
-        return
-    save_json(cgl_data, data)
 
 
-def has_approved_frame_padding(filename):
-    hashes = re.compile("#+")
-    m = re.search(hashes, filename)
-    if m:
-        this_padding = int(len(m.group()))
-        studio_padding = int(CONFIG['default']['padding'])
-        if this_padding == studio_padding:
-            return 0
-        else:
-            return [this_padding, studio_padding]
 
 
-def edit_cgl_data(job_id, key, value=None, user=None):
-    if not job_id:
-        logging.info('No Job ID Defined')
-        click.echo('No Job ID Defined')
-        return
-    if not key:
-        logging.info('No Key Defined')
-        click.echo('No Key Defined')
-    if not value:
-        value = time.time()
-    if not user:
-        user = current_user()
-    cgl_data = os.path.join(os.path.dirname(CONFIG['paths']['globals']), 'cgl_data.json')
-    if os.path.exists(cgl_data):
-        data = load_json(cgl_data)
-        print(user, job_id, key, value)
-        data[user][job_id][key] = value
-        save_json(cgl_data, data)
-        print('saved it probably')
-    else:
-        logging.info('No cgl_data.json found! Aborting')
-        click.echo('No cgl_data.json found! Aborting')
-        return
-
-
-@click.command()
-@click.option('--edit_cgl', '-e', default=False, prompt='edit cgl data file for a user, job_id, and key/value pair')
-@click.option('--user', '-u', default=current_user(), prompt='File Sequence Path (file.####.ext)',
-              help='Path to the Input File.  Can be Image, Image Sequence, Movie')
-@click.option('--job_id', '-j', default=None,
-              help='job_id object to edit')
-@click.option('--key', '-k', help='key to edit')
-@click.option('--value', '-v', help='value for the key')
-def main(edit_cgl, user, job_id, key, value):
-    if edit_cgl:
-        edit_cgl_data(user, job_id, key, value)
-
-
-if __name__ == '__main__':
-    main()
-    # check_for_latest_master()
 
 
 

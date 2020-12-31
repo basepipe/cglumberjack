@@ -6,11 +6,8 @@ from cgl.ui.util import drop_handler, define_palettes
 from cgl.ui.widgets.containers.table import LJTableWidget
 from cgl.ui.widgets.containers.model import ListItemModel, FilesModel
 from cgl.ui.widgets.containers.menu import LJMenu
-from cgl.core.config import app_config
 from cgl.core.project import get_task_info
-
-CONFIG = app_config()
-PROJECT_MANAGEMENT = CONFIG['account_info']['project_management']
+from cgl.core.config.config import ProjectConfig
 
 
 class LJButton(QtWidgets.QPushButton):
@@ -202,8 +199,9 @@ class FilesWidget(QtWidgets.QFrame):
     copy_selected_version = QtCore.Signal()
     create_edit_clicked = QtCore.Signal()
 
-    def __init__(self, parent, show_import=False, show_reference=False):
+    def __init__(self, parent, show_import=False, show_reference=False, cfg=None):
         QtWidgets.QFrame.__init__(self, parent)
+        self.cfg = cfg
         self.show_import = show_import
         self.show_reference = show_reference
         layout = QtWidgets.QVBoxLayout(self)
@@ -215,13 +213,13 @@ class FilesWidget(QtWidgets.QFrame):
         layout.addLayout(tool_button_layout)
 
         # The Files Area
-        self.work_files_table = FileTableWidget(self, hide_header=False)
+        self.work_files_table = FileTableWidget(self, hide_header=False, cfg=self.cfg)
         self.work_files_table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
         # self.work_files_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.work_files_table.set_draggable(True)
         self.work_files_table.title = 'work_files'
         self.work_files_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.export_files_table = FileTableWidget(self, hide_header=False)
+        self.export_files_table = FileTableWidget(self, hide_header=False, cfg=self.cfg)
         self.export_files_table.horizontalHeader().setProperty('class', 'output')
         self.export_files_table.horizontalHeader().setDefaultAlignment(QtCore.Qt.AlignLeft)
         self.export_files_table.set_draggable(True)
@@ -353,10 +351,15 @@ class TaskWidget(QtWidgets.QWidget):
     copy_latest_version = QtCore.Signal()
     copy_selected_version = QtCore.Signal()
 
-    def __init__(self, parent, title, filter_string=None, path_object=None, show_import=False, show_reference=False):
+    def __init__(self, parent, title, filter_string=None, path_object=None, show_import=False, show_reference=False,
+                 cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         task_row = QtWidgets.QHBoxLayout()
+        if not cfg:
+            self.cfg = ProjectConfig(path_object)
+        else:
+            self.cfg = cfg
         self.show_import = show_import
         self.show_reference = show_reference
         self.path_object = path_object
@@ -412,7 +415,8 @@ class TaskWidget(QtWidgets.QWidget):
 
         self.empty_state = EmptyStateWidget(path_object=self.path_object)
         self.empty_state.hide()
-        self.files_area = FilesWidget(self, show_import=self.show_import, show_reference=self.show_reference)
+        self.files_area = FilesWidget(self, show_import=self.show_import, show_reference=self.show_reference,
+                                      cfg=self.cfg)
 
         v_layout.addLayout(self.title_row)
         v_layout.addLayout(self.info_layout)
@@ -593,6 +597,8 @@ class ProjectWidget(QtWidgets.QWidget):
         self.data_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.installEventFilter(self)
+        config = ProjectConfig(self.path_object)
+        self.project_management = config.project_config['account_info']['project_management']
 
 
         # can i create a right click menu in this stage?
@@ -620,7 +626,7 @@ class ProjectWidget(QtWidgets.QWidget):
             self.menu = LJMenu(self.data_table)
             #self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
             self.menu.create_action("Mark as Favorite", self.mark_as_favorite)
-            self.menu.create_action('Show in %s' % PROJECT_MANAGEMENT, self.show_in_proj)
+            self.menu.create_action('Show in %s' % self.project_management, self.show_in_proj)
             self.menu.create_action('Share Project', self.share_project)
             self.menu.create_action('Calculate Project Size', self.calculate_project_size)
             self.menu.popup(QtGui.QCursor.pos())
@@ -829,9 +835,15 @@ class FileTableWidget(LJTableWidget):
     import_version_from = QtCore.Signal()
     share_download_link = QtCore.Signal()
 
-    def __init__(self, parent, hide_header=True):
+    def __init__(self, parent, hide_header=True, cfg=None):
         LJTableWidget.__init__(self, parent)
+
         self.path_object = parent.parent().path_object
+        if cfg:
+            self.cfg = cfg
+        else:
+            self.cfg = ProjectConfig(self.path_object)
+        self.project_management = self.cfg.project_config['account_info']['project_management']
         self.task = self.path_object.task
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                 QtWidgets.QSizePolicy.MinimumExpanding)
@@ -839,7 +851,7 @@ class FileTableWidget(LJTableWidget):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.item_right_click_menu = LJMenu(self)
         self.item_right_click_menu.create_action("Show In Folder", self.show_in_folder)
-        self.item_right_click_menu.create_action('Show in %s' % PROJECT_MANAGEMENT, self.show_in_proj)
+        self.item_right_click_menu.create_action('Show in %s' % self.project_management, self.show_in_proj)
         self.item_right_click_menu.addSeparator()
         self.item_right_click_menu.create_action("Copy Folder Path", self.copy_folder_path)
         self.item_right_click_menu.create_action("Copy File Path", self.copy_file_path)
@@ -970,7 +982,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
 
     def set_project_management(self, proj_man=None):
         if not proj_man:
-            proj_man = PROJECT_MANAGEMENT
+            proj_man = self.project_management
         index = self.proj_management_combo.findText(proj_man)
         self.proj_management_combo.setCurrentIndex(index)
 

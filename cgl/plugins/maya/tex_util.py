@@ -1,6 +1,6 @@
 import os
 from cgl.core.utils.general import cgl_execute
-from cgl.core.path import get_file_type
+from cgl.core.path import get_file_type, PathObject
 from cgl.core.config import app_config
 
 CONFIG = app_config()
@@ -14,6 +14,7 @@ def tx_make(directory):
     :return:
     """
     directory = (os.path.dirname(directory))
+    path_object = PathObject(directory)
     list_of_files = list()
     file_type = None
     for (dirpath, dirnames, filenames) in os.walk(directory):
@@ -27,5 +28,5 @@ def tx_make(directory):
         if file_type == 'image':
             output = '{}.tx'.format(file)
             command = '%s %s -v -u -oiio -o %s' % (CONFIG['paths']['maketx'], f, output)
-            cgl_execute(command)
+            cgl_execute(path_object, command)
 
