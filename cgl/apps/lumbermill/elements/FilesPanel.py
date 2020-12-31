@@ -38,6 +38,7 @@ class FilesPanel(QtWidgets.QWidget):
         if cfg:
             self.cfg = cfg
         else:
+            print('Files Panel')
             self.cfg = ProjectConfig(path_object)
         self.set_to_publish = set_to_publish
         self.work_files = []
@@ -83,7 +84,7 @@ class FilesPanel(QtWidgets.QWidget):
                 current = data.copy()
             elif isinstance(data, dict):
                 'its a dict, this sucks'
-                current = PathObject(data)
+                current = PathObject(data, self.cfg)
         except IndexError:
             logging.debug('Nothing Selected')
             return
@@ -196,7 +197,7 @@ class FilesPanel(QtWidgets.QWidget):
         self.panel.addStretch(1)
 
     def new_files_dragged(self, files):
-        to_object = PathObject(self.sender().to_object)
+        to_object = PathObject(self.sender().to_object, self.cfg)
         to_folder = to_object.path_root
 
         for f in files:
@@ -221,7 +222,7 @@ class FilesPanel(QtWidgets.QWidget):
         """
         if path_object:
             if isinstance(path_object, dict):
-                path_object = PathObject(path_object)
+                path_object = PathObject(path_object, self.cfg)
             self.current_location = path_object.data
             self.path_object = path_object.copy()
             self.location_changed.emit(self.path_object)
@@ -232,7 +233,7 @@ class FilesPanel(QtWidgets.QWidget):
                                  combo_box_items=['CLIENT'])
             dialog.exec_()
             self.current_location['ingest_source'] = dialog.combo_box.currentText()
-            ingest_source_location = PathObject(self.current_location).path_root
+            ingest_source_location = PathObject(self.current_location, self.cfg).path_root
             if ingest_source_location.endswith(dialog.combo_box.currentText()):
                 CreateProductionData(self.current_location, json=False)
         else:
@@ -321,11 +322,11 @@ class FilesPanel(QtWidgets.QWidget):
     def on_source_selected(self, data):
         reload_render = False
         new_data = []
-        temp_ = PathObject(self.current_location)
+        temp_ = PathObject(self.current_location, self.cfg)
         if temp_.resolution:
             if temp_.render_pass:
                 reload_render = True
-            object_ = PathObject(temp_.split_after('resolution'))
+            object_ = PathObject(temp_.split_after('resolution'), self.cfg)
         else:
             object_ = temp_
         parent = self.sender().parent()
@@ -393,7 +394,7 @@ class FilesPanel(QtWidgets.QWidget):
                 self.current_location['filename'] = ''
                 self.current_location['ext'] = ''
                 self.current_location['context'] = 'render'
-            object_ = PathObject(self.current_location)
+            object_ = PathObject(self.current_location, self.cfg)
             if not self.in_current_folder:
                 current_variable = self.get_next_path_object_variable(object_)
                 self.in_current_folder = True
@@ -404,7 +405,7 @@ class FilesPanel(QtWidgets.QWidget):
                 if object_.filename:
                     object_.set_attr(filename='')
                     object_.set_attr(ext='')
-            new_path_object = PathObject(object_).copy()
+            new_path_object = PathObject(object_, self.cfg).copy()
             new_path_object.set_attr(attr=current_variable, value=data[0][0])
             object_.set_attr(attr=current_variable, value=data[0][0])
             # object_.set_attr(task=self.sender().task)
@@ -435,12 +436,12 @@ class FilesPanel(QtWidgets.QWidget):
         :return:
         """
         from cgl.core.utils.general import load_json
-        from cgl.core.project import get_cgl_tools
         # get the current task
+
         if self.task and 'elem' not in self.task:
-            menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
+            menu_file = os.path.join(self.cfg.cookbook_folder, 'context-menus.cgl')  # TODO - this should probably become part of ProjectConfig()
             if os.path.exists(menu_file):
-                menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())
+                menu_items = load_json(menu_file)
                 if self.task in menu_items['lumbermill']:
                     for item in menu_items['lumbermill'][self.task]:
                         if item != 'order':
@@ -467,7 +468,7 @@ class FilesPanel(QtWidgets.QWidget):
         Action when "Empty Version" is clicked
         :return:
         """
-        current = PathObject(self.version_obj)
+        current = PathObject(self.version_obj, self.cfg)
         next_minor = current.new_minor_version_object()
         next_minor.set_attr(filename='')
         next_minor.set_attr(ext='')
@@ -475,7 +476,7 @@ class FilesPanel(QtWidgets.QWidget):
         self.on_task_selected(next_minor)
 
     def version_up_selected_clicked(self):
-        current = PathObject(self.current_location)
+        current = PathObject(self.current_location, self.cfg)
         # current location needs to have the version in it.
         next_minor = current.new_minor_version_object()
         next_minor.set_attr(filename='')
@@ -638,14 +639,14 @@ class FilesPanel(QtWidgets.QWidget):
 
     # LOAD FUNCTIONS
     def on_file_dragged_to_render(self, data):
-        object_ = PathObject.copy(self.version_obj, context='render')
+        object_ = PathObject.copy(self.version_obj, self.cfg, context='render')
         process_method(self.parent().progress_bar, self.on_file_dragged, args=(object_, data),
                        text='Lumber-hacking Files')
         self.on_task_selected(object_)
         # logging.debug('Files Dragged to Render %s' % data)
 
     def on_file_dragged_to_source(self, data):
-        object_ = PathObject.copy(self.version_obj, context='source')
+        object_ = PathObject.copy(self.version_obj, self.cfg, context='source')
         process_method(self.parent().progress_bar, self.on_file_dragged, args=(object_, data),
                        text='Lumber-hacking Files')
         self.on_task_selected(object_)
@@ -672,9 +673,9 @@ class FilesPanel(QtWidgets.QWidget):
 
     def reload_task_widget(self, widget, path_object=None, populate_versions=True):
         if path_object:
-            path_obj = PathObject(path_object)
+            path_obj = PathObject(path_object, self.cfg)
         else:
-            path_obj = PathObject(self.current_location)
+            path_obj = PathObject(self.current_location, self.cfg)
         path_obj.set_attr(user=widget.users.currentText())
         if populate_versions:
             path_obj.set_attr(version=self.populate_versions_combo(widget, path_obj, widget.label))
@@ -722,13 +723,13 @@ class FilesPanel(QtWidgets.QWidget):
             glob_path = render_path
         files_ = glob.glob('%s/*' % glob_path)
         data_ = self.prep_list_for_table(files_, basename=True, length=1, back=True)
-        model = FilesModel(data_, ['Ready to Review/Publish'])
+        model = FilesModel(data_, ['Ready to Review/Publish'], cfg=self.cfg)
         self.render_files_widget.set_item_model(model)
 
     def load_render_files(self, widget):
         widget.files_area.work_files_table.show()
         render_table = widget.files_area.export_files_table
-        current = PathObject(self.version_obj)
+        current = PathObject(self.version_obj, self.cfg)
         if widget.files_area.work_files_table.user:
             renders = current.copy(context='render', task=widget.task, user=widget.files_area.work_files_table.user,
                                    version=widget.files_area.work_files_table.version,
@@ -746,7 +747,7 @@ class FilesPanel(QtWidgets.QWidget):
                 render_files_label = 'Ready to Review/Publish'
             logging.debug('Published Files for %s' % current.path_root)
             data_ = self.prep_list_for_table(files_, basename=True, length=1)
-            model = FilesModel(data_, [render_files_label])
+            model = FilesModel(data_, [render_files_label], cfg=self.cfg)
             widget.setup(render_table, model)  # this is somehow replacing the other table for source when there are no files
             render_table.show()
             widget.files_area.open_button.show()
@@ -764,8 +765,7 @@ class FilesPanel(QtWidgets.QWidget):
     def clear_layout(self, layout=None):
         clear_layout(self, layout)
 
-    @staticmethod
-    def prep_list_for_table(list_, path_filter=None, basename=False, length=None, back=False):
+    def prep_list_for_table(self, list_, path_filter=None, basename=False, length=None, back=False):
         """
         Allows us to prepare lists for display in LJTables.
         :param list_: list to put into the table.
@@ -781,7 +781,7 @@ class FilesPanel(QtWidgets.QWidget):
 
         output_ = []
         dirname = os.path.dirname(list_[0])
-        files = lj_list_dir(dirname, path_filter=path_filter, basename=basename)
+        files = lj_list_dir(dirname, path_filter=path_filter, basename=basename, cfg=self.cfg)
         for each in files:
             output_.append([each])
         if back:

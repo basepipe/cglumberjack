@@ -9,7 +9,7 @@ import re
 import copy
 import importlib
 from cgl.core.utils.general import split_all, cgl_copy, cgl_execute, clean_file_list
-from cgl.core.config.config import ProjectConfig, user_config
+from cgl.core.config.config import ProjectConfig, user_config, get_root
 
 # these should come from config ideally.
 SEQ_REGEX = re.compile("[0-9]{4,}\\.")
@@ -25,11 +25,12 @@ class PathObject(object):
     Representation of a path on disk
     """
 
-    def __init__(self, path_object=None):
+    def __init__(self, path_object=None, cfg=None):
         if not path_object:
             logging.error('No Path Object supplied')
             return
         self.data = {}
+        self.cfg = cfg
         self.company = None
         self.context = None
         self.project = None
@@ -92,7 +93,7 @@ class PathObject(object):
 
         self.project_config_path = None
         self.company_config_path = None
-        self.config = {}
+        self.project_config = {}
         self.proj_management = None
         self.project_padding = None
         self.processing_method = 'local'
@@ -120,19 +121,21 @@ class PathObject(object):
         set config values based on project config.
         :return:
         """
-        project_config = ProjectConfig(company=company, project=project)
-        self.config = project_config.project_config
-        self.proj_management = self.config['account_info']['project_management']
-        self.project_padding = self.config['default']['padding']
+        if not self.cfg:
+            print('PathObject().get_config_values')
+            self.cfg = ProjectConfig(company=company, project=project)
+        self.project_config = self.cfg.project_config
+        self.proj_management = self.project_config['account_info']['project_management']
+        self.project_padding = self.project_config['default']['padding']
         try:
-            self.processing_method = project_config.user_config['methodology']
+            self.processing_method = self.cfg.user_config['methodology']
         except AttributeError:
-            print('methodology {} not found in user config {}'.format(self.processing_method, project_config.user_config_file))
+            print('methodology {} not found in user config {}'.format(self.processing_method, cfg.user_config_file))
             self.processing_method = 'local'
-        self.ext_map = self.config['ext_map']
-        self.root = self.config['paths']['root'].replace('\\', '/')
-        self.scope_list = self.config['rules']['scope_list']
-        self.context_list = self.config['rules']['context_list']
+        self.ext_map = self.project_config['ext_map']
+        self.root = self.project_config['paths']['root'].replace('\\', '/')
+        self.scope_list = self.project_config['rules']['scope_list']
+        self.context_list = self.project_config['rules']['context_list']
 
     def set_status(self):
         if not self.status:
@@ -163,19 +166,17 @@ class PathObject(object):
 
     def get_attrs_from_config(self):
         attrs = []
-        for key in self.config['rules']['path_variables']:
+        for key in self.project_config['rules']['path_variables']:
             attrs.append(key)
         return attrs
 
     def set_attrs_from_dict(self, path_object):
-        print(path_object)
         self.get_config_values(path_object['company'], path_object['project'])
         if 'company' not in path_object:
             logging.error('No company attr found in %s - invalid dict' % path_object)
             return
         for key in path_object:
             self.data[key] = path_object[key]
-            print(key, path_object[key])
             self.set_attr(attr=key, value=path_object[key])
         if self.version:
             major_version, minor_version = self.version.split('.')
@@ -191,7 +192,7 @@ class PathObject(object):
             if t in self.data:
                 if self.data[t]:
                     current_ = t
-            elif t in self.config['rules']['scope_list']:
+            elif t in self.project_config['rules']['scope_list']:
                 current_ = 'scope'
         return current_
 
@@ -199,13 +200,13 @@ class PathObject(object):
         if self.scope and self.context and self.user:
             self.version_template = []
             version = 'version_%s' % self.task
-            if version in self.config['templates'][self.scope][self.context].keys():
-                version_template = self.config['templates'][self.scope][self.context][version].split('/')
+            if version in self.project_config['templates'][self.scope][self.context].keys():
+                version_template = self.project_config['templates'][self.scope][self.context][version].split('/')
             else:
-                version_template = self.config['templates'][self.scope][self.context]['version'].split('/')
+                version_template = self.project_config['templates'][self.scope][self.context]['version'].split('/')
             self.version_template = self.clean_template(version_template)
         elif self.scope == "IO":
-            version_template = self.config['templates'][self.scope]['source']['version'].split('/')
+            version_template = self.project_config['templates'][self.scope]['source']['version'].split('/')
             self.version_template = self.clean_template(version_template)
         else:
             self.version_template = []
@@ -227,7 +228,7 @@ class PathObject(object):
                 if self.scope == '*':
                     self.path_template = ['company', 'context', 'project', 'scope']
                     return
-                path_template = self.config['templates'][self.scope][self.context]['path'].split('/')
+                path_template = self.project_config['templates'][self.scope][self.context]['path'].split('/')
                 self.path_template = self.clean_template(path_template)
                 return
             else:
@@ -241,14 +242,14 @@ class PathObject(object):
         self.template = self.path_template + self.version_template
 
     def set_scope_list(self):
-        self.scope_list = self.config['rules']['scope_list']
+        self.scope_list = self.project_config['rules']['scope_list']
 
     def set_context_list(self):
-        self.context_list = self.config['rules']['context_list']
-        for key in self.config['templates']:
+        self.context_list = self.project_config['rules']['context_list']
+        for key in self.project_config['templates']:
             if key not in self.context_list:
                 self.context_list.append(key)
-                for scope in self.config['templates'][key]:
+                for scope in self.project_config['templates'][key]:
                     if scope not in self.scope_list:
                         self.scope_list.append(scope)
 
@@ -296,10 +297,10 @@ class PathObject(object):
                     self.template = ['company', 'context', 'project', 'scope']
                     return
                 try:
-                    path_template = self.config['templates'][self.scope][self.context]['path'].split('/')
+                    path_template = self.project_config['templates'][self.scope][self.context]['path'].split('/')
                     if path_template[-1] == '':
                         path_template.pop(-1)
-                    version_template = self.config['templates'][self.scope][self.context]['version'].split('/')
+                    version_template = self.project_config['templates'][self.scope][self.context]['version'].split('/')
                     template = path_template + version_template
                     for each in template:
                         each = each.replace('{', '').replace('}', '')
@@ -424,7 +425,7 @@ class PathObject(object):
         for attr in kwargs:
             value = kwargs[attr]
             try:
-                self.config['rules']['path_variables'][attr]['regex']
+                self.project_config['rules']['path_variables'][attr]['regex']
             except KeyError:
                 print('Could not find regex for %s: %s in config, skipping' % (attr, value))
                 return
@@ -534,7 +535,7 @@ class PathObject(object):
             else:
                 list_ = glob.glob(path_)
 
-            return clean_file_list(list_, self)
+            return clean_file_list(list_, self, cfg=self.cfg)
         else:
             return []
 
@@ -687,7 +688,7 @@ class PathObject(object):
         :return:
         """
         if self.path_root and self.resolution:
-            resolution = self.config['default']['resolution']['video_review']
+            resolution = self.project_config['default']['resolution']['video_review']
             name_ = os.path.splitext(self.filename)[0]
             filename = '%s.jpg' % name_
             dir_ = os.path.dirname(self.path_root.replace(self.resolution, resolution))
@@ -775,8 +776,8 @@ class PathObject(object):
         sets the .company_config and .project_config values
         :return:
         """
-        self.company_config_path = os.path.join(self.config['account_info']['globals_path'], 'globals.json')
-        self.project_config_path = os.path.join(self.config['account_info']['globals_path'], 'globals.json')
+        self.company_config_path = os.path.join(self.project_config['account_info']['globals_path'], 'globals.json')
+        self.project_config_path = os.path.join(self.project_config['account_info']['globals_path'], 'globals.json')
 
     def set_command_base(self):
         """
@@ -804,10 +805,10 @@ class PathObject(object):
             if os.path.exists(self.preview_path):
                 print('Preview Path Found: {}'.format(self.preview_path))
                 if self.proj_management == 'ftrack':
-                    prod_data = CreateProductionData(path_object=self)
+                    prod_data = CreateProductionData(path_object=self, cfg=self.cfg)
                     return True
                 elif self.proj_management == 'shotgun':
-                    prod_data = CreateProductionData(path_object=self)
+                    prod_data = CreateProductionData(path_object=self, cfg=self.cfg)
                     print('Finished uploading to shotgun')
                 elif self.proj_management == 'lumbermill':
                     logging.debug('no review process defined for default lumbermill')
@@ -881,10 +882,10 @@ class PathObject(object):
         if resolution:
             width, height = resolution.split('x')
         else:
-            if self.project.lower() in self.config['default']['proxy_resolution'].keys():
-                proxy_resolution = self.config['default']['proxy_resolution'][self.project.lower()]
+            if self.project.lower() in self.project_config['default']['proxy_resolution'].keys():
+                proxy_resolution = self.project_config['default']['proxy_resolution'][self.project.lower()]
             else:
-                proxy_resolution = self.config['default']['proxy_resolution']['default']
+                proxy_resolution = self.project_config['default']['proxy_resolution']['default']
             width, height = proxy_resolution.split('x')
         name_ = os.path.splitext(self.filename)[0]
         filename = '%s.%s' % (name_, ext)
@@ -914,7 +915,7 @@ class PathObject(object):
                 # Step 0) Create the HD Proxy if it doesn't exist.
                 if not hd_proxy_exists(self.hd_proxy_path, self.frame_range):
                     print("Making Preview Media")
-                    review_res = self.config['default']['resolution']['video_review']
+                    review_res = self.project_config['default']['resolution']['video_review']
                     proxy_info = self.make_proxy(resolution=review_res, ext='jpg', job_id=job_id)
                     job_id = proxy_info['job_id']
             # Step 2) Create the web preview & Thumbnail with .make_preview()
@@ -1012,12 +1013,19 @@ class CreateProductionData(object):
                  do_scope=False, test=False, json=False, create_default_file=False,
                  force_pm_creation=False,
                  session=None,
-                 status=None):
+                 status=None,
+                 cfg=None):
+
         self.session = session
         self.force_pm_creation = force_pm_creation
         self.user_login = user_login
         self.test = test
         self.path_object = PathObject(path_object)
+        if cfg:
+            self.cfg = cfg
+        if not cfg:
+            print(CreateProductionData)
+            self.cfg = ProjectConfig(path_object)
         if project_management:
             print('were setting project management to {} for some reason'.format(project_management))
         project_management = path_object.proj_management
@@ -1441,40 +1449,6 @@ def get_task_default_file(task):
         return None
 
 
-def image_path(image=None):
-    """
-    get the path where images are stored
-    :param image:
-    :return:
-    """
-    cfg = ProjectConfig()
-    if image:
-        return os.path.join(cfg.images_folder, image)
-    else:
-        return cfg.images_folder
-
-
-def icon_path(icon=None):
-    """
-    get the path where icons are stored.
-    :param icon:
-    :return:
-    """
-    cfg = ProjectConfig()
-    if icon:
-        return os.path.join(cfg.project_config['paths']['code_root'], 'resources', 'icons', icon)
-    else:
-        return os.path.join(cfg.project_config['paths']['code_root'], 'resources', 'icons')
-
-
-def font_path():
-    """
-    get the path where fonts for the app are stored
-    :return:
-    """
-    return ProjectConfig().app_font_folder
-
-
 def start(filepath):
     """
     opens a file on any os
@@ -1652,13 +1626,13 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
     """
     path_object = PathObject(directory)
     if not cfg:
+        print(lj_list_dir)
         cfg = ProjectConfig(path_object)
     ext_map = cfg.project_config['ext_map']
-    print(ext_map)
     list_ = os.listdir(directory)
     if not list_:
         return
-    list_ = clean_file_list(list_, path_object)
+    list_ = clean_file_list(list_, path_object, cfg)
     list_.sort()
     output_ = []
     for each in list_:
@@ -1774,14 +1748,6 @@ def get_file_type(filepath):
     if '%0' in filepath:
         ft = 'sequence'
     return ft
-
-
-def get_root():
-    """
-
-    :return:
-    """
-    return user_config()['root']['master']
 
 
 def get_projects(company):

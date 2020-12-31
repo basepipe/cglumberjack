@@ -50,55 +50,6 @@ def pull_task_info(path_object):
         return task_info
 
 
-def create_project_config(company, project):
-    """
-    Creates the config for a project
-    :param company:
-    :param project:
-    :return:
-    """
-    from cgl.core.utils.general import cgl_copy
-    config_dir = os.path.dirname(UserConfig().user_config_path)
-    company_config = os.path.join(config_dir, 'companies', company, 'global.yaml')
-    project_dir = os.path.join(config_dir, 'companies', company, project)
-    project_config = os.path.join(project_dir, 'global.yaml')
-    if os.path.exists(company_config):
-        if not os.path.exists(project_dir):
-            os.makedirs(project_dir)
-            cgl_copy(company_config, project_config)
-
-
-def get_company_config():
-    """
-    Get Company Config (not currently used anywhere)
-    :return:
-    """
-    user_dir = os.path.expanduser("~")
-    if 'Documents' in user_dir:
-        cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
-    else:
-        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
-    return cg_lumberjack_dir
-
-
-def get_cgl_config():
-
-    user_dir = os.path.expanduser("~")
-    if 'Documents' in user_dir:
-        cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack')
-    else:
-        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
-    return cg_lumberjack_dir
-
-
-def get_cgl_tools():
-    """
-    get the path for the cgl_tools directory
-    :return:
-    """
-    return CONFIG['paths']['cgl_tools']
-
-
 def publish(path_obj):
     """
     Requires a path with render folder with existing data.

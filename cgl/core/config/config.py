@@ -2,9 +2,25 @@ import os
 from cgl.core.utils.read_write import load_json, save_json
 
 
+def get_user_config_file():
+    """
+    returns the location of the user config file.
+    :return:
+    """
+    return os.getenv('cgl_user_globals')
+
+
+def user_config():
+    """
+    returns dictionary representing user config.
+    :return:
+    """
+    return load_json(get_user_config_file())
+
+
 class ProjectConfig(object):
-    user_config_file = os.getenv('cgl_user_globals')
-    user_config = {}
+    user_config_file = get_user_config_file()
+    user_config = user_config()
     project_config = {}
     shaders_config = {}
     globals_root = None
@@ -26,7 +42,9 @@ class ProjectConfig(object):
         if path_object:
             self.company = path_object.company
             self.project = path_object.project
-        self.get_user_config()
+        print('--------------------------------')
+        print('Loading Config for {}: {}'.format(self.company, self.project))
+        print('\n\n')
         self.set_globals_path()
         self.get_project_config()
         self.images_folder = os.path.join(self.project_config['paths']['code_root'], 'resources', 'images')
@@ -127,10 +145,6 @@ class ProjectConfig(object):
             shader_config_dict = self.shaders_config
         save_json(self.shader_config_file, shader_config_dict)
 
-    def get_user_config(self):
-        self.user_config = load_json(self.user_config_file)
-        return self.user_config
-
     def get_project_config(self):
         """
         returns a dictionary for the current project config globals.
@@ -180,25 +194,38 @@ class ProjectConfig(object):
         """
         pass
 
+    def image_path(self, image=None, ):
+        """
+        get the path where images are stored
+        :param image:
+        :return:
+        """
+        if image:
+            return os.path.join(self.images_folder, image)
+        else:
+            return self.images_folder
 
+    def icon_path(self, icon=None):
+        """
+        get the path where icons are stored.
+        :param icon:
+        :return:
+        """
+        if icon:
+            return os.path.join(self.project_config['paths']['code_root'], 'resources', 'icons', icon)
+        else:
+            return os.path.join(self.project_config['paths']['code_root'], 'resources', 'icons')
 
-
-def app_config(path_object):
-    """
-    convenience function making transition from old "app_config" to the new ProjectConfig() architecture.
-
-    Returns: dict
-
-    """
-    config = ProjectConfig(path_object=path_object)
-    return config.project_config
-
-
-def user_config():
-    return ProjectConfig().user_config
+    def font_path(self):
+        """
+        get the path where fonts for the app are stored
+        :return:
+        """
+        return self.app_font_folder
 
 
 def check_for_latest_master(path_object=None):
+    # TODO - need to look at this and make it require cfg if possible.
     # TODO - probably need something in place to check if git is installed.
     cfg = ProjectConfig(path_object)
     code_root = cfg.project_config['paths']['code_root']
@@ -217,6 +244,7 @@ def check_for_latest_master(path_object=None):
 
 
 def update_master(path_object=None, widget=None):
+    # TODO - need to look at this and make it require cfg if possible.
     cfg = ProjectConfig(path_object)
     code_root = cfg.project_config['paths']['code_root']
     command = 'git pull'
@@ -224,6 +252,14 @@ def update_master(path_object=None, widget=None):
     cgl_execute(command)
     if widget:
         widget.close()
+
+
+def get_root(project='master'):
+    """
+    gets root from the current project defaults to 'master'.
+    :return:
+    """
+    return user_config()['root'][project]
 
 
 if __name__ == '__main__':

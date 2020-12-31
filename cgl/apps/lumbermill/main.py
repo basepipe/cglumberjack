@@ -10,7 +10,7 @@ from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
 from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master
 from cgl.core.utils.general import current_user, launch_lumber_watch, save_json
-from cgl.core.config.config import app_config, ProjectConfig
+from cgl.core.config.config import ProjectConfig
 # from cgl.core.config import app_config, UserConfig, user_config
 from cgl.apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
 from cgl.apps.lumbermill.elements.FilesPanel import FilesPanel
@@ -63,10 +63,10 @@ class FunctionRow(QtWidgets.QFrame):
 
 class PathWidget(QtWidgets.QFrame):
 
-    def __init__(self, parent=None, path_object=None):
+    def __init__(self, parent=None, path_object=None, cfg=None):
         QtWidgets.QFrame.__init__(self, parent)
         if path_object:
-            self.path_object = cglpath.PathObject(path_object)
+            self.path_object = cglpath.PathObject(path_object, cfg)
             self.path_root = self.path_object.path_root
         else:
             return
@@ -103,23 +103,28 @@ class NavigationWidget(QtWidgets.QFrame):
     ingest_button_clicked = QtCore.Signal()
     refresh_button_clicked = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None):
+    def __init__(self, parent=None, path_object=None, cfg=None):
         QtWidgets.QFrame.__init__(self, parent)
         if path_object:
             self.path_object = path_object
         else:
             return
+        if not cfg:
+            print('NavigationWidget')
+            self.cfg = ProjectConfig(self.path_object)
+        else:
+            self.cfg = cfg
         self.setProperty('class', 'light_grey')
         self.my_tasks_button = QtWidgets.QPushButton()
         self.my_tasks_button.setToolTip('My Tasks')
-        tasks_icon = os.path.join(cglpath.icon_path(), 'star24px.png')
+        tasks_icon = os.path.join(self.cfg.icon_path('star24px.png'))
         self.my_tasks_button.setProperty('class', 'grey_border')
         self.my_tasks_button.setIcon(QtGui.QIcon(tasks_icon))
         self.my_tasks_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
 
         self.refresh_button = QtWidgets.QPushButton()
         self.refresh_button.setToolTip('Refresh')
-        refresh_icon = os.path.join(cglpath.icon_path(), 'spinner11.png')
+        refresh_icon = os.path.join(self.cfg.icon_path('spinner11.png'))
         self.refresh_button.setProperty('class', 'grey_border')
         self.refresh_button.setIcon(QtGui.QIcon(refresh_icon))
         self.refresh_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
@@ -127,14 +132,14 @@ class NavigationWidget(QtWidgets.QFrame):
         self.ingest_button = QtWidgets.QPushButton()
         self.ingest_button.setToolTip('Ingest Data')
         self.ingest_button.setProperty('class', 'grey_border')
-        ingest_icon = os.path.join(cglpath.icon_path(), 'ingest24px.png')
+        ingest_icon = os.path.join(self.cfg.icon_path('ingest24px.png'))
         self.ingest_button.setIcon(QtGui.QIcon(ingest_icon))
         self.ingest_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
 
         self.sync_button = QtWidgets.QPushButton()
         self.sync_button.setToolTip('Sync Status')
         self.sync_button.setProperty('class', 'grey_border')
-        sync_icon = os.path.join(cglpath.icon_path(), 'sync_on24px.png')
+        sync_icon = os.path.join(self.cfg.icon_path('sync_on24px.png'))
         self.sync_button.setIcon(QtGui.QIcon(sync_icon))
         self.sync_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
         self.sync_button.installEventFilter(self)
@@ -162,9 +167,9 @@ class NavigationWidget(QtWidgets.QFrame):
         self.projects_button.setStyleSheet("background: transparent;")
         self.companies_button.setStyleSheet("background: transparent;")
 
-        back_icon = os.path.join(cglpath.icon_path(), 'back24px.png')
-        home_icon = os.path.join(cglpath.icon_path(), 'project24px.png')
-        company_icon = os.path.join(cglpath.icon_path(), 'company24px.png')
+        back_icon = os.path.join(self.cfg.icon_path('back24px.png'))
+        home_icon = os.path.join(self.cfg.icon_path('project24px.png'))
+        company_icon = os.path.join(self.cfg.icon_path('company24px.png'))
 
         self.back_button.setIcon(QtGui.QIcon(back_icon))
         self.back_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
@@ -386,15 +391,17 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                  set_to_publish=False, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
         if not cfg:
+            print(CGLumberjackWidget)
             self.cfg = ProjectConfig(company=company, project=default_project)
         else:
             self.cfg = cfg
         try:
             font_db = QtGui.QFontDatabase()
-            font_db.addApplicationFont(os.path.join(cfg.app_font_folder, 'ARCADECLASSIC.TTF'))
-            font_db.addApplicationFont(os.path.join(cfg.app_font_folder, 'ka1.ttf'))
+            font_db.addApplicationFont(os.path.join(self.cfg.app_font_folder, 'ARCADECLASSIC.TTF'))
+            font_db.addApplicationFont(os.path.join(self.cfg.app_font_folder, 'ka1.ttf'))
         except AttributeError:
-            logging.error('Skipping Loading Fonts - possible Pyside2 issue')
+            logging.error('Skipping Loading Fonts from: {} '
+                          '\n\t- possible Pyside2 issue'.format(self.cfg.app_font_folder))
 
         # Environment Stuff
         self.set_to_publish = set_to_publish
@@ -419,7 +426,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         if path:
             try:
-                self.path_object = cglpath.PathObject(path)
+                self.path_object = cglpath.PathObject(path, cfg=self.cfg)
                 if self.path_object.context == 'render':
                     self.path_object.set_attr(context='source')
                     self.path_object.set_attr(resolution=None)
@@ -446,16 +453,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                       "project": proj,
                       "scope": scp
                       }
-                print('---------------')
-                print(self.company)
-                print(self.root)
-                print('source')
-                print(proj)
-                print(scp)
-                print(d_)
-                self.path_object = cglpath.PathObject(d_)
+                self.path_object = cglpath.PathObject(d_, self.cfg)
             else:
-                self.path_object = cglpath.PathObject(self.root)
+                self.path_object = cglpath.PathObject(self.root, self.cfg)
         # self.project = '*'
         self.scope = 'assets'
         self.shot = '*'
@@ -474,10 +474,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.task = ''
         self.resolution = ''
         self.in_file_tree = None
-        self.nav_widget = NavigationWidget(path_object=self.path_object)
+        self.nav_widget = NavigationWidget(path_object=self.path_object, cfg=self.cfg)
         self.label_widget = LocationWidget(path_object=self.path_object)
-        self.path_widget = PathWidget(path_object=self.path_object)
-        self.progress_bar = ProgressGif()
+        self.path_widget = PathWidget(path_object=self.path_object, cfg=self.cfg)
+        self.progress_bar = ProgressGif(cfg=self.cfg)
         self.progress_bar.hide()
         # self.nav_widget.update_buttons()
         self.path_widget.update_path(path_object=self.path_object)
@@ -491,7 +491,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.update_location(self.path_object)
 
     def show_my_tasks(self):
-        self.path_object = cglpath.PathObject(self.path_widget.path_line_edit.text())
+        self.path_object = cglpath.PathObject(self.path_widget.path_line_edit.text(), self.cfg)
         self.path_object.set_attr(user=current_user(), resolution='', filename='', ext='')
         self.path_object.set_attr(scope='shots', seq='*', shot=None, task=None)
         self.path_object.data['my_tasks'] = True
@@ -518,7 +518,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.title_label.setText(" {}: {}".format(project, shot))
 
     def update_location(self, data):
-        self.update_cfg()
         self.nav_widget.search_box.setText('')
         try:
             if self.sender().force_clear:
@@ -529,9 +528,9 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             pass
         path_object = None
         if type(data) == dict:
-            path_object = cglpath.PathObject(data)
+            path_object = cglpath.PathObject(data, self.cfg)
         elif type(data) == cglpath.PathObject:
-            path_object = cglpath.PathObject(data)
+            path_object = cglpath.PathObject(data, self.cfg)
         if path_object.frame_range:
             self.frame_range = path_object.frame_range
         self.label_widget.path_changed(path_object)
@@ -599,7 +598,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                                              search_box=self.nav_widget.search_box, cfg=self.cfg)
         if last == 'scope':
             if path_object.scope == '*':
-                self.panel = ScopePanel(path_object=path_object)
+                self.panel = ScopePanel(path_object=path_object, cfg=self.cfg)
             elif path_object.scope == 'IO':
                 if DO_IOP:
                     self.panel = IoP.IOPanel(path_object=path_object)
@@ -635,6 +634,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.layout.addWidget(self.path_widget)
 
     def update_cfg(self):
+        print('update_cfg')
         self.cfg = ProjectConfig(self.path_object)
 
     def update_panel(self, set_tasks_radio=False):
@@ -662,7 +662,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def load_files_panel(self, path_object):
         self.panel = FilesPanel(path_object=path_object, show_import=self.show_import,
-                                show_reference=self.show_reference, set_to_publish=self.set_to_publish)
+                                show_reference=self.show_reference, set_to_publish=self.set_to_publish, cfg=self.cfg)
         self.panel.open_signal.connect(self.open_clicked)
         self.panel.import_signal.connect(self.import_clicked)
         self.panel.reference_signal.connect(self.reference_clicked)
@@ -697,7 +697,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def review_clicked(self):
 
-        selection = cglpath.PathObject(self.path_widget.path_line_edit.text())
+        selection = cglpath.PathObject(self.path_widget.path_line_edit.text(), self.cfg)
         if not os.path.exists(selection.preview_path):
             selection.set_file_type()
             process_method(self.progress_bar, self.do_review,
@@ -720,7 +720,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         logging.debug(3)
         from cgl.plugins.preflight.launch import launch_
         from cgl.ui.widgets.publish_dialog import PublishDialog
-        selection = cglpath.PathObject(self.path_widget.path_line_edit.text())
+        selection = cglpath.PathObject(self.path_widget.path_line_edit.text(), self.cfg)
         if not selection.filename or selection.context == 'source':
             dialog = InputDialog(title='Invalid Selection', message='Please select a valid file or sequence\nfrom '
                                                                     'the "Ready to Review/Publish" Section')
@@ -970,11 +970,11 @@ class CGLumberjack(LJMainWindow):
         sync_button = self.centralWidget().nav_widget.sync_button
         if syncing:
             logging.debug('setting sync icon to sync_on')
-            sync_icon = os.path.join(cglpath.icon_path(), 'sync_on24px.png')
+            sync_icon = os.path.join(self.cfg.icon_path('sync_on24px.png'))
             logging.debug(sync_icon)
         else:
             logging.debug('setting sync icon to sync_off')
-            sync_icon = os.path.join(cglpath.icon_path(), 'sync_off24px.png')
+            sync_icon = os.path.join(self.cfg.icon_path('sync_off24px.png'))
             logging.debug(sync_icon)
         sync_button.setIcon(QtGui.QIcon(sync_icon))
         sync_button.setIconSize(QtCore.QSize(ICON_WIDTH, ICON_WIDTH))
@@ -1283,8 +1283,8 @@ class CGLumberjack(LJMainWindow):
     def closeEvent(self, event):
         # set the current path so that it works on the load better.
         self.cfg.edit_user_config(['current_path'], self.centralWidget().path_widget.text)
-        user_config = UserConfig(current_path=self.centralWidget().path_widget.text)
-        user_config.update_all()
+        #user_config = UserConfig(current_path=self.centralWidget().path_widget.text)
+        #user_config.update_all()
 
     # check the config file to see if it has a default company and a default location
 

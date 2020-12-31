@@ -3,7 +3,7 @@ import os
 import re
 from cgl.plugins.Qt.QtCore import QAbstractTableModel, Qt, QAbstractItemModel
 from cgl.plugins.Qt.QtGui import QIcon, QColor
-from cgl.core.path import icon_path
+from cgl.core.config.config import ProjectConfig
 
 
 # noinspection PyUnusedLocal
@@ -157,11 +157,17 @@ class FileTableModel(ListItemModel):
 
 
 class FilesModel(QAbstractTableModel):
-    def __init__(self, data_list, header_titles=None, data_filter=False, path_object=None):
+    def __init__(self, data_list, header_titles=None, data_filter=False, path_object=None, cfg=None):
         QAbstractTableModel.__init__(self)
         # self.setHeaderData(Qt.Horizontal, Qt.AlignLeft, Qt.TextAlignmentRole)
         # self.setHeaderData(Qt.Horizontal, Qt.AlignLeft, Qt.TextAlignmentRole)
+
         self.path_object = path_object
+        if not cfg:
+            print(FilesModel)
+            self.cfg = ProjectConfig(self.path_object)
+        else:
+            self.cfg = cfg
         self.data_ = data_list
         self.headers = header_titles
         self.data_filter = data_filter
@@ -180,7 +186,7 @@ class FilesModel(QAbstractTableModel):
                 return data
             if role == Qt.DecorationRole:
                 if "." not in data:
-                    icon_path_ = os.path.join(icon_path(), 'folder24px.png')
+                    icon_path_ = self.cfg.icon_path('folder24px.png')
                     return QIcon(icon_path_)
             if role == Qt.ForegroundRole:
                 padding_difference = self.has_approved_frame_padding(data)

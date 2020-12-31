@@ -718,10 +718,13 @@ class RequestFeatureDialog(LJDialog):
 
 class ReportBugDialog(LJDialog):
 
-    def __init__(self, parent=None, title='Report A Bug'):
+    def __init__(self, parent=None, title='Report A Bug', cfg=None):
         LJDialog.__init__(self, parent)
         from cgl.core.config.config import ProjectConfig
-        self.cfg = ProjectConfig()
+        if not cfg:
+            self.cfg = ProjectConfig()
+        else:
+            self.cfg = cfg
         self.title_ = parent.windowTitle()
         layout = QtWidgets.QVBoxLayout()
         grid_layout = QtWidgets.QGridLayout()
@@ -949,11 +952,15 @@ class ReportBugDialog(LJDialog):
 
 class APIKeyDialog(LJDialog):
 
-    def __init__(self, parent=None, title='Error'):
+    def __init__(self, parent=None, title='Error', cfg=None):
         LJDialog.__init__(self, parent)
         self.setWindowTitle(title)
         from cgl.core.config.config import ProjectConfig
-        self.cfg = ProjectConfig()
+        if not cfg:
+            print('APIKeyDialog')
+            self.cfg = ProjectConfig()
+        else:
+            self.cfg = cfg
         layout = QtWidgets.QVBoxLayout(self)
         button_row = QtWidgets.QHBoxLayout()
 

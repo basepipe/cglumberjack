@@ -5,12 +5,11 @@ from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.ui.widgets.widgets import LJButton, LJTableWidget
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.containers.model import ListItemModel
-from cgl.core.path import PathObject, CreateProductionData, icon_path, get_root
-from cgl.core.project import create_project_config
+from cgl.core.path import PathObject, CreateProductionData
 from cgl.ui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
 from cgl.core.utils.general import current_user, clean_file_list
 from cgl.ui.widgets.progress_gif import process_method
-from cgl.core.config.config import ProjectConfig
+from cgl.core.config.config import ProjectConfig, get_root
 
 
 class CompanyPanel(QtWidgets.QWidget):
@@ -20,11 +19,16 @@ class CompanyPanel(QtWidgets.QWidget):
 
     def __init__(self, parent=None, path_object=None, search_box=None, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
+        self.path_object = path_object
+        if cfg:
+            self.cfg = cfg
+        else:
+            print(CompanyPanel)
+            self.cfg = ProjectConfig(self.path_object)
         self.set_stuff_from_globals()
         self.search_box = search_box
-        self.path_object = path_object
         self.panel = QtWidgets.QVBoxLayout(self)
-        pixmap = QtGui.QPixmap(icon_path('company24px.png'))
+        pixmap = QtGui.QPixmap(self.cfg.icon_path('company24px.png'))
         #self.company_widget = LJListWidget('Companies', pixmap=pixmap, search_box=search_box)
         self.data_table = LJTableWidget(self, path_object=self.path_object)
         self.company_widget.add_button.setText('add company')
@@ -85,7 +89,7 @@ class CompanyPanel(QtWidgets.QWidget):
         self.company_widget.list.clear()
         companies_loc = '%s/*' % self.path_object.root
         companies = glob.glob(companies_loc)
-        clean_companies = clean_file_list(companies, self.path_object)
+        clean_companies = clean_file_list(companies, self.path_object, cfg=self.cfg)
         if clean_companies:
             for each in companies:
                 c = os.path.basename(each)
@@ -255,13 +259,14 @@ class TaskPanel(QtWidgets.QWidget):
         if path_object:
             self.path_object = path_object
             elements = self.path_object.glob_project_element(element)
-            elements = clean_file_list(elements, path_object)
+
         else:
             return
         if cfg:
             self.cfg = cfg
         else:
             self.cfg = ProjectConfig(self.path_object)
+        elements = clean_file_list(elements, path_object, self.cfg)
         self.project_management = self.cfg.project_config['account_info']['project_management']
         self.schema = self.cfg.project_config['project_management'][self.project_management]['api']['default_schema']
         schema = self.cfg.project_config['project_management'][self.project_management]['tasks'][self.schema]
@@ -325,13 +330,18 @@ class TaskPanel(QtWidgets.QWidget):
 class ScopePanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None):
+    def __init__(self, parent=None, path_object=None, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
         if path_object:
             self.path_object = path_object.copy(seq=None, shot=None, ingest_source=None, resolution='', version='',
                                                 user=None, scope=None)
         else:
             return
+        if cfg:
+            self.cfg = cfg
+        else:
+            print(ScopePanel)
+            self.cfg = ProjectConfig(self.path_object)
         self.panel = QtWidgets.QVBoxLayout(self)
         for each in ['assets', 'shots']:
             if each == 'assets':
@@ -343,7 +353,7 @@ class ScopePanel(QtWidgets.QWidget):
             else:
                 image_name = 'ingest96px.png'
             button = LJButton(str(each))
-            button.setIcon(QtGui.QIcon(QtGui.QPixmap(os.path.join(icon_path(), image_name))))
+            button.setIcon(QtGui.QIcon(QtGui.QPixmap(self.cfg.icon_path(image_name))))
             button.setIconSize(QtCore.QSize(50, 50))
             button.setProperty('class', 'ultra_button')
             self.panel.addWidget(button)
@@ -372,6 +382,7 @@ class ProductionPanel(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         # Create the Middle Panel
         if not cfg:
+            print('ProductionPanel')
             self.cfg = ProjectConfig(path_object)
         else:
             self.cfg = cfg
@@ -387,7 +398,7 @@ class ProductionPanel(QtWidgets.QWidget):
         self.root = get_root()
         self.radio_filter = 'Everything'
         self.clear_layout()
-        self.assets = AssetWidget(self, title="", path_object=self.path_object, search_box=search_box)
+        self.assets = AssetWidget(self, title="", path_object=self.path_object, search_box=search_box, cfg=self.cfg)
 
         self.assets.add_button.show()
         self.set_scope_radio()
@@ -464,7 +475,7 @@ class ProductionPanel(QtWidgets.QWidget):
             self.assets.message.hide()
             self.assets.message.setText('')
             for each in items:
-                obj_ = PathObject(str(each))
+                obj_ = PathObject(str(each), self.cfg)
                 d = obj_.data
                 shot_name = '%s_%s' % (d['seq'], d['shot'])
                 if shot_name not in temp_:
@@ -490,7 +501,7 @@ class ProductionPanel(QtWidgets.QWidget):
 
     def on_main_asset_selected(self, data):
         if data:
-            path_object = PathObject(data[0][2])
+            path_object = PathObject(data[0][2], self.cfg)
             if not path_object.task:
                 path_object.set_attr(task='*')
             else:
@@ -551,7 +562,7 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path
     source_size = ''
     for each in list_:
         if size_path:
-            temp_obj = PathObject(size_path).copy(project=each)
+            temp_obj = PathObject(size_path, self.cfg).copy(project=each)
             print(temp_obj.path_root)
             total_size = get_cgl_info_size(temp_obj.path_root, source=True, render=True)
             source_size = get_cgl_info_size(temp_obj.path_root, source=True, render=False)
@@ -562,7 +573,7 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path
             else:
                 total_size = total_size
         if path_filter:
-            filtered = PathObject(each).data[path_filter]
+            filtered = PathObject(each, self.cfg).data[path_filter]
             to_append = [filtered]
             if size_path:
                 to_append = [filtered, total_size]

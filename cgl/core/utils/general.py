@@ -9,7 +9,7 @@ import time
 import logging
 import re
 import xmltodict
-from cgl.core.config.config import ProjectConfig, app_config
+from cgl.core.config.config import ProjectConfig
 # from cgl.core.config import app_config, update_globals
 
 
@@ -70,6 +70,7 @@ def clean_file_list(file_list, path_object, cfg=None):
     :return:
     """
     if not cfg:
+        print(clean_file_list)
         cfg = ProjectConfig(path_object)
     if 'ignore' in cfg.project_config['rules'].keys():
         ignore_matches = cfg.project_config['rules']['ignore']['matches']

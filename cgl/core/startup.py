@@ -179,7 +179,7 @@ def load_style_sheet():
     return data
 
 
-def user_init():
+def user_init(cfg=None):
     """
     Initializes needed User information
     :return:
@@ -189,7 +189,9 @@ def user_init():
     from cgl.ui.widgets.dialog import LoginDialog
     current = current_user().lower()
     logging.debug(current)
-    cfg = ProjectConfig()
+    if not cfg:
+        print(user_init)
+        cfg = ProjectConfig()
     CONFIG = cfg.project_config
     proj_man = CONFIG['account_info']['project_management']
     logging.debug(proj_man)
@@ -228,12 +230,10 @@ def app_init(splash_image='lubmermill.jpg', cfg=None):
     app_ = QtWidgets.QApplication([])
     if not cfg:
         from cgl.core.config.config import ProjectConfig
+        print('app_init')
         cfg = ProjectConfig()
     image_path = cfg.images_folder
-    print(image_path)
-    print(splash_image)
     image_path = os.path.join(image_path, splash_image)
-    print(image_path)
     splash_pix = QtGui.QPixmap(image_path)
     splash_ = QtWidgets.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
     splash_.setMask(splash_pix.mask())

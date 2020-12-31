@@ -181,8 +181,7 @@ class FileTableModel(ListItemModel):
         if role == QtCore.Qt.DecorationRole:
             data = self.data_[row][col]
             if "." not in data:
-                icon_path = os.path.join(path.icon_path(), 'folder2.png')
-                return QtGui.QIcon(icon_path)
+                return QtGui.QIcon(self.cfg.icon_path('folder2.png'))
         # if role == QtCore.Qt.ToolTipRole:
         #     return "hello tom"
 
@@ -725,17 +724,22 @@ class AssetWidget(QtWidgets.QWidget):
     add_clicked = QtCore.Signal()
     assign_clicked = QtCore.Signal(object)
 
-    def __init__(self, parent, title, filter_string=None, path_object=None, search_box=None):
+    def __init__(self, parent, title, filter_string=None, path_object=None, search_box=None, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.right_click = False
-        self.shots_icon = QtGui.QPixmap(path.icon_path('shots24px.png'))
-        self.assets_icon = QtGui.QPixmap(path.icon_path('assets24px.png'))
 
         self.v_layout = QtWidgets.QVBoxLayout(self)
 
         v_list = QtWidgets.QVBoxLayout()
         self.scope_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
+        if not cfg:
+            print(AssetWidget)
+            self.cfg = ProjectConfig(self.path_object)
+        else:
+            self.cfg = cfg
+        self.shots_icon = QtGui.QPixmap(self.cfg.icon_path('shots24px.png'))
+        self.assets_icon = QtGui.QPixmap(self.cfg.icon_path('assets24px.png'))
         self.tool_button_layout = QtWidgets.QHBoxLayout()
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                 QtWidgets.QSizePolicy.MinimumExpanding)

@@ -1,6 +1,6 @@
 from Qt import QtWidgets, QtGui
 from cgl.ui.widgets.base import LJDialog
-from cgl.core.config import app_config
+from cgl.core.config.config import ProjectConfig, get_root
 from cgl.core.path import lj_list_dir
 import os
 
@@ -13,17 +13,20 @@ CURRENT_PATH = 6
 NEW_PATH = 5
 NEW_PATH_EXISTS = 4
 
-CONFIG = app_config()
-
 
 class PathFixer(LJDialog):
 
-    def __init__(self, nodes=[]):
+    def __init__(self, nodes=[], cfg=None):
         LJDialog.__init__(self)
+        if not cfg:
+            print(PathFixer)
+            self.cfg = ProjectConfig()
+        else:
+            self.cfg = cfg
 
         self.nodes = nodes
         self.node_dict = {}
-        self.root = CONFIG['paths']['root'].replace('\\', '/')
+        self.root = get_root()
         layout = QtWidgets.QVBoxLayout(self)
         find_replace_row = QtWidgets.QHBoxLayout()
         button_row = QtWidgets.QHBoxLayout()
@@ -84,7 +87,7 @@ class PathFixer(LJDialog):
             node = self.node_dict[node_name]
             node.knob('file').fromUserText(filepath)
             try:
-                contents = lj_list_dir(os.path.dirname(filepath))
+                contents = lj_list_dir(os.path.dirname(filepath), cfg=self.cfg)
                 for c in contents:
                     if ' ' in c:
                         frange_ = c.split(' ')[-1]

@@ -2,21 +2,24 @@ from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 QtWidgets.QHeaderView.setResizeMode = QtWidgets.QHeaderView.setSectionResizeMode
 import re
 import datetime
-from cgl.core.config.config import app_config, ProjectConfig
+from cgl.core.config.config import ProjectConfig
 from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.ui.widgets.widgets import AdvComboBox, EmptyStateWidget
 from cgl.ui.widgets.containers.table import LJTableWidget
 from cgl.ui.widgets.containers.menu import LJMenu
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import current_user
-from cgl.core.path import icon_path
 
 
 class TimeTracker(LJDialog):
 
-    def __init__(self, path_object=None):
+    def __init__(self, path_object=None, cfg=None):
         LJDialog.__init__(self)
-        self.cfg = ProjectConfig(path_object=path_object)
+        if not cfg:
+            print(TimeTracker)
+            self.cfg = ProjectConfig(path_object=path_object)
+        else:
+            self.cfg = cfg
         user = current_user()
         user_info = {}
         try:
@@ -41,7 +44,7 @@ class TimeTracker(LJDialog):
         self.date = self.today.date()
         self.total_hrs = 0
         self.calendar_tool_button = QtWidgets.QToolButton()
-        calendar_icon_path = icon_path('calendar24px.png')
+        calendar_icon_path = self.cfg.icon_path('calendar24px.png')
         self.calendar_tool_button.setIcon(QtGui.QIcon(calendar_icon_path))
         self.calendar_tool_button.setMinimumWidth(24)
         self.calendar_tool_button.setMinimumHeight(24)
@@ -832,9 +835,13 @@ class LoginDialog(LJDialog):
 
 class ProjectCreator(LJDialog):
     def __init__(self, parent=None):
-        LJDialog.__init__(self, parent)
+        LJDialog.__init__(self, parent, cfg=None)
         self.setMinimumWidth(1000)
-        self.cfg = ProjectConfig()
+        if not cfg:
+            print('ProjectConfig')
+            self.cfg = ProjectConfig()
+        else:
+            self.cfg = cfg
         proj_man = self.cfg.project_config['account_info']['project_management']
         self.project_management = self.cfg.project_config['project_management'][proj_man]
         self.headers = self.project_management['api']['project_creation_headers']
@@ -1114,7 +1121,7 @@ class ProjectCreator(LJDialog):
                         seq, shot = cell.split('_')
                         row_dict['seq'] = seq
                         row_dict['shot'] = '%04d' % int(shot)
-            path_object = PathObject(row_dict)
+            path_object = PathObject(row_dict, self.cfg)
             CreateProductionData(path_object=path_object, force_pm_creation=True)
         # open up Ftrack to the project page
         d = {'company': self.company_combo.currentText(),
@@ -1122,7 +1129,7 @@ class ProjectCreator(LJDialog):
              'context': 'source',
              'scope': self.scope,
              'seq': '*'}
-        path_object = PathObject(d)
+        path_object = PathObject(d, self.cfg)
         show_in_project_management(path_object, self.cfg)
         self.accept()
         self.parent().centralWidget().update_location(path_object)

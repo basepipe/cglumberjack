@@ -1,22 +1,26 @@
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 import logging
 import threading
-from cgl.core.path import image_path
+from cgl.core.config.config import ProjectConfig
 
 
 class ProgressGif(QtWidgets.QWidget):
 
-    def __init__(self, title='CG Lumberjacking...', height=150):
+    def __init__(self, title='CG Lumberjacking...', height=150, cfg=None):
         QtWidgets.QWidget.__init__(self)
         layout = QtWidgets.QVBoxLayout(self)
         self.gif_height = QtCore.QSize(height, height)
-
+        if not cfg:
+            print(ProgressGif)
+            self.cfg = ProjectConfig()
+        else:
+            self.cfg = cfg
         self.message = QtWidgets.QLabel(title)
         self.message.setProperty('class', 'ultra_title')
         self.message.setAlignment(QtCore.Qt.AlignCenter)
         self.progress_bar = QtWidgets.QLabel()
         self.progress_bar.setAlignment(QtCore.Qt.AlignCenter)
-        self.movie = QtGui.QMovie(image_path('chopping_wood.gif'))
+        self.movie = QtGui.QMovie(self.cfg.image_path('chopping_wood.gif'))
         self.movie.setScaledSize(self.gif_height)
         self.progress_bar.setMovie(self.movie)
 
