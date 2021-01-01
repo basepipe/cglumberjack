@@ -31,8 +31,9 @@ class Task(SmartTask):
 
 
         # Imports the fbx for the published camera
-        alc.import_file(filepath = fbx.path_root)
-        camera = bpy.data.objects[camFile.shot]
+        from cgl.plugins.blender.alchemy import scene_object
+        camera = alc.import_file(filepath = fbx.path_root,namespace=scene_object().shot)
+        #camera = bpy.data.objects[camFile.shot]
 
         #Set Offset for the camera
         move_keyframes(camera,int(camDic[camFile.shot]['frame_start'])*-1)

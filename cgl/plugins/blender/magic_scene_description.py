@@ -368,6 +368,14 @@ def return_lib_path(library):
     # filename = Path(bpy.path.abspath(library_path)).__str__()
     return (library_path)
 
+def add_source_path(obj, path_object):
+    from cgl.plugins.blender.utils import get_objects_in_hirarchy, get_object
+
+    tag_list = get_objects_in_hirarchy(obj)
+
+    for each in tag_list:
+        object = get_object(each)
+        object['source_path'] = path_object.path
 
 
 if __name__ == '__main__':

@@ -29,7 +29,7 @@ class SmartTask(object):
         """
         pass
 
-    def _import(self, file_path, reference=False):
+    def _import(self, file_path, reference=False,**kwargs):
         """
         Imports the file into the scene - this function should be smart enough to handle various file types
         as well as
@@ -37,9 +37,9 @@ class SmartTask(object):
         """
         if not file_path:
             file_path = self.path_object.path_root
-        from cgl.plugins.blender.lumbermill import import_file, reference_file,LumberObject
+        from cgl.plugins.blender.alchemy import import_file, reference_file,PathObject
 
-        path_object = LumberObject(file_path)
+        path_object = PathObject(file_path)
         if reference:
             return reference_file(filepath=file_path,namespace=path_object.asset)
         else:
@@ -60,6 +60,6 @@ class SmartTask(object):
         this allows us to customize at a more granular level if needed.
         :return:
         """
-        from cgl.plugins.maya.lumbermill import publish
+        from cgl.plugins.blender.alchemy import publish
         publish()
 

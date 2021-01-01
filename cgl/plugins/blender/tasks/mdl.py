@@ -6,10 +6,12 @@ import bpy
 class Task(SmartTask):
 
     def __init__(self, path_object=None):
+
         if not path_object:
             from cgl.plugins.blender.lumbermill import scene_object
-            self.path_object = scene_object()
-
+            self.path_object = scene_object().copy(task = 'mdl', set_proper_filename=True,latest=True)
+        else:
+            self.path_object = path_object
     def build(self):
         from cgl.plugins.blender.alchemy import selection
         from cgl.plugins.blender.utils import create_shot_mask_info
@@ -139,7 +141,7 @@ def create_material_groups(do_high=True, do_mdl=True):
                             regex='^([a-z]{3,}, *)*[a-z]{3,}', name_example='ex: wood, metal',
                             command='bpy.ops.object.create_material_groups()')
 
-def get_mdl_objects(group= 'high'):
+def get_mdl_objects(group= 'high', namespace = None):
     """
     returns a list of tuples with the objects and it's material group
     :param group:
@@ -151,9 +153,35 @@ def get_mdl_objects(group= 'high'):
     from importlib import  reload
     reload(utils)
     mdl_objects = []
-    geo_group = utils.get_object(group)
+    group_name = group
+
+    if namespace:
+        group_name = '{}:{}'.format(namespace,group)
+    geo_group = utils.get_object(group_name)
+
     for mtl in geo_group.children:
         for obj in mtl.children:
             mdl_objects.append((obj, mtl.name))
 
     return mdl_objects
+
+
+def export_mesh(type = 'abc'):
+    """
+    exports all the rigs in the scene
+    :return:
+    :rtype:
+    """
+    from cgl.plugins.blender.alchemy import export_selected, scene_object, selection
+
+
+    selection(clear=True)
+
+    for obj in get_mdl_objects():
+        selection(object=obj)
+
+    render_path = scene_object().copy(context = 'render', ext = type)
+
+    export_selected(render_path.path_root)
+    print(render_path.path_root)
+    print(get_rigs_in_scene())

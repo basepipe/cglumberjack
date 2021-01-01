@@ -906,7 +906,8 @@ def create_object(name, type=None, parent=None,collection = None):
     import bpy
     from cgl.plugins.blender.alchemy import scene_object
     if collection == None:
-        collection  = 'Collection'
+
+        collection = bpy.context.collection
 
     if name in bpy.data.objects:
         object = bpy.data.objects[name]
@@ -916,7 +917,7 @@ def create_object(name, type=None, parent=None,collection = None):
 
     if parent:
         object.parent = parent
-    parent_to_collection(collection_name=collection,obj=object)
+    parent_to_collection(collection_name=collection.name,obj=object)
 
     return object
 
@@ -1148,8 +1149,6 @@ def set_collection_name(obj = None):
         object = bpy.context.object
         object.users_collection[0].name = name
 
-
-
 def rename_collection(current_scene):
     import bpy
     if current_scene.scope == 'assets':
@@ -1172,6 +1171,35 @@ def rename_collection(current_scene):
 
         else:
             bpy.data.collections['Collection'].name = name
+
+def set_context_view_3d():
+    import bpy
+    for window in bpy.context.window_manager.windows:
+        screen = window.screen
+
+        for area in screen.areas:
+            if area.type == 'VIEW_3D':
+                override = {'window': window, 'screen': screen, 'area': area}
+                bpy.ops.screen.screen_full_area(override)
+
+
+def get_objects_in_hirarchy(obj, levels=10):
+    import bpy
+
+    hirarchy = []
+
+    def recurse(obj, parent, depth):
+        if depth > levels:
+            return
+        hirarchy.append(obj.name)
+        print("  " * depth, obj.name)
+        for child in obj.children:
+            recurse(child, obj, depth + 1)
+
+    recurse(obj, obj.parent, 0)
+
+    return hirarchy
+
 
 if __name__ == '__main__':
     # create_menu_file('TomTest', 'Tom Test',

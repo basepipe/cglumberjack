@@ -7,7 +7,11 @@ class Task(SmartTask):
         if not path_object:
             from cgl.plugins.blender.alchemy import scene_object
             self.path_object = scene_object()
-            self.path_object.render_path = scene_object().copy(context = 'render', ext = 'abc')
+            self.path_object.render_path = scene_object().copy(task = 'anim',
+                                                               context = 'render',
+                                                               ext = 'abc',
+                                                               latest=True,
+                                                               set_proper_filename=True).path_root
     def build(self):
         """
         1. Read layout for file
@@ -25,9 +29,12 @@ class Task(SmartTask):
         rename_collection(scene_object())
         create_shot_mask_info()
         reset_lock_cursor()
+        parent_rig_to_anim_group()
 
-    def _import(self, filepath):
+    def _import(self, filepath,reference):
         from cgl.plugins.blender.alchemy import import_file, scene_object
+        print('animation file')
+        print(self.path_object.path_root)
         import_file(self.path_object.render_path)
         pass
 
@@ -121,7 +128,6 @@ def export_rigs():
     print(render_path.path_root)
     print(get_rigs_in_scene())
 
-
 def renanme_action():
     objects = bpy.context.selected_objects
     # selected_object = bpy.context.object
@@ -138,6 +144,16 @@ def renanme_action():
         else:
             lm.confirm_prompt(message='No action linked to object')
 
+def parent_rig_to_anim_group():
+    from cgl.plugins.blender.alchemy import scene_object
+    from cgl.plugins.blender import utils
+
+    scn = scene_object()
+    rigs = get_rigs_in_scene()
+    anim_group = utils.create_object('{}_{}:{}'.format(scn.seq,scn.shot,scn.task))
+
+    for rig in rigs:
+        utils.parent_object(rig,anim_group)
 
 
 

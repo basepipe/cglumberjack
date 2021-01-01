@@ -21,6 +21,7 @@ class MagicBrowser(MagicBrowser):
         print('Application Path path is %s' % path)
         # self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
 
+
 class BrowserWidget(CGLumberjackWidget):
     def __init__(self, parent=None,
                  project_management=None,
@@ -38,7 +39,6 @@ class BrowserWidget(CGLumberjackWidget):
                                             radio_filter=radio_filter,
                                             show_import=True,
                                             show_reference=True)
-
 
     def open_clicked(self):
         """
@@ -93,6 +93,7 @@ class BrowserWidget(CGLumberjackWidget):
         ## close lumbermill
         # self.parent().parent().accept()
 
+
 class ConfirmDialog(bpy.types.Operator):
     bl_idname = "message.messagebox"
     bl_label = ""
@@ -112,6 +113,7 @@ class ConfirmDialog(bpy.types.Operator):
 
     def draw(self, context):
         self.layout.label(text=self.message)
+
 
 class InputDialog(bpy.types.Operator):
     bl_idname = "message.inputdialog"
@@ -199,6 +201,7 @@ class InputDialog(bpy.types.Operator):
         row2.prop(self, 'selection', text='')
 
         row3 = col2.row()
+
 
 class PathObject(CorePathObject):
 
@@ -307,7 +310,7 @@ class PathObject(CorePathObject):
     def set_relative_path(self):
         import os
         from cgl.plugins.blender.lumbermill import scene_object
-        self.path_relative = os.path.relpath( self.path_root, scene_object().path_root)
+        self.path_relative = os.path.relpath(self.path_root, scene_object().path_root)
 
     def set_render_paths(self):
         padding = '#' * self.frame_padding
@@ -329,15 +332,23 @@ class PathObject(CorePathObject):
         print('what is my render path?')
         pass
 
+
 def import_file(filepath, namespace=None, collection_name=None):
     from cgl.plugins.blender import lumbermill as lm
+    from .magic_scene_description import add_source_path
+
     import bpy
+    path_object = lm.PathObject(filepath)
 
     if filepath.endswith('fbx'):
         bpy.ops.import_scene.fbx(filepath=filepath)
-    elif filepath.endswith('blend'):
+        for obj in bpy.context.selected_objects:
+            obj.name = '{}:{}'.format(obj.name, path_object.task)
 
-        path_object = lm.PathObject(filepath)
+    if filepath.endswith('abc'):
+        bpy.ops.wm.alembic_import(filepath=filepath)
+
+    elif filepath.endswith('blend'):
 
         if collection_name == None:
             collection_name = path_object.asset
@@ -351,20 +362,40 @@ def import_file(filepath, namespace=None, collection_name=None):
                     data_to.collections = [c]
 
         imported_collection = bpy.data.collections[collection_name]
+        imported_collection.name = '{}:{}'.format(collection_name, path_object.task)
         bpy.context.scene.collection.children.link(imported_collection)
-        imported_collection.name = path_object.task
 
         if namespace:
-            imported_collection.name = '{}:{}'.format(namespace,path_object.task )
+            imported_collection.name = '{}:{}'.format(namespace, path_object.task)
             for obj in imported_collection.objects:
-                obj.name = '{}:{}'.format(namespace,obj.name)
+                obj.name = '{}:{}'.format(namespace, obj.name)
                 obj['source_path'] = path_object.path
 
-                if obj.type =='MESH':
+                if obj.type == 'MESH':
                     obj.data.name = '{}:{}'.format(namespace, obj.data.name)
                     material = obj.material_slots[0].material
                     if ':' not in material.name:
-                        material.name = '{}:{}'.format(namespace,material.name)
+                        material.name = '{}:{}'.format(namespace, material.name)
+
+        print(namespace)
+
+    name = '{}:{}'.format(namespace, path_object.task)
+    if filepath.endswith('blend') or filepath.endswith('fbx'):
+        imported_object_name = name
+
+    if filepath.endswith('abc'):
+        imported_object_name = bpy.data.objects[path_object.filename_base].name = '{}_{}:{}'.format(path_object.seq,
+                                                                                                    path_object.shot,
+                                                                                                    path_object.task)
+
+    imported_object = bpy.data.objects[imported_object_name]
+
+
+
+    add_source_path(imported_object,path_object)
+
+
+    return imported_object
 
 
 def render(preview=False, audio=False):
@@ -393,8 +424,10 @@ def render(preview=False, audio=False):
         bpy.context.scene.render.filepath = file_out
         bpy.ops.render.render(animation=True, use_viewport=True)
 
+
 def reference_file(filepath, namespace=None, collection_name=None):
     from cgl.plugins.blender import lumbermill as lm
+    from .magic_scene_description import add_source_path
 
     import bpy
 
@@ -419,7 +452,9 @@ def reference_file(filepath, namespace=None, collection_name=None):
     bpy.context.collection.objects.link(obj)
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
+    add_source_path(obj,path_object)
     return obj
+
 
 def open_file(filepath):
     """
@@ -430,6 +465,7 @@ def open_file(filepath):
     bpy.ops.wm.open_mainfile(filepath=filepath)
     return filepath
 
+
 def save_file(filepath=''):
     """
     Save Current File
@@ -437,6 +473,7 @@ def save_file(filepath=''):
     :return:
     """
     return bpy.ops.wm.save_mainfile()
+
 
 def export_selected(to_path):
     """
@@ -458,7 +495,8 @@ def export_selected(to_path):
         bpy.ops.export_scene.blend(filepath=to_path, use_selection=True)
 
     elif to_path.endswith('abc'):
-        bpy.ops.wm.alembic_export(filepath = to_path,selected = True)
+        bpy.ops.wm.alembic_export(filepath=to_path, selected=True)
+
 
 def save_file_as(filepath):
     """
@@ -469,6 +507,7 @@ def save_file_as(filepath):
     bpy.ops.wm.save_as_mainfile(filepath=filepath)
     return filepath
 
+
 def get_scene_name():
     """
     get current scene name
@@ -476,11 +515,13 @@ def get_scene_name():
     """
     return bpy.data.filepath
 
-def set_relative_paths(set = True):
+
+def set_relative_paths(set=True):
     if set:
         bpy.ops.file.make_paths_relative()
     else:
         bpy.ops.file.make_paths_absolute()
+
 
 def scene_object():
     """
@@ -488,6 +529,7 @@ def scene_object():
     :return:
     """
     return PathObject(get_scene_name())
+
 
 def create_turntable(length=250, task=False, startFrame=1):
     """
@@ -530,6 +572,7 @@ def create_turntable(length=250, task=False, startFrame=1):
     bpy.context.scene.frame_end = endFrame
     pass
 
+
 def clean_turntable():
     """
     cleans up the turntable
@@ -544,6 +587,7 @@ def clean_turntable():
                 objs.remove(objs[obj.name], do_unlink=True)
     pass
 
+
 def review():
     """
     submit a review of the current scene.  (Requires a render to be present)
@@ -555,6 +599,7 @@ def review():
     if render_files:
         path_object = PathObject(scene_object().render_path)
         do_review(progress_bar=None, path_object=path_object)
+
 
 def launch_preflight(task=None, software=None):
     """
@@ -570,6 +615,7 @@ def launch_preflight(task=None, software=None):
     bpy.utils.register_class(PreflightOperator)
     bpy.ops.screen.preflight()
 
+
 def import_task(task=None, reference=False, **kwargs):
     """
     imports the latest version of the specified task into the scene.
@@ -581,13 +627,10 @@ def import_task(task=None, reference=False, **kwargs):
         task = scene_object().task
     class_ = get_task_class(task)
     print(class_)
-    if reference:
-        print(11111111111111111)
-        print(reference)
-        return class_().import_latest(task=task, reference=reference, **kwargs)
-    else:
-        print(2)
-        return class_().import_latest(**kwargs)
+
+    print(reference)
+    return class_().import_latest(task=task, reference=reference, **kwargs)
+
 
 def build(path_object=None):
     """
@@ -600,6 +643,7 @@ def build(path_object=None):
     task = path_object.task
     task_class = get_task_class(task)
     task_class(path_object).build()
+
 
 def get_task_class(task):
     """
@@ -622,6 +666,7 @@ def get_task_class(task):
     class_ = getattr(loaded_module, 'Task')
     return class_
 
+
 def publish():
     """
 
@@ -630,6 +675,7 @@ def publish():
     publish_object = scene_object().publish()
     # TODO - i'd like to have a lumbermill controlled popup here.  The blender one doesn't work.
     return publish_object
+
 
 def version_up(vtype='minor'):
     """
@@ -643,8 +689,9 @@ def version_up(vtype='minor'):
     elif vtype == 'major':
         new_version = path_object.next_major_version()
     create_file_dirs(new_version.path_root)
-    create_file_dirs(new_version.copy(context = 'render').path_root)
+    create_file_dirs(new_version.copy(context='render').path_root)
     return save_file_as(new_version.path_root)
+
 
 def selection(object=None, clear=False):
     if clear:
@@ -677,21 +724,23 @@ def unlink_asset(selection=None):
         obj = bpy.data.objects[name]
         bpy.data.batch_remove(ids=(libname, obj))
 
+
 def get_object(name):
     obj = bpy.data.objects[name]
     return obj
 
+
 def check_obj_exists(obj):
-
     if isinstance(obj, str):
-
         obj = bpy.data.objects[obj]
 
     if obj:
         return True
 
+
 def launch():
     BlenderJack.show()
+
 
 def confirm_prompt(title='Lumber message:', message='This is a message', button='Ok'):
     """
@@ -711,9 +760,10 @@ def confirm_prompt(title='Lumber message:', message='This is a message', button=
 
     bpy.ops.message.messagebox('INVOKE_DEFAULT', message=message)
 
+
 def input_dialog(parent=None, title='Attention:', message="message",
-                buttons=None, line_edit=False, line_edit_text=False, combo_box_items=None,
-                combo_box2_items=None, regex=None, name_example=None, button_a='ok', button_b='cancel', command=None):
+                 buttons=None, line_edit=False, line_edit_text=False, combo_box_items=None,
+                 combo_box2_items=None, regex=None, name_example=None, button_a='ok', button_b='cancel', command=None):
     import bpy
 
     try:
@@ -733,7 +783,6 @@ def input_dialog(parent=None, title='Attention:', message="message",
     bpy.types.Scene.inputDialogSelectionRegex = bpy.props.BoolProperty(default=False)
     value = bpy.ops.message.inputdialog('INVOKE_DEFAULT', message=message, example=name_example, title=title,
                                         operator=command)
-
 
 
 if __name__ == "__main__":

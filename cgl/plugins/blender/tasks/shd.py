@@ -78,6 +78,13 @@ def split_materials():
 
         lm.selection(clear=True)
 
+def import_materials(filepath):
+
+    with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
+        # data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
+        data_to.materials = [c for c in data_from.materials if c.startswith(collection_name)]
+    print('{} material imported '.format(collection_name))
+
 def read_materials(path_object=None):
     """
 
@@ -106,7 +113,8 @@ def read_materials(path_object=None):
         for material in data[obj].keys():
 
             if material not in bpy.data.materials:
-                lm.import_file_old(shaders.path_root, collection_name=material, type='MATERIAL', linked=False)
+                #lm.import_file_old(shaders.path_root, collection_name=material, type='MATERIAL', linked=False)
+                import_materials(shaders.path_root)
 
             if material not in object.data.materials:
                 object.data.materials.append(bpy.data.materials[material])
@@ -123,3 +131,4 @@ def read_materials(path_object=None):
             bpy.ops.mesh.select_all(action='DESELECT')
             bpy.ops.object.mode_set(mode='OBJECT')
             index += 1
+

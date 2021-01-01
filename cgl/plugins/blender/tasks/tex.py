@@ -333,6 +333,32 @@ def assign_material_to_children(shader):
         obj.material_slots[0].material = SG_path
 
 
+def publish_textures():
+    """
+    This run statement is what's executed when your button is pressed in blender.
+    :return:
+    """
+    from cgl.plugins.blender import alchemy as alc
+    import bpy
+    import os
+
+    scene = alc.scene_object()
+
+    texture_task = scene.copy(task='tex').latest_version()
+    texture_task = texture_task.copy(version=texture_task.next_minor_version_number(), filename='')
+    # print(texture_task_next.path_root)
+
+    os.makedirs(texture_task.path_root)
+
+    os.makedirs(texture_task.copy(context='render').path_root)
+
+    for image in bpy.data.images:
+        out_path = texture_task.copy(filename=image.name, context='render').path_root
+        image.save_render(out_path)
+
+    alc.save_file_as(texture_task.copy(context='source', set_proper_filename=True).path_root)
+    alc.confirm_prompt(message='textures exported!!! ')
+
 if __name__ == '__main__':
     task = Task()
     task._import()
