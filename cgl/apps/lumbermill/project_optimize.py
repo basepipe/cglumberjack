@@ -8,7 +8,8 @@ import re
 
 COMPANY = 'VFX'
 # PROJECT = '02BTH_2021_Kish'
-PROJECT = '18BTH_2019_Brinkley'
+# PROJECT = '18BTH_2019_Brinkley'
+PROJECT = '16BTH_2020_Arena'
 
 
 def get_shots(company, project, scope='shots', task=False):
@@ -83,11 +84,14 @@ def optimize_project(company, project, new_company=None, new_project=None, test=
     :param test:
     :return:
     """
+    start_time = time.time()
     if not new_company:
         new_company = company
     if not new_project:
         new_project = '{}_clean'.format(project)
     create_clean_project(company, project, new_company, new_project, test)
+    total_time = time.time()-start_time
+    print('Created Optimized Project in {} seconds'.format(total_time))
     # create_project_backup(company, project)
     # rename_clean_copy(company, project, new_company, new_project)
 
@@ -104,7 +108,7 @@ def create_clean_project(company, project, new_company, new_project, test=True):
     # TODO - copy over the globals from the current project to the new one.
 
 
-def copy_publish(old, new, test=True):
+def copy_publish(old, new, test=True, force=False):
     """
     copies the latest version to the new location.
     :param old:
@@ -114,7 +118,11 @@ def copy_publish(old, new, test=True):
     if test:
         print('Copying {} to {}'.format(old, new))
     else:
-        cgl_copy(old, new)
+        if force:
+            cgl_copy(old, new)
+        else:
+            if not os.path.exists(new):
+                cgl_copy(old, new)
 
 
 def create_project_backup(company, project, test=True):

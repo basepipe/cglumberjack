@@ -149,7 +149,7 @@ class FilesPanel(QtWidgets.QWidget):
             else:
                 my_files_label = 'Published Work Files'
             task_widget.setup(task_widget.files_area.work_files_table,
-                              FileTableModel(self.prep_list_for_table(self.work_files, basename=True, cfg=self.cfg),
+                              FileTableModel(self.prep_list_for_table(self.work_files, basename=True),
                                              [my_files_label]))
             self.load_render_files(task_widget)
             task_widget.create_empty_version.connect(self.new_empty_version_clicked)

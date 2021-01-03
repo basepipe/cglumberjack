@@ -170,7 +170,17 @@ class PathObject(object):
         return attrs
 
     def set_attrs_from_dict(self, path_object):
-        self.get_config_values(path_object['company'], path_object['project'])
+        company = 'master'
+        project = 'master'
+        try:
+            company = path_object['company']
+        except KeyError:
+            pass
+        try:
+            project = path_object['project']
+        except KeyError:
+            pass
+        self.get_config_values(company, project)
         if 'company' not in path_object:
             logging.error('No company attr found in %s - invalid dict' % path_object)
             return

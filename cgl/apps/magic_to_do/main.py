@@ -1,6 +1,7 @@
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
-from cgl.core.path import PathObject, CreateProductionData
+from cgl.core.path import PathObject, CreateProductionData, get_companies, get_projects
 from cgl.ui.widgets.base import LJDialog
+from cgl.ui.widgets.widgets import AdvComboBox
 from cgl.core.config.config import user_config
 from datetime import datetime, date
 from cgl.core.path import start
@@ -20,7 +21,8 @@ STATUS_COLORS = {'Not Started': '#BFBFBF',
                  'Published': '#52B434'}
 
 FILE_TYPES = {'maya': {'defaults': ['.mb', '.ma']},
-              'houdini': {'defaults': ['']}}
+              'houdini': {'defaults': ['']},
+              'nuke': {'defaults': ['.nk']}}
 
 
 class ScopeList(QtWidgets.QWidget):
@@ -61,6 +63,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
     newest_version_file = None
     published_file = None
     latest_user_file = None
+    latest_user_render_folder = None
     user = 'tmikota'
 
     def __init__(self, parent=None, button_label='Default Text', info_label=None, task=None, button_click_dict=None):
@@ -89,6 +92,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
         self.latest_user_context_text = 'User:       {}'.format(self.latest_user_file)
         self.latest_publish_text = 'Publish:   {}'.format(self.published_file)
         self.create_user_version_text = 'Create {} version'.format(self.user)
+        self.latest_user_render_text = '{}'.format(self.latest_user_render_folder)
 
         button_dict = {'Open in Magic Browser': self.open_in_magic_browser,
                        'separator': None,
@@ -98,7 +102,8 @@ class MagicButtonWidget(QtWidgets.QWidget):
                        self.latest_user_context_text: self.open_latest_user_file,
                        self.latest_publish_text: self.open_latest_publish_file,
                        'separator3': None,
-                       'Render Files:': None
+                       'Render Files:': None,
+                       self.latest_user_render_text: self.open_latest_user_render
                        }
 
         self.context_menu = QtWidgets.QMenu()
@@ -119,6 +124,15 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 if self.published_file:
                     from_latest_publish = QtWidgets.QAction('From Latest Publish File', self)
                     menu.addAction(from_latest_publish)
+            elif button == self.latest_user_render_text:
+                menu = QtWidgets.QMenu(button, self)
+                self.context_menu.addMenu(menu)
+                open_folder = QtWidgets.QAction('Open Folder', self)
+                publish_folder = QtWidgets.QAction('Publish', self)
+                open_folder.triggered.connect(self.open_latest_user_render)
+                publish_folder.triggered.connect(self.publish_latest_user_render)
+                menu.addAction(open_folder)
+                menu.addAction(publish_folder)
             elif 'separator' in button:
                 self.context_menu.addSeparator()
             else:
@@ -169,6 +183,21 @@ class MagicButtonWidget(QtWidgets.QWidget):
             print("Open: {}".format(self.latest_user_file))
             cmd = "cmd /c start {}".format(self.latest_user_file)
             os.system(cmd)
+
+    def open_latest_user_render(self):
+        if self.latest_user_render_folder:
+            print("Open: {}".format(self.latest_user_render_folder))
+            cmd = "cmd /c start {}".format(self.latest_user_render_folder)
+            os.system(cmd)
+
+    def publish_latest_user_render(self):
+        print('Publishing {}'.format(self.latest_user_render_folder))
+        render_object = PathObject(self.latest_user_render_folder).publish()
+        self.latest_user_render_folder = render_object.path_root
+        self.published_file = render_object.copy(context='source').path_root
+        self.status = 'Published'
+        self.set_button_look()
+
 
     def open_latest_publish_file(self):
         if self.published_file:
@@ -229,6 +258,9 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 else:
                     self.latest_user_file = self.newest_version_file
 
+                    self.latest_user_render_folder = os.path.dirname(self.latest_user_file).replace('/source/',
+                                                                                                    '/render/')
+
             self.set_time_stuff()
         else:
             self.status = 'Not Started'
@@ -276,7 +308,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
                     print('Creating a new version for the current user')
 
 
-class MagicToDo(LJDialog):
+class SkyView(LJDialog):
     cancel_signal = QtCore.Signal()
     button = True
     company = None
@@ -285,7 +317,7 @@ class MagicToDo(LJDialog):
     base_path_object = None
     current_scope = 'shots'
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, company=None, project=None):
         """
         Frame Range Dialog.
         :param parent:
@@ -302,30 +334,60 @@ class MagicToDo(LJDialog):
         self.user_config = user_config()
         self.setWindowTitle("Project View")
         layout = QtWidgets.QVBoxLayout(self)
+        self.company = company
+        if not self.company:
+            return
+        self.project = project
+        if not self.project:
+            return
+        self.project_row = QtWidgets.QHBoxLayout()
+        self.company_label = QtWidgets.QLabel("Company")
+        self.project_label = QtWidgets.QLabel("Project")
+        self.company_combo = AdvComboBox()
+        self.project_combo = AdvComboBox()
+        self.project_row.addWidget(self.company_label)
+        self.project_row.addWidget(self.company_combo)
+        self.project_row.addWidget(self.project_label)
+        self.project_row.addWidget(self.project_combo)
         self.scope_list = ScopeList()
         self.scroll_area = QtWidgets.QScrollArea(self)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area_widget_contents = QtWidgets.QWidget()
         self.grid_layout = QtWidgets.QGridLayout(self.scroll_area_widget_contents)
+        layout.addLayout(self.project_row)
         layout.addWidget(self.scope_list)
         layout.addWidget(self.scroll_area)
         #layout.addLayout(self.grid_layout)
-        self.scroll_area.setWidget(self.scroll_area_widget_contents)
-
         self.scope_changed()
+        self.set_defaults()
+        self.get_shots()
+        self.scroll_area.setWidget(self.scroll_area_widget_contents)
         self.scope_list.assets.clicked.connect(self.scope_changed)
         self.scope_list.shots.clicked.connect(self.scope_changed)
+        self.company_combo.currentIndexChanged.connect(self.on_company_selected)
+        self.project_combo.currentIndexChanged.connect(self.on_project_selected)
+
+
 
     def scope_changed(self):
+        if self.scope_list.assets.isChecked():
+            self.current_scope = 'assets'
+        else:
+            self.current_scope = 'shots'
+
+    def refresh(self):
         self.wipe_grid()
-        try:
-            self.current_scope = self.sender().text()
-        except AttributeError:
-            pass
-        self.set_defaults()
+        self.dict = {'project': self.project,
+                     'company': self.company,
+                     'context': 'render',
+                     'scope': self.current_scope,
+                     'seq': '*',
+                     'shot': '*'}
+        self.base_path_object = PathObject(self.dict)
         self.get_shots()
 
     def get_shots(self):
+        print(self.base_path_object.path_root)
         files = glob.glob(self.base_path_object.path_root)
         for i, f in enumerate(files):
             ii = i+1
@@ -349,14 +411,25 @@ class MagicToDo(LJDialog):
                 self.grid_layout.addWidget(button, row_number, i)
 
     def set_defaults(self):
-        if 'default_company' in self.user_config.keys():
-            self.company = self.user_config['default_company']
+        companies = get_companies()
+        companies.insert(0, '')
+        self.company_combo.clear()
+        self.company_combo.addItems(companies)
+        # if 'default_company' in self.user_config.keys():
+        #     self.company = self.user_config['default_company']
+        index = self.company_combo.findText(self.company)
+        if index != -1:
+            self.company_combo.setCurrentIndex(index)
+            self.on_company_selected()
         else:
-            self.company = ''
-        if 'default_project' in self.user_config.keys():
-            self.project = self.user_config['default_project']
+            self.company_combo.setCurrentIndex(0)
+        # if 'default_project' in self.user_config.keys():
+        #     self.project = self.user_config['default_project']
+        p_index = self.project_combo.findText(self.project)
+        if p_index != -1:
+            self.project_combo.setCurrentIndex(p_index)
         else:
-            self.project = None
+            self.project_combo.setCurrentIndex(0)
         self.dict = {'project': self.project,
                      'company': self.company,
                      'context': 'render',
@@ -364,6 +437,18 @@ class MagicToDo(LJDialog):
                      'seq': '*',
                      'shot': '*'}
         self.base_path_object = PathObject(self.dict)
+
+    def on_company_selected(self):
+        company = self.company_combo.currentText()
+        projects = get_projects(company)
+        self.company = company
+        projects.insert(0, '')
+        self.project_combo.clear()
+        self.project_combo.addItems(projects)
+
+    def on_project_selected(self):
+        self.project = self.project_combo.currentText()
+        self.refresh()
 
     def wipe_grid(self):
         while self.grid_layout.count():
@@ -384,7 +469,7 @@ class MagicToDo(LJDialog):
 if __name__ == "__main__":
     from cgl.ui.startup import do_gui_init
     app = do_gui_init()
-    mw = MagicToDo()
+    mw = SkyView(company='VFX', project='02BTH_2021_Kish')
     mw.show()
     mw.raise_()
     app.exec_()
