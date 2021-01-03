@@ -34,6 +34,7 @@ class ProjectConfig(object):
     project_config_file = None
     shaders_config_file = None
     images_folder = None
+    project_management = None
 
     def __init__(self, path_object=None, company='master', project='master', print_cfg=False):
         self.print_cfg = print_cfg
@@ -51,6 +52,7 @@ class ProjectConfig(object):
         self.get_project_config()
         self.images_folder = os.path.join(self.project_config['paths']['code_root'], 'resources', 'images')
         self.app_font_folder = os.path.join(self.project_config['paths']['code_root'], 'resources', 'fonts')
+        self.project_management = self.project_config['account_info']['project_management']
 
     def set_globals_path(self):
         try:
@@ -59,9 +61,12 @@ class ProjectConfig(object):
             self.root_folder = self.user_config['root']['master']
 
         self.master_globals_root = os.path.join(self.root_folder, 'master', 'config', 'master')
+        company_globals_root = os.path.join(self.root_folder, self.company, 'config', 'master')
         self.globals_root = os.path.join(self.root_folder, self.company, 'config', self.project)
+        if not os.path.exists(company_globals_root):
+            company_globals_root = self.master_globals_root
         if not os.path.exists(self.globals_root):
-            self.globals_root = self.master_globals_root
+            self.globals_root = company_globals_root
         self.css_folder = os.path.join(self.globals_root, 'css')
         self.default_files_folder = os.path.join(self.globals_root, 'default_files')
         self.hdri_folder = os.path.join(self.globals_root, 'hdri')
@@ -247,6 +252,13 @@ class ProjectConfig(object):
             return None
 
 
+def copy_config(from_company, from_project, to_company, to_project):
+    from_config = ProjectConfig(company=from_company, project=from_project).globals_root
+    to_config_root = os.path.join(get_root(from_project), to_company, 'config', to_project)
+    print('Copying from {} to {}'.format(from_config, to_config_root))
+    cgl_copy(from_config, to_config_root)
+
+
 def check_for_latest_master(path_object=None):
     # TODO - need to look at this and make it require cfg if possible.
     # TODO - probably need something in place to check if git is installed.
@@ -291,7 +303,8 @@ def get_root(project='master'):
 
 
 if __name__ == '__main__':
-    project_config = ProjectConfig(project='bob')
+    project_config = ProjectConfig(company='bob')
+    print(project_config.globals_root)
     # these return file paths
     # print(project_config.globals_file)
     # print(project_config.shaders_file)

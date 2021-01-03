@@ -1,10 +1,7 @@
 import os
 from cgl.core.utils.general import cgl_execute
 from cgl.core.path import get_file_type, PathObject
-from cgl.core.config import app_config
-
-CONFIG = app_config()
-EXT_MAP = CONFIG['ext_map']
+from cgl.core.config.config import ProjectConfig
 
 
 def tx_make(directory):
@@ -15,6 +12,8 @@ def tx_make(directory):
     """
     directory = (os.path.dirname(directory))
     path_object = PathObject(directory)
+    cfg = ProjectConfig(path_object)
+    ext_map = cfg.project_config['ext_map']
     list_of_files = list()
     file_type = None
     for (dirpath, dirnames, filenames) in os.walk(directory):
@@ -22,11 +21,11 @@ def tx_make(directory):
     for f in list_of_files:
         file, ext = os.path.splitext(f)
         try:
-            file_type = EXT_MAP[ext]
+            file_type = ext_map[ext]
         except KeyError:
             pass
         if file_type == 'image':
             output = '{}.tx'.format(file)
-            command = '%s %s -v -u -oiio -o %s' % (CONFIG['paths']['maketx'], f, output)
+            command = '%s %s -v -u -oiio -o %s' % (cfg.project_config['paths']['maketx'], f, output)
             cgl_execute(path_object, command)
 

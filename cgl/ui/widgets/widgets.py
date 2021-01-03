@@ -932,9 +932,12 @@ class LJListWidget(QtWidgets.QWidget):
 
 class CreateProjectDialog(QtWidgets.QDialog):
 
-    def __init__(self, parent, variable):
+    def __init__(self, parent, company, variable):
         QtWidgets.QDialog.__init__(self, parent=parent)
         self.variable = variable
+        self.company = company
+        self.cfg = ProjectConfig(company=self.company)
+        self.project_management = self.cfg.project_management
         self.proj_management_label = QtWidgets.QLabel('Project Management')
         layout = QtWidgets.QVBoxLayout(self)
         self.proj_management_combo = QtWidgets.QComboBox()

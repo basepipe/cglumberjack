@@ -10,7 +10,6 @@ import logging
 import re
 import xmltodict
 from cgl.core.config.config import ProjectConfig
-# from cgl.core.config import app_config, update_globals
 
 
 def pretty(obj):

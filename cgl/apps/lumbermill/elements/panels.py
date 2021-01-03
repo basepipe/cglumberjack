@@ -212,7 +212,7 @@ class ProjectPanel(QtWidgets.QWidget):
     def on_create_project(self):
         if self.title == 'Projects':
             progress_bar = self.parent().progress_bar
-            dialog = CreateProjectDialog(parent=None, variable='project')
+            dialog = CreateProjectDialog(parent=None, company=self.path_object.company, variable='project')
             dialog.exec_()
             if dialog.button == 'Ok':
                 project_name = dialog.proj_line_edit.text()
@@ -532,7 +532,7 @@ class ProductionPanel(QtWidgets.QWidget):
             task_mode = True
         else:
             task_mode = False
-        dialog = asset_creator.AssetCreator(self, path_dict=self.path_object.data, task_mode=task_mode)
+        dialog = asset_creator.AssetCreator(self, path_dict=self.path_object.data, task_mode=task_mode, cfg=self.cfg)
         dialog.exec_()
         self.update_location()
 

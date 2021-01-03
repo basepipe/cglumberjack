@@ -242,7 +242,8 @@ class FilesPanel(QtWidgets.QWidget):
                 task_mode = True
             else:
                 task_mode = False
-            dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
+            dialog = asset_creator.AssetCreator(self, path_dict=self.current_location,
+                                                task_mode=task_mode, cfg=self.cfg)
             dialog.exec_()
 
     def populate_users_combo(self, widget, path_object, task, set_to_publish=False):

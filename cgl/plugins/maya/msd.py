@@ -407,8 +407,10 @@ class CameraDescription(AssetDescription):
 
 def load_msd(msd_path):
     pm.select(d=True)
-    import cgl.plugins.maya.alchemy as lumbermill
-    reload(lumbermill)
+    import cgl.plugins.maya.alchemy as alchemy
+    reload(alchemy)
+    path_object = PathObject(msd_path)
+    root = path_object.root
     msd_ = load_json(msd_path)
     for asset in msd_:
         namespace = asset
@@ -423,7 +425,7 @@ def load_msd(msd_path):
             else:
                 group = 'LAYOUT'
             # TODO - this should not be pointing to 'source_path', it should be pointing to "msd" or "bndl_path"
-            bndl_path = "%s/%s" % (app_config()['paths']['root'], msd_[asset]['source_path'])
+            bndl_path = "%s/%s" % (root, msd_[asset]['source_path'])
             bundle = task_bndl.bundle_import(bndl_path, group)
             pm.xform(bundle, m=float_transforms)
         else:
@@ -435,7 +437,7 @@ def load_msd(msd_path):
                 else:
                     group = 'ANIM'
                 pm.select(d=True)
-                reference_path = "%s/%s" % (app_config()['paths']['root'], msd_[asset]['abc'])
+                reference_path = "%s/%s" % (root, msd_[asset]['abc'])
                 print(reference_path)
             elif msd_[asset]['type'] == 'asset':
                 print('Importing Layout')
@@ -444,20 +446,13 @@ def load_msd(msd_path):
                 else:
                     group = 'LAYOUT'
                 try:
-                    reference_path = "%s/%s" % (app_config()['paths']['root'], msd_[asset]['mb'])
+                    reference_path = "%s/%s" % (root, msd_[asset]['mb'])
                 except KeyError:
                     print('didnt find expected "mb" key, looking for "source_path" instead')
-                    reference_path = "%s/%s" % (app_config()['paths']['root'], msd_[asset]['source_path'])
-            # elif msd_[asset]['type'] == 'camera':
-            #     print('Importing Camera')
-            #     if not pm.objExists('CAMERA'):
-            #         group = pm.group(name='CAMERA')
-            #     else:
-            #         group = 'CAMERA'
-            #     reference_path = "%s%s" % (app_config()['paths']['root'], msd_[asset]['mb'])
+                    reference_path = "%s/%s" % (root, msd_[asset]['source_path'])
             pm.select(d=True)
             reference_path = reference_path.replace('\\', '/')
-            ref = lumbermill.reference_file(reference_path, namespace=namespace)
+            ref = alchemy.reference_file(reference_path, namespace=namespace)
             latest_top_node = pm.ls(assemblies=True)[-1]
             # ref_obj = select_reference(ref)
             print(latest_top_node, '---------------------')

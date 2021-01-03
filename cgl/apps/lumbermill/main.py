@@ -656,7 +656,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         logging.debug(1)
         from cgl.apps.lumbermill.elements import asset_creator
         task_mode = True
-        dialog = asset_creator.AssetCreator(self, path_dict=path_object.data, task_mode=task_mode)
+        dialog = asset_creator.AssetCreator(self, path_dict=path_object.data, task_mode=task_mode, cfg=self.cfg)
         dialog.exec_()
         self.update_location(path_object.data)
 
@@ -1228,8 +1228,7 @@ class CGLumberjack(LJMainWindow):
     def check_configs():
         return False
 
-    @staticmethod
-    def open_company_globals():
+    def open_company_globals(self):
         logging.debug(os.path.dirname(self.cfg.project_config['paths']['globals']))
         cglpath.start(os.path.dirname(self.cfg.project_config['paths']['globals']))
 
