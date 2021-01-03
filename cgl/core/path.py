@@ -27,6 +27,7 @@ class PathObject(object):
 
     def __init__(self, path_object=None, cfg=None):
         if not path_object:
+            logging.error('{} {}'.format(path_object, cfg))
             logging.error('No Path Object supplied')
             return
         self.data = {}
@@ -90,10 +91,9 @@ class PathObject(object):
         self.path_template = []
         self.version_template = []
         self.name = None
-
+        self.project_config = {}
         self.project_config_path = None
         self.company_config_path = None
-        self.project_config = {}
         self.proj_management = None
         self.project_padding = None
         self.processing_method = 'local'
@@ -122,7 +122,7 @@ class PathObject(object):
         :return:
         """
         if not self.cfg:
-            print('PathObject().get_config_values')
+            # print('PathObject().get_config_values')
             self.cfg = ProjectConfig(company=company, project=project)
         self.project_config = self.cfg.project_config
         self.proj_management = self.project_config['account_info']['project_management']
@@ -159,7 +159,6 @@ class PathObject(object):
 
     def process_dict(self, path_object):
         self.set_attrs_from_dict(path_object)
-        return
         self.set_path()
         self.set_project_config_paths()
         self.set_preview_path()
@@ -656,7 +655,7 @@ class PathObject(object):
         :return:
         """
         # first see if it's a sequence
-        sequence = Sequence(self.path_root, padding=self.project_padding)
+        sequence = Sequence(self.path_root, padding=self.project_padding, cfg=self.cfg)
         if sequence.is_valid_sequence():
             self.filename = os.path.basename(sequence.hash_sequence)
             self.frame_range = sequence.frame_range
@@ -1214,7 +1213,7 @@ class CreateProductionData(object):
         """
         Creates a default file for the given task
         """
-        default_file = get_task_default_file(self.path_object.task)
+        default_file = self.cfg.get_task_default_file(self.path_object.task)
         if default_file:
             if os.path.exists(default_file):
                 ext = os.path.splitext(default_file)[-1].replace('.', '')
@@ -1247,14 +1246,18 @@ class Sequence(object):
     num = None
     hash = None
 
-    def __init__(self, sequence, padding=None, verbose=False):
+    def __init__(self, sequence, padding=None, verbose=False, cfg=None):
         self.sequence = sequence
         self.verbose = verbose
+        self.cfg = cfg
+        self.config = cfg.project_config
         if not self.is_valid_sequence():
             return
         self.padding = padding
         self.set_frange()
         self.set_sequence_strings()
+
+
         # self.print_info()
 
     def is_valid_sequence(self):
@@ -1417,22 +1420,6 @@ class Sequence(object):
             return '%10d' % number
         elif padding == 11:
             return '%11d' % number
-
-
-def get_cgl_resources_path():
-    """
-    get the resources path
-    :return: path string
-    """
-    return os.path.join(self.config['paths']['code_root'], 'resources')
-
-
-def get_project_resources_path():
-    """
-    return the resources folder for the current project
-    :return:
-    """
-    return self.config['paths']['resources']
 
 
 def get_task_default_file(task):
@@ -1785,8 +1772,8 @@ def get_companies():
 def main(path_string, upload_review):
     if path_string:
         if upload_review:
-            path_object = PathObject(path_string)
-            path_object.upload_review()
+            po = PathObject(path_string)
+            po.upload_review()
         else:
             print('Upload Review Set to False')
     else:
@@ -1801,8 +1788,8 @@ if __name__ == '__main__':
                       'context': 'source',
                       'project': '02BTH_2021_Kish',
                       'scope': '*'}
-    path_object = PathObject(file_dict_test)
-    print(path_object.path_root)
+    po = PathObject(file_dict_test)
+    print(po.path_root)
 
 
 

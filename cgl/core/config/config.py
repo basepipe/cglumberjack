@@ -35,16 +35,18 @@ class ProjectConfig(object):
     shaders_config_file = None
     images_folder = None
 
-    def __init__(self, path_object=None, company='master', project='master'):
+    def __init__(self, path_object=None, company='master', project='master', print_cfg=False):
+        self.print_cfg = print_cfg
         if not path_object:
             self.company = company
             self.project = project
         if path_object:
             self.company = path_object.company
             self.project = path_object.project
-        print('--------------------------------')
-        print('Loading Config for {}: {}'.format(self.company, self.project))
-        print('\n\n')
+        if self.print_cfg:
+            print('--------------------------------')
+            print('Loading Config for {}: {}'.format(self.company, self.project))
+            print('\n\n')
         self.set_globals_path()
         self.get_project_config()
         self.images_folder = os.path.join(self.project_config['paths']['code_root'], 'resources', 'images')
@@ -63,6 +65,7 @@ class ProjectConfig(object):
         self.css_folder = os.path.join(self.globals_root, 'css')
         self.default_files_folder = os.path.join(self.globals_root, 'default_files')
         self.hdri_folder = os.path.join(self.globals_root, 'hdri')
+        self.hdri_settings_file = os.path.join(self.hdri_folder, 'settings.json')
         self.cookbook_folder = os.path.join(self.globals_root, 'cookbook')
         self.project_config_file = os.path.join(self.globals_root, 'globals.json')
         self.shaders_config_file = os.path.join(self.globals_root, 'shaders.json')
@@ -230,6 +233,18 @@ class ProjectConfig(object):
         """
         return os.path.join(self.project_config['paths']['code_root'], 'resources')
 
+    def get_task_default_file(self, task):
+        """
+        returns the path to the default file of the given task
+        :param task:
+        :return:
+        """
+        task_folder = os.path.join(self.default_files_folder, task)
+        default_file = glob.glob('{}/default.*'.format(task_folder))
+        if default_file:
+            return os.path.join(task_folder, default_file[0])
+        else:
+            return None
 
 
 def check_for_latest_master(path_object=None):
@@ -267,7 +282,12 @@ def get_root(project='master'):
     gets root from the current project defaults to 'master'.
     :return:
     """
-    return user_config()['root'][project]
+    user_conf = user_config()
+    if project in user_conf['root'].keys():
+        return user_conf['root'][project]
+    else:
+        return user_conf['root']['master']
+    return
 
 
 if __name__ == '__main__':

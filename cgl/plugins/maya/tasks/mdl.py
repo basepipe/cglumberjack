@@ -102,7 +102,7 @@ def delete_history(name=None):
     else:
         name = pm.ls(sl=True)
         if not name:
-            print 'Nothing Selected, and no object given, skipping Delete History'
+            print('Nothing Selected, and no object given, skipping Delete History')
             return
     pm.delete(all=True, constructionHistory=True)
 
@@ -113,7 +113,7 @@ def freeze_transforms(name=None):
     else:
         name = pm.ls(sl=True)
         if not name:
-            print 'Nothing Selected, and no object given, skipping Delete History'
+            print('Nothing Selected, and no object given, skipping Delete History')
             return
     pm.runtime.FreezeTransformations()
 

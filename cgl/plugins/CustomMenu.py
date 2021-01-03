@@ -1,7 +1,7 @@
 import os
 import json
 from cgl.core.path import PathObject
-from cgl.core.project import get_cgl_tools, get_cgl_config
+from cgl.core.config.config import ProjectConfig
 
 
 class CustomMenu(object):
@@ -37,13 +37,14 @@ class CustomMenu(object):
             self.path_object = PathObject(str(self.scene_path))
         else:
             print('No Valid Scene Path')
-        self.company_config = os.path.dirname(get_cgl_tools())
-        print('Company Config is: %s' % self.company_config)
-        if not os.path.exists(self.company_config):
-            print('Company Config %s: does no exist' % self.company_config)
+        self.cfg = ProjectConfig(self.path_object)
+        self.project_config = self.cfg.project_config_file
+        print('Company Config is: %s' % self.project_config)
+        if not os.path.exists(self.project_config):
+            print('Project Config %s: does no exist' % self.project_config)
             return
 
-        self.menus_file = os.path.join(get_cgl_tools(), software, '%s.cgl' % self.type)
+        self.menus_file = os.path.join(self.cfg.cookbook_folder, software, '%s.cgl' % self.type)
         self.menus = self.load_cgl()
         self.menus_folder = os.path.join(os.path.dirname(self.menus_file), type_)
         self.menu_dict = {}
@@ -149,7 +150,7 @@ class CustomMenu(object):
         :param button:
         :return: icon path string
         """
-        icon_path = os.path.join(self.company_config, 'cgl_tools')
+        icon_path = os.path.join(self.project_config, 'cgl_tools')
         if self.menus[shelf][button]['icon']:
             icon_file = os.path.join(icon_path, self.menus[shelf][button]['icon'])
             return icon_file

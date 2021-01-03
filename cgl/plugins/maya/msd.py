@@ -4,12 +4,29 @@ import glob
 import pymel.core as pm
 import cgl.plugins.MagicSceneDescription as msd
 reload(msd)
-from cgl.core.config import app_config
+from cgl.core.path import PathObject
 from cgl.core.utils.read_write import load_json, save_json
-from cgl.plugins.maya.alchemy import get_scene_name, PathObject, scene_object
+from cgl.plugins.maya.alchemy import get_scene_name, scene_object
 from cgl.plugins.maya.utils import load_plugin, select_reference
 
-CONFIG = app_config()
+DEFAULT_DATA = {
+                    "asset": {
+                        "name": "",
+                        "source_path": "",
+                        "task": "",
+                        "transform": "",
+                        "type": "asset"
+                    },
+                    "camera": {
+                        "name": "",
+                        "source_path": "",
+                        "task": "",
+                        "transform": "",
+                        "type": "camera",
+                        "frame_start": 0,
+                        "frame_end": 0
+                    }
+                }
 
 
 class MagicSceneDescription(msd.MagicSceneDescription):
@@ -37,6 +54,7 @@ class MagicSceneDescription(msd.MagicSceneDescription):
         """
         self.scene_file = get_scene_name()
         self.path_object = PathObject(self.scene_file)
+        print(self.path_object.path_root, 'path_root')
         pass
 
     @staticmethod
@@ -127,7 +145,7 @@ class AssetDescription(object):
         self.single_asset_name = single_asset_name
         self.mesh_name = mesh_name
         self.path_root = path_root
-        self.data = CONFIG['layout']['asset']
+        self.data = DEFAULT_DATA['asset']
         self.asset_type = asset_type
         if not mesh_object:
             self.mesh_object = self.get_object_from_mesh_name()
@@ -159,6 +177,8 @@ class AssetDescription(object):
                 self.path_root = self.mesh_object[-1].path
         elif self.asset_type == 'bndl':
             self.path_root = pm.getAttr(self.mesh_object.BundlePath)
+        elif self.asset_type == 'anim':
+            self.path_root = str(pm.referenceQuery(self.mesh_object, filename=True))
         self.path_object = PathObject(self.path_root)
 
     def get_mesh_name_from_object(self):
@@ -248,13 +268,15 @@ class AssetDescription(object):
         # see if it's animated (is it in the ANIM group)
         data_temp = copy.copy(self.data)
         if self.asset_type == 'asset':
-            self.data = self.add_matching_files_to_dict(self.path_object.copy(context='render').path_root, data_temp)
+            self.data = self.add_matching_files_to_dict(self.path_object.copy(context='render',
+                                                                              user='publish').path_root, data_temp)
         elif self.asset_type == 'anim':
-            anim_obj = PathObject(pm.referenceQuery(self.mesh_object, filename=True))
+            self.data = self.add_matching_files_to_dict(self.path_object.copy(context='render',
+                                                                              user='publish').path_root, data_temp)
+            # anim_publish = str(pm.referenceQuery(self.mesh_object, filename=True))
+            anim_obj = PathObject(self.path_root)
             filename = '{}_{}*'.format(anim_obj.seq, anim_obj.shot)
-            filepath = self.path_object.copy(context='render', filename=filename).path_root
-            print('Adding to dict------------------------------')
-            print('\t{}'.format(filepath))
+            filepath = scene_object().copy(context='render', user='publish', filename=filename).path_root
             self.data = self.add_matching_files_to_dict(filepath, data_temp)
         self.set_path_object_details()
         matrix = self.get_matrix()
@@ -324,7 +346,7 @@ class CameraDescription(AssetDescription):
         """
 
         self.mesh_name = mesh_name
-        self.data = CONFIG['layout']['asset']
+        self.data = DEFAULT_DATA['asset']
         self.asset_type = 'camera'
         self.mesh_object = self.get_object_from_mesh_name()
         self.create_msd()
@@ -414,7 +436,7 @@ def load_msd(msd_path):
                     group = 'ANIM'
                 pm.select(d=True)
                 reference_path = "%s/%s" % (app_config()['paths']['root'], msd_[asset]['abc'])
-                print reference_path
+                print(reference_path)
             elif msd_[asset]['type'] == 'asset':
                 print('Importing Layout')
                 if not pm.objExists('LAYOUT'):

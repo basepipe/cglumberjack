@@ -125,9 +125,9 @@ class ProjectPanel(QtWidgets.QWidget):
         # Create the Left Panel
         self.panel = QtWidgets.QVBoxLayout(self)
         if title == 'Projects':
-            pixmap = QtGui.QPixmap(icon_path('project24px.png'))
+            pixmap = QtGui.QPixmap(self.cfg.icon_path('project24px.png'))
         elif title == 'Companies':
-            pixmap = QtGui.QPixmap(icon_path('company24px.png'))
+            pixmap = QtGui.QPixmap(self.cfg.icon_path('company24px.png'))
         self.project_filter = ProjectWidget(title=title, pixmap=pixmap,
                                             search_box=search_box, path_object=self.path_object)
 
@@ -179,8 +179,8 @@ class ProjectPanel(QtWidgets.QWidget):
             self.project_filter.add_button.setText('Add Project')
         self.project_filter.setup(ListItemModel(prep_list_for_table(projects,
                                                                     split_for_file=True,
-                                                                    size_path=self.path_object.path_root),
-                                                ['Name', 'Size']))
+                                                                    size_path=self.path_object.path_root,
+                                                                    cfg=self.cfg), ['Name', 'Size']))
 
         self.update_location(self.path_object)
 
@@ -199,7 +199,9 @@ class ProjectPanel(QtWidgets.QWidget):
         else:
             self.project_filter.data_table.setEnabled(True)
             self.project_filter.add_button.setText('Add Company')
-        self.project_filter.setup(ListItemModel(prep_list_for_table(clean_companies, split_for_file=True), ['Name']))
+        self.project_filter.setup(ListItemModel(prep_list_for_table(clean_companies,
+                                                                    split_for_file=True,
+                                                                    cfg=self.cfg), ['Name']))
         self.update_location(self.path_object)
 
     def update_location(self, path_object=None):
@@ -553,7 +555,7 @@ class ProductionPanel(QtWidgets.QWidget):
         clear_layout(self, layout=layout)
 
 
-def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path=False):
+def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path=False, cfg=None):
     from cgl.core.cgl_info import get_cgl_info_size
     list_.sort()
     output_ = []
@@ -562,7 +564,7 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path
     source_size = ''
     for each in list_:
         if size_path:
-            temp_obj = PathObject(size_path, self.cfg).copy(project=each)
+            temp_obj = PathObject(size_path, cfg).copy(project=each)
             print(temp_obj.path_root)
             total_size = get_cgl_info_size(temp_obj.path_root, source=True, render=True)
             source_size = get_cgl_info_size(temp_obj.path_root, source=True, render=False)
@@ -573,7 +575,7 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path
             else:
                 total_size = total_size
         if path_filter:
-            filtered = PathObject(each, self.cfg).data[path_filter]
+            filtered = PathObject(each, cfg).data[path_filter]
             to_append = [filtered]
             if size_path:
                 to_append = [filtered, total_size]

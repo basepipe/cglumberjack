@@ -5,7 +5,7 @@ import pymel.core as pm
 from .smart_task import SmartTask
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
-from cgl.plugins.maya.alchemy import PathObject
+from cgl.core.path import PathObject
 from cgl.core.config import shader_config, app_config
 from cgl.ui.widgets.widgets import AdvComboBox
 

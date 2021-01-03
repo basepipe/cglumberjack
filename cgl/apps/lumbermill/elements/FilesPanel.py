@@ -149,7 +149,7 @@ class FilesPanel(QtWidgets.QWidget):
             else:
                 my_files_label = 'Published Work Files'
             task_widget.setup(task_widget.files_area.work_files_table,
-                              FileTableModel(self.prep_list_for_table(self.work_files, basename=True),
+                              FileTableModel(self.prep_list_for_table(self.work_files, basename=True, cfg=self.cfg),
                                              [my_files_label]))
             self.load_render_files(task_widget)
             task_widget.create_empty_version.connect(self.new_empty_version_clicked)
@@ -722,7 +722,7 @@ class FilesPanel(QtWidgets.QWidget):
         else:
             glob_path = render_path
         files_ = glob.glob('%s/*' % glob_path)
-        data_ = self.prep_list_for_table(files_, basename=True, length=1, back=True)
+        data_ = self.prep_list_for_table(files_, basename=True, length=1, back=True, cfg=self.cfg)
         model = FilesModel(data_, ['Ready to Review/Publish'], cfg=self.cfg)
         self.render_files_widget.set_item_model(model)
 
@@ -746,7 +746,7 @@ class FilesPanel(QtWidgets.QWidget):
                 widget.files_area.publish_button.show()
                 render_files_label = 'Ready to Review/Publish'
             logging.debug('Published Files for %s' % current.path_root)
-            data_ = self.prep_list_for_table(files_, basename=True, length=1)
+            data_ = self.prep_list_for_table(files_, basename=True, length=1, cfg=self.cfg)
             model = FilesModel(data_, [render_files_label], cfg=self.cfg)
             widget.setup(render_table, model)  # this is somehow replacing the other table for source when there are no files
             render_table.show()

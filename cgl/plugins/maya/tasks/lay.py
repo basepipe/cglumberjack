@@ -2,7 +2,8 @@ import os
 import pymel.core as pm
 from cgl.core.utils.read_write import load_json
 from .smart_task import SmartTask
-from cgl.plugins.maya.alchemy import PathObject, scene_object
+from cgl.core.path import PathObject
+from cgl.plugins.maya.alchemy import scene_object
 from cgl.plugins.maya.utils import select_reference
 from cgl.ui.widgets.dialog import InputDialog
 import cgl.core.assetcore as assetcore

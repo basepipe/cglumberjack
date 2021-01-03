@@ -1,7 +1,7 @@
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.path import PathObject, CreateProductionData
 from cgl.ui.widgets.base import LJDialog
-from cgl.core.config import app_config, UserConfig
+from cgl.core.config.config import user_config
 from datetime import datetime, date
 from cgl.core.path import start
 
@@ -299,7 +299,7 @@ class MagicToDo(LJDialog):
         :param both:
         """
         LJDialog.__init__(self, parent)
-        self.user_config = UserConfig().d
+        self.user_config = user_config()
         self.setWindowTitle("Project View")
         layout = QtWidgets.QVBoxLayout(self)
         self.scope_list = ScopeList()

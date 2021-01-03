@@ -1,10 +1,7 @@
 import os
 import copy
 import glob
-from cgl.core.config import app_config
 from cgl.core.utils.read_write import load_json, save_json
-
-CONFIG = app_config()
 
 
 class MagicSceneDescription(object):

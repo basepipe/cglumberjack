@@ -1,7 +1,8 @@
 import pymel.core as pm
 from cgl.core.utils.read_write import load_json
 from .smart_task import SmartTask
-from cgl.plugins.maya.alchemy import PathObject, scene_object
+from cgl.core.path import PathObject
+from cgl.plugins.maya.alchemy import scene_object
 import cgl.plugins.maya.utils as utils
 reload(utils)
 from cgl.ui.widgets.dialog import InputDialog

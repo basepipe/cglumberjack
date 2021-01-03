@@ -1,3 +1,4 @@
+from cgl.core.path import PathObject
 
 
 class SmartTask(object):
@@ -12,7 +13,7 @@ class SmartTask(object):
 
         :param path_object: must be a "PathObject"
         """
-        from cgl.plugins.maya.alchemy import PathObject, scene_object
+        from cgl.plugins.maya.alchemy import scene_object
         if not path_object:
             self.path_object = scene_object()
         else:
