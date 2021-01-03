@@ -334,11 +334,12 @@ class PathObject(CorePathObject):
 
 
 def import_file(filepath, namespace=None, collection_name=None):
-    from cgl.plugins.blender import lumbermill as lm
+    from cgl.plugins.blender import alchemy as alc
     from .magic_scene_description import add_source_path
+    from cgl.plugins.blender.utils import get_objects_in_hirarchy, parent_to_collection
 
     import bpy
-    path_object = lm.PathObject(filepath)
+    path_object = alc.PathObject(filepath)
 
     if filepath.endswith('fbx'):
         bpy.ops.import_scene.fbx(filepath=filepath)
@@ -362,24 +363,20 @@ def import_file(filepath, namespace=None, collection_name=None):
                     data_to.collections = [c]
 
         imported_collection = bpy.data.collections[collection_name]
-        imported_collection.name = '{}:{}'.format(collection_name, path_object.task)
+
+        scene_collection_name = alc.scene_object().filename_base
         bpy.context.scene.collection.children.link(imported_collection)
 
         if namespace:
-            imported_collection.name = '{}:{}'.format(namespace, path_object.task)
-            for obj in imported_collection.objects:
-                obj.name = '{}:{}'.format(namespace, obj.name)
-                obj['source_path'] = path_object.path
-
-                if obj.type == 'MESH':
-                    obj.data.name = '{}:{}'.format(namespace, obj.data.name)
-                    material = obj.material_slots[0].material
-                    if ':' not in material.name:
-                        material.name = '{}:{}'.format(namespace, material.name)
-
-        print(namespace)
+            imported_objects_list = []
+            for each_obj in imported_collection.objects:
+                each_obj.name = '{}:{}'.format(namespace, each_obj.name)
+                imported_objects_list.append(each_obj)
+                parent_to_collection(each_obj, scene_collection_name)
+            bpy.data.collections.remove(imported_collection)
 
     name = '{}:{}'.format(namespace, path_object.task)
+
     if filepath.endswith('blend') or filepath.endswith('fbx'):
         imported_object_name = name
 
@@ -389,10 +386,9 @@ def import_file(filepath, namespace=None, collection_name=None):
                                                                                                     path_object.task)
 
     imported_object = bpy.data.objects[imported_object_name]
+    add_source_path(imported_object, path_object)
 
 
-
-    add_source_path(imported_object,path_object)
 
 
     return imported_object

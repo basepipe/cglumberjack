@@ -821,7 +821,7 @@ def create_collection(collection_name, parent=None):
 
     return collection
 
-def parent_to_collection(obj, collection_name):
+def parent_to_collection(obj, collection_name,replace = False):
     """
 
     :param obj: blender object
@@ -839,6 +839,15 @@ def parent_to_collection(obj, collection_name):
         collection.objects.link(obj)
     except RuntimeError:
         print('{} already in light collection'.format(obj.name))
+
+    if replace:
+        for col in obj.users_collection:
+            if not col.name == collection_name:
+                try:
+                    col.objects.unlink(obj)
+                    bpy.data.collections.remove(col)
+                except:
+                    pass
 
 def return_asset_name(obj):
     if 'proxy' in obj.name:
@@ -907,7 +916,7 @@ def create_object(name, type=None, parent=None,collection = None):
     from cgl.plugins.blender.alchemy import scene_object
     if collection == None:
 
-        collection = bpy.context.collection
+        collection = bpy.context.collection.name
 
     if name in bpy.data.objects:
         object = bpy.data.objects[name]
@@ -917,7 +926,7 @@ def create_object(name, type=None, parent=None,collection = None):
 
     if parent:
         object.parent = parent
-    parent_to_collection(collection_name=collection.name,obj=object)
+    parent_to_collection(collection_name=collection,obj=object)
 
     return object
 

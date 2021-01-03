@@ -21,8 +21,6 @@ class Task(SmartTask):
         model_ref = lm.import_task(task='mdl', reference=True)
         lm.import_task(task='tex', ref_node=model_ref)
 
-
-
 def get_materials_dictionary(objects = None):
     """
     creates a dictionary of the objects and the faces associated with that object
@@ -45,7 +43,6 @@ def get_materials_dictionary(objects = None):
             materialPolys[o.material_slots[p.material_index].name].append(i)
         materials.update({o.name: materialPolys})
     return (materials)
-
 
 def check_material_count(max_count = 1 ):
 

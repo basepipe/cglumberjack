@@ -65,7 +65,6 @@ def get_latest(ext='msd'):
                                    user='publish', latest=True, set_proper_filename=True, ext=ext)
     return this_obj
 
-
 def main_import(filepath, import_rigs = True,reference = True, latest = False):
     """
 
@@ -116,6 +115,7 @@ def main_import(filepath, import_rigs = True,reference = True, latest = False):
 
         print('IMPORTING FILES________________')
         print(d2.path_root)
+
         if not task == 'rig':
 
             ref = import_file(namespace=ns2, filepath=d2.path_root)
@@ -137,8 +137,6 @@ def main_import(filepath, import_rigs = True,reference = True, latest = False):
         #         print('________IMPORT Rig set to false_____________')
 
         set_matrix(ref, float_transforms)
-
-
 
 def check_reference_attribute(attribute,reference_path = None):
     from cgl.plugins.blender.alchemy import scene_object,PathObject, set_relative_paths

@@ -155,8 +155,6 @@ def parent_rig_to_anim_group():
     for rig in rigs:
         utils.parent_object(rig,anim_group)
 
-
-
 def reset_lock_cursor():
     import bpy
 
