@@ -122,8 +122,6 @@ class MagicSceneDescription(msd.MagicSceneDescription):
         else:
             return bundles
 
-
-
 class AssetDescription(object):
     name = None
     namespace = ''
@@ -169,6 +167,7 @@ class AssetDescription(object):
         self.path_object = LumberObject(os.path.join(scene_object().root,self.path_root))
 
         print(self.path_object.path_root)
+
     def get_mesh_name_from_object(self):
         """
         get the mesh name (name of asset in scene) from the mesh_object
@@ -298,7 +297,6 @@ class AssetDescription(object):
 
             self.data['rig_root'] = 'c_pos' #TODO this sholdn't be hardcoded move to globals
 
-
 class CameraDescription(AssetDescription):
 
     def __init__(self, name, start_frame=0, end_frame=0, start_handle=None, end_handle=None):
@@ -307,6 +305,37 @@ class CameraDescription(AssetDescription):
     def set_frame_range(self, start_frame, end_frame, start_handle, end_handle):
         pass
 
+
+
+
+def path_object_from_source_path(source_path):
+    from cgl.core.config import app_config
+    from cgl.plugins.blender.alchemy import PathObject
+    root = app_config()['paths']['root']
+    if root not in source_path:
+        reference_path = "%s\%s" % (root, source_path)
+    else:
+        reference_path = source_path
+
+
+    path_object = PathObject(reference_path)
+    return path_object
+
+def path_object_from_asset_name(asset_name ,task = 'mdl', seq = 'char'):
+    from cgl.core.config import app_config
+    from cgl.plugins.blender.alchemy import PathObject
+    root = app_config()['paths']['root']
+
+    path_object = scene_object().copy(scope ='assets',
+                                      context = 'source',
+                                      asset = asset_name,
+                                      task = task,
+                                      latest=True,
+                                      user = 'publish',
+                                      set_proper_filename=True,
+                                      seq = seq)
+
+    return path_object
 
 def set_matrix(obj, transform_data):
     """

@@ -612,7 +612,7 @@ def launch_preflight(task=None, software=None):
     bpy.ops.screen.preflight()
 
 
-def import_task(task=None, reference=False, **kwargs):
+def import_task(task=None,file_path=None, reference=False, **kwargs):
     """
     imports the latest version of the specified task into the scene.
     :param task:
@@ -625,7 +625,7 @@ def import_task(task=None, reference=False, **kwargs):
     print(class_)
 
     print(reference)
-    return class_().import_latest(task=task, reference=reference, **kwargs)
+    return class_().import_latest(task=task, reference=reference, file_path = file_path,**kwargs)
 
 
 def build(path_object=None):

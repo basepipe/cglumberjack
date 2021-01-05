@@ -45,7 +45,7 @@ class SmartTask(object):
         else:
             return import_file(filepath=file_path,namespace=path_object.asset)
 
-    def import_latest(self, task=None, reference=False, **kwargs):
+    def import_latest(self,task=None, reference=False, **kwargs):
         if not task:
             task = self.path_object.task
         new_obj = self.path_object.copy(task=task, context='render', user='publish',

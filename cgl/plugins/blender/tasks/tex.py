@@ -158,7 +158,6 @@ def create_and_attach_shader(mtl_group, name_space=None, source_shader=DEFAULT_S
     :return:
     """
     print("Found Published Textures for {}: Creating Shader".format(mtl_group))
-    print(55555555555555)
     materials = bpy.data.materials
 
     material = '{}_mtl'.format(mtl_group)

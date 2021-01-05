@@ -530,7 +530,7 @@ def read_materials(path_object=None):
             bpy.ops.object.mode_set(mode='OBJECT')
             index += 1
 
-def create_task_on_asset(task, path_object=None):
+def create_task_on_asset(task, path_object=None,version_up = False):
     """
     Creates a task on disk based on path object
     :param task:
@@ -543,25 +543,26 @@ def create_task_on_asset(task, path_object=None):
     if path_object == None:
         path_object = lm.scene_object()
 
-    newTask = path_object.copy(task=task, version='000.000', user='publish', set_proper_filename=True)
-    print(newTask.path)
+    newTask = path_object.copy(task=task)
+    if version_up:
+        newTask =newTask.new_minor_version_object()
 
     taskFolder = newTask.copy(filename='').path_root
 
-    if not os.path.isdir(taskFolder):
-        os.makedirs(taskFolder)
 
-    else:
-        if os.listdir(taskFolder):
-            print('{} Exists'.format(taskFolder))
-            newTask.next_major_version()
-            newTask = newTask.next_major_version()
-            taskFolder = newTask.copy(filename='').path_root
-            os.makedirs(taskFolder)
-            print(newTask.path)
+    print('{} creating version'.format(taskFolder))
 
-        else:
-            print('{}  is empty, using version {}'.format(taskFolder, newTask.version))
+    print(newTask.path_root)
+
+    sourceFolder = newTask.copy(filename='',context = 'source').path_root
+    renderFolder = newTask.copy(filename='',context = 'render').path_root
+
+    folders = [sourceFolder,renderFolder]
+
+    for f in folders:
+        if not os.path.isdir(f):
+            os.makedirs(f)
+
 
     return newTask
 
@@ -930,47 +931,7 @@ def create_object(name, type=None, parent=None,collection = None):
 
     return object
 
-def material_dictionaries(task='mdl'):
-    import bpy
-    mdl = bpy.data.objects[task]
-    resolutions = mdl.children
 
-    material_MSD = {}
-    material_MSD[task] = {}
-    for res in resolutions:
-        material_MSD[task][res.name] = {}
-        for mat in res.children:
-            objects = []
-            for obj in mat.children:
-                objects.append(obj.name)
-            material_MSD[task][res.name][mat.name] = objects
-
-    return material_MSD
-
-def get_object_list(materials_dic = None):
-    from cgl.plugins.blender.lumbermill import scene_object
-    import bpy
-
-    if not materials_dic:
-        task = scene_object().task
-        materials_dic = material_dictionaries(task)
-
-    dic = materials_dic
-    obj = bpy.data.objects
-    object_list = []
-    for task in dic:
-        task_null = obj[task]
-        print(task_null)
-        for res in dic[task]:
-            resolution_null = obj[res]
-            print(resolution_null)
-            for material in dic[task][res]:
-                print(material)
-                children = bpy.data.objects[material].children
-
-                for obj in children:
-                    object_list.append(obj)
-    return object_list
 
 def parent_object(child, parent, keep_transform=True):
     child.parent = parent
@@ -1084,9 +1045,10 @@ def scene_elem(elem):
     import bpy
     return eval('bpy.data.{}'.format(elem))
 
-def get_object(name):
+def get_object(name, namespace = False):
     import bpy
     return bpy.data.objects[name]
+
 
 def set_framerange(start,end):
     import bpy
@@ -1095,6 +1057,7 @@ def set_framerange(start,end):
     bpy.context.scene.frame_current = start
 
 def selection(object=None, clear=False):
+    import bpy
     if clear:
 
         for ob in bpy.data.objects:
@@ -1102,6 +1065,7 @@ def selection(object=None, clear=False):
 
     if object:
         object.select_set(True)
+        bpy.context.view_layer.objects.active = object
 
 def current_selection(single = False):
     import bpy
@@ -1201,7 +1165,7 @@ def get_objects_in_hirarchy(obj, levels=10):
         if depth > levels:
             return
         hirarchy.append(obj.name)
-        print("  " * depth, obj.name)
+        #print("  " * depth, obj.name)
         for child in obj.children:
             recurse(child, obj, depth + 1)
 

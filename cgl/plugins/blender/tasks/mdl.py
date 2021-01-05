@@ -165,7 +165,6 @@ def get_mdl_objects(group= 'high', namespace = None):
 
     return mdl_objects
 
-
 def export_mesh(type = 'abc'):
     """
     exports all the rigs in the scene

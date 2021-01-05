@@ -11,6 +11,7 @@ class Task(SmartTask):
                                                                context = 'render',
                                                                ext = 'abc',
                                                                latest=True,
+                                                               user = 'publish',
                                                                set_proper_filename=True).path_root
     def build(self):
         """
@@ -21,12 +22,12 @@ class Task(SmartTask):
         from cgl.plugins.blender.utils import create_shot_mask_info , rename_collection
         from cgl.plugins.blender.alchemy import scene_object
 
-
+        rename_collection(scene_object())
         camfile = alc.scene_object().copy(task = 'cam')
         alc.import_task(file_path = camfile,  task='cam')
-        alc.import_task(task='lay')
+        alc.import_task(task='lay', reference=True,latest = True)
 
-        rename_collection(scene_object())
+
         create_shot_mask_info()
         reset_lock_cursor()
         parent_rig_to_anim_group()
@@ -35,7 +36,8 @@ class Task(SmartTask):
         from cgl.plugins.blender.alchemy import import_file, scene_object
         print('animation file')
         print(self.path_object.path_root)
-        import_file(self.path_object.render_path)
+        rig = import_file(self.path_object.render_path)
+
         pass
 
 def get_keyframes(obj, ends=False):
@@ -88,7 +90,48 @@ def make_proxy(path_object,obj):
     bpy.ops.object.proxy_make(object=rig_name)
     return bpy.data.objects[rig_name]
 
-def get_rigs_in_scene(scene=None):
+def get_anim_group():
+    from cgl.plugins.blender.alchemy import scene_object
+    from cgl.plugins.blender.utils import create_object
+    scn = scene_object()
+    group = create_object('{}_{}:anim'.format(scn.seq, scn.shot))
+
+    return group
+
+
+def get_animation_mdl_groups():
+    elements = get_rigs_in_scene(all=True)
+    from ..utils import get_objects_in_hirarchy, get_object
+    from ..msd import path_object_from_asset_name
+
+
+    for obj in elements:
+        # print(obj.name)
+        if ':' not in obj.name:
+
+            name = obj.name.split('_')[0]
+        else:
+            name = obj.name.split(':')[0]
+
+        # print(asset.path_root)
+        # print(asset.asset)
+        asset = path_object_from_asset_name(name)
+
+        mdl_group = get_objects_in_hirarchy(obj)
+        for mdl in mdl_group:
+
+
+            locator = get_object(mdl)
+            new_name = '{}:'.format(asset.asset)
+            old_name = '{}_'.format(asset.asset)
+
+            locator.name = locator.name.replace(old_name, new_name)
+
+        mdl_group = get_objects_in_hirarchy(obj)
+    return mdl_group
+
+
+def get_rigs_in_scene(scene=None, all = False):
     """
     takes in view layer and returns the rigs in that scene
     :param scene:
@@ -97,6 +140,7 @@ def get_rigs_in_scene(scene=None):
     :rtype:
     """
     import bpy
+    from cgl.plugins.blender.utils import create_object
     if scene == None:
         scene = bpy.context
 
@@ -107,6 +151,10 @@ def get_rigs_in_scene(scene=None):
         if ':rig' in object.name and object.type == 'EMPTY':
             rigs.append(object)
 
+    if all:
+        anim_group = get_anim_group()
+        for object in anim_group.children:
+            rigs.append(object)
     return rigs
 
 def export_rigs():
@@ -144,17 +192,21 @@ def renanme_action():
         else:
             lm.confirm_prompt(message='No action linked to object')
 
+
 def parent_rig_to_anim_group():
     from cgl.plugins.blender.alchemy import scene_object
     from cgl.plugins.blender import utils
 
     scn = scene_object()
     rigs = get_rigs_in_scene()
-    anim_group = utils.create_object('{}_{}:{}'.format(scn.seq,scn.shot,scn.task))
+
+    anim_group = get_anim_group()
 
     for rig in rigs:
         utils.parent_object(rig,anim_group)
-
+        rig_proxy = utils.get_object('{}_proxy'.format(rig.name))
+        if rig_proxy:
+            utils.parent_object(rig_proxy,anim_group)
 def reset_lock_cursor():
     import bpy
 

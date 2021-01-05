@@ -77,6 +77,7 @@ def main_import(filepath, import_rigs = True,reference = True, latest = False):
     from cgl.plugins.blender.alchemy import  reference_file, import_file
     from cgl.plugins.blender.msd import set_matrix
     from .anim import make_proxy
+    from ..msd import path_object_from_source_path
     import bpy
     relative_path = None
     root = app_config()['paths']['root']
@@ -88,53 +89,51 @@ def main_import(filepath, import_rigs = True,reference = True, latest = False):
 
     pprint(layout_data)
     for each in layout_data:
+
+
         if 'source_path' in layout_data[each]:
             # this is a bundle, rather than a layout - unsure why this has changed so drastically
             # TODO - look at what's going on here.
             relative_path = layout_data[each]['source_path']
             task = layout_data[each]['task']
             transforms = layout_data[each]['transform'].split(' ')
-        company = scene_object().company
+            d2  = path_object_from_source_path(relative_path)
+            float_transforms = [float(x) for x in transforms]
 
-        if root not in relative_path:
 
-            reference_path = "%s\%s" % (root, relative_path)
-        else:
-            reference_path = relative_path
-        float_transforms = [float(x) for x in transforms]
-
-        d2 = PathObject(reference_path)
         if latest:
             d2 = d2.latest_version(publish_=True)
         ns2 = get_next_namespace(d2.shot)
-        #if reference == True:
+        if reference == True:
 
-        #    print('referencing files ________________')
-        #    ref = reference_file(namespace=ns2, filepath=reference_path)
-        #else:
 
-        print('IMPORTING FILES________________')
-        print(d2.path_root)
+           print('_'*8,'referencing files','_'*8)
+           ref = reference_file(namespace=ns2, filepath=d2.path_root)
+           layout_group = create_object(('{}_{}:FG'.format(scene_object().seq, scene_object().asset)))
+           parent_object(child=ref, parent=layout_group)
 
-        if not task == 'rig':
+           if task == 'rig':
+               if reference:
 
+                   print('________IMPORTING RIG_____________')
+                   rig = make_proxy(d2, ref)
+                   rig_root = layout_data[each]['rig_root']
+                   proxy = bpy.data.objects['{}:rig_proxy'.format(ns2)]
+                   ref = proxy.pose.bones[rig_root]
+                   parent_object(proxy,parent=layout_group)
+
+
+
+        else:
+            print('_'*8,'IMPORTING FILES','_'*8)
+            print(d2.path_root)
+
+            if task == 'rig':
+                return
             ref = import_file(namespace=ns2, filepath=d2.path_root)
-            ref = bpy.data.objects['{}:{}'.format(ns2,d2.task)]
             layout_group = create_object(('{}_{}:FG'.format(scene_object().seq,scene_object().asset)))
             parent_object(child=ref,parent=layout_group)
 
-
-        # if task == 'rig':
-        #     if reference:
-        #
-        #         print('________IMPORTING RIG_____________')
-        #         rig = make_proxy(d2, ref)
-        #         rig_root = layout_data[each]['rig_root']
-        #         proxy = bpy.data.objects['{}:rig_proxy'.format(ns2)]
-        #         ref = proxy.pose.bones[rig_root]
-        #         parent_object(proxy,group)
-        #     else:
-        #         print('________IMPORT Rig set to false_____________')
 
         set_matrix(ref, float_transforms)
 
