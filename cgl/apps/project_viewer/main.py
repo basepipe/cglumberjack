@@ -381,13 +381,10 @@ class SkyView(LJDialog):
                      'scope': self.current_scope,
                      'seq': '*',
                      'shot': '*'}
-        print(1)
         self.base_path_object = PathObject(self.dict)
-        print(self.base_path_object.path_root)
         self.get_shots()
 
     def get_shots(self):
-        print(self.base_path_object.path_root)
         files = glob.glob(self.base_path_object.path_root)
         for i, f in enumerate(files):
             ii = i+1
