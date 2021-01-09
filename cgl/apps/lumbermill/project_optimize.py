@@ -7,9 +7,9 @@ import time
 import re
 
 COMPANY = 'VFX'
-# PROJECT = '02BTH_2021_Kish'
+PROJECT = '02BTH_2021_Kish'
 # PROJECT = '18BTH_2019_Brinkley'
-PROJECT = '16BTH_2020_Arena'
+# PROJECT = '16BTH_2020_Arena'
 
 
 def get_shots(company, project, scope='shots', task=False):

@@ -1,4 +1,6 @@
 import os
+import re
+import glob
 from cgl.core.utils.read_write import load_json, save_json
 
 
@@ -177,8 +179,7 @@ class ProjectConfig(object):
         :param effected_label: PySide Label Object to effect color of.
         :return:
         """
-        self.project_config()
-        regex = re.compile(r'%s' % self.project_config_dict['paths']['rules'][rule])
+        regex = re.compile(r'%s' % self.project_config['rules']['path_variables'][rule]['regex'])
         if re.findall(regex, test_string):
             if effected_label:
                 effected_label.setStyleSheet("color: rgb(255, 255, 255);")
@@ -186,7 +187,7 @@ class ProjectConfig(object):
         else:
             if effected_label:
                 effected_label.setStyleSheet("color: rgb(255, 50, 50);")
-            return self.project_config_dict['paths']['rules']['%s_example' % rule]
+            return self.project_config['rules']['path_variables'][rule]['example']
 
     def update_user_paths(self, current_path):
         """

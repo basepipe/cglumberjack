@@ -4,7 +4,7 @@ import glob
 from cgl.plugins.Qt import QtCore, QtWidgets
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.utils.general import current_user, cgl_copy, clean_file_list
-from cgl.ui.widgets.progress_gif import process_method
+from cgl.ui.widgets.progress_gif import process_method, ProgressDialog
 from cgl.core.path import PathObject, CreateProductionData, lj_list_dir
 from cgl.core.path import replace_illegal_filename_characters, show_in_folder
 from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
@@ -581,7 +581,7 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_assign_button_clicked(self, data):
         task = self.sender().task
-        users_dict = CONFIG['project_management'][self.project_management]['users']
+        users_dict = self.cfg.project_config['project_management'][self.project_management]['users']
         all_users = []
         for each in users_dict.keys():
             all_users.append(each.lower())
@@ -594,8 +594,13 @@ class FilesPanel(QtWidgets.QWidget):
             dialog.combo_box.setCurrentIndex(index)
         dialog.exec_()
         if dialog.button == 'Start':
+            # TODO - how to i seperate this into another thread? can i do that within ProgressDialog itself?
+            # The movie won't show up otherwise.
+            progress_dialog = ProgressDialog(
+                message='Creating An Assignment with {} - Kickass!!'.format(self.project_management))
+            progress_dialog.show()
             selected_user = dialog.combo_box.currentText()  # this denotes the OS login name of the user
-            user_info = CONFIG['project_management'][self.project_management]['users'][selected_user]
+            user_info = self.cfg.project_config['project_management'][self.project_management]['users'][selected_user]
             self.path_object.set_attr(task=task)
             self.path_object.set_attr(user=selected_user)
             self.path_object.set_attr(version='000.000')
@@ -606,10 +611,11 @@ class FilesPanel(QtWidgets.QWidget):
             self.path_object.set_attr(ext=None)
             self.path_object.set_attr(filename_base=None)
             CreateProductionData(path_object=self.path_object,
-                                 project_management=self.project_management,
                                  user_login=user_info['login'],
                                  force_pm_creation=True)
+            progress_dialog.accept()
         self.update_task_location(path_object=self.path_object)
+
 
     def show_selected_in_folder(self):
         show_in_folder(self.path_object.path_root)
@@ -747,7 +753,7 @@ class FilesPanel(QtWidgets.QWidget):
                 widget.files_area.publish_button.show()
                 render_files_label = 'Ready to Review/Publish'
             logging.debug('Published Files for %s' % current.path_root)
-            data_ = self.prep_list_for_table(files_, basename=True, length=1, cfg=self.cfg)
+            data_ = self.prep_list_for_table(files_, basename=True, length=1)
             model = FilesModel(data_, [render_files_label], cfg=self.cfg)
             widget.setup(render_table, model)  # this is somehow replacing the other table for source when there are no files
             render_table.show()

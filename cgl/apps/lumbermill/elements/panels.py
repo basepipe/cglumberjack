@@ -9,7 +9,7 @@ from cgl.core.path import PathObject, CreateProductionData
 from cgl.ui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
 from cgl.core.utils.general import current_user, clean_file_list
 from cgl.ui.widgets.progress_gif import process_method
-from cgl.core.config.config import ProjectConfig, get_root
+from cgl.core.config.config import ProjectConfig, get_root, copy_config
 
 
 class CompanyPanel(QtWidgets.QWidget):
@@ -129,7 +129,7 @@ class ProjectPanel(QtWidgets.QWidget):
         elif title == 'Companies':
             pixmap = QtGui.QPixmap(self.cfg.icon_path('company24px.png'))
         self.project_filter = ProjectWidget(title=title, pixmap=pixmap,
-                                            search_box=search_box, path_object=self.path_object)
+                                            search_box=search_box, path_object=self.path_object, cfg=self.cfg)
 
         self.panel.addWidget(self.project_filter)
         if title == 'Projects':
@@ -236,12 +236,10 @@ class ProjectPanel(QtWidgets.QWidget):
                 CreateProductionData(self.path_object, project_management='lumbermill')
                 self.load_companies()
 
-
-    @staticmethod
-    def do_create_project(progress_bar, path_object, production_management):
-        CreateProductionData(path_object=path_object.path_root, file_system=True, project_management=production_management)
+    def do_create_project(self, progress_bar, path_object, production_management):
+        CreateProductionData(path_object=path_object.path_root, file_system=True,
+                             project_management=production_management, cfg=self.cfg)
         logging.debug('setting project management to %s' % production_management)
-        create_project_config(path_object.company, path_object.project)
         progress_bar.hide()
 
     def clear_layout(self, layout=None):
@@ -565,11 +563,9 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path
     for each in list_:
         if size_path:
             temp_obj = PathObject(size_path, cfg).copy(project=each)
-            print(temp_obj.path_root)
             total_size = get_cgl_info_size(temp_obj.path_root, source=True, render=True)
             source_size = get_cgl_info_size(temp_obj.path_root, source=True, render=False)
             render_size = get_cgl_info_size(temp_obj.path_root, source=False, render=True)
-            print('\tsize: {}'.format(total_size))
             if not total_size:
                 total_size = 'Not Calculated'
             else:

@@ -31,7 +31,7 @@ DEFAULT_DATA = {
 
 class MagicSceneDescription(msd.MagicSceneDescription):
 
-    def __init__(self, single_asset=None, single_asset_path=None, single_asset_name=None, single_asset_type=None):
+    def __init__(self, task, single_asset=None, single_asset_path=None, single_asset_name=None, single_asset_type=None):
         """
 
         :param software:
@@ -86,10 +86,6 @@ class MagicSceneDescription(msd.MagicSceneDescription):
 
     @staticmethod
     def get_lights():
-        pass
-
-    @staticmethod
-    def get_cameras():
         pass
 
     @staticmethod

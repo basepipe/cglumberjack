@@ -1034,10 +1034,10 @@ class CreateProductionData(object):
             self.cfg = cfg
         if not cfg:
             print(CreateProductionData)
-            self.cfg = ProjectConfig(path_object)
+            self.cfg = ProjectConfig(self.path_object)
         if project_management:
             print('were setting project management to {} for some reason'.format(project_management))
-        project_management = path_object.proj_management
+        project_management = self.path_object.proj_management
         self.path_object.set_path()
         self.do_scope = do_scope
         if file_system:

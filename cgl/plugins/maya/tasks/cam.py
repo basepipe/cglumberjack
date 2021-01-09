@@ -3,7 +3,6 @@ import pymel.core as pm
 from .smart_task import SmartTask
 from cgl.core.path import PathObject
 from cgl.plugins.maya.alchemy import scene_object
-from cgl.core.config import app_config
 from cgl.ui.widgets.dialog import MagicList, InputDialog, FrameRange
 from cgl.plugins.maya.utils import get_shape_name, load_plugin
 import cgl.plugins.maya.msd as msd

@@ -805,7 +805,7 @@ class CGLumberjack(LJMainWindow):
         self.login_menu = self.two_bar.addAction(login)
         self.two_bar.addAction(time_tracking)
         settings = QtWidgets.QAction('Settings', self)
-        open_globals = QtWidgets.QAction('Go to Company Globals', self)
+        open_globals = QtWidgets.QAction('Go to Project Globals', self)
         open_user_globals = QtWidgets.QAction('Go to User Globals', self)
         open_default_files = QtWidgets.QAction("Go to Default Files", self)
         create_project = QtWidgets.QAction('Import .csv', self)
@@ -887,7 +887,7 @@ class CGLumberjack(LJMainWindow):
         open_default_files.triggered.connect(self.open_default_files)
         create_project.triggered.connect(self.open_create_project_dialog)
         settings.triggered.connect(self.on_settings_clicked)
-        alchemy_cookbook.triggered.connect(self.on_menu_designer_clicked)
+        alchemy_cookbook.triggered.connect(self.on_alchemists_cookbook_clicked)
         login.triggered.connect(self.on_login_clicked)
         proj_man.triggered.connect(self.on_proj_man_menu_clicked)
         update_button.triggered.connect(self.update_lumbermill_clicked)
@@ -1229,8 +1229,9 @@ class CGLumberjack(LJMainWindow):
         return False
 
     def open_company_globals(self):
-        logging.debug(os.path.dirname(self.cfg.project_config['paths']['globals']))
-        cglpath.start(os.path.dirname(self.cfg.project_config['paths']['globals']))
+        print(self.cfg.globals_root)
+        logging.debug(self.cfg.globals_root)
+        cglpath.start(self.cfg.globals_root)
 
     @staticmethod
     def open_user_globals():
@@ -1266,18 +1267,18 @@ class CGLumberjack(LJMainWindow):
     def on_settings_clicked():
         logging.debug('settings clicked')
 
-    def on_designer_clicked(self):
+    def on_alchemists_cookbook_clicked(self):
+        from cgl.apps.pipeline.designer import Designer
+        self.cfg = ProjectConfig(company=self.company, project=self.project)
         pm = self.cfg.project_config['account_info']['project_management']
         def_schema = self.cfg.project_config['project_management'][pm]['api']['default_schema']
         schema = self.cfg.project_config['project_management'][pm]['tasks'][def_schema]
-        from cgl.apps.pipeline.designer import Designer
+
         dialog = Designer(self, pm_tasks=schema, cfg=self.cfg)
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)
         dialog.exec_()
 
-    def on_menu_designer_clicked(self):
-        self.on_designer_clicked()
 
     def closeEvent(self, event):
         print('closing')

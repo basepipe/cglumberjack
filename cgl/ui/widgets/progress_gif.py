@@ -40,14 +40,17 @@ class ProgressGif(QtWidgets.QWidget):
 
 class ProgressDialog(QtWidgets.QDialog):
 
-    def __init__(self, message, gif_name):
+    def __init__(self, message='Achieving Kickassity', gif_name='chopping_wood.gif', cfg=None):
         QtWidgets.QDialog.__init__(self)
-        self.setWindowTitle("Gif Tester")
+        self.setWindowTitle("Hold My Beer")
+        if not cfg:
+            cfg = ProjectConfig()
 
         self.message = QtWidgets.QLabel(message)
         self.movie_screen = QtWidgets.QLabel()
-
-        self.movie = QtGui.QMovie(image_path(gif_name))
+        mov_path = cfg.image_path(gif_name)
+        print(mov_path)
+        self.movie = QtGui.QMovie(cfg.image_path(gif_name))
         logging.info(self.movie.isValid())
         self.movie.start()
 
@@ -78,6 +81,6 @@ def process_method(progress_bar, target, args=(), text=None):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication([])
-    form = ProgressDialog(message='test', gif_name='')
+    form = ProgressDialog()
     form.show()
     app.exec_()

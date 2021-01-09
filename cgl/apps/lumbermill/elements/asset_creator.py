@@ -46,6 +46,7 @@ class AssetWidget(QtWidgets.QWidget):
 
 
 class AssetCreator(LJDialog):
+
     def __init__(self, parent=None, path_dict=None, task_mode=False, cfg=None):
         LJDialog.__init__(self, parent)
         self.task_mode = task_mode
@@ -55,6 +56,10 @@ class AssetCreator(LJDialog):
             return
         self.path_object = PathObject(path_dict)
         self.scope = self.path_object.scope
+        if cfg:
+            self.cfg = cfg
+        else:
+            self.cfg = ProjectConfig(self.path_object)
         if task_mode:
             self.setWindowTitle('Create %s' % 'Task(s)')
         else:
@@ -69,7 +74,6 @@ class AssetCreator(LJDialog):
         self.valid_categories = []
         self.get_valid_categories()
         # Environment Stuff
-        self.cfg = cfg
         self.root = get_root()
         self.project_management = self.cfg.project_config['account_info']['project_management']
         self.schema = self.cfg.project_config['project_management'][self.project_management]['api']['default_schema']
@@ -78,8 +82,8 @@ class AssetCreator(LJDialog):
         elif self.scope == 'shots':
             self.asset_string_example = self.cfg.project_config['rules']['path_variables']['shotname']['example']
         schema = self.cfg.project_config['project_management'][self.project_management]['tasks'][self.schema]
-        self.proj_man_tasks = self.cfg.project_config['long_to_short'][self.scope.lower()]
-        self.proj_man_tasks_short_to_long = self.cfg.project_config['short_to_long'][self.scope.lower()]
+        self.proj_man_tasks = schema['long_to_short'][self.scope.lower()]
+        self.proj_man_tasks_short_to_long = schema['short_to_long'][self.scope.lower()]
         self.v_layout = QtWidgets.QVBoxLayout(self)
         self.scope_row = QtWidgets.QHBoxLayout()
         self.asset_row = QtWidgets.QHBoxLayout(self)

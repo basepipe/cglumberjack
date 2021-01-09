@@ -569,11 +569,16 @@ class ProjectWidget(QtWidgets.QWidget):
     add_clicked = QtCore.Signal()
     assign_clicked = QtCore.Signal(object)
 
-    def __init__(self, parent=None, title='', filter_string=None, path_object=None, pixmap=None, search_box=None):
+    def __init__(self, parent=None, title='', filter_string=None, path_object=None, pixmap=None, search_box=None,
+                 cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
         v_layout = QtWidgets.QVBoxLayout(self)
         h_layout = QtWidgets.QHBoxLayout()
         self.path_object = path_object
+        if not cfg:
+            self.cfg = ProjectConfig(path_object)
+        else:
+            self.cfg = cfg
         self.tool_button_layout = QtWidgets.QHBoxLayout()
         self.sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                 QtWidgets.QSizePolicy.MinimumExpanding)
@@ -633,16 +638,13 @@ class ProjectWidget(QtWidgets.QWidget):
         return False
 
     def mark_as_favorite(self):
-
-        print(os.environ['cgl_user_globals'])
-        u_globals = read_write.load_json(os.environ['cgl_user_globals'])
+        print(self.cfg.user_config_file)
         if self.parent().title == 'Companies':
             default = 'default_company'
         elif self.parent().title == 'Projects':
             default = 'default_project'
         print('Setting {} to: {}'.format(default, self.current_selection()))
-        u_globals[default] = self.current_selection()
-        read_write.save_json(os.environ['cgl_user_globals'], u_globals)
+        self.cfg.edit_user_config([default], self.current_selection())
 
     def current_selection(self):
         from cgl.core.cgl_info import create_full_project_cgl_info
@@ -1029,7 +1031,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
 
     def on_project_text_changed(self):
         input_text = self.proj_line_edit.text()
-        message = path.test_string_against_path_rules(self.variable, input_text)
+        message = self.cfg.test_string_against_rules(input_text, self.variable, self.message)
         if input_text:
             if message:
                 self.message.setText(message)
