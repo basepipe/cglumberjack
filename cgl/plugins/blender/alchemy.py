@@ -364,7 +364,8 @@ def import_file(filepath, namespace=None, collection_name=None):
 
         imported_collection = bpy.data.collections[collection_name]
 
-        scene_collection_name = alc.scene_object().filename_base
+        scene_collection_name = '{}:{}'.format(path_object.asset,path_object.task)
+
         bpy.context.scene.collection.children.link(imported_collection)
 
         if namespace:
@@ -372,10 +373,11 @@ def import_file(filepath, namespace=None, collection_name=None):
             for each_obj in imported_collection.objects:
                 each_obj.name = '{}:{}'.format(namespace, each_obj.name)
                 imported_objects_list.append(each_obj)
-                parent_to_collection(each_obj, scene_collection_name)
-            bpy.data.collections.remove(imported_collection)
+                #parent_to_collection(each_obj, scene_collection_name)
+            #bpy.data.collections.remove(imported_collection)
 
-    name = '{}:{}'.format(namespace, path_object.task)
+        imported_collection.name = scene_collection_name
+    name = '{}:{}'.format(namespace,path_object.task)
 
     if filepath.endswith('blend') or filepath.endswith('fbx'):
         imported_object_name = name
@@ -735,7 +737,7 @@ def check_obj_exists(obj):
 
 
 def launch():
-    BlenderJack.show()
+    MagicBrowser.show()
 
 
 def confirm_prompt(title='Lumber message:', message='This is a message', button='Ok'):

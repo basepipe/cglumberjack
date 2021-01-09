@@ -355,3 +355,61 @@ def set_matrix(obj, transform_data):
 
     scale = (transform_data[6], transform_data[7], transform_data[8])
     obj.scale = scale
+
+
+def tag_object(objects, tag, value):
+    for obj in objects:
+        obj[tag] = value
+
+
+def switch_layer_visibility(objects = None, tag= 'rig_layer', layer='SECONDARY'):
+
+
+    import bpy
+    from cgl.plugins.blender.tasks.mdl import get_mdl_objects
+
+    if objects == None:
+        objects = get_mdl_objects()
+
+    current_scene = bpy.context.scene
+    if layer in current_scene.keys():
+
+        current_scene[layer] = not current_scene[layer]
+    else:
+        current_scene[layer] = True
+
+    for obj in objects:
+        if obj[0][tag] == layer:
+            print(obj[0])
+            obj[0].hide_viewport = current_scene[layer]
+
+
+def add_namespace(obj=None, namespace=None, ):
+    from cgl.plugins.blender.alchemy import scene_object
+    from cgl.plugins.blender.utils import get_object, get_objects_in_hirarchy
+
+    if obj == None:
+        obj = 'mdl'
+
+    if namespace == None:
+        namespace = scene_object().asset
+
+    for obj in get_objects_in_hirarchy(obj=get_object(obj)):
+        object = get_object(obj)
+        object.name = '{}:{}'.format(namespace, object.name)
+
+
+def remove_namespace(obj = None,namespace=None):
+    from cgl.plugins.blender.alchemy import scene_object
+    from cgl.plugins.blender.utils import get_object, get_objects_in_hirarchy
+    if namespace == None:
+        namespace = scene_object().asset
+    if obj == None:
+        obj = '{}:mdl'.format(namespace)
+
+    for obj in get_objects_in_hirarchy(obj=get_object(obj)):
+        object = get_object(obj)
+        object.name = object.name.split(':')[1]
+
+
+

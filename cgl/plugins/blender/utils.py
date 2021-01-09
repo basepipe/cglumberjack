@@ -361,12 +361,14 @@ def get_materials_from_object(object):
     return (valid_materials)
 
 def get_selection(selection=None):
+    from .alchemy import scene_object
+    import bpy
     if selection == None:
         try:
             selection = bpy.context.selected_objects
         except:
-            currentScene = lm.scene_object()
-            assetName = lm.scene_object().shot
+            currentScene = scene_object()
+            assetName = scene_object().shot
             obj_in_collection = bpy.data.collections[assetName].all_objects
 
     if not selection:
@@ -935,7 +937,8 @@ def create_object(name, type=None, parent=None,collection = None):
 
 def parent_object(child, parent, keep_transform=True):
     child.parent = parent
-    child.matrix_parent_inverse = parent.matrix_world.inverted()
+    if keep_transform:
+        child.matrix_parent_inverse = parent.matrix_world.inverted()
 
 def clear_parent(objects=None):
     if objects == None:
@@ -1155,7 +1158,6 @@ def set_context_view_3d():
                 override = {'window': window, 'screen': screen, 'area': area}
                 bpy.ops.screen.screen_full_area(override)
 
-
 def get_objects_in_hirarchy(obj, levels=10):
     import bpy
 
@@ -1172,6 +1174,31 @@ def get_objects_in_hirarchy(obj, levels=10):
     recurse(obj, obj.parent, 0)
 
     return hirarchy
+
+def rename_collection(current_scene=None):
+
+    if current_scene is None:
+        current_scene = alc.scene_object()
+
+    if current_scene.scope == 'assets':
+        name = current_scene.asset
+    else:
+        name = current_scene.filename_base
+
+    obj = bpy.context.object
+
+    if obj:
+        if current_scene.asset in bpy.data.collections:
+            print('collection exist ')
+        object = bpy.context.object
+        object.users_collection[0].name = name
+
+    else:
+        if current_scene.asset in bpy.data.collections:
+            print('collection exist')
+
+        else:
+            bpy.data.collections['Collection'].name = name
 
 
 if __name__ == '__main__':

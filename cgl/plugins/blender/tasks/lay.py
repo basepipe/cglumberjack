@@ -30,8 +30,11 @@ class Task(SmartTask):
 
     def build(self):
         from cgl.plugins.blender.utils import create_shot_mask_info,set_collection_name
+        from cgl.plugins.blender import alchemy as alc
         create_shot_mask_info()
         set_collection_name()
+        camfile = alc.scene_object().copy(task='cam')
+        alc.import_task(file_path=camfile, task='cam')
 
 
     def import_latest(self, seq=None, shot= None, import_rigs = True,reference=True,latest = False,**kwargs):

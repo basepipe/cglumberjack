@@ -24,7 +24,9 @@ class Task(SmartTask):
         alc.import_task(task='lay', import_rigs = False, reference = False,latest = True)
         import_task(task='anim')
 
+
         rigs = get_rigs_in_scene(all=True)
+
         for rig in rigs:
             name = rig.name.split('_')[0]
             path = path_object_from_asset_name(asset_name=name,task='shd').copy(latest=True)

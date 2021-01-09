@@ -332,6 +332,24 @@ def assign_material_to_children(shader):
         obj.material_slots[0].material = SG_path
 
 
+def rename_textures():
+    from cgl.plugins.blender.tasks import shd
+    baseColor = ['base_color', 'Base_Color', 'baseColor', 'BaseColor']
+    materials = shd.get_valid_material_list(mat_object=True)
+
+    for material in materials:
+        nodes = material.node_tree.nodes
+        for node in nodes:
+            if node.type == 'TEX_IMAGE':
+                # for key in baseColor:
+
+                # if key in node.image.name:
+
+                rename = '{}_{}'.format(material.name, 'BaseColor')
+                node.image.name = rename
+
+
+
 def publish_textures():
     """
     This run statement is what's executed when your button is pressed in blender.
@@ -349,14 +367,32 @@ def publish_textures():
 
     os.makedirs(texture_task.path_root)
 
+
+
     os.makedirs(texture_task.copy(context='render').path_root)
 
     for image in bpy.data.images:
-        out_path = texture_task.copy(filename=image.name, context='render').path_root
-        image.save_render(out_path)
+        if '_mtl' in image.name:
+
+            out_path = texture_task.copy(filename=image.name, context='render',ext ='exr').path_root
+            image.save_render(out_path)
+            image.filepath = out_path
 
     alc.save_file_as(texture_task.copy(context='source', set_proper_filename=True).path_root)
     alc.confirm_prompt(message='textures exported!!! ')
+
+def get_image_inputs(node, attribute='Base Color'):
+    input = node.inputs[attribute]
+
+    try:
+
+        input_surface = input.links[0].from_node
+        # color_input = input_surface.inputs[attribute]
+        image_node = input.links[0].from_node
+
+    except IndexError:
+        image_node = input
+    return image_node
 
 if __name__ == '__main__':
     task = Task()

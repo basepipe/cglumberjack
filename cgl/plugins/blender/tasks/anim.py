@@ -98,7 +98,6 @@ def get_anim_group():
 
     return group
 
-
 def get_animation_mdl_groups():
     elements = get_rigs_in_scene(all=True)
     from ..utils import get_objects_in_hirarchy, get_object
@@ -129,7 +128,6 @@ def get_animation_mdl_groups():
 
         mdl_group = get_objects_in_hirarchy(obj)
     return mdl_group
-
 
 def get_rigs_in_scene(scene=None, all = False):
     """
