@@ -38,7 +38,7 @@ class ProjectConfig(object):
     images_folder = None
     project_management = None
 
-    def __init__(self, path_object=None, company='master', project='master', print_cfg=False):
+    def __init__(self, path_object=None, company='master', project='master', print_cfg=True):
         self.print_cfg = print_cfg
         if not path_object:
             self.company = company
@@ -49,7 +49,6 @@ class ProjectConfig(object):
         if self.print_cfg:
             print('--------------------------------')
             print('Loading Config for {}: {}'.format(self.company, self.project))
-            print('\n\n')
         self.set_globals_path()
         self.get_project_config()
         self.images_folder = os.path.join(self.project_config['paths']['code_root'], 'resources', 'images')
@@ -63,8 +62,14 @@ class ProjectConfig(object):
             self.root_folder = self.user_config['root']['master']
 
         self.master_globals_root = os.path.join(self.root_folder, 'master', 'config', 'master')
-        company_globals_root = os.path.join(self.root_folder, self.company, 'config', 'master')
-        self.globals_root = os.path.join(self.root_folder, self.company, 'config', self.project)
+        try:
+            company_globals_root = os.path.join(self.root_folder, self.company, 'config', 'master')
+        except TypeError:
+            company_globals_root = self.master_globals_root
+        try:
+            self.globals_root = os.path.join(self.root_folder, self.company, 'config', self.project)
+        except TypeError:
+            self.globals_root = self.master_globals_root
         if not os.path.exists(company_globals_root):
             company_globals_root = self.master_globals_root
         if not os.path.exists(self.globals_root):
@@ -76,6 +81,7 @@ class ProjectConfig(object):
         self.cookbook_folder = os.path.join(self.globals_root, 'cookbook')
         self.project_config_file = os.path.join(self.globals_root, 'globals.json')
         self.shaders_config_file = os.path.join(self.globals_root, 'shaders.json')
+        print(self.project_config_file)
 
     def print_variables(self):
         for elem in self.__dict__:
