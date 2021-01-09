@@ -5,7 +5,6 @@ import datetime
 import json
 import base64
 from cgl.core import lj_mail
-from cgl.core.config import app_config, get_globals, save_globals
 from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.utils.general import current_user
@@ -20,8 +19,8 @@ try:
 except ModuleNotFoundError:
     print('skipping asana load')
 
-CONFIG = app_config()
-PROJECT_MANAGEMENT = CONFIG['account_info']['project_management']
+# CONFIG = app_config()
+# PROJECT_MANAGEMENT = CONFIG['account_info']['project_management']
 
 class RequestFeatureDialog(LJDialog):
     def __init__(self, parent=None, title='Request Feature'):
@@ -719,13 +718,18 @@ class RequestFeatureDialog(LJDialog):
 
 class ReportBugDialog(LJDialog):
 
-    def __init__(self, parent=None, title='Report A Bug'):
+    def __init__(self, parent=None, title='Report A Bug', cfg=None):
         LJDialog.__init__(self, parent)
+        from cgl.core.config.config import ProjectConfig
+        if not cfg:
+            self.cfg = ProjectConfig()
+        else:
+            self.cfg = cfg
         self.title_ = parent.windowTitle()
         layout = QtWidgets.QVBoxLayout()
         grid_layout = QtWidgets.QGridLayout()
         self.attachments = []
-        icon_path = os.path.join(CONFIG['paths']['code_root'], 'resources', 'images')
+        icon_path = os.path.join(self.cfg.project_config['paths']['code_root'], 'resources', 'images')
         # define the user name area
         self.label_username = QtWidgets.QLabel('Username')
         self.lineEdit_username = QtWidgets.QLineEdit()
@@ -810,7 +814,7 @@ class ReportBugDialog(LJDialog):
 
     def get_email(self):
         try:
-            email = CONFIG['project_management'][PROJECT_MANAGEMENT]['users'][self.lineEdit_username.text()]['email']
+            email = self.cfg.project_config['project_management'][PROJECT_MANAGEMENT]['users'][self.lineEdit_username.text()]['email']
             self.lineEdit_email.setText(email)
             return self.lineEdit_email.text()
         except KeyError:
@@ -884,10 +888,10 @@ class ReportBugDialog(LJDialog):
         """ % (self.get_username(), self.get_email(), self.get_message())
         files_ = ""
         # TODO: to send this to people we need a paig mailgun account
-        return requests.post(CONFIG["email"]["lj_domain"],
-                             auth=("api", CONFIG["email"]['mailgun_key']),
+        return requests.post(self.cfg.project_config["email"]["lj_domain"],
+                             auth=("api", self.cfg.project_config["email"]['mailgun_key']),
                              files=files_,
-                             data={"from": "%s <%s>" % (self.get_username(), CONFIG["email"]['from']),
+                             data={"from": "%s <%s>" % (self.get_username(), self.cfg.project_config["email"]['from']),
                                    "to": self.get_email(),
                                    "subject": "Bug Reported", "text": email},
                              )
@@ -948,9 +952,15 @@ class ReportBugDialog(LJDialog):
 
 class APIKeyDialog(LJDialog):
 
-    def __init__(self, parent=None, title='Error'):
+    def __init__(self, parent=None, title='Error', cfg=None):
         LJDialog.__init__(self, parent)
         self.setWindowTitle(title)
+        from cgl.core.config.config import ProjectConfig
+        if not cfg:
+            print('APIKeyDialog')
+            self.cfg = ProjectConfig()
+        else:
+            self.cfg = cfg
         layout = QtWidgets.QVBoxLayout(self)
         button_row = QtWidgets.QHBoxLayout()
 
@@ -978,15 +988,15 @@ class APIKeyDialog(LJDialog):
 
     def update_asana_global(self):
         new_value = self.api_line_edit.text()
-        CONFIG['helpdesk']["asana_api"] = new_value
+        self.cfg.project_config['helpdesk']["asana_api"] = new_value
         if self.check_api_key(new_value):
-            save_globals(CONFIG)
+            self.cfg.save_project_config(self.cfg.project_config)
             self.close()
         else:
             self.error_label.setText("Invalid Key")
 
     def check_api_key(self, api_key):
-        api_key = CONFIG['helpdesk']['asana_api']
+        api_key = self.cfg.project_config['helpdesk']['asana_api']
         authorize = "Bearer %s" % api_key
         r = requests.get("https://app.asana.com/api/1.0/workspaces", headers={'Authorization': "%s" % authorize})
         response_json = json.loads(r.content)

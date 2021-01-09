@@ -4,7 +4,7 @@ import logging
 # except ModuleNotFoundError:
 #     print('Python3 - Skipping Queue import')
 from cgl.plugins.project_management.shotgun import shotgun_api3 as sg_api
-from cgl.core.config import app_config
+from cgl.core.config.config import ProjectConfig
 
 # TODO: This is a temporary fix until i can sort out the maya multi-threading issues
 # TODO: This disables multi-threading for the Shotgun Queries
@@ -30,7 +30,7 @@ class ShotgunQuery(object):
 
     @staticmethod
     def base_shotgun_query(type_, *args, **kwargs):
-        config = app_config()['project_management']['shotgun']['api']
+        config = ProjectConfig().project_config['project_management']['shotgun']['api']
         connection = sg_api.Shotgun(base_url=str(config['server_url']),
                                     script_name=str(config['api_script']),
                                     api_key=str(config['api_key']))
@@ -96,7 +96,7 @@ class ShotgunProcess(object):
         task = self.queue.get(True)
         if not self.connection:
             import plugins.project_management.shotgun.shotgun_api3 as sg_api
-            config = app_config()['project_management']['shotgun']['api']
+            config = ProjectConfig().project_config['project_management']['shotgun']['api']
             self.connection = sg_api.Shotgun(base_url=config['server_url'],
                                              script_name=config['api_script'],
                                              api_key=config['api_key'])

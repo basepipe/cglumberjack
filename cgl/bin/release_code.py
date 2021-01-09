@@ -2,9 +2,9 @@ import os
 import shutil
 import stat
 from cgl.core.utils.general import cgl_copy
-from core.config import app_config
+from core.config.config import ProjectConfig
 
-CONFIG = app_config()
+CONFIG = ProjectConfig().project_config
 
 DEVROOT = os.path.join(__file__.split('cglumberjack')[0], 'cglumberjack')
 ROOT = r'Z:\Projects'

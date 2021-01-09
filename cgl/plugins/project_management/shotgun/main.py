@@ -4,16 +4,10 @@ import datetime
 import os
 import json
 from .tracking_internal.shotgun_specific import ShotgunQuery
-from cgl.core.config import app_config
+from cgl.core.config.config import ProjectConfig
 
-CONFIG = app_config()
-PROJECTSHORTNAME = CONFIG['project_management']['shotgun']['api']['project_short_name']
-PROJECTFIELDS = ['code', 'name', 'sg_status', 'sg_description', PROJECTSHORTNAME]
+
 HUMANUSERFIELDS = ['code', 'name', 'email', 'department', 'login']
-TASKFIELDS = ['content', 'sg_status_list', 'step', 'step.Step.short_name',
-              'project.Project.%s' % PROJECTSHORTNAME, 'task_assignees', 'task_assignees.Humanuser.username',
-              'name', 'code', 'project', 'project.Project.sg_status', 'project.Project.status',
-              'entity', 'entity.Shot.sg_sequence', 'due_date', 'updated_at', 'entity.Asset.sg_asset_type', 'updated_at']
 ASSETFIELDS = ['code', 'name', 'status', 'updated_at', 'description']
 SHOTFIELDS = ['code', 'sg_sequence', 'status', 'updated_at', 'description']
 VERSIONFIELDS = ['code', 'name', 'sg_sequence', 'status', 'updated_at', 'description',
@@ -48,16 +42,29 @@ class ProjectManagementData(object):
     version_data = None
     entity_data = None
     status = None
-    server_url = CONFIG['project_management']['shotgun']['api']['server_url']
+    server_url = None
     review_session = None
 
-    def __init__(self, path_object=None, **kwargs):
+    def __init__(self, path_object=None, cfg=None, **kwargs):
         if path_object:
             self.path_object = path_object
             for key in path_object.__dict__:
                 self.__dict__[key] = path_object.__dict__[key]
+        if cfg:
+            self.cfg = cfg
+        else:
+            self.cfg = ProjectConfig(path_object)
+        self.project_short_name = self.cfg.project_config['project_management']['shotgun']['api']['project_short_name']
+        self.project_fields = ['code', 'name', 'sg_status', 'sg_description', self.project_short_name]
+        self.task_fields = ['content', 'sg_status_list', 'step', 'step.Step.short_name',
+                            'project.Project.%s' % self.project_short_name, 'task_assignees',
+                            'task_assignees.Humanuser.username',
+                            'name', 'code', 'project', 'project.Project.sg_status', 'project.Project.status',
+                            'entity', 'entity.Shot.sg_sequence', 'due_date', 'updated_at', 'entity.Asset.sg_asset_type',
+                            'updated_at']
         for key in kwargs:
             self.__dict__[key] = kwargs[key]
+        self.server_url = self.cfg.project_config['project_management']['shotgun']['api']['server_url']
 
     def get_project_management_data(self):
         self.project_data = self.entity_exists('project')
@@ -361,7 +368,7 @@ class ProjectManagementData(object):
         """
         filters = [['name', 'is', self.project],
                    ]
-        return ShotgunQuery.find_one("Project", filters, fields=PROJECTFIELDS)
+        return ShotgunQuery.find_one("Project", filters, fields=self.project_fields)
 
     def find_asset(self):
         """
@@ -422,7 +429,7 @@ class ProjectManagementData(object):
                    ['content', 'is', self.task_name],
                    ['entity', 'is', self.entity_data]
                    ]
-        return ShotgunQuery.find_one("Task", filters, fields=TASKFIELDS)
+        return ShotgunQuery.find_one("Task", filters, fields=self.task_fields)
 
     def find_version(self):
         """

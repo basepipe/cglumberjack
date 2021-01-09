@@ -5,21 +5,19 @@ import pymel.core as pm
 from .smart_task import SmartTask
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
-from cgl.plugins.maya.lumbermill import LumberObject
-from cgl.core.config import shader_config, app_config
+from cgl.core.path import PathObject
 from cgl.ui.widgets.widgets import AdvComboBox
+from cgl.core.config.config import get_root, ProjectConfig
 
 DEFAULT_SHADER = 'aiStandardSurface'  # TODO - add this in the globals.
 DEFAULT_EXT = 'tx'  # TODO - add this in the globals
-SHADER_CONFIG = shader_config()['shaders']
-ROOT = app_config()['paths']['root']
 
 
 class Task(SmartTask):
 
     def __init__(self, path_object=None):
         if not path_object:
-            from cgl.plugins.maya.lumbermill import scene_object
+            from cgl.plugins.maya.alchemy import scene_object
             self.path_object = scene_object()
 
     def _import(self, ref_node):
@@ -90,8 +88,8 @@ def get_latest_tex_publish_from_filepath(filepath):
     :return:
     """
     # TODO - could i do this from just the asset name alone?
-    path_object = LumberObject(filepath).copy(task='tex', context='render', user='publish',
-                                              latest=True, resolution='high')
+    path_object = PathObject(filepath).copy(task='tex', context='render', user='publish',
+                                            latest=True, resolution='high')
     return os.path.dirname(path_object.path_root)
 
 
@@ -171,18 +169,21 @@ def get_selected_namespace():
     return name_space
 
 
-def get_attr_dict_for_tex_channel(tex_channel, shader=DEFAULT_SHADER):
+def get_attr_dict_for_tex_channel(path_object, tex_channel, shader=DEFAULT_SHADER):
     """
     queries the current texture channel against our shader dictionaries, returns the proper channel
     to plug the texture into.
+    :param path_object:
     :param tex_channel:
     :param shader:
     :return:
     """
     # TODO - this would be the place to allow for people to add to the dictionary.
-    for parameter in SHADER_CONFIG[shader]['parameters']:
-        if tex_channel in SHADER_CONFIG[shader]['parameters'][parameter]['name_match']:
-            return SHADER_CONFIG[shader]['parameters'][parameter]
+    cfg = ProjectConfig(path_object)
+    shader_config = cfg.shader_config
+    for parameter in shader_config[shader]['parameters']:
+        if tex_channel in shader_config[shader]['parameters'][parameter]['name_match']:
+            return shader_config[shader]['parameters'][parameter]
     print("\tshading.json - No shading config match found for texture channel: {}".format(tex_channel))
     return None
 
@@ -208,7 +209,8 @@ def import_and_connect_textures(shader_node, shading_dict, mtl_group=None,
             # TODO - take relative path and make it absolute
             # full_path = os.path.join(ROOT, texture_path)
             full_path = texture_path
-            channel_ = get_attr_dict_for_tex_channel(tex_channel)
+            path_object = PathObject(full_path)
+            channel_ = get_attr_dict_for_tex_channel(path_object, tex_channel)
             if channel_:
                 attr_ = channel_['attr']
                 try:

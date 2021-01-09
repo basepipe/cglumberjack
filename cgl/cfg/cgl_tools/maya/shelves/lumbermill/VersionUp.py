@@ -1,4 +1,4 @@
-from cgl.plugins.maya import lumbermill
+from cgl.plugins.maya import alchemy
 
 def run():
-    lumbermill.version_up()
+    alchemy.version_up()

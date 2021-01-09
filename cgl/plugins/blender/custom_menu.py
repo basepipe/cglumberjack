@@ -6,8 +6,9 @@ from .utils import get_button_path, get_menu_path
 
 
 class LumberMenu(CustomMenu):
-    def __init__(self, software='blender', type_='menus'):
+    def __init__(self, software='blender', type_='menus', cfg=None):
         CustomMenu.__init__(self, software, type_)
+        self.cfg = cfg
 
     def create_menu(self, name, menu_type='panel'):
         """
@@ -57,7 +58,7 @@ class LumberMenu(CustomMenu):
         """
         if isinstance(menu_name, dict):
             menu_name = menu_name['name']
-        menu_path = get_menu_path('blender', menu_name, menu_file=True)
+        menu_path = get_menu_path('blender', menu_name, menu_file=True, cfg=self.cfg)
         module = menu_path.split('cgl_tools\\')[-1].replace('\\', '.').replace('.py', '')
         module = 'cgl_tools.%s' % module
         module_result = importlib.import_module(module)

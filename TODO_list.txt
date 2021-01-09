@@ -39,7 +39,7 @@ Ftrack Integration:
 * I should probably create a base class for the menu layout - right now prelights and menus are pulling from different classes that share a lot in common.
 Refreshing the table after a preflight isn't goingwell.
 	* change color after pass and disable selection?
-	When i Successfully complete my preflights i should remove the run selected buttons and give them a "done" button
+	When i Successfully complete my pre_publish i should remove the run selected buttons and give them a "done" button
 	that done button should refresh the treeWidget and it should close the thingy.
 * BUG - on ingest i'm not versioning up if i publish to the same place twice.
 * BUG - i should be setting the status as Published on the last Preflight as a seperate Preflight!

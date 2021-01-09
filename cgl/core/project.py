@@ -1,41 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
-from cgl.core.config import app_config, UserConfig
 from cgl.core.path import PathObject, CreateProductionData
-
-CONFIG = app_config()
-PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
-ROOT = CONFIG['paths']['root']
-
-
-def get_projects(company):
-    """
-    returns projects for "company"
-    :param company:
-    :return:
-    """
-    d = {'root': ROOT,
-         'company': company,
-         'project': '*',
-         'context': 'source'}
-    path_object = PathObject(d)
-    return path_object.glob_project_element('project')
-
-
-def get_companies():
-    """
-    returns all companies the system is aware of.
-    :return:
-    """
-    d = {'root': ROOT,
-         'company': '*'
-         }
-    path_object = PathObject(d)
-    companies = path_object.glob_project_element('company')
-    if '_config' in companies:
-        companies.remove('_config')
-    return companies
+from cgl.core.config.config import ProjectConfig
 
 
 def get_task_info(path_object, force=False):
@@ -45,12 +12,13 @@ def get_task_info(path_object, force=False):
     :param force:
     :return:
     """
-    logging.debug(UserConfig().d)
+    cfg = ProjectConfig(path_object)
+    logging.debug(cfg.user_config)
     logging.debug(path_object.company, path_object.project)
     logging.debug(path_object.path_root)
-    if path_object.company in UserConfig().d['my_tasks'].keys():
-        if path_object.project in UserConfig().d['my_tasks'].keys():
-            all_tasks = UserConfig().d['my_tasks'][path_object.company][path_object.project]
+    if path_object.company in cfg.user_config['my_tasks'].keys():
+        if path_object.project in cfg.user_config['my_tasks'].keys():
+            all_tasks = cfg.user_config['my_tasks'][path_object.company][path_object.project]
         else:
             return
     else:
@@ -80,55 +48,6 @@ def pull_task_info(path_object):
         project_tasks = find_user_assignments(path_object, login, force=True)
         task_info = project_tasks[path_object.task_name]
         return task_info
-
-
-def create_project_config(company, project):
-    """
-    Creates the config for a project
-    :param company:
-    :param project:
-    :return:
-    """
-    from cgl.core.utils.general import cgl_copy
-    config_dir = os.path.dirname(UserConfig().user_config_path)
-    company_config = os.path.join(config_dir, 'companies', company, 'global.yaml')
-    project_dir = os.path.join(config_dir, 'companies', company, project)
-    project_config = os.path.join(project_dir, 'global.yaml')
-    if os.path.exists(company_config):
-        if not os.path.exists(project_dir):
-            os.makedirs(project_dir)
-            cgl_copy(company_config, project_config)
-
-
-def get_company_config():
-    """
-    Get Company Config (not currently used anywhere)
-    :return:
-    """
-    user_dir = os.path.expanduser("~")
-    if 'Documents' in user_dir:
-        cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack', 'companies')
-    else:
-        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack', 'companies')
-    return cg_lumberjack_dir
-
-
-def get_cgl_config():
-
-    user_dir = os.path.expanduser("~")
-    if 'Documents' in user_dir:
-        cg_lumberjack_dir = os.path.join(user_dir, 'cglumberjack')
-    else:
-        cg_lumberjack_dir = os.path.join(user_dir, 'Documents', 'cglumberjack')
-    return cg_lumberjack_dir
-
-
-def get_cgl_tools():
-    """
-    get the path for the cgl_tools directory
-    :return:
-    """
-    return CONFIG['paths']['cgl_tools']
 
 
 def publish(path_obj):
