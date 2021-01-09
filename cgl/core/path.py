@@ -272,16 +272,20 @@ class PathObject(object):
 
     def get_company(self, path_string):
         path_string = path_string.replace('\\', '/')
+        temp_ = path_string.split(self.root)[-1]
+        temp_ = temp_.replace('\\', '/')
+        splitted = split_all(temp_)
         try:
-            temp_ = path_string.split(self.root)[-1]
-            temp_ = temp_.replace('\\', '/')
-            splitted = split_all(temp_)
             c = splitted[2]
-            project = splitted[4]
-            self.get_config_values(company=c, project=project)
             self.set_attr(company=c, do_set_path=False)
         except IndexError:
+            c = 'master'
             self.set_attr(company='*', do_set_path=False)
+        try:
+            project = splitted[4]
+        except IndexError:
+            project = 'project'
+        self.get_config_values(company=c, project=project)
 
     def unpack_version(self, path_parts):
         """

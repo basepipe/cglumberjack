@@ -251,7 +251,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.my_tasks_button.show()
 
     def show_none(self):
-        self.shots_button.hide()
+        # self.shots_button.hide()
         self.my_tasks_button.hide()
         self.companies_button.hide()
         self.projects_button.hide()
