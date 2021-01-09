@@ -1,11 +1,12 @@
 import pymel.core as pm
 from cgl.core.utils.read_write import load_json
 from .smart_task import SmartTask
-from cgl.plugins.maya.lumbermill import LumberObject, scene_object
+from cgl.core.path import PathObject
+from cgl.plugins.maya.alchemy import scene_object
 import cgl.plugins.maya.utils as utils
 reload(utils)
 from cgl.ui.widgets.dialog import InputDialog
-from cgl.core.config import app_config
+from cgl.core.config.config import get_root
 
 
 class Task(SmartTask):
@@ -52,8 +53,8 @@ def get_latest_publish(filepath, task='bndl', ext='.json'):
     :return:
     """
     bundle_path = None
-    bndl_obj = LumberObject(filepath).copy(task=task, context='render',
-                                           user='publish', latest=True, filename='*', ext=None)
+    bndl_obj = PathObject(filepath).copy(task=task, context='render',
+                                         user='publish', latest=True, filename='*', ext=None)
     for each in glob.glob(bndl_obj.path_root):
         if ext in each:
             bundle_path = each
@@ -94,7 +95,7 @@ def bundle_import(filepath, layout_group=None):
     :return:
     """
     relative_path = None
-    d = LumberObject(filepath)
+    d = PathObject(filepath)
     og_ns = d.shot
     ns = utils.get_namespace(filepath)
     try:
@@ -123,9 +124,9 @@ def bundle_import(filepath, layout_group=None):
             # TODO - look at what's going on here.
             relative_path = layout_data[each]['source_path']
             transforms = layout_data[each]['transform'].split(' ')
-        reference_path = "%s/%s%s" % (app_config()['paths']['root'], d.company, relative_path)
+        reference_path = "%s/%s%s" % (get_root(d.project), d.company, relative_path)
         float_transforms = [float(x) for x in transforms]
-        d2 = LumberObject(reference_path)
+        d2 = PathObject(reference_path)
         ns2 = utils.get_next_namespace(d2.shot)
         ref = pm.createReference(reference_path, namespace=ns2, ignoreVersion=True, loadReferenceDepth='all')
         namespace_ = pm.referenceQuery(ref, ns=True)  # ref.namespace

@@ -1,10 +1,7 @@
 import os
 import copy
 import glob
-from cgl.core.config import app_config
 from cgl.core.utils.read_write import load_json, save_json
-
-CONFIG = app_config()
 
 
 class MagicSceneDescription(object):
@@ -21,7 +18,7 @@ class MagicSceneDescription(object):
     single_asset_path = None
     single_asset_name = None
 
-    def __init__(self, single_asset=None, single_asset_name=None, single_asset_path=None, single_asset_type=None):
+    def __init__(self, task, single_asset=None, single_asset_name=None, single_asset_path=None, single_asset_type=None):
         """
         This is the base code for the Production Alchemy "Mystic Scene Description" file or 'msd'.
         Essentially this is a template for setting up different 3d packages in the .msd universe.
@@ -33,6 +30,7 @@ class MagicSceneDescription(object):
         :param type_:
         :param scene_description_path:
         """
+        self.task = task
         self.single_asset = single_asset
         self.single_asset_name = single_asset_name
         self.single_asset_path = single_asset_path
@@ -80,23 +78,31 @@ class MagicSceneDescription(object):
         :return:
         """
         if not self.single_asset:
-            bundles, children = self.get_bundles(children=True)
-            if bundles:
-                for b in bundles:
-                    b_desc = self.ad_class(b, asset_type='bndl')
-                    self.add_asset(b_desc)
-            animated_assets, anim_ignore = self.get_anim()
-            if animated_assets:
-                for aa in animated_assets:
-                    print(aa, 'animated')
-                    aa_desc = self.ad_class(aa, asset_type='anim')
-                    self.add_asset(aa_desc)
-            assets = self.get_assets(ignore=children+anim_ignore)
-            if assets:
-                for a in assets:
-                    print(a, 'assets')
-                    a_desc = self.ad_class(mesh_object=a, asset_type='asset')
-                    self.add_asset(a_desc)
+            if task == 'lay' or task == 'bndl':
+                bundles, children = self.get_bundles(children=True)
+                if bundles:
+                    for b in bundles:
+                        b_desc = self.ad_class(b, asset_type='bndl')
+                        self.add_asset(b_desc)
+                assets = self.get_assets(ignore=children + anim_ignore)
+                if assets:
+                    for a in assets:
+                        print(a, 'assets')
+                        a_desc = self.ad_class(mesh_object=a, asset_type='asset')
+                        self.add_asset(a_desc)
+            elif task == 'anim':
+                animated_assets, anim_ignore = self.get_anim()
+                if animated_assets:
+                    for aa in animated_assets:
+                        print(aa, 'animated')
+                        aa_desc = self.ad_class(aa, asset_type='anim')
+                        self.add_asset(aa_desc)
+            elif task == 'mdl':
+                print('task is mdl')
+            elif task == 'rig':
+                print('task is rig')
+            elif task == 'cam':
+                print('task is cam')
         else:
             single_desc = self.ad_class(mesh_name=self.single_asset,
                                         path_root=self.single_asset_path,

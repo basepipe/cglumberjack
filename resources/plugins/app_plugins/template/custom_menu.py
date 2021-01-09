@@ -2,8 +2,9 @@ from cgl.plugins.CustomMenu import CustomMenu
 
 
 class LumberMenu(CustomMenu):
-    def __init__(self, software='maya', type_='shelves'):
+    def __init__(self, software='maya', type_='shelves', cfg=None):
         CustomMenu.__init__(self, software, type_)
+        self.cfg = cfg
 
     def get_scene_path(self):
         """

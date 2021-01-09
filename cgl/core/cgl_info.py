@@ -54,7 +54,6 @@ def get_cgl_info_size(folder_path, source=True, render=True, return_type='best')
             elif return_type == 'bytes':
                 return size
         else:
-            print('No cgl_info.json file found: %s' % cgl_info_file)
             return None
 
     else:

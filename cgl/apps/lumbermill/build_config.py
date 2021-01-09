@@ -874,7 +874,7 @@ class QuickSync(QtWidgets.QDialog):
 
     def set_up_lumbermill(self):
         """
-        checks s3 for the existance of a globals file and pipeline_designer files.
+        checks s3 for the existance of a globals file and alchemists_cookbook files.
         :return:
         """
         if self.download_globals_from_cloud():

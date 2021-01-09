@@ -1,5 +1,5 @@
 from cgl.plugins.preflight.preflight_check import PreflightCheck
-from cgl.plugins.maya import lumbermill
+from cgl.plugins.maya import alchemy
 
 class Publish(PreflightCheck):
 
@@ -7,10 +7,10 @@ class Publish(PreflightCheck):
         pass
 
     def run(self):
-        path_object = lumbermill.publish()
+        path_object = alchemy.publish()
         print(path_object.path_root)
         self.pass_check('Version  Published!')
-        lumbermill.confirm_prompt(title='Publish Successful!', message='Version %s has been published!\n '
+        alchemy.confirm_prompt(title='Publish Successful!', message='Version %s has been published!\n '
                                                                        'you may close this scene' % path_object.version)
 
 

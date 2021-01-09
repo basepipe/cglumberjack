@@ -13,6 +13,7 @@ from cgl.core.config import app_config
 from cgl.core.path import PathObject, icon_path, lj_list_dir, split_sequence_frange, get_file_type
 from cgl.plugins.preflight.main import Preflight
 from cgl.apps.lumbermill.elements.panels import clear_layout
+from cgl.core.config.config import ProjectConfig
 import time
 
 CONFIG = app_config()
@@ -55,13 +56,18 @@ class EmptyStateWidgetIO(EmptyStateWidget):
 class IOPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None):
+    def __init__(self, parent=None, path_object=None, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
         if path_object:
             self.path_object = path_object
         else:
             logging.debug('No Path Object found, exiting')
             return
+        if cfg:
+            self.cfg = cfg
+        else:
+            print(IOPanel)
+            self.cfg = ProjectConfig(path_object)
         # self.project_management = CONFIG['account_info']['project_management']
         self.project_management = 'lumbermill'
         self.schema = CONFIG['project_management'][self.project_management]['api']['default_schema']
@@ -169,7 +175,7 @@ class IOPanel(QtWidgets.QWidget):
         self.empty_state = EmptyStateWidgetIO(path_object=self.path_object)
         self.empty_state.setText('Select a Source:\n Click + to Create a new one')
 
-        self.progress_bar = ProgressGif()
+        self.progress_bar = ProgressGif(cfg=self.cfg)
         self.progress_bar.hide()
         self.view_in_lumbermill.hide()
 
@@ -379,7 +385,7 @@ class IOPanel(QtWidgets.QWidget):
 
     def append_data_children(self, data, directory, parent='self'):
         # regex = r"#{3,}.[aA-zZ]{2,} \d{3,}-\d{3,}$"
-        files = lj_list_dir(directory, basename=True)
+        files = lj_list_dir(directory, basename=True, cfg=self.cfg)
         if files:
             for filename in files:
                 type_ = get_file_type(filename)
@@ -481,7 +487,7 @@ class IOPanel(QtWidgets.QWidget):
 
 
     def go_to_location(self, to_path):
-        path_object = PathObject(to_path).copy(context='source', user='', resolution='', filename='', ext='',
+        path_object = PathObject(to_path, self.cfg).copy(context='source', user='', resolution='', filename='', ext='',
                                                filename_base='', version='')
         self.location_changed.emit(path_object)
 
@@ -684,13 +690,13 @@ class IOPanel(QtWidgets.QWidget):
         # self.sender().parent().show_tags_info(data)
 
     def on_view_in_lumbermill_clicked(self):
-        path_object = PathObject(self.current_selection[0][PUBLISH_FILEPATH]).copy(context='source',
-                                                                                   user='',
-                                                                                   resolution='',
-                                                                                   filename='',
-                                                                                   ext='',
-                                                                                   filename_base='',
-                                                                                   version='')
+        path_object = PathObject(self.current_selection[0][PUBLISH_FILEPATH], self.cfg).copy(context='source',
+                                                                                               user='',
+                                                                                               resolution='',
+                                                                                               filename='',
+                                                                                               ext='',
+                                                                                               filename_base='',
+                                                                                               version='')
         self.location_changed.emit(path_object)
 
     def on_add_ingest_event(self):
@@ -727,7 +733,7 @@ class IOPanel(QtWidgets.QWidget):
     # noinspection PyListCreation
     @staticmethod
     def make_source_file(to_path, row):
-        source_path = PathObject(to_path)
+        source_path = PathObject(to_path, self.cfg)
         source_path.set_attr(context='source')
         source_path.set_attr(filename='system_report.csv')
         dir_ = os.path.dirname(source_path.path_root)

@@ -15,7 +15,7 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
     :param software: software package to get the menu path for.
     :param menu_name: CamelCase string - all menus created with pipeline designer are CamelCase
     :param menu_file: if True returns a menu path with a menu_name.py file.
-    :param menu_type: menus, preflights, shelves, context-menus
+    :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
     if menu_file:
@@ -32,7 +32,7 @@ def get_button_path(software, menu_name, button_name, menu_type='menus'):
     :param software: software as it appears in pipeline designer.
     :param menu_name: CamelCase menu name
     :param button_name: CamelCase button name
-    :param menu_type: menus, preflights, shelves, context-menus
+    :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
     menu_folder = get_menu_path(software, menu_name, menu_type=menu_type)
@@ -81,7 +81,7 @@ def create_menu_file(class_name):
     """
     # read in the menu file
     menu_path = get_menu_path('blender', class_name, menu_file=True)
-    menu_template = os.path.join(get_cgl_resources_path(), 'pipeline_designer',
+    menu_template = os.path.join(get_cgl_resources_path(), 'alchemists_cookbook',
                                  'blender', 'PanelTemplate.py')
     menu_lines = read_write.load_text_file(menu_template)
     changed_lines = []
@@ -108,7 +108,7 @@ def create_button_file(class_name, label, menu_name):
     :return:
     """
     button_path = get_button_path('blender', menu_name, class_name)
-    button_template = os.path.join(get_cgl_resources_path(), 'pipeline_designer',
+    button_template = os.path.join(get_cgl_resources_path(), 'alchemists_cookbook',
                                    'blender', 'buttonTemplate.py')
     button_lines = read_write.load_text_file(button_template)
     changed_lines = []
@@ -590,7 +590,7 @@ def get_formatted_list(element, first_item):
     """
     scene = bpy.types.Scene.scene_enum
 
-    path_object = lm.LumberObject(get_asset_from_name(scene))
+    path_object = lm.PathObject(get_asset_from_name(scene))
     tasks = reorder_list(path_object.glob_project_element(element), arg=first_item)
     value = [(tasks[i], tasks[i], '') for i in range(len(tasks))]
 
@@ -632,7 +632,7 @@ def unlink_asset(object):
 def remove_linked_environment_dependencies(library):
     env = library
     bpy.ops.file.make_paths_absolute()
-    env_path = lm.LumberObject(env.filepath)
+    env_path = lm.PathObject(env.filepath)
     env_layout = env_path.copy(ext='json').path_root
     env_asset_collection = bpy.data.collections['{}_assets'.format(env_path.asset)]
     data = load_json(env_layout)
@@ -710,7 +710,7 @@ def remove_instancers():
 def reparent_linked_environemnt_assets(library):
     env = library
     bpy.ops.file.make_paths_absolute()
-    env_path = lm.LumberObject(env.filepath)
+    env_path = lm.PathObject(env.filepath)
     env_layout = env_path.copy(ext='json').path_root
 
     data = load_json(env_layout)
@@ -759,7 +759,7 @@ def reparent_collections(view_layer):
                 print(collection.library)
                 if collection.library:
 
-                    path_object = lm.LumberObject(collection.library.filepath)
+                    path_object = lm.PathObject(collection.library.filepath)
 
                     create_collection(path_object.type)
                     for collection in bpy.data.collections:
