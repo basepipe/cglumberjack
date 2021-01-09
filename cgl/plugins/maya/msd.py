@@ -4,17 +4,34 @@ import glob
 import pymel.core as pm
 import cgl.plugins.MagicSceneDescription as msd
 reload(msd)
-from cgl.core.config import app_config
+from cgl.core.path import PathObject
 from cgl.core.utils.read_write import load_json, save_json
-from cgl.plugins.maya.lumbermill import get_scene_name, LumberObject, scene_object
+from cgl.plugins.maya.alchemy import get_scene_name, scene_object
 from cgl.plugins.maya.utils import load_plugin, select_reference
 
-CONFIG = app_config()
+DEFAULT_DATA = {
+                    "asset": {
+                        "name": "",
+                        "source_path": "",
+                        "task": "",
+                        "transform": "",
+                        "type": "asset"
+                    },
+                    "camera": {
+                        "name": "",
+                        "source_path": "",
+                        "task": "",
+                        "transform": "",
+                        "type": "camera",
+                        "frame_start": 0,
+                        "frame_end": 0
+                    }
+                }
 
 
 class MagicSceneDescription(msd.MagicSceneDescription):
 
-    def __init__(self, single_asset=None, single_asset_path=None, single_asset_name=None, single_asset_type=None):
+    def __init__(self, task, single_asset=None, single_asset_path=None, single_asset_name=None, single_asset_type=None):
         """
 
         :param software:
@@ -36,7 +53,8 @@ class MagicSceneDescription(msd.MagicSceneDescription):
         :return:
         """
         self.scene_file = get_scene_name()
-        self.path_object = LumberObject(self.scene_file)
+        self.path_object = PathObject(self.scene_file)
+        print(self.path_object.path_root, 'path_root')
         pass
 
     @staticmethod
@@ -68,10 +86,6 @@ class MagicSceneDescription(msd.MagicSceneDescription):
 
     @staticmethod
     def get_lights():
-        pass
-
-    @staticmethod
-    def get_cameras():
         pass
 
     @staticmethod
@@ -127,7 +141,7 @@ class AssetDescription(object):
         self.single_asset_name = single_asset_name
         self.mesh_name = mesh_name
         self.path_root = path_root
-        self.data = CONFIG['layout']['asset']
+        self.data = DEFAULT_DATA['asset']
         self.asset_type = asset_type
         if not mesh_object:
             self.mesh_object = self.get_object_from_mesh_name()
@@ -159,7 +173,9 @@ class AssetDescription(object):
                 self.path_root = self.mesh_object[-1].path
         elif self.asset_type == 'bndl':
             self.path_root = pm.getAttr(self.mesh_object.BundlePath)
-        self.path_object = LumberObject(self.path_root)
+        elif self.asset_type == 'anim':
+            self.path_root = str(pm.referenceQuery(self.mesh_object, filename=True))
+        self.path_object = PathObject(self.path_root)
 
     def get_mesh_name_from_object(self):
         """
@@ -248,13 +264,15 @@ class AssetDescription(object):
         # see if it's animated (is it in the ANIM group)
         data_temp = copy.copy(self.data)
         if self.asset_type == 'asset':
-            self.data = self.add_matching_files_to_dict(self.path_object.copy(context='render').path_root, data_temp)
+            self.data = self.add_matching_files_to_dict(self.path_object.copy(context='render',
+                                                                              user='publish').path_root, data_temp)
         elif self.asset_type == 'anim':
-            anim_obj = LumberObject(pm.referenceQuery(self.mesh_object, filename=True))
+            self.data = self.add_matching_files_to_dict(self.path_object.copy(context='render',
+                                                                              user='publish').path_root, data_temp)
+            # anim_publish = str(pm.referenceQuery(self.mesh_object, filename=True))
+            anim_obj = PathObject(self.path_root)
             filename = '{}_{}*'.format(anim_obj.seq, anim_obj.shot)
-            filepath = self.path_object.copy(context='render', filename=filename).path_root
-            print('Adding to dict------------------------------')
-            print('\t{}'.format(filepath))
+            filepath = scene_object().copy(context='render', user='publish', filename=filename).path_root
             self.data = self.add_matching_files_to_dict(filepath, data_temp)
         self.set_path_object_details()
         matrix = self.get_matrix()
@@ -304,7 +322,7 @@ class AssetDescription(object):
         :return:
         """
         print('Exporting .msd to: {}'.format(self.path_root))
-        from cgl.plugins.maya.lumbermill import create_file_dirs
+        from cgl.plugins.maya.alchemy import create_file_dirs
         create_file_dirs(self.path_root)
         save_json(self.path_root, self.data)
 
@@ -324,7 +342,7 @@ class CameraDescription(AssetDescription):
         """
 
         self.mesh_name = mesh_name
-        self.data = CONFIG['layout']['asset']
+        self.data = DEFAULT_DATA['asset']
         self.asset_type = 'camera'
         self.mesh_object = self.get_object_from_mesh_name()
         self.create_msd()
@@ -364,7 +382,7 @@ class CameraDescription(AssetDescription):
         # seq, shot = self.mesh_name.split('_')
         # seq = seq.replace('cam', '')
         cam_path = get_latest()
-        self.path_object = LumberObject(cam_path).copy(ext='msd')
+        self.path_object = PathObject(cam_path).copy(ext='msd')
         self.path_root = self.path_object.path_root
 
     def set_frame_range(self, ):
@@ -385,8 +403,10 @@ class CameraDescription(AssetDescription):
 
 def load_msd(msd_path):
     pm.select(d=True)
-    import cgl.plugins.maya.lumbermill as lumbermill
-    reload(lumbermill)
+    import cgl.plugins.maya.alchemy as alchemy
+    reload(alchemy)
+    path_object = PathObject(msd_path)
+    root = path_object.root
     msd_ = load_json(msd_path)
     for asset in msd_:
         namespace = asset
@@ -401,7 +421,7 @@ def load_msd(msd_path):
             else:
                 group = 'LAYOUT'
             # TODO - this should not be pointing to 'source_path', it should be pointing to "msd" or "bndl_path"
-            bndl_path = "%s/%s" % (app_config()['paths']['root'], msd_[asset]['source_path'])
+            bndl_path = "%s/%s" % (root, msd_[asset]['source_path'])
             bundle = task_bndl.bundle_import(bndl_path, group)
             pm.xform(bundle, m=float_transforms)
         else:
@@ -413,8 +433,8 @@ def load_msd(msd_path):
                 else:
                     group = 'ANIM'
                 pm.select(d=True)
-                reference_path = "%s/%s" % (app_config()['paths']['root'], msd_[asset]['abc'])
-                print reference_path
+                reference_path = "%s/%s" % (root, msd_[asset]['abc'])
+                print(reference_path)
             elif msd_[asset]['type'] == 'asset':
                 print('Importing Layout')
                 if not pm.objExists('LAYOUT'):
@@ -422,20 +442,13 @@ def load_msd(msd_path):
                 else:
                     group = 'LAYOUT'
                 try:
-                    reference_path = "%s/%s" % (app_config()['paths']['root'], msd_[asset]['mb'])
+                    reference_path = "%s/%s" % (root, msd_[asset]['mb'])
                 except KeyError:
                     print('didnt find expected "mb" key, looking for "source_path" instead')
-                    reference_path = "%s/%s" % (app_config()['paths']['root'], msd_[asset]['source_path'])
-            # elif msd_[asset]['type'] == 'camera':
-            #     print('Importing Camera')
-            #     if not pm.objExists('CAMERA'):
-            #         group = pm.group(name='CAMERA')
-            #     else:
-            #         group = 'CAMERA'
-            #     reference_path = "%s%s" % (app_config()['paths']['root'], msd_[asset]['mb'])
+                    reference_path = "%s/%s" % (root, msd_[asset]['source_path'])
             pm.select(d=True)
             reference_path = reference_path.replace('\\', '/')
-            ref = lumbermill.reference_file(reference_path, namespace=namespace)
+            ref = alchemy.reference_file(reference_path, namespace=namespace)
             latest_top_node = pm.ls(assemblies=True)[-1]
             # ref_obj = select_reference(ref)
             print(latest_top_node, '---------------------')

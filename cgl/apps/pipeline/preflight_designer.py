@@ -3,7 +3,7 @@ from cgl.apps.pipeline.designer import Designer
 
 class PreflightDesigner(Designer):
 
-    def __init__(self, parent=None, type_='preflights', pm_tasks=None):
+    def __init__(self, parent=None, type_='pre_publish', pm_tasks=None):
         Designer.__init__(self, parent, type_=type_, pm_tasks=pm_tasks)
 
 

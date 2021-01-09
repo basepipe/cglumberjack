@@ -2,46 +2,53 @@ import glob
 import os
 import logging
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
-from cgl.core.config import app_config
 from cgl.ui.widgets.widgets import LJButton, LJTableWidget
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.containers.model import ListItemModel
-from cgl.core.path import PathObject, CreateProductionData, icon_path
-from cgl.core.project import create_project_config
+from cgl.core.path import PathObject, CreateProductionData
 from cgl.ui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
 from cgl.core.utils.general import current_user, clean_file_list
 from cgl.ui.widgets.progress_gif import process_method
-
-CONFIG = app_config()
+from cgl.core.config.config import ProjectConfig, get_root, copy_config
 
 
 class CompanyPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
+    user_root = None
+    project_management = 'lumbermill'
 
-    def __init__(self, parent=None, path_object=None, search_box=None):
+    def __init__(self, parent=None, path_object=None, search_box=None, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
-        self.search_box = search_box
         self.path_object = path_object
+        if cfg:
+            self.cfg = cfg
+        else:
+            print(CompanyPanel)
+            self.cfg = ProjectConfig(self.path_object)
+        self.set_stuff_from_globals()
+        self.search_box = search_box
         self.panel = QtWidgets.QVBoxLayout(self)
-        pixmap = QtGui.QPixmap(icon_path('company24px.png'))
+        pixmap = QtGui.QPixmap(self.cfg.icon_path('company24px.png'))
         #self.company_widget = LJListWidget('Companies', pixmap=pixmap, search_box=search_box)
         self.data_table = LJTableWidget(self, path_object=self.path_object)
         self.company_widget.add_button.setText('add company')
         self.company_widget.list.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Expanding)
-        self.user_root = CONFIG['cg_lumberjack_dir']
         self.panel.addWidget(self.company_widget)
         self.panel.addStretch(0)
         self.load_companies()
-        self.project_management = 'lumbermill'
-
         self.company_widget.add_button.clicked.connect(self.on_create_company)
         self.company_widget.list.itemDoubleClicked.connect(self.on_company_changed)
+
+    def set_stuff_from_globals(self):
+        cfg = ProjectConfig(self.path_object)
+        self.user_root = cfg.project_config['cg_lumberjack_dir']
+        self.project_management = cfg.project_config['account_info']['project_management']
 
     def on_company_changed(self):
         self.path_object.set_attr(company=self.company_widget.list.selectedItems()[0].text())
         if self.path_object.company:
             if self.path_object.company != '*':
-                self.project_management = CONFIG['account_info']['project_management']
+                self.set_stuff_from_globals()
                 self.check_default_company_globals()
         self.update_location()
 
@@ -70,7 +77,7 @@ class CompanyPanel(QtWidgets.QWidget):
         successful.
         :return:
         """
-        self.path_object.set_project_config()
+        self.path_object.set_project_config_paths()
         if self.path_object.company:
             if self.path_object.company != '*':
                 dir_ = os.path.dirname(self.path_object.company_config)
@@ -82,7 +89,7 @@ class CompanyPanel(QtWidgets.QWidget):
         self.company_widget.list.clear()
         companies_loc = '%s/*' % self.path_object.root
         companies = glob.glob(companies_loc)
-        clean_companies = clean_file_list(companies)
+        clean_companies = clean_file_list(companies, self.path_object, cfg=self.cfg)
         if clean_companies:
             for each in companies:
                 c = os.path.basename(each)
@@ -102,23 +109,27 @@ class CompanyPanel(QtWidgets.QWidget):
 class ProjectPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None, search_box=None, title='Projects'):
+    def __init__(self, parent=None, path_object=None, search_box=None, title='Projects', cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
+        if cfg:
+            self.cfg = cfg
+        else:
+            self.cfg = ProjectConfig(path_object)
         self.path_object = path_object
-        self.project_management = CONFIG['account_info']['project_management']
-        self.user_email = CONFIG['project_management'][self.project_management]['users'][current_user()]
-        self.root = CONFIG['paths']['root']  # Company Specific
-        self.user_root = CONFIG['cg_lumberjack_dir']
+        self.project_management = self.cfg.project_config['account_info']['project_management']
+        self.user_email = self.cfg.project_config['project_management'][self.project_management]['users'][current_user()]
+        self.root = self.cfg.project_config['paths']['root']  # Company Specific
+        self.user_root = self.cfg.project_config['cg_lumberjack_dir']
         self.left_column_visibility = True
         self.title = title
         # Create the Left Panel
         self.panel = QtWidgets.QVBoxLayout(self)
         if title == 'Projects':
-            pixmap = QtGui.QPixmap(icon_path('project24px.png'))
+            pixmap = QtGui.QPixmap(self.cfg.icon_path('project24px.png'))
         elif title == 'Companies':
-            pixmap = QtGui.QPixmap(icon_path('company24px.png'))
+            pixmap = QtGui.QPixmap(self.cfg.icon_path('company24px.png'))
         self.project_filter = ProjectWidget(title=title, pixmap=pixmap,
-                                            search_box=search_box, path_object=self.path_object)
+                                            search_box=search_box, path_object=self.path_object, cfg=self.cfg)
 
         self.panel.addWidget(self.project_filter)
         if title == 'Projects':
@@ -158,7 +169,7 @@ class ProjectPanel(QtWidgets.QWidget):
     def load_projects(self):
         self.path_object.set_attr(project='*')
         projects = self.path_object.glob_project_element('project')
-        projects = clean_file_list(projects)
+        projects = clean_file_list(projects, self.path_object, cfg=self.cfg)
         if not projects:
             logging.debug('no projects for %s' % self.path_object.company)
             self.project_filter.data_table.setEnabled(False)
@@ -168,8 +179,8 @@ class ProjectPanel(QtWidgets.QWidget):
             self.project_filter.add_button.setText('Add Project')
         self.project_filter.setup(ListItemModel(prep_list_for_table(projects,
                                                                     split_for_file=True,
-                                                                    size_path=self.path_object.path_root),
-                                                ['Name', 'Size']))
+                                                                    size_path=self.path_object.path_root,
+                                                                    cfg=self.cfg), ['Name', 'Size']))
 
         self.update_location(self.path_object)
 
@@ -188,7 +199,9 @@ class ProjectPanel(QtWidgets.QWidget):
         else:
             self.project_filter.data_table.setEnabled(True)
             self.project_filter.add_button.setText('Add Company')
-        self.project_filter.setup(ListItemModel(prep_list_for_table(clean_companies, split_for_file=True), ['Name']))
+        self.project_filter.setup(ListItemModel(prep_list_for_table(clean_companies,
+                                                                    split_for_file=True,
+                                                                    cfg=self.cfg), ['Name']))
         self.update_location(self.path_object)
 
     def update_location(self, path_object=None):
@@ -199,7 +212,7 @@ class ProjectPanel(QtWidgets.QWidget):
     def on_create_project(self):
         if self.title == 'Projects':
             progress_bar = self.parent().progress_bar
-            dialog = CreateProjectDialog(parent=None, variable='project')
+            dialog = CreateProjectDialog(parent=None, company=self.path_object.company, variable='project')
             dialog.exec_()
             if dialog.button == 'Ok':
                 project_name = dialog.proj_line_edit.text()
@@ -223,12 +236,10 @@ class ProjectPanel(QtWidgets.QWidget):
                 CreateProductionData(self.path_object, project_management='lumbermill')
                 self.load_companies()
 
-
-    @staticmethod
-    def do_create_project(progress_bar, path_object, production_management):
-        CreateProductionData(path_object=path_object.path_root, file_system=True, project_management=production_management)
+    def do_create_project(self, progress_bar, path_object, production_management):
+        CreateProductionData(path_object=path_object.path_root, file_system=True,
+                             project_management=production_management, cfg=self.cfg)
         logging.debug('setting project management to %s' % production_management)
-        create_project_config(path_object.company, path_object.project)
         progress_bar.hide()
 
     def clear_layout(self, layout=None):
@@ -242,18 +253,23 @@ class TaskPanel(QtWidgets.QWidget):
     add_button = QtCore.Signal(object)
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None, element='task', pixmap=None):
+    def __init__(self, parent=None, path_object=None, element='task', pixmap=None, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.element = element
         if path_object:
             self.path_object = path_object
             elements = self.path_object.glob_project_element(element)
-            elements = clean_file_list(elements)
+
         else:
             return
-        self.project_management = CONFIG['account_info']['project_management']
-        self.schema = CONFIG['project_management'][self.project_management]['api']['default_schema']
-        schema = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
+        if cfg:
+            self.cfg = cfg
+        else:
+            self.cfg = ProjectConfig(self.path_object)
+        elements = clean_file_list(elements, path_object, self.cfg)
+        self.project_management = self.cfg.project_config['account_info']['project_management']
+        self.schema = self.cfg.project_config['project_management'][self.project_management]['api']['default_schema']
+        schema = self.cfg.project_config['project_management'][self.project_management]['tasks'][self.schema]
         self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
         self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
         self.panel = QtWidgets.QVBoxLayout(self)
@@ -314,13 +330,18 @@ class TaskPanel(QtWidgets.QWidget):
 class ScopePanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None):
+    def __init__(self, parent=None, path_object=None, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
         if path_object:
             self.path_object = path_object.copy(seq=None, shot=None, ingest_source=None, resolution='', version='',
                                                 user=None, scope=None)
         else:
             return
+        if cfg:
+            self.cfg = cfg
+        else:
+            print(ScopePanel)
+            self.cfg = ProjectConfig(self.path_object)
         self.panel = QtWidgets.QVBoxLayout(self)
         for each in ['assets', 'shots']:
             if each == 'assets':
@@ -332,7 +353,7 @@ class ScopePanel(QtWidgets.QWidget):
             else:
                 image_name = 'ingest96px.png'
             button = LJButton(str(each))
-            button.setIcon(QtGui.QIcon(QtGui.QPixmap(os.path.join(icon_path(), image_name))))
+            button.setIcon(QtGui.QIcon(QtGui.QPixmap(self.cfg.icon_path(image_name))))
             button.setIconSize(QtCore.QSize(50, 50))
             button.setProperty('class', 'ultra_button')
             self.panel.addWidget(button)
@@ -357,9 +378,14 @@ class ScopePanel(QtWidgets.QWidget):
 class ProductionPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None, search_box=None, my_tasks=False):
+    def __init__(self, parent=None, path_object=None, search_box=None, my_tasks=False, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
         # Create the Middle Panel
+        if not cfg:
+            print('ProductionPanel')
+            self.cfg = ProjectConfig(path_object)
+        else:
+            self.cfg = cfg
         if path_object:
             self.path_object = path_object.copy(seq='*', shot='*', ingest_source='*', resolution='', version='',
                                                 user=None)
@@ -369,10 +395,10 @@ class ProductionPanel(QtWidgets.QWidget):
         self.panel = QtWidgets.QVBoxLayout(self)
         self.assets = None
         self.assets_filter_default = filter
-        self.root = CONFIG['paths']['root']
+        self.root = get_root()
         self.radio_filter = 'Everything'
         self.clear_layout()
-        self.assets = AssetWidget(self, title="", path_object=self.path_object, search_box=search_box)
+        self.assets = AssetWidget(self, title="", path_object=self.path_object, search_box=search_box, cfg=self.cfg)
 
         self.assets.add_button.show()
         self.set_scope_radio()
@@ -384,20 +410,19 @@ class ProductionPanel(QtWidgets.QWidget):
         self.assets.tasks_radio.clicked.connect(self.load_tasks)
 
     def load_tasks(self):
-        from cgl.core.config import UserConfig
         # TODO - figure out how to add the progress bar to this.
         self.assets.add_button.setEnabled(False)
         self.assets.data_table.clearSpans()
         data = []
-        proj_man = CONFIG['account_info']['project_management']
-        login = CONFIG['project_management'][proj_man]['users'][current_user()]['login']
+        proj_man = self.cfg.project_config['account_info']['project_management']
+        login = self.cfg.project_config['project_management'][proj_man]['users'][current_user()]['login']
         if proj_man == 'ftrack':
             # ideally we load from a .csv file and run this in the background only to update the .csv file.
             from cgl.plugins.project_management.ftrack.main import find_user_assignments
             process_method(self.parent().progress_bar, find_user_assignments, args=(self.path_object, login),
                            text='Finding Your Tasks')
             try:
-                company_json = UserConfig().d['my_tasks'][self.path_object.company]
+                company_json = self.cfg.user_config['my_tasks'][self.path_object.company]
             except KeyError:
                 logging.debug('Couldnt find company %s in company_json tasks file.' % self.path_object.company)
                 self.parent().progress_bar.hide()
@@ -439,7 +464,7 @@ class ProductionPanel(QtWidgets.QWidget):
         red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
         self.assets.data_table.clearSpans()
         items = glob.glob(self.path_object.path_root)
-        items = clean_file_list(items)
+        items = clean_file_list(items, self.path_object, cfg=self.cfg)
         data = []
         temp_ = []
         self.assets.add_button.clicked.connect(self.on_create_asset)
@@ -450,7 +475,7 @@ class ProductionPanel(QtWidgets.QWidget):
             self.assets.message.hide()
             self.assets.message.setText('')
             for each in items:
-                obj_ = PathObject(str(each))
+                obj_ = PathObject(str(each), self.cfg)
                 d = obj_.data
                 shot_name = '%s_%s' % (d['seq'], d['shot'])
                 if shot_name not in temp_:
@@ -476,7 +501,7 @@ class ProductionPanel(QtWidgets.QWidget):
 
     def on_main_asset_selected(self, data):
         if data:
-            path_object = PathObject(data[0][2])
+            path_object = PathObject(data[0][2], self.cfg)
             if not path_object.task:
                 path_object.set_attr(task='*')
             else:
@@ -505,7 +530,7 @@ class ProductionPanel(QtWidgets.QWidget):
             task_mode = True
         else:
             task_mode = False
-        dialog = asset_creator.AssetCreator(self, path_dict=self.path_object.data, task_mode=task_mode)
+        dialog = asset_creator.AssetCreator(self, path_dict=self.path_object.data, task_mode=task_mode, cfg=self.cfg)
         dialog.exec_()
         self.update_location()
 
@@ -528,7 +553,7 @@ class ProductionPanel(QtWidgets.QWidget):
         clear_layout(self, layout=layout)
 
 
-def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path=False):
+def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path=False, cfg=None):
     from cgl.core.cgl_info import get_cgl_info_size
     list_.sort()
     output_ = []
@@ -537,18 +562,16 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path
     source_size = ''
     for each in list_:
         if size_path:
-            temp_obj = PathObject(size_path).copy(project=each)
-            print(temp_obj.path_root)
+            temp_obj = PathObject(size_path, cfg).copy(project=each)
             total_size = get_cgl_info_size(temp_obj.path_root, source=True, render=True)
             source_size = get_cgl_info_size(temp_obj.path_root, source=True, render=False)
             render_size = get_cgl_info_size(temp_obj.path_root, source=False, render=True)
-            print('\tsize: {}'.format(total_size))
             if not total_size:
                 total_size = 'Not Calculated'
             else:
                 total_size = total_size
         if path_filter:
-            filtered = PathObject(each).data[path_filter]
+            filtered = PathObject(each, cfg).data[path_filter]
             to_append = [filtered]
             if size_path:
                 to_append = [filtered, total_size]

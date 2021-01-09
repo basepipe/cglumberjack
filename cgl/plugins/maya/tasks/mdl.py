@@ -8,7 +8,7 @@ class Task(SmartTask):
 
     def __init__(self, path_object=None):
         if not path_object:
-            from cgl.plugins.maya.lumbermill import scene_object
+            from cgl.plugins.maya.alchemy import scene_object
             self.path_object = scene_object()
 
     def build(self):
@@ -102,7 +102,7 @@ def delete_history(name=None):
     else:
         name = pm.ls(sl=True)
         if not name:
-            print 'Nothing Selected, and no object given, skipping Delete History'
+            print('Nothing Selected, and no object given, skipping Delete History')
             return
     pm.delete(all=True, constructionHistory=True)
 
@@ -113,7 +113,7 @@ def freeze_transforms(name=None):
     else:
         name = pm.ls(sl=True)
         if not name:
-            print 'Nothing Selected, and no object given, skipping Delete History'
+            print('Nothing Selected, and no object given, skipping Delete History')
             return
     pm.runtime.FreezeTransformations()
 

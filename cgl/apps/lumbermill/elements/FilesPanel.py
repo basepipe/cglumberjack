@@ -2,19 +2,14 @@ import os
 import logging
 import glob
 from cgl.plugins.Qt import QtCore, QtWidgets
-from cgl.core.config import app_config
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.utils.general import current_user, cgl_copy, clean_file_list
-from cgl.ui.widgets.progress_gif import process_method
+from cgl.ui.widgets.progress_gif import process_method, ProgressDialog
 from cgl.core.path import PathObject, CreateProductionData, lj_list_dir
 from cgl.core.path import replace_illegal_filename_characters, show_in_folder
 from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 from cgl.ui.widgets.containers.model import FilesModel
 from cgl.apps.lumbermill.elements.panels import clear_layout
-
-# TODO - this appears to be the main offender when it comes to calling the globals through app_config()
-
-CONFIG = app_config()
 
 
 class FilesPanel(QtWidgets.QWidget):
@@ -27,11 +22,24 @@ class FilesPanel(QtWidgets.QWidget):
     new_version_signal = QtCore.Signal()
     review_signal = QtCore.Signal()
     publish_signal = QtCore.Signal()
+    cfg = None
+    schema = None
+    user_info = None
+    proj_man_tasks = None
+    proj_man_tasks_short_to_long = None
+    project_management = None
+    path_object = None
 
     def __init__(self, parent=None, path_object=None, user_email='', machine_user=None, show_import=False,
-                 show_reference=False, set_to_publish=False):
+                 show_reference=False, set_to_publish=False, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
         # self.setWidgetResizable(True)
+        from cgl.core.config.config import ProjectConfig
+        if cfg:
+            self.cfg = cfg
+        else:
+            print('Files Panel')
+            self.cfg = ProjectConfig(path_object)
         self.set_to_publish = set_to_publish
         self.work_files = []
         self.in_current_folder = False
@@ -44,13 +52,7 @@ class FilesPanel(QtWidgets.QWidget):
         self.show_import = show_import
         self.show_reference = show_reference
         self.path_object = path_object
-        self.project_management = CONFIG['account_info']['project_management']
-        self.schema = CONFIG['project_management'][self.project_management]['api']['default_schema']
-        schema = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
-        self.user_info = CONFIG['project_management'][self.project_management]['users'][current_user()]
-        self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
-        self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
-
+        self.set_config_data()
         self.current_location = path_object.data
         self.panel = QtWidgets.QVBoxLayout(self)
         self.tasks = QtWidgets.QHBoxLayout()
@@ -61,7 +63,6 @@ class FilesPanel(QtWidgets.QWidget):
             self.user = machine_user
         else:
             self.user = current_user()
-        self.project_management = CONFIG['account_info']['project_management']
         self.on_task_selected(self.path_object)
         self.panel.addLayout(self.tasks)
         self.panel.addStretch(1)
@@ -69,13 +70,21 @@ class FilesPanel(QtWidgets.QWidget):
         self.force_clear = False
         self.auto_publish_tasks = ['plate', 'element']
 
+    def set_config_data(self):
+        self.project_management = self.cfg.project_config['account_info']['project_management']
+        self.schema = self.cfg.project_config['project_management'][self.project_management]['api']['default_schema']
+        schema = self.cfg.project_config['project_management'][self.project_management]['tasks'][self.schema]
+        self.user_info = self.cfg.project_config['project_management'][self.project_management]['users'][current_user()]
+        self.proj_man_tasks = schema['long_to_short'][self.path_object.scope]
+        self.proj_man_tasks_short_to_long = schema['short_to_long'][self.path_object.scope]
+
     def on_task_selected(self, data):
         try:
             if isinstance(data, PathObject):
                 current = data.copy()
             elif isinstance(data, dict):
                 'its a dict, this sucks'
-                current = PathObject(data)
+                current = PathObject(data, self.cfg)
         except IndexError:
             logging.debug('Nothing Selected')
             return
@@ -100,7 +109,8 @@ class FilesPanel(QtWidgets.QWidget):
             task_widget = TaskWidget(parent=self,
                                      title=title,
                                      path_object=current, show_import=self.show_import,
-                                     show_reference=self.show_reference)
+                                     show_reference=self.show_reference,
+                                     cfg=self.cfg)
             task_widget.task = self.task
             self.render_files_widget = task_widget.files_area.export_files_table
             task_widget.files_area.export_files_table.hide()
@@ -187,7 +197,7 @@ class FilesPanel(QtWidgets.QWidget):
         self.panel.addStretch(1)
 
     def new_files_dragged(self, files):
-        to_object = PathObject(self.sender().to_object)
+        to_object = PathObject(self.sender().to_object, self.cfg)
         to_folder = to_object.path_root
 
         for f in files:
@@ -212,7 +222,7 @@ class FilesPanel(QtWidgets.QWidget):
         """
         if path_object:
             if isinstance(path_object, dict):
-                path_object = PathObject(path_object)
+                path_object = PathObject(path_object, self.cfg)
             self.current_location = path_object.data
             self.path_object = path_object.copy()
             self.location_changed.emit(self.path_object)
@@ -223,7 +233,7 @@ class FilesPanel(QtWidgets.QWidget):
                                  combo_box_items=['CLIENT'])
             dialog.exec_()
             self.current_location['ingest_source'] = dialog.combo_box.currentText()
-            ingest_source_location = PathObject(self.current_location).path_root
+            ingest_source_location = PathObject(self.current_location, self.cfg).path_root
             if ingest_source_location.endswith(dialog.combo_box.currentText()):
                 CreateProductionData(self.current_location, json=False)
         else:
@@ -232,7 +242,8 @@ class FilesPanel(QtWidgets.QWidget):
                 task_mode = True
             else:
                 task_mode = False
-            dialog = asset_creator.AssetCreator(self, path_dict=self.current_location, task_mode=task_mode)
+            dialog = asset_creator.AssetCreator(self, path_dict=self.current_location,
+                                                task_mode=task_mode, cfg=self.cfg)
             dialog.exec_()
 
     def populate_users_combo(self, widget, path_object, task, set_to_publish=False):
@@ -312,11 +323,11 @@ class FilesPanel(QtWidgets.QWidget):
     def on_source_selected(self, data):
         reload_render = False
         new_data = []
-        temp_ = PathObject(self.current_location)
+        temp_ = PathObject(self.current_location, self.cfg)
         if temp_.resolution:
             if temp_.render_pass:
                 reload_render = True
-            object_ = PathObject(temp_.split_after('resolution'))
+            object_ = PathObject(temp_.split_after('resolution'), self.cfg)
         else:
             object_ = temp_
         parent = self.sender().parent()
@@ -384,7 +395,7 @@ class FilesPanel(QtWidgets.QWidget):
                 self.current_location['filename'] = ''
                 self.current_location['ext'] = ''
                 self.current_location['context'] = 'render'
-            object_ = PathObject(self.current_location)
+            object_ = PathObject(self.current_location, self.cfg)
             if not self.in_current_folder:
                 current_variable = self.get_next_path_object_variable(object_)
                 self.in_current_folder = True
@@ -395,7 +406,7 @@ class FilesPanel(QtWidgets.QWidget):
                 if object_.filename:
                     object_.set_attr(filename='')
                     object_.set_attr(ext='')
-            new_path_object = PathObject(object_).copy()
+            new_path_object = PathObject(object_, self.cfg).copy()
             new_path_object.set_attr(attr=current_variable, value=data[0][0])
             object_.set_attr(attr=current_variable, value=data[0][0])
             # object_.set_attr(task=self.sender().task)
@@ -426,12 +437,12 @@ class FilesPanel(QtWidgets.QWidget):
         :return:
         """
         from cgl.core.utils.general import load_json
-        from cgl.core.project import get_cgl_tools
         # get the current task
+
         if self.task and 'elem' not in self.task:
-            menu_file = '%s/lumbermill/context-menus.cgl' % get_cgl_tools()
+            menu_file = os.path.join(self.cfg.cookbook_folder, 'context-menus.cgl')  # TODO - this should probably become part of ProjectConfig()
             if os.path.exists(menu_file):
-                menu_items = load_json('%s/lumbermill/context-menus.cgl' % get_cgl_tools())
+                menu_items = load_json(menu_file)
                 if self.task in menu_items['lumbermill']:
                     for item in menu_items['lumbermill'][self.task]:
                         if item != 'order':
@@ -458,7 +469,7 @@ class FilesPanel(QtWidgets.QWidget):
         Action when "Empty Version" is clicked
         :return:
         """
-        current = PathObject(self.version_obj)
+        current = PathObject(self.version_obj, self.cfg)
         next_minor = current.new_minor_version_object()
         next_minor.set_attr(filename='')
         next_minor.set_attr(ext='')
@@ -466,7 +477,7 @@ class FilesPanel(QtWidgets.QWidget):
         self.on_task_selected(next_minor)
 
     def version_up_selected_clicked(self):
-        current = PathObject(self.current_location)
+        current = PathObject(self.current_location, self.cfg)
         # current location needs to have the version in it.
         next_minor = current.new_minor_version_object()
         next_minor.set_attr(filename='')
@@ -570,7 +581,7 @@ class FilesPanel(QtWidgets.QWidget):
 
     def on_assign_button_clicked(self, data):
         task = self.sender().task
-        users_dict = CONFIG['project_management'][self.project_management]['users']
+        users_dict = self.cfg.project_config['project_management'][self.project_management]['users']
         all_users = []
         for each in users_dict.keys():
             all_users.append(each.lower())
@@ -583,8 +594,13 @@ class FilesPanel(QtWidgets.QWidget):
             dialog.combo_box.setCurrentIndex(index)
         dialog.exec_()
         if dialog.button == 'Start':
+            # TODO - how to i seperate this into another thread? can i do that within ProgressDialog itself?
+            # The movie won't show up otherwise.
+            progress_dialog = ProgressDialog(
+                message='Creating An Assignment with {} - Kickass!!'.format(self.project_management))
+            progress_dialog.show()
             selected_user = dialog.combo_box.currentText()  # this denotes the OS login name of the user
-            user_info = CONFIG['project_management'][self.project_management]['users'][selected_user]
+            user_info = self.cfg.project_config['project_management'][self.project_management]['users'][selected_user]
             self.path_object.set_attr(task=task)
             self.path_object.set_attr(user=selected_user)
             self.path_object.set_attr(version='000.000')
@@ -595,10 +611,11 @@ class FilesPanel(QtWidgets.QWidget):
             self.path_object.set_attr(ext=None)
             self.path_object.set_attr(filename_base=None)
             CreateProductionData(path_object=self.path_object,
-                                 project_management=self.project_management,
                                  user_login=user_info['login'],
                                  force_pm_creation=True)
+            progress_dialog.accept()
         self.update_task_location(path_object=self.path_object)
+
 
     def show_selected_in_folder(self):
         show_in_folder(self.path_object.path_root)
@@ -629,14 +646,14 @@ class FilesPanel(QtWidgets.QWidget):
 
     # LOAD FUNCTIONS
     def on_file_dragged_to_render(self, data):
-        object_ = PathObject.copy(self.version_obj, context='render')
+        object_ = PathObject.copy(self.version_obj, self.cfg, context='render')
         process_method(self.parent().progress_bar, self.on_file_dragged, args=(object_, data),
                        text='Lumber-hacking Files')
         self.on_task_selected(object_)
         # logging.debug('Files Dragged to Render %s' % data)
 
     def on_file_dragged_to_source(self, data):
-        object_ = PathObject.copy(self.version_obj, context='source')
+        object_ = PathObject.copy(self.version_obj, self.cfg, context='source')
         process_method(self.parent().progress_bar, self.on_file_dragged, args=(object_, data),
                        text='Lumber-hacking Files')
         self.on_task_selected(object_)
@@ -663,9 +680,9 @@ class FilesPanel(QtWidgets.QWidget):
 
     def reload_task_widget(self, widget, path_object=None, populate_versions=True):
         if path_object:
-            path_obj = PathObject(path_object)
+            path_obj = PathObject(path_object, self.cfg)
         else:
-            path_obj = PathObject(self.current_location)
+            path_obj = PathObject(self.current_location, self.cfg)
         path_obj.set_attr(user=widget.users.currentText())
         if populate_versions:
             path_obj.set_attr(version=self.populate_versions_combo(widget, path_obj, widget.label))
@@ -712,14 +729,14 @@ class FilesPanel(QtWidgets.QWidget):
         else:
             glob_path = render_path
         files_ = glob.glob('%s/*' % glob_path)
-        data_ = self.prep_list_for_table(files_, basename=True, length=1, back=True)
-        model = FilesModel(data_, ['Ready to Review/Publish'])
+        data_ = self.prep_list_for_table(files_, basename=True, length=1, back=True, cfg=self.cfg)
+        model = FilesModel(data_, ['Ready to Review/Publish'], cfg=self.cfg)
         self.render_files_widget.set_item_model(model)
 
     def load_render_files(self, widget):
         widget.files_area.work_files_table.show()
         render_table = widget.files_area.export_files_table
-        current = PathObject(self.version_obj)
+        current = PathObject(self.version_obj, self.cfg)
         if widget.files_area.work_files_table.user:
             renders = current.copy(context='render', task=widget.task, user=widget.files_area.work_files_table.user,
                                    version=widget.files_area.work_files_table.version,
@@ -737,7 +754,7 @@ class FilesPanel(QtWidgets.QWidget):
                 render_files_label = 'Ready to Review/Publish'
             logging.debug('Published Files for %s' % current.path_root)
             data_ = self.prep_list_for_table(files_, basename=True, length=1)
-            model = FilesModel(data_, [render_files_label])
+            model = FilesModel(data_, [render_files_label], cfg=self.cfg)
             widget.setup(render_table, model)  # this is somehow replacing the other table for source when there are no files
             render_table.show()
             widget.files_area.open_button.show()
@@ -755,8 +772,7 @@ class FilesPanel(QtWidgets.QWidget):
     def clear_layout(self, layout=None):
         clear_layout(self, layout)
 
-    @staticmethod
-    def prep_list_for_table(list_, path_filter=None, basename=False, length=None, back=False):
+    def prep_list_for_table(self, list_, path_filter=None, basename=False, length=None, back=False):
         """
         Allows us to prepare lists for display in LJTables.
         :param list_: list to put into the table.
@@ -772,7 +788,7 @@ class FilesPanel(QtWidgets.QWidget):
 
         output_ = []
         dirname = os.path.dirname(list_[0])
-        files = lj_list_dir(dirname, path_filter=path_filter, basename=basename)
+        files = lj_list_dir(dirname, path_filter=path_filter, basename=basename, cfg=self.cfg)
         for each in files:
             output_.append([each])
         if back:

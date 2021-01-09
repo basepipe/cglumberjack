@@ -66,7 +66,7 @@ class CreatePublishFiles(PreflightCheck):
                     # What to do if it's a Folder
                     if row['Filetype'] == 'folder':
                         print('Copying %s to %s' % (from_file, to_file))
-                        # Send this to the Preflights - No matter what basically
+                        # Send this to the pre_publish - No matter what basically
                         if not self.test:
                             cgl_copy(from_file, to_file)
                             CreateProductionData(to_file, json=True)

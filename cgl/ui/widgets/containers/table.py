@@ -4,9 +4,6 @@ from cgl.ui.widgets.base import StateSavers
 from cgl.ui.util import drop_handler
 from cgl.ui.widgets.containers.proxy import LJTableSearchProxy
 from cgl.ui.widgets.containers.menu import LJMenu
-from cgl.core.config import app_config
-
-PROJ_MANAGEMENT = app_config()['account_info']['project_management']
 
 
 class LJTableWidget(QtWidgets.QTableView):

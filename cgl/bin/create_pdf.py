@@ -3,7 +3,7 @@ from reportlab.lib.units import inch
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import PageBreak
 from cgl.core.utils.general import load_json
-from cgl.core.config import app_config
+from cgl.core.config.config import ProjectConfig
 import click
 
 
@@ -148,7 +148,7 @@ def convert_shot_pdfs_to_png(path_list):
         filein = path
         fileout = path.replace('pdf', 'png')
         # TODO - we should be pulling this from globals
-        magick = app_config()['paths']['magick']
+        magick = ProjectConfig.project_config['paths']['magick']
         command = '%s -density 300 "%s" "%s"' % (magick, filein, fileout)
         print('CONVERSION -------\n\t', command)
         os.system(command)

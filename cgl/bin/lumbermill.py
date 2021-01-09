@@ -1,5 +1,6 @@
 import time
 import logging
+from cgl.core.config.config import ProjectConfig
 zero_start_time = time.time()
 import cgl.core.startup as startup
 from cgl.apps.lumbermill.main import CGLumberjack
@@ -7,8 +8,8 @@ start_time = time.time()
 logging.debug('Loaded initial modules in %s seconds: %s' % ((start_time - zero_start_time), __file__))
 
 
-def load_lumbermill(app, splash=None):
-    gui = CGLumberjack(show_import=False, user_info=user_info, start_time=start_time)
+def load_lumbermill(app, splash=None, cfg=None):
+    gui = CGLumberjack(show_import=False, user_info=user_info, start_time=start_time, cfg=cfg)
     gui.show()
     gui.raise_()
     if splash:
@@ -17,8 +18,10 @@ def load_lumbermill(app, splash=None):
 
 
 if __name__ == "__main__":
-    app, splash = startup.app_init()
-    project_management, user_info = startup.user_init()
+    print('Lumbermill.py')
+    cfg = ProjectConfig()
+    app, splash = startup.app_init(cfg=cfg)
+    project_management, user_info = startup.user_init(cfg=cfg)
     # TODO tell them to run the setup script if there's not globals file.
     # TODO make this value a globals value
     time_required = False
@@ -27,14 +30,14 @@ if __name__ == "__main__":
         if project_management == 'ftrack':
             if time_required:
                 if startup.check_time_log(project_management):
-                    load_lumbermill(app, splash)
+                    load_lumbermill(app, splash, cfg)
                 else:
                     from cgl.bin.time_sheet import load_time_sheet
                     load_time_sheet(app, splash)
             else:
-                load_lumbermill(app, splash)
+                load_lumbermill(app, splash, cfg)
         else:
-            load_lumbermill(app, splash)
+            load_lumbermill(app, splash, cfg)
     else:
         from cgl.bin.login_dialog import load_login_dialog
         load_login_dialog(app)

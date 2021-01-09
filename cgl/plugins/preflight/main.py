@@ -92,7 +92,7 @@ class Preflight(QtWidgets.QWidget):
         self.software = software
         self.preflight = preflight
         self.software_dir = os.path.join(CONFIG['paths']['cgl_tools'], software)
-        self.preflight_dir = os.path.join(self.software_dir, 'preflights')
+        self.preflight_dir = os.path.join(self.software_dir, 'pre_publish')
         if self.preflight not in os.listdir(self.preflight_dir):
             print('test')
             if software == 'maya':
@@ -100,7 +100,7 @@ class Preflight(QtWidgets.QWidget):
                 print(self.preflight_dir, 'looking for :', self.preflight)
                 message = 'no {} preflight found, create one in the Production Cookbook:\n' \
                           'Software: {}\n' \
-                          'Menu Type: Preflights\n' \
+                          'Menu Type: pre_publish\n' \
                           'Create new Preflight: {}'.format(self.preflight, self.software, self.preflight)
                 dialog = InputDialog(title='Preflight Not Found', message=message)
                 dialog.exec_()
@@ -108,13 +108,13 @@ class Preflight(QtWidgets.QWidget):
             self.preflight = None
             return None
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-        self.json_file = os.path.join(self.software_dir, 'preflights.cgl')
+        self.json_file = os.path.join(self.software_dir, 'pre_publish.cgl')
         self.modules = {}
         self.ignore = ['__init__.py']
         self.selected_checks = []
         self.function_d = {}
         self.table_data = []
-        self.setWindowTitle('%s Publish Preflights' % self.preflight.title())
+        self.setWindowTitle('%s Publish pre_publish' % self.preflight.title())
         PreflightCheck.shared_data['path_object'] = PathObject(path_object)
         PreflightCheck.shared_data['current_selection'] = current_selection
         PreflightCheck.shared_data['preflight_dialog'] = self
@@ -132,9 +132,9 @@ class Preflight(QtWidgets.QWidget):
         combo_layout = QtWidgets.QHBoxLayout(self)
 
         # create the widgets
-        self.preflights = ItemTable(self)
-        self.preflights.setMinimumWidth(800)
-        self.preflights.setMinimumHeight(250)
+        self.pre_publish = ItemTable(self)
+        self.pre_publish.setMinimumWidth(800)
+        self.pre_publish.setMinimumHeight(250)
         self.software_label = QtWidgets.QLabel('Preflight Checks')
         self.software_label.setProperty('class', 'ultra_title')
 
@@ -154,14 +154,14 @@ class Preflight(QtWidgets.QWidget):
         button_bar.addWidget(self.run_selected)
         button_bar.addWidget(self.run_all)
         v_layout.addLayout(combo_layout)
-        v_layout.addWidget(self.preflights)
+        v_layout.addWidget(self.pre_publish)
         v_layout.addWidget(self.image_plane)
         v_layout.addLayout(button_bar)
 
         # load the GUI
         self._load_json()
         self.populate_table()
-        self.preflights.item_selected.connect(self.update_selection)
+        self.pre_publish.item_selected.connect(self.update_selection)
         self.run_selected.clicked.connect(self.run_selected_clicked)
         self.run_all.clicked.connect(self.run_all_clicked)
         if auto_show:
@@ -206,11 +206,11 @@ class Preflight(QtWidgets.QWidget):
                              item['order'],
                              item['required']])
         self.table_data = data
-        self.preflights.set_item_model(PreflightModel(data, ["Check", "Status", "Path", "Order", "Required"]))
-        self.preflights.sortByColumn(3, QtCore.Qt.SortOrder(0))
-        self.preflights.hideColumn(2)
-        self.preflights.hideColumn(3)
-        self.preflights.setSortingEnabled(False)
+        self.pre_publish.set_item_model(PreflightModel(data, ["Check", "Status", "Path", "Order", "Required"]))
+        self.pre_publish.sortByColumn(3, QtCore.Qt.SortOrder(0))
+        self.pre_publish.hideColumn(2)
+        self.pre_publish.hideColumn(3)
+        self.pre_publish.setSortingEnabled(False)
 
     def update_selection(self, data):
         self.selected_checks = data
@@ -238,7 +238,7 @@ class Preflight(QtWidgets.QWidget):
         self.signal_one.emit(data)
 
     def previous_checks_passed(self, check):
-        mdl = self.preflights.model()
+        mdl = self.pre_publish.model()
         if int(check["Order"]) == 1:
             return True
         for irow in range(int(check['Order'])-1):
@@ -266,17 +266,17 @@ class Preflight(QtWidgets.QWidget):
             if each[0] == check:
                 self.table_data[row][1] = status
         # refresh the table with self.table_data
-        self.preflights.set_item_model(PreflightModel(self.table_data,
+        self.pre_publish.set_item_model(PreflightModel(self.table_data,
                                                       ["Check", "Status", "Path", "Order", "Required"]))
-        self.preflights.sortByColumn(3, QtCore.Qt.SortOrder(0))
-        self.preflights.hideColumn(2)
-        self.preflights.hideColumn(3)
-        self.preflights.setSortingEnabled(False)
+        self.pre_publish.sortByColumn(3, QtCore.Qt.SortOrder(0))
+        self.pre_publish.hideColumn(2)
+        self.pre_publish.hideColumn(3)
+        self.pre_publish.setSortingEnabled(False)
 
     def run_all_clicked(self):
         # To Do: load waiting gif while function operates
         self.image_plane.start()
-        model = self.preflights.model()
+        model = self.pre_publish.model()
         all_rows = []
         for irow in range(model.rowCount()):
             data = {'Check': str(model.data(model.index(irow, 0))),

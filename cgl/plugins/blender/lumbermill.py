@@ -206,14 +206,14 @@ class LumberObject(PathObject):
             self.get_company(path_object)
             self.unpack_path(path_object)
             self.set_data_from_attrs()
-            self.set_project_config()
+            self.set_project_config_paths()
             self.set_json()
             self.set_relative_path()
 
         def process_dict(self, path_object):
             self.set_attrs_from_dict(path_object)
             self.set_path()
-            self.set_project_config()
+            self.set_project_config_paths()
             self.set_preview_path()
             self.set_json()
             self.set_relative_path()

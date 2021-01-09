@@ -44,7 +44,7 @@ class AppMainWindow(CGLumberjack):
         self.setCentralWidget(BrowserWidget(self, show_import=True, path=path))
 
 
-class LumberObject(PathObject):
+class PathObject(PathObject):
 
     def __init__(self, path_object=None):
         if not path_object:
@@ -143,7 +143,7 @@ def get_scene_name():
 
 def scene_object():
     """
-    returns LumberObject of curent scene
+    returns PathObject of curent scene
     :return:
     """
     pass
@@ -343,7 +343,7 @@ def publish():
 
 def launch_():
     scene_name = get_scene_name()
-    scene = LumberObject(scene_name)
+    scene = PathObject(scene_name)
     location = '%s/*' % scene.split_after('shot')
     project_management = CONFIG['account_info']['project_management']
     users = CONFIG['project_management'][project_management]['users']

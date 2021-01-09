@@ -1,7 +1,8 @@
 import re
 import os
 import glob
-from cgl.core.config import app_config
+from cgl.core.path import PathObject
+from cgl.core.config.config import ProjectConfig
 from cgl.core.utils.read_write import load_json
 from cgl.ui.widgets.dialog import MagicList
 
@@ -14,13 +15,9 @@ except ModuleNotFoundError:
     print('Skipping pymel.core - outside of maya')
 
 
-CONFIG = app_config()
-
-
 def get_namespace(filepath):
-    from lumbermill import LumberObject
     namespace = ''
-    path_object = LumberObject(filepath)
+    path_object = PathObject(filepath)
     if path_object.task == 'cam':
         namespace = 'cam'
     elif path_object.scope == 'assets':
@@ -208,9 +205,15 @@ def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=Fals
         print('Playblast not set up for audio yet')
 
 
-def get_hdri_json_path():
-    hdri_json = CONFIG['paths']['resources']
-    return os.path.join(hdri_json, 'hdri', 'settings.json')
+def get_hdri_json_path(return_config=False):
+    from cgl.plugins.maya.alchemy import scene_object
+    cfg = ProjectConfig(scene_object())
+    hdri_json = cfg.hdri_settings_file
+    print(hdri_json)
+    if return_config:
+        return hdri_json, cfg
+    else:
+        return hdri_json
 
 
 def hdri_widget():
@@ -224,7 +227,7 @@ def hdri_widget():
 
 
 def create_env_light(tex_name):
-    d = load_json(get_hdri_json_path())
+    d, cfg = load_json(get_hdri_json_path(return_config=True))
     rotation = 0
     delete_existing = True
     rotate_set = False
@@ -239,11 +242,12 @@ def create_env_light(tex_name):
     if delete_existing:
         env_lights = pm.ls('env_light*', type='transform')
         pm.delete(env_lights)
+    # TODO - this is extremely specific - needs to be generalized into the plugin structure.
     tex_path = r'Z:\Projects\VFX\PLUGINS\substance_painter\ibl\%s.tx' % tex_name
     tex_path2 = r'Z:\Projects\VFX\PLUGINS\substance_painter\ibl\%s.exr' % tex_name
     if not os.path.exists(tex_path):
         if os.path.exists(tex_path2):
-            command = '%s %s -v -u -oiio -o %s' % (CONFIG['paths']['maketx'], tex_path2, tex_path)
+            command = '%s %s -v -u -oiio -o %s' % (cfg.project_config['paths']['maketx'], tex_path2, tex_path)
             # should probably run the txmake command here and make the .tx file.
             p = subprocess.Popen(command, shell=True)
             p.communicate()
@@ -289,12 +293,11 @@ def get_maya_window():
 
 
 def update_reference(reference):
-    from cgl.plugins.maya.lumbermill import LumberObject
     path = reference[1].path
     if '{' in path:
         path = path.split('{')[0]
     filename = os.path.basename(path)
-    lobj = LumberObject(path).copy(context='render', user='publish', latest=True)
+    lobj = PathObject(path).copy(context='render', user='publish', latest=True)
     latest_version = lobj.path_root
     path = path.replace('\\', '/')
     latest_version = latest_version.replace('\\', '/')

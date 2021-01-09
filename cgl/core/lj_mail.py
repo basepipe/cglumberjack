@@ -1,13 +1,14 @@
 import requests
 import os
 import logging
-from cgl.core.config import app_config
-
-CONFIG = app_config()
-email = CONFIG['email']
+from cgl.core.config.config import ProjectConfig
 
 
-def slack_notification_email(type_='reviews', subject='Generic Subject', message='This is a message', attachments=None):
+def slack_notification_email(type_='reviews', subject='Generic Subject', message='This is a message',
+                             attachments=None, cfg=None):
+    if not cfg:
+        cfg = ProjectConfig()
+    email = cfg.project_config['email']
     from_name = ''
     if type_ == 'bugs':
         from_name = 'Lumbermill Bugs'
