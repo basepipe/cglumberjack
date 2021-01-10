@@ -181,7 +181,8 @@ def write_layout(outFile=None):
     :param outFile:
     :return:
     """
-    from cgl.plugins.blender.lumbermill import scene_object, LumberObject
+    from cgl.plugins.blender.alchemy import scene_object
+    from cgl.core.path import PathObject
     from cgl.core.utils.read_write import save_json
     import bpy
     from pathlib import Path
@@ -213,7 +214,7 @@ def write_layout(outFile=None):
 
                     libraryPath = bpy.path.abspath(collection_library.filepath)
                     filename = Path(bpy.path.abspath(libraryPath)).__str__()
-                    libObject = LumberObject(filename)
+                    libObject = PathObject(filename)
 
                     data[name] = {'name': libObject.asset,
                                   'source_path': libObject.path,
@@ -249,7 +250,8 @@ def read_layout(outFile=None, linked=False, append=False):
     :param append:
     :return:
     """
-    from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file_old
+    from cgl.plugins.blender.alchemy import scene_object, import_file_old
+    from cgl.core.path import PathObject
     from cgl.core.utils.read_write import load_json
     import bpy
 
@@ -270,20 +272,20 @@ def read_layout(outFile=None, linked=False, append=False):
             transform_data.append(float(value))
 
         pathToFile = os.path.join(scene_object().root, data_path)
-        lumberObject = LumberObject(pathToFile)
+        pathObject = PathObject(pathToFile)
 
-        if lumberObject.filename_base in bpy.data.libraries:
-            lib = bpy.data.libraries[lumberObject.filename]
+        if pathObject.filename_base in bpy.data.libraries:
+            lib = bpy.data.libraries[pathObject.filename]
             bpy.data.batch_remove(ids=([lib]))
-            import_file_old(lumberObject.path_root, linked=linked, append=append)
+            import_file_old(pathObject.path_root, linked=linked, append=append)
         else:
-            import_file_old(lumberObject.path_root, linked=linked, append=append)
+            import_file_old(pathObject.path_root, linked=linked, append=append)
 
         if p not in bpy.data.objects:
             obj = bpy.data.objects.new(p, None)
             bpy.context.collection.objects.link(obj)
             obj.instance_type = 'COLLECTION'
-            obj.instance_collection = bpy.data.collections[lumberObject.asset]
+            obj.instance_collection = bpy.data.collections[pathObject.asset]
 
             location = (transform_data[0], transform_data[1], transform_data[2])
             obj.location = location
@@ -493,7 +495,7 @@ def read_materials(path_object=None):
 
     :type path_object: object
     """
-    from cgl.plugins.blender import lumbermill as lm
+    from cgl.plugins.blender import alchemy as alc
     from cgl.core.utils.read_write import load_json
     """
     Reads the materials on the shdr task from defined from a json file
@@ -501,7 +503,7 @@ def read_materials(path_object=None):
     """
     import bpy
     if path_object == None:
-        path_object = lm.scene_object()
+        path_object = alc.scene_object()
 
     shaders = path_object.copy(task='shd', user='publish', set_proper_filename=True).latest_version()
     outFile = shaders.copy(ext='json').path_root
@@ -516,7 +518,7 @@ def read_materials(path_object=None):
         for material in data[obj].keys():
 
             if material not in bpy.data.materials:
-                lm.import_file_old(shaders.path_root, collection_name=material, type='MATERIAL', linked=False)
+                alc.import_file_old(shaders.path_root, collection_name=material, type='MATERIAL', linked=False)
 
             if material not in object.data.materials:
                 object.data.materials.append(bpy.data.materials[material])
@@ -543,9 +545,9 @@ def create_task_on_asset(task, path_object=None,version_up = False):
 
     """
 
-    from cgl.plugins.blender import lumbermill as lm
+    from cgl.plugins.blender import alchemy as alc
     if path_object == None:
-        path_object = lm.scene_object()
+        path_object = alc.scene_object()
 
     newTask = path_object.copy(task=task)
     if version_up:
@@ -592,7 +594,7 @@ def get_formatted_list(element, first_item):
     """
     scene = bpy.types.Scene.scene_enum
 
-    path_object = lm.PathObject(get_asset_from_name(scene))
+    path_object = PathObject(get_asset_from_name(scene))
     tasks = reorder_list(path_object.glob_project_element(element), arg=first_item)
     value = [(tasks[i], tasks[i], '') for i in range(len(tasks))]
 
@@ -625,7 +627,7 @@ def unlink_asset(object):
 
         except AttributeError:
             pass
-        if filepath and lm.PathObject(filepath).type == 'env':
+        if filepath and PathObject(filepath).type == 'env':
             remove_linked_environment_dependencies(libname.library)
 
         bpy.data.batch_remove(ids=(libname, obj))
@@ -634,7 +636,7 @@ def unlink_asset(object):
 def remove_linked_environment_dependencies(library):
     env = library
     bpy.ops.file.make_paths_absolute()
-    env_path = lm.PathObject(env.filepath)
+    env_path = PathObject(env.filepath)
     env_layout = env_path.copy(ext='json').path_root
     env_asset_collection = bpy.data.collections['{}_assets'.format(env_path.asset)]
     data = load_json(env_layout)
@@ -712,7 +714,7 @@ def remove_instancers():
 def reparent_linked_environemnt_assets(library):
     env = library
     bpy.ops.file.make_paths_absolute()
-    env_path = lm.PathObject(env.filepath)
+    env_path = PathObject(env.filepath)
     env_layout = env_path.copy(ext='json').path_root
 
     data = load_json(env_layout)
@@ -737,7 +739,7 @@ def reparent_linked_environemnt_assets(library):
 
 def keep_single_user_collection(obj, assetName=None):
     if not assetName:
-        assetName = lm.scene_object().shot
+        assetName = alc.scene_object().shot
 
     try:
         bpy.data.collections[assetName].objects.link(obj)
@@ -761,7 +763,7 @@ def reparent_collections(view_layer):
                 print(collection.library)
                 if collection.library:
 
-                    path_object = lm.PathObject(collection.library.filepath)
+                    path_object = PathObject(collection.library.filepath)
 
                     create_collection(path_object.type)
                     for collection in bpy.data.collections:

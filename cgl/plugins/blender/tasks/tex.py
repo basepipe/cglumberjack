@@ -4,9 +4,10 @@ from cgl.plugins.Qt import QtCore, QtWidgets
 from cgl.plugins.blender.tasks.smart_task import SmartTask
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
-from cgl.plugins.blender.lumbermill import LumberObject
+from cgl.core.path import PathObject
 from cgl.core.config.config import ProjectConfig
 from cgl.ui.widgets.widgets import AdvComboBox
+
 import bpy
 
 DEFAULT_SHADER = 'BSDF_PRINCIPLED'  # TODO - add this in the globals.
@@ -95,7 +96,7 @@ def get_latest_tex_publish_from_filepath(filepath):
     :return:
     """
     # TODO - could i do this from just the asset name alone?
-    path_object = LumberObject(filepath).copy(task='tex', context='render', user='publish',
+    path_object = PathObject(filepath).copy(task='tex', context='render', user='publish',
                                               latest=True, resolution='high')
     return os.path.dirname(path_object.path_root)
 
@@ -233,7 +234,7 @@ def import_and_connect_textures(shader_node, shading_dict, mtl_group=None,
             # TODO - take relative path and make it absolute
             # full_path = os.path.join(ROOT, texture_path)
             full_path = texture_path
-            path_object = LumberObject(full_path)
+            path_object = PathObject(full_path)
             channel_ = get_attr_dict_for_tex_channel(path_object, tex_channel)
             if channel_:
                 attr_ = channel_['attr']
@@ -277,7 +278,7 @@ def assign_texture_to_shader(tex_path, shader, attr, channel=False, normal=False
     # print(1111111111111111)
     # print('mat/{}_SG'.format(shader))
 
-    path_object = LumberObject(tex_path)
+    path_object = PathObject(tex_path)
     print(shader.replace('shd', 'mtl'))
     shader = bpy.data.materials[shader.replace('shd', 'mtl')]
     material = shader.node_tree.nodes['Principled BSDF']

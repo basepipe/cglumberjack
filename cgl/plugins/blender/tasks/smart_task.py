@@ -11,13 +11,14 @@ class SmartTask(object):
 
         :param path_object: must be a "PathObject"
         """
-        from cgl.plugins.maya.lumbermill import LumberObject, scene_object
+        from cgl.plugins.maya.lumbermill import scene_object
+        from cgl.core.path import PathObject
         if not path_object:
             self.path_object = scene_object()
         else:
             self.path_object = path_object
-        if not isinstance(path_object, LumberObject):
-            print("{} is not instance LumberObject")
+        if not isinstance(path_object, PathObject):
+            print("{} is not instance PathObject")
             return
         print(path_object.path_root)
         # check if it's a PathObject instance

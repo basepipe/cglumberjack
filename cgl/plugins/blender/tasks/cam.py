@@ -2,7 +2,7 @@ from .smart_task import SmartTask
 from cgl.plugins.blender import alchemy as alc
 import bpy
 from cgl.core.utils.read_write import load_json
-from cgl.plugins.blender import magic_scene_description as msd
+from cgl.plugins.blender import msd
 
 class Task(SmartTask):
 

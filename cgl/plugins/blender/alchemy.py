@@ -7,6 +7,7 @@ from cgl.core.path import PathObject
 from cgl.core.utils.general import create_file_dirs
 from cgl.plugins.blender.main_window import CGLumberjack
 from cgl.apps.lumbermill.main import CGLumberjackWidget
+from cgl.core.path import PathObject
 
 CONFIG = ProjectConfig().project_config
 PROJ_MANAGEMENT = ProjectConfig().project_management
@@ -44,11 +45,11 @@ class BrowserWidget(CGLumberjackWidget):
 
     def open_clicked(self):
         """
-        Re-implementation of the open_clicked function in lumbermill.  This allows us to customize it to
+        Re-implementation of the open_clicked function in alchemy.  This allows us to customize it to
         this app's specific needs
         :return:
         """
-        from cgl.plugins.blender.lumbermill import open_file
+        from cgl.plugins.blender.alchemy import open_file
         selection = self.path_widget.path_line_edit.text()
         if os.path.exists(selection):
             open_file(selection)
@@ -57,32 +58,34 @@ class BrowserWidget(CGLumberjackWidget):
 
     def import_clicked(self):
         """
-        Re-implemenation of the import_clicked function in lumbermill.  This allows us to customize it to
+        Re-implemenation of the import_clicked function in alchemy.  This allows us to customize it to
         this app's specific needs.  Typically the default will work if you've defined the import_file() function
         in this plugin.
         :return:
         """
-        from cgl.plugins.blender.lumbermill import import_file, LumberObject
+        from cgl.plugins.blender.alchemy import import_file
+        from cgl.core.path import PathObject
         selection = self.path_widget.path_line_edit.text()
-        path_object = LumberObject(selection)
+        path_object = PathObject(selection)
         if os.path.exists(selection):
             import_file(selection, namespace=path_object.asset)
         else:
             logging.info('{0} does not exist!'.format(selection))
-        # close lumbermill.
+        # close alchemy.
         # self.parent().parent().accept()
 
     def reference_clicked(self):
         """
-        Re-implemenation of the reference_clicked function in lumbermill.  This allows us to customize it to
+        Re-implemenation of the reference_clicked function in alchemy.  This allows us to customize it to
         this app's specific needs.  Typically the default will work if you've defined the reference_file() function
         in this plugin.
         :return:
         """
         print('reference clicked! Referencing not yet implemented in Blender.')
-        from cgl.plugins.blender.lumbermill import reference_file, LumberObject
+        from cgl.plugins.blender.alchemy import reference_file
+        from cgl.core.path import PathObject
         selection = self.path_widget.path_line_edit.text()
-        path_object = LumberObject(selection)
+        path_object = PathObject(selection)
         if os.path.exists(selection):
             reference_file(selection, namespace=path_object.asset)
         else:
@@ -92,7 +95,7 @@ class BrowserWidget(CGLumberjackWidget):
         #     reference_file(selection, namespace=None)
         # else:
         #     logging.info('{0} does not exist!'.format(selection))
-        ## close lumbermill
+        ## close alchemy
         # self.parent().parent().accept()
 
 
@@ -208,11 +211,12 @@ class InputDialog(bpy.types.Operator):
 
 def import_file(filepath, namespace=None, collection_name=None):
     from cgl.plugins.blender import alchemy as alc
-    from .magic_scene_description import add_source_path
+    from .msd import add_source_path
     from cgl.plugins.blender.utils import get_objects_in_hirarchy, parent_to_collection
+    from cgl.core.path import PathObject
 
     import bpy
-    path_object = alc.PathObject(filepath)
+    path_object = PathObject(filepath)
 
     if filepath.endswith('fbx'):
         bpy.ops.import_scene.fbx(filepath=filepath)
@@ -297,12 +301,12 @@ def render(preview=False, audio=False):
 
 
 def reference_file(filepath, namespace=None, collection_name=None):
-    from cgl.plugins.blender import lumbermill as lm
-    from .magic_scene_description import add_source_path
+    from cgl.plugins.blender import alchemy as lm
+    from .msd import tag_object
 
     import bpy
 
-    path_object = lm.PathObject(filepath)
+    path_object = PathObject(filepath)
 
     if collection_name == None:
         collection_name = path_object.asset
@@ -323,7 +327,7 @@ def reference_file(filepath, namespace=None, collection_name=None):
     bpy.context.collection.objects.link(obj)
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
-    add_source_path(obj,path_object)
+    tag_object([obj],'source_path',path_object.path)
     return obj
 
 
@@ -544,7 +548,7 @@ def publish():
     :return:
     """
     publish_object = scene_object().publish()
-    # TODO - i'd like to have a lumbermill controlled popup here.  The blender one doesn't work.
+    # TODO - i'd like to have a alchemy controlled popup here.  The blender one doesn't work.
     return publish_object
 
 

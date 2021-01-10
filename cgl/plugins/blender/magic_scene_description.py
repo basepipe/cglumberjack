@@ -1,7 +1,8 @@
 import os
 import copy
 import glob
-from cgl.plugins.blender.lumbermill import LumberObject, scene_object, objExists
+from cgl.plugins.blender.alchemy import scene_object, objExists
+from cgl.core.path import PathObject
 import cgl.core.assetcore as assetcore
 from cgl.core.config import app_config
 from cgl.core.utils.read_write import load_json, save_json
@@ -21,7 +22,7 @@ def create_asset_description(ref):
     top_node = ref
 
     print(ref['BundlePath'])
-    ref_obj = LumberObject(ref['BundlePath'])
+    ref_obj = PathObject(ref['BundlePath'])
 
     add_matching_files(ref['BundlePath'], asset_dict)
 

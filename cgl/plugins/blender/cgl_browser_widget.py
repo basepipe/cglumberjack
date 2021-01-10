@@ -41,9 +41,10 @@ class BrowserWidget(CGLumberjackWidget):
         in this plugin.
         :return:
         """
-        from cgl.plugins.blender.alchemy import import_file, LumberObject
+        from cgl.plugins.blender.alchemy import import_file, PathObject
+        from cgl.core.path import PathObject
         selection = self.path_widget.path_line_edit.text()
-        path_object = LumberObject(selection)
+        path_object = PathObject(selection)
         if os.path.exists(selection):
             import_file(selection, namespace=path_object.asset)
         else:
@@ -59,9 +60,10 @@ class BrowserWidget(CGLumberjackWidget):
         :return:
         """
         print('reference clicked! Referencing not yet implemented in Blender.')
-        from cgl.plugins.blender.alchemy import reference_file, LumberObject
+        from cgl.plugins.blender.alchemy import reference_file
+        from cgl.core.path import PathObject
         selection = self.path_widget.path_line_edit.text()
-        path_object = LumberObject(selection)
+        path_object = PathObject(selection)
         if os.path.exists(selection):
             reference_file(selection, namespace=path_object.asset)
         else:
