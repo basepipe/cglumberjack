@@ -367,8 +367,6 @@ class SkyView(LJDialog):
         self.company_combo.currentIndexChanged.connect(self.on_company_selected)
         self.project_combo.currentIndexChanged.connect(self.on_project_selected)
 
-
-
     def scope_changed(self):
         if self.scope_list.assets.isChecked():
             self.current_scope = 'assets'
@@ -387,7 +385,6 @@ class SkyView(LJDialog):
         self.get_shots()
 
     def get_shots(self):
-        print(self.base_path_object.path_root)
         files = glob.glob(self.base_path_object.path_root)
         for i, f in enumerate(files):
             ii = i+1

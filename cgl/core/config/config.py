@@ -38,7 +38,7 @@ class ProjectConfig(object):
     images_folder = None
     project_management = None
 
-    def __init__(self, path_object=None, company='master', project='master', print_cfg=True):
+    def __init__(self, path_object=None, company='master', project='master', print_cfg=False):
         self.print_cfg = print_cfg
         if not path_object:
             self.company = company
@@ -81,7 +81,6 @@ class ProjectConfig(object):
         self.cookbook_folder = os.path.join(self.globals_root, 'cookbook')
         self.project_config_file = os.path.join(self.globals_root, 'globals.json')
         self.shaders_config_file = os.path.join(self.globals_root, 'shaders.json')
-        print(self.project_config_file)
 
     def print_variables(self):
         for elem in self.__dict__:

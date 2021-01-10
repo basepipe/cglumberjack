@@ -277,15 +277,16 @@ class PathObject(object):
         splitted = split_all(temp_)
         try:
             c = splitted[2]
-            self.set_attr(company=c, do_set_path=False)
+            c_val = c
         except IndexError:
             c = 'master'
-            self.set_attr(company='*', do_set_path=False)
+            c_val = '*'
         try:
             project = splitted[4]
         except IndexError:
             project = 'project'
         self.get_config_values(company=c, project=project)
+        self.set_attr(company=c_val, do_set_path=False)
 
     def unpack_version(self, path_parts):
         """
@@ -440,7 +441,8 @@ class PathObject(object):
             try:
                 self.project_config['rules']['path_variables'][attr]['regex']
             except KeyError:
-                print('Could not find regex for %s: %s in config, skipping' % (attr, value))
+                print('Could not find regex for %s in config, skipping' % attr)
+                print(attr, self.project_config)
                 return
             if value == '*':
                 self.__dict__[attr] = value
