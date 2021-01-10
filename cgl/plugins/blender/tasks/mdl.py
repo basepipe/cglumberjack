@@ -1,6 +1,6 @@
 from cgl.plugins.blender.tasks.smart_task import SmartTask
 from cgl.plugins.blender import utils
-from cgl.plugins.blender import lumbermill as lm
+from cgl.plugins.blender import alchemy as alc
 import bpy
 
 
@@ -9,7 +9,7 @@ class Task(SmartTask):
     def __init__(self, path_object=None):
 
         if not path_object:
-            from cgl.plugins.blender.lumbermill import scene_object
+            from cgl.plugins.blender.alchemy import scene_object
             self.path_object = scene_object().copy(task='mdl',
                                                    set_proper_filename=True,
                                                    latest=True, context='render',
@@ -77,7 +77,7 @@ class CreateMaterialsGroups(bpy.types.Operator):
             print(materials)
             root = None
             high = None
-            asset = lm.scene_object().asset
+            asset = alc.scene_object().asset
             if self.mdl:
                 root = utils.create_object('mdl', collection=asset)
                 res = bpy.data.objects['mdl']
@@ -103,10 +103,10 @@ class CreateMaterialsGroups(bpy.types.Operator):
             full_list += cleaned_list
             for element in full_list:
                 print(asset)
-                utils.parent_to_collection(obj=lm.get_object(element),
+                utils.parent_to_collection(obj=alc.get_object(element),
                                            collection_name=asset)
 
-            lm.confirm_prompt(message='Material Groups created, please move geometries to groups')
+            alc.confirm_prompt(message='Material Groups created, please move geometries to groups')
 
             return {'FINISHED'}
 
@@ -142,7 +142,7 @@ def create_material_groups(do_high=True, do_mdl=True):
     except ValueError:
         pass
 
-    dialog = lm.InputDialog(title='Create Material Groups',
+    dialog = alc.InputDialog(title='Create Material Groups',
                             message='List materials needed in this object (comma seperated)', line_edit=True,
                             regex='^([a-z]{3,}, *)*[a-z]{3,}', name_example='ex: wood, metal',
                             command='bpy.ops.object.create_material_groups()')

@@ -8,13 +8,12 @@ from cgl.core.utils.general import create_file_dirs
 from cgl.plugins.blender.main_window import CGLumberjack as MagicBrowser
 from cgl.apps.lumbermill.main import CGLumberjackWidget
 
-CONFIG = ProjectConfig()
+CONFIG = ProjectConfig().project_config
+PROJ_MANAGEMENT = ProjectConfig().project_management
+PADDING = CONFIG['default']['padding']
 
-PROJ_MANAGEMENT = CONFIG.project_management
-#PADDING = CONFIG['default']['padding']
-PADDING = 4
-#PROCESSING_METHOD = CONFIG.get_user_globals().d['methodology']
-PROCESSING_METHOD  = 'local'
+PROCESSING_METHOD = ProjectConfig().user_config['methodology']
+
 SOFTWARE = os.path.basename(os.path.dirname(__file__))
 
 

@@ -6,7 +6,7 @@ from cgl.plugins.blender.cgl_browser_widget import BrowserWidget
 from PySide2 import QtWidgets, QtCore, QtGui
 import logging
 
-USERCONFIG = ProjectConfig().get_user_globals()
+USERCONFIG = ProjectConfig().user_config
 ICON_WIDTH = 24
 CONFIG = ProjectConfig()
 
@@ -17,7 +17,7 @@ class CGLumberjack(VFXWindow):
 
         if start_time:
             logging.debug('Finished Loading Lumbermill in %s seconds' % (time.time() - start_time))
-        self.user_config = ProjectConfig().get_user_globals()
+        self.user_config = ProjectConfig().user_config
         if previous_path:
             self.previous_path = previous_path
             self.previous_paths = []
