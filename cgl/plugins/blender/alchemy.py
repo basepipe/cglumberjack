@@ -5,7 +5,7 @@ import bpy
 from cgl.core.config.config import  ProjectConfig, user_config, get_root
 from cgl.core.path import PathObject
 from cgl.core.utils.general import create_file_dirs
-from cgl.plugins.blender.main_window import CGLumberjack as MagicBrowser
+from cgl.plugins.blender.main_window import CGLumberjack
 from cgl.apps.lumbermill.main import CGLumberjackWidget
 
 CONFIG = ProjectConfig().project_config
@@ -17,7 +17,7 @@ PROCESSING_METHOD = ProjectConfig().user_config['methodology']
 SOFTWARE = os.path.basename(os.path.dirname(__file__))
 
 
-class MagicBrowser(MagicBrowser):
+class MagicBrowser(CGLumberjack):
     def __init__(self, parent=None, path=None, user_info=None):
         CGLumberjack.__init__(self, parent, user_info=user_info, previous_path=path, sync_enabled=False)
         print('Application Path path is %s' % path)

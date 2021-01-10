@@ -8,7 +8,7 @@ import logging
 
 USERCONFIG = ProjectConfig().user_config
 ICON_WIDTH = 24
-CONFIG = ProjectConfig()
+CONFIG = ProjectConfig().project_config
 
 
 class CGLumberjack(VFXWindow):
