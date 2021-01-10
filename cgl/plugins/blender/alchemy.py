@@ -2,16 +2,19 @@ import glob
 import logging
 import os
 import bpy
-from cgl.core.config import app_config, UserConfig
-from cgl.core.path import PathObject as CorePathObject
+from cgl.core.config.config import  ProjectConfig, user_config, get_root
+from cgl.core.path import PathObject
 from cgl.core.utils.general import create_file_dirs
 from cgl.plugins.blender.main_window import CGLumberjack as MagicBrowser
 from cgl.apps.lumbermill.main import CGLumberjackWidget
 
-CONFIG = app_config()
-PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
-PADDING = CONFIG['default']['padding']
-PROCESSING_METHOD = UserConfig().d['methodology']
+CONFIG = ProjectConfig()
+
+PROJ_MANAGEMENT = CONFIG.project_management
+#PADDING = CONFIG['default']['padding']
+PADDING = 4
+#PROCESSING_METHOD = CONFIG.get_user_globals().d['methodology']
+PROCESSING_METHOD  = 'local'
 SOFTWARE = os.path.basename(os.path.dirname(__file__))
 
 
@@ -202,135 +205,6 @@ class InputDialog(bpy.types.Operator):
 
         row3 = col2.row()
 
-
-class PathObject(CorePathObject):
-
-    def __init__(self, path_object=None):
-        if not path_object:
-            path_object = get_scene_name()
-        self.data = {}
-        self.root = CONFIG['paths']['root'].replace('\\', '/')
-        self.company = None
-        self.project = None
-        self.scope = None
-        self.context = None
-        self.seq = None
-        self.shot = None
-        self.type = None
-        self.asset = None
-        self.variant = None
-        self.user = None
-        self.version = None
-        self.major_version = None
-        self.minor_version = None
-        self.ext = None
-        self.filename = None
-        self.filename_base = None
-        self.resolution = None
-        self.frame = None
-        self.aov = None
-        self.render_pass = None
-        self.shotname = None
-        self.assetname = None
-        self.task = None
-        self.camera = None
-        self.file_type = None
-        self.frame_padding = CONFIG['default']['padding']
-        self.scope_list = CONFIG['rules']['scope_list']
-        self.context_list = CONFIG['rules']['context_list']
-        self.path = None  # string of the properly formatted path
-        self.path_root = None  # this gives the full path with the root
-        self.path_relative = None
-        self.thumb_path = None
-        self.playblast_path = None
-        self.render_path = None
-        self.preview_path = None
-        self.preview_seq = None
-        self.hd_proxy_path = None
-        self.start_frame = None
-        self.end_frame = None
-        self.frame_rate = None
-        self.frame_range = None
-        self.template = []
-        self.filename_template = []
-        self.actual_resolution = None
-        self.date_created = None
-        self.date_modified = None
-        self.project_config = None
-        self.company_config = None
-        self.software_config = None
-        self.asset_json = None
-        self.shot_json = None
-        self.task_json = None
-        self.command_base = ''
-        self.project_json = None
-        self.status = None
-        self.due = None
-        self.assigned = None
-        self.priority = None
-        self.ingest_source = '*'
-        self.processing_method = PROCESSING_METHOD
-        self.proxy_resolution = '1920x1080'
-        self.path_template = []
-        self.version_template = []
-        self.name = None
-
-        def process_string(self, path_object):
-            path_object = path_object.replace('\\', '/')
-            self.get_company(path_object)
-            self.unpack_path(path_object)
-            self.set_data_from_attrs()
-            self.set_project_config_paths()
-            self.set_json()
-            self.set_relative_path()
-
-        def process_dict(self, path_object):
-            self.set_attrs_from_dict(path_object)
-            self.set_path()
-            self.set_project_config_paths()
-            self.set_preview_path()
-            self.set_json()
-            self.set_relative_path()
-
-        try:
-            if isinstance(path_object, unicode):
-                path_object = str(path_object)
-        except NameError:
-            pass
-        if isinstance(path_object, dict):
-            self.process_dict(path_object)
-        elif isinstance(path_object, str):
-            self.process_string(path_object)
-        elif isinstance(path_object, PathObject):
-            self.process_dict(path_object.data)
-        else:
-            logging.error('type: %s not expected' % type(path_object))
-        self.set_render_paths()
-
-    def set_relative_path(self):
-        import os
-        from cgl.plugins.blender.lumbermill import scene_object
-        self.path_relative = os.path.relpath(self.path_root, scene_object().path_root)
-
-    def set_render_paths(self):
-        padding = '#' * self.frame_padding
-        previewRenderTypes = ['anim', 'rig', 'mdl', 'lay', 'remsh', 'grmnt']
-
-        if self.task in previewRenderTypes:
-            render_path = self.copy(context='render', ext='jpg', set_proper_filename=True).path_root
-            self.render_path = render_path.replace('.jpg', '.{}.jpg'.format(padding))
-        else:
-            render_path = self.copy(context='render', ext='exr', set_proper_filename=True).path_root
-            self.render_path = render_path.replace('.exr', '.{}.exr'.format(padding))
-
-    def render(self, processing_method=PROCESSING_METHOD):
-        """
-        :param processing_method: app, local, smedge, or deadline.  App - render in gui.  local - render through
-        command line locally.  smedge/deadline - submit the job to a render manager for farm rendering.
-        :return:
-        """
-        print('what is my render path?')
-        pass
 
 
 def import_file(filepath, namespace=None, collection_name=None):

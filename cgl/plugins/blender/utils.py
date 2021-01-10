@@ -2,16 +2,15 @@ import logging
 import os
 
 import stringcase
-
 import cgl.core.utils.read_write as read_write
-from cgl.core.path import get_cgl_resources_path
-from cgl.core.project import get_cgl_tools
 
 logger = logging.getLogger('qtutils')
 
-def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
+def get_menu_path(software, menu_name, menu_file=False, menu_type='menus', cfg = None):
     """
     returns the menu path for a menu with the given name
+    :param cfg:
+    :type cfg:
     :param software: software package to get the menu path for.
     :param menu_name: CamelCase string - all menus created with pipeline designer are CamelCase
     :param menu_file: if True returns a menu path with a menu_name.py file.
@@ -21,12 +20,12 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
     if menu_file:
         if isinstance(menu_name, dict):
             menu_name = menu_name['name']
-        menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name, '%s.py' % menu_name)
+        menu_folder = os.path.join(cfg.cookbook_folder, software, menu_type, menu_name, '%s.py' % menu_name)
     else:
-        menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name)
+        menu_folder = os.path.join(cfg.cookbook_folder, software, menu_type, menu_name)
     return menu_folder
 
-def get_button_path(software, menu_name, button_name, menu_type='menus'):
+def get_button_path(software, menu_name, button_name, menu_type='menus',cfg = None):
     """
 
     :param software: software as it appears in pipeline designer.
@@ -35,7 +34,7 @@ def get_button_path(software, menu_name, button_name, menu_type='menus'):
     :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
-    menu_folder = get_menu_path(software, menu_name, menu_type=menu_type)
+    menu_folder = get_menu_path(software, menu_name, menu_type=menu_type,cfg= cfg)
     button_path = os.path.join(menu_folder, '%s.py' % button_name)
     return button_path
 
@@ -71,7 +70,7 @@ def load_plugin(plugin_name):
 def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=False):
     pass
 
-def create_menu_file(class_name):
+def create_menu_file(class_name,cfg):
     """
     Creates a Menu File on Disk
     :param class_name: name for the class
@@ -80,9 +79,12 @@ def create_menu_file(class_name):
     :return:
     """
     # read in the menu file
-    menu_path = get_menu_path('blender', class_name, menu_file=True)
-    menu_template = os.path.join(get_cgl_resources_path(), 'alchemists_cookbook',
+    menu_path = get_menu_path('blender', class_name, menu_file=True,cfg = cfg)
+
+    menu_template = os.path.join(cfg.get_cgl_resources_path(), 'alchemists_cookbook',
                                  'blender', 'PanelTemplate.py')
+
+
     menu_lines = read_write.load_text_file(menu_template)
     changed_lines = []
     for l in menu_lines:
@@ -99,7 +101,7 @@ def create_menu_file(class_name):
     # write out the menu file to desired location
     pass
 
-def create_button_file(class_name, label, menu_name):
+def create_button_file(class_name, label, menu_name,cfg):
     """
     Creates a Blender Button File on Disk.
     :param class_name: name of the class
@@ -107,8 +109,8 @@ def create_button_file(class_name, label, menu_name):
     :param menu_name: name of the parent menu (CamelCase)
     :return:
     """
-    button_path = get_button_path('blender', menu_name, class_name)
-    button_template = os.path.join(get_cgl_resources_path(), 'alchemists_cookbook',
+    button_path = get_button_path('blender', menu_name, class_name,cfg)
+    button_template = os.path.join(cfg.get_cgl_resources_path(), 'alchemists_cookbook',
                                    'blender', 'buttonTemplate.py')
     button_lines = read_write.load_text_file(button_template)
     changed_lines = []
@@ -130,14 +132,14 @@ def create_button_file(class_name, label, menu_name):
     read_write.save_text_lines(changed_lines, button_path)
     # Add a row to the Menu File
 
-def add_buttons_to_menu(menu_name):
+def add_buttons_to_menu(menu_name, cfg = None):
     """
     adds buttons from a cgl menu config file to a blender menu
     :param menu_class:
     :param button_list:
     :return:
     """
-    menu_file = get_menu_path('blender', menu_name, '%s.py' % menu_name)
+    menu_file = get_menu_path('blender', menu_name, '%s.py' % menu_name,cfg=cfg)
     menu_config = os.path.join(get_cgl_tools(), 'blender', 'menus.cgl')
     menu_object = read_write.load_json(menu_config)
     biggest = get_last_button_number(menu_object, 'blender', menu_name)

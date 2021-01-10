@@ -1,13 +1,14 @@
 import os
 from vfxwindow import VFXWindow
-from cgl.core.config import app_config, UserConfig, user_config
+#from cgl.core.config import app_config, UserConfig, user_config
+from cgl.core.config.config import ProjectConfig
 from cgl.plugins.blender.cgl_browser_widget import BrowserWidget
 from PySide2 import QtWidgets, QtCore, QtGui
 import logging
 
-USERCONFIG = UserConfig().d
+USERCONFIG = ProjectConfig().get_user_globals()
 ICON_WIDTH = 24
-CONFIG = app_config()
+CONFIG = ProjectConfig()
 
 
 class CGLumberjack(VFXWindow):
@@ -16,7 +17,7 @@ class CGLumberjack(VFXWindow):
 
         if start_time:
             logging.debug('Finished Loading Lumbermill in %s seconds' % (time.time() - start_time))
-        self.user_config = UserConfig().d
+        self.user_config = ProjectConfig().get_user_globals()
         if previous_path:
             self.previous_path = previous_path
             self.previous_paths = []
@@ -203,7 +204,8 @@ class CGLumberjack(VFXWindow):
             except KeyError:
                 logging.debug('Skipping, Syncthing Not Set up')
 
-    def set_processing_method_text(self, method=USERCONFIG['methodology']):
+#TODO fix the local declaration to variable in the globals
+    def set_processing_method_text(self, method='local'):
         self.current_processing_method.setTitle('Processing Method: %s' % method.title())
 
     def change_processing_method(self):
@@ -218,8 +220,9 @@ class CGLumberjack(VFXWindow):
             method = "Deadline"
         else:
             return
-        USERCONFIG['methodology'] = method.lower()
-        save_json(user_config(), USERCONFIG)
+
+        #USERCONFIG['methodology'] = method.lower()
+        save_json(ProjectConfig().get_user_globals(), USERCONFIG)
         self.set_processing_method_text(method)
 
     def change_sync_icon(self, syncing=True):
@@ -296,11 +299,11 @@ class CGLumberjack(VFXWindow):
         if "sync_thing_auto_launch" in USERCONFIG.keys():
             if USERCONFIG["sync_thing_auto_launch"] == 'True':
                 USERCONFIG["sync_thing_auto_launch"] = 'False'
-                save_json(user_config(), USERCONFIG)
+                save_json(ProjectConfig().get_user_globals(), USERCONFIG)
                 logging.debug('Setting Auto Launch of LumberSync Off - Restart to see effects')
             else:
                 USERCONFIG["sync_thing_auto_launch"] = 'True'
-                save_json(user_config(), USERCONFIG)
+                save_json(ProjectConfig().get_user_globals(), USERCONFIG)
                 logging.debug('Setting Auto Launch of LumberSync On - Restart to see effects')
         self.set_auto_launch_text()
 
@@ -483,13 +486,13 @@ class CGLumberjack(VFXWindow):
 
     @staticmethod
     def open_user_globals():
-        logging.debug(os.path.dirname(user_config()))
-        cglpath.start(os.path.dirname(user_config()))
+        logging.debug(os.path.dirname(ProjectConfig().get_user_globals()))
+        cglpath.start(os.path.dirnameProjectConfig().get_user_globals())
 
     def load_user_config(self):
-        user_config = UserConfig()
+        user_config = ProjectConfig().get_user_globals()
         if 'd' in user_config.__dict__:
-            config = user_config.d
+            config = user_config
             self.user_name = str(config['user_info']['local'])
             self.user_email = str(config['user_info'][self.project_management]['login'])
             self.company = str(config['company'])
@@ -527,5 +530,6 @@ class CGLumberjack(VFXWindow):
 
     def closeEvent(self, event):
         # set the current path so that it works on the load better.
-        user_config = UserConfig(current_path=self.centralWidget().path_widget.text)
+        #user_config = UserConfig(current_path=self.centralWidget().path_widget.text)
+        user_config = ProjectConfig().get_user_globals()
         user_config.update_all()
