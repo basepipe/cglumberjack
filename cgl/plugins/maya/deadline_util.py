@@ -14,7 +14,7 @@ import cgl.plugins.maya.alchemy as lm
 from cgl.plugins.maya.tasks.cam import get_camera_names
 from cgl.plugins.maya.tasks.lite import get_render_folder
 from cgl.core.utils.general import current_user
-
+from cgl.ui.widgets.dialog import InputDialog
 
 
 PATH_OBJECT = lm.scene_object()
@@ -45,17 +45,21 @@ def create_plugin_info_file(unc=True, render_layer=CURRENT_LAYER):
     height = pm.getAttr("defaultResolution.height")
     output_file_prefix = FILE_NAME
     renderable_cameras = get_camera_names(renderable=True)
+    if not renderable_cameras:
+        print(renderable_cameras)
+        dialog = InputDialog(message="No renderable cameras found - please check camera settings")
+        dialog.exec_()
     if ':' in renderable_cameras[0]:
         base_camera = renderable_cameras[0].split(':')[-1]
     else:
-        print renderable_cameras
+        print(renderable_cameras)
         base_camera = renderable_cameras[0]
     current_layer = render_layer
     output_file_path = render_path
-    print output_file_path
+    print(output_file_path)
     if len(renderable_cameras) > 1:
         output_file_path = render_path
-        print 'Multiple cameras, going to have to hard code some stuff now'
+        print('Multiple cameras, going to have to hard code some stuff now')
     cam_dict = {'camera': '',
                 'camera0': '',
                 'camera1': '',
@@ -67,7 +71,7 @@ def create_plugin_info_file(unc=True, render_layer=CURRENT_LAYER):
                 'camera7': ''
                 }
     for i, each in enumerate(renderable_cameras):
-        print i, each
+        print(i, each)
         camera_name = 'camera%s' % i
         if each not in ignore_cams:
             cam_dict[camera_name] = each
@@ -194,7 +198,7 @@ def maya_deadline_info(job_name=JOB_NAME, comment='Default Comment', output_file
                'ChunkSize=1' % (job_name, comment, dept, initial_status, output_file, frange)
 
     with open(maya_deadline_info_file, 'w') as job_file:
-        print 'Saving Deadline Info file to %s' % maya_deadline_info_file
+        print('Saving Deadline Info file to %s' % maya_deadline_info_file)
         job_file.write(info_txt)
     return maya_deadline_info_file
 

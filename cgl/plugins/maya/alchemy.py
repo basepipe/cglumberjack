@@ -354,3 +354,17 @@ def get_task_class(task):
     return class_
 
 
+def screen_grab():
+    """
+    pops open a screen capture window and when you grab the screen it does the following:
+    1) Create preview file for current scene_object()
+    2) Creates thumb_file for current scene_object()
+    3) Updates Project Management with new thumbnail.
+    :return:
+    """
+    from cgl.core.utils.general import screen_grab
+    screen_grab(scene_object())
+
+
+
+

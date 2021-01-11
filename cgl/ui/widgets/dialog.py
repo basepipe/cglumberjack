@@ -2,7 +2,7 @@ from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 QtWidgets.QHeaderView.setResizeMode = QtWidgets.QHeaderView.setSectionResizeMode
 import re
 import datetime
-from cgl.core.config.config import ProjectConfig
+from cgl.core.config.config import ProjectConfig, paths
 from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.ui.widgets.widgets import AdvComboBox, EmptyStateWidget
 from cgl.ui.widgets.containers.table import LJTableWidget
@@ -378,7 +378,7 @@ class MagicList(LJDialog):
         self.button_functions = button_functions
         self.user_buttons = buttons
         self.combo_defaults = combo_box
-        self.root_path = app_config()['paths']['root']
+        self.root_path = paths()['root']
         self.v_layout = QtWidgets.QVBoxLayout(self)
         self.combo_row = QtWidgets.QHBoxLayout(self)
         self.combo_label = QtWidgets.QLabel("<b>%s</b>" % combo_label)
