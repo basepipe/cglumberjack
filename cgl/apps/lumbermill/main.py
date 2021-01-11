@@ -8,7 +8,7 @@ from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
-from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master
+from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master, paths
 from cgl.core.utils.general import current_user, launch_lumber_watch, save_json
 from cgl.core.config.config import ProjectConfig
 # from cgl.core.config import app_config, UserConfig, user_config
@@ -410,7 +410,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.user_email = user_email
         self.company = company
         self.project_management = project_management
-        self.root = self.cfg.project_config['paths']['root']  # Company Specific
+        self.root = paths()['root']  # Company Specific
         self.user_root = self.cfg.project_config['cg_lumberjack_dir']
         self.context = 'source'
         self.path_object = None

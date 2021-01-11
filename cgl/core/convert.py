@@ -2,11 +2,11 @@ import logging
 import os
 import re
 import click
-from cgl.core.config import app_config
-from cgl.core.utils.general import cgl_execute, write_to_cgl_data
+from cgl.core.config.config import ProjectConfig, paths
+from cgl.core.utils.general import cgl_execute
 
-CONFIG = app_config()
-PATHS = CONFIG['paths']
+CONFIG = ProjectConfig().project_config  # all this needs to be better sorted out.
+PATHS = paths()
 PADDING = CONFIG['default']['padding']
 settings = CONFIG['default']
 thumb_res = settings['resolution']['thumb']
@@ -318,6 +318,13 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
         except ValueError:
             print('Error writing to cgl_data for: %s' % output_file)
         return process_info
+
+
+def create_image_thumb(input_image, output_image, height=90):
+    command = '{} -define jpeg:size=500x500, "{}" ' \
+              '-auto-orient -thumbnail 250x{} -unsharp 0x.5 "{}"'.format(PATHS['convert'], input_image, height, output_image)
+    os.makedirs(os.path.dirname(output_image))
+    cgl_execute(command)
 
 
 def change_extension(filein, new_ext):
