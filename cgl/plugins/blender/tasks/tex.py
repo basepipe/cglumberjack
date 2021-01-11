@@ -4,9 +4,10 @@ from cgl.plugins.Qt import QtCore, QtWidgets
 from cgl.plugins.blender.tasks.smart_task import SmartTask
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
-from cgl.plugins.blender.lumbermill import LumberObject
+from cgl.core.path import PathObject
 from cgl.core.config.config import ProjectConfig
 from cgl.ui.widgets.widgets import AdvComboBox
+
 import bpy
 
 DEFAULT_SHADER = 'BSDF_PRINCIPLED'  # TODO - add this in the globals.
@@ -95,7 +96,7 @@ def get_latest_tex_publish_from_filepath(filepath):
     :return:
     """
     # TODO - could i do this from just the asset name alone?
-    path_object = LumberObject(filepath).copy(task='tex', context='render', user='publish',
+    path_object = PathObject(filepath).copy(task='tex', context='render', user='publish',
                                               latest=True, resolution='high')
     return os.path.dirname(path_object.path_root)
 
@@ -156,7 +157,6 @@ def create_and_attach_shader(mtl_group, name_space=None, source_shader=DEFAULT_S
     :return:
     """
     print("Found Published Textures for {}: Creating Shader".format(mtl_group))
-    print(55555555555555)
     materials = bpy.data.materials
 
     material = '{}_mtl'.format(mtl_group)
@@ -234,7 +234,7 @@ def import_and_connect_textures(shader_node, shading_dict, mtl_group=None,
             # TODO - take relative path and make it absolute
             # full_path = os.path.join(ROOT, texture_path)
             full_path = texture_path
-            path_object = LumberObject(full_path)
+            path_object = PathObject(full_path)
             channel_ = get_attr_dict_for_tex_channel(path_object, tex_channel)
             if channel_:
                 attr_ = channel_['attr']
@@ -278,7 +278,7 @@ def assign_texture_to_shader(tex_path, shader, attr, channel=False, normal=False
     # print(1111111111111111)
     # print('mat/{}_SG'.format(shader))
 
-    path_object = LumberObject(tex_path)
+    path_object = PathObject(tex_path)
     print(shader.replace('shd', 'mtl'))
     shader = bpy.data.materials[shader.replace('shd', 'mtl')]
     material = shader.node_tree.nodes['Principled BSDF']
@@ -333,6 +333,68 @@ def assign_material_to_children(shader):
     for obj in object.children:
         obj.material_slots[0].material = SG_path
 
+
+def rename_textures():
+    from cgl.plugins.blender.tasks import shd
+    baseColor = ['base_color', 'Base_Color', 'baseColor', 'BaseColor']
+    materials = shd.get_valid_material_list(mat_object=True)
+
+    for material in materials:
+        nodes = material.node_tree.nodes
+        for node in nodes:
+            if node.type == 'TEX_IMAGE':
+                # for key in baseColor:
+
+                # if key in node.image.name:
+
+                rename = '{}_{}'.format(material.name, 'BaseColor')
+                node.image.name = rename
+
+
+
+def publish_textures():
+    """
+    This run statement is what's executed when your button is pressed in blender.
+    :return:
+    """
+    from cgl.plugins.blender import alchemy as alc
+    import bpy
+    import os
+
+    scene = alc.scene_object()
+
+    texture_task = scene.copy(task='tex').latest_version()
+    texture_task = texture_task.copy(version=texture_task.next_minor_version_number(), filename='')
+    # print(texture_task_next.path_root)
+
+    os.makedirs(texture_task.path_root)
+
+
+
+    os.makedirs(texture_task.copy(context='render').path_root)
+
+    for image in bpy.data.images:
+        if '_mtl' in image.name:
+
+            out_path = texture_task.copy(filename=image.name, context='render',ext ='exr').path_root
+            image.save_render(out_path)
+            image.filepath = out_path
+
+    alc.save_file_as(texture_task.copy(context='source', set_proper_filename=True).path_root)
+    alc.confirm_prompt(message='textures exported!!! ')
+
+def get_image_inputs(node, attribute='Base Color'):
+    input = node.inputs[attribute]
+
+    try:
+
+        input_surface = input.links[0].from_node
+        # color_input = input_surface.inputs[attribute]
+        image_node = input.links[0].from_node
+
+    except IndexError:
+        image_node = input
+    return image_node
 
 if __name__ == '__main__':
     task = Task()

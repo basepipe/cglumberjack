@@ -3,12 +3,13 @@ import bpy
 import importlib
 from cgl.plugins.CustomMenu import CustomMenu
 from .utils import get_button_path, get_menu_path
+from cgl.core.config.config import ProjectConfig
 
 
 class LumberMenu(CustomMenu):
-    def __init__(self, software='blender', type_='menus', cfg=None):
+    def __init__(self, software='blender', type_='menus'):
         CustomMenu.__init__(self, software, type_)
-        self.cfg = cfg
+        self.cfg = ProjectConfig()
 
     def create_menu(self, name, menu_type='panel'):
         """
@@ -35,9 +36,9 @@ class LumberMenu(CustomMenu):
         :param hot_key: not required
         :return:
         """
-        menu_path = get_button_path('blender', menu, label)
-        module = menu_path.split('cgl_tools\\')[-1].replace('\\', '.').replace('.py', '')
-        module = 'cgl_tools.%s' % module
+        menu_path = get_button_path('blender', menu, label, cfg=self.cfg)
+        module = menu_path.split('cookbook\\')[-1].replace('\\', '.').replace('.py', '')
+        module = 'cookbook.%s' % module
         try:
             module_result = importlib.import_module(module)
             button_class = getattr(module_result, label)
@@ -48,8 +49,8 @@ class LumberMenu(CustomMenu):
         except ModuleNotFoundError:
             print('module: {0} not found'.format(module))
 
-    @staticmethod
-    def find_menu_by_name(menu_name):
+
+    def find_menu_by_name(self, menu_name):
         """
         finds menu in software package given its string name
         :param parent:
@@ -58,9 +59,13 @@ class LumberMenu(CustomMenu):
         """
         if isinstance(menu_name, dict):
             menu_name = menu_name['name']
+        print(11111111111111)
+        print(self.cfg.cookbook_folder)
         menu_path = get_menu_path('blender', menu_name, menu_file=True, cfg=self.cfg)
-        module = menu_path.split('cgl_tools\\')[-1].replace('\\', '.').replace('.py', '')
-        module = 'cgl_tools.%s' % module
+        module = menu_path.split('cookbook\\')[-1].replace('\\', '.').replace('.py', '')
+        module = 'cookbook.%s' % module
+        print(222222222222)
+        print(module)
         module_result = importlib.import_module(module)
         menu_class = getattr(module_result, menu_name)
         return menu_class

@@ -232,7 +232,7 @@ class Designer(LJDialog):
         if self.software == 'blender':
             if self.type == 'menus':
                 from cgl.plugins.blender.utils import create_menu_file
-                create_menu_file(menu_name)
+                create_menu_file(menu_name,self.cfg)
 
     def load_menus(self):
         menu_dict = {}

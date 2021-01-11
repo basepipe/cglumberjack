@@ -2,7 +2,7 @@ from .smart_task import SmartTask
 from cgl.plugins.blender import alchemy as alc
 import bpy
 from cgl.core.utils.read_write import load_json
-from cgl.plugins.blender import magic_scene_description as msd
+from cgl.plugins.blender import msd
 
 class Task(SmartTask):
 
@@ -31,19 +31,50 @@ class Task(SmartTask):
 
 
         # Imports the fbx for the published camera
-        alc.import_file(filepath = fbx.path_root)
-        camera = bpy.data.objects[camFile.shot]
+        from cgl.plugins.blender.alchemy import scene_object
+        camera = alc.import_file(filepath = fbx.path_root,namespace=scene_object().shot)
+        #camera = bpy.data.objects[camFile.shot]
 
         #Set Offset for the camera
         move_keyframes(camera,int(camDic[camFile.shot]['frame_start'])*-1)
         move_keyframes(camera,start_frame)
-        start,end = get_keyframes(camera,ends=True)
-        set_framerange(start,end)
+        camera_keyframes = get_keyframes(camera,ends=True)
+        start,end = camera_keyframes
 
+
+        set_framerange(start,end)
+        
+        set_shot_from_camera(cam = camera)
         pass
 
 
+def set_shot_from_camera(cam = None):
+    import bpy 
 
+    for area in bpy.context.screen.areas:
+        if area.type == 'DOPESHEET_EDITOR':
+            for region in area.regions:
+                if region.type == 'WINDOW':
+                    ctx = bpy.context.copy()
+                    ctx['area'] = area
+                    ctx['region'] = region
+                    ctx['mode'] = 'TIMELINE'
+                    bpy.ops.action.view_all(ctx)
+
+    bpy.ops.object.select_by_type(type='CAMERA')
+
+    if cam == None:
+        cam = bpy.context.selected_objects[0]
+        cam.select_set(state=True)
+        
+    bpy.context.view_layer.objects.active = cam
+
+    bpy.context.scene.camera = bpy.context.scene.objects[cam.name]
+
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            area.spaces[0].region_3d.view_perspective = 'CAMERA'
+            
 def get_selected_camera():
     camera = bpy.context.object
 
@@ -58,15 +89,16 @@ def get_selected_camera():
     # get keyframes of object list
 
 def return_camera_dictionary(camera=None):
+    from cgl.plugins.blender.tasks.anim import get_keyframes
     camDic = {}
     currentScene = alc.scene_object()
 
     # get all frames with assigned keyframes
     if camera == None:
-        keyframes = alc.get_keyframes(get_selected_camera())
+        keyframes = get_keyframes(get_selected_camera())
 
     else:
-        keyframes = alc.get_keyframes(camera)
+        keyframes = get_keyframes(camera)
 
     frame_start, frame_end = keyframes[0], keyframes[-1]
 
@@ -92,9 +124,10 @@ def check_cam_export_directory(camTask):
 def publish_selected_camera(camera=None, mb=True, abc=False, fbx=False, unity=False, shotgun=True, json=False):
 
     from cgl.core.utils.read_write import save_json
+    from cgl.plugins.blender.utils import  get_framerange, set_framerange
     alc.save_file()
     currentScene = alc.scene_object()
-    framerange = alc.get_framerange()
+    framerange = get_framerange()
 
     # Finds the start and end frame of the given camera
     camDic = return_camera_dictionary(camera)
@@ -119,7 +152,7 @@ def publish_selected_camera(camera=None, mb=True, abc=False, fbx=False, unity=Fa
 
     camera.select_set(True)
 
-    alc.set_framerange(camDic[camera.name]['frame_start'],
+    set_framerange(camDic[camera.name]['frame_start'],
                       camDic[camera.name]['frame_end'])
 
     if fbx:

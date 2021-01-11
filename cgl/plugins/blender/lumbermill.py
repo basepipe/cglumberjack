@@ -130,7 +130,7 @@ class BlenderInputDialog(bpy.types.Operator):
         row3 = col2.row()
 
 
-class LumberObject(PathObject):
+class PathObject(PathObject):
 
     def __init__(self, path_object=None):
         if not path_object:
@@ -200,7 +200,7 @@ class LumberObject(PathObject):
         self.proxy_resolution = '1920x1080'
         self.path_template = []
         self.version_template = []
-
+        self.name = None
         def process_string(self, path_object):
             path_object = path_object.replace('\\', '/')
             self.get_company(path_object)
@@ -269,10 +269,10 @@ def get_scene_name():
 
 def scene_object():
     """
-    returns LumberObject of curent scene
+    returns PathObject of curent scene
     :return:
     """
-    return LumberObject(get_scene_name())
+    return PathObject(get_scene_name())
 
 
 def save_file_as(filepath):
@@ -291,7 +291,7 @@ def version_up(vtype='minor'):
     :param vtype: minor or major
     :return:
     """
-    path_object = LumberObject(get_scene_name())
+    path_object = PathObject(get_scene_name())
     if vtype == 'minor':
         new_version = path_object.new_minor_version_object()
     elif vtype == 'major':
@@ -367,7 +367,7 @@ def import_file(filepath, namespace=None, collection_name=None):
     from cgl.plugins.blender import lumbermill as lm
     import bpy
 
-    path_object = lm.LumberObject(filepath)
+    path_object = lm.PathObject(filepath)
 
     if collection_name == None:
         collection_name = path_object.asset
@@ -402,7 +402,7 @@ def reference_file(filepath, namespace=None, collection_name=None):
 
     import bpy
 
-    path_object = lm.LumberObject(filepath)
+    path_object = lm.PathObject(filepath)
 
     if collection_name == None:
         collection_name = path_object.asset
@@ -681,7 +681,7 @@ def review():
     padding = scene_object().frame_padding
     render_files = glob.glob(scene_object().render_path.replace('#' * padding, '*'))
     if render_files:
-        path_object = LumberObject(scene_object().render_path)
+        path_object = PathObject(scene_object().render_path)
         do_review(progress_bar=None, path_object=path_object)
 
 
