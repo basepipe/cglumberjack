@@ -10,7 +10,7 @@ from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
 from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master, paths
 from cgl.core.utils.general import current_user, launch_lumber_watch, save_json
-from cgl.core.config.config import ProjectConfig
+from cgl.core.config.config import ProjectConfig, paths
 # from cgl.core.config import app_config, UserConfig, user_config
 from cgl.apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
 from cgl.apps.lumbermill.elements.FilesPanel import FilesPanel
@@ -679,7 +679,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             sequence_path = self.path_widget.path_line_edit.text()
             sequence = cglpath.Sequence(sequence_path)
             file_seq = sequence.num_sequence.split()[0]
-            command = ('{} -start_number {} {}'.format(self.cfg.project_config['paths']['ffplay'], sequence.start_frame, file_seq))
+            command = ('{} -start_number {} {}'.format(paths()['ffplay'], sequence.start_frame, file_seq))
             os.system(command)
             logging.info('Nothing set for sequences yet')
         else:
@@ -1094,7 +1094,7 @@ class CGLumberjack(LJMainWindow):
     def load_pipeline_designer_menus(self):
         import json
         #
-        menus_json = os.path.join(self.cfg.project_config['paths']['cgl_tools'], 'lumbermill', 'menus.cgl')
+        menus_json = os.path.join(self.cfg.cookbook_folder, 'lumbermill', 'menus.cgl')
         if os.path.exists(menus_json):
             with open(menus_json, 'r') as stream:
                 self.pd_menus = json.load(stream)['lumbermill']
@@ -1238,9 +1238,8 @@ class CGLumberjack(LJMainWindow):
         logging.debug(os.path.dirname(user_config()))
         cglpath.start(os.path.dirname(user_config()))
 
-    @staticmethod
-    def open_default_files():
-        location = os.path.join(self.cfg.project_config['paths']['resources'], 'default_files')
+    def open_default_files(self):
+        location = os.path.join(self.cfg.get_cgl_resources_path(), 'default_files')
         logging.debug(location)
         cglpath.start(location)
 
@@ -1251,7 +1250,7 @@ class CGLumberjack(LJMainWindow):
             self.user_name = str(config['user_info']['local'])
             self.user_email = str(config['user_info'][self.project_management]['login'])
             self.company = str(config['company'])
-            self.previous_path = '%s%s/source/%s' % (self.cfg.project_config['paths']['root'], self.company, self.project)
+            self.previous_path = '%s%s/source/%s' % (paths()['root'], self.company, self.project)
             if self.user_name in self.previous_path:
                 self.filter = 'My Assignments'
             elif 'publish' in self.previous_path:
