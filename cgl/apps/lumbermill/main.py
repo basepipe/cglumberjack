@@ -8,7 +8,7 @@ from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
-from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master, paths
+from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master, paths, get_user_config_file
 from cgl.core.utils.general import current_user, launch_lumber_watch, save_json
 from cgl.core.config.config import ProjectConfig, paths
 # from cgl.core.config import app_config, UserConfig, user_config
@@ -741,8 +741,10 @@ class CGLumberjack(LJMainWindow):
         if start_time:
             logging.debug('Finished Loading Magic Browser in %s seconds' % (time.time() - start_time))
         if cfg:
+            print('cfg provided')
             self.cfg = cfg
         else:
+            print('Dont know company and project')
             self.cfg = ProjectConfig()  # we don't know the company or project at this stage.
         self.user_config = self.cfg.user_config
 
@@ -764,6 +766,7 @@ class CGLumberjack(LJMainWindow):
             self.project = self.user_config['default_project']
         else:
             self.project = None
+        self.cfg = ProjectConfig(company=self.company, project=self.project)
         self.pd_menus = {}
         self.menu_dict = {}
         self.menus = {}
@@ -1229,14 +1232,16 @@ class CGLumberjack(LJMainWindow):
         return False
 
     def open_company_globals(self):
+        print(self.cfg.company)
+        print(self.cfg.project)
         print(self.cfg.globals_root)
         logging.debug(self.cfg.globals_root)
         cglpath.start(self.cfg.globals_root)
 
     @staticmethod
     def open_user_globals():
-        logging.debug(os.path.dirname(user_config()))
-        cglpath.start(os.path.dirname(user_config()))
+        logging.debug(os.path.dirname(get_user_config_file()))
+        cglpath.start(os.path.dirname(get_user_config_file()))
 
     def open_default_files(self):
         location = os.path.join(self.cfg.get_cgl_resources_path(), 'default_files')

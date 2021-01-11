@@ -183,6 +183,7 @@ class Preflight(QtWidgets.QWidget):
     def populate_table(self):
         import sys
         source_dir = os.path.dirname(self.cfg.cookbook_folder)
+        print('folder: {}'.format(self.cfg.cookbook_folder))
         sys.path.insert(0, source_dir)
         data = []
         for item in self.modules:
