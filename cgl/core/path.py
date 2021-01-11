@@ -1655,7 +1655,7 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
                 output_.append(each)
     for each in output_:
         if '#' in each:
-            sequence = Sequence(os.path.join(directory, each))
+            sequence = Sequence(os.path.join(directory, each), cfg=ProjectConfig(path_object=PathObject(directory)))
             frange = sequence.frame_range
             if frange:
                 index = output_.index(each)
