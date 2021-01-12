@@ -1,7 +1,8 @@
 import os
 import copy
 import glob
-from cgl.plugins.blender.lumbermill import LumberObject, scene_object, objExists
+from cgl.plugins.blender.alchemy import scene_object, objExists
+from cgl.core.path import PathObject
 import cgl.core.assetcore as assetcore
 from cgl.core.config import app_config
 from cgl.core.utils.read_write import load_json, save_json
@@ -21,7 +22,7 @@ def create_asset_description(ref):
     top_node = ref
 
     print(ref['BundlePath'])
-    ref_obj = LumberObject(ref['BundlePath'])
+    ref_obj = PathObject(ref['BundlePath'])
 
     add_matching_files(ref['BundlePath'], asset_dict)
 
@@ -368,6 +369,14 @@ def return_lib_path(library):
     # filename = Path(bpy.path.abspath(library_path)).__str__()
     return (library_path)
 
+def add_source_path(obj, path_object):
+    from cgl.plugins.blender.utils import get_objects_in_hirarchy, get_object
+
+    tag_list = get_objects_in_hirarchy(obj)
+
+    for each in tag_list:
+        object = get_object(each)
+        object['source_path'] = path_object.path
 
 
 if __name__ == '__main__':

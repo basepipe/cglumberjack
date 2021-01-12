@@ -4,11 +4,13 @@ import datetime
 import os
 import json
 import ftrack_api
-from cgl.core.config import app_config, UserConfig
+#from cgl.core.config import app_config, UserConfig
+from cgl.core.config.config import ProjectConfig,user_config
 from cgl.core.utils.general import current_user
 
-CONFIG = app_config()
 
+#CONFIG = app_config()
+CONFIG = ProjectConfig().project_config
 
 class ProjectManagementData(object):
     create = False
@@ -270,7 +272,8 @@ class ProjectManagementData(object):
 
     def update_user_globals_task(self, status='Not started'):
         if self.user_info[current_user()]['login'] == self.user_email:
-            my_tasks = UserConfig().d['my_tasks']
+
+            my_tasks = user_config()['my_tasks']
             if self.path_object.company not in my_tasks:
                 my_tasks[self.path_object.company] = {}
             if self.path_object.project not in my_tasks[self.path_object.company]:
@@ -288,7 +291,7 @@ class ProjectManagementData(object):
             task_info['filepath'] = new_path
             task_info['task_type'] = self.task
             task_info['status'] = status
-            UserConfig(my_tasks=my_tasks).update_all()
+            user_config(my_tasks=my_tasks).update_all()
 
     def create_version(self):
         if self.filename:
@@ -617,7 +620,7 @@ def find_user_assignments(path_object, user_email, force=False):
     project = path_object.project
     # load whatever is in the user globals:
     if company and project and company != '*' and project != '*':
-        my_tasks = UserConfig().d['my_tasks']
+        my_tasks = user_config()['my_tasks']
         if not force:
             try:
                 return my_tasks[company][project]

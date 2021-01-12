@@ -18,7 +18,7 @@ SOFTWARE = os.path.basename(os.path.dirname(__file__))
 
 
 
-class LumberObject(PathObject):
+class PathObject(PathObject):
 
     def __init__(self, path_object=None):
         if not path_object:
@@ -126,10 +126,10 @@ def get_scene_name():
 
 def scene_object():
     """
-    returns LumberObject of curent scene
+    returns PathObject of curent scene
     :return:
     """
-    return LumberObject(get_scene_name())
+    return PathObject(get_scene_name())
 
 
 def open_file(filepath):
@@ -164,7 +164,7 @@ def import_alembic(filepath='', namespace=None):
     :return:
     """
 
-    path_object = LumberObject(filepath)
+    path_object = PathObject(filepath)
     objects = hou.node('obj')
 
     alembic = objects.createNode('alembicarchive', path_object.asset)
@@ -182,7 +182,7 @@ def reference_file(filepath='', namespace=None):
     """
     print(filepath)
 
-    path_object = LumberObject(filepath)
+    path_object = PathObject(filepath)
     objects = hou.node('obj')
 
     geometry = objects.createNode('geo', path_object.asset)
@@ -216,7 +216,7 @@ def version_up(vtype='minor'):
     :param vtype: minor or major
     :return:
     """
-    path_object = LumberObject(get_scene_name())
+    path_object = PathObject(get_scene_name())
     if vtype == 'minor':
         new_version = path_object.new_minor_version_object()
     elif vtype == 'major':

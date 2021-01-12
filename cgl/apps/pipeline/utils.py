@@ -183,7 +183,7 @@ class CGLMenuButton(QtWidgets.QWidget):
         import pyperclip
 
         name = self.name
-        text = 'import cgl_tools.{}.pre_publish.{}.{} as {}\nreload({})\n\n{}.{}().run()'.format(self.software,
+        text = 'import cookbook.{}.pre_publish.{}.{} as {}\nreload({})\n\n{}.{}().run()'.format(self.software,
                                                                                                 self.preflight_name,
                                                                                                 name,
                                                                                                 name,
@@ -540,7 +540,7 @@ class CGLMenu(QtWidgets.QWidget):
                                                                      button_name, button_name)
 
     def default_preflight_text(self, preflight_name):
-        return 'cgl_tools.%s.%s.%s.%s' % (self.software, self.menu_type, self.menu_name, preflight_name)
+        return 'cookbook.%s.%s.%s.%s' % (self.software, self.menu_type, self.menu_name, preflight_name)
 
     def load_buttons(self):
         if self.menu:

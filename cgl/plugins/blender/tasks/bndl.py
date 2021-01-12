@@ -1,4 +1,4 @@
-from cgl.plugins.blender import lumbermill as lm
+from cgl.plugins.blender import alchemy as alc
 
 import bpy
 from cgl.core.utils.read_write import load_json
@@ -10,14 +10,14 @@ from importlib import reload
 # from cgl.plugins.blender.utils import get_next_namespace, select_reference
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.plugins.blender.utils import load_plugin
-from cgl.core.config import app_config
+from cgl.core.config.config import ProjectConfig
 
 
 class Task(SmartTask):
 
     def __init__(self, path_object=None):
         if not path_object:
-            from cgl.plugins.blender.lumbermill import scene_object
+            from cgl.plugins.blender.alchemy import scene_object
             self.path_object = scene_object()
 
     def _import(self, filepath, layout_group=None):
@@ -84,7 +84,7 @@ def bundle_import(filepath, layout_group=None):
     :return:
     """
     relative_path = None
-    root = app_config()['paths']['root']
+    root = ProjectConfig.project_management['paths']['root']
     d = PathObject(filepath)
     ns = d.shot
     #    try:

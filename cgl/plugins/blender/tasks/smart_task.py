@@ -1,4 +1,3 @@
-from cgl.core.path import PathObject
 
 
 class SmartTask(object):
@@ -12,13 +11,14 @@ class SmartTask(object):
 
         :param path_object: must be a "PathObject"
         """
-        from cgl.plugins.maya.alchemy import scene_object
+        from cgl.plugins.maya.lumbermill import scene_object
+        from cgl.core.path import PathObject
         if not path_object:
             self.path_object = scene_object()
         else:
             self.path_object = path_object
         if not isinstance(path_object, PathObject):
-            print("{} is not instance LumberObject")
+            print("{} is not instance PathObject")
             return
         print(path_object.path_root)
         # check if it's a PathObject instance
@@ -30,7 +30,7 @@ class SmartTask(object):
         """
         pass
 
-    def _import(self, file_path, reference=False):
+    def _import(self, file_path, reference=False,**kwargs):
         """
         Imports the file into the scene - this function should be smart enough to handle various file types
         as well as
@@ -38,15 +38,15 @@ class SmartTask(object):
         """
         if not file_path:
             file_path = self.path_object.path_root
-        from cgl.plugins.blender.lumbermill import import_file, reference_file,LumberObject
+        from cgl.plugins.blender.alchemy import import_file, reference_file,PathObject
 
-        path_object = LumberObject(file_path)
+        path_object = PathObject(file_path)
         if reference:
             return reference_file(filepath=file_path,namespace=path_object.asset)
         else:
             return import_file(filepath=file_path,namespace=path_object.asset)
 
-    def import_latest(self, task=None, reference=False, **kwargs):
+    def import_latest(self,task=None, reference=False, **kwargs):
         if not task:
             task = self.path_object.task
         new_obj = self.path_object.copy(task=task, context='render', user='publish',
@@ -61,6 +61,6 @@ class SmartTask(object):
         this allows us to customize at a more granular level if needed.
         :return:
         """
-        from cgl.plugins.maya.alchemy import publish
+        from cgl.plugins.blender.alchemy import publish
         publish()
 

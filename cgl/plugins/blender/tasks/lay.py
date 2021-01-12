@@ -17,7 +17,7 @@ class Task(SmartTask):
         if not path_object:
             self.path_object = scene_object()
 
-    def _import(self, filepath):
+    def _import(self, filepath, import_rigs = True,reference = True ,task=None,latest =False, **kwargs):
         """
         imports a bundle file
         :param filepath:
@@ -25,16 +25,19 @@ class Task(SmartTask):
         :return:
         """
         from cgl.plugins.blender.alchemy import  set_relative_paths
-        main_import(filepath)
+        main_import(filepath,import_rigs,reference=reference,latest=latest)
         set_relative_paths(True)
 
     def build(self):
         from cgl.plugins.blender.utils import create_shot_mask_info,set_collection_name
+        from cgl.plugins.blender import alchemy as alc
         create_shot_mask_info()
         set_collection_name()
+        camfile = alc.scene_object().copy(task='cam')
+        alc.import_task(file_path=camfile, task='cam')
 
 
-    def import_latest(self, seq=None, shot= None):
+    def import_latest(self, seq=None, shot= None, import_rigs = True,reference=True,latest = False,**kwargs):
         """
         imports the latest layout for a shot.
         :param seq:
@@ -55,7 +58,7 @@ class Task(SmartTask):
             if '.msd' in each:
                 layout_path = each
         if layout_path:
-            self._import(filepath=layout_path)
+            self._import(filepath=layout_path, import_rigs= import_rigs,reference=reference, latest = latest)
         else:
             print('Could not glob layout path at {}'.format(layout_obj.path))
 
@@ -65,8 +68,7 @@ def get_latest(ext='msd'):
                                    user='publish', latest=True, set_proper_filename=True, ext=ext)
     return this_obj
 
-
-def main_import(filepath):
+def main_import(filepath, import_rigs = True,reference = True, latest = False):
     """
 
     :param filepath:
@@ -75,51 +77,68 @@ def main_import(filepath):
     from pprint import pprint
     from cgl.core.config import app_config
     from cgl.plugins.blender.utils import get_next_namespace, read_matrix, parent_object, create_object
-    from cgl.plugins.blender.alchemy import  reference_file
+    from cgl.plugins.blender.alchemy import  reference_file, import_file
     from cgl.plugins.blender.msd import set_matrix
     from .anim import make_proxy
+    from ..msd import path_object_from_source_path
     import bpy
     relative_path = None
     root = app_config()['paths']['root']
     d = PathObject(filepath)
 
     layout_data = load_json(filepath)
+    layout = create_object('{}_{}:lay'.format(scene_object().seq,scene_object().asset))
+    group = create_object('{}_{}:FG'.format(scene_object().seq,scene_object().asset),parent=layout)
 
-    group = create_object('{}_{}:lay'.format(scene_object().seq,scene_object().asset))
     pprint(layout_data)
     for each in layout_data:
+
+
         if 'source_path' in layout_data[each]:
             # this is a bundle, rather than a layout - unsure why this has changed so drastically
             # TODO - look at what's going on here.
             relative_path = layout_data[each]['source_path']
             task = layout_data[each]['task']
             transforms = layout_data[each]['transform'].split(' ')
-        company = scene_object().company
+            d2  = path_object_from_source_path(relative_path)
+            float_transforms = [float(x) for x in transforms]
 
-        if root not in relative_path:
 
-            reference_path = "%s\%s" % (root, relative_path)
-        else:
-            reference_path = relative_path
-        float_transforms = [float(x) for x in transforms]
-
-        d2 = PathObject(reference_path)
+        if latest:
+            d2 = d2.latest_version(publish_=True)
         ns2 = get_next_namespace(d2.shot)
-        ref = reference_file(namespace=ns2, filepath=reference_path)
-        parent_object(child=ref,parent=group)
+        if reference == True:
 
 
-        if task == 'rig':
-            print('________IMPORTING RIG_____________')
-            rig = make_proxy(d2, ref)
-            rig_root = layout_data[each]['rig_root']
-            proxy = bpy.data.objects['{}:rig_proxy'.format(ns2)]
-            ref = proxy.pose.bones[rig_root]
-            parent_object(proxy,group)
+           print('_'*8,'referencing files','_'*8)
+           ref = reference_file(namespace=ns2, filepath=d2.path_root)
+           layout_group = create_object(('{}_{}:FG'.format(scene_object().seq, scene_object().asset)))
+           parent_object(child=ref, parent=layout_group)
+
+           if task == 'rig':
+               if reference:
+
+                   print('________IMPORTING RIG_____________')
+                   rig = make_proxy(d2, ref)
+                   rig_root = layout_data[each]['rig_root']
+                   proxy = bpy.data.objects['{}:rig_proxy'.format(ns2)]
+                   ref = proxy.pose.bones[rig_root]
+                   parent_object(proxy,parent=layout_group)
+
+
+
+        else:
+            print('_'*8,'IMPORTING FILES','_'*8)
+            print(d2.path_root)
+
+            if task == 'rig':
+                return
+            ref = import_file(namespace=ns2, filepath=d2.path_root)
+            layout_group = create_object(('{}_{}:FG'.format(scene_object().seq,scene_object().asset)))
+            parent_object(child=ref,parent=layout_group)
+
 
         set_matrix(ref, float_transforms)
-
-
 
 def check_reference_attribute(attribute,reference_path = None):
     from cgl.plugins.blender.alchemy import scene_object,PathObject, set_relative_paths

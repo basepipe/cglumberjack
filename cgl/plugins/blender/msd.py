@@ -4,14 +4,15 @@ import os
 import copy
 import glob
 import importlib
-from cgl.core.config import app_config
+from cgl.core.config.config import ProjectConfig
 from cgl.core.utils.read_write import load_json, save_json
 import cgl.plugins.MagicSceneDescription as msd
 importlib.reload(msd)
 import bpy
-from cgl.plugins.blender.lumbermill import get_scene_name, LumberObject , objExists,scene_object
+from cgl.plugins.blender.alchemy import get_scene_name,scene_object
 
-CONFIG = app_config()
+from cgl.core.path import PathObject
+CONFIG = ProjectConfig().project_config
 
 
 
@@ -62,7 +63,7 @@ class MagicSceneDescription(msd.MagicSceneDescription):
         :return:
         """
         self.scene_file = get_scene_name()
-        self.path_object = LumberObject(self.scene_file)
+        self.path_object = PathObject(self.scene_file)
         pass
 
     def get_ref_from_object(self,object):
@@ -122,8 +123,6 @@ class MagicSceneDescription(msd.MagicSceneDescription):
         else:
             return bundles
 
-
-
 class AssetDescription(object):
     name = None
     namespace = ''
@@ -166,9 +165,10 @@ class AssetDescription(object):
             print('no source_path found in {}'.format(self.mesh_object))
             pass
 
-        self.path_object = LumberObject(os.path.join(scene_object().root,self.path_root))
+        self.path_object = PathObject(os.path.join(scene_object().root,self.path_root))
 
         print(self.path_object.path_root)
+
     def get_mesh_name_from_object(self):
         """
         get the mesh name (name of asset in scene) from the mesh_object
@@ -211,6 +211,7 @@ class AssetDescription(object):
         return t_array, r_array, s_array
 
     def get_matrix(self, obj=None, query=False,rig_root = 'c_pos'):
+        from cgl.plugins.blender.utils import get_object
         """
         Returns a matrix of values relating to translate, scale, rotate.
         :param obj:
@@ -225,7 +226,8 @@ class AssetDescription(object):
             source_path = obj['source_path']
             reference_path = "%s\%s" % (root, source_path)
             path_root = PathObject(reference_path)
-            if objExists(obj):
+            object = get_object(obj)
+            if object:
 
                 obj_matrix = obj.matrix_world
                 if path_root.task == 'rig':
@@ -298,7 +300,6 @@ class AssetDescription(object):
 
             self.data['rig_root'] = 'c_pos' #TODO this sholdn't be hardcoded move to globals
 
-
 class CameraDescription(AssetDescription):
 
     def __init__(self, name, start_frame=0, end_frame=0, start_handle=None, end_handle=None):
@@ -307,6 +308,34 @@ class CameraDescription(AssetDescription):
     def set_frame_range(self, start_frame, end_frame, start_handle, end_handle):
         pass
 
+def path_object_from_source_path(source_path):
+    from cgl.core.config import app_config
+    from cgl.plugins.blender.alchemy import PathObject
+    root = app_config()['paths']['root']
+    if root not in source_path:
+        reference_path = "%s\%s" % (root, source_path)
+    else:
+        reference_path = source_path
+
+
+    path_object = PathObject(reference_path)
+    return path_object
+
+def path_object_from_asset_name(asset_name ,task = 'mdl', seq = 'char'):
+    from cgl.core.config import app_config
+    from cgl.plugins.blender.alchemy import PathObject
+    root = app_config()['paths']['root']
+
+    path_object = scene_object().copy(scope ='assets',
+                                      context = 'source',
+                                      asset = asset_name,
+                                      task = task,
+                                      latest=True,
+                                      user = 'publish',
+                                      set_proper_filename=True,
+                                      seq = seq)
+
+    return path_object
 
 def set_matrix(obj, transform_data):
     """
@@ -326,3 +355,61 @@ def set_matrix(obj, transform_data):
 
     scale = (transform_data[6], transform_data[7], transform_data[8])
     obj.scale = scale
+
+
+def tag_object(objects, tag, value):
+    for obj in objects:
+        obj[tag] = value
+
+
+def switch_layer_visibility(objects = None, tag= 'rig_layer', layer='SECONDARY'):
+
+
+    import bpy
+    from cgl.plugins.blender.tasks.mdl import get_mdl_objects
+
+    if objects == None:
+        objects = get_mdl_objects()
+
+    current_scene = bpy.context.scene
+    if layer in current_scene.keys():
+
+        current_scene[layer] = not current_scene[layer]
+    else:
+        current_scene[layer] = True
+
+    for obj in objects:
+        if obj[0][tag] == layer:
+            print(obj[0])
+            obj[0].hide_viewport = current_scene[layer]
+
+
+def add_namespace(obj=None, namespace=None, ):
+    from cgl.plugins.blender.alchemy import scene_object
+    from cgl.plugins.blender.utils import get_object, get_objects_in_hirarchy
+
+    if obj == None:
+        obj = 'mdl'
+
+    if namespace == None:
+        namespace = scene_object().asset
+
+    for obj in get_objects_in_hirarchy(obj=get_object(obj)):
+        object = get_object(obj)
+        object.name = '{}:{}'.format(namespace, object.name)
+
+
+def remove_namespace(obj = None,namespace=None):
+    from cgl.plugins.blender.alchemy import scene_object
+    from cgl.plugins.blender.utils import get_object, get_objects_in_hirarchy
+    if namespace == None:
+        namespace = scene_object().asset
+    if obj == None:
+        obj = '{}:mdl'.format(namespace)
+
+    for obj in get_objects_in_hirarchy(obj=get_object(obj)):
+        object = get_object(obj)
+        object.name = object.name.split(':')[1]
+
+
+

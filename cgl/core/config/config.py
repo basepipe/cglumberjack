@@ -20,6 +20,14 @@ def user_config():
     return load_json(get_user_config_file())
 
 
+def paths():
+    """
+    returns paths to all the software used in the pipeline.
+    :return:
+    """
+    return user_config()['paths']
+
+
 class ProjectConfig(object):
     user_config_file = get_user_config_file()
     user_config = user_config()
@@ -40,6 +48,7 @@ class ProjectConfig(object):
 
     def __init__(self, path_object=None, company='master', project='master', print_cfg=False):
         self.print_cfg = print_cfg
+        self.paths = paths()
         if not path_object:
             self.company = company
             self.project = project
@@ -51,8 +60,8 @@ class ProjectConfig(object):
             print('Loading Config for {}: {}'.format(self.company, self.project))
         self.set_globals_path()
         self.get_project_config()
-        self.images_folder = os.path.join(self.project_config['paths']['code_root'], 'resources', 'images')
-        self.app_font_folder = os.path.join(self.project_config['paths']['code_root'], 'resources', 'fonts')
+        self.images_folder = os.path.join(self.paths['code_root'], 'resources', 'images')
+        self.app_font_folder = os.path.join(self.paths['code_root'], 'resources', 'fonts')
         self.project_management = self.project_config['account_info']['project_management']
 
     def set_globals_path(self):
@@ -226,9 +235,9 @@ class ProjectConfig(object):
         :return:
         """
         if icon:
-            return os.path.join(self.project_config['paths']['code_root'], 'resources', 'icons', icon)
+            return os.path.join(self.paths['code_root'], 'resources', 'icons', icon)
         else:
-            return os.path.join(self.project_config['paths']['code_root'], 'resources', 'icons')
+            return os.path.join(self.paths['code_root'], 'resources', 'icons')
 
     def font_path(self):
         """
@@ -242,7 +251,7 @@ class ProjectConfig(object):
         get the resources path
         :return: path string
         """
-        return os.path.join(self.project_config['paths']['code_root'], 'resources')
+        return os.path.join(self.paths['code_root'], 'resources')
 
     def get_task_default_file(self, task):
         """
@@ -302,9 +311,9 @@ def get_root(project='master'):
     """
     user_conf = user_config()
     if project in user_conf['root'].keys():
-        return user_conf['root'][project]
+        return user_conf['root'][project].replace('\\', '/')
     else:
-        return user_conf['root']['master']
+        return user_conf['root']['master'].replace('\\', '/')
     return
 
 

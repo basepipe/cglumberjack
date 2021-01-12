@@ -2,7 +2,7 @@ from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 QtWidgets.QHeaderView.setResizeMode = QtWidgets.QHeaderView.setSectionResizeMode
 import re
 import datetime
-from cgl.core.config.config import ProjectConfig
+from cgl.core.config.config import ProjectConfig, paths
 from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.ui.widgets.widgets import AdvComboBox, EmptyStateWidget
 from cgl.ui.widgets.containers.table import LJTableWidget
@@ -378,7 +378,7 @@ class MagicList(LJDialog):
         self.button_functions = button_functions
         self.user_buttons = buttons
         self.combo_defaults = combo_box
-        self.root_path = app_config()['paths']['root']
+        self.root_path = paths()['root']
         self.v_layout = QtWidgets.QVBoxLayout(self)
         self.combo_row = QtWidgets.QHBoxLayout(self)
         self.combo_label = QtWidgets.QLabel("<b>%s</b>" % combo_label)
@@ -824,14 +824,13 @@ class LoginDialog(LJDialog):
 
     def save_user_defaults(self):
         import json
-        globals_location = UserConfig().d['globals']
+
         user_info = self.create_user_info_dict()
-        app_config_dict = self.config
+        app_config_dict = self.cfg.project_config
         app_config_dict['project_management'][self.project_management]['users'][current_user()] = user_info
-        with open(globals_location, 'w') as fileout:
+        with open(self.cfg.project_config_file, 'w') as fileout:
             json.dump(app_config_dict, fileout, indent=4, sort_keys=True)
         self.accept()
-
 
 class ProjectCreator(LJDialog):
     def __init__(self, parent=None):
