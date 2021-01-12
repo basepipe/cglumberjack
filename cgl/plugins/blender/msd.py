@@ -309,9 +309,9 @@ class CameraDescription(AssetDescription):
         pass
 
 def path_object_from_source_path(source_path):
-    from cgl.core.config import app_config
+    from cgl.core.config.config import ProjectConfig
     from cgl.plugins.blender.alchemy import PathObject
-    root = app_config()['paths']['root']
+    root = ProjectConfig().root_folder
     if root not in source_path:
         reference_path = "%s\%s" % (root, source_path)
     else:
@@ -322,9 +322,9 @@ def path_object_from_source_path(source_path):
     return path_object
 
 def path_object_from_asset_name(asset_name ,task = 'mdl', seq = 'char'):
-    from cgl.core.config import app_config
+    from cgl.core.config.config import ProjectConfig
     from cgl.plugins.blender.alchemy import PathObject
-    root = app_config()['paths']['root']
+    root = ProjectConfig().root_folder
 
     path_object = scene_object().copy(scope ='assets',
                                       context = 'source',

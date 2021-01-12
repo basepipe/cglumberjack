@@ -1129,28 +1129,6 @@ def set_collection_name(obj = None):
         object = bpy.context.object
         object.users_collection[0].name = name
 
-def rename_collection(current_scene):
-    import bpy
-    if current_scene.scope == 'assets':
-        name = current_scene.asset
-    else:
-        name = current_scene.filename_base
-
-
-    obj = bpy.context.object
-
-    if obj:
-        if current_scene.asset in bpy.data.collections:
-            print('collection exist ')
-        object = bpy.context.object
-        object.users_collection[0].name = name
-
-    else:
-        if current_scene.asset in bpy.data.collections:
-            print('collection exist')
-
-        else:
-            bpy.data.collections['Collection'].name = name
 
 def set_context_view_3d():
     import bpy
@@ -1180,7 +1158,7 @@ def get_objects_in_hirarchy(obj, levels=10):
     return hirarchy
 
 def rename_collection(current_scene=None):
-
+    import bpy
     if current_scene is None:
         current_scene = alc.scene_object()
 

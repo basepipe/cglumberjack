@@ -75,7 +75,7 @@ def main_import(filepath, import_rigs = True,reference = True, latest = False):
     :return:
     """
     from pprint import pprint
-    from cgl.core.config import app_config
+    from cgl.core.config.config import ProjectConfig
     from cgl.plugins.blender.utils import get_next_namespace, read_matrix, parent_object, create_object
     from cgl.plugins.blender.alchemy import  reference_file, import_file
     from cgl.plugins.blender.msd import set_matrix
@@ -83,7 +83,7 @@ def main_import(filepath, import_rigs = True,reference = True, latest = False):
     from ..msd import path_object_from_source_path
     import bpy
     relative_path = None
-    root = app_config()['paths']['root']
+    root = ProjectConfig.root_folder
     d = PathObject(filepath)
 
     layout_data = load_json(filepath)

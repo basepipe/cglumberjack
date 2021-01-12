@@ -351,7 +351,7 @@ def write_materials_msd(ref_object = None):
     save_json(outFile, data= get_materials_dictionary())
 
 def import_materials(filepath):
-
+    import bpy
     with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
         # data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
         data_to.materials = [c for c in data_from.materials]

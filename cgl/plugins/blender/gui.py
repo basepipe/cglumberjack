@@ -5,7 +5,7 @@ import logging
 from PySide2 import QtWidgets, QtCore
 from cgl.plugins.preflight.main import Preflight
 from cgl.ui.widgets.combo import AdvComboBox
-from .lumbermill import scene_object
+from .alchemy import scene_object
 
 logger = logging.getLogger('qtutils')
 

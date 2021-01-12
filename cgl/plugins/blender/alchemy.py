@@ -211,7 +211,7 @@ class InputDialog(bpy.types.Operator):
 
 def import_file(filepath, namespace=None, collection_name=None):
     from cgl.plugins.blender import alchemy as alc
-    from .msd import add_source_path
+    from .msd import tag_object
     from cgl.plugins.blender.utils import get_objects_in_hirarchy, parent_to_collection
     from cgl.core.path import PathObject
 
@@ -265,7 +265,7 @@ def import_file(filepath, namespace=None, collection_name=None):
                                                                                                     path_object.task)
 
     imported_object = bpy.data.objects[imported_object_name]
-    add_source_path(imported_object, path_object)
+    tag_object([imported_object],'source_path', path_object.path)
 
 
 

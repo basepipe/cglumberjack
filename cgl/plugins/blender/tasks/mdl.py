@@ -142,7 +142,7 @@ def create_material_groups(do_high=True, do_mdl=True):
     except ValueError:
         pass
 
-    dialog = alc.InputDialog(title='Create Material Groups',
+    dialog = alc.input_dialog(title='Create Material Groups',
                             message='List materials needed in this object (comma seperated)', line_edit=True,
                             regex='^([a-z]{3,}, *)*[a-z]{3,}', name_example='ex: wood, metal',
                             command='bpy.ops.object.create_material_groups()')
@@ -169,7 +169,11 @@ def get_mdl_objects(group='high', namespace=None, groups=False, default_ns=True)
 
     if namespace:
         group_name = '{}:{}'.format(namespace, group)
-    geo_group = utils.get_object(group_name)
+    try:
+
+        geo_group = utils.get_object(group_name)
+    except KeyError:
+        geo_group = utils.get_object(group)
 
     for mtl in geo_group.children:
         for obj in mtl.children:

@@ -1,15 +1,15 @@
 import os
 import json
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
-from cgl.core.config import app_config
-from cgl.core.path import icon_path, image_path, PathObject
+from cgl.core.config.config import ProjectConfig
+from cgl.core.path import  PathObject
 from cgl.ui.widgets.containers.table import LJTableWidget
 from cgl.ui.startup import do_gui_init
 from cgl.ui.widgets.widgets import GifWidget
 from .preflight_check import PreflightCheck
 
 
-CONFIG = app_config()
+CONFIG = ProjectConfig.project_config
 
 
 class PreflightModel(QtCore.QAbstractTableModel):
@@ -28,13 +28,13 @@ class PreflightModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.DecorationRole:
             data = self.data_[row][col]
             if data == 'Untested':
-                ip = icon_path('checkbox_unchecked.png')
+                ip = ProjectConfig.icon_path('checkbox_unchecked.png')
                 return QtGui.QIcon(ip)
             if data == 'Pass':
-                ip = icon_path('checkbox_checked.png')
+                ip = ProjectConfig.icon_path('checkbox_checked.png')
                 return QtGui.QIcon(ip)
             if data == 'Fail':
-                ip = icon_path('checkbox_unchecked.png')
+                ip = ProjectConfig.icon_path('checkbox_unchecked.png')
                 return QtGui.QIcon(ip)
 
     def headerData(self, section, orientation, role):
@@ -91,7 +91,7 @@ class Preflight(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         self.software = software
         self.preflight = preflight
-        self.software_dir = os.path.join(CONFIG['paths']['cgl_tools'], software)
+        self.software_dir = os.path.join(ProjectConfig().cookbook_folder, software)
         self.preflight_dir = os.path.join(self.software_dir, 'pre_publish')
         if self.preflight not in os.listdir(self.preflight_dir):
             print('test')
@@ -137,8 +137,7 @@ class Preflight(QtWidgets.QWidget):
         self.pre_publish.setMinimumHeight(250)
         self.software_label = QtWidgets.QLabel('Preflight Checks')
         self.software_label.setProperty('class', 'ultra_title')
-
-        self.image_plane = GifWidget(gif_path=image_path('rolling_logs.gif'))
+        self.image_plane = GifWidget(gif_path=ProjectConfig().image_path('rolling_logs.gif'))
         self.image_plane.hide()
 
         self.run_all = QtWidgets.QPushButton('Run All')
@@ -183,7 +182,7 @@ class Preflight(QtWidgets.QWidget):
 
     def populate_table(self):
         import sys
-        source_dir = os.path.join(CONFIG['paths']['cgl_tools'])
+        source_dir = os.path.join(ProjectConfig().cookbook_folder)
         source_dir = os.path.dirname(source_dir)
         sys.path.insert(0, source_dir)
         data = []
