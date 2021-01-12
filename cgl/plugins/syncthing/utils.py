@@ -14,6 +14,7 @@ from cgl.core.path import PathObject
 URL = 'http://localhost:8384/rest'
 
 
+
 def setup_server(clean=False):
     """
     sets up a machine as a syncing server for a studio.  This is the machine that will add remote workstations as
@@ -26,12 +27,8 @@ def setup_server(clean=False):
     from cgl.core.config.config import ProjectConfig
     wipe_globals()
     user_globals = ProjectConfig().user_config_file
-    #user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     set_machine_type('server')
-
-    globls = load_json(user_globals['globals'])
     cgl_tools_folder = ProjectConfig().project_config
-    #cgl_tools_folder = globls['paths']['cgl_tools']
 
     sheet_obj = get_sheet()
     add_device_info_to_sheet(sheet_obj, server='true')
@@ -53,7 +50,6 @@ def set_machine_type(m_type=""):
     :return:
     """
     user_globals = ProjectConfig().user_config
-    #user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     user_globals['sync_thing_machine_type'] = m_type
     save_json(ProjectConfig().user_config_file, user_globals)
 
@@ -61,8 +57,6 @@ def set_machine_type(m_type=""):
 def clear_sync_thing_user_globals():
     from cgl.core.config.config import ProjectConfig
     user_globals = ProjectConfig().user_config
-
-    #user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     user_globals['sync_thing_config_modified'] = ""
     user_globals['sync_thing_machine_type'] = ""
     save_json(ProjectConfig.user_config_file, user_globals)
@@ -85,33 +79,25 @@ def setup_workstation():
     """
     wipe_globals()
     from cgl.core.config.config import ProjectConfig
-
-    #USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
-    USER_GLOBALS = ProjectConfig().user_config_file
+    USER_GLOBALS = ProjectConfig().user_config
     GLOBALS = ProjectConfig().project_config
-    #GLOBALS = load_json(USER_GLOBALS['globals'])
-
     set_machine_type("remote workstation")
     # kill_syncthing()
     print(1, get_my_device_info())
     device_info = get_my_device_info()
     print('Setting Up Workstation for Syncing')
-    print(5555555555555)
-
     company = GLOBALS['account_info']['aws_company_name']
     sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
     folder_id = r'[root]\master\config\master'
-
-    #folder_path = GLOBALS['paths']['cgl_tools']
     folder_path = ProjectConfig().cookbook_folder
 
     sheet_obj = get_sheet()
     add_device_info_to_sheet(sheet_obj)
     add_all_devices_to_config(sheet_obj)
-    print(444444)
-    print(folder_id)
+
     add_folder_to_config(folder_id, folder_path, type_='recieveonly')
     launch_syncthing()
+
     from cgl.plugins.aws.cgl_sqs.utils import machine_added_message
     machine_added_message(device_id=device_info['id'],
                           device_name=device_info['name'],
@@ -266,11 +252,7 @@ def process_st_config(folder_type='sendreceive'):
 
 def get_folder_from_id(folder_id):
     from cgl.core.config.config import ProjectConfig
-
-    #user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     user_globals = ProjectConfig().user_config
-    #globals_ = load_json(user_globals['globals'])
-    globals_ = ProjectConfig.project_config
     try:
         variable, the_rest = folder_id.split(']')
         variable = variable.replace('[', '')
@@ -341,8 +323,6 @@ def get_sheet():
     """
     from cgl.core.config.config import ProjectConfig
     user_globals = ProjectConfig().user_config
-    #user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
-    #globals_ = load_json(user_globals['globals'])
     globals_ = ProjectConfig().project_config
     client_file = globals_['sync']['syncthing']['sheets_config_path']
     name_ = globals_['sync']['syncthing']['sheets_name'].split('_SYNC_THING')[0]
@@ -739,7 +719,8 @@ def get_device_dict():
 def share_files(path_object):
     from cgl.ui.widgets.sync_master import SyncMaster
     current_m_type = None
-    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    from cgl.core.config.config import ProjectConfig
+    user_globals = ProjectConfig().user_config
     if 'sync_thing_machine_type' in user_globals.keys():
         current_m_type = user_globals['sync_thing_machine_type']
     if not current_m_type:
