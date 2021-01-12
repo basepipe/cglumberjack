@@ -287,7 +287,8 @@ class ProjectManagementData(object):
                 print('didnt find %s' % self.path_object.project)
                 my_tasks[self.path_object.company][self.path_object.project] = {}
             else:
-                print(my_tasks[self.path_object.company][self.path_object.project])
+                print('didnt find {} in my_tasks'.format(self.path_object.project))
+                #print(my_tasks[self.path_object.company][self.path_object.project])
             new_path = self.path_root.split(self.user)[0]
             my_tasks[self.path_object.company][self.path_object.project][self.task_name] = {}
             task_info = my_tasks[self.path_object.company][self.path_object.project][self.task_name]
@@ -298,7 +299,7 @@ class ProjectManagementData(object):
             task_info['filepath'] = new_path
             task_info['task_type'] = self.task
             task_info['status'] = status
-            UserConfig(my_tasks=my_tasks).update_all()
+            #UserConfig(my_tasks=my_tasks).update_all()
 
     def create_version(self):
         """

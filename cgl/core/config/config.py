@@ -311,9 +311,9 @@ def get_root(project='master'):
     """
     user_conf = user_config()
     if project in user_conf['root'].keys():
-        return user_conf['root'][project]
+        return user_conf['root'][project].replace('\\', '/')
     else:
-        return user_conf['root']['master']
+        return user_conf['root']['master'].replace('\\', '/')
     return
 
 
