@@ -276,13 +276,13 @@ class PathObject(object):
         temp_ = temp_.replace('\\', '/')
         splitted = split_all(temp_)
         try:
-            c = splitted[2]
+            c = splitted[1]
             c_val = c
         except IndexError:
             c = 'master'
             c_val = '*'
         try:
-            project = splitted[4]
+            project = splitted[3]
         except IndexError:
             project = 'project'
         self.get_config_values(company=c, project=project)
@@ -442,7 +442,7 @@ class PathObject(object):
                 self.project_config['rules']['path_variables'][attr]['regex']
             except KeyError:
                 print('Could not find regex for %s in config, skipping' % attr)
-                print(attr, self.project_config)
+                # print(attr, self.project_config)
                 return
             if value == '*':
                 self.__dict__[attr] = value
