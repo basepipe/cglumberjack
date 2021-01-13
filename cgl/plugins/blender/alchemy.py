@@ -311,29 +311,33 @@ def reference_file(filepath, namespace=None, collection_name=None):
     import bpy
 
     path_object = PathObject(filepath)
+    if os.path.exists(filepath):
 
-    if collection_name == None:
-        collection_name = path_object.asset
+        if collection_name == None:
+            collection_name = path_object.asset
 
-    with bpy.data.libraries.load(filepath, link=True) as (data_from, data_to):
-        for c in data_from.collections:
-            if c == collection_name:
-                print(c)
-                data_to.collections = [c]
-    if namespace:
-        object_name = '{}:{}'.format(namespace, path_object.task)
+        with bpy.data.libraries.load(filepath, link=True) as (data_from, data_to):
+            for c in data_from.collections:
+                if c == collection_name:
+                    print(c)
+                    data_to.collections = [c]
+        if namespace:
+            object_name = '{}:{}'.format(namespace, path_object.task)
+        else:
+            object_name = path_object.task
+        obj = bpy.data.objects.new(object_name, None)
+        obj.instance_type = 'COLLECTION'
+        obj['source_path'] = path_object.path
+        obj.instance_collection = bpy.data.collections[collection_name]
+        bpy.context.collection.objects.link(obj)
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        tag_object([obj],'source_path',path_object.path)
+        return obj
+
     else:
-        object_name = path_object.task
-    obj = bpy.data.objects.new(object_name, None)
-    obj.instance_type = 'COLLECTION'
-    obj['source_path'] = path_object.path
-    obj.instance_collection = bpy.data.collections[collection_name]
-    bpy.context.collection.objects.link(obj)
-    bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True)
-    tag_object([obj],'source_path',path_object.path)
-    return obj
-
+        print('NO SUCH FILE')
+        confirm_prompt('ERROR', '{} FILE NOT FOUND'.format(path_object.filename))
 
 def open_file(filepath):
     """
