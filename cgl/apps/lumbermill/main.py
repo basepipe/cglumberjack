@@ -208,7 +208,7 @@ class NavigationWidget(QtWidgets.QFrame):
         self.set_text(self.path_object.path_root)
 
     def eventFilter(self, widget, event):
-        if widget == self.sync_button and isinstance(event, QtGui.QMouseEvent) and event.buttons() & QtCore.Qt.LeftButton:
+        if widget == self.sync_button and isinstance(event,QtGui.QMouseEvent) and event.buttons() & QtCore.Qt.LeftButton:
             self.leftClicked(event.pos())
             return True
         return False
