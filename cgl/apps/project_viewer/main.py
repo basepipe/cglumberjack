@@ -65,6 +65,8 @@ class MagicButtonWidget(QtWidgets.QWidget):
     latest_user_file = None
     latest_user_render_folder = None
     user = 'tmikota'
+    thumb_path = None
+    preview_path = None
 
     def __init__(self, parent=None, button_label='Default Text', info_label=None, task=None, button_click_dict=None):
         QtWidgets.QWidget.__init__(self, parent)
@@ -146,8 +148,23 @@ class MagicButtonWidget(QtWidgets.QWidget):
 
     def set_button_look(self):
         border_color = '#808080'
-        border_px = 4
         bg_color = STATUS_COLORS[self.status]
+        if self.thumb_path:
+            if os.path.exists(self.thumb_path):
+                # print('found thumb path {}'.format(self.thumb_path))
+                pixmap = QtGui.QPixmap(self.thumb_path)
+                icon = QtGui.QIcon(pixmap)
+                self.button.setIcon(icon)
+                # print(pixmap.rect().size().width())
+                self.button.setIconSize(pixmap.rect().size())
+                self.button.setText('')
+                self.button.setMinimumWidth(pixmap.rect().size().width()+8)
+                self.button.setMinimumHeight(pixmap.rect().size().height()+8)
+                self.button.setMaximumWidth(pixmap.rect().size().width() + 8)
+                self.button.setMaximumHeight(pixmap.rect().size().height() + 8)
+                border_color = STATUS_COLORS[self.status]
+                bg_color = 'black'
+        border_px = 4
         font_color = '#383838'
         height = 120
         width = 100
@@ -233,7 +250,6 @@ class MagicButtonWidget(QtWidgets.QWidget):
             latest_folder = ''
             if not self.published_folder:
                 self.status = 'In Progress'
-                self.set_button_look()
             for each in versions:
                 raw_time = os.path.getctime(each)
                 if raw_time > latest:
@@ -257,11 +273,14 @@ class MagicButtonWidget(QtWidgets.QWidget):
                             self.latest_user_file = each.replace('\\', '/')
                 else:
                     self.latest_user_file = self.newest_version_file
-
+                    path_object = PathObject(self.latest_user_file)
+                    self.preview_path = path_object.preview_path
+                    self.thumb_path = path_object.thumb_path
                     self.latest_user_render_folder = os.path.dirname(self.latest_user_file).replace('/source/',
                                                                                                     '/render/')
 
             self.set_time_stuff()
+            self.set_button_look()
         else:
             self.status = 'Not Started'
             self.set_button_look()

@@ -2,7 +2,7 @@ import os
 import shutil
 import stat
 from cgl.core.utils.general import cgl_copy
-from core.config.config import ProjectConfig
+from core.config.config import ProjectConfig, paths
 
 CONFIG = ProjectConfig().project_config
 
@@ -53,8 +53,8 @@ def clear_latest():
 
 
 def safe_to_release():
-    root_ = CONFIG['paths']['root']
-    code_root = CONFIG['paths']['code_root']
+    root_ = paths()['root']
+    code_root = paths()['code_root']
     if code_root != LATEST:
         print('code_root = ', code_root, 'not safe to release')
         return False

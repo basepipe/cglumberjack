@@ -9,7 +9,7 @@ from cgl.core.path import PathObject, CreateProductionData
 from cgl.ui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
 from cgl.core.utils.general import current_user, clean_file_list
 from cgl.ui.widgets.progress_gif import process_method
-from cgl.core.config.config import ProjectConfig, get_root, copy_config
+from cgl.core.config.config import ProjectConfig, get_root, copy_config, paths
 
 
 class CompanyPanel(QtWidgets.QWidget):
@@ -118,7 +118,7 @@ class ProjectPanel(QtWidgets.QWidget):
         self.path_object = path_object
         self.project_management = self.cfg.project_config['account_info']['project_management']
         self.user_email = self.cfg.project_config['project_management'][self.project_management]['users'][current_user()]
-        self.root = self.cfg.project_config['paths']['root']  # Company Specific
+        self.root = paths()['root']  # Company Specific
         self.user_root = self.cfg.project_config['cg_lumberjack_dir']
         self.left_column_visibility = True
         self.title = title

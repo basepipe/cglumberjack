@@ -428,6 +428,43 @@ def get_job_id():
     return str(time.time()).replace('.', '')
 
 
+def write_to_cgl_data(company, project, process_info):
+    cfg = ProjectConfig(company, project)
+    CONFIG = cfg.project_config
+    job_id = None
+    if 'job_id' in process_info.keys():
+        if process_info['job_id']:
+            job_id = process_info['job_id']
+        else:
+            process_info['job_id'] = get_job_id()
+    user = current_user()
+    cgl_data = os.path.join(os.path.dirname(CONFIG['paths']['globals']), 'cgl_data.json')
+    if os.path.exists(cgl_data):
+        data = load_json(cgl_data)
+    else:
+        data = {}
+    if user not in data.keys():
+        data[user] = {}
+    if job_id not in data[user].keys():
+        data[user][process_info['job_id']] = process_info
+    else:
+        print('%s already exists in %s dict' % (process_info['job_id'], user))
+        return
+    save_json(cgl_data, data)
+
+def screen_grab(path_object):
+    """
+    1) takes a screen grab and saves it to the "preview_path" variable on PathObject()
+    2) creates a "thumbnail" at the "thumb_path" from PathObject()
+    3) updates ftrack or shotgun with the new thumbnail.
+    :return:
+    """
+    import cgl.core.screen_grab as screen_grab
+    import cgl.core.convert as convert
+    ppath = screen_grab.run(path_object=path_object)
+    convert.create_image_thumb(ppath, path_object.thumb_path)
+    print('Creating Preview at: {}'.format(ppath))
+
 
 
 

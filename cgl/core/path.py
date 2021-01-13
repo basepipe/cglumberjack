@@ -9,7 +9,7 @@ import re
 import copy
 import importlib
 from cgl.core.utils.general import split_all, cgl_copy, cgl_execute, clean_file_list
-from cgl.core.config.config import ProjectConfig, user_config, get_root
+from cgl.core.config.config import ProjectConfig, user_config, get_root, paths
 
 # these should come from config ideally.
 SEQ_REGEX = re.compile("[0-9]{4,}\\.")
@@ -32,6 +32,7 @@ class PathObject(object):
             return
         self.data = {}
         self.cfg = cfg
+        self.paths_dict = paths()
         self.company = None
         self.context = None
         self.project = None
@@ -62,7 +63,6 @@ class PathObject(object):
         self.path_root = None  # this gives the full path with the root
         self.thumb_path = None
         self.preview_path = None
-        self.preview_file = None
         self.preview_seq = None
         self.hd_proxy_path = None
         self.start_frame = None
@@ -133,7 +133,7 @@ class PathObject(object):
             print('methodology {} not found in user config {}'.format(self.processing_method, cfg.user_config_file))
             self.processing_method = 'local'
         self.ext_map = self.project_config['ext_map']
-        self.root = self.project_config['paths']['root'].replace('\\', '/')
+        self.root = self.paths_dict['root'].replace('\\', '/')
         self.scope_list = self.project_config['rules']['scope_list']
         self.context_list = self.project_config['rules']['context_list']
 
@@ -276,13 +276,13 @@ class PathObject(object):
         temp_ = temp_.replace('\\', '/')
         splitted = split_all(temp_)
         try:
-            c = splitted[2]
+            c = splitted[1]
             c_val = c
         except IndexError:
             c = 'master'
             c_val = '*'
         try:
-            project = splitted[4]
+            project = splitted[3]
         except IndexError:
             project = 'project'
         self.get_config_values(company=c, project=project)
@@ -442,7 +442,7 @@ class PathObject(object):
                 self.project_config['rules']['path_variables'][attr]['regex']
             except KeyError:
                 print('Could not find regex for %s in config, skipping' % attr)
-                print(attr, self.project_config)
+                # print(attr, self.project_config)
                 return
             if value == '*':
                 self.__dict__[attr] = value
@@ -715,6 +715,7 @@ class PathObject(object):
             p_path = os.path.splitext(self.preview_path)[0]
             self.thumb_path = '%s%s' % (p_path.replace('.preview', '.thumb'), '.jpg')
             self.data['thumb_path'] = self.thumb_path
+            return self.thumb_path
 
     def set_preview_path(self):
         """
@@ -1654,7 +1655,7 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
                 output_.append(each)
     for each in output_:
         if '#' in each:
-            sequence = Sequence(os.path.join(directory, each))
+            sequence = Sequence(os.path.join(directory, each), cfg=ProjectConfig(path_object=PathObject(directory)))
             frange = sequence.frame_range
             if frange:
                 index = output_.index(each)

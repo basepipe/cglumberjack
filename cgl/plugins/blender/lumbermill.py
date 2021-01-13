@@ -456,7 +456,6 @@ def confirm_prompt(title='Lumber message:', message='This is a message', button=
     :param button: single button is created with a string, multiple buttons created with array
     :return:
     """
-    import bpy
     try:
         # bpy.utils.unregister_class(BlenderConfirmDialog)
         bpy.utils.register_class(BlenderConfirmDialog)
