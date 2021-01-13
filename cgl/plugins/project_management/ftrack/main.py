@@ -10,7 +10,8 @@ from cgl.core.utils.general import current_user
 
 
 #CONFIG = app_config()
-CONFIG = ProjectConfig().project_config
+CFG = ProjectConfig()
+CONFIG = CFG.project_config
 
 class ProjectManagementData(object):
     create = False
@@ -73,6 +74,7 @@ class ProjectManagementData(object):
                 self.__dict__[key] = path_object.__dict__[key]
         for key in kwargs:
             self.__dict__[key] = kwargs[key]
+        self.cfg = ProjectConfig(path_object=path_object)
         self.shot_name = '%s_%s' % (self.seq, self.shot)
 
         if not self.project_short_name:
@@ -292,7 +294,7 @@ class ProjectManagementData(object):
             task_info['task_type'] = self.task
             task_info['status'] = status
             #TODO we need to add update user tasks here
-            #user_config(my_tasks=my_tasks).update_all()
+            self.cfg.edit_user_config(['tasks'], my_tasks)
 
     def create_version(self):
         if self.filename:
@@ -620,6 +622,8 @@ def find_user_assignments(path_object, user_email, force=False):
     company = path_object.company
     project = path_object.project
     # load whatever is in the user globals:
+    cfg = ProjectConfig(path_object)
+    config = cfg.project_config
     if company and project and company != '*' and project != '*':
         my_tasks = user_config()['my_tasks']
         if not force:
@@ -631,11 +635,11 @@ def find_user_assignments(path_object, user_email, force=False):
             continue_parse = True
         if continue_parse:
             print('GATHERING TASK DATA FROM FTRACK')
-            server_url = CONFIG['project_management']['ftrack']['api']['server_url']
-            api_key = CONFIG['project_management']['ftrack']['api']['api_key']
-            api_user = CONFIG['project_management']['ftrack']['api']['api_user']
-            schema = CONFIG['project_management']['ftrack']['api']['default_schema']
-            long_to_short = CONFIG['project_management']['ftrack']['tasks'][schema]['long_to_short']
+            server_url = config['project_management']['ftrack']['api']['server_url']
+            api_key = config['project_management']['ftrack']['api']['api_key']
+            api_user = config['project_management']['ftrack']['api']['api_user']
+            schema = config['project_management']['ftrack']['api']['default_schema']
+            long_to_short = config['project_management']['ftrack']['tasks'][schema]['long_to_short']
             session = ftrack_api.Session(server_url=server_url, api_key=api_key, api_user=api_user)
             project_name = project
             user = user_email
@@ -681,7 +685,7 @@ def find_user_assignments(path_object, user_email, force=False):
                             my_tasks[company][project][p['name']]['due_date'] = ''
                 session.close()
                 #TODO We need to add update_user_tasks here
-                #UserConfig(my_tasks=my_tasks).update_all()
+                cfg.edit_user_config(['tasks'], my_tasks)
                 return my_tasks[company][project]
             else:
                 return None
