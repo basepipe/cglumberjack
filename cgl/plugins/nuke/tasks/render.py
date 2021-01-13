@@ -27,11 +27,6 @@ class Task(SmartTask):
 
 
 
-
-
-
-
-
 def import_lighting_renders(filepath):
     # change backdrop name to include render pass
     # fix the problem with my merge nodes.
