@@ -217,9 +217,8 @@ def import_file(filepath, namespace=None, collection_name=None):
 
     import bpy
     path_object = PathObject(filepath)
-    if os.path.isdir(path_object.copy(filename = '').path_root):
 
-
+    if os.path.exists(filepath):
         if filepath.endswith('fbx'):
             bpy.ops.import_scene.fbx(filepath=filepath)
             for obj in bpy.context.selected_objects:
@@ -277,6 +276,7 @@ def import_file(filepath, namespace=None, collection_name=None):
     else:
         print('NO SUCH FILE')
         confirm_prompt('ERROR', '{} FILE NOT FOUND'.format(path_object.filename))
+
 def render(preview=False, audio=False):
     """
     renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
