@@ -1,8 +1,9 @@
-from cgl.core.config import app_config
+#from cgl.core.config import app_config
+from cgl.core.config.config import ProjectConfig
 import ftrack_api
 import datetime
 
-CONFIG = app_config()
+CONFIG = ProjectConfig().project_config
 
 
 def setup():

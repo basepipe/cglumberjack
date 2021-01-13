@@ -291,7 +291,8 @@ class ProjectManagementData(object):
             task_info['filepath'] = new_path
             task_info['task_type'] = self.task
             task_info['status'] = status
-            user_config(my_tasks=my_tasks).update_all()
+            #TODO we need to add update user tasks here
+            #user_config(my_tasks=my_tasks).update_all()
 
     def create_version(self):
         if self.filename:
@@ -658,7 +659,15 @@ def find_user_assignments(path_object, user_email, force=False):
                                 shot_ = p['parent']['name']
                             else:
                                 if '_' in p['parent']['name']:
-                                    seq, shot_ = p['parent']['name'].split('_')
+                                    task_info_list = p['parent']['name'].split('_')
+                                    if len(task_info_list) == 3:
+                                        proj,seq,shot_ = task_info_list
+
+                                    elif len(task_info_list)== 2 :
+                                        seq,shot_ = task_info_list
+                                    else:
+                                        prin("SHOT name not supported {}".format(task_info_list))
+
                                 scope = 'shots'
                             task_type = long_to_short[scope][p['type']['name']]
                             my_tasks[company][project][p['name']] = {}
@@ -671,7 +680,8 @@ def find_user_assignments(path_object, user_email, force=False):
                             my_tasks[company][project][p['name']]['status'] = p['status']['name']
                             my_tasks[company][project][p['name']]['due_date'] = ''
                 session.close()
-                UserConfig(my_tasks=my_tasks).update_all()
+                #TODO We need to add update_user_tasks here
+                #UserConfig(my_tasks=my_tasks).update_all()
                 return my_tasks[company][project]
             else:
                 return None
@@ -681,7 +691,6 @@ def find_user_assignments(path_object, user_email, force=False):
 
 if __name__ == "__main__":
     this = ProjectManagementData()
-    this.create_project_management_data()
-    this.ftrack.commit()
-
+    #this.create_project_management_data()
+    #this.ftrack.commit()
 
