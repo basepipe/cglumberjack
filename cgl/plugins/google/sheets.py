@@ -17,11 +17,15 @@ def authorize_sheets():
     :param sheet_name: Title of the sheet being accessed
     :return: A google sheet object
     """
+    from cgl.core.config.config import ProjectConfig
     import gspread
     scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/spreadsheets',
              'https://www.googleapis.com/auth/drive']
-    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
-    globals_ = load_json(user_globals['globals'])
+    user_globals =ProjectConfig().user_config
+
+    #user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    #globals_ = load_json(user_globals['globals'])
+    globals_ = ProjectConfig().project_config
     sheet_name = globals_['sync']['syncthing']['sheets_name']
     client_file = globals_['sync']['syncthing']['sheets_config_path']
     print('client file:{}'.format(client_file))
@@ -82,8 +86,11 @@ def get_sheets_authentication():
     :return: Returns the filepath to the local copy of the authentication file
     """
     # TODO - change this to read the ENV Variable once that's more stable/consistant.
-    USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
-    GLOBALS = load_json(USER_GLOBALS['globals'])
+    from cgl.core.config.config import ProjectConfig
+    USER_GLOBALS = ProjectConfig().user_config
+    #USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
+    #GLOBALS = load_json(USER_GLOBALS['globals'])
+    GLOBALS = ProjectConfig().project_config
     filepath = GLOBALS['sync']['syncthing']['sheets_config_path']
     if filepath.endswith('.json'):
         url = GLOBALS['sync']['syncthing']['sync_thing_url']

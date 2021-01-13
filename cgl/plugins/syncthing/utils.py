@@ -14,6 +14,7 @@ from cgl.core.path import PathObject
 URL = 'http://localhost:8384/rest'
 
 
+
 def setup_server(clean=False):
     """
     sets up a machine as a syncing server for a studio.  This is the machine that will add remote workstations as
@@ -23,21 +24,24 @@ def setup_server(clean=False):
     :param clean: wipe the server as part of the setup process.
     :return:
     """
+    from cgl.core.config.config import ProjectConfig
     wipe_globals()
-    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    user_globals = ProjectConfig().user_config_file
     set_machine_type('server')
-    globls = load_json(user_globals['globals'])
-    cgl_tools_folder = globls['paths']['cgl_tools']
+    cgl_tools_folder = ProjectConfig().project_config
+
     sheet_obj = get_sheet()
     add_device_info_to_sheet(sheet_obj, server='true')
     add_all_devices_to_config(sheet_obj)
-    folder_id = r'[root]\_config\cgl_tools'
+    #folder_id = r'[root]\_config\cgl_tools'
+    folder_id = r'[root]\master\config\master'
     add_folder_to_config(folder_id, cgl_tools_folder, type_='sendonly')
     share_folders_to_devices()  # only if you're setting up main folders
     launch_syncthing()
 
 
 def set_machine_type(m_type=""):
+    from cgl.core.config.config import ProjectConfig
     """
     sets the machine type for the current machine
     a value of "" is used when a machine is using lumbermill but not syncthing.  This would be typical of a networked
@@ -45,16 +49,17 @@ def set_machine_type(m_type=""):
     :param m_type: valid types: "", "remote workstation", "server"
     :return:
     """
-    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    user_globals = ProjectConfig().user_config
     user_globals['sync_thing_machine_type'] = m_type
-    save_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'), user_globals)
+    save_json(ProjectConfig().user_config_file, user_globals)
 
 
 def clear_sync_thing_user_globals():
-    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    from cgl.core.config.config import ProjectConfig
+    user_globals = ProjectConfig().user_config
     user_globals['sync_thing_config_modified'] = ""
     user_globals['sync_thing_machine_type'] = ""
-    save_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'), user_globals)
+    save_json(ProjectConfig.user_config_file, user_globals)
 
 
 def get_syncthing_state():
@@ -73,8 +78,9 @@ def setup_workstation():
     :return:
     """
     wipe_globals()
-    USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
-    GLOBALS = load_json(USER_GLOBALS['globals'])
+    from cgl.core.config.config import ProjectConfig
+    USER_GLOBALS = ProjectConfig().user_config
+    GLOBALS = ProjectConfig().project_config
     set_machine_type("remote workstation")
     # kill_syncthing()
     print(1, get_my_device_info())
@@ -82,13 +88,16 @@ def setup_workstation():
     print('Setting Up Workstation for Syncing')
     company = GLOBALS['account_info']['aws_company_name']
     sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
-    folder_id = r'[root]\_config\cgl_tools'
-    folder_path = GLOBALS['paths']['cgl_tools']
+    folder_id = r'[root]\master\config\master'
+    folder_path = ProjectConfig().cookbook_folder
+
     sheet_obj = get_sheet()
     add_device_info_to_sheet(sheet_obj)
     add_all_devices_to_config(sheet_obj)
+
     add_folder_to_config(folder_id, folder_path, type_='recieveonly')
     launch_syncthing()
+
     from cgl.plugins.aws.cgl_sqs.utils import machine_added_message
     machine_added_message(device_id=device_info['id'],
                           device_name=device_info['name'],
@@ -242,12 +251,13 @@ def process_st_config(folder_type='sendreceive'):
 
 
 def get_folder_from_id(folder_id):
-    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
-    globals_ = load_json(user_globals['globals'])
+    from cgl.core.config.config import ProjectConfig
+    user_globals = ProjectConfig().user_config
     try:
         variable, the_rest = folder_id.split(']')
         variable = variable.replace('[', '')
-        value = globals_['paths'][variable]
+
+        value = user_globals['paths'][variable]
         local_path = '%s%s' % (value, the_rest)
         return local_path
     except ValueError:
@@ -311,8 +321,9 @@ def get_sheet():
     :param sheet_name: Name of the google sheet being accessed
     :return: Sheet object
     """
-    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
-    globals_ = load_json(user_globals['globals'])
+    from cgl.core.config.config import ProjectConfig
+    user_globals = ProjectConfig().user_config
+    globals_ = ProjectConfig().project_config
     client_file = globals_['sync']['syncthing']['sheets_config_path']
     name_ = globals_['sync']['syncthing']['sheets_name'].split('_SYNC_THING')[0]
     print('Syncing with %s' % name_)
@@ -708,7 +719,8 @@ def get_device_dict():
 def share_files(path_object):
     from cgl.ui.widgets.sync_master import SyncMaster
     current_m_type = None
-    user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
+    from cgl.core.config.config import ProjectConfig
+    user_globals = ProjectConfig().user_config
     if 'sync_thing_machine_type' in user_globals.keys():
         current_m_type = user_globals['sync_thing_machine_type']
     if not current_m_type:
@@ -901,9 +913,11 @@ def update_machines():
 
 if __name__ == "__main__":
     #wipe_globals()
-    setup_workstation()
+    #setup_workstation()
     #kill_syncthing()
     # process_pending_devices()
     # print(get_all_devices_from_config())
     # print(get_my_device_info()['name'])
+    from cgl.core.utils.general import launch_lumber_watch
+    launch_lumber_watch()
 
