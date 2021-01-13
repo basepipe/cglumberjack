@@ -203,19 +203,6 @@ class ProjectConfig(object):
                 effected_label.setStyleSheet("color: rgb(255, 50, 50);")
             return self.project_config['rules']['path_variables'][rule]['example']
 
-    def update_user_paths(self, current_path):
-        """
-        this will update the list of paths as well as the current path in the user globals
-        """
-        pass
-
-    def update_user_tasks(self, tasks):
-        """
-        updates the tasks section of the user globals.
-        :param tasks:
-        :return:
-        """
-        pass
 
     def image_path(self, image=None, ):
         """
