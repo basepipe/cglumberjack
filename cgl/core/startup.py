@@ -179,17 +179,20 @@ def load_style_sheet():
     return data
 
 
-def user_init():
+def user_init(cfg=None):
     """
     Initializes needed User information
     :return:
     """
-    from cgl.core.config import app_config
+    from cgl.core.config.config import ProjectConfig
     from cgl.core.utils.general import current_user
     from cgl.ui.widgets.dialog import LoginDialog
     current = current_user().lower()
     logging.debug(current)
-    CONFIG = app_config()
+    if not cfg:
+        print(user_init)
+        cfg = ProjectConfig()
+    CONFIG = cfg.project_config
     proj_man = CONFIG['account_info']['project_management']
     logging.debug(proj_man)
     users = CONFIG['project_management'][proj_man]['users']
@@ -223,10 +226,15 @@ def check_time_log(project_management):
             return False
 
 
-def app_init(splash_image='lubmermill.jpg'):
-    from cgl.core.path import image_path
+def app_init(splash_image='lubmermill.jpg', cfg=None):
     app_ = QtWidgets.QApplication([])
-    splash_pix = QtGui.QPixmap(image_path(splash_image))
+    if not cfg:
+        from cgl.core.config.config import ProjectConfig
+        print('app_init')
+        cfg = ProjectConfig()
+    image_path = cfg.images_folder
+    image_path = os.path.join(image_path, splash_image)
+    splash_pix = QtGui.QPixmap(image_path)
     splash_ = QtWidgets.QSplashScreen(splash_pix, QtCore.Qt.WindowStaysOnTopHint)
     splash_.setMask(splash_pix.mask())
     splash_.show()

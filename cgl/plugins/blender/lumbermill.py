@@ -42,7 +42,95 @@ class BlenderConfirmDialog(bpy.types.Operator):
         self.layout.label(text=self.message)
 
 
-class LumberObject(PathObject):
+class BlenderInputDialog(bpy.types.Operator):
+    bl_idname = "message.inputdialog"
+    bl_label = "Enter input"
+    bl_context = "scene"
+    passes_re = False
+
+    message = bpy.props.StringProperty(
+        name="message",
+        description="message",
+        default=''
+    )
+
+    operator = bpy.props.StringProperty(
+        name="TEST_OPERATOR",
+        description="TEST_OPERATOR",
+        default=''
+    )
+
+    example = bpy.props.StringProperty(
+        name="example",
+        description="example",
+        default=''
+    )
+
+    selection = bpy.props.StringProperty(
+        name="selection",
+        description="selection",
+        default=''
+    )
+
+    title = bpy.props.StringProperty(
+        name="title",
+        description="title",
+        default='')
+
+    bl_label = title[1]['default']
+
+    buttons = bpy.props.StringProperty(name="buttons",
+                                       description="buttons",
+                                       default='ok')
+
+    def execute(self, context):
+        bpy.types.Scene.inputDialogText = self.selection
+        bpy.types.Scene.inputDialogSelectionRegex = bpy.props.BoolProperty(default=self.passes_re)
+
+        eval(self.operator)
+
+        return {'PASS_THROUGH'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=600)
+
+    def draw(self, context):
+        import re
+        props = bpy.types.Scene.inputDialogText
+        layout = self.layout
+
+        col = layout.column(align=True)
+
+        col.label(text=self.title)
+
+        col.label(text=self.message)
+
+        col = layout.column()
+        col = col.row()
+
+        rexpression = '^([a-z]{3,}, *)*[a-z]{3,}'
+
+        col.label(text=self.example)
+
+        if re.match(rexpression, self.selection):
+            col.label(text='{} passes'.format(self.selection))
+            self.passes_re = True
+
+
+
+        else:
+            col.label(text='{} does not pass '.format(self.selection))
+            self.passes_re = False
+
+        col2 = layout.column()
+
+        row2 = col2.row()
+        row2.prop(self, 'selection', text='')
+
+        row3 = col2.row()
+
+
+class PathObject(PathObject):
 
     def __init__(self, path_object=None):
         if not path_object:
@@ -79,6 +167,7 @@ class LumberObject(PathObject):
         self.context_list = CONFIG['rules']['context_list']
         self.path = None  # string of the properly formatted path
         self.path_root = None  # this gives the full path with the root
+        self.path_relative = None
         self.thumb_path = None
         self.playblast_path = None
         self.render_path = None
@@ -111,6 +200,23 @@ class LumberObject(PathObject):
         self.proxy_resolution = '1920x1080'
         self.path_template = []
         self.version_template = []
+        self.name = None
+        def process_string(self, path_object):
+            path_object = path_object.replace('\\', '/')
+            self.get_company(path_object)
+            self.unpack_path(path_object)
+            self.set_data_from_attrs()
+            self.set_project_config_paths()
+            self.set_json()
+            self.set_relative_path()
+
+        def process_dict(self, path_object):
+            self.set_attrs_from_dict(path_object)
+            self.set_path()
+            self.set_project_config_paths()
+            self.set_preview_path()
+            self.set_json()
+            self.set_relative_path()
 
         try:
             if isinstance(path_object, unicode):
@@ -126,6 +232,11 @@ class LumberObject(PathObject):
         else:
             logging.error('type: %s not expected' % type(path_object))
         self.set_render_paths()
+
+    def set_relative_path(self):
+        import os
+        from cgl.plugins.blender.lumbermill import scene_object
+        self.path_relative = os.path.relpath( self.path_root, scene_object().path_root)
 
     def set_render_paths(self):
         padding = '#' * self.frame_padding
@@ -158,10 +269,10 @@ def get_scene_name():
 
 def scene_object():
     """
-    returns LumberObject of curent scene
+    returns PathObject of curent scene
     :return:
     """
-    return LumberObject(get_scene_name())
+    return PathObject(get_scene_name())
 
 
 def save_file_as(filepath):
@@ -180,16 +291,17 @@ def version_up(vtype='minor'):
     :param vtype: minor or major
     :return:
     """
-    path_object = LumberObject(get_scene_name())
+    path_object = PathObject(get_scene_name())
     if vtype == 'minor':
         new_version = path_object.new_minor_version_object()
     elif vtype == 'major':
         new_version = path_object.next_major_version()
     create_file_dirs(new_version.path_root)
+    create_file_dirs(new_version.copy(context = 'render').path_root)
     return save_file_as(new_version.path_root)
 
 
-def import_file(filepath='', namespace=None, collection_name=None, append=True, linked=True, type='COLLECTION',
+def import_file_old(filepath='', namespace=None, collection_name=None, append=True, linked=True, type='COLLECTION',
                 snap_to_cursor=False):
     """
     imports file into a scene.
@@ -251,6 +363,69 @@ def import_file(filepath='', namespace=None, collection_name=None, append=True, 
                 obj.location = bpy.context.scene.cursor.location
 
 
+def import_file(filepath, namespace=None, collection_name=None):
+    from cgl.plugins.blender import lumbermill as lm
+    import bpy
+
+    path_object = lm.PathObject(filepath)
+
+    if collection_name == None:
+        collection_name = path_object.asset
+
+    with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
+        # data_to.collections = [c for c in data_from.collections if c == collection_name]
+
+        for c in data_from.collections:
+            if c == collection_name:
+                print(c)
+                data_to.collections = [c]
+
+    imported_collection = bpy.data.collections[collection_name]
+    bpy.context.scene.collection.children.link(imported_collection)
+    imported_collection.name = path_object.task
+
+    if namespace:
+        imported_collection.name = '{}:{}'.format(namespace,path_object.task )
+        for obj in imported_collection.objects:
+            obj.name = '{}:{}'.format(namespace,obj.name)
+            obj['source_path'] = path_object.path
+
+            if obj.type =='MESH':
+                obj.data.name = '{}:{}'.format(namespace, obj.data.name)
+                material = obj.material_slots[0].material
+                if ':' not in material.name:
+                    material.name = '{}:{}'.format(namespace,material.name)
+
+
+def reference_file(filepath, namespace=None, collection_name=None):
+    from cgl.plugins.blender import lumbermill as lm
+
+    import bpy
+
+    path_object = lm.PathObject(filepath)
+
+    if collection_name == None:
+        collection_name = path_object.asset
+
+    with bpy.data.libraries.load(filepath, link=True) as (data_from, data_to):
+        for c in data_from.collections:
+            if c == collection_name:
+                print(c)
+                data_to.collections = [c]
+    if namespace:
+        object_name = '{}:{}'.format(namespace, path_object.task)
+    else:
+        object_name = path_object.task
+    obj = bpy.data.objects.new(object_name, None)
+    obj.instance_type = 'COLLECTION'
+    obj['source_path'] = path_object.path
+    obj.instance_collection = bpy.data.collections[collection_name]
+    bpy.context.collection.objects.link(obj)
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    return obj
+
+
 def open_file(filepath):
     """
     Open File: filepath
@@ -270,16 +445,6 @@ def save_file(filepath=''):
     return bpy.ops.wm.save_mainfile()
 
 
-def reference_file(filepath='', namespace=None):
-    """
-    creates a "reference" of a file, this is a convenience function to be used in various software plugins
-    to promote continuity accross plugins
-    :param namespace:
-    :param filepath:
-    :return:
-    """
-    print(filepath)
-    pass
 
 
 def confirm_prompt(title='Lumber message:', message='This is a message', button='Ok'):
@@ -291,7 +456,6 @@ def confirm_prompt(title='Lumber message:', message='This is a message', button=
     :param button: single button is created with a string, multiple buttons created with array
     :return:
     """
-    import bpy
     try:
         # bpy.utils.unregister_class(BlenderConfirmDialog)
         bpy.utils.register_class(BlenderConfirmDialog)
@@ -300,6 +464,29 @@ def confirm_prompt(title='Lumber message:', message='This is a message', button=
 
     bpy.ops.message.messagebox('INVOKE_DEFAULT', message=message)
 
+
+def InputDialog(parent=None, title='Attention:', message="message",
+                buttons=None, line_edit=False, line_edit_text=False, combo_box_items=None,
+                combo_box2_items=None, regex=None, name_example=None, button_a='ok', button_b='cancel', command=None):
+    import bpy
+
+    try:
+        bpy.utils.register_class(BlenderInputDialog)
+    except ValueError:
+        print('class already registered')
+
+    if buttons:
+        button_a = buttons[0]
+        button_b = buttons[1]
+        buttons = buttons[0]
+    else:
+        buttons = ''
+
+    bpy.types.Scene.inputDialogText = bpy.props.StringProperty(default='')
+    bpy.types.Scene.inputDialogSelection = bpy.props.StringProperty(default='ok')
+    bpy.types.Scene.inputDialogSelectionRegex = bpy.props.BoolProperty(default=False)
+    value = bpy.ops.message.inputdialog('INVOKE_DEFAULT', message=message, example=name_example, title=title,
+                                        operator=command)
 
 def select(selection, d=True):
     """
@@ -322,7 +509,12 @@ def export_selected(to_path):
     :return:
     """
     if to_path.endswith('fbx'):
-        bpy.ops.export_scene.fbx(filepath=to_path, use_selection=True)
+        bpy.ops.export_scene.fbx(filepath=to_path,
+                                 use_selection=True,
+                                 bake_anim=True,
+                                 bake_anim_use_nla_strips=False,
+                                 bake_anim_use_all_actions=False,
+                                 )
     elif to_path.endswith('obj'):
         bpy.ops.export_scene.obj(filepath=to_path, use_selection=True)
     elif to_path.endswith('blend'):
@@ -488,7 +680,7 @@ def review():
     padding = scene_object().frame_padding
     render_files = glob.glob(scene_object().render_path.replace('#' * padding, '*'))
     if render_files:
-        path_object = LumberObject(scene_object().render_path)
+        path_object = PathObject(scene_object().render_path)
         do_review(progress_bar=None, path_object=path_object)
 
 
@@ -542,6 +734,141 @@ def unlink_asset(selection=None):
         obj = bpy.data.objects[name]
         bpy.data.batch_remove(ids=(libname, obj))
 
+
+def get_framerange():
+    start = bpy.context.scene.frame_start
+    end  = bpy.context.scene.frame_end
+
+    return(start,end)
+
+
+def get_keyframes(obj, ends=False):
+    import math
+    '''
+        returns list with first and last keyframe of the camera
+    '''
+    keyframes = []
+    anim = obj.animation_data
+    if anim is not None and anim.action is not None:
+        for fcu in anim.action.fcurves:
+            for keyframe in fcu.keyframe_points:
+                x, y = keyframe.co
+                if x not in keyframes:
+                    keyframes.append((math.ceil(x)))
+
+    if ends :
+        return (keyframes[0], keyframes[-1])
+    else:
+
+        return keyframes
+
+
+def move_keyframes(obj, offset):
+    """
+
+    :param obj: object to move animation
+    :type obj: bpy.data.object
+    :param offset: how many frames forwards or backwards to move
+    :type offset: int
+    """
+    keyframes = []
+    anim = obj.animation_data
+    if anim is not None and anim.action is not None:
+        for fcu in anim.action.fcurves:
+            for keyframe in fcu.keyframe_points:
+                x, y = keyframe.co
+                keyframe.co = (x + offset, y)
+
+
+def set_framerange(start,end):
+    bpy.context.scene.frame_start = start
+    bpy.context.scene.frame_end =  end
+    bpy.context.scene.frame_current = start
+
+
+def import_task(task=None, reference=False, **kwargs):
+    """
+    imports the latest version of the specified task into the scene.
+    :param task:
+    :param reference:
+    :return:
+    """
+    if not task:
+        task = scene_object().task
+    class_ = get_task_class(task)
+    print(class_)
+    if reference:
+        print(11111111111111111)
+        print(reference)
+        return class_().import_latest(task=task, reference=reference, **kwargs)
+    else:
+        print(2)
+        return class_().import_latest(**kwargs)
+
+
+def build(path_object=None):
+    """
+    runs build command for the specified task.
+    :param task:
+    :return:
+    """
+    if not path_object:
+        path_object = scene_object()
+    task = path_object.task
+    task_class = get_task_class(task)
+    task_class(path_object).build()
+
+
+def get_task_class(task):
+    """
+    gets the class that relates to the specified task, if no task is specified the task for the current scene will
+    be used.
+    :param task:
+    :return:
+    """
+    import importlib
+    software = os.path.split(os.path.dirname(__file__))[-1]
+    module = 'cgl.plugins.{}.tasks.{}'.format(software, task)
+    module_name = task
+    try:
+        # python 2.7 method
+        loaded_module = __import__(module, globals(), locals(), module_name, -1)
+    except ValueError:
+        import importlib
+        # Python 3+
+        loaded_module = importlib.import_module(module, module_name)
+    class_ = getattr(loaded_module, 'Task')
+    return class_
+
+
+def selection(object=None, clear=False):
+    if clear:
+
+        for ob in bpy.data.objects:
+            ob.select_set(False)
+
+    if object:
+        object.select_set(True)
+
+def current_selection(single = False):
+
+    if single:
+        return bpy.context.object
+
+    return  bpy.context.selected_objects
+
+def get_object(name):
+    obj = bpy.data.objects[name]
+    return obj
+
+def objExists(obj):
+
+    if isinstance(obj, str):
+
+        obj = bpy.data.objects[obj]
+
+    if obj:
+        return True
 
 if __name__ == "__main__":
     print(SOFTWARE)

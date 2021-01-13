@@ -3,31 +3,31 @@
         "render": {
             "CheckWriteNode": {
                 "label": "Check Write Node", 
-                "module": "cgl_tools.nuke.preflights.render.CheckWriteNode", 
+                "module": "cgl_tools.nuke.pre_publish.render.CheckWriteNode",
                 "order": 1, 
                 "required": "True"
             }, 
             "CheckWriteVersions": {
                 "label": "CheckWriteVersions", 
-                "module": "cgl_tools.nuke.preflights.render.CheckWriteVersions", 
+                "module": "cgl_tools.nuke.pre_publish.render.CheckWriteVersions",
                 "order": 2, 
                 "required": "True"
             }, 
             "ClosePreflight": {
                 "label": "Close Preflight", 
-                "module": "cgl_tools.nuke.preflights.render.ClosePreflight", 
+                "module": "cgl_tools.nuke.pre_publish.render.ClosePreflight",
                 "order": 5, 
                 "required": "True"
             }, 
             "CreateMOV": {
                 "label": "Create MOV", 
-                "module": "cgl_tools.nuke.preflights.render.CreateMOV", 
+                "module": "cgl_tools.nuke.pre_publish.render.CreateMOV",
                 "order": 4, 
                 "required": "True"
             }, 
             "RenderSelectedNode": {
                 "label": "RenderSelectedNode", 
-                "module": "cgl_tools.nuke.preflights.render.RenderSelectedNode", 
+                "module": "cgl_tools.nuke.pre_publish.render.RenderSelectedNode",
                 "order": 3, 
                 "required": "True"
             }, 

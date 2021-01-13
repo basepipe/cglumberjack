@@ -1,6 +1,8 @@
 import re
 import os
-from cgl.core.config import app_config
+import glob
+from cgl.core.path import PathObject
+from cgl.core.config.config import ProjectConfig
 from cgl.core.utils.read_write import load_json
 from cgl.ui.widgets.dialog import MagicList
 
@@ -13,13 +15,9 @@ except ModuleNotFoundError:
     print('Skipping pymel.core - outside of maya')
 
 
-CONFIG = app_config()
-
-
 def get_namespace(filepath):
-    from lumbermill import LumberObject
     namespace = ''
-    path_object = LumberObject(filepath)
+    path_object = PathObject(filepath)
     if path_object.task == 'cam':
         namespace = 'cam'
     elif path_object.scope == 'assets':
@@ -40,10 +38,16 @@ def get_selected_namespace():
 
 
 def select_reference(ref_node):
-    # This assumes we're talking about a published reference
-    object_ = pm.ls(regex='%s:[a-z]{3}|%s:CAMERAS' % (ref_node.namespace, ref_node.namespace))[0]
-    pm.select(object_)
-    return object_
+    # TODO - this needs to be more robust to handle some of the strange things that happen in production.
+    objects = pm.ls(regex='%s:[a-z]{3}|%s:CAMERAS' % (ref_node.namespace, ref_node.namespace))
+    pm.select(objects[0])
+
+    return objects[0]
+
+
+def get_ref_node(reference):
+    node = pm.FileReference(pm.referenceQuery(reference, referenceNode=True))
+    return node
 
 
 def get_next_namespace(ns):
@@ -154,15 +158,37 @@ def load_plugin(plugin_name):
         pm.system.loadPlugin(plugin_name)
 
 
-def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=False):
-    scene = pm.sceneName()
-    pm.select(cl=True)
+def get_playblast_path(path_object):
     playblast_file = path_object.copy(context='render', filename='playblast', ext='').path_root
+    return playblast_file
+
+
+def playblast_exists(path_object):
+    playblast_file = get_playblast_path(path_object)
+    playblast_files = glob.glob('{}*'.format(playblast_file))
+    if playblast_files:
+        return playblast_files
+    else:
+        return False
+
+
+def review_exists(path_object):
+    path_, ext = os.path.splitext(path_object.preview_path)
+    print(path_)
+    files = glob.glob('{}*'.format(path_))
+    if files:
+        return files
+    else:
+        return False
+
+
+def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=False):
+    pm.select(cl=True)
+    playblast_file = get_playblast_path(path_object)
     if not cam:
         cam = get_current_camera()
     editor = pm.getPanel(wf=True)
     pm.modelEditor(editor, edit=True, displayAppearance=appearance, camera=cam)
-    # TODO - make this source something from globals for the resolution
     w, h = path_object.proxy_resolution.split('x')
     w = int(w)
     h = int(h)
@@ -179,9 +205,15 @@ def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=Fals
         print('Playblast not set up for audio yet')
 
 
-def get_hdri_json_path():
-    hdri_json = CONFIG['paths']['resources']
-    return os.path.join(hdri_json, 'hdri', 'settings.json')
+def get_hdri_json_path(return_config=False):
+    from cgl.plugins.maya.alchemy import scene_object
+    cfg = ProjectConfig(scene_object())
+    hdri_json = cfg.hdri_settings_file
+    print(hdri_json)
+    if return_config:
+        return hdri_json, cfg
+    else:
+        return hdri_json
 
 
 def hdri_widget():
@@ -195,7 +227,7 @@ def hdri_widget():
 
 
 def create_env_light(tex_name):
-    d = load_json(get_hdri_json_path())
+    d, cfg = load_json(get_hdri_json_path(return_config=True))
     rotation = 0
     delete_existing = True
     rotate_set = False
@@ -210,11 +242,12 @@ def create_env_light(tex_name):
     if delete_existing:
         env_lights = pm.ls('env_light*', type='transform')
         pm.delete(env_lights)
+    # TODO - this is extremely specific - needs to be generalized into the plugin structure.
     tex_path = r'Z:\Projects\VFX\PLUGINS\substance_painter\ibl\%s.tx' % tex_name
     tex_path2 = r'Z:\Projects\VFX\PLUGINS\substance_painter\ibl\%s.exr' % tex_name
     if not os.path.exists(tex_path):
         if os.path.exists(tex_path2):
-            command = '%s %s -v -u -oiio -o %s' % (CONFIG['paths']['maketx'], tex_path2, tex_path)
+            command = '%s %s -v -u -oiio -o %s' % (cfg.project_config['paths']['maketx'], tex_path2, tex_path)
             # should probably run the txmake command here and make the .tx file.
             p = subprocess.Popen(command, shell=True)
             p.communicate()
@@ -260,12 +293,11 @@ def get_maya_window():
 
 
 def update_reference(reference):
-    from cgl.plugins.maya.lumbermill import LumberObject
     path = reference[1].path
     if '{' in path:
         path = path.split('{')[0]
     filename = os.path.basename(path)
-    lobj = LumberObject(path).copy(context='render', user='publish', latest=True)
+    lobj = PathObject(path).copy(context='render', user='publish', latest=True)
     latest_version = lobj.path_root
     path = path.replace('\\', '/')
     latest_version = latest_version.replace('\\', '/')
@@ -363,6 +395,93 @@ def is_reference(mesh=None, return_namespaces=False):
         return True
     else:
         return False
+
+
+def default_matrix():
+    dm = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+    return dm
+
+
+def get_matrix(obj, query=False):
+    """
+    Returns a matrix of values relating to translate, scale, rotate.
+    :param obj:
+    :param query:
+    :return:
+    """
+    if not query:
+        if pm.objExists(obj):
+            if 'rig' in obj:
+                translate = '%s:translate' % obj.split(':')[0]
+                scale = '%s:scale' % obj.split(':')[0]
+                rotate = '%s:rotate' % obj.split(':')[0]
+                relatives = pm.listRelatives(obj)
+                if translate and scale in relatives:
+                    if rotate in pm.listRelatives(translate):
+                        matrix_rotate = pm.getAttr('%s.matrix' % rotate)[0:3]
+                        matrix_scale = pm.getAttr('%s.matrix' % scale)[0:3]
+                        matrix = matrix_scale * matrix_rotate
+                        matrix.append(pm.getAttr('%s.matrix' % translate)[3])
+                    else:
+                        attr = "%s.%s" % (obj, 'matrix')
+                        if pm.attributeQuery('matrix', n=obj, ex=True):
+                            matrix = pm.getAttr(attr)
+                        else:
+                            matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0],
+                                      [0.0, 0.0, 0.0, 1.0]]
+                else:
+                    attr = "%s.%s" % (obj, 'matrix')
+                    if pm.attributeQuery('matrix', n=obj, ex=True):
+                        matrix = pm.getAttr(attr)
+                    else:
+                        matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0],
+                                  [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+            else:
+                attr = "%s.%s" % (obj, 'matrix')
+                if pm.attributeQuery('matrix', n=obj, ex=True):
+                    matrix = pm.getAttr(attr)
+                else:
+                    matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0],
+                              [0.0, 0.0, 0.0, 1.0]]
+        else:
+            matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+        return matrix
+    else:
+        return [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+
+
+def get_frame_start():
+    """
+    gets starting frame from render frame range
+    :return:
+    """
+    return int(pm.playbackOptions(query=True, min=True))
+
+
+def get_frame_end():
+    """
+    gets end frame from render frame range
+    :return:
+    """
+    return int(pm.playbackOptions(query=True, max=True))
+
+
+def get_handle_start():
+    """
+    gets the handle before the animation starts
+    :return:
+    """
+    return int(pm.playbackOptions(query=True, animationStartTime=True))
+
+
+def get_handle_end():
+    """
+    gets the handle after the animation ends.
+    :return:
+    """
+    return int(pm.playbackOptions(query=True, animationEndTime=True))
+
+
 
 
 

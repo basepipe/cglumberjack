@@ -16,10 +16,16 @@ class ListWidget(QtWidgets.QListWidget):
 class PublishDialog(LJDialog):
     do_publish = QtCore.Signal()
 
-    def __init__(self, parent=None, path_object=None, verbose=False):
+    def __init__(self, parent=None, path_object=None, verbose=False, cfg=None):
         LJDialog.__init__(self, parent)
         if not path_object:
             return
+        if cfg:
+            self.cfg = cfg
+        else:
+            from cgl.core.config.config import ProjectConfig
+            print(PublishDialog)
+            self.cfg = ProjectConfig(path_object)
         self.do_review = True
         self.setMinimumWidth(300)
         self.setWindowTitle('Publish %s -->> %s' % (path_object.version, path_object.next_major_version().version))

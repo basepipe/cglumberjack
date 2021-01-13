@@ -3,13 +3,13 @@
         "default": {
             "MarkAsPublished": {
                 "label": "MarkAsPublished", 
-                "module": "cgl_tools.ingest.preflights.default.MarkAsPublished", 
+                "module": "cgl_tools.ingest.pre_publish.default.MarkAsPublished",
                 "order": 2, 
                 "required": "True"
             }, 
             "PublishFromIngestDataFrame": {
                 "label": "Publish From Ingest Tool", 
-                "module": "cgl_tools.ingest.preflights.default.PublishFromIngestDataFrame", 
+                "module": "cgl_tools.ingest.pre_publish.default.PublishFromIngestDataFrame",
                 "order": 1, 
                 "required": "True"
             }, 
@@ -18,25 +18,25 @@
         "plate": {
             "CreateHdMovie": {
                 "label": "CreateHdMovie", 
-                "module": "cgl_tools.ingest.preflights.plate.CreateHdMovie", 
+                "module": "cgl_tools.ingest.pre_publish.plate.CreateHdMovie",
                 "order": 2, 
                 "required": "True"
             }, 
             "MarkAsPublished": {
                 "label": "MarkAsPublished", 
-                "module": "cgl_tools.ingest.preflights.plate.MarkAsPublished", 
+                "module": "cgl_tools.ingest.pre_publish.plate.MarkAsPublished",
                 "order": 4, 
                 "required": "True"
             }, 
             "PublishPlate": {
                 "label": "PublishPlate", 
-                "module": "cgl_tools.ingest.preflights.plate.PublishPlate", 
+                "module": "cgl_tools.ingest.pre_publish.plate.PublishPlate",
                 "order": 1, 
                 "required": "True"
             }, 
             "SendToFtrack": {
                 "label": "SendToFtrack", 
-                "module": "cgl_tools.ingest.preflights.plate.SendToFtrack", 
+                "module": "cgl_tools.ingest.pre_publish.plate.SendToFtrack",
                 "order": 3, 
                 "required": "True"
             }, 

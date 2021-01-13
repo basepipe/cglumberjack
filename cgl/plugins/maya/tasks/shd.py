@@ -5,7 +5,7 @@ from cgl.ui.widgets.dialog import InputDialog
 import pymel.core as pm
 import cgl.plugins.maya.utils as utils
 reload(utils)
-import cgl.plugins.maya.lumbermill as lm
+import cgl.plugins.maya.alchemy as lm
 try:
     import pymel.core as pm
     import maya.mel as mel
@@ -17,7 +17,7 @@ class Task(SmartTask):
 
     def __init__(self, path_object=None):
         if not path_object:
-            from cgl.plugins.maya.lumbermill import scene_object
+            from cgl.plugins.maya.alchemy import scene_object
             self.path_object = scene_object()
 
     def build(self):
@@ -34,8 +34,8 @@ class Task(SmartTask):
 
 
 def get_latest_shader(path):
-    shader_object = lm.LumberObject(path).copy(task='shd', context='render', name='shaders',
-                                               latest=True, set_proper_filename=True)
+    shader_object = lm.PathObject(path).copy(task='shd', context='render', name='shaders',
+                                             latest=True, set_proper_filename=True, ext='mb')
     return shader_object.path_root
 
 
@@ -62,11 +62,10 @@ def import_and_attach_shaders_for_references(selected=False):
     else:
         refs = pm.listReferences(refNodes=True)
     # for each reference figure out the shader publish
-    print refs
     if refs:
         for ref in refs:
             if pm.referenceQuery(ref[-1], isLoaded=True):
-                asset_obj = lm.LumberObject(str(ref[-1]))
+                asset_obj = lm.PathObject(str(ref[-1]))
                 if asset_obj.ext == 'abc':
                     try:
                         asset_obj.seq, asset_obj.shot = asset_obj.filename.replace('.abc', '').split('_')
@@ -93,13 +92,11 @@ def import_and_attach_shaders_for_references(selected=False):
                         else:
                             shader_pub = get_latest_shader(ref_path)
                         if os.path.exists(shader_pub):
-                            print 'importing published shader for %s: %s' % (shd_ns, shader_pub)
+                            print('importing published shader for %s: %s' % (shd_ns, shader_pub))
                             pm.importFile(shader_pub, namespace=shd_ns)
                         else:
                             print('No Published Shaders at: %s' % shader_pub)
-                    print 4
                     sg_list = pm.ls(regex='%s.*' % shd_ns, type='shadingEngine')
-                    print sg_list
                     for sg in sg_list:
                         this = pm.PyNode(sg)
                         assigned_to_geo = pm.getAttr('%s.assigned_to' % this)

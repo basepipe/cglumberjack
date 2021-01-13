@@ -1,8 +1,8 @@
 import os
 import pymel.core as pm
 from .smart_task import SmartTask
-from cgl.plugins.maya.lumbermill import LumberObject, scene_object
-from cgl.core.config import app_config
+from cgl.core.path import PathObject
+from cgl.plugins.maya.alchemy import scene_object
 from cgl.ui.widgets.dialog import MagicList, InputDialog, FrameRange
 from cgl.plugins.maya.utils import get_shape_name, load_plugin
 import cgl.plugins.maya.msd as msd
@@ -29,7 +29,8 @@ class Task(SmartTask):
         :param layout_group:
         :return:
         """
-        pass
+        from cgl.plugins.maya.alchemy import reference_file
+        reference_file(filepath=filepath)
 
     def import_latest(self):
         """
@@ -39,19 +40,17 @@ class Task(SmartTask):
         :param ext:
         :return:
         """
-        from cgl.plugins.maya.lumbermill import reference_file
-        this_obj = scene_object().copy(task='cam', context='render',
-                                       user='publish', latest=True, set_proper_filename=True, ext='mb')
-        if os.path.exists(this_obj.path_root):
-            reference_file(filepath=this_obj.path_root)
+        cam_path = get_latest()
+        if os.path.exists(cam_path):
+            self._import(cam_path)
         else:
-            print('Could not find camera at {}'.format(this_obj.path))
+            print('Could not find camera at {}'.format(cam_path))
 
 
-def get_latest(seq, shot, task=TASKNAME, ext='mb'):
-    this_obj = scene_object().copy(task=TASKNAME, seq=seq, shot=shot, context='render',
+def get_latest(ext='mb'):
+    this_obj = scene_object().copy(task='cam', context='render',
                                    user='publish', latest=True, set_proper_filename=True, ext=ext)
-    return this_obj
+    return this_obj.path_root
 
 
 def main_import(filepath):
@@ -87,15 +86,17 @@ class RenameCameraDialog(MagicList):
         self.selected = []
         self.title = title
         self.item_selected.connect(self.on_item_selected)
+        self.button_signal.connect(self.on_button_clicked)
 
     def on_item_selected(self, data):
-        print(data)
+        self.selected = data
 
     def on_button_clicked(self):
         for each in self.selected:
+            each = each[0]
             names = []
             if '|' in each:
-                names = each.split('|')
+                names = each.split('|')[-1]
                 child_name = names[-1]
             else:
                 child_name = each
@@ -113,7 +114,7 @@ class RenameCameraDialog(MagicList):
                 else:
                     new_name = self.rename_it.line_edit.text()
                     print('renaming %s to %s' % (each, new_name))
-                    pm.rename(each, new_name)
+                pm.rename(each, new_name)
         self.close()
 
 

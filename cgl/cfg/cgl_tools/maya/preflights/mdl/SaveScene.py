@@ -1,5 +1,5 @@
 from cgl.plugins.preflight.preflight_check import PreflightCheck
-from cgl.plugins.maya import lumbermill
+from cgl.plugins.maya import alchemy
 
 
 class SaveScene(PreflightCheck):
@@ -8,7 +8,7 @@ class SaveScene(PreflightCheck):
         pass
 
     def run(self):
-        lumbermill.save_file()
+        alchemy.save_file()
         self.pass_check('Current Version Saved, Check Passed')
 
 

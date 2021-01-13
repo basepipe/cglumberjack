@@ -5,15 +5,24 @@ from datetime import datetime
 
 class ScreenCapture(QtWidgets.QDialog):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, path_object=None, output=None):
         """
         Constructor
         """
         super(ScreenCapture, self).__init__(parent)
-
+        self.path_object = path_object
         self.click_position = None
         file_name = datetime.now().strftime('screen_grab_%Y-%m-%d_at_%H.%M.%S.png')
-        self.output_path = os.path.expanduser(r'~/Desktop/%s' % file_name).replace('\\', '/')
+        if not output:
+            self.output_path = os.path.expanduser(r'~/Desktop/%s' % file_name).replace('\\', '/')
+        else:
+            if self.path_object:
+                self.output_path = self.path_object.preview_path
+            else:
+                self.output = output
+        if not os.path.exists(os.path.dirname(self.output_path)):
+            print('Creating missing directories for {}'.format(self.output_path))
+            os.makedirs(os.path.dirname(self.output_path))
         self.rectangle = QtCore.QRect()
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint |
                             QtCore.Qt.CustomizeWindowHint | QtCore.Qt.Tool)
@@ -96,7 +105,8 @@ def capture_area(rect, output_path):
     return output_path
 
 
-def run():
-    temp = ScreenCapture()
+def run(path_object, output='thumb'):
+    temp = ScreenCapture(parent=None, path_object=path_object, output=output)
     temp.exec_()
     return temp.output_path
+

@@ -8,7 +8,7 @@ from cgl.core.utils import read_write, web
 
 
 
-DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
+DEFAULT_ROOT = r"D:\CGLUMBERJACK\COMPANIES"
 DEFAULT_CODE_ROOT = os.path.join(os.path.expanduser("~"), 'PycharmProjects', 'cglumberjack')
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), 'Documents', 'cglumberjack')
 DEFAULT_USER_GLOBALS = os.path.join(DEFAULT_HOME, 'user_globals.json')
@@ -193,7 +193,7 @@ class PathItemWidget(QtWidgets.QWidget):
 
 class ConfigDialog(QtWidgets.QDialog):
 
-    def __init__(self, parent=None, company='', config_dict=None, root=r"C:\CGLUMBERJACK\COMPANIES"):
+    def __init__(self, parent=None, company='', config_dict=None, root=r"D:\CGLUMBERJACK\COMPANIES"):
         QtWidgets.QDialog.__init__(self, parent)
         self.app_config = config_dict
         self.proj_management_label = QtWidgets.QLabel('Project Management')
@@ -874,7 +874,7 @@ class QuickSync(QtWidgets.QDialog):
 
     def set_up_lumbermill(self):
         """
-        checks s3 for the existance of a globals file and pipeline_designer files.
+        checks s3 for the existance of a globals file and alchemists_cookbook files.
         :return:
         """
         if self.download_globals_from_cloud():

@@ -2,26 +2,28 @@ from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 QtWidgets.QHeaderView.setResizeMode = QtWidgets.QHeaderView.setSectionResizeMode
 import re
 import datetime
-from cgl.core.config import app_config, UserConfig
+from cgl.core.config.config import ProjectConfig, paths
 from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.ui.widgets.widgets import AdvComboBox, EmptyStateWidget
 from cgl.ui.widgets.containers.table import LJTableWidget
 from cgl.ui.widgets.containers.menu import LJMenu
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import current_user
-from cgl.core.path import icon_path
-
-CONFIG = app_config()
 
 
 class TimeTracker(LJDialog):
 
-    def __init__(self):
+    def __init__(self, path_object=None, cfg=None):
         LJDialog.__init__(self)
+        if not cfg:
+            print(TimeTracker)
+            self.cfg = ProjectConfig(path_object=path_object)
+        else:
+            self.cfg = cfg
         user = current_user()
         user_info = {}
         try:
-            users = CONFIG['project_management']['ftrack']['users']
+            users = self.cfg.project_config['project_management']['ftrack']['users']
         except KeyError:
             print('No Ftrack User Found - check Ftrack Globals')
             return
@@ -42,7 +44,7 @@ class TimeTracker(LJDialog):
         self.date = self.today.date()
         self.total_hrs = 0
         self.calendar_tool_button = QtWidgets.QToolButton()
-        calendar_icon_path = icon_path('calendar24px.png')
+        calendar_icon_path = self.cfg.icon_path('calendar24px.png')
         self.calendar_tool_button.setIcon(QtGui.QIcon(calendar_icon_path))
         self.calendar_tool_button.setMinimumWidth(24)
         self.calendar_tool_button.setMinimumHeight(24)
@@ -208,7 +210,7 @@ class TimeTracker(LJDialog):
             row = []
             project = log['context']['parent']['project']['name']
             asset = log['context']['parent']['name']
-            task = CONFIG['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][log['context']['type']['name']]
+            task = self.cfg.project_config['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][log['context']['type']['name']]
             hours = log['duration']
             hours = hours/60/60
             bid = log['context']['bid']
@@ -240,7 +242,7 @@ class TimeTracker(LJDialog):
         bid = task_data['bid']
         bid = bid/60/60
         total_hours = ftrack_util.get_total_time(task_data)
-        task_short_name = CONFIG['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][task_data['type']['name']]
+        task_short_name = self.cfg.project_config['project_management']['ftrack']['tasks']['VFX']['long_to_short']['shots'][task_data['type']['name']]
         pos = self.task_table.rowCount()
         self.task_table.insertRow(pos)
         self.task_table.setItem(pos, 0, QtWidgets.QTableWidgetItem(project))
@@ -376,7 +378,7 @@ class MagicList(LJDialog):
         self.button_functions = button_functions
         self.user_buttons = buttons
         self.combo_defaults = combo_box
-        self.root_path = app_config()['paths']['root']
+        self.root_path = paths()['root']
         self.v_layout = QtWidgets.QVBoxLayout(self)
         self.combo_row = QtWidgets.QHBoxLayout(self)
         self.combo_label = QtWidgets.QLabel("<b>%s</b>" % combo_label)
@@ -701,24 +703,25 @@ class PlaylistDialog(InputDialog):
 
 class LoginDialog(LJDialog):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, path_object=None):
         LJDialog.__init__(self, parent)
+        self.cfg = ProjectConfig(path_object=path_object)
         self.parent = parent
-        self.project_management = CONFIG['account_info']['project_management']
+        self.project_management = self.cfg.project_config['account_info']['project_management']
         self.email_line_edit = None
         self.line_edit_dict = {}
         self.login_line_edit = None
         self.button = ''
 
         try:
-            self.user_details = CONFIG['project_management'][self.project_management]['user_details']
+            self.user_details = self.cfg.project_config['project_management'][self.project_management]['user_details']
         except KeyError:
             self.user_details = {'email': '',
                                  'first': '',
                                  'last': '',
                                  'login': ''}
         try:
-            self.user_info = CONFIG['project_management'][self.project_management]['users'][current_user()]
+            self.user_info = self.cfg.project_config['project_management'][self.project_management]['users'][current_user()]
             return
         except KeyError:
             print('No user info found for %s, setting it up' % current_user())
@@ -821,25 +824,29 @@ class LoginDialog(LJDialog):
 
     def save_user_defaults(self):
         import json
-        globals_location = UserConfig().d['globals']
+
         user_info = self.create_user_info_dict()
-        app_config_dict = CONFIG
+        app_config_dict = self.cfg.project_config
         app_config_dict['project_management'][self.project_management]['users'][current_user()] = user_info
-        with open(globals_location, 'w') as fileout:
+        with open(self.cfg.project_config_file, 'w') as fileout:
             json.dump(app_config_dict, fileout, indent=4, sort_keys=True)
         self.accept()
 
-
 class ProjectCreator(LJDialog):
     def __init__(self, parent=None):
-        LJDialog.__init__(self, parent)
+        LJDialog.__init__(self, parent, cfg=None)
         self.setMinimumWidth(1000)
-        proj_man = CONFIG['account_info']['project_management']
-        self.project_management = CONFIG['project_management'][proj_man]
+        if not cfg:
+            print('ProjectConfig')
+            self.cfg = ProjectConfig()
+        else:
+            self.cfg = cfg
+        proj_man = self.cfg.project_config['account_info']['project_management']
+        self.project_management = self.cfg.project_config['project_management'][proj_man]
         self.headers = self.project_management['api']['project_creation_headers']
         self.default_task_type = self.project_management['api']['default_schema']
-        self.project_name_regex = CONFIG['rules']['path_variables']['project']['regex']
-        self.project_name_example = CONFIG['rules']['path_variables']['project']['example']
+        self.project_name_regex = self.cfg.project_config['rules']['path_variables']['project']['regex']
+        self.project_name_example = self.cfg.project_config['rules']['path_variables']['project']['example']
         self.daily_hours = float(self.project_management['api']['daily_hours'])
         layout = QtWidgets.QVBoxLayout(self)
         self.model = None
@@ -1113,7 +1120,7 @@ class ProjectCreator(LJDialog):
                         seq, shot = cell.split('_')
                         row_dict['seq'] = seq
                         row_dict['shot'] = '%04d' % int(shot)
-            path_object = PathObject(row_dict)
+            path_object = PathObject(row_dict, self.cfg)
             CreateProductionData(path_object=path_object, force_pm_creation=True)
         # open up Ftrack to the project page
         d = {'company': self.company_combo.currentText(),
@@ -1121,8 +1128,8 @@ class ProjectCreator(LJDialog):
              'context': 'source',
              'scope': self.scope,
              'seq': '*'}
-        path_object = PathObject(d)
-        show_in_project_management(path_object)
+        path_object = PathObject(d, self.cfg)
+        show_in_project_management(path_object, self.cfg)
         self.accept()
         self.parent().centralWidget().update_location(path_object)
 

@@ -5,15 +5,20 @@ from cgl.plugins.Qt import QtWidgets
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import load_style_sheet
-from cgl.core.project import get_cgl_tools
 from cgl.apps.pipeline.utils import CGLMenu, get_menu_path, get_button_path
+from cgl.core.config.config import ProjectConfig
 
 
 class Designer(LJDialog):
-    def __init__(self, parent=None, type_=None, menu_path=None, pm_tasks=None):
+    def __init__(self, parent=None, type_=None, menu_path=None, pm_tasks=None, cfg=None, path_object=None):
         LJDialog.__init__(self, parent)
         self.type = type_
-        self.cgl_tools = get_cgl_tools()
+        if cfg:
+            self.cfg = cfg
+        else:
+            print('Designer')
+            self.cfg = ProjectConfig(path_object)
+        self.cgl_tools = self.cfg.cookbook_folder
         self.singular = ''
 
         self.menu_path = menu_path
@@ -49,7 +54,7 @@ class Designer(LJDialog):
         self.menu_type_label = QtWidgets.QLabel('Recipe Type:')
         self.menu_type_label.setProperty('class', 'title')
         self.menu_type_combo = QtWidgets.QComboBox()
-        self.menu_type_combo.addItems(['', 'menus', 'context-menus', 'shelves', 'preflights'])
+        self.menu_type_combo.addItems(['', 'menus', 'shelves', 'pre_publish', 'pre_render', 'tasks'])
 
         self.new_software_button = QtWidgets.QPushButton('Add Software')
         self.new_software_button.setProperty('class', 'add_button')
@@ -102,7 +107,7 @@ class Designer(LJDialog):
         if dialog.button == 'Ok':
             import shutil
             self.menus.removeTab(index)
-            menu_folder = os.path.join(get_cgl_tools(), self.software, self.menu_type_combo.currentText(), menu_name)
+            menu_folder = os.path.join(self.cgl_tools, self.software, self.menu_type_combo.currentText(), menu_name)
             print('Removing folder: {}'.format(menu_folder))
             shutil.rmtree(menu_folder)
 
@@ -125,6 +130,12 @@ class Designer(LJDialog):
     def update_menu_path(self):
         self.software = self.software_combo.currentText()
         self.type = self.menu_type_combo.currentText()
+        if self.type == 'tasks':
+            self.add_menu_button.hide()
+            self.delete_menu_button.hide()
+        else:
+            self.add_menu_button.show()
+            self.delete_menu_button.show()
         self.get_singular(self.type)
         if self.type:
             self.menu_path = os.path.join(self.cgl_tools, self.software, '%s.cgl' % self.type)
@@ -139,23 +150,30 @@ class Designer(LJDialog):
             self.singular = 'shelf'
         elif self.type == 'menus':
             self.singular = 'menu'
-        elif self.type == 'preflights':
-            self.singular = 'preflight'
+        elif self.type == 'pre_publish':
+            self.singular = 'pre_publish'
+        elif self.type == 'pre_render':
+            self.singular = 'pre_render'
+        elif self.type == 'tasks':
+            self.singular = 'task'
         elif self.type == 'context-menus':
             self.singular = 'context-menu'
         else:
             self.singular = 'not defined'
 
     def on_add_menu_clicked(self):
-        if self.type == 'preflights' or self.type == 'context-menus':
-            if self.type == 'preflights':
-                singular = 'preflight'
+        if self.type == 'pre_publish' or self.type == 'context-menus' or self.type == 'pre_render':
+            if self.type == 'pre_publish':
+                singular = 'Pre-Publish'
+            elif self.type == 'pre_render':
+                singular = 'Pre-Render'
             elif self.type == 'context-menus':
                 singular = 'Context Menu'
             elif self.type == 'shelves':
                 singular = 'Shelf'
             dialog = InputDialog(title='Add %s' % singular,
-                                 message='Choose Task to Create a %s For\n Or Type to Create Your Own' % singular,
+                                 message='Choose Task to Create a %s Recipe For\n '
+                                         'Or Type to Create Your Own' % singular,
                                  line_edit=False, combo_box_items=self.task_list, regex='[a-zA-Z]',
                                  name_example='Only letters & Numbers Allowed in %s Names' % singular)
             dialog.exec_()
@@ -175,6 +193,25 @@ class Designer(LJDialog):
             if dialog.button == 'Ok':
                 menu_name = dialog.line_edit.text()
                 self.do_add_menu(menu_name)
+        elif self.type == 'tasks':
+            singular = 'Task'
+            dialog = InputDialog(title='Add %s' % singular,
+                                 message='Choose Task to Create a %s Recipe For\n '
+                                         'Or Type to Create Your Own' % singular,
+                                 line_edit=False, combo_box_items=self.task_list, regex='[a-zA-Z]',
+                                 name_example='Only letters & Numbers Allowed in %s Names' % singular)
+            dialog.exec_()
+            if dialog.button == 'Ok':
+                long_name = dialog.combo_box.currentText()
+                task_name = ''
+                if long_name in self.schema['long_to_short']['assets']:
+                    task_name = self.schema['long_to_short']['assets'][long_name]
+                elif long_name in self.schema['long_to_short']['shots']:
+                    task_name = self.schema['long_to_short']['shots'][long_name]
+                else:
+                    task_name = long_name
+                if task_name:
+                    self.do_add_task(task_name)
 
     def do_add_menu(self, menu_name):
         # remove spaces from the end of the name:
@@ -183,9 +220,9 @@ class Designer(LJDialog):
         if ' ' in menu_name:
             menu_name = menu_name.replace(' ', '_')
         cgl_file = self.menu_path
-        menu_folder = get_menu_path(self.software, menu_name, menu_file=False, menu_type=self.type)
+        menu_folder = get_menu_path(self.software, menu_name, menu_file=False, menu_type=self.type, cfg=self.cfg)
         new_menu = CGLMenu(parent=self, software=self.software, menu_name=menu_name, menu=[],
-                           menu_path=cgl_file, menu_type=self.type)
+                           menu_path=cgl_file, menu_type=self.type, cfg=self.cfg)
         index = self.menus.addTab(new_menu, menu_name)
         self.menus.setCurrentIndex(index)
         if not os.path.exists(menu_folder):
@@ -195,7 +232,7 @@ class Designer(LJDialog):
         if self.software == 'blender':
             if self.type == 'menus':
                 from cgl.plugins.blender.utils import create_menu_file
-                create_menu_file(menu_name)
+                create_menu_file(menu_name,self.cfg)
 
     def load_menus(self):
         menu_dict = {}
@@ -203,6 +240,9 @@ class Designer(LJDialog):
         self.title_widget.show()
         self.title_label.setText('%s %s' % (self.software_combo.currentText(), self.type))
         self.software = self.software_combo.currentText()
+        # if self.sender().currentText() == 'tasks':
+        #     self.load_tasks()
+        #     return
         if os.path.exists(self.menu_path):
             menu_dict = self.load_json(self.menu_path)
         if menu_dict:
@@ -211,8 +251,9 @@ class Designer(LJDialog):
                     for i in range(len(menu_dict[self.software])+1):
                         for menu in menu_dict[self.software]:
                             if i == menu_dict[self.software][menu]['order']:
-                                buttons = CGLMenu(parent=self, software=self.software, menu_name=menu, menu=menu_dict[self.software][menu],
-                                                  menu_path=self.menu_path, menu_type=self.type)
+                                buttons = CGLMenu(parent=self, software=self.software, menu_name=menu,
+                                                  menu=menu_dict[self.software][menu],
+                                                  menu_path=self.menu_path, menu_type=self.type, cfg=self.cfg)
                                 buttons.menu_button_save_clicked.connect(self.on_save_clicked)
                                 self.menus.addTab(buttons, menu)
                 elif isinstance(menu_dict[self.software], list):
@@ -221,16 +262,23 @@ class Designer(LJDialog):
                         # buttons = menu['buttons']
                         buttons = CGLMenu(parent=self, software=self.software, menu_name=menu_name,
                                           menu=menu,
-                                          menu_path=self.menu_path, menu_type=self.type)
+                                          menu_path=self.menu_path, menu_type=self.type, cfg=self.cfg)
                         # buttons.menu_button_save_clicked.connect(self.on_save_clicked)
                         self.menus.addTab(buttons, menu_name)
 
             else:
                 print('%s not found in %s' % (self.softwre, self.menu_path))
 
+    def load_tasks(self):
+        ignore = ['__init__.py']
+        tasks_path = self.menu_path.replace('.cgl', '')
+        if os.path.exists(tasks_path):
+            for each in os.listdir(tasks_path):
+                print(each)
+
     def on_new_software_clicked(self):
         dialog = InputDialog(title='Add Software', message='Enter or Choose Software',
-                             combo_box_items=['', 'lumbermill', 'nuke', 'maya'],
+                             combo_box_items=['', 'lumbermill', 'nuke', 'maya', 'blender', 'houdini', 'unreal'],
                              regex='[a-zA-Z0-0]{3,}', name_example='Only letters & Numbers Allowed Software Names')
         dialog.exec_()
         if dialog.button == 'Ok':
@@ -277,7 +325,7 @@ class Designer(LJDialog):
                     split = button_widget.command_line_edit.text().split()
                     print('setting name to module name: %s' % split[-1].split('.run()')[0])
                     button_name = split[-1].split('.run()')[0]
-                if self.type == 'preflights':
+                if self.type == 'pre_publish':
                     button_dict = {
                                         'module': button_widget.command_line_edit.text(),
                                         'label': button_widget.label_line_edit.text(),
@@ -316,6 +364,11 @@ class Designer(LJDialog):
 
     def create_empty_menu(self):
         json_object = {self.software: {}}
+        if self.type == 'tasks':
+            tasks_path = self.menu_path.replace('.cgl', '\\tasks')
+            print(tasks_path)
+            json_object = {self.software: [{'buttons': [], 'name': 'tasks'}]}
+
         self.save_json(self.menu_path, json_object)
 
     @staticmethod
@@ -356,9 +409,9 @@ class Designer(LJDialog):
 if __name__ == "__main__":
     from cgl.ui.startup import do_gui_init
     app = do_gui_init()
-    mw = Designer(type_='preflights')
+    mw = Designer(type_='pre_publish')
     # mw = Designer(type_='menus')
-    mw.setWindowTitle('Preflight Designer')
+    mw.setWindowTitle('Alchemists Cookbook')
     mw.setMinimumWidth(1200)
     mw.setMinimumHeight(500)
     mw.show()

@@ -2,45 +2,41 @@ import logging
 import os
 
 import stringcase
-
 import cgl.core.utils.read_write as read_write
-from cgl.core.path import get_cgl_resources_path
-from cgl.core.project import get_cgl_tools
 
 logger = logging.getLogger('qtutils')
 
-
-def get_menu_path(software, menu_name, menu_file=False, menu_type='menus'):
+def get_menu_path(software, menu_name, menu_file=False, menu_type='menus', cfg = None):
     """
     returns the menu path for a menu with the given name
+    :param cfg:
+    :type cfg:
     :param software: software package to get the menu path for.
     :param menu_name: CamelCase string - all menus created with pipeline designer are CamelCase
     :param menu_file: if True returns a menu path with a menu_name.py file.
-    :param menu_type: menus, preflights, shelves, context-menus
+    :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
     if menu_file:
         if isinstance(menu_name, dict):
             menu_name = menu_name['name']
-        menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name, '%s.py' % menu_name)
+        menu_folder = os.path.join(cfg.cookbook_folder, software, menu_type, menu_name, '%s.py' % menu_name)
     else:
-        menu_folder = os.path.join(get_cgl_tools(), software, menu_type, menu_name)
+        menu_folder = os.path.join(cfg.cookbook_folder, software, menu_type, menu_name)
     return menu_folder
 
-
-def get_button_path(software, menu_name, button_name, menu_type='menus'):
+def get_button_path(software, menu_name, button_name, menu_type='menus',cfg = None):
     """
 
     :param software: software as it appears in pipeline designer.
     :param menu_name: CamelCase menu name
     :param button_name: CamelCase button name
-    :param menu_type: menus, preflights, shelves, context-menus
+    :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
-    menu_folder = get_menu_path(software, menu_name, menu_type=menu_type)
+    menu_folder = get_menu_path(software, menu_name, menu_type=menu_type,cfg= cfg)
     button_path = os.path.join(menu_folder, '%s.py' % button_name)
     return button_path
-
 
 def create_tt(length, tt_object):
     """
@@ -51,14 +47,11 @@ def create_tt(length, tt_object):
     """
     pass
 
-
 def clean_tt(task=None):
     pass
 
-
 def get_current_camera():
     pass
-
 
 def confirm_prompt(title='title', message='message', button='Ok'):
     """
@@ -71,16 +64,13 @@ def confirm_prompt(title='title', message='message', button='Ok'):
     """
     pass
 
-
 def load_plugin(plugin_name):
     pass
-
 
 def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=False):
     pass
 
-
-def create_menu_file(class_name):
+def create_menu_file(class_name,cfg):
     """
     Creates a Menu File on Disk
     :param class_name: name for the class
@@ -89,9 +79,12 @@ def create_menu_file(class_name):
     :return:
     """
     # read in the menu file
-    menu_path = get_menu_path('blender', class_name, menu_file=True)
-    menu_template = os.path.join(get_cgl_resources_path(), 'pipeline_designer',
+    menu_path = get_menu_path('blender', class_name, menu_file=True,cfg = cfg)
+
+    menu_template = os.path.join(cfg.get_cgl_resources_path(), 'alchemists_cookbook',
                                  'blender', 'PanelTemplate.py')
+
+
     menu_lines = read_write.load_text_file(menu_template)
     changed_lines = []
     for l in menu_lines:
@@ -108,8 +101,7 @@ def create_menu_file(class_name):
     # write out the menu file to desired location
     pass
 
-
-def create_button_file(class_name, label, menu_name):
+def create_button_file(class_name, label, menu_name,cfg):
     """
     Creates a Blender Button File on Disk.
     :param class_name: name of the class
@@ -117,8 +109,8 @@ def create_button_file(class_name, label, menu_name):
     :param menu_name: name of the parent menu (CamelCase)
     :return:
     """
-    button_path = get_button_path('blender', menu_name, class_name)
-    button_template = os.path.join(get_cgl_resources_path(), 'pipeline_designer',
+    button_path = get_button_path('blender', menu_name, class_name,cfg)
+    button_template = os.path.join(cfg.get_cgl_resources_path(), 'alchemists_cookbook',
                                    'blender', 'buttonTemplate.py')
     button_lines = read_write.load_text_file(button_template)
     changed_lines = []
@@ -140,15 +132,14 @@ def create_button_file(class_name, label, menu_name):
     read_write.save_text_lines(changed_lines, button_path)
     # Add a row to the Menu File
 
-
-def add_buttons_to_menu(menu_name):
+def add_buttons_to_menu(menu_name, cfg = None):
     """
     adds buttons from a cgl menu config file to a blender menu
     :param menu_class:
     :param button_list:
     :return:
     """
-    menu_file = get_menu_path('blender', menu_name, '%s.py' % menu_name)
+    menu_file = get_menu_path('blender', menu_name, '%s.py' % menu_name,cfg=cfg)
     menu_config = os.path.join(get_cgl_tools(), 'blender', 'menus.cgl')
     menu_object = read_write.load_json(menu_config)
     biggest = get_last_button_number(menu_object, 'blender', menu_name)
@@ -172,12 +163,10 @@ def add_buttons_to_menu(menu_name):
 
         read_write.save_text_lines(new_menu_lines, menu_file)
 
-
 def get_last_button_number(menu_dict, software, menu):
     for m in menu_dict[software]:
         if m['name'] == menu:
             return len(m['buttons'])
-
 
 def get_menu_at(menu_dict, software, menu, i):
     for men in menu_dict[software]:
@@ -186,14 +175,14 @@ def get_menu_at(menu_dict, software, menu, i):
             button_at = men['buttons'][i]
             return button_at['label']
 
-
 def write_layout(outFile=None):
     """
 
     :param outFile:
     :return:
     """
-    from cgl.plugins.blender.lumbermill import scene_object, LumberObject
+    from cgl.plugins.blender.alchemy import scene_object
+    from cgl.core.path import PathObject
     from cgl.core.utils.read_write import save_json
     import bpy
     from pathlib import Path
@@ -225,7 +214,7 @@ def write_layout(outFile=None):
 
                     libraryPath = bpy.path.abspath(collection_library.filepath)
                     filename = Path(bpy.path.abspath(libraryPath)).__str__()
-                    libObject = LumberObject(filename)
+                    libObject = PathObject(filename)
 
                     data[name] = {'name': libObject.asset,
                                   'source_path': libObject.path,
@@ -240,8 +229,8 @@ def write_layout(outFile=None):
 
     return (outFile)
 
-
 def return_linked_library(collection):
+    import bpy
     '''
     retrieves the linked libraries manually
     '''
@@ -253,7 +242,6 @@ def return_linked_library(collection):
         if collection in i.name:
             return (i)
 
-
 def read_layout(outFile=None, linked=False, append=False):
     """
     Reads layout from json file
@@ -262,7 +250,8 @@ def read_layout(outFile=None, linked=False, append=False):
     :param append:
     :return:
     """
-    from cgl.plugins.blender.lumbermill import scene_object, LumberObject, import_file
+    from cgl.plugins.blender.alchemy import scene_object, import_file_old
+    from cgl.core.path import PathObject
     from cgl.core.utils.read_write import load_json
     import bpy
 
@@ -283,20 +272,20 @@ def read_layout(outFile=None, linked=False, append=False):
             transform_data.append(float(value))
 
         pathToFile = os.path.join(scene_object().root, data_path)
-        lumberObject = LumberObject(pathToFile)
+        pathObject = PathObject(pathToFile)
 
-        if lumberObject.filename_base in bpy.data.libraries:
-            lib = bpy.data.libraries[lumberObject.filename]
+        if pathObject.filename_base in bpy.data.libraries:
+            lib = bpy.data.libraries[pathObject.filename]
             bpy.data.batch_remove(ids=([lib]))
-            import_file(lumberObject.path_root, linked=linked, append=append)
+            import_file_old(pathObject.path_root, linked=linked, append=append)
         else:
-            import_file(lumberObject.path_root, linked=linked, append=append)
+            import_file_old(pathObject.path_root, linked=linked, append=append)
 
         if p not in bpy.data.objects:
             obj = bpy.data.objects.new(p, None)
             bpy.context.collection.objects.link(obj)
             obj.instance_type = 'COLLECTION'
-            obj.instance_collection = bpy.data.collections[lumberObject.asset]
+            obj.instance_collection = bpy.data.collections[pathObject.asset]
 
             location = (transform_data[0], transform_data[1], transform_data[2])
             obj.location = location
@@ -323,28 +312,39 @@ def read_layout(outFile=None, linked=False, append=False):
             scale = (transform_data[6], transform_data[7], transform_data[8])
             obj.scale = scale
 
+def rename_materials(selection=None, material_name=None):
+    """
 
-def rename_materials(selection=None):
-    import bpy
-    """
     Sequentially renames  materials from given object name if empty , renamed from selected object
-    :param name:
+    :param selection: name of the selection object
+    :type selection:
+    :param material_name:
+    :type material_name:
     """
+    import bpy
+
     if selection == None:
         selection = bpy.context.selected_objects
 
-        for object in selection:
-            for material_slot in object.material_slots:
-                material_slot.material.name = object.name
-                print(object.name, material_slot.name)
+    if material_name == None:
+        if selection.parent:
+            material_name = selection.parent.name
+        else:
+            material_name = selection.name
+
+    for object in selection:
+        for material_slot in object.material_slots:
+            material_slot.material.name = object.name
+            print(object.name, material_slot.name)
 
     if selection:
         selection = [bpy.data.objects[selection]]
         for object in selection:
             for material_slot in object.material_slots:
-                material_slot.material.name = object.name
+                material_slot.material.name = material_name
                 print(object.name, material_slot.name)
 
+    cleanup_scene_data(bpy.data.materials)
 
 def get_valid_meshes_list(objects):
     valid_objects = []
@@ -355,7 +355,6 @@ def get_valid_meshes_list(objects):
                 valid_objects.append(object)
     return valid_objects
 
-
 def get_materials_from_object(object):
     valid_materials = []
 
@@ -365,21 +364,21 @@ def get_materials_from_object(object):
 
     return (valid_materials)
 
-
 def get_selection(selection=None):
+    from .alchemy import scene_object
+    import bpy
     if selection == None:
         try:
             selection = bpy.context.selected_objects
         except:
-            currentScene = lm.scene_object()
-            assetName = lm.scene_object().shot
+            currentScene = scene_object()
+            assetName = scene_object().shot
             obj_in_collection = bpy.data.collections[assetName].all_objects
 
     if not selection:
         selection = bpy.data.objects
 
     return selection
-
 
 def get_preview_from_texture(inputs, node_tree):
     texture = None
@@ -427,7 +426,6 @@ def get_preview_from_texture(inputs, node_tree):
 
     return preview_color
 
-
 def preview_inputs_from_node_tree(node_tree):
     color_input = None
     transparent = None
@@ -456,7 +454,6 @@ def preview_inputs_from_node_tree(node_tree):
     else:
         returns = (1, 1, 1, 1)
 
-
 def setup_preview_viewport_display(object):
     """
     set up the default viewport display color  diffuse_color on materials
@@ -473,7 +470,6 @@ def setup_preview_viewport_display(object):
         for i in range(0, 3):
             material.diffuse_color[i] = preview_colors[i]
 
-
 def get_materials_dictionary():
     """
     creates a dictionary of the objects and the faces associated with that object
@@ -484,7 +480,7 @@ def get_materials_dictionary():
     materials = {}
 
     for o in bpy.context.selected_objects:
-
+        bpy.ops.object.material_slot_remove_unused()
         # Initialize dictionary of all materials applied to object with empty lists
         # which will contain indices of faces on which these materials are applied
         materialPolys = {ms.material.name: [] for ms in o.material_slots}
@@ -494,13 +490,12 @@ def get_materials_dictionary():
         materials.update({o.name: materialPolys})
     return (materials)
 
-
 def read_materials(path_object=None):
     """
 
     :type path_object: object
     """
-    from cgl.plugins.blender import lumbermill as lm
+    from cgl.plugins.blender import alchemy as alc
     from cgl.core.utils.read_write import load_json
     """
     Reads the materials on the shdr task from defined from a json file
@@ -508,7 +503,7 @@ def read_materials(path_object=None):
     """
     import bpy
     if path_object == None:
-        path_object = lm.scene_object()
+        path_object = alc.scene_object()
 
     shaders = path_object.copy(task='shd', user='publish', set_proper_filename=True).latest_version()
     outFile = shaders.copy(ext='json').path_root
@@ -523,7 +518,7 @@ def read_materials(path_object=None):
         for material in data[obj].keys():
 
             if material not in bpy.data.materials:
-                lm.import_file(shaders.path_root, collection_name=material, type='MATERIAL', linked=False)
+                alc.import_file_old(shaders.path_root, collection_name=material, type='MATERIAL', linked=False)
 
             if material not in object.data.materials:
                 object.data.materials.append(bpy.data.materials[material])
@@ -541,8 +536,7 @@ def read_materials(path_object=None):
             bpy.ops.object.mode_set(mode='OBJECT')
             index += 1
 
-
-def create_task_on_asset(task, path_object=None):
+def create_task_on_asset(task, path_object=None,version_up = False):
     """
     Creates a task on disk based on path object
     :param task:
@@ -551,32 +545,32 @@ def create_task_on_asset(task, path_object=None):
 
     """
 
-    from cgl.plugins.blender import lumbermill as lm
+    from cgl.plugins.blender import alchemy as alc
     if path_object == None:
-        path_object = lm.scene_object()
+        path_object = alc.scene_object()
 
-    newTask = path_object.copy(task=task, version='000.000', user='publish', set_proper_filename=True)
-    print(newTask.path)
+    newTask = path_object.copy(task=task)
+    if version_up:
+        newTask =newTask.new_minor_version_object()
 
     taskFolder = newTask.copy(filename='').path_root
 
-    if not os.path.isdir(taskFolder):
-        os.makedirs(taskFolder)
 
-    else:
-        if os.listdir(taskFolder):
-            print('{} Exists'.format(taskFolder))
-            newTask.next_major_version()
-            newTask = newTask.next_major_version()
-            taskFolder = newTask.copy(filename='').path_root
-            os.makedirs(taskFolder)
-            print(newTask.path)
+    print('{} creating version'.format(taskFolder))
 
-        else:
-            print('{}  is empty, using version {}'.format(taskFolder, newTask.version))
+    print(newTask.path_root)
+
+    sourceFolder = newTask.copy(filename='',context = 'source').path_root
+    renderFolder = newTask.copy(filename='',context = 'render').path_root
+
+    folders = [sourceFolder,renderFolder]
+
+    for f in folders:
+        if not os.path.isdir(f):
+            os.makedirs(f)
+
 
     return newTask
-
 
 def reorder_list(items, arg=''):
     """
@@ -594,19 +588,17 @@ def reorder_list(items, arg=''):
 
     return items
 
-
 def get_formatted_list(element, first_item):
     """
     Formats list for blender search mode
     """
     scene = bpy.types.Scene.scene_enum
 
-    path_object = lm.LumberObject(get_asset_from_name(scene))
+    path_object = PathObject(get_asset_from_name(scene))
     tasks = reorder_list(path_object.glob_project_element(element), arg=first_item)
     value = [(tasks[i], tasks[i], '') for i in range(len(tasks))]
 
     return (value)
-
 
 def unlink_asset(object):
     filepath = None
@@ -635,17 +627,16 @@ def unlink_asset(object):
 
         except AttributeError:
             pass
-        if filepath and lm.PathObject(filepath).type == 'env':
+        if filepath and PathObject(filepath).type == 'env':
             remove_linked_environment_dependencies(libname.library)
 
         bpy.data.batch_remove(ids=(libname, obj))
         remove_unused_libraries()
 
-
 def remove_linked_environment_dependencies(library):
     env = library
     bpy.ops.file.make_paths_absolute()
-    env_path = lm.LumberObject(env.filepath)
+    env_path = PathObject(env.filepath)
     env_layout = env_path.copy(ext='json').path_root
     env_asset_collection = bpy.data.collections['{}_assets'.format(env_path.asset)]
     data = load_json(env_layout)
@@ -662,7 +653,6 @@ def remove_linked_environment_dependencies(library):
         bpy.data.collections.remove(env_asset_collection)
     except KeyError:
         pass
-
 
 def remove_unused_libraries():
     libraries = bpy.data.libraries
@@ -689,7 +679,6 @@ def remove_unused_libraries():
                 bpy.data.batch_remove(ids=(lib,))
     except AttributeError:
         pass
-
 
 def remove_instancers():
     for object in bpy.data.objects:
@@ -722,11 +711,10 @@ def remove_instancers():
                 pass
             remove_unused_libraries()
 
-
 def reparent_linked_environemnt_assets(library):
     env = library
     bpy.ops.file.make_paths_absolute()
-    env_path = lm.LumberObject(env.filepath)
+    env_path = PathObject(env.filepath)
     env_layout = env_path.copy(ext='json').path_root
 
     data = load_json(env_layout)
@@ -749,10 +737,9 @@ def reparent_linked_environemnt_assets(library):
 
             keep_single_user_collection(obj, assetName=assets_collection_name)
 
-
 def keep_single_user_collection(obj, assetName=None):
     if not assetName:
-        assetName = lm.scene_object().shot
+        assetName = alc.scene_object().shot
 
     try:
         bpy.data.collections[assetName].objects.link(obj)
@@ -763,7 +750,6 @@ def keep_single_user_collection(obj, assetName=None):
     for collection in obj.users_collection:
         if collection.name != assetName:
             collection.objects.unlink(obj)
-
 
 def reparent_collections(view_layer):
     for obj in view_layer:
@@ -777,7 +763,7 @@ def reparent_collections(view_layer):
                 print(collection.library)
                 if collection.library:
 
-                    path_object = lm.LumberObject(collection.library.filepath)
+                    path_object = PathObject(collection.library.filepath)
 
                     create_collection(path_object.type)
                     for collection in bpy.data.collections:
@@ -794,7 +780,6 @@ def reparent_collections(view_layer):
         if len(collection.objects) < 1:
             print(collection.name)
             bpy.context.scene.collection.children.unlink(collection)
-
 
 def keep_single_collections(obj, collection_name):
     """
@@ -816,52 +801,74 @@ def keep_single_collections(obj, collection_name):
                 except:
                     pass
 
-
-def create_collection(collection_name: object):
+def create_collection(collection_name, parent=None):
+    import bpy
     """
     creates a colleciton in current scene
     :type collection_name: string
 
     """
-    if type not in bpy.data.collections:
+    if collection_name not in bpy.data.collections:
         bpy.data.collections.new(collection_name)
 
     collection = bpy.data.collections[collection_name]
+
+    if parent == None:
+        parent = bpy.context.scene.collection
+
+    else:
+        parent = bpy.data.collections[parent]
+
     try:
 
-        bpy.context.scene.collection.children.link(collection)
+        parent.children.link(collection)
     except(RuntimeError):
         print('{} collection already in scene'.format(collection_name))
         pass
 
+    return collection
 
-def parent_object(view_layer, collection_name, obj_type):
-    create_collection(collection_name)
+def parent_to_collection(obj, collection_name,replace = False):
+    """
+
+    :param obj: blender object
+    :type obj: bpy.data.object
+    :param collection_name: str
+    :type collection_name: takes in name of the collection
+    """
+    import bpy
     collection = bpy.data.collections[collection_name]
-    for obj in view_layer:
-        if obj.type == obj_type:
-            try:
-                collection.objects.link(obj)
-            except(RuntimeError):
-                print('{} already in light collection'.format(obj.name))
 
-        unlink_collections(obj, type)
+    if not collection:
+        create_collection(collection_name)
 
+    try:
+        collection.objects.link(obj)
+    except RuntimeError:
+        print('{} already in light collection'.format(obj.name))
 
-def return_asset_name(object):
-    if 'proxy' in object.name:
-        name = object.name.split('_')[0]
+    if replace:
+        for col in obj.users_collection:
+            if not col.name == collection_name:
+                try:
+                    col.objects.unlink(obj)
+                    bpy.data.collections.remove(col)
+                except:
+                    pass
+
+def return_asset_name(obj):
+    if 'proxy' in obj.name:
+        name = obj.name.split('_')[0]
         return name
 
     else:
-        if '.' in object.name:
+        if '.' in obj.name:
 
-            name = object.name.split('.')[0]
+            name = obj.name.split('.')[0]
         else:
-            name = object.name
+            name = obj.name
 
         return name
-
 
 def get_lib_from_object(object):
     if not object.isinstancer:
@@ -870,20 +877,21 @@ def get_lib_from_object(object):
 
     return (library)
 
-
 def return_lib_path(library):
+    from pathlib import Path
     print(library)
     library_path = bpy.path.abspath(library.filepath)
     filename = Path(bpy.path.abspath(library_path)).__str__()
     return (filename)
 
-
-def burn_in_image():
+def create_shot_mask_info():
+    import bpy
+    from .alchemy import scene_object
     current = bpy.context.scene
     mSettings = current.render
-    sceneObject = lm.scene_object()
+    sceneObject = scene_object()
     current.name = sceneObject.filename_base
-    scene_info = current.statistics(bpy.context.view_layer)
+    scene_info = bpy.context.scene.statistics(bpy.context.view_layer)
     try:
         mSettings.metadata_input = 'SCENE'
     except AttributeError:
@@ -908,7 +916,293 @@ def burn_in_image():
     mSettings.use_stamp_note = True
     mSettings.stamp_note_text = scene_info
 
-    print('sucess')
+    print('shot_mask_created')
+
+def create_object(name, type=None, parent=None,collection = None):
+    import bpy
+    from cgl.plugins.blender.alchemy import scene_object
+    if collection == None:
+
+        collection = bpy.context.collection.name
+
+    if name in bpy.data.objects:
+        object = bpy.data.objects[name]
+        print('{} object already exists'.format(name))
+    else:
+        object = bpy.data.objects.new(name, object_data=type )
+
+    if parent:
+        object.parent = parent
+    parent_to_collection(collection_name=collection,obj=object)
+
+    return object
+
+
+
+def parent_object(child, parent, keep_transform=True):
+    child.parent = parent
+    if keep_transform:
+        child.matrix_parent_inverse = parent.matrix_world.inverted()
+
+def clear_parent(objects=None):
+    if objects == None:
+        objects = bpy.context.selected_objects
+
+    for obj in objects:
+        parent = obj.parent
+        children = obj.children
+        if children:
+            for child in children:
+                parent_object(child, parent)
+
+def cleanup_scene_data(data_type):
+    """
+    Deletes data that's not currently linked to any object in scene , takes in bpy.data.type ie
+    bpy.data.materials
+    :param data_type:
+    :type data_type:
+    """
+    for child in data_type:
+        if child.users == 0:
+            print(child.name)
+            data_type.remove(child)
+
+def return_object_list(task):
+    import bpy
+
+    object_list = []
+
+    for res in bpy.data.objects[task].children:
+        for materials in res.children:
+            for obj in materials.children:
+                object_list.append(obj)
+    return object_list
+
+def objects_in_scene():
+    import bpy
+    return bpy.data.objects
+
+def get_next_namespace(ns):
+    import re
+    import bpy
+    pattern = '[0-9]+'
+    next = False
+    sel = bpy.data.objects
+    latest = 0
+
+    for i in sel:
+
+        if ns in i.name:
+            num = re.findall(pattern, i.name)
+            if num:
+                if int(num[-1]) > latest:
+                    latest = int(num[-1])
+            next = True
+
+    if next:
+        name = '{}{}'.format(ns, latest + 1)
+        return name
+    else:
+        return ns
+
+def set_framerange(start=1, end=1, current=False):
+    import bpy
+    bpy.context.scene.frame_start = start
+    bpy.context.scene.frame_end = end
+
+    current = bpy.context.scene.frame_current
+    if current:
+        bpy.context.scene.frame_start = current
+        bpy.context.scene.frame_end = current
+
+def render(preview=False, audio=False):
+    """
+    renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
+    :param preview: determines if exr is used or not
+    :param audio: if True renders an  mov and setups the audio settings
+    :return:
+    """
+    previewRenderTypes = ['anim', 'rig', 'mdl', 'lay']
+    file_out = scene_object().render_path.split('#')[0]
+
+    if preview:
+        bpy.context.scene.render.image_settings.file_format = 'JPEG'
+        bpy.context.scene.render.filepath = file_out
+
+        if audio:
+            bpy.context.scene.render.image_settings.file_format = 'FFMPEG'
+            bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
+            bpy.context.scene.render.ffmpeg.audio_codec = 'MP3'
+
+        bpy.ops.render.opengl('INVOKE_DEFAULT', animation=True, view_context=True)
+
+    else:
+        bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR_MULTILAYER'
+        bpy.context.scene.render.filepath = file_out
+        bpy.ops.render.render(animation=True, use_viewport=True)
+
+def get_framerange():
+    import bpy
+    start = bpy.context.scene.frame_start
+    end  = bpy.context.scene.frame_end
+
+    return(start,end)
+
+def scene_elem(elem):
+    import bpy
+    return eval('bpy.data.{}'.format(elem))
+
+def get_object(name, namespace = False):
+    import bpy
+    return bpy.data.objects[name]
+
+
+def set_framerange(start,end):
+    import bpy
+    bpy.context.scene.frame_start = start
+    bpy.context.scene.frame_end =  end
+    bpy.context.scene.frame_current = start
+
+def selection(object=None, clear=False):
+    import bpy
+    if clear:
+
+        for ob in bpy.data.objects:
+            ob.select_set(False)
+
+    if object:
+        object.select_set(True)
+        bpy.context.view_layer.objects.active = object
+
+def current_selection(single = False):
+    import bpy
+    if single:
+        return bpy.context.object
+
+    return  bpy.context.selected_objects
+
+def switch_overlays(visible=False):
+    for window in bpy.context.window_manager.windows:
+        screen = window.screen
+
+        for area in screen.areas:
+            if area.type == 'VIEW_3D':
+                for space in area.spaces:
+                    if space.type == 'VIEW_3D':
+                        space.overlay.show_overlays = visible
+
+def read_matrix(obj, transform_data):
+
+    location = (transform_data[0], transform_data[1], transform_data[2])
+    obj.location = location
+
+    rotation = (transform_data[3], transform_data[4], transform_data[5])
+    obj.rotation_euler = rotation
+
+    scale = (transform_data[6], transform_data[7], transform_data[8])
+    obj.scale = scale
+
+def set_collection_name(obj = None):
+    from .alchemy import scene_object
+    import bpy
+    if scene_object().scope == 'assets':
+        name = scene_object().asset
+    elif scene_object().scope == 'shots':
+        name = scene_object().filename_base
+
+
+    if obj == None:
+        if name in bpy.data.collections:
+            print('collection exist')
+        else:
+            if 'Collection' in bpy.data.collections:
+                bpy.data.collections['Collection'].name = name
+
+            else:
+                print('default Collection not found')
+                bpy.context.collection.name = name
+ 
+
+    else:
+        if scene_object().asset in bpy.data.collections:
+            print('collection exist ')
+        object = bpy.context.object
+        object.users_collection[0].name = name
+
+def rename_collection(current_scene):
+    import bpy
+    if current_scene.scope == 'assets':
+        name = current_scene.asset
+    else:
+        name = current_scene.filename_base
+
+
+    obj = bpy.context.object
+
+    if obj:
+        if current_scene.asset in bpy.data.collections:
+            print('collection exist ')
+        object = bpy.context.object
+        object.users_collection[0].name = name
+
+    else:
+        if current_scene.asset in bpy.data.collections:
+            print('collection exist')
+
+        else:
+            bpy.data.collections['Collection'].name = name
+
+def set_context_view_3d():
+    import bpy
+    for window in bpy.context.window_manager.windows:
+        screen = window.screen
+
+        for area in screen.areas:
+            if area.type == 'VIEW_3D':
+                override = {'window': window, 'screen': screen, 'area': area}
+                bpy.ops.screen.screen_full_area(override)
+
+def get_objects_in_hirarchy(obj, levels=10):
+    import bpy
+
+    hirarchy = []
+
+    def recurse(obj, parent, depth):
+        if depth > levels:
+            return
+        hirarchy.append(obj.name)
+        #print("  " * depth, obj.name)
+        for child in obj.children:
+            recurse(child, obj, depth + 1)
+
+    recurse(obj, obj.parent, 0)
+
+    return hirarchy
+
+def rename_collection(current_scene=None):
+
+    if current_scene is None:
+        current_scene = alc.scene_object()
+
+    if current_scene.scope == 'assets':
+        name = current_scene.asset
+    else:
+        name = current_scene.filename_base
+
+    obj = bpy.context.object
+
+    if obj:
+        if current_scene.asset in bpy.data.collections:
+            print('collection exist ')
+        object = bpy.context.object
+        object.users_collection[0].name = name
+
+    else:
+        if current_scene.asset in bpy.data.collections:
+            print('collection exist')
+
+        else:
+            bpy.data.collections['Collection'].name = name
 
 
 if __name__ == '__main__':
