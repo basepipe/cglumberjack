@@ -20,11 +20,14 @@ def check_syncthing_config():
     """
     from os.path import getmtime
     import cgl.plugins.syncthing.utils as st_utils
-    from cgl.core.config import UserConfig, user_config
+    from cgl.core.config.config import ProjectConfig
+    #from cgl.core.config import UserConfig, user_config
     from cgl.core.utils.general import save_json
-    user_config_path = str(user_config())
+
+    #user_config_path = str(user_config())
+    user_config_path = ProjectConfig.user_config_file
     config_file = st_utils.get_config_path()
-    user_config_dict = UserConfig().d
+    user_config_dict = ProjectConfig.user_config
     time_stamp = getmtime(config_file)
     if 'sync_thing_config_modified' in user_config_dict.keys():
         previous_time_stamp = user_config_dict['sync_thing_config_modified']
