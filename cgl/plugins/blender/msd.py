@@ -358,9 +358,13 @@ def set_matrix(obj, transform_data):
 
 
 def tag_object(objects, tag, value):
-    for obj in objects:
-        obj[tag] = value
+    if type(objects) == list:
 
+        for obj in objects:
+            obj[tag] = value
+
+    else:
+        objects[tag] = value
 
 def switch_layer_visibility(objects = None, tag= 'rig_layer', layer='SECONDARY'):
 

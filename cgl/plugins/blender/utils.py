@@ -1183,6 +1183,10 @@ def rename_collection(current_scene=None):
             bpy.data.collections['Collection'].name = name
 
 
+def delete_object(object_to_delete):
+    import bpy
+    bpy.data.objects.remove(object_to_delete, do_unlink=True)
+
 if __name__ == '__main__':
     # create_menu_file('TomTest', 'Tom Test',
     # r'F:\FSU-CMPA\COMPANIES\_config\cgl_tools\blender\menus\TomTest\TomTest.py')

@@ -217,62 +217,66 @@ def import_file(filepath, namespace=None, collection_name=None):
 
     import bpy
     path_object = PathObject(filepath)
-
-    if filepath.endswith('fbx'):
-        bpy.ops.import_scene.fbx(filepath=filepath)
-        for obj in bpy.context.selected_objects:
-            obj.name = '{}:{}'.format(obj.name, path_object.task)
-
-    if filepath.endswith('abc'):
-        bpy.ops.wm.alembic_import(filepath=filepath)
-
-    elif filepath.endswith('blend'):
-
-        if collection_name == None:
-            collection_name = path_object.asset
-
-        with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
-            # data_to.collections = [c for c in data_from.collections if c == collection_name]
-
-            for c in data_from.collections:
-                if c == collection_name:
-                    print(c)
-                    data_to.collections = [c]
-
-        imported_collection = bpy.data.collections[collection_name]
-
-        scene_collection_name = '{}:{}'.format(path_object.asset,path_object.task)
-
-        bpy.context.scene.collection.children.link(imported_collection)
-
-        if namespace:
-            imported_objects_list = []
-            for each_obj in imported_collection.objects:
-                each_obj.name = '{}:{}'.format(namespace, each_obj.name)
-                imported_objects_list.append(each_obj)
-                #parent_to_collection(each_obj, scene_collection_name)
-            #bpy.data.collections.remove(imported_collection)
-
-        imported_collection.name = scene_collection_name
-    name = '{}:{}'.format(namespace,path_object.task)
-
-    if filepath.endswith('blend') or filepath.endswith('fbx'):
-        imported_object_name = name
-
-    if filepath.endswith('abc'):
-        imported_object_name = bpy.data.objects[path_object.filename_base].name = '{}_{}:{}'.format(path_object.seq,
-                                                                                                    path_object.shot,
-                                                                                                    path_object.task)
-
-    imported_object = bpy.data.objects[imported_object_name]
-    tag_object([imported_object],'source_path', path_object.path)
+    if os.path.isdir(path_object.copy(filename = '').path_root):
 
 
+        if filepath.endswith('fbx'):
+            bpy.ops.import_scene.fbx(filepath=filepath)
+            for obj in bpy.context.selected_objects:
+                obj.name = '{}:{}'.format(obj.name, path_object.task)
+
+        if filepath.endswith('abc'):
+            bpy.ops.wm.alembic_import(filepath=filepath)
+
+        elif filepath.endswith('blend'):
+
+            if collection_name == None:
+                collection_name = path_object.asset
+
+            with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
+                # data_to.collections = [c for c in data_from.collections if c == collection_name]
+
+                for c in data_from.collections:
+                    if c == collection_name:
+                        print(c)
+                        data_to.collections = [c]
+
+            imported_collection = bpy.data.collections[collection_name]
+
+            scene_collection_name = '{}:{}'.format(path_object.asset,path_object.task)
+
+            bpy.context.scene.collection.children.link(imported_collection)
+
+            if namespace:
+                imported_objects_list = []
+                for each_obj in imported_collection.objects:
+                    each_obj.name = '{}:{}'.format(namespace, each_obj.name)
+                    imported_objects_list.append(each_obj)
+                    #parent_to_collection(each_obj, scene_collection_name)
+                #bpy.data.collections.remove(imported_collection)
+
+            imported_collection.name = scene_collection_name
+        name = '{}:{}'.format(namespace,path_object.task)
+
+        if filepath.endswith('blend') or filepath.endswith('fbx'):
+            imported_object_name = name
+
+        if filepath.endswith('abc'):
+            imported_object_name = bpy.data.objects[path_object.filename_base].name = '{}_{}:{}'.format(path_object.seq,
+                                                                                                        path_object.shot,
+                                                                                                        path_object.task)
+
+        imported_object = bpy.data.objects[imported_object_name]
+        tag_object([imported_object],'source_path', path_object.path)
 
 
-    return imported_object
 
 
+        return imported_object
+
+    else:
+        print('NO SUCH FILE')
+        confirm_prompt('ERROR', '{} FILE NOT FOUND'.format(path_object.filename))
 def render(preview=False, audio=False):
     """
     renders the current scene.  Based on the task we can derive what kind of render and specific render settings.

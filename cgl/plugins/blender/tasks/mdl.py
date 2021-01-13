@@ -133,7 +133,7 @@ def create_high_group(materials):
 
 
 def create_mdl_group(res='high'):
-    utils.create_collection('mdl')
+    collection = utils.create_collection('mdl')
 
 
 def create_material_groups(do_high=True, do_mdl=True):
@@ -221,3 +221,17 @@ def read_model_hirarchy(cl=False):
     if cl:
         for obj in eval(hirarchy):
             parent_object(obj[0], None, keep_transform=False)
+
+def get_mdl_group():
+    from ..utils import objects_in_scene
+    from ..alchemy import scene_object
+    for obj in objects_in_scene():
+        if obj.name == '{}:{}':
+
+
+
+def remove_mdl_group():
+    from ..utils import delete_object
+    for obj in get_mdl_objects(group=True):
+        delete_object(obj[0])
+
