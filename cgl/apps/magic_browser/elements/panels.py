@@ -15,7 +15,7 @@ from cgl.core.config.config import ProjectConfig, get_root, copy_config, paths
 class CompanyPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
     user_root = None
-    project_management = 'lumbermill'
+    project_management = 'magic_browser'
 
     def __init__(self, parent=None, path_object=None, search_box=None, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
@@ -59,7 +59,7 @@ class CompanyPanel(QtWidgets.QWidget):
         if dialog.button == 'Ok':
             company = dialog.line_edit.text()
             self.path_object.set_attr(company=company)
-            CreateProductionData(self.path_object, project_management='lumbermill')
+            CreateProductionData(self.path_object, project_management='magic_browser')
             self.load_companies()
 
     def create_company_globals(self, company, proj_management):
@@ -233,7 +233,7 @@ class ProjectPanel(QtWidgets.QWidget):
             if dialog.button == 'Ok':
                 company = dialog.line_edit.text()
                 self.path_object.set_attr(company=company)
-                CreateProductionData(self.path_object, project_management='lumbermill')
+                CreateProductionData(self.path_object, project_management='magic_browser')
                 self.load_companies()
 
     def do_create_project(self, progress_bar, path_object, production_management):
@@ -525,7 +525,7 @@ class ProductionPanel(QtWidgets.QWidget):
             self.assets.assets_radio.setChecked(True)
 
     def on_create_asset(self):
-        from cgl.apps.lumbermill.elements import asset_creator
+        from cgl.apps.magic_browser.elements import asset_creator
         if self.path_object.scope == 'assets':
             task_mode = True
         else:

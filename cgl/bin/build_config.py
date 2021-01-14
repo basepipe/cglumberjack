@@ -1,5 +1,5 @@
 from cgl.plugins.Qt import QtGui, QtWidgets
-from cgl.apps.lumbermill import build_config
+from cgl.apps.magic_browser import build_config
 
 if __name__ == "__main__":
     # from cgl.core.utils import load_style_sheet

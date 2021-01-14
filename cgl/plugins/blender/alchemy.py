@@ -6,7 +6,7 @@ from cgl.core.config.config import  ProjectConfig, user_config, get_root
 from cgl.core.path import PathObject
 from cgl.core.utils.general import create_file_dirs
 from cgl.plugins.blender.main_window import CGLumberjack
-from cgl.apps.lumbermill.main import CGLumberjackWidget
+from cgl.apps.magic_browser.main import CGLumberjackWidget
 from cgl.core.path import PathObject
 
 CONFIG = ProjectConfig().project_config

@@ -64,7 +64,7 @@ class MagicSceneDescription(object):
         sets the scene file as path_root for the msd
         :return:
         """
-        # from cgl.plugins.SOFTWARE.lumbermill import get_scene_file
+        # from cgl.plugins.SOFTWARE.magic_browser import get_scene_file
         # self.scene_file = get_scene_file()
         # use the above code to set this
         pass

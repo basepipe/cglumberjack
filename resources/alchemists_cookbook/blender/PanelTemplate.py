@@ -9,7 +9,7 @@ class PanelTemplate(bpy.types.Panel):
 
     def draw(self, context):
         """
-        in here we'll have all the buttons for the Panel in the order that lumbermill saves them in.
+        in here we'll have all the buttons for the Panel in the order that magic_browser saves them in.
         :param context:
         :return:
         """

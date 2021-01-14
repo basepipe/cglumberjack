@@ -7,7 +7,7 @@ from cgl.core.config.config import ProjectConfig
 
 def get_task_info(path_object, force=False):
     """
-    Gets Task info in a format ready for display in lumbermill
+    Gets Task info in a format ready for display in magic_browser
     :param path_object:
     :param force:
     :return:

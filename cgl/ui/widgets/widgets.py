@@ -943,7 +943,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.proj_management_label = QtWidgets.QLabel('Project Management')
         layout = QtWidgets.QVBoxLayout(self)
         self.proj_management_combo = QtWidgets.QComboBox()
-        self.proj_management_combo.addItems(['lumbermill', 'ftrack', 'shotgun', 'google_docs'])
+        self.proj_management_combo.addItems(['magic_browser', 'ftrack', 'shotgun', 'google_docs'])
         self.red_palette, self.green_palette, self.black_palette = define_palettes()
 
         self.server_label = QtWidgets.QLabel('server url:')
@@ -1024,7 +1024,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.api_user_line_edit.show()
         
     def on_pm_changed(self):
-        if self.proj_management_combo.currentText() == 'lumbermill':
+        if self.proj_management_combo.currentText() == 'magic_browser':
             self.hide_api_info()
         else:
             self.show_api_info()

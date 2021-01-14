@@ -5,7 +5,6 @@ import time
 import nuke
 from cgl.core.utils.general import cgl_execute, write_to_cgl_data
 from cgl.core.path import PathObject, Sequence, CreateProductionData, lj_list_dir
-from cgl.core.config import app_config, UserConfig
 
 CONFIG = app_config()
 PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
@@ -140,7 +139,7 @@ class NukePathObject(PathObject):
                     node_name = s.name()
                     file_name = s['file'].value()
                     dir_ = os.path.dirname(file_name)
-                    CreateProductionData(dir_, project_management='lumbermill')
+                    CreateProductionData(dir_, project_management='magic_browser')
                     sequence = Sequence(file_name)
                     if sequence.is_valid_sequence():
                         file_name = sequence.hash_sequence
@@ -214,7 +213,7 @@ def version_up(write_nodes=True):
     dialog = InputDialog(title='Version Up', message=message)
     dialog.exec_()
     if dialog.button == 'Ok':
-        CreateProductionData(next_minor, project_management='lumbermill')
+        CreateProductionData(next_minor, project_management='magic_browser')
         nuke.scriptSaveAs(next_minor.path_root)
         if write_nodes:
             match_scene_version()
@@ -226,7 +225,7 @@ def get_scene_name():
 
 def create_scene_write_node():
     """
-    This function specifically assumes the current file is in the pipeline and that you want to make a write node for
+    This function specifically assumes the current file is in the cookbook and that you want to make a write node for
     that.  We can get more complicated and tasks from here for sure.
     :return:
     """

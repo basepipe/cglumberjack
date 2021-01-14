@@ -1,6 +1,6 @@
 
 
-print('This module simply sets all the needed env vars for lumbermill after a user_globals.json '
+print('This module simply sets all the needed env vars for magic_browser after a user_globals.json '
       'file and a globals.json file have been craeted')
 
 # app_config()['paths']['code_root'] must be in PYTHONPATH

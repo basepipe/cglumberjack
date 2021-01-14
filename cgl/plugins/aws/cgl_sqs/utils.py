@@ -215,7 +215,7 @@ def folders_shared_message(device_id, device_name, message, **kwargs):
 
 def machine_added_message(device_id, device_name, message, **kwargs):
     """
-    pipeline: sync_thing
+    cookbook: sync_thing
     pipeline_id: 206
     :return:
     """

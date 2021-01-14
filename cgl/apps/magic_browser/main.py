@@ -12,13 +12,13 @@ from cgl.core.config.config import ProjectConfig, check_for_latest_master, updat
 from cgl.core.utils.general import current_user, launch_lumber_watch, save_json
 from cgl.core.config.config import ProjectConfig, paths
 # from cgl.core.config import app_config, UserConfig, user_config
-from cgl.apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
-from cgl.apps.lumbermill.elements.FilesPanel import FilesPanel
+from cgl.apps.magic_browser.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
+from cgl.apps.magic_browser.elements.FilesPanel import FilesPanel
 from cgl.ui.widgets.help import ReportBugDialog, RequestFeatureDialog
 # import cgl.plugins.syncthing.utils as st_utils
 
 try:
-    import apps.lumbermill.elements.IOPanel as IoP
+    import apps.magic_browser.elements.IOPanel as IoP
     DO_IOP = True
 except ImportError:
     IoP = None
@@ -654,7 +654,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def add_task(self, path_object):
         logging.debug(1)
-        from cgl.apps.lumbermill.elements import asset_creator
+        from cgl.apps.magic_browser.elements import asset_creator
         task_mode = True
         dialog = asset_creator.AssetCreator(self, path_dict=path_object.data, task_mode=task_mode, cfg=self.cfg)
         dialog.exec_()
@@ -803,7 +803,7 @@ class CGLumberjack(LJMainWindow):
         request_feature_button = QtWidgets.QAction('Request Feature', self)
         tools_menu = self.menu_bar.addMenu('&Tools')
         self.sync_menu = self.menu_bar.addMenu('&Sync')
-        if self.project_management != 'lumbermill':
+        if self.project_management != 'magic_browser':
             self.proj_man_link = self.two_bar.addAction(proj_man)
         self.login_menu = self.two_bar.addAction(login)
         self.two_bar.addAction(time_tracking)
@@ -902,7 +902,7 @@ class CGLumberjack(LJMainWindow):
         self.set_auto_launch_text()
         self.set_processing_method_text()
         # TODO how do i run this as a background process, or a parallell process?
-        # TODO - how do i grab the pid so i can close this when lumbermill closes potentially?
+        # TODO - how do i grab the pid so i can close this when magic_browser closes potentially?
         if sync_enabled:
             import cgl.plugins.syncthing.utils as st_utils
             try:
@@ -1097,10 +1097,10 @@ class CGLumberjack(LJMainWindow):
     def load_pipeline_designer_menus(self):
         import json
         #
-        menus_json = os.path.join(self.cfg.cookbook_folder, 'lumbermill', 'menus.cgl')
+        menus_json = os.path.join(self.cfg.cookbook_folder, 'magic_browser', 'menus.cgl')
         if os.path.exists(menus_json):
             with open(menus_json, 'r') as stream:
-                self.pd_menus = json.load(stream)['lumbermill']
+                self.pd_menus = json.load(stream)['magic_browser']
                 software_menus = self.order_menus(self.pd_menus)
                 if software_menus:
                     for menu in software_menus:
@@ -1272,7 +1272,7 @@ class CGLumberjack(LJMainWindow):
         logging.debug('settings clicked')
 
     def on_alchemists_cookbook_clicked(self):
-        from cgl.apps.pipeline.designer import Designer
+        from cgl.apps.cookbook.designer import Designer
         self.cfg = ProjectConfig(company=self.company, project=self.project)
         pm = self.cfg.project_config['account_info']['project_management']
         def_schema = self.cfg.project_config['project_management'][pm]['api']['default_schema']

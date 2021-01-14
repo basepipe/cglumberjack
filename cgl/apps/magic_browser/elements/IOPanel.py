@@ -12,7 +12,7 @@ from cgl.ui.widgets.widgets import LJListWidget, EmptyStateWidget
 from cgl.core.config import app_config
 from cgl.core.path import PathObject, icon_path, lj_list_dir, split_sequence_frange, get_file_type
 from cgl.plugins.preflight.main import Preflight
-from cgl.apps.lumbermill.elements.panels import clear_layout
+from cgl.apps.magic_browser.elements.panels import clear_layout
 from cgl.core.config.config import ProjectConfig
 import time
 
@@ -69,7 +69,7 @@ class IOPanel(QtWidgets.QWidget):
             print(IOPanel)
             self.cfg = ProjectConfig(path_object)
         # self.project_management = CONFIG['account_info']['project_management']
-        self.project_management = 'lumbermill'
+        self.project_management = 'magic_browser'
         self.schema = CONFIG['project_management'][self.project_management]['api']['default_schema']
         self.schema_dict = CONFIG['project_management'][self.project_management]['tasks'][self.schema]
         self.path_object_next = None

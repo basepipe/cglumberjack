@@ -1,5 +1,5 @@
 from cgl.plugins.preflight.preflight_check import PreflightCheck
-# from cgl.plugins.blender import lumbermill as lm
+# from cgl.plugins.blender import magic_browser as lm
 # from cgl.plugins.blender import utils
 
 

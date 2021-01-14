@@ -22,7 +22,7 @@ def user_config():
 
 def paths():
     """
-    returns paths to all the software used in the pipeline.
+    returns paths to all the software used in the cookbook.
     :return:
     """
     return user_config()['paths']

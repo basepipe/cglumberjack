@@ -178,4 +178,4 @@ class AsanaJack(object):
             self.client.sections.delete(section_data['gid'])
 
 
-# AsanaJack().create_project('lumbermill nuke')
+# AsanaJack().create_project('magic_browser nuke')

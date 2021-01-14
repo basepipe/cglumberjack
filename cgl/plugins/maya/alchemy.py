@@ -1,7 +1,7 @@
 import os
 import glob
 from cgl.plugins.Qt import QtCore, QtWidgets
-from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
+from cgl.apps.magic_browser.main import CGLumberjack, CGLumberjackWidget
 from cgl.core.utils.general import current_user
 from cgl.ui.widgets.dialog import InputDialog
 import logging

@@ -9,7 +9,7 @@ from cgl.core.path import PathObject, CreateProductionData, lj_list_dir
 from cgl.core.path import replace_illegal_filename_characters, show_in_folder
 from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 from cgl.ui.widgets.containers.model import FilesModel
-from cgl.apps.lumbermill.elements.panels import clear_layout
+from cgl.apps.magic_browser.elements.panels import clear_layout
 
 
 class FilesPanel(QtWidgets.QWidget):
@@ -237,7 +237,7 @@ class FilesPanel(QtWidgets.QWidget):
             if ingest_source_location.endswith(dialog.combo_box.currentText()):
                 CreateProductionData(self.current_location, json=False)
         else:
-            from cgl.apps.lumbermill.elements import asset_creator
+            from cgl.apps.magic_browser.elements import asset_creator
             if 'asset' in self.current_location:
                 task_mode = True
             else:
@@ -443,11 +443,11 @@ class FilesPanel(QtWidgets.QWidget):
             menu_file = os.path.join(self.cfg.cookbook_folder, 'context-menus.cgl')  # TODO - this should probably become part of ProjectConfig()
             if os.path.exists(menu_file):
                 menu_items = load_json(menu_file)
-                if self.task in menu_items['lumbermill']:
-                    for item in menu_items['lumbermill'][self.task]:
+                if self.task in menu_items['magic_browser']:
+                    for item in menu_items['magic_browser'][self.task]:
                         if item != 'order':
-                            button_label = menu_items['lumbermill'][self.task][item]['label']
-                            button_command = menu_items['lumbermill'][self.task][item]['module']
+                            button_label = menu_items['magic_browser'][self.task][item]['label']
+                            button_command = menu_items['magic_browser'][self.task][item]['module']
                             module = button_command.split()[1]
                             try:
                                 loaded_module = __import__(module, globals(), locals(), item, -1)
@@ -529,7 +529,7 @@ class FilesPanel(QtWidgets.QWidget):
             print(1)
             print(self.current_location['task'])
             print(current.path_root)
-            this = Preflight(software='lumbermill', preflight=self.current_location['task'],
+            this = Preflight(software='magic_browser', preflight=self.current_location['task'],
                              path_object=self.current_location, auto_show=False)
             if this.preflight == 'default':
                 print(2)

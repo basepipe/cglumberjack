@@ -36,6 +36,7 @@ class PathObject(object):
         self.company = None
         self.context = None
         self.project = None
+        self.project_msd_path = None
         self.seq = None
         self.shot = None
         self.scope = None
@@ -101,6 +102,8 @@ class PathObject(object):
         self.context_list = []
         self.ext_map = {}
         self.root = get_root()
+        self.msd_path = ''
+        self.relative_msd_path = ''
         try:
             # TODO python 3 doesn't like unicode
             if isinstance(path_object, unicode):
@@ -149,6 +152,45 @@ class PathObject(object):
             self.assigned = self.user
         if not self.priority:
             self.priority = 'medium'
+
+    def set_msd(self):
+        if self.resolution:
+            if self.filename:
+                base = os.path.dirname(self.path_root)
+                rel_base = os.path.dirname(self.path)
+            else:
+                base = self.path_root
+                rel_base = self.path
+            self.msd_path = '%s/%s_%s_%s.%s' % (base, self.seq, self.shot, self.task, 'msd')
+            self.relative_msd_path = '%s/%s_%s_%s.%s' % (rel_base, self.seq, self.shot, self.task, 'msd')
+        else:
+            self.msd_path = ''
+            self.relative_msd_path = ''
+
+    def update_project_msd(self):
+        from cgl.core.utils.general import load_json, save_json
+        if os.path.exists(self.project_msd_path):
+            print(0)
+            msd_dict = load_json(self.project_msd_path)
+            if self.seq not in msd_dict[self.scope].keys():
+                print(1)
+                msd_dict[self.scope][self.seq] = {}
+            if self.shot not in msd_dict[self.scope][self.seq].keys():
+                print(2)
+                msd_dict[self.scope][self.seq][self.shot] = {}
+            print(3)
+            msd_dict[self.scope][self.seq][self.shot][self.task] = self.relative_msd_path
+        else:
+            if self.scope == 'assets':
+                msd_dict = {'shots': {},
+                            'assets': {self.seq: {self.shot: {self.task: self.relative_msd_path}}}
+                            }
+            elif self.scope == 'shots':
+                msd_dict = {'shots': {self.seq: {self.shot: {self.task: self.relative_msd_path}}},
+                            'assets': {},
+                            }
+        print('Saving Project.msd: {}'.format(self.project_msd_path))
+        save_json(self.project_msd_path, msd_dict)
 
     def process_string(self, path_object):
         path_object = path_object.replace('\\', '/')
@@ -416,6 +458,8 @@ class PathObject(object):
             self.path_root = os.path.join(self.root, path_string).replace('\\', '/')
         self.path = path_string
         self.set_command_base()
+        if self.resolution:
+            self.set_msd()
         if self.filename:
             if self.filename != '*':
                 self.set_file_type()
@@ -794,6 +838,8 @@ class PathObject(object):
         """
         self.company_config_path = os.path.join(self.project_config['account_info']['globals_path'], 'globals.json')
         self.project_config_path = os.path.join(self.project_config['account_info']['globals_path'], 'globals.json')
+        self.project_msd_path = os.path.join(self.split_after('project'),
+                                             '{}.msd'.format(self.project)).replace('/source', '/render')
 
     def set_command_base(self):
         """
@@ -826,8 +872,8 @@ class PathObject(object):
                 elif self.proj_management == 'shotgun':
                     prod_data = CreateProductionData(path_object=self, cfg=self.cfg)
                     print('Finished uploading to shotgun')
-                elif self.proj_management == 'lumbermill':
-                    logging.debug('no review process defined for default lumbermill')
+                elif self.proj_management == 'magic_browser':
+                    logging.debug('no review process defined for default magic_browser')
             else:
                 print('No preview file found for uploading: %s' % self.preview_path)
                 return False
@@ -1205,7 +1251,7 @@ class CreateProductionData(object):
 
     def create_project_management_data(self, path_object, project_management, user_login=None, status=None):
 
-        if project_management != 'lumbermill':
+        if project_management != 'magic_browser':
             if path_object.filename or self.force_pm_creation:
                 session = None
                 if self.session:
@@ -1221,7 +1267,7 @@ class CreateProductionData(object):
                                                     user_email=user_login,
                                                     status=status).create_project_management_data()
             else:
-                logging.debug('Creating Paths on Disk, lumbermill will create %s '
+                logging.debug('Creating Paths on Disk, magic_browser will create %s '
                       'versions when you add files' % project_management)
         else:
             logging.debug('Using Lumbermill built in proj management')
@@ -1248,7 +1294,7 @@ class CreateProductionData(object):
 
 class Sequence(object):
     """
-    Class for dealing with "Sequences" of images or files in general as defined within a vfx/animation/games pipeline
+    Class for dealing with "Sequences" of images or files in general as defined within a vfx/animation/games cookbook
     """
     sequence = None
     frame_range = None
@@ -1579,7 +1625,7 @@ def show_in_project_management(path_object, cfg=None):
     :param path_object:
     :return:
     """
-    if path_object.proj_management != 'lumbermill':
+    if path_object.proj_management != 'magic_browser':
         module = "plugins.project_management.%s.main" % path_object.proj_management
         # noinspection PyTypeChecker
         try:
@@ -1630,7 +1676,6 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
     """
     path_object = PathObject(directory)
     if not cfg:
-        print(lj_list_dir)
         cfg = ProjectConfig(path_object)
     ext_map = cfg.project_config['ext_map']
     list_ = os.listdir(directory)
