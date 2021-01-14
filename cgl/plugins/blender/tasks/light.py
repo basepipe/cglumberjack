@@ -20,8 +20,9 @@ class Task(SmartTask):
 
         rename_collection(scene_object())
         camfile = alc.scene_object().copy(task = 'cam')
-        alc.import_task(task='cam',file_path = camfile)
-        alc.import_task(task='lay', import_rigs = False, reference = False,latest = True)
+
+        import_task(task='cam',file_path = camfile)
+        import_task(task='lay', import_rigs = False, reference = False,latest = True)
         import_task(task='anim')
 
 

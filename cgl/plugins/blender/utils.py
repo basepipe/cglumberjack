@@ -978,8 +978,16 @@ def return_object_list(task):
                 object_list.append(obj)
     return object_list
 
-def objects_in_scene():
+def objects_in_scene(string = False):
     import bpy
+
+    list_of_objects = []
+    if string == True:
+        for object in bpy.data.objects:
+            list_of_objects.append(object.name)
+
+        return list_of_objects
+
     return bpy.data.objects
 
 def get_next_namespace(ns):

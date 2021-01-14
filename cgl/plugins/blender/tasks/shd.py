@@ -335,14 +335,23 @@ def material_dictionaries(task='mdl'):
 
 def assign_material_in_hirarchy(shader,asset):
     import bpy
-    from ..utils import get_object,selection
+    from ..alchemy import confirm_prompt
+    from ..utils import get_object,selection, objects_in_scene
     mtl_name = shader.replace('shd', 'mtl')
-
+    failed_materials  = []
     material_name = shader
     SG_path = bpy.data.materials[material_name]
 
-    object = get_object(mtl_name)
 
+
+    if mtl_name not in  objects_in_scene(string=True):
+        confirm_prompt(message="didn't find material group, rig is probably not up to date "
+                               "please fix rig, and export alembic again")
+
+        return
+
+
+    object = get_object(mtl_name)
     for obj in object.children:
         obj.material_slots[0].material = SG_path
 
