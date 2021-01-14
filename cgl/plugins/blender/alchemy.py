@@ -230,7 +230,7 @@ def import_file(filepath, namespace=None, collection_name=None):
         elif filepath.endswith('blend'):
 
             if collection_name == None:
-                collection_name = path_object.asset
+                collection_name = '{}:{}'.format(path_object.asset,path_object.task)
 
             with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
                 # data_to.collections = [c for c in data_from.collections if c == collection_name]
@@ -243,6 +243,9 @@ def import_file(filepath, namespace=None, collection_name=None):
             imported_collection = bpy.data.collections[collection_name]
 
             scene_collection_name = '{}:{}'.format(path_object.asset,path_object.task)
+            from .utils import get_collection
+            if imported_collection.name in bpy.data.collections:
+                get_collection(imported_collection.name).name = '{}:{}'.format(scene_object().task, scene_object().asset)
 
             bpy.context.scene.collection.children.link(imported_collection)
 

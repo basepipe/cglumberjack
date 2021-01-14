@@ -31,6 +31,7 @@ class Task(SmartTask):
         else:
             print('please_create_material_groups')
 
+
         create_material_groups()
 
         bpy.ops.object.fix_collection_name()
@@ -175,14 +176,18 @@ def get_mdl_objects(group='high', namespace=None, groups=False, default_ns=True)
     except KeyError:
         geo_group = utils.get_object(group)
 
-    for mtl in geo_group.children:
-        for obj in mtl.children:
-            mdl_objects.append((obj, mtl.name))
+    if geo_group:
 
-    if groups:
-        return geo_group.children
+        for mtl in geo_group.children:
+            for obj in mtl.children:
+                mdl_objects.append((obj, mtl.name))
+
+        if groups:
+            return geo_group.children
+        else:
+            return mdl_objects
     else:
-        return mdl_objects
+        return None
 
 
 def export_mesh(type='abc'):
@@ -226,12 +231,27 @@ def get_mdl_group():
     from ..utils import objects_in_scene
     from ..alchemy import scene_object
     for obj in objects_in_scene():
-        if obj.name == '{}:{}':
+        if obj.name == '{}:mdl'.format(scene_object().asset):
+            return obj
 
 
 
 def remove_mdl_group():
-    from ..utils import delete_object
-    for obj in get_mdl_objects(group=True):
-        delete_object(obj[0])
+    from ..utils import delete_object, get_objects_in_hirarchy,get_object, get_collection
+    from ..alchemy import scene_object
+    obj_to_delete = []
+    mdl_name = '{}:mdl'.format(scene_object().asset)
 
+
+    if get_mdl_group():
+        for obj in get_objects_in_hirarchy(get_mdl_group()):
+            obj_to_delete.append(obj)
+
+    if obj_to_delete:
+        for obj in obj_to_delete:
+
+            print(obj)
+            delete_object(get_object(obj))
+    mdl_collection =get_collection('mdl',scene_object().asset)
+    if mdl_collection:
+        bpy.data.collections.remove(mdl_collection)

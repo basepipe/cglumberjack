@@ -1052,11 +1052,28 @@ def scene_elem(elem):
     import bpy
     return eval('bpy.data.{}'.format(elem))
 
-def get_object(name, namespace = False):
+def get_object(name, namespace = None):
     import bpy
-    return bpy.data.objects[name]
 
+    if namespace:
+        name = '{}:{}'.format(namespace,name)
 
+    if name in bpy.data.objects:
+        return bpy.data.objects[name]
+
+    else:
+        return None
+
+def get_collection(name, namespace = None):
+    import bpy
+
+    if namespace:
+        name = '{}:{}'.format(namespace,name)
+    if name in bpy.data.collections:
+
+        return bpy.data.collections[name]
+    else:
+        return None
 def set_framerange(start,end):
     import bpy
     bpy.context.scene.frame_start = start

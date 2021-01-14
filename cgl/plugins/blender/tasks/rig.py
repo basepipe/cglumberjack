@@ -17,15 +17,18 @@ class Task(SmartTask):
         """
         from cgl.plugins.blender.utils import create_shot_mask_info , rename_collection
         from cgl.plugins.blender.alchemy import scene_object
+        from cgl.plugins.blender.tasks.mdl import remove_mdl_group
         import bpy
 
         #bpy.ops.object.correct_file_name()
 
 
         #model = alc.scene_object().copy(task='mdl', set_proper_filename=True).latest_version()
-        print('hello we are building rig ')
+        print('Building rig ')
 
+        remove_mdl_group()
         alc.import_task(task='mdl')
+
         #bpy.ops.object.fix_collection_name()
         #assign_rig()
 
