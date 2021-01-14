@@ -230,7 +230,7 @@ def import_file(filepath, namespace=None, collection_name=None):
         elif filepath.endswith('blend'):
 
             if collection_name == None:
-                collection_name = '{}:{}'.format(path_object.asset,path_object.task)
+                collection_name = '{}'.format(path_object.asset)
 
             with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
                 # data_to.collections = [c for c in data_from.collections if c == collection_name]
@@ -239,6 +239,7 @@ def import_file(filepath, namespace=None, collection_name=None):
                     if c == collection_name:
                         print(c)
                         data_to.collections = [c]
+
 
             imported_collection = bpy.data.collections[collection_name]
 
@@ -368,6 +369,8 @@ def export_selected(to_path):
     :param type: type of geo to export according to ext: obj, fbx, abc, usd, blnd
     :return:
     """
+    from .utils import set_context_view_3d
+    set_context_view_3d()
     if to_path.endswith('fbx'):
         bpy.ops.export_scene.fbx(filepath=to_path,
                                  use_selection=True,
@@ -502,7 +505,7 @@ def launch_preflight(task=None, software=None):
     bpy.ops.screen.preflight()
 
 
-def import_task(task=None,file_path=None, reference=False, **kwargs):
+def import_task(task=None,file_path=None, reference=False, ref_node = None,  **kwargs):
     """
     imports the latest version of the specified task into the scene.
     :param task:
@@ -515,7 +518,7 @@ def import_task(task=None,file_path=None, reference=False, **kwargs):
     print(class_)
 
     print(reference)
-    return class_().import_latest(task=task, reference=reference, file_path = file_path,**kwargs)
+    return class_().import_latest(task=task, reference=reference, file_path = file_path,ref_node=ref_node,**kwargs)
 
 
 def build(path_object=None):

@@ -265,7 +265,7 @@ def check_for_latest_master(path_object=None):
     # TODO - need to look at this and make it require cfg if possible.
     # TODO - probably need something in place to check if git is installed.
     cfg = ProjectConfig(path_object)
-    code_root = cfg.project_config['paths']['code_root']
+    code_root = paths()['code_root']
     command = 'git remote show origin'
     os.chdir(code_root)
     output = cgl_execute(command, return_output=True, print_output=False)['printout']
@@ -283,7 +283,7 @@ def check_for_latest_master(path_object=None):
 def update_master(path_object=None, widget=None):
     # TODO - need to look at this and make it require cfg if possible.
     cfg = ProjectConfig(path_object)
-    code_root = cfg.project_config['paths']['code_root']
+    code_root = paths()['code_root']
     command = 'git pull'
     os.chdir(code_root)
     cgl_execute(command)

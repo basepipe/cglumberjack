@@ -201,13 +201,11 @@ def export_mesh(type='abc'):
     selection(clear=True)
 
     for obj in get_mdl_objects():
-        selection(object=obj)
+        selection(object=obj[0])
 
     render_path = scene_object().copy(context='render', ext=type)
 
     export_selected(render_path.path_root)
-    print(render_path.path_root)
-    print(get_rigs_in_scene())
 
 
 def write_model_hirarchy():

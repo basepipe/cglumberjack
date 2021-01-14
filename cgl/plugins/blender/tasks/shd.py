@@ -18,8 +18,13 @@ class Task(SmartTask):
         2. Import latest textures for this asset (and assemble a shader network)
         :return:
         """
-        model_ref = alc.import_task(task='mdl', reference=True)
-        alc.import_task(task='tex', ref_node=model_ref)
+        from .mdl import remove_mdl_group
+        remove_mdl_group()
+        model_ref = alc.import_task(task='mdl', reference=False)
+
+        remove_materials()
+        alc.import_task(task='tex')
+        set_object_materials()
 
     def _import(self, file_path, reference=False,**kwargs):
         from cgl.plugins.blender.alchemy import PathObject
@@ -36,9 +41,16 @@ class Task(SmartTask):
         import_obj = self._import(new_obj.path_root, reference=reference)
         return import_obj
 
-def get_materials_in_scene():
+def get_materials_in_scene(string = False):
     import bpy
-    return bpy.data.materials
+    materials = []
+    if string:
+        for mat in bpy.data.materials:
+            materials.append(mat.name)
+        return materials
+
+    else:
+        return bpy.data.materials
 
 def get_materials_dictionary(objects = None):
     """
@@ -66,7 +78,7 @@ def get_materials_dictionary(objects = None):
 def check_material_count(max_count = 1 ):
 
     dic = get_materials_dictionary()
-    material_count = []
+    assignmaterial_count = []
     for item in dic:
         print(item)
 
@@ -116,7 +128,6 @@ def assign_materials_from_shading_group():
         material_object = get_material(geo.parent.name,create=True)
         assign_material(material_object,geo,clear=True)
 
-
 def remove_materials(material_list = None ,keep_valid_materials =True):
     valid_material_list = get_valid_material_list()
 
@@ -141,9 +152,6 @@ def delete_duplicate_groups(node_name):
         if node.name.split('.')[0] == node_name:
             if not node.name == node_name:
                 bpy.data.node_groups.remove(node)
-
-
-
 
 def fix_material_names(namespace = None):
     from cgl.plugins.blender.tasks import mdl
@@ -245,7 +253,7 @@ def read_face_list(msd):
         index += 1
 
 def get_object_list(materials_dic = None):
-    from cgl.plugins.blender.lumbermill import scene_object
+    from cgl.plugins.blender.alchemy import scene_object
     import bpy
 
     if not materials_dic:
@@ -272,9 +280,10 @@ def get_object_list(materials_dic = None):
 
 def get_material(name, create = False):
     material = None
-    scene_materials = get_materials_in_scene()
+    scene_materials = get_materials_in_scene(string=True)
+
     if name in scene_materials:
-        material = scene_materials[name]
+        material = get_material(name)
 
     if material is None and create:
         material = scene_materials.new(name = name)
@@ -410,9 +419,12 @@ def read_materials_msd(filepath=None, mdl_group= None):
 
     return materials
 
-
 def set_object_materials():
     fix_material_names()
     assign_materials_from_shading_group()
     remove_materials()
+
+def remove_empty_shd_group():
+    print('empty')
+
 

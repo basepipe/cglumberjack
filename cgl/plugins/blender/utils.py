@@ -1053,6 +1053,8 @@ def scene_elem(elem):
     return eval('bpy.data.{}'.format(elem))
 
 def get_object(name, namespace = None):
+    print(5555555555555)
+    print(name)
     import bpy
 
     if namespace:

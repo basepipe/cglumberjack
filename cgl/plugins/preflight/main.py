@@ -9,7 +9,7 @@ from cgl.ui.widgets.widgets import GifWidget
 from .preflight_check import PreflightCheck
 
 
-CONFIG = ProjectConfig.project_config
+CONFIG = ProjectConfig().project_config
 
 
 class PreflightModel(QtCore.QAbstractTableModel):
@@ -28,13 +28,13 @@ class PreflightModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.DecorationRole:
             data = self.data_[row][col]
             if data == 'Untested':
-                ip = ProjectConfig.icon_path('checkbox_unchecked.png')
+                ip = ProjectConfig().icon_path('checkbox_unchecked.png')
                 return QtGui.QIcon(ip)
             if data == 'Pass':
-                ip = ProjectConfig.icon_path('checkbox_checked.png')
+                ip = ProjectConfig().icon_path('checkbox_checked.png')
                 return QtGui.QIcon(ip)
             if data == 'Fail':
-                ip = ProjectConfig.icon_path('checkbox_unchecked.png')
+                ip = ProjectConfig().icon_path('checkbox_unchecked.png')
                 return QtGui.QIcon(ip)
 
     def headerData(self, section, orientation, role):

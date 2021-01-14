@@ -7,10 +7,15 @@ from cgl.ui.widgets.base import LJDialog
 from cgl.core.path import PathObject
 from cgl.core.config.config import ProjectConfig
 from cgl.ui.widgets.widgets import AdvComboBox
-
+from cgl.plugins.blender.alchemy import scene_object
 import bpy
 
+
 DEFAULT_SHADER = 'BSDF_PRINCIPLED'  # TODO - add this in the globals.
+if 'MILVIO' in scene_object().project:
+    DEFAULT_SHADER ='DEFAULTSHADER'
+
+
 DEFAULT_SG = 'OUTPUT_MATERIAL'
 DEFAULT_EXT = 'exr'  # TODO - add this in the globals
 
@@ -19,14 +24,14 @@ class Task(SmartTask):
 
     def __init__(self, path_object=None):
         if not path_object:
-            from cgl.plugins.blender.lumbermill import scene_object
+            from cgl.plugins.blender.alchemy import scene_object
             self.path_object = scene_object()
 
     def build(self):
         print('No Build Script defined for textures, this would belong in Substance Painter most likely')
         pass
 
-    def _import(self, ref_node=None,**kwargs):
+    def _import(self, ref_node=None, **kwargs):
         """
         Main Parent Function for importing textures.  In our context importing textures consists of a
         full usable series of events that leads to a useable baseline of textures.  In this instance that would be:
@@ -38,7 +43,7 @@ class Task(SmartTask):
         """
         main_import(ref_node)
 
-    def import_latest(self, ref_node,**kwargs):
+    def import_latest(self, ref_node, **kwargs):
         self._import(ref_node)
 
 
@@ -67,7 +72,7 @@ for writing/testing code than to include the coe in TaskObject()._import()
 """
 
 
-def main_import(ref_node):
+def main_import(ref_node=None):
     """
     Main Parent Function for importing textures.  In a Production Alchemy Context importing textures consists of a
     full usable series of events that leads to a useable baseline of textures.  In this instance that would be:
@@ -77,15 +82,15 @@ def main_import(ref_node):
     :param ref_node: takes a reference node from maya
     :return:
     """
-    from cgl.plugins.blender.lumbermill import scene_object
-    if not ref_node:
-        ref_node = scene_object().path_root
+    from cgl.plugins.blender.alchemy import scene_object
+    if ref_node is None:
+        ref_node = scene_object().copy(task='tex', latest=True).path_root
     filepath = str(ref_node)
 
     tex_root = get_latest_tex_publish_from_filepath(filepath)
     shading_dict = get_shading_dict(tex_root)  # these should be made at texture publish time.
     for mtl_group in shading_dict:
-        shader = create_and_attach_shader(mtl_group)
+        shader = create_and_attach_shader(mtl_group,name_space=scene_object().asset)
         import_and_connect_textures(shader, shading_dict=shading_dict)
 
 
@@ -97,7 +102,7 @@ def get_latest_tex_publish_from_filepath(filepath):
     """
     # TODO - could i do this from just the asset name alone?
     path_object = PathObject(filepath).copy(task='tex', context='render', user='publish',
-                                              latest=True, resolution='high')
+                                            latest=True, resolution='high')
     return os.path.dirname(path_object.path_root)
 
 
@@ -127,25 +132,29 @@ def get_shading_dict(tex_root):
     """
     udim_pattern = r"[0-9]{4}"
     ignore = ['cgl_info.json']
-    ignore_ext = ['json']
+    ignore_ext = ['json','blend']
     mtl_groups = os.listdir(tex_root)
     dict_ = {}
     for g in mtl_groups:
         if g in ignore:
             mtl_groups.remove(g)
-        else:
-            dict_[g] = {}
-            for tex in os.listdir(os.path.join(tex_root, g)):
-                channel_name = tex.split("_")[-1].split('.')[0]
-                if channel_name not in dict_[g].keys():
-                    dict_[g][channel_name] = {}
-                ext = os.path.splitext(tex)[-1].replace('.', '')
-                if ext not in ignore_ext:
-                    if re.search(udim_pattern, tex):
-                        # new_t = re.sub(udim_pattern, '<UDIM>', tex)
-                        tex = os.path.join(tex_root, g, tex).replace('\\', '/')
-                    dict_[g][channel_name][ext] = tex
-    return dict_
+        for item in ignore_ext:
+            if g.endswith(item):
+                mtl_groups.remove(g)
+
+    for g in mtl_groups:
+        dict_[g] = {}
+        for tex in os.listdir(os.path.join(tex_root, g)):
+            channel_name = tex.split("_")[-1].split('.')[0]
+            if channel_name not in dict_[g].keys():
+                dict_[g][channel_name] = {}
+            ext = os.path.splitext(tex)[-1].replace('.', '')
+            if ext not in ignore_ext:
+                if re.search(udim_pattern, tex):
+                    # new_t = re.sub(udim_pattern, '<UDIM>', tex)
+                    tex = os.path.join(tex_root, g, tex).replace('\\', '/')
+                dict_[g][channel_name][ext] = tex
+        return dict_
 
 
 def create_and_attach_shader(mtl_group, name_space=None, source_shader=DEFAULT_SHADER, source_sg=DEFAULT_SG):
@@ -157,7 +166,8 @@ def create_and_attach_shader(mtl_group, name_space=None, source_shader=DEFAULT_S
     :return:
     """
     print("Found Published Textures for {}: Creating Shader".format(mtl_group))
-    materials = bpy.data.materials
+    from .shd import get_materials_in_scene
+    materials = get_materials_in_scene()
 
     material = '{}_mtl'.format(mtl_group)
     shader_name = "{}_shd".format(mtl_group)
@@ -176,7 +186,7 @@ def create_and_attach_shader(mtl_group, name_space=None, source_shader=DEFAULT_S
     print(shading_group.name)
     # Creates material
 
-    assign_material_to_children(shader_name)
+    assign_material_to_children(shader_name,name_space=name_space)
 
     return shader_name
 
@@ -204,9 +214,12 @@ def get_attr_dict_for_tex_channel(path_object, tex_channel, shader=DEFAULT_SHADE
     :return:
     """
     cfg = ProjectConfig(path_object)
-    shader_config = cfg.shader_config
+    shader_config = cfg.get_shaders_config()['shaders']
     # TODO - this would be the place to allow for people to add to the dictionary.
+    print(20*'_')
+
     for parameter in shader_config[shader]['parameters']:
+
         if tex_channel in shader_config[shader]['parameters'][parameter]['name_match']:
             return shader_config[shader]['parameters'][parameter]
     print("\tshading.json - No shading config match found for texture channel: {}".format(tex_channel))
@@ -325,8 +338,11 @@ def get_node_children(node):
     return list
 
 
-def assign_material_to_children(shader):
+def assign_material_to_children(shader,name_space = None):
+
     mtl_name = shader.replace('shd', 'mtl')
+    if name_space:
+        mtl_name = '{}:{}'.format(name_space,mtl_name)
     SG_path = bpy.data.materials[mtl_name]
     object = bpy.data.objects[mtl_name]
 
@@ -351,7 +367,6 @@ def rename_textures():
                 node.image.name = rename
 
 
-
 def publish_textures():
     """
     This run statement is what's executed when your button is pressed in blender.
@@ -369,19 +384,21 @@ def publish_textures():
 
     os.makedirs(texture_task.path_root)
 
-
-
     os.makedirs(texture_task.copy(context='render').path_root)
 
     for image in bpy.data.images:
-        if '_mtl' in image.name:
+        filename = image.name.split(':')
+        if len(filename) > 1:
+            filename = filename[1]
 
-            out_path = texture_task.copy(filename=image.name, context='render',ext ='exr').path_root
+        if '_mtl' in image.name:
+            out_path = texture_task.copy(filename=filename, context='render', ext='exr').path_root
             image.save_render(out_path)
             image.filepath = out_path
 
     alc.save_file_as(texture_task.copy(context='source', set_proper_filename=True).path_root)
     alc.confirm_prompt(message='textures exported!!! ')
+
 
 def get_image_inputs(node, attribute='Base Color'):
     input = node.inputs[attribute]
@@ -395,6 +412,35 @@ def get_image_inputs(node, attribute='Base Color'):
     except IndexError:
         image_node = input
     return image_node
+
+
+def get_image_from_input():
+    from .shd import get_materials_in_scene
+    shaders = get_materials_in_scene()
+
+    texture_list = []
+    for mat in shaders:
+
+        color = mat.node_tree.nodes['DEFAULTSHADER'].inputs['Color']
+        links = color.links
+
+        if links:
+            for link in links:
+                texture = link.from_node.image
+                name = '{}_BaseColor'.format(mat.name)
+                texture_list.append((texture, name))
+    return (texture_list)
+
+
+def rename_textures(rename):
+    for image in rename:
+        image[0].name = image[1]
+
+
+def fix_texture_names():
+    textures = get_image_from_input()
+    rename_textures(textures)
+
 
 if __name__ == '__main__':
     task = Task()

@@ -48,7 +48,6 @@ class MagicSceneDescription(msd.MagicSceneDescription):
         assets = self.get_assets(ignore=[])
         if assets:
             for a in assets:
-                print(333333)
                 print('________________{}'.format(a))
                 a_desc = self.ad_class(mesh_object=a)
                 print(a_desc.data)
@@ -397,10 +396,13 @@ def add_namespace(obj=None, namespace=None, ):
 
     if namespace == None:
         namespace = scene_object().asset
+    hirarchy = obj=get_object(obj)
 
-    for obj in get_objects_in_hirarchy(obj=get_object(obj)):
-        object = get_object(obj)
-        object.name = '{}:{}'.format(namespace, object.name)
+    for item in get_objects_in_hirarchy(hirarchy):
+        object = get_object(item)
+        if ':' not in object.name:
+            object.name = '{}:{}'.format(namespace, object.name)
+
 
 
 def remove_namespace(obj = None,namespace=None):

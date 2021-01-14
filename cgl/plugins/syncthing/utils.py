@@ -918,6 +918,8 @@ if __name__ == "__main__":
     # process_pending_devices()
     # print(get_all_devices_from_config())
     # print(get_my_device_info()['name'])
-    from cgl.core.utils.general import launch_lumber_watch
-    launch_lumber_watch()
-
+    #from cgl.core.utils.general import launch_lumber_watch
+    #launch_lumber_watch()
+    #from cgl.plugins.google.sheets import get_sheets_authentication
+    #get_sheets_authentication()
+    setup_workstation()
