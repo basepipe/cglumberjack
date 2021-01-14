@@ -262,6 +262,7 @@ def copy_config(from_company, from_project, to_company, to_project):
 
 
 def check_for_latest_master(path_object=None):
+    from cgl.core.utils.general import cgl_execute
     # TODO - need to look at this and make it require cfg if possible.
     # TODO - probably need something in place to check if git is installed.
     cfg = ProjectConfig(path_object)
