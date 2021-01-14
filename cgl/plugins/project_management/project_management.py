@@ -3,11 +3,12 @@ import logging
 # import datetime
 # import os
 # import json
-from cgl.core.config import app_config, UserConfig
+#from cgl.core.config import app_config, UserConfig
+from cgl.core.config.config import ProjectConfig
 from cgl.core.utils.general import current_user
 # from cgl.core.path import create_previews
 
-CONFIG = app_config()
+CONFIG = ProjectConfig().project_config
 
 
 class ProjectManagementData(object):
@@ -279,8 +280,9 @@ class ProjectManagementData(object):
         :param status: 
         :return: 
         """
+        from cgl.core.config.config import ProjectConfig
         if self.user_info[current_user()]['login'] == self.user_email:
-            my_tasks = UserConfig().d['my_tasks']
+            my_tasks = ProjectConfig().user_config['my_tasks']
             if self.path_object.company not in my_tasks:
                 my_tasks[self.path_object.company] = {}
             if self.path_object.project not in my_tasks[self.path_object.company]:
@@ -491,6 +493,8 @@ def find_user_assignments(path_object, user_email, force=False):
             api_user = CONFIG['project_management']['ftrack']['api']['api_user']
             schema = CONFIG['project_management']['ftrack']['api']['default_schema']
             long_to_short = CONFIG['project_management']['ftrack']['tasks'][schema]['long_to_short']
+            print('_5' * 10)
+            print(server_url, api_key, api_user)
             session = ftrack_api.Session(server_url=server_url, api_key=api_key, api_user=api_user)
             project_name = project
             user = user_email
@@ -537,7 +541,5 @@ def find_user_assignments(path_object, user_email, force=False):
 
 if __name__ == "__main__":
     this = ProjectManagementData()
-    this.create_project_management_data()
-    this.ftrack.commit()
-
-
+    #this.create_project_management_data()
+    #this.ftrack.commit()
