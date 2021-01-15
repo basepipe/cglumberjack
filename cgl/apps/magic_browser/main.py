@@ -8,7 +8,8 @@ from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
-from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master, paths, get_user_config_file
+from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master, paths,\
+    get_user_config_file, get_root
 from cgl.core.utils.general import current_user, launch_lumber_watch, save_json
 from cgl.core.config.config import ProjectConfig, paths
 # from cgl.core.config import app_config, UserConfig, user_config
@@ -65,7 +66,7 @@ class PathWidget(QtWidgets.QFrame):
 
     def __init__(self, parent=None, path_object=None, cfg=None):
         QtWidgets.QFrame.__init__(self, parent)
-        if path_object:
+        if path_object.path_root:
             self.path_object = cglpath.PathObject(path_object, cfg)
             self.path_root = self.path_object.path_root
         else:
@@ -231,9 +232,10 @@ class NavigationWidget(QtWidgets.QFrame):
         return self.current_location_line_edit.text()
 
     def set_text(self, text):
-        self.current_location_line_edit.setText(text.replace('\\', '/'))
-        if self.current_location_line_edit.text():
-            self.path_object = cglpath.PathObject(self.current_location_line_edit.text())
+        if text:
+            self.current_location_line_edit.setText(text.replace('\\', '/'))
+            if self.current_location_line_edit.text():
+                self.path_object = cglpath.PathObject(self.current_location_line_edit.text())
 
     def show_company(self):
         self.companies_button.show()
@@ -411,7 +413,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.company = company
         self.project_management = project_management
         self.root = paths()['root']  # Company Specific
-        self.user_root = self.cfg.project_config['cg_lumberjack_dir']
         self.context = 'source'
         self.path_object = None
         self.panel = None
@@ -481,7 +482,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.progress_bar.hide()
         # self.nav_widget.update_buttons()
         self.path_widget.update_path(path_object=self.path_object)
-
         self.nav_widget.location_changed.connect(self.update_location)
         self.nav_widget.refresh_button_clicked.connect(self.update_location_to_latest)
         self.nav_widget.my_tasks_clicked.connect(self.show_my_tasks)
@@ -743,6 +743,8 @@ class CGLumberjack(LJMainWindow):
         if cfg:
             print('cfg provided')
             self.cfg = cfg
+            print(self.cfg.user_config_file)
+            print(self.cfg.project_config_file)
         else:
             print('Dont know company and project')
             self.cfg = ProjectConfig()  # we don't know the company or project at this stage.
@@ -770,6 +772,7 @@ class CGLumberjack(LJMainWindow):
         self.pd_menus = {}
         self.menu_dict = {}
         self.menus = {}
+        self.previous_path = os.path.join(get_root(), '*')
         self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
                                                  user_email=self.user_info,
                                                  company=self.company,

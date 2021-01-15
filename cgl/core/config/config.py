@@ -66,9 +66,9 @@ class ProjectConfig(object):
 
     def set_globals_path(self):
         try:
-            self.root_folder = self.user_config['root'][self.company]
+            self.root_folder = self.user_config['paths']['root']
         except KeyError:
-            self.root_folder = self.user_config['root']['master']
+            self.root_folder = self.user_config['paths']['root']
 
         self.master_globals_root = os.path.join(self.root_folder, 'master', 'config', 'master')
         try:
@@ -297,11 +297,7 @@ def get_root(project='master'):
     :return:
     """
     user_conf = user_config()
-    if project in user_conf['root'].keys():
-        return user_conf['root'][project].replace('\\', '/')
-    else:
-        return user_conf['root']['master'].replace('\\', '/')
-    return
+    return user_conf['paths']['root'].replace('\\', '/')
 
 
 if __name__ == '__main__':

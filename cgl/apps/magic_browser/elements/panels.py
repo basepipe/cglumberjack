@@ -64,11 +64,12 @@ class CompanyPanel(QtWidgets.QWidget):
 
     def create_company_globals(self, company, proj_management):
         logging.debug('Creating Company Globals %s' % company)
-        dir_ = os.path.join(self.user_root, 'companies', company)
-        if not os.path.exists(dir_):
-            logging.debug('%s doesnt exist, making it' % dir_)
-            os.makedirs(dir_)
-            app_config(company=company, proj_management=proj_management)
+        print('this function must be re-written')
+        # dir_ = os.path.join(self.user_root, 'companies', company)
+        # if not os.path.exists(dir_):
+        #     logging.debug('%s doesnt exist, making it' % dir_)
+        #     os.makedirs(dir_)
+        #     app_config(company=company, proj_management=proj_management)
             # set the config stuff according to what's up
 
     def check_default_company_globals(self):
@@ -119,7 +120,7 @@ class ProjectPanel(QtWidgets.QWidget):
         self.project_management = self.cfg.project_config['account_info']['project_management']
         self.user_email = self.cfg.project_config['project_management'][self.project_management]['users'][current_user()]
         self.root = paths()['root']  # Company Specific
-        self.user_root = self.cfg.project_config['cg_lumberjack_dir']
+        self.user_root = self.cfg.cookbook_folder
         self.left_column_visibility = True
         self.title = title
         # Create the Left Panel

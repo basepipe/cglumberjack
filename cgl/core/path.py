@@ -94,7 +94,6 @@ class PathObject(object):
         self.name = None
         self.project_config = {}
         self.project_config_path = None
-        self.company_config_path = None
         self.proj_management = None
         self.project_padding = None
         self.processing_method = 'local'
@@ -105,7 +104,6 @@ class PathObject(object):
         self.msd_path = ''
         self.relative_msd_path = ''
         try:
-            # TODO python 3 doesn't like unicode
             if isinstance(path_object, unicode):
                 path_object = str(path_object)
         except NameError:
@@ -170,17 +168,15 @@ class PathObject(object):
     def update_project_msd(self):
         from cgl.core.utils.general import load_json, save_json
         if os.path.exists(self.project_msd_path):
-            print(0)
             msd_dict = load_json(self.project_msd_path)
             if self.seq not in msd_dict[self.scope].keys():
-                print(1)
                 msd_dict[self.scope][self.seq] = {}
             if self.shot not in msd_dict[self.scope][self.seq].keys():
-                print(2)
                 msd_dict[self.scope][self.seq][self.shot] = {}
-            print(3)
             msd_dict[self.scope][self.seq][self.shot][self.task] = self.relative_msd_path
+            print("updating {} with {}".format(self.shot, self.relative_msd_path))
         else:
+            print("updating {} with {}".format(self.shot, self.relative_msd_path))
             if self.scope == 'assets':
                 msd_dict = {'shots': {},
                             'assets': {self.seq: {self.shot: {self.task: self.relative_msd_path}}}
@@ -189,10 +185,14 @@ class PathObject(object):
                 msd_dict = {'shots': {self.seq: {self.shot: {self.task: self.relative_msd_path}}},
                             'assets': {},
                             }
+
         print('Saving Project.msd: {}'.format(self.project_msd_path))
         save_json(self.project_msd_path, msd_dict)
 
     def process_string(self, path_object):
+        if self.root not in path_object:
+            print('Could not find root {} in {}'.format(self.root, path_object))
+            return
         path_object = path_object.replace('\\', '/')
         self.get_company(path_object)
         self.unpack_path(path_object)
@@ -234,7 +234,6 @@ class PathObject(object):
             self.set_attr(major_version=major_version.replace('.', ''))
             self.set_attr(minor_version=minor_version.replace('.', ''))
         self.set_shotname()
-
 
     def get_last_attr(self):
         current_ = 'company'
@@ -366,7 +365,7 @@ class PathObject(object):
                     return self.template
                 except KeyError:
                     logging.debug("Config ERROR: Can't find either %s or %s within app config 'templates'"
-                                 % (self.scope, self.context))
+                                  % (self.scope, self.context))
                     return
             else:
                 self.template = ['company', 'context', 'project', 'scope']
@@ -419,7 +418,7 @@ class PathObject(object):
         if not self.type:
             self.set_attr(type=self.seq, do_set_path=False)
         if self.user:
-            del path_parts[0:split_at+1]
+            del path_parts[0:split_at + 1]
             self.unpack_version(path_parts)
         if self.version:
             major_version, minor_version = self.version.split('.')
@@ -607,8 +606,12 @@ class PathObject(object):
         :return:
         """
         value = self.data[attr]
-        split_after_thing = os.path.join(self.path_root.split(value)[0], value)
-        return os.path.join(self.path_root.split(value)[0], value).replace('\\', '/')
+        if value:
+            split_after_thing = os.path.join(self.path_root.split(value)[0], value)
+            return os.path.join(self.path_root.split(value)[0], value).replace('\\', '/')
+        else:
+            print('Attr: {} does not exist'.format(attr))
+            return self.path_root
 
     def eliminate_wild_cards(self):
         """
@@ -683,7 +686,7 @@ class PathObject(object):
         pub_major = self.latest_version(publish_=True).major_version
         if int(major) < int(pub_major):
             major = pub_major
-        next_major = '%03d' % (int(major)+1)
+        next_major = '%03d' % (int(major) + 1)
         return '%s.%s' % (next_major, '000')
 
     def next_major_version(self):
@@ -836,8 +839,7 @@ class PathObject(object):
         sets the .company_config and .project_config values
         :return:
         """
-        self.company_config_path = os.path.join(self.project_config['account_info']['globals_path'], 'globals.json')
-        self.project_config_path = os.path.join(self.project_config['account_info']['globals_path'], 'globals.json')
+        self.project_config_path = self.cfg.project_config_file
         self.project_msd_path = os.path.join(self.split_after('project'),
                                              '{}.msd'.format(self.project)).replace('/source', '/render')
 
@@ -880,7 +882,7 @@ class PathObject(object):
 
     def make_thumbnail(self, job_id=None, new_window=False, type_='movie'):
         from cgl.core import convert
-        #TODO make this smart enough to know based off the self.thumb_path
+        # TODO make this smart enough to know based off the self.thumb_path
         if os.path.exists(self.preview_path):
             if type_ == 'movie':
                 logging.debug('Creating Thumbnail %s' % self.thumb_path)
@@ -890,7 +892,7 @@ class PathObject(object):
                                                         processing_method=PROCESSING_METHOD, new_window=new_window)
                 return thumb_info
 
-    def make_preview(self, job_id=None, new_window=False ):
+    def make_preview(self, job_id=None, new_window=False):
         """
         Creates web optimized preview of PathObject.  For movies and image sequences it's a 1920x1080 quicktime h264,
         for images it's a jpeg within the boundaries of 1920x1080
@@ -1268,7 +1270,7 @@ class CreateProductionData(object):
                                                     status=status).create_project_management_data()
             else:
                 logging.debug('Creating Paths on Disk, magic_browser will create %s '
-                      'versions when you add files' % project_management)
+                              'versions when you add files' % project_management)
         else:
             logging.debug('Using Lumbermill built in proj management')
 
@@ -1319,7 +1321,6 @@ class Sequence(object):
         self.padding = padding
         self.set_frange()
         self.set_sequence_strings()
-
 
         # self.print_info()
 
@@ -1444,15 +1445,13 @@ class Sequence(object):
             self.start_frame = sframe
             self.end_frame = eframe
             self.padding = len(self.start_frame)
-            self.hash = '#'*self.padding
+            self.hash = '#' * self.padding
             if self.padding < 10:
-                self.num = '%0'+str(self.padding)+'d'
+                self.num = '%0' + str(self.padding) + 'd'
             else:
-                self.num = '%'+str(self.padding)+'d'
+                self.num = '%' + str(self.padding) + 'd'
             mid_frame = int((int(eframe) - int(sframe)) / 2) + int(sframe)
             self.middle_frame = self.int_as_padded_frame(mid_frame, self.padding)
-
-
 
     @staticmethod
     def int_as_padded_frame(number, padding=None):
@@ -1599,7 +1598,7 @@ def find_latest_publish_objects(folder, source=True, render=False):
             size = get_folder_size(l_object.path_root)
             total_size += size
     logging.debug('%s %s Total Size of Latest Publishes\n\t%s' % (path_object.seq, path_object.shot,
-                                                          print_file_size(total_size, do_print=False)))
+                                                                  print_file_size(total_size, do_print=False)))
     return sync_objects
 
 
@@ -1852,6 +1851,3 @@ if __name__ == '__main__':
                       'scope': '*'}
     po = PathObject(file_dict_test)
     print(po.path_root)
-
-
-

@@ -34,6 +34,6 @@ class Task(SmartTask):
 
 
 if __name__ == '__main__':
-    company = 'VFX'
+    company = 'fsu_animation'
     project = '02BTH_2021_Kish'
     Task().create_base_msd(company, project)

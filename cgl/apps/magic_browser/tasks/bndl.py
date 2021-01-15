@@ -2,7 +2,7 @@ import os
 from cgl.core.path import PathObject
 from cgl.apps.magic_browser.tasks.smart_task import SmartTask
 from cgl.core.utils.general import load_json, save_json
-
+import time
 
 class Task(SmartTask):
     """
@@ -46,6 +46,7 @@ class Task(SmartTask):
                         save_json(msd.msd_path, temp_dict)
                 else:
                     print('Found {}'.format(msd.msd_path))
+                    time.sleep(1)
                     msd.update_project_msd()
                     pass
                     """
@@ -55,6 +56,6 @@ class Task(SmartTask):
 
 
 if __name__ == '__main__':
-    company = 'VFX'
+    company = 'fsu_animation'
     project = '02BTH_2021_Kish'
     Task().create_base_msd(company, project)
