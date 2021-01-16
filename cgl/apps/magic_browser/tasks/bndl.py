@@ -43,11 +43,13 @@ class Task(SmartTask):
                             temp_dict[key]['category'] = category
                             temp_dict[key]['msd_path'] = msd_path
                             temp_dict[key]['task'] = task
+                            temp_dict[key]['transform'] = {'matrix': json_dict[key]['transform']}
                         save_json(msd.msd_path, temp_dict)
+                        msd.update_project_msd()
                 else:
                     print('Found {}'.format(msd.msd_path))
-                    time.sleep(1)
-                    msd.update_project_msd()
+                    # os.remove(msd.msd_path)
+
                     pass
                     """
 
@@ -56,6 +58,6 @@ class Task(SmartTask):
 
 
 if __name__ == '__main__':
-    company = 'fsu_animation'
+    company = 'VFX'
     project = '02BTH_2021_Kish'
     Task().create_base_msd(company, project)

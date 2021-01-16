@@ -154,11 +154,11 @@ class PathObject(object):
     def set_msd(self):
         if self.resolution:
             if self.filename:
-                base = os.path.dirname(self.path_root)
-                rel_base = os.path.dirname(self.path)
+                base = os.path.dirname(self.path_root).replace('source', 'render')
+                rel_base = os.path.dirname(self.path).replace('source', 'render')
             else:
-                base = self.path_root
-                rel_base = self.path
+                base = self.path_root.replace('source', 'render')
+                rel_base = self.path.replace('source', 'render')
             self.msd_path = '%s/%s_%s_%s.%s' % (base, self.seq, self.shot, self.task, 'msd')
             self.relative_msd_path = '%s/%s_%s_%s.%s' % (rel_base, self.seq, self.shot, self.task, 'msd')
         else:
