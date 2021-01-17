@@ -1,11 +1,16 @@
-from .smart_task import SmartTask
+import cgl.plugins.maya.tasks.smart_task as smart_task
+reload(smart_task)
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.path import PathObject
+from cgl.core.utils.general import save_json
+from cgl.plugins.maya.alchemy import scene_object
 import pymel.core as pm
 import maya.cmds as cmds
+import glob
+import os
 
 
-class Task(SmartTask):
+class Task(smart_task.SmartTask):
 
     def __init__(self, path_object=None):
         if not path_object:
@@ -20,6 +25,40 @@ class Task(SmartTask):
             pass
         else:
             create_material_groups()
+
+    def get_msd_info(self, mdl):
+        """
+        returns the msd dict for the given task.
+        :return:
+        """
+
+        dict_ = {}
+        meshes = []
+        groups = get_mtl_groups(mdl)
+        so = scene_object()
+        if groups:
+            for child in groups:
+                clean_name = str(child)
+                meshes.append(clean_name)
+        dict_['attrs'] = {'mtl_groups': meshes}
+        dict_['source_file'] = so.path
+        # find all the model exports:
+        render_object = so.copy(context='render', set_proper_filename=True, ext='*')
+        print(render_object.path_root)
+        files = glob.glob(render_object.path_root)
+        if files:
+            for f in files:
+                file_, ext_ = os.path.splitext(f)
+                dict_['attrs'][ext_] = PathObject(f).path
+        return dict_
+
+
+def get_mtl_groups(mdl, res='high'):
+    sel = '{}|{}'.format(mdl, res)
+    mtl_groups = pm.listRelatives(sel, children=True)
+    return mtl_groups
+
+
 
 
 def create_high_group(materials):

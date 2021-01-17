@@ -18,6 +18,7 @@ SEQ_SPLIT = re.compile("\\#{4,}")
 SEQ2_SPLIT = re.compile("[%0-9]{2,}d")
 SEQ = re.compile('[0-9]{3,}-[0-9]{3,}')
 CGL_SEQ_TEST = re.compile('.+#+.+\s[0-9]+-[0-9]+$')
+PROCESSING_METHOD = user_config()['methodology']
 
 
 class PathObject(object):
@@ -165,6 +166,41 @@ class PathObject(object):
             self.msd_path = ''
             self.relative_msd_path = ''
 
+    def save_msd(self, msd_dict):
+        print('Saving msd: {}'.format(self.msd_path))
+        save_json(self.msd_path, msd_dict)
+        self.update_project_msd()
+        self.update_test_project_msd(attr='msd')
+
+    def update_test_project_msd(self, attr='msd'):
+        project_msd_file = r'Z:\Projects\VFX\render\02BTH_2021_Kish\test_project_msd.msd'
+        if os.path.exists(project_msd_file):
+            msd_dict = load_json(self.project_msd_path)
+            if attr == 'msd':
+                if user == 'publish':
+                    msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['render'][
+                        'msd'] = self.relative_msd_path
+                else:
+                    msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['render'][
+                        'msd'] = self.relative_msd_path
+            if attr == 'preview':
+                if user == 'publish':
+                    if os.path.exists(self.preview_path):
+                        msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['source'][
+                            'preview_file'] = self.preview_path
+                    if os.path.exists(self.thumb_path):
+                        msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['source'][
+                            'thumb_file'] = self.thumb_path
+                else:
+                    if os.path.exists(self.preview_path):
+                        msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['source'][
+                            'preview_file'] = self.preview_path
+                    if os.path.exists(self.thumb_path):
+                        msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['source'][
+                            'thumb_file'] = self.thumb_path
+            print('Saving Project.msd: {}'.format(project_msd_file))
+            save_json(project_msd_file, msd_dict)
+
     def update_project_msd(self):
         from cgl.core.utils.general import load_json, save_json
         if os.path.exists(self.project_msd_path):
@@ -190,10 +226,10 @@ class PathObject(object):
         save_json(self.project_msd_path, msd_dict)
 
     def process_string(self, path_object):
+        path_object = path_object.replace('\\', '/')
         if self.root not in path_object:
             print('Could not find root {} in {}'.format(self.root, path_object))
             return
-        path_object = path_object.replace('\\', '/')
         self.get_company(path_object)
         self.unpack_path(path_object)
         self.set_data_from_attrs()
@@ -802,6 +838,7 @@ class PathObject(object):
             path_ = os.path.split(self.path_root)[0]
             if sys.platform == 'win32':
                 self.preview_path = '%s/%s/%s' % (path_, '.preview', name_)
+                self.preview_path = self.preview_path.replace('render', 'source')
                 self.preview_seq = self.preview_path.replace(ext, '.####%s' % ext)
                 self.data['preview_path'] = self.preview_path
                 self.set_thumb_path()
@@ -840,8 +877,9 @@ class PathObject(object):
         :return:
         """
         self.project_config_path = self.cfg.project_config_file
-        self.project_msd_path = os.path.join(self.split_after('project'),
-                                             '{}.msd'.format(self.project)).replace('/source', '/render')
+        if self.project:
+            self.project_msd_path = os.path.join(self.split_after('project'),
+                                                 '{}.msd'.format(self.project)).replace('/source', '/render')
 
     def set_command_base(self):
         """
@@ -1177,30 +1215,6 @@ class CreateProductionData(object):
             os.makedirs(os.path.dirname(obj.asset_json))
         asset_meta.save(obj.asset_json)
 
-    def update_project_json(self):
-        from cgl.core import assetcore
-        logging.debug('updating project json')
-        if os.path.exists(self.path_object.project_json):
-            project_meta = assetcore.MetaObject(jsonfile=self.path_object.project_json)
-        else:
-            project_meta = assetcore.MetaObject()
-        asset_obj = PathObject(str(self.path_object.asset_json))
-        if self.path_object.user == 'publish':
-            status = 'published'
-        else:
-            status = 'in progress'
-        project_meta.add(_type='link',
-                         name="%s_%s" % (self.path_object.seq, self.path_object.shot),
-                         type='link',
-                         uid="%s_%s" % (self.path_object.seq, self.path_object.shot),
-                         added_from='system',
-                         task='lay',
-                         json=asset_obj.path,
-                         status=status,
-                         scope=self.path_object.scope
-                         )
-        project_meta.save(self.path_object.project_json)
-
     def create_folders(self):
         if not self.path_object.root:
             logging.debug('No Root Defined')
@@ -1314,8 +1328,12 @@ class Sequence(object):
     def __init__(self, sequence, padding=None, verbose=False, cfg=None):
         self.sequence = sequence
         self.verbose = verbose
-        self.cfg = cfg
-        self.config = cfg.project_config
+        if cfg:
+            self.cfg = cfg
+        else:
+            # TODO - this seems dangerous.
+            self.cfg = ProjectConfig()
+        self.config = self.cfg.project_config
         if not self.is_valid_sequence():
             return
         self.padding = padding

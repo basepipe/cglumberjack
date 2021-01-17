@@ -43,44 +43,28 @@ class Task(SmartTask):
 
     def export_msd(self, selected=None):
         """
-        exports the selected bndle as an msd file.
-        format example for bndl:
-        {
-            "presentPile1": {
-                "category": "Prop",
-                "msd_path": "VFX/render/02BTH_2021_Kish/assets/Prop/presentPile/mdl/publish/004.000/high/Prop_presentPile_mdl.msd",
-                "name": "presentPile",
-                "task": "mdl",
-                "transform": {
-                    "matrix": "-1.64649598661 -0.0125312913377 -2.15273456447 0.0 0.00236906607631 2.71017660235 -0.0175881741261 0.0 2.15276973359 -0.012566745027 -1.646449733 0.0 18.9753119694 2.28237451241 5.23043842313 1.0"
-                    "scale": {}
-                    "rotate": {}
-                    "translate": {}
-                }
-        }
-        :return:
+
         """
         if not selected:
             print(self.path_object.msd_path)
             save_json(self.path_object.msd_path, get_msd_info(TASKNAME))
 
+    def get_msd_info(self, bndl):
+        """
+        returns the msd dict for the given task.
+        :return:
+        """
 
-def get_msd_info(bndl):
-    """
-    returns the msd dict for the given task.
-    :return:
-    """
-
-    bndl_dict = {}
-    meshes = {}
-    children = pm.listRelatives(bndl, children=True)
-    if children:
-        for child in children:
-            clean_name = child.namespace().replace(':', '')
-            meshes[clean_name] = mdl.get_msd_info(child)
-    bndl_dict['attrs'] = {'meshes': meshes}
-    bndl_dict['source_file'] = scene_object().path
-    return bndl_dict
+        bndl_dict = {}
+        meshes = {}
+        children = pm.listRelatives(bndl, children=True)
+        if children:
+            for child in children:
+                clean_name = child.namespace().replace(':', '')
+                meshes[clean_name] = mdl.get_msd_info(child)
+        bndl_dict['attrs'] = {'meshes': meshes}
+        bndl_dict['source_file'] = scene_object().path
+        return bndl_dict
 
 
 def get_latest_publish(filepath, task='bndl', ext='.json'):

@@ -5,17 +5,26 @@ from cgl.ui.widgets.widgets import AdvComboBox
 from cgl.core.config.config import user_config
 from datetime import datetime, date
 from cgl.core.path import start
-
+from cgl.core.utils.general import load_json
+import copy
 import glob
 import os
 
 SHOTS_LABELS = ['Animation', 'Seq Lighting', 'Lighting', 'FX', 'Comp']
-ASSERTS_LABELS = ['Model', 'Rig', 'Textures', 'Shading']
-LABEL_MAP = {'Animation': 'anim',
-             'Seq Lighting': 'lite',
-             'Lighting': 'lite',
-             'FX': 'fx',
-             'Comp': 'comp'}
+ASSETS_LABEL_MAP = {'Reference': "ref",
+                    'Model': 'mdl',
+                    'Rig': 'rig',
+                    'Textures': 'tex',
+                    'Shading': 'shd'}
+SHOTS_LABEL_MAP = {'Layout': 'lay',
+                   'Camera': 'cam',
+                   'Animation': 'anim',
+                     'Seq Lighting': 'lite',
+                     'Lighting': 'lite',
+                     'FX': 'fx',
+                     'Comp': 'comp'}
+LABEL_MAP = {'shots': SHOTS_LABEL_MAP,
+             'assets': ASSETS_LABEL_MAP}
 STATUS_COLORS = {'Not Started': '#BFBFBF',
                  'In Progress': '#F3D886',
                  'Published': '#52B434'}
@@ -23,6 +32,8 @@ STATUS_COLORS = {'Not Started': '#BFBFBF',
 FILE_TYPES = {'maya': {'defaults': ['.mb', '.ma']},
               'houdini': {'defaults': ['']},
               'nuke': {'defaults': ['.nk']}}
+
+PROJECT_MSD = load_json(r'Z:\Projects\VFX\render\02BTH_2021_Kish\test_project_msd.msd')
 
 
 class ScopeList(QtWidgets.QWidget):
@@ -68,7 +79,8 @@ class MagicButtonWidget(QtWidgets.QWidget):
     thumb_path = None
     preview_path = None
 
-    def __init__(self, parent=None, button_label='Default Text', info_label=None, task=None, button_click_dict=None):
+    def __init__(self, parent=None, button_label='Default Text', info_label=None, task=None, task_dict=None,
+                 button_click_dict=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.setContentsMargins(0, 0, 0, 0)
         self.task = task
@@ -77,7 +89,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
             self.path_object = PathObject(self.filepath)
         self.row = QtWidgets.QHBoxLayout(self)
         self.row.setContentsMargins(0, 0, 0, 0)
-
+        self.task_dict = task_dict
         self.button = QtWidgets.QPushButton()
         # self.button.setProperty('class', 'grey_border')
         self.button.setText(button_label)
@@ -88,10 +100,21 @@ class MagicButtonWidget(QtWidgets.QWidget):
         # self.check_box = QtWidgets.QCheckBox()
         # self.row.addWidget(self.check_box)
         self.row.addWidget(self.button)
+        self.latest_user_context_text = ""
+        self.latest_publish_text = ""
+        self.create_user_version_text = ""
+        self.latest_user_render_text = ""
+        self.context_menu = QtWidgets.QMenu()
+
+        self.process_path_dict()
+        # self.context_menu.addSeparator()
+        self.button.clicked.connect(self.button_clicked)
+
+    def process_path_dict(self):
         self.get_published_path()
         self.get_newest_version()
         self.set_tool_tip()
-        self.latest_user_context_text = 'User:       {}'.format(self.latest_user_file)
+        self.latest_user_context_text = 'User:       {}'.format(self.newest_version_file)
         self.latest_publish_text = 'Publish:   {}'.format(self.published_file)
         self.create_user_version_text = 'Create {} version'.format(self.user)
         self.latest_user_render_text = '{}'.format(self.latest_user_render_folder)
@@ -108,7 +131,6 @@ class MagicButtonWidget(QtWidgets.QWidget):
                        self.latest_user_render_text: self.open_latest_user_render
                        }
 
-        self.context_menu = QtWidgets.QMenu()
         for button in button_dict:
             if button == self.create_user_version_text:
                 menu = QtWidgets.QMenu(button, self)
@@ -143,19 +165,14 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 if button_dict[button]:
                     action.triggered.connect(button_dict[button])
 
-        # self.context_menu.addSeparator()
-        self.button.clicked.connect(self.button_clicked)
-
     def set_button_look(self):
         border_color = '#808080'
         bg_color = STATUS_COLORS[self.status]
         if self.thumb_path:
             if os.path.exists(self.thumb_path):
-                # print('found thumb path {}'.format(self.thumb_path))
                 pixmap = QtGui.QPixmap(self.thumb_path)
                 icon = QtGui.QIcon(pixmap)
                 self.button.setIcon(icon)
-                # print(pixmap.rect().size().width())
                 self.button.setIconSize(pixmap.rect().size())
                 self.button.setText('')
                 self.button.setMinimumWidth(pixmap.rect().size().width()+8)
@@ -175,7 +192,6 @@ class MagicButtonWidget(QtWidgets.QWidget):
 
     def create_default_file(self):
         print('Creating tmikota version for task {}'.format(self.task))
-        print(self.path_object.path_root)
         current = self.path_object.copy(task=self.task, user=self.user, version='000.000', resolution='high',
                                         context='source')
         next_minor = current.new_minor_version_object()
@@ -188,7 +204,6 @@ class MagicButtonWidget(QtWidgets.QWidget):
         if file_name:
             if os.path.exists(file_name):
                 cmd = "cmd /c start {}".format(file_name)
-                print(cmd)
                 os.system(cmd)
         # self.on_task_selected(next_minor)
 
@@ -215,7 +230,6 @@ class MagicButtonWidget(QtWidgets.QWidget):
         self.status = 'Published'
         self.set_button_look()
 
-
     def open_latest_publish_file(self):
         if self.published_file:
             print("Open: {}".format(self.published_file))
@@ -223,24 +237,43 @@ class MagicButtonWidget(QtWidgets.QWidget):
             os.system(cmd)
 
     def open_in_magic_browser(self):
-        print("Opening in Magic Browser")
+        cmd = "cmd /c start {}".format(self.published_folder)
+        os.system(cmd)
 
     def on_context_menu(self, point):
         self.context_menu.exec_(self.button.mapToGlobal(point))
 
     def get_published_path(self):
-        if self.task:
-            # if it's seq-lighting we need to set that here somehow
-            published_path_object = self.path_object.copy(task=self.task, context='render', user='publish',
-                                                          resolution='high', latest=True)
-            if os.path.exists(published_path_object.path_root):
-                raw_time = os.path.getctime(published_path_object.path_root)
+        if self.task_dict:
+            self.published_folder = self.task_dict['publish']['source']['folder']
+            # raw_time = self.task_dict['publish']['source']['date']
+            if self.published_folder:
+                raw_time = os.path.getctime(self.published_folder)
                 self.publish_date = datetime.fromtimestamp(raw_time).strftime(self.date_format)
+                self.published_file = self.task_dict['publish']['source']['source_file']
+                self.preview_path = self.task_dict['publish']['source']['preview_file']
+                self.thumb_path = self.task_dict['publish']['source']['thumb_file']
                 self.status = 'Published'
                 self.set_button_look()
-                self.published_folder = published_path_object.path_root
 
     def get_newest_version(self):
+        if self.task_dict:
+            if not self.published_folder:
+                self.status = 'In Progress'
+            self.newest_version_folder = self.task_dict['latest_user']['source']['folder']
+            self.newest_version_files = self.task_dict['latest_user']['source']['source_files']
+            self.newest_version_file = self.task_dict['latest_user']['source']['source_file']
+            self.latest_user_render_folder = self.newest_version_folder.replace('/source/', '/render/')
+            self.preview_path = self.task_dict['latest_user']['source']['preview_file']
+            self.thumb_path = self.task_dict['latest_user']['source']['thumb_file']
+            #raw_time = self.task_dict['latest_user']['source']['date']
+            if self.newest_version_folder:
+                raw_time = os.path.getctime(self.newest_version_folder)
+                self.latest_date = datetime.fromtimestamp(raw_time).strftime(self.date_format)
+                self.set_time_stuff()
+                self.set_button_look()
+
+    def get_newest_version2(self):
         latest_glob_object = self.path_object.copy(task=self.task, context='source', user='*',
                                                    resolution='high', version='*')
         versions = glob.glob(latest_glob_object.path_root)
@@ -274,8 +307,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 else:
                     self.latest_user_file = self.newest_version_file
                     path_object = PathObject(self.latest_user_file)
-                    self.preview_path = path_object.preview_path
-                    self.thumb_path = path_object.thumb_path
+
                     self.latest_user_render_folder = os.path.dirname(self.latest_user_file).replace('/source/',
                                                                                                     '/render/')
 
@@ -301,7 +333,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
     def set_tool_tip(self):
         tool_tip = 'Status: {}\nTask Info:\n'.format(self.status)
         if self.published_folder:
-            tool_tip = "{}\nPublished File  : {} ({} days ago)".format(tool_tip, self.published_folder,
+            tool_tip = "{}\nPublished File  : {} ({} days ago)".format(tool_tip, self.published_file,
                                                                        self.last_published)
         if self.newest_version_folder:
             tool_tip = "{}\nNewest Version: {} ({} days ago)".format(tool_tip, self.newest_version_file,
@@ -377,9 +409,9 @@ class SkyView(LJDialog):
         layout.addWidget(self.scope_list)
         layout.addWidget(self.scroll_area)
         #layout.addLayout(self.grid_layout)
-        self.scope_changed()
         self.set_defaults()
-        self.get_shots()
+
+        self.scope_changed()
         self.scroll_area.setWidget(self.scroll_area_widget_contents)
         self.scope_list.assets.clicked.connect(self.scope_changed)
         self.scope_list.shots.clicked.connect(self.scope_changed)
@@ -389,8 +421,12 @@ class SkyView(LJDialog):
     def scope_changed(self):
         if self.scope_list.assets.isChecked():
             self.current_scope = 'assets'
+            print('assets clicked')
         else:
             self.current_scope = 'shots'
+            print('shots clicked')
+        self.refresh()
+        self.get_shots()
 
     def refresh(self):
         self.wipe_grid()
@@ -412,14 +448,20 @@ class SkyView(LJDialog):
                 shot_name = '{}_{}'.format(temp_obj.seq, temp_obj.shot)
                 label = QtWidgets.QLabel(shot_name)
                 label.filepath = f
+                label.dict = PROJECT_MSD[self.current_scope][temp_obj.seq][temp_obj.shot]
                 self.grid_layout.addWidget(label, ii, 0)
                 self.add_row_buttons(ii, label)
 
     def add_row_buttons(self, row_number, label):
-        for i, each in enumerate(LABEL_MAP):
+        label_map = LABEL_MAP[self.current_scope]
+        for i, each in enumerate(label_map):
             i += 1
-            task = LABEL_MAP[each]
-            button = MagicButtonWidget(button_label=each, info_label=label, task=task)
+            task = label_map[each]
+            if task in label.dict.keys():
+                task_dict = label.dict[task]
+            else:
+                task_dict = None
+            button = MagicButtonWidget(button_label=each, info_label=label, task=task, task_dict=task_dict)
             if each == 'Seq Lighting':
                 if button.path_object.shot == '0000':
                     self.grid_layout.addWidget(button, row_number, i)

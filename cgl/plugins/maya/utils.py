@@ -189,9 +189,9 @@ def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=Fals
         cam = get_current_camera()
     editor = pm.getPanel(wf=True)
     pm.modelEditor(editor, edit=True, displayAppearance=appearance, camera=cam)
-    w, h = path_object.proxy_resolution.split('x')
-    w = int(w)
-    h = int(h)
+    # w, h = path_object.proxy_resolution.split('x')
+    w = int(1920)
+    h = int(1080)
 
     # set proper attributes
     pm.setAttr('defaultRenderGlobals.imageFormat', 8)

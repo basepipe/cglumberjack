@@ -1,7 +1,7 @@
 import os
 import copy
 import glob
-import cgl.plugins.MagicSceneDescription as msd
+import cgl.plugins.MagicSceneDescriptionOld as msd
 from cgl.core.path import PathObject
 from cgl.core.utils.read_write import load_json, save_json
 from cgl.plugins.maya.alchemy import get_scene_name, scene_object
