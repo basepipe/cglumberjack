@@ -108,6 +108,9 @@ class CompanyPanel(QtWidgets.QWidget):
 
 
 class ProjectPanel(QtWidgets.QWidget):
+    """
+    Shows a list of Projects
+    """
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, search_box=None, title='Projects', cfg=None):
@@ -314,15 +317,21 @@ class TaskPanel(QtWidgets.QWidget):
     def on_button_clicked(self):
         text = self.sender().text()
         if text:
-            if 'elem' in text:
-                short = text
-            else:
-                logging.debug(self.proj_man_tasks)
-                short = self.proj_man_tasks[text]
-            self.path_object.__dict__[self.element] = short
-            self.path_object.data[self.element] = short
-            self.path_object.set_path()
-            self.location_changed.emit(self.path_object)
+            if self.element == 'task':
+                if 'elem' in text:
+                    short = text
+                else:
+                    logging.debug(self.proj_man_tasks)
+                    short = self.proj_man_tasks[text]
+                self.path_object.__dict__[self.element] = short
+                self.path_object.data[self.element] = short
+                self.path_object.set_attr(variant='*')
+                self.path_object.set_path()
+                self.location_changed.emit(self.path_object)
+            elif self.element == 'variant':
+                self.path_object.set_attr(variant=text)
+                self.path_object.set_path()
+                self.location_changed.emit(self.path_object)
 
     def clear_layout(self, layout=None):
         clear_layout(self, layout=layout)
@@ -381,7 +390,7 @@ class ProductionPanel(QtWidgets.QWidget):
 
     def __init__(self, parent=None, path_object=None, search_box=None, my_tasks=False, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
-        # Create the Middle Panel
+        print('Production Panel')
         if not cfg:
             print('ProductionPanel')
             self.cfg = ProjectConfig(path_object)
@@ -411,7 +420,10 @@ class ProductionPanel(QtWidgets.QWidget):
         self.assets.tasks_radio.clicked.connect(self.load_tasks)
 
     def load_tasks(self):
-        # TODO - figure out how to add the progress bar to this.
+        """
+        Loads Tasks into the AssetWidget.  Currently only works for Ftrack.
+        :return:
+        """
         self.assets.add_button.setEnabled(False)
         self.assets.data_table.clearSpans()
         data = []
@@ -461,6 +473,10 @@ class ProductionPanel(QtWidgets.QWidget):
                 return False
 
     def load_assets(self):
+        """
+        Loads Shots or assets for the current project into the table widget.
+        :return:
+        """
         red_palette = QtGui.QPalette()
         red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
         self.assets.data_table.clearSpans()
@@ -489,7 +505,7 @@ class ProductionPanel(QtWidgets.QWidget):
                 self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status', 'Task']))
             elif d['scope'] == 'shots':
                 self.assets.setup(ListItemModel(data, ['Seq', 'Shot', 'Path', 'Due Date', 'Status', 'Task']))
-            self.assets.data_table.hideColumn(0)
+            # self.assets.data_table.hideColumn(0)
             self.assets.data_table.hideColumn(2)
             self.assets.data_table.hideColumn(3)
             self.assets.data_table.hideColumn(5)

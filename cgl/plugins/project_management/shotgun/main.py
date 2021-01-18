@@ -22,6 +22,7 @@ class ProjectManagementData(object):
     project = None
     task = None
     scope = None
+    variant = 'default'
     seq = None
     shot = None
     shot_name = ''
@@ -93,16 +94,30 @@ class ProjectManagementData(object):
             if self.task:
                 # set task_name
                 if self.scope == 'assets':
-                    self.task_name = '%s_%s' % (self.asset, self.task)
+                    if self.variant == 'default':
+                        self.task_name = '%s_%s' % (self.asset, self.task)
+                    else:
+                        self.task_name = '%s_%s_%s' % (self.asset, self.task, self.variant)
                 elif self.scope == 'shots':
-                    self.task_name = '%s_%s' % (self.shot_name, self.task)
+                    if self.variant == 'default':
+                        self.task_name = '%s_%s' % (self.shot_name, self.task)
+                    else:
+                        self.task_name = '%s_%s_%s' % (self.shot_name, self.task, self.variant)
                 # get task_data
                 self.task_data = self.entity_exists('task')
                 if self.version:
                     if self.scope == 'shots':
-                        self.version_name = '%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.version)
+                        if self.variant == 'default':
+                            self.version_name = '%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.version)
+                        else:
+                            self.version_name = '%s_%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.variant,
+                                                                 self.version)
                     elif self.scope == 'assets':
-                        self.version_name = '%s_%s_%s_%s' % (self.type, self.asset, self.task, self.version)
+                        if self.variant == 'default':
+                            self.version_name = '%s_%s_%s_%s' % (self.type, self.asset, self.task, self.version)
+                        else:
+                            self.version_name = '%s_%s_%s_%s_%s' % (self.type, self.asset, self.task, self.variant,
+                                                                 self.version)
             if self.status:
                 self.set_status()
 
@@ -142,18 +157,32 @@ class ProjectManagementData(object):
             if self.task:
                 # set task_name
                 if self.scope == 'assets':
-                    self.task_name = '%s_%s' % (self.asset, self.task)
+                    if self.variant == 'default':
+                        self.task_name = '%s_%s' % (self.asset, self.task)
+                    else:
+                        self.task_name = '%s_%s_%s' % (self.asset, self.task, self.variant)
                 elif self.scope == 'shots':
-                    self.task_name = '%s_%s' % (self.shot_name, self.task)
+                    if self.variant == 'default':
+                        self.task_name = '%s_%s' % (self.shot_name, self.task)
+                    else:
+                        self.task_name = '%s_%s_%s' % (self.shot_name, self.task, self.variant)
                 # get task_data
                 self.task_data = self.entity_exists('task')
                 if not self.task_data:
                     self.task_data = self.create_task()
                 if self.version:
                     if self.scope == 'shots':
-                        self.version_name = '%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.version)
+                        if self.variant == 'default':
+                            self.version_name = '%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.version)
+                        else:
+                            self.version_name = '%s_%s_%s_%s_%s' % (self.seq, self.shot, self.task, self.variant,
+                                                                    self.version)
                     elif self.scope == 'assets':
-                        self.version_name = '%s_%s_%s_%s' % (self.type, self.asset, self.task, self.version)
+                        if self.variant == 'default':
+                            self.version_name = '%s_%s_%s_%s' % (self.type, self.asset, self.task, self.version)
+                        else:
+                            self.version_name = '%s_%s_%s_%s_%s' % (self.type, self.asset, self.task, self.variant,
+                                                                    self.version)
                     if self.version_name:
                         self.version_data = self.find_version()
                         if not self.version_data:

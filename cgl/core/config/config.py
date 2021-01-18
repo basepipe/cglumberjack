@@ -76,7 +76,11 @@ class ProjectConfig(object):
         except TypeError:
             company_globals_root = self.master_globals_root
         try:
-            self.globals_root = os.path.join(self.root_folder, self.company, 'config', self.project)
+            if not self.project:
+                project = 'master'
+            else:
+                project = self.project
+            self.globals_root = os.path.join(self.root_folder, self.company, 'config', project)
         except TypeError:
             self.globals_root = self.master_globals_root
         if not os.path.exists(company_globals_root):

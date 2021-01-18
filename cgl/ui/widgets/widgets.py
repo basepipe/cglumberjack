@@ -564,6 +564,9 @@ class TaskWidget(QtWidgets.QWidget):
 
 
 class ProjectWidget(QtWidgets.QWidget):
+    """
+    Displays Projects within a company
+    """
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
@@ -630,12 +633,23 @@ class ProjectWidget(QtWidgets.QWidget):
             self.menu = LJMenu(self.data_table)
             #self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
             self.menu.create_action("Mark as Favorite", self.mark_as_favorite)
+            self.menu.create_action("Create New Branch", self.create_project_branch)
             self.menu.create_action('Show in %s' % self.project_management, self.show_in_proj)
             self.menu.create_action('Share Project', self.share_project)
             self.menu.create_action('Calculate Project Size', self.calculate_project_size)
             self.menu.popup(QtGui.QCursor.pos())
             return True
         return False
+
+    def create_project_branch(self):
+        """
+
+        :return:
+        """
+        from cgl.apps.magic_browser.project_branch import CreateBranchDialog
+        print('Creating a new branch for {}'.format(self.current_selection()))
+        dialog = CreateBranchDialog(self.path_object)
+        dialog.exec_()
 
     def mark_as_favorite(self):
         print(self.cfg.user_config_file)
@@ -721,6 +735,9 @@ class ProjectWidget(QtWidgets.QWidget):
 
 
 class AssetWidget(QtWidgets.QWidget):
+    """
+    GUI Element for Displaying shots, assets, and "my tasks"
+    """
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
@@ -793,7 +810,6 @@ class AssetWidget(QtWidgets.QWidget):
         self.scope_layout.addWidget(self.add_button)
 
         v_list.addItem(QtWidgets.QSpacerItem(0, 3, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
-        # v_list.addWidget(self.search_box)
         v_list.addWidget(self.data_table, 1)
         self.v_layout.addLayout(self.scope_layout)
         self.v_layout.addWidget(self.message)

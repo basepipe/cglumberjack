@@ -90,3 +90,10 @@ class SmartTask(object):
             # update the project.msd
             # update the project_test.msd
 
+    def render(self):
+        """
+
+        :return:
+        """
+        pass
+

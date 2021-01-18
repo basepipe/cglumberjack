@@ -9,7 +9,7 @@ from cgl.core.path import PathObject, CreateProductionData, lj_list_dir
 from cgl.core.path import replace_illegal_filename_characters, show_in_folder
 from cgl.ui.widgets.widgets import AssetWidget, TaskWidget, FileTableModel
 from cgl.ui.widgets.containers.model import FilesModel
-from cgl.apps.magic_browser.elements.panels import clear_layout
+from cgl.apps.magic_browser.elements.panels import clear_layout, TaskPanel
 
 
 class FilesPanel(QtWidgets.QWidget):
@@ -93,105 +93,122 @@ class FilesPanel(QtWidgets.QWidget):
             # reset the GUI
             if not current.task:
                 current.set_attr(task='*')
-            current.set_attr(root=self.path_object.root)
-            # current.set_attr(user_email=self.user_email)
             self.panel.seq = current.seq
             self.panel.shot = current.shot
-            self.update_task_location(path_object=current)
-            self.panel.tasks = []
-            try:
-                if 'elem' in self.task:
-                    title = self.task
-                else:
-                    title = self.proj_man_tasks_short_to_long[self.task]
-            except KeyError:
-                return
-            task_widget = TaskWidget(parent=self,
-                                     title=title,
-                                     path_object=current, show_import=self.show_import,
-                                     show_reference=self.show_reference,
-                                     cfg=self.cfg)
-            task_widget.task = self.task
-            self.render_files_widget = task_widget.files_area.export_files_table
-            task_widget.files_area.export_files_table.hide()
-            self.task_widgets_dict[self.task] = task_widget
+            if current.branch:
+                if not current.variant:
+                    current.set_attr(variant='*')
+                    self.panel.variant = current.variant
+                    self.update_task_location(path_object=current)
+                    variant_widget = TaskPanel(path_object=self.path_object, element='variant', cfg=self.cfg)
+                    self.panel.addWidget(variant_widget)
+                    # Define what happens when you click a variant.
+                    return
+            self.populate_task_details(current)
 
-            # find the version information for the task:
-            user = self.populate_users_combo(task_widget, current, self.task, set_to_publish=self.set_to_publish)
-            self.current_location['user'] = user
-            version = self.populate_versions_combo(task_widget, current, self.task)
-            self.current_location['version'] = version
-            resolution = self.populate_resolutions_combo(task_widget, current, self.task)
-            self.current_location['resolution'] = resolution
-            self.update_task_location(self.current_location)
-            self.panel.addWidget(task_widget)
-            self.panel.tasks.append(self.task)
-            self.version_obj = current.copy(task=self.task, user=user, version=version,
-                                            resolution=resolution, context='source', filename='*')
-            task_widget.files_area.work_files_table.task = self.version_obj.task
-            task_widget.files_area.work_files_table.user = self.version_obj.user
-            task_widget.files_area.work_files_table.version = self.version_obj.version
-            task_widget.files_area.work_files_table.resolution = self.version_obj.resolution
-            try:
-                self.work_files = self.version_obj.glob_project_element('filename', full_path=True)
-                self.high_files = self.version_obj.copy(resolution='high').glob_project_element('filename',
-                                                                                                full_path=True)
-            except ValueError:
-                self.work_files = []
-                self.high_files = []
-            # check to see if there are work files for the 'high' version
-            self.render_files = []
-            if user != 'publish':
-                my_files_label = 'My Work Files'
-                if not self.work_files and not self.render_files:
-                    my_files_label = 'Drag/Drop Work Files'
-                    task_widget.files_area.work_files_table.hide()
+    def populate_task_details(self, current):
+        """
+
+        :return:
+        """
+        current.set_attr(root=self.path_object.root)
+        # current.set_attr(user_email=self.user_email)
+
+        self.update_task_location(path_object=current)
+        self.panel.tasks = []
+        try:
+            if 'elem' in self.task:
+                title = self.task
             else:
-                my_files_label = 'Published Work Files'
-            task_widget.setup(task_widget.files_area.work_files_table,
-                              FileTableModel(self.prep_list_for_table(self.work_files, basename=True),
-                                             [my_files_label]))
-            self.load_render_files(task_widget)
-            task_widget.create_empty_version.connect(self.new_empty_version_clicked)
-            task_widget.files_area.review_button_clicked.connect(self.on_review_clicked)
-            task_widget.files_area.publish_button_clicked.connect(self.on_publish_clicked)
-            task_widget.files_area.create_edit_clicked.connect(self.on_create_edit_clicked)
-            task_widget.copy_latest_version.connect(self.new_version_from_latest)
-            task_widget.copy_selected_version.connect(self.version_up_selected_clicked)
-            task_widget.files_area.work_files_table.selected.connect(self.on_source_selected)
-            task_widget.files_area.export_files_table.selected.connect(self.on_render_selected)
-            task_widget.files_area.export_files_table.double_clicked.connect(self.on_render_double_clicked)
-            task_widget.files_area.export_files_table.show_in_folder.connect(self.show_selected_in_folder)
-            task_widget.files_area.work_files_table.doubleClicked.connect(self.on_open_clicked)
-            task_widget.files_area.open_button.clicked.connect(self.on_open_clicked)
-            task_widget.files_area.import_button.clicked.connect(self.on_import_clicked)
-            task_widget.files_area.reference_button.clicked.connect(self.on_reference_clicked)
-            task_widget.versions.currentIndexChanged.connect(self.on_task_info_changed)
-            task_widget.users.currentIndexChanged.connect(self.on_task_info_changed)
-            task_widget.resolutions.currentIndexChanged.connect(self.on_task_info_changed)
-            task_widget.start_task_clicked.connect(self.on_assign_button_clicked)
-            task_widget.files_area.work_files_table.dropped.connect(self.on_file_dragged_to_source)
-            task_widget.files_area.export_files_table.dropped.connect(self.on_file_dragged_to_render)
-            task_widget.files_area.work_files_table.show_in_folder.connect(self.show_selected_in_folder)
-            task_widget.files_area.work_files_table.copy_folder_path.connect(self.copy_folder_path)
-            task_widget.files_area.work_files_table.copy_file_path.connect(self.copy_file_path)
-            task_widget.files_area.work_files_table.import_version_from.connect(self.import_versions_from)
-            task_widget.empty_state.files_added.connect(self.on_file_dragged_to_source)
-            if not user:
-                task_widget.users_label.hide()
-                task_widget.users.hide()
-                task_widget.files_area.hide()
-                task_widget.versions_label.hide()
-                task_widget.versions.hide()
-                task_widget.resolutions_label.hide()
-                task_widget.resolutions.hide()
-                task_widget.empty_state.hide()
+                title = self.proj_man_tasks_short_to_long[self.task]
+        except KeyError:
+            return
+        task_widget = TaskWidget(parent=self,
+                                 title=title,
+                                 path_object=current, show_import=self.show_import,
+                                 show_reference=self.show_reference,
+                                 cfg=self.cfg)
+        task_widget.task = self.task
+        self.render_files_widget = task_widget.files_area.export_files_table
+        task_widget.files_area.export_files_table.hide()
+        self.task_widgets_dict[self.task] = task_widget
+
+        # find the version information for the task:
+        user = self.populate_users_combo(task_widget, current, self.task, set_to_publish=self.set_to_publish)
+        self.current_location['user'] = user
+        version = self.populate_versions_combo(task_widget, current, self.task)
+        self.current_location['version'] = version
+        resolution = self.populate_resolutions_combo(task_widget, current, self.task)
+        self.current_location['resolution'] = resolution
+        self.update_task_location(self.current_location)
+        self.panel.addWidget(task_widget)
+        self.panel.tasks.append(self.task)
+        self.version_obj = current.copy(task=self.task, user=user, version=version,
+                                        resolution=resolution, context='source', filename='*')
+        task_widget.files_area.work_files_table.task = self.version_obj.task
+        task_widget.files_area.work_files_table.user = self.version_obj.user
+        task_widget.files_area.work_files_table.version = self.version_obj.version
+        task_widget.files_area.work_files_table.resolution = self.version_obj.resolution
+        try:
+            self.work_files = self.version_obj.glob_project_element('filename', full_path=True)
+            self.high_files = self.version_obj.copy(resolution='high').glob_project_element('filename',
+                                                                                            full_path=True)
+        except ValueError:
+            self.work_files = []
+            self.high_files = []
+        # check to see if there are work files for the 'high' version
+        self.render_files = []
+        if user != 'publish':
+            my_files_label = 'My Work Files'
+            if not self.work_files and not self.render_files:
+                my_files_label = 'Drag/Drop Work Files'
+                task_widget.files_area.work_files_table.hide()
+        else:
+            my_files_label = 'Published Work Files'
+        task_widget.setup(task_widget.files_area.work_files_table,
+                          FileTableModel(self.prep_list_for_table(self.work_files, basename=True),
+                                         [my_files_label]))
+        self.load_render_files(task_widget)
+        task_widget.create_empty_version.connect(self.new_empty_version_clicked)
+        task_widget.files_area.review_button_clicked.connect(self.on_review_clicked)
+        task_widget.files_area.publish_button_clicked.connect(self.on_publish_clicked)
+        task_widget.files_area.create_edit_clicked.connect(self.on_create_edit_clicked)
+        task_widget.copy_latest_version.connect(self.new_version_from_latest)
+        task_widget.copy_selected_version.connect(self.version_up_selected_clicked)
+        task_widget.files_area.work_files_table.selected.connect(self.on_source_selected)
+        task_widget.files_area.export_files_table.selected.connect(self.on_render_selected)
+        task_widget.files_area.export_files_table.double_clicked.connect(self.on_render_double_clicked)
+        task_widget.files_area.export_files_table.show_in_folder.connect(self.show_selected_in_folder)
+        task_widget.files_area.work_files_table.doubleClicked.connect(self.on_open_clicked)
+        task_widget.files_area.open_button.clicked.connect(self.on_open_clicked)
+        task_widget.files_area.import_button.clicked.connect(self.on_import_clicked)
+        task_widget.files_area.reference_button.clicked.connect(self.on_reference_clicked)
+        task_widget.versions.currentIndexChanged.connect(self.on_task_info_changed)
+        task_widget.users.currentIndexChanged.connect(self.on_task_info_changed)
+        task_widget.resolutions.currentIndexChanged.connect(self.on_task_info_changed)
+        task_widget.start_task_clicked.connect(self.on_assign_button_clicked)
+        task_widget.files_area.work_files_table.dropped.connect(self.on_file_dragged_to_source)
+        task_widget.files_area.export_files_table.dropped.connect(self.on_file_dragged_to_render)
+        task_widget.files_area.work_files_table.show_in_folder.connect(self.show_selected_in_folder)
+        task_widget.files_area.work_files_table.copy_folder_path.connect(self.copy_folder_path)
+        task_widget.files_area.work_files_table.copy_file_path.connect(self.copy_file_path)
+        task_widget.files_area.work_files_table.import_version_from.connect(self.import_versions_from)
+        task_widget.empty_state.files_added.connect(self.on_file_dragged_to_source)
+        if not user:
+            task_widget.users_label.hide()
+            task_widget.users.hide()
+            task_widget.files_area.hide()
+            task_widget.versions_label.hide()
+            task_widget.versions.hide()
+            task_widget.resolutions_label.hide()
+            task_widget.resolutions.hide()
+            task_widget.empty_state.hide()
+            task_widget.status_button.hide()
+        else:
+            if task_widget.users.currentText() == current_user():
+                task_widget.refresh_task_info()
+            else:
                 task_widget.status_button.hide()
-            else:
-                if task_widget.users.currentText() == current_user():
-                    task_widget.refresh_task_info()
-                else:
-                    task_widget.status_button.hide()
 
     def add_stretch_to_source(self):
         self.panel.addStretch(1)
@@ -601,6 +618,9 @@ class FilesPanel(QtWidgets.QWidget):
             progress_dialog.show()
             selected_user = dialog.combo_box.currentText()  # this denotes the OS login name of the user
             user_info = self.cfg.project_config['project_management'][self.project_management]['users'][selected_user]
+            if self.path_object.branch:
+                if not self.path_object.variant:
+                    self.path_object.set_attr(variant='default')
             self.path_object.set_attr(task=task)
             self.path_object.set_attr(user=selected_user)
             self.path_object.set_attr(version='000.000')
@@ -610,6 +630,7 @@ class FilesPanel(QtWidgets.QWidget):
             self.path_object.set_attr(filename=None)
             self.path_object.set_attr(ext=None)
             self.path_object.set_attr(filename_base=None)
+            print('creating {}'.format(self.path_object.path_root))
             CreateProductionData(path_object=self.path_object,
                                  user_login=user_info['login'],
                                  force_pm_creation=True)

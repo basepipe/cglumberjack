@@ -377,10 +377,14 @@ class LocationWidget(QtWidgets.QWidget):
     def path_changed(self, path_object):
         if path_object.project:
             if path_object.shot:
+                if path_object.variant == 'default' or path_object.variant == '*' or not path_object.variant:
+                    shot = path_object.shot
+                else:
+                    shot = '{}_{}'.format(path_object.shot, path_object.variant)
                 if path_object.scope == 'assets':
-                    text = " {}: {}".format(path_object.project, path_object.shot)
+                    text = " {}: {}".format(path_object.project, shot)
                 elif path_object.scope == 'shots':
-                    text = " {}: {}_{}".format(path_object.project, path_object.seq, path_object.shot)
+                    text = " {}: {}_{}".format(path_object.project, path_object.seq, shot)
             else:
                 text = " {}".format(path_object.project)
             self.current_project_label.setText(text)
@@ -426,6 +430,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.setContentsMargins(0, 0, 0, 0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         if path:
+            print('path')
+            print(path)
             try:
                 self.path_object = cglpath.PathObject(path, cfg=self.cfg)
                 if self.path_object.context == 'render':
@@ -454,6 +460,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                       "project": proj,
                       "scope": scp
                       }
+
                 self.path_object = cglpath.PathObject(d_, self.cfg)
             else:
                 self.path_object = cglpath.PathObject(self.root, self.cfg)
@@ -542,6 +549,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         version_template = path_object.version_template
         del version_template[0:2]
         if DO_IOP:
+            print(1)
             if path_object.scope == 'IO':
                 if path_object.version:
                     if not self.panel:
@@ -621,7 +629,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.panel = IoP.IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
-                self.panel = TaskPanel(path_object=path_object, element='task')
+                self.panel = TaskPanel(path_object=path_object, element='task', cfg=self.cfg)
+                self.panel.add_button.connect(self.add_task)
+            else:
+                self.load_files_panel(path_object)
+        elif last == 'variant':
+            if path_object.variant == '*':
+                self.panel = TaskPanel(path_object=path_object, element='variant', cfg=self.cfg)
                 self.panel.add_button.connect(self.add_task)
             else:
                 self.load_files_panel(path_object)
@@ -741,10 +755,7 @@ class CGLumberjack(LJMainWindow):
         if start_time:
             logging.debug('Finished Loading Magic Browser in %s seconds' % (time.time() - start_time))
         if cfg:
-            print('cfg provided')
             self.cfg = cfg
-            print(self.cfg.user_config_file)
-            print(self.cfg.project_config_file)
         else:
             print('Dont know company and project')
             self.cfg = ProjectConfig()  # we don't know the company or project at this stage.
@@ -777,9 +788,9 @@ class CGLumberjack(LJMainWindow):
                                                  user_email=self.user_info,
                                                  company=self.company,
                                                  default_project=self.project,
-                                                 path=self.previous_path,
                                                  radio_filter=self.filter,
-                                                 show_import=show_import))
+                                                 show_import=show_import,
+                                                 cfg=self.cfg))
         if user_info:
             if user_info['first']:
                 self.setWindowTitle('Magic Browser - Logged in as %s' % user_info['first'])

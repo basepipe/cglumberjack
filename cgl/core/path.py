@@ -37,6 +37,7 @@ class PathObject(object):
         self.company = None
         self.context = None
         self.project = None
+        self.branch = None
         self.project_msd_path = None
         self.seq = None
         self.shot = None
@@ -259,6 +260,11 @@ class PathObject(object):
         except KeyError:
             pass
         self.get_config_values(company, project)
+        if 'branch' in self.project_config['templates']['assets']['render']['path']:
+            path_object['branch'] = 'master'
+            if 'shot' in path_object.keys() or 'asset' in path_object.keys():
+                if 'variant' not in path_object.keys() and 'task' in path_object.keys():
+                    path_object['variant'] = 'default'
         if 'company' not in path_object:
             logging.error('No company attr found in %s - invalid dict' % path_object)
             return
@@ -312,7 +318,10 @@ class PathObject(object):
         if self.context:
             if self.scope:
                 if self.scope == '*':
-                    self.path_template = ['company', 'context', 'project', 'scope']
+                    if self.branch:
+                        self.path_template = ['company', 'context', 'project', 'branch', 'scope']
+                    else:
+                        self.path_template = ['company', 'context', 'project', 'scope']
                     return
                 path_template = self.project_config['templates'][self.scope][self.context]['path'].split('/')
                 self.path_template = self.clean_template(path_template)
@@ -414,6 +423,7 @@ class PathObject(object):
         :param path_string: string value representing a path.
         :return:
         """
+        scopes = ['IO', 'assets', 'shots']
         path_string = os.path.normpath(path_string.split(self.company)[-1])
         path_ = os.path.normpath(path_string)
         path_parts = path_.split(os.sep)
@@ -421,8 +431,13 @@ class PathObject(object):
             path_parts.pop(0)
         path_parts.insert(0, self.company)
         self.set_attr(context=path_parts[1].lower(), do_set_path=False)
+
         if len(path_parts) > 3:
-            self.set_attr(scope=path_parts[3].lower(), do_set_path=False)
+            if path_parts[3] in scopes:
+                self.set_attr(scope=path_parts[3].lower(), do_set_path=False)
+            if len(path_parts) > 4:
+                if path_parts[4] in scopes:
+                    self.set_attr(scope=path_parts[4].lower(), do_set_path=False)
         split_at = -1
         self.get_path_template()
         self.data = {}
@@ -483,8 +498,6 @@ class PathObject(object):
                     if self.__dict__[attr]:
                         path_string = os.path.join(path_string, self.__dict__[attr])
         path_string = path_string.replace('\\', '/')
-        # TODO - if it ends with a frame range
-
         if path_string.endswith('.'):
             path_string = path_string[:-1]
         if sys.platform == 'win32':
