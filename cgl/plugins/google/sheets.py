@@ -26,8 +26,9 @@ def authorize_sheets():
     #user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
     #globals_ = load_json(user_globals['globals'])
     globals_ = ProjectConfig().project_config
-    sheet_name = globals_['sync']['syncthing']['sheets_name']
-    client_file = globals_['sync']['syncthing']['sheets_config_path']
+    user_globals = ProjectConfig().user_config
+    sheet_name = user_globals['sync']['syncthing']['sheets_name']
+    client_file = user_globals['sync']['syncthing']['sheets_config_path']
     print('client file:{}'.format(client_file))
     creds = ServiceAccountCredentials.from_json_keyfile_name(client_file, scope)
     client = gspread.authorize(creds)
