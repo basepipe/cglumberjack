@@ -3,13 +3,13 @@ from cgl.plugins.Qt import QtCore, QtWidgets
 from cgl.apps.magic_browser.main import CGLumberjack, CGLumberjackWidget
 import nuke
 from cgl.ui.widgets.dialog import InputDialog
-from cgl.plugins.nuke import cgl_nuke
+from cgl.plugins.nuke import alchemy
 from cgl.core.path import PathObject
-from cgl.core.config import app_config
+#from cgl.core.config import app_config
 from cgl.core.utils.general import current_user
 from cgl.plugins.preflight.main import Preflight
-
-CONFIG = app_config()
+from cgl.core.config.config import ProjectConfig
+CONFIG = ProjectConfig().project_config
 
 
 def get_nuke_main_window():
@@ -34,7 +34,7 @@ class NukeBrowserWidget(CGLumberjackWidget):
         print('open nuke')
 
     def import_clicked(self):
-        from cgl.plugins.nuke.cgl_nuke import import_media, import_script, import_directory, import_geo
+        from cgl.plugins.nuke.alchemy import import_media, import_script, import_directory, import_geo
         z_index = 0
         for selection in self.source_selection:
             base_, ext = os.path.splitext(selection)
@@ -59,7 +59,7 @@ class CGLNukeWidget(QtWidgets.QDialog):
     def __init__(self, parent=None):
         QtWidgets.QDialog.__init__(self, parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        scene_name = cgl_nuke.get_file_name()
+        scene_name = alchemy.get_file_name()
         scene = PathObject(scene_name)
         self.setWindowTitle('Nuke - Lumbermill')
         if scene.shot:
@@ -84,7 +84,7 @@ class CGLNuke(CGLumberjack):
 
 
 class RenderDialog(QtWidgets.QDialog):
-    from cgl.plugins.nuke.cgl_nuke import get_main_window
+    from cgl.plugins.nuke.alchemy import get_main_window
 
     def __init__(self, parent=get_main_window(), write_node=''):
         QtWidgets.QDialog.__init__(self, parent)
@@ -215,10 +215,10 @@ def create_write_node():
     if dialog.button == 'Ok':
         if dialog.combo_box.currentText():
             elem_name = 'elem%s' % dialog.combo_box.currentText().title()
-            padding = '#' * cgl_nuke.get_biggest_read_padding()
+            padding = '#' * alchemy.get_biggest_read_padding()
             if not padding:
                 padding = '####'
-            path_object = cgl_nuke.NukePathObject(cgl_nuke.get_file_name())
+            path_object = alchemy.NukePathObject(alchemy.get_file_name())
             path_object.set_attr(task=elem_name)
             path_object.set_attr(context='render')
             path_object.set_attr(version='000.001')
@@ -229,7 +229,7 @@ def create_write_node():
             write_node.knob('name').setValue(elem_name)
             return write_node
         else:
-            this = cgl_nuke.create_scene_write_node()
+            this = alchemy.create_scene_write_node()
             return this
 
 
@@ -239,7 +239,7 @@ def review_selected():
     :return:
     """
     import glob
-    path_objects = cgl_nuke.get_write_paths_as_path_objects()
+    path_objects = alchemy.get_write_paths_as_path_objects()
     for each in path_objects:
         glob_string = '%s*' % each.path_root.split('#')[0]
         files = glob.glob(glob_string)
@@ -270,7 +270,7 @@ def render_selected():
 
 
 def launch_lumbermill():
-    scene_name = cgl_nuke.get_file_name()
+    scene_name = alchemy.get_file_name()
     scene = PathObject(scene_name)
     location = '%s/*' % scene.split_after('shot')
     project_management = CONFIG['account_info']['project_management']

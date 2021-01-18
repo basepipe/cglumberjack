@@ -1,7 +1,7 @@
 import cgl.plugins.nuke.alchemy as alc
 import nuke
 from cgl.core.path import PathObject
-
+from cgl.plugins.nuke.tasks.smart_task import SmartTask
 
 class Task(SmartTask):
 

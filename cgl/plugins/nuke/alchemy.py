@@ -5,11 +5,12 @@ import time
 import nuke
 from cgl.core.utils.general import cgl_execute, write_to_cgl_data
 from cgl.core.path import PathObject, Sequence, CreateProductionData, lj_list_dir
+from cgl.core.config.config import ProjectConfig
 
-CONFIG = app_config()
+CONFIG = ProjectConfig().project_config
 PROJ_MANAGEMENT = CONFIG['account_info']['project_management']
 PADDING = CONFIG['default']['padding']
-PROCESSING_METHOD = UserConfig().d['methodology']
+PROCESSING_METHOD = ProjectConfig().user_config['methodology']
 X_SPACE = 120
 Y_SPACE = 120
 
@@ -20,7 +21,7 @@ class NukePathObject(PathObject):
         if not path_object:
             path_object = get_scene_name()
         self.data = {}
-        self.root = CONFIG['paths']['root'].replace('\\', '/')
+        self.root = ProjectConfig().user_config['paths']['root'].replace('\\', '/')
         self.company = None
         self.project = None
         self.scope = None
@@ -427,3 +428,7 @@ def get_proxy_resolution():
         print(project)
 
     return proxy_resolution
+
+def get_file_name():
+    return str(nuke.Root().name())
+
