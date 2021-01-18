@@ -1,6 +1,6 @@
 import os
 from cgl.plugins.Qt import QtCore, QtWidgets
-from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
+from cgl.apps.magic_browser.main import CGLumberjack, CGLumberjackWidget
 import nuke
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.plugins.nuke import cgl_nuke
@@ -72,7 +72,7 @@ class CGLNukeWidget(QtWidgets.QDialog):
             layout.addWidget(main)
         else:
             dialog = InputDialog(title='Not In Pipeline', message='Current Scene is not in the Pipeline, \n'
-                                                                  'open files from lumbermill')
+                                                                  'open files from magic_browser')
             dialog.exec_()
 
 

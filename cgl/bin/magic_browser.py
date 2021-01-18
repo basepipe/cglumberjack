@@ -3,7 +3,7 @@ import logging
 from cgl.core.config.config import ProjectConfig
 zero_start_time = time.time()
 import cgl.core.startup as startup
-from cgl.apps.lumbermill.main import CGLumberjack
+from cgl.apps.magic_browser.main import CGLumberjack
 start_time = time.time()
 logging.debug('Loaded initial modules in %s seconds: %s' % ((start_time - zero_start_time), __file__))
 
@@ -20,6 +20,7 @@ def load_lumbermill(app, splash=None, cfg=None):
 if __name__ == "__main__":
     print('Lumbermill.py')
     cfg = ProjectConfig()
+    print(cfg.project_config_file)
     app, splash = startup.app_init(cfg=cfg)
     project_management, user_info = startup.user_init(cfg=cfg)
     # TODO tell them to run the setup script if there's not globals file.

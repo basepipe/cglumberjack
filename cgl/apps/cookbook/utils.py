@@ -584,8 +584,8 @@ class CGLMenu(QtWidgets.QWidget):
 
 def create_button_file(software, menu_name, button_name, menu_type, cfg):
     button_path = get_button_path(software, menu_name, button_name, menu_type=menu_type, cfg=cfg)
-    if software == 'lumbermill':
-        template_software = 'lumbermill'
+    if software == 'magic_browser':
+        template_software = 'magic_browser'
     elif software == 'blender':
         template_software = 'blender'
     elif software.lower() == 'unreal':
@@ -651,7 +651,7 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus', cfg=N
     """
     returns the menu path for a menu with the given name
     :param software: software package to get the menu path for.
-    :param menu_name: CamelCase string - all menus created with pipeline designer are CamelCase
+    :param menu_name: CamelCase string - all menus created with cookbook designer are CamelCase
     :param menu_file: if True returns a menu path with a menu_name.py file.
     :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
@@ -671,7 +671,7 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus', cfg=N
 def get_button_path(software, menu_name, button_name, menu_type='menus', cfg=None):
     """
 
-    :param software: software as it appears in pipeline designer.
+    :param software: software as it appears in cookbook designer.
     :param menu_name: CamelCase menu name
     :param button_name: CamelCase button name
     :param menu_type: menus, pre_publish, shelves, context-menus

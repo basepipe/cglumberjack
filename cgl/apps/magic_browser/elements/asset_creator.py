@@ -21,9 +21,11 @@ class AssetWidget(QtWidgets.QWidget):
         if scope == 'assets':
             self.category_row = LabelComboRow('%s Category' % scope.title(), button=False, bold=False)
             self.name_row = LabelComboRow('%s Name(s)' % scope.title(), button=False, bold=False)
+            self.variant_row = LabelComboRow('Variant', button=False, bold=False)
         if scope == 'shots':
             self.category_row = LabelComboRow('Sequence', button=False, bold=False)
             self.name_row = LabelComboRow('Shot Name(s)', button=False, bold=False)
+            self.variant_row = LabelComboRow('Variant', button=False, bold=False)
         self.label = title
         self.project_label = QtWidgets.QLabel("<b>Create %s tasks For: %s</b>" % (scope.title(), title))
         self.message = QtWidgets.QLabel("")
@@ -37,6 +39,9 @@ class AssetWidget(QtWidgets.QWidget):
                                                QtWidgets.QSizePolicy.Minimum))
         v_layout.addLayout(self.category_row)
         v_layout.addLayout(self.name_row)
+        if parent.path_object.branch:
+            self.variant_row.combo.setEnabled(False)
+            v_layout.addLayout(self.variant_row)
         v_layout.addWidget(self.message)
 
         self.message.hide()
@@ -71,6 +76,7 @@ class AssetCreator(LJDialog):
         self.regex = ''
         self.valid_categories_string = ''
         self.seq = None
+        self.variant = 'default'
         self.valid_categories = []
         self.get_valid_categories()
         # Environment Stuff
@@ -130,6 +136,7 @@ class AssetCreator(LJDialog):
         self.load_categories()
         self.asset_widget.category_row.combo.currentIndexChanged.connect(self.on_category_selected)
         self.asset_widget.name_row.combo.editTextChanged.connect(self.process_asset_string)
+        self.asset_widget.variant_row.combo.editTextChanged.connect(self.process_variant_string)
         self.create_button.clicked.connect(self.on_create_clicked)
         if self.scope == 'shots':
             self.asset_widget.category_row.combo.editTextChanged.connect(self.on_seq_text_changed)
@@ -214,6 +221,10 @@ class AssetCreator(LJDialog):
             self.asset_widget.category_row.combo.addItems(seqs)
             self.on_seq_text_changed()
 
+    def process_variant_string(self):
+        self.variant = self.asset_widget.variant_row.combo.currentText()
+        self.create_button.setEnabled(True)
+
     def process_asset_string(self):
         asset_rules = ''
         self.seq = self.asset_widget.category_row.combo.currentText()
@@ -232,12 +243,18 @@ class AssetCreator(LJDialog):
             self.show_layout_items(self.task_layout)
             self.create_button.setEnabled(True)
             if asset_string in self.asset_list:
-                self.asset_message_string = '%s already Exists!' % asset_string
+                if self.path_object.branch:
+                    self.asset_message_string = 'Create a Variant for %s' % asset_string
+                    self.asset_widget.variant_row.combo.setEnabled(True)
+                else:
+                    self.asset_message_string = '%s already Exists!' % asset_string
+                    self.hide_layout_items(self.task_layout)
+                self.create_button.setEnabled(False)
                 self.asset_widget.message.setText(self.asset_message_string)
                 # self.asset_widget.message.setPalette(self.red_palette)
                 self.asset_widget.message.show()
-                self.hide_layout_items(self.task_layout)
-                self.create_button.setEnabled(False)
+
+
         else:
             self.asset_message_string = '%s is not a valid %s name\n%s' % (asset_string, self.scope,
                                                                            self.asset_string_example)
@@ -289,6 +306,8 @@ class AssetCreator(LJDialog):
         pass
 
     def on_create_clicked(self):
+        if self.path_object.branch:
+            self.path_object.set_attr(variant=self.variant)
         for each in self.tasks:
             if self.scope == 'assets':
                 self.path_object.set_attr(asset=self.asset_widget.name_row.combo.currentText())

@@ -36,8 +36,8 @@ class RequestFeatureDialog(LJDialog):
         self.results_list = []
         self.links_list = []
         # This list should be connected to
-        self.repo_dict = {'cglumberjack': {'guis': {'Lumbermill': ['cgl/apps/lumbermill/main.py'],
-                                                    'Pipeline Designer': ['cgl/apps/pipeline/designer.py'],
+        self.repo_dict = {'cglumberjack': {'guis': {'Lumbermill': ['cgl/apps/magic_browser/main.py'],
+                                                    'Pipeline Designer': ['cgl/apps/cookbook/designer.py'],
                                                     'Request Feature': ['cgl/ui/widgets/help.py',
                                                                         'RequestFeatureDialog()'],
                                                     'Time Tracker': ['cgl/ui/widgets/dialog.py', 'TimeTracker()'],
@@ -116,7 +116,7 @@ class RequestFeatureDialog(LJDialog):
                                             'videos': {},
                                             'CGL Examples': {}
                                             },
-                          'lumbermill': {'documentation': {},
+                          'magic_browser': {'documentation': {},
                                          'videos': {},
                                          'CGL Examples': {}
                                          },

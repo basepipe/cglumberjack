@@ -18,6 +18,7 @@ SEQ_SPLIT = re.compile("\\#{4,}")
 SEQ2_SPLIT = re.compile("[%0-9]{2,}d")
 SEQ = re.compile('[0-9]{3,}-[0-9]{3,}')
 CGL_SEQ_TEST = re.compile('.+#+.+\s[0-9]+-[0-9]+$')
+PROCESSING_METHOD = user_config()['methodology']
 
 
 class PathObject(object):
@@ -36,6 +37,8 @@ class PathObject(object):
         self.company = None
         self.context = None
         self.project = None
+        self.branch = None
+        self.project_msd_path = None
         self.seq = None
         self.shot = None
         self.scope = None
@@ -93,7 +96,6 @@ class PathObject(object):
         self.name = None
         self.project_config = {}
         self.project_config_path = None
-        self.company_config_path = None
         self.proj_management = None
         self.project_padding = None
         self.processing_method = 'local'
@@ -101,8 +103,9 @@ class PathObject(object):
         self.context_list = []
         self.ext_map = {}
         self.root = get_root()
+        self.msd_path = ''
+        self.relative_msd_path = ''
         try:
-            # TODO python 3 doesn't like unicode
             if isinstance(path_object, unicode):
                 path_object = str(path_object)
         except NameError:
@@ -150,8 +153,84 @@ class PathObject(object):
         if not self.priority:
             self.priority = 'medium'
 
+    def set_msd(self):
+        if self.resolution:
+            if self.filename:
+                base = os.path.dirname(self.path_root).replace('source', 'render')
+                rel_base = os.path.dirname(self.path).replace('source', 'render')
+            else:
+                base = self.path_root.replace('source', 'render')
+                rel_base = self.path.replace('source', 'render')
+            self.msd_path = '%s/%s_%s_%s.%s' % (base, self.seq, self.shot, self.task, 'msd')
+            self.relative_msd_path = '%s/%s_%s_%s.%s' % (rel_base, self.seq, self.shot, self.task, 'msd')
+        else:
+            self.msd_path = ''
+            self.relative_msd_path = ''
+
+    def save_msd(self, msd_dict):
+        print('Saving msd: {}'.format(self.msd_path))
+        save_json(self.msd_path, msd_dict)
+        self.update_project_msd()
+        self.update_test_project_msd(attr='msd')
+
+    def update_test_project_msd(self, attr='msd'):
+        project_msd_file = r'Z:\Projects\VFX\render\02BTH_2021_Kish\test_project_msd.msd'
+        if os.path.exists(project_msd_file):
+            msd_dict = load_json(self.project_msd_path)
+            if attr == 'msd':
+                if user == 'publish':
+                    msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['render'][
+                        'msd'] = self.relative_msd_path
+                else:
+                    msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['render'][
+                        'msd'] = self.relative_msd_path
+            if attr == 'preview':
+                if user == 'publish':
+                    if os.path.exists(self.preview_path):
+                        msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['source'][
+                            'preview_file'] = self.preview_path
+                    if os.path.exists(self.thumb_path):
+                        msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['source'][
+                            'thumb_file'] = self.thumb_path
+                else:
+                    if os.path.exists(self.preview_path):
+                        msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['source'][
+                            'preview_file'] = self.preview_path
+                    if os.path.exists(self.thumb_path):
+                        msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['source'][
+                            'thumb_file'] = self.thumb_path
+            print('Saving Project.msd: {}'.format(project_msd_file))
+            save_json(project_msd_file, msd_dict)
+
+    def update_project_msd(self):
+        from cgl.core.utils.general import load_json, save_json
+        if os.path.exists(self.project_msd_path):
+            msd_dict = load_json(self.project_msd_path)
+            if self.seq not in msd_dict[self.scope].keys():
+                msd_dict[self.scope][self.seq] = {}
+            if self.shot not in msd_dict[self.scope][self.seq].keys():
+                msd_dict[self.scope][self.seq][self.shot] = {}
+            msd_dict[self.scope][self.seq][self.shot][self.task] = self.relative_msd_path
+            print("updating {} with {}".format(self.shot, self.relative_msd_path))
+        else:
+            print("updating {} with {}".format(self.shot, self.relative_msd_path))
+            if self.scope == 'assets':
+                msd_dict = {'shots': {},
+                            'assets': {self.seq: {self.shot: {self.task: self.relative_msd_path}}}
+                            }
+            elif self.scope == 'shots':
+                msd_dict = {'shots': {self.seq: {self.shot: {self.task: self.relative_msd_path}}},
+                            'assets': {},
+                            }
+
+        print('Saving Project.msd: {}'.format(self.project_msd_path))
+        save_json(self.project_msd_path, msd_dict)
+
     def process_string(self, path_object):
         path_object = path_object.replace('\\', '/')
+        if self.root not in path_object:
+            print('Could not find root {} in {}'.format(self.root, path_object))
+            return
         self.get_company(path_object)
         self.unpack_path(path_object)
         self.set_data_from_attrs()
@@ -181,6 +260,11 @@ class PathObject(object):
         except KeyError:
             pass
         self.get_config_values(company, project)
+        if 'branch' in self.project_config['templates']['assets']['render']['path']:
+            path_object['branch'] = 'master'
+            if 'shot' in path_object.keys() or 'asset' in path_object.keys():
+                if 'variant' not in path_object.keys() and 'task' in path_object.keys():
+                    path_object['variant'] = 'default'
         if 'company' not in path_object:
             logging.error('No company attr found in %s - invalid dict' % path_object)
             return
@@ -192,7 +276,6 @@ class PathObject(object):
             self.set_attr(major_version=major_version.replace('.', ''))
             self.set_attr(minor_version=minor_version.replace('.', ''))
         self.set_shotname()
-
 
     def get_last_attr(self):
         current_ = 'company'
@@ -235,7 +318,10 @@ class PathObject(object):
         if self.context:
             if self.scope:
                 if self.scope == '*':
-                    self.path_template = ['company', 'context', 'project', 'scope']
+                    if self.branch:
+                        self.path_template = ['company', 'context', 'project', 'branch', 'scope']
+                    else:
+                        self.path_template = ['company', 'context', 'project', 'scope']
                     return
                 path_template = self.project_config['templates'][self.scope][self.context]['path'].split('/')
                 self.path_template = self.clean_template(path_template)
@@ -324,7 +410,7 @@ class PathObject(object):
                     return self.template
                 except KeyError:
                     logging.debug("Config ERROR: Can't find either %s or %s within app config 'templates'"
-                                 % (self.scope, self.context))
+                                  % (self.scope, self.context))
                     return
             else:
                 self.template = ['company', 'context', 'project', 'scope']
@@ -337,6 +423,7 @@ class PathObject(object):
         :param path_string: string value representing a path.
         :return:
         """
+        scopes = ['IO', 'assets', 'shots']
         path_string = os.path.normpath(path_string.split(self.company)[-1])
         path_ = os.path.normpath(path_string)
         path_parts = path_.split(os.sep)
@@ -344,8 +431,13 @@ class PathObject(object):
             path_parts.pop(0)
         path_parts.insert(0, self.company)
         self.set_attr(context=path_parts[1].lower(), do_set_path=False)
+
         if len(path_parts) > 3:
-            self.set_attr(scope=path_parts[3].lower(), do_set_path=False)
+            if path_parts[3] in scopes:
+                self.set_attr(scope=path_parts[3].lower(), do_set_path=False)
+            if len(path_parts) > 4:
+                if path_parts[4] in scopes:
+                    self.set_attr(scope=path_parts[4].lower(), do_set_path=False)
         split_at = -1
         self.get_path_template()
         self.data = {}
@@ -377,7 +469,7 @@ class PathObject(object):
         if not self.type:
             self.set_attr(type=self.seq, do_set_path=False)
         if self.user:
-            del path_parts[0:split_at+1]
+            del path_parts[0:split_at + 1]
             self.unpack_version(path_parts)
         if self.version:
             major_version, minor_version = self.version.split('.')
@@ -406,8 +498,6 @@ class PathObject(object):
                     if self.__dict__[attr]:
                         path_string = os.path.join(path_string, self.__dict__[attr])
         path_string = path_string.replace('\\', '/')
-        # TODO - if it ends with a frame range
-
         if path_string.endswith('.'):
             path_string = path_string[:-1]
         if sys.platform == 'win32':
@@ -416,6 +506,8 @@ class PathObject(object):
             self.path_root = os.path.join(self.root, path_string).replace('\\', '/')
         self.path = path_string
         self.set_command_base()
+        if self.resolution:
+            self.set_msd()
         if self.filename:
             if self.filename != '*':
                 self.set_file_type()
@@ -563,8 +655,12 @@ class PathObject(object):
         :return:
         """
         value = self.data[attr]
-        split_after_thing = os.path.join(self.path_root.split(value)[0], value)
-        return os.path.join(self.path_root.split(value)[0], value).replace('\\', '/')
+        if value:
+            split_after_thing = os.path.join(self.path_root.split(value)[0], value)
+            return os.path.join(self.path_root.split(value)[0], value).replace('\\', '/')
+        else:
+            print('Attr: {} does not exist'.format(attr))
+            return self.path_root
 
     def eliminate_wild_cards(self):
         """
@@ -639,7 +735,7 @@ class PathObject(object):
         pub_major = self.latest_version(publish_=True).major_version
         if int(major) < int(pub_major):
             major = pub_major
-        next_major = '%03d' % (int(major)+1)
+        next_major = '%03d' % (int(major) + 1)
         return '%s.%s' % (next_major, '000')
 
     def next_major_version(self):
@@ -755,6 +851,7 @@ class PathObject(object):
             path_ = os.path.split(self.path_root)[0]
             if sys.platform == 'win32':
                 self.preview_path = '%s/%s/%s' % (path_, '.preview', name_)
+                self.preview_path = self.preview_path.replace('render', 'source')
                 self.preview_seq = self.preview_path.replace(ext, '.####%s' % ext)
                 self.data['preview_path'] = self.preview_path
                 self.set_thumb_path()
@@ -792,8 +889,10 @@ class PathObject(object):
         sets the .company_config and .project_config values
         :return:
         """
-        self.company_config_path = os.path.join(self.project_config['account_info']['globals_path'], 'globals.json')
-        self.project_config_path = os.path.join(self.project_config['account_info']['globals_path'], 'globals.json')
+        self.project_config_path = self.cfg.project_config_file
+        if self.project:
+            self.project_msd_path = os.path.join(self.split_after('project'),
+                                                 '{}.msd'.format(self.project)).replace('/source', '/render')
 
     def set_command_base(self):
         """
@@ -826,15 +925,15 @@ class PathObject(object):
                 elif self.proj_management == 'shotgun':
                     prod_data = CreateProductionData(path_object=self, cfg=self.cfg)
                     print('Finished uploading to shotgun')
-                elif self.proj_management == 'lumbermill':
-                    logging.debug('no review process defined for default lumbermill')
+                elif self.proj_management == 'magic_browser':
+                    logging.debug('no review process defined for default magic_browser')
             else:
                 print('No preview file found for uploading: %s' % self.preview_path)
                 return False
 
     def make_thumbnail(self, job_id=None, new_window=False, type_='movie'):
         from cgl.core import convert
-        #TODO make this smart enough to know based off the self.thumb_path
+        # TODO make this smart enough to know based off the self.thumb_path
         if os.path.exists(self.preview_path):
             if type_ == 'movie':
                 logging.debug('Creating Thumbnail %s' % self.thumb_path)
@@ -844,7 +943,7 @@ class PathObject(object):
                                                         processing_method=PROCESSING_METHOD, new_window=new_window)
                 return thumb_info
 
-    def make_preview(self, job_id=None, new_window=False ):
+    def make_preview(self, job_id=None, new_window=False):
         """
         Creates web optimized preview of PathObject.  For movies and image sequences it's a 1920x1080 quicktime h264,
         for images it's a jpeg within the boundaries of 1920x1080
@@ -1129,30 +1228,6 @@ class CreateProductionData(object):
             os.makedirs(os.path.dirname(obj.asset_json))
         asset_meta.save(obj.asset_json)
 
-    def update_project_json(self):
-        from cgl.core import assetcore
-        logging.debug('updating project json')
-        if os.path.exists(self.path_object.project_json):
-            project_meta = assetcore.MetaObject(jsonfile=self.path_object.project_json)
-        else:
-            project_meta = assetcore.MetaObject()
-        asset_obj = PathObject(str(self.path_object.asset_json))
-        if self.path_object.user == 'publish':
-            status = 'published'
-        else:
-            status = 'in progress'
-        project_meta.add(_type='link',
-                         name="%s_%s" % (self.path_object.seq, self.path_object.shot),
-                         type='link',
-                         uid="%s_%s" % (self.path_object.seq, self.path_object.shot),
-                         added_from='system',
-                         task='lay',
-                         json=asset_obj.path,
-                         status=status,
-                         scope=self.path_object.scope
-                         )
-        project_meta.save(self.path_object.project_json)
-
     def create_folders(self):
         if not self.path_object.root:
             logging.debug('No Root Defined')
@@ -1205,7 +1280,7 @@ class CreateProductionData(object):
 
     def create_project_management_data(self, path_object, project_management, user_login=None, status=None):
 
-        if project_management != 'lumbermill':
+        if project_management != 'magic_browser':
             if path_object.filename or self.force_pm_creation:
                 session = None
                 if self.session:
@@ -1221,8 +1296,8 @@ class CreateProductionData(object):
                                                     user_email=user_login,
                                                     status=status).create_project_management_data()
             else:
-                logging.debug('Creating Paths on Disk, lumbermill will create %s '
-                      'versions when you add files' % project_management)
+                logging.debug('Creating Paths on Disk, magic_browser will create %s '
+                              'versions when you add files' % project_management)
         else:
             logging.debug('Using Lumbermill built in proj management')
 
@@ -1248,7 +1323,7 @@ class CreateProductionData(object):
 
 class Sequence(object):
     """
-    Class for dealing with "Sequences" of images or files in general as defined within a vfx/animation/games pipeline
+    Class for dealing with "Sequences" of images or files in general as defined within a vfx/animation/games cookbook
     """
     sequence = None
     frame_range = None
@@ -1266,14 +1341,17 @@ class Sequence(object):
     def __init__(self, sequence, padding=None, verbose=False, cfg=None):
         self.sequence = sequence
         self.verbose = verbose
-        self.cfg = cfg
-        self.config = cfg.project_config
+        if cfg:
+            self.cfg = cfg
+        else:
+            # TODO - this seems dangerous.
+            self.cfg = ProjectConfig()
+        self.config = self.cfg.project_config
         if not self.is_valid_sequence():
             return
         self.padding = padding
         self.set_frange()
         self.set_sequence_strings()
-
 
         # self.print_info()
 
@@ -1398,15 +1476,13 @@ class Sequence(object):
             self.start_frame = sframe
             self.end_frame = eframe
             self.padding = len(self.start_frame)
-            self.hash = '#'*self.padding
+            self.hash = '#' * self.padding
             if self.padding < 10:
-                self.num = '%0'+str(self.padding)+'d'
+                self.num = '%0' + str(self.padding) + 'd'
             else:
-                self.num = '%'+str(self.padding)+'d'
+                self.num = '%' + str(self.padding) + 'd'
             mid_frame = int((int(eframe) - int(sframe)) / 2) + int(sframe)
             self.middle_frame = self.int_as_padded_frame(mid_frame, self.padding)
-
-
 
     @staticmethod
     def int_as_padded_frame(number, padding=None):
@@ -1553,7 +1629,7 @@ def find_latest_publish_objects(folder, source=True, render=False):
             size = get_folder_size(l_object.path_root)
             total_size += size
     logging.debug('%s %s Total Size of Latest Publishes\n\t%s' % (path_object.seq, path_object.shot,
-                                                          print_file_size(total_size, do_print=False)))
+                                                                  print_file_size(total_size, do_print=False)))
     return sync_objects
 
 
@@ -1579,7 +1655,7 @@ def show_in_project_management(path_object, cfg=None):
     :param path_object:
     :return:
     """
-    if path_object.proj_management != 'lumbermill':
+    if path_object.proj_management != 'magic_browser':
         module = "plugins.project_management.%s.main" % path_object.proj_management
         # noinspection PyTypeChecker
         try:
@@ -1630,7 +1706,6 @@ def lj_list_dir(directory, path_filter=None, basename=True, return_sequences=Fal
     """
     path_object = PathObject(directory)
     if not cfg:
-        print(lj_list_dir)
         cfg = ProjectConfig(path_object)
     ext_map = cfg.project_config['ext_map']
     list_ = os.listdir(directory)
@@ -1807,6 +1882,3 @@ if __name__ == '__main__':
                       'scope': '*'}
     po = PathObject(file_dict_test)
     print(po.path_root)
-
-
-

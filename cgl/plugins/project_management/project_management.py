@@ -17,7 +17,7 @@ class ProjectManagementData(object):
     just about any project management system.  Once everything is filled out
     we should have a working version of project management fo just about anything.
     """
-    project_management = 'lumbermill'
+    project_management = 'magic_browser'
     create = False
     edit = False
     delete = False

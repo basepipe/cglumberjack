@@ -48,7 +48,7 @@ class Task(SmartTask):
 
 
 """
-Files Required to make the textures pipeline work.
+Files Required to make the textures cookbook work.
 
 config_/shaders.json - 
     this is a config file containing shader settings for specific shaders, this allows us

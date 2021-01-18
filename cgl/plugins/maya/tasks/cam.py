@@ -1,12 +1,10 @@
 import os
-import pymel.core as pm
 from .smart_task import SmartTask
 from cgl.core.path import PathObject
 from cgl.plugins.maya.alchemy import scene_object
 from cgl.ui.widgets.dialog import MagicList, InputDialog, FrameRange
 from cgl.plugins.maya.utils import get_shape_name, load_plugin
 import cgl.plugins.maya.msd as msd
-reload(msd)
 try:
     import pymel.core as pm
     import maya.mel as mel

@@ -123,7 +123,7 @@ def build_folder_info(root_folder, force=False):
             last_attr = temp_object.get_last_attr()
             create_cgl_info(root, last_attr, dirs, files, force=force)
         except ValueError:
-            # TODO - need to add anything that falls into this to some kind of "not in pipeline"
+            # TODO - need to add anything that falls into this to some kind of "not in cookbook"
             #  list of stuff to be deleted.
             last_attr = ''
             create_cgl_info(root, last_attr, dirs, files, force=force)

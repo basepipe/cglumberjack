@@ -2,7 +2,7 @@
 
 class SmartTask(object):
     """
-    This is a template for a "task" within the pipeline.  It covers common areas when dealing with digital assets
+    This is a template for a "task" within the cookbook.  It covers common areas when dealing with digital assets
     specific to different tasks.
     """
 
@@ -57,7 +57,7 @@ class SmartTask(object):
 
     def publish(self):
         """
-        publishes specific to the task at hand. by default we just do what's in the lumbermill plugin,
+        publishes specific to the task at hand. by default we just do what's in the magic_browser plugin,
         this allows us to customize at a more granular level if needed.
         :return:
         """

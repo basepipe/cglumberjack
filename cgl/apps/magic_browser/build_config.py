@@ -214,7 +214,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.project_management_label.setProperty('class', 'ultra_title')
         self.proj_management_label = QtWidgets.QLabel('Software:')
         self.proj_management_combo = QtWidgets.QComboBox()
-        self.proj_management_combo.addItems(['lumbermill', 'ftrack', 'shotgun'])
+        self.proj_management_combo.addItems(['magic_browser', 'ftrack', 'shotgun'])
         # self.red_palette, self.green_palette, self.black_palette = define_palettes()
 
         self.user_email_label = QtWidgets.QLabel('User Email:')
@@ -552,7 +552,7 @@ class ConfigDialog(QtWidgets.QDialog):
         self.api_key_line_edit.setText(api_key)
         self.api_user_line_edit.setText(api_user)
         self.server_line_edit.setText(server_url)
-        if self.project_management == 'lumbermill':
+        if self.project_management == 'magic_browser':
             self.hide_api_info()
         elif self.project_management == 'ftrack':
             self.show_api_info()
@@ -593,13 +593,13 @@ class ConfigDialog(QtWidgets.QDialog):
                     'project_management': 'shotgun',
                     'root': self.root
                     }
-        elif self.project_management == 'lumbermill':
+        elif self.project_management == 'magic_browser':
             info = {'api_server': self.api_server,
                     'api_key': self.api_key,
                     'api_user': self.api_user,
                     'api_script': self.api_script,
                     'company': self.company,
-                    'project_management': 'lumbermill',
+                    'project_management': 'magic_browser',
                     'root': self.root,
                     }
         if '' in info:

@@ -17,18 +17,13 @@ class LJTableWidget(QtWidgets.QTableView):
         self.verticalHeader().hide()
         self.horizontalHeader().setStretchLastSection(True)
         self.path_object = path_object
-        # self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        # self.horizontalHeader().setMovable(True)
         self.menu = None
         self.search_wgt = None
         self.alphabet_header = None
         self.header_right_click_menu = LJMenu(self)
-        # self.item_right_click_menu = LJMenu(self)
         self.horizontalHeader().setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         StateSavers.remember_me(self)
         self.items_ = []
-        # self.clicked.connect(self.row_selected)
-        # self.activated.connect(self.row_selected)
         self.height_hint = 0
         self.width_hint = 0
         self.doubleClicked.connect(self.send_double_click_signal)

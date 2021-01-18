@@ -5,7 +5,7 @@ from cgl.plugins.Qt import QtWidgets
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import load_style_sheet
-from cgl.apps.pipeline.utils import CGLMenu, get_menu_path, get_button_path
+from cgl.apps.cookbook.utils import CGLMenu, get_menu_path, get_button_path
 from cgl.core.config.config import ProjectConfig
 
 
@@ -278,7 +278,7 @@ class Designer(LJDialog):
 
     def on_new_software_clicked(self):
         dialog = InputDialog(title='Add Software', message='Enter or Choose Software',
-                             combo_box_items=['', 'lumbermill', 'nuke', 'maya', 'blender', 'houdini', 'unreal'],
+                             combo_box_items=['', 'magic_browser', 'nuke', 'maya', 'blender', 'houdini', 'unreal'],
                              regex='[a-zA-Z0-0]{3,}', name_example='Only letters & Numbers Allowed Software Names')
         dialog.exec_()
         if dialog.button == 'Ok':

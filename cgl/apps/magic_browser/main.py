@@ -8,17 +8,18 @@ from cgl.ui.widgets.search import LJSearchEdit
 from cgl.ui.widgets.base import LJMainWindow
 from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 import cgl.core.path as cglpath
-from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master, paths, get_user_config_file
+from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master, paths,\
+    get_user_config_file, get_root
 from cgl.core.utils.general import current_user, launch_lumber_watch, save_json
 from cgl.core.config.config import ProjectConfig, paths
 # from cgl.core.config import app_config, UserConfig, user_config
-from cgl.apps.lumbermill.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
-from cgl.apps.lumbermill.elements.FilesPanel import FilesPanel
+from cgl.apps.magic_browser.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
+from cgl.apps.magic_browser.elements.FilesPanel import FilesPanel
 from cgl.ui.widgets.help import ReportBugDialog, RequestFeatureDialog
 # import cgl.plugins.syncthing.utils as st_utils
 
 try:
-    import apps.lumbermill.elements.IOPanel as IoP
+    import apps.magic_browser.elements.IOPanel as IoP
     DO_IOP = True
 except ImportError:
     IoP = None
@@ -65,7 +66,7 @@ class PathWidget(QtWidgets.QFrame):
 
     def __init__(self, parent=None, path_object=None, cfg=None):
         QtWidgets.QFrame.__init__(self, parent)
-        if path_object:
+        if path_object.path_root:
             self.path_object = cglpath.PathObject(path_object, cfg)
             self.path_root = self.path_object.path_root
         else:
@@ -231,9 +232,10 @@ class NavigationWidget(QtWidgets.QFrame):
         return self.current_location_line_edit.text()
 
     def set_text(self, text):
-        self.current_location_line_edit.setText(text.replace('\\', '/'))
-        if self.current_location_line_edit.text():
-            self.path_object = cglpath.PathObject(self.current_location_line_edit.text())
+        if text:
+            self.current_location_line_edit.setText(text.replace('\\', '/'))
+            if self.current_location_line_edit.text():
+                self.path_object = cglpath.PathObject(self.current_location_line_edit.text())
 
     def show_company(self):
         self.companies_button.show()
@@ -375,10 +377,14 @@ class LocationWidget(QtWidgets.QWidget):
     def path_changed(self, path_object):
         if path_object.project:
             if path_object.shot:
+                if path_object.variant == 'default' or path_object.variant == '*' or not path_object.variant:
+                    shot = path_object.shot
+                else:
+                    shot = '{}_{}'.format(path_object.shot, path_object.variant)
                 if path_object.scope == 'assets':
-                    text = " {}: {}".format(path_object.project, path_object.shot)
+                    text = " {}: {}".format(path_object.project, shot)
                 elif path_object.scope == 'shots':
-                    text = " {}: {}_{}".format(path_object.project, path_object.seq, path_object.shot)
+                    text = " {}: {}_{}".format(path_object.project, path_object.seq, shot)
             else:
                 text = " {}".format(path_object.project)
             self.current_project_label.setText(text)
@@ -411,7 +417,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.company = company
         self.project_management = project_management
         self.root = paths()['root']  # Company Specific
-        self.user_root = self.cfg.project_config['cg_lumberjack_dir']
         self.context = 'source'
         self.path_object = None
         self.panel = None
@@ -425,6 +430,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.setContentsMargins(0, 0, 0, 0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         if path:
+            print('path')
+            print(path)
             try:
                 self.path_object = cglpath.PathObject(path, cfg=self.cfg)
                 if self.path_object.context == 'render':
@@ -453,6 +460,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                       "project": proj,
                       "scope": scp
                       }
+
                 self.path_object = cglpath.PathObject(d_, self.cfg)
             else:
                 self.path_object = cglpath.PathObject(self.root, self.cfg)
@@ -481,7 +489,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.progress_bar.hide()
         # self.nav_widget.update_buttons()
         self.path_widget.update_path(path_object=self.path_object)
-
         self.nav_widget.location_changed.connect(self.update_location)
         self.nav_widget.refresh_button_clicked.connect(self.update_location_to_latest)
         self.nav_widget.my_tasks_clicked.connect(self.show_my_tasks)
@@ -542,6 +549,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         version_template = path_object.version_template
         del version_template[0:2]
         if DO_IOP:
+            print(1)
             if path_object.scope == 'IO':
                 if path_object.version:
                     if not self.panel:
@@ -621,7 +629,13 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.panel = IoP.IOPanel(path_object=path_object)
         elif last == 'task':
             if path_object.task == '*':
-                self.panel = TaskPanel(path_object=path_object, element='task')
+                self.panel = TaskPanel(path_object=path_object, element='task', cfg=self.cfg)
+                self.panel.add_button.connect(self.add_task)
+            else:
+                self.load_files_panel(path_object)
+        elif last == 'variant':
+            if path_object.variant == '*':
+                self.panel = TaskPanel(path_object=path_object, element='variant', cfg=self.cfg)
                 self.panel.add_button.connect(self.add_task)
             else:
                 self.load_files_panel(path_object)
@@ -654,7 +668,7 @@ class CGLumberjackWidget(QtWidgets.QWidget):
 
     def add_task(self, path_object):
         logging.debug(1)
-        from cgl.apps.lumbermill.elements import asset_creator
+        from cgl.apps.magic_browser.elements import asset_creator
         task_mode = True
         dialog = asset_creator.AssetCreator(self, path_dict=path_object.data, task_mode=task_mode, cfg=self.cfg)
         dialog.exec_()
@@ -741,7 +755,6 @@ class CGLumberjack(LJMainWindow):
         if start_time:
             logging.debug('Finished Loading Magic Browser in %s seconds' % (time.time() - start_time))
         if cfg:
-            print('cfg provided')
             self.cfg = cfg
         else:
             print('Dont know company and project')
@@ -770,13 +783,14 @@ class CGLumberjack(LJMainWindow):
         self.pd_menus = {}
         self.menu_dict = {}
         self.menus = {}
+        self.previous_path = os.path.join(get_root(), '*')
         self.setCentralWidget(CGLumberjackWidget(self, project_management=self.project_management,
                                                  user_email=self.user_info,
                                                  company=self.company,
                                                  default_project=self.project,
-                                                 path=self.previous_path,
                                                  radio_filter=self.filter,
-                                                 show_import=show_import))
+                                                 show_import=show_import,
+                                                 cfg=self.cfg))
         if user_info:
             if user_info['first']:
                 self.setWindowTitle('Magic Browser - Logged in as %s' % user_info['first'])
@@ -803,7 +817,7 @@ class CGLumberjack(LJMainWindow):
         request_feature_button = QtWidgets.QAction('Request Feature', self)
         tools_menu = self.menu_bar.addMenu('&Tools')
         self.sync_menu = self.menu_bar.addMenu('&Sync')
-        if self.project_management != 'lumbermill':
+        if self.project_management != 'magic_browser':
             self.proj_man_link = self.two_bar.addAction(proj_man)
         self.login_menu = self.two_bar.addAction(login)
         self.two_bar.addAction(time_tracking)
@@ -902,7 +916,7 @@ class CGLumberjack(LJMainWindow):
         self.set_auto_launch_text()
         self.set_processing_method_text()
         # TODO how do i run this as a background process, or a parallell process?
-        # TODO - how do i grab the pid so i can close this when lumbermill closes potentially?
+        # TODO - how do i grab the pid so i can close this when magic_browser closes potentially?
         if sync_enabled:
             import cgl.plugins.syncthing.utils as st_utils
             try:
@@ -1097,10 +1111,10 @@ class CGLumberjack(LJMainWindow):
     def load_pipeline_designer_menus(self):
         import json
         #
-        menus_json = os.path.join(self.cfg.cookbook_folder, 'lumbermill', 'menus.cgl')
+        menus_json = os.path.join(self.cfg.cookbook_folder, 'magic_browser', 'menus.cgl')
         if os.path.exists(menus_json):
             with open(menus_json, 'r') as stream:
-                self.pd_menus = json.load(stream)['lumbermill']
+                self.pd_menus = json.load(stream)['magic_browser']
                 software_menus = self.order_menus(self.pd_menus)
                 if software_menus:
                     for menu in software_menus:
@@ -1272,7 +1286,7 @@ class CGLumberjack(LJMainWindow):
         logging.debug('settings clicked')
 
     def on_alchemists_cookbook_clicked(self):
-        from cgl.apps.pipeline.designer import Designer
+        from cgl.apps.cookbook.designer import Designer
         self.cfg = ProjectConfig(company=self.company, project=self.project)
         pm = self.cfg.project_config['account_info']['project_management']
         def_schema = self.cfg.project_config['project_management'][pm]['api']['default_schema']

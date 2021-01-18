@@ -2,7 +2,7 @@ import cgl.core.startup as startup
 
 
 def load_pipeline_designer(app_, splash_):
-    from cgl.apps.pipeline.designer import Designer
+    from cgl.apps.cookbook.designer import Designer
     mw = Designer(type_='pre_publish')
     if mw:
         # mw = Designer(type_='menus')

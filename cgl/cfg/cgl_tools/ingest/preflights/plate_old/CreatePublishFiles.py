@@ -23,7 +23,7 @@ STATUS = 12
 
 class CreatePublishFiles(PreflightCheck):
     """
-    This Class is designed specifically to work with the lumbermill ingest tool.  It expects a lumbermill data frame in order to function.
+    This Class is designed specifically to work with the magic_browser ingest tool.  It expects a magic_browser data frame in order to function.
 
     """
 

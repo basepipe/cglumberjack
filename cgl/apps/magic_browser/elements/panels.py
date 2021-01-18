@@ -15,7 +15,7 @@ from cgl.core.config.config import ProjectConfig, get_root, copy_config, paths
 class CompanyPanel(QtWidgets.QWidget):
     location_changed = QtCore.Signal(object)
     user_root = None
-    project_management = 'lumbermill'
+    project_management = 'magic_browser'
 
     def __init__(self, parent=None, path_object=None, search_box=None, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
@@ -59,16 +59,17 @@ class CompanyPanel(QtWidgets.QWidget):
         if dialog.button == 'Ok':
             company = dialog.line_edit.text()
             self.path_object.set_attr(company=company)
-            CreateProductionData(self.path_object, project_management='lumbermill')
+            CreateProductionData(self.path_object, project_management='magic_browser')
             self.load_companies()
 
     def create_company_globals(self, company, proj_management):
         logging.debug('Creating Company Globals %s' % company)
-        dir_ = os.path.join(self.user_root, 'companies', company)
-        if not os.path.exists(dir_):
-            logging.debug('%s doesnt exist, making it' % dir_)
-            os.makedirs(dir_)
-            app_config(company=company, proj_management=proj_management)
+        print('this function must be re-written')
+        # dir_ = os.path.join(self.user_root, 'companies', company)
+        # if not os.path.exists(dir_):
+        #     logging.debug('%s doesnt exist, making it' % dir_)
+        #     os.makedirs(dir_)
+        #     app_config(company=company, proj_management=proj_management)
             # set the config stuff according to what's up
 
     def check_default_company_globals(self):
@@ -107,6 +108,9 @@ class CompanyPanel(QtWidgets.QWidget):
 
 
 class ProjectPanel(QtWidgets.QWidget):
+    """
+    Shows a list of Projects
+    """
     location_changed = QtCore.Signal(object)
 
     def __init__(self, parent=None, path_object=None, search_box=None, title='Projects', cfg=None):
@@ -119,7 +123,7 @@ class ProjectPanel(QtWidgets.QWidget):
         self.project_management = self.cfg.project_config['account_info']['project_management']
         self.user_email = self.cfg.project_config['project_management'][self.project_management]['users'][current_user()]
         self.root = paths()['root']  # Company Specific
-        self.user_root = self.cfg.project_config['cg_lumberjack_dir']
+        self.user_root = self.cfg.cookbook_folder
         self.left_column_visibility = True
         self.title = title
         # Create the Left Panel
@@ -233,7 +237,7 @@ class ProjectPanel(QtWidgets.QWidget):
             if dialog.button == 'Ok':
                 company = dialog.line_edit.text()
                 self.path_object.set_attr(company=company)
-                CreateProductionData(self.path_object, project_management='lumbermill')
+                CreateProductionData(self.path_object, project_management='magic_browser')
                 self.load_companies()
 
     def do_create_project(self, progress_bar, path_object, production_management):
@@ -313,15 +317,21 @@ class TaskPanel(QtWidgets.QWidget):
     def on_button_clicked(self):
         text = self.sender().text()
         if text:
-            if 'elem' in text:
-                short = text
-            else:
-                logging.debug(self.proj_man_tasks)
-                short = self.proj_man_tasks[text]
-            self.path_object.__dict__[self.element] = short
-            self.path_object.data[self.element] = short
-            self.path_object.set_path()
-            self.location_changed.emit(self.path_object)
+            if self.element == 'task':
+                if 'elem' in text:
+                    short = text
+                else:
+                    logging.debug(self.proj_man_tasks)
+                    short = self.proj_man_tasks[text]
+                self.path_object.__dict__[self.element] = short
+                self.path_object.data[self.element] = short
+                self.path_object.set_attr(variant='*')
+                self.path_object.set_path()
+                self.location_changed.emit(self.path_object)
+            elif self.element == 'variant':
+                self.path_object.set_attr(variant=text)
+                self.path_object.set_path()
+                self.location_changed.emit(self.path_object)
 
     def clear_layout(self, layout=None):
         clear_layout(self, layout=layout)
@@ -380,7 +390,7 @@ class ProductionPanel(QtWidgets.QWidget):
 
     def __init__(self, parent=None, path_object=None, search_box=None, my_tasks=False, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
-        # Create the Middle Panel
+        print('Production Panel')
         if not cfg:
             print('ProductionPanel')
             self.cfg = ProjectConfig(path_object)
@@ -410,7 +420,10 @@ class ProductionPanel(QtWidgets.QWidget):
         self.assets.tasks_radio.clicked.connect(self.load_tasks)
 
     def load_tasks(self):
-        # TODO - figure out how to add the progress bar to this.
+        """
+        Loads Tasks into the AssetWidget.  Currently only works for Ftrack.
+        :return:
+        """
         self.assets.add_button.setEnabled(False)
         self.assets.data_table.clearSpans()
         data = []
@@ -460,6 +473,10 @@ class ProductionPanel(QtWidgets.QWidget):
                 return False
 
     def load_assets(self):
+        """
+        Loads Shots or assets for the current project into the table widget.
+        :return:
+        """
         red_palette = QtGui.QPalette()
         red_palette.setColor(self.foregroundRole(), QtGui.QColor(255, 0, 0))
         self.assets.data_table.clearSpans()
@@ -488,7 +505,7 @@ class ProductionPanel(QtWidgets.QWidget):
                 self.assets.setup(ListItemModel(data, ['Category', 'Name', 'Path', 'Due Date', 'Status', 'Task']))
             elif d['scope'] == 'shots':
                 self.assets.setup(ListItemModel(data, ['Seq', 'Shot', 'Path', 'Due Date', 'Status', 'Task']))
-            self.assets.data_table.hideColumn(0)
+            # self.assets.data_table.hideColumn(0)
             self.assets.data_table.hideColumn(2)
             self.assets.data_table.hideColumn(3)
             self.assets.data_table.hideColumn(5)
@@ -525,7 +542,7 @@ class ProductionPanel(QtWidgets.QWidget):
             self.assets.assets_radio.setChecked(True)
 
     def on_create_asset(self):
-        from cgl.apps.lumbermill.elements import asset_creator
+        from cgl.apps.magic_browser.elements import asset_creator
         if self.path_object.scope == 'assets':
             task_mode = True
         else:

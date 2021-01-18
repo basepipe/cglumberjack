@@ -1,18 +1,21 @@
 import os
-from .smart_task import SmartTask
-from .shd import import_and_attach_shaders_for_references
-from .cam import get_camera_names
+from cgl.plugins.maya.tasks.smart_task import SmartTask
+from cgl.plugins.maya.tasks.shd import import_and_attach_shaders_for_references
+from cgl.plugins.maya.tasks.cam import get_camera_names
 import cgl.plugins.maya.alchemy as lm
 from cgl.plugins.maya.utils import load_plugin, get_shape_name, get_frame_end, get_frame_start
-from cgl.core.utils.general import cgl_copy
+from cgl.core.utils.general import cgl_copy, save_json
 from cgl.ui.widgets.base import LJDialog
 from cgl.ui.widgets.dialog import InputDialog, MagicList
 from cgl.ui.widgets.widgets import AdvComboBox
-
 from cgl.plugins.Qt import QtCore, QtWidgets
-import pymel.core as pm
-import maya.mel
+from cgl.core.path import lj_list_dir, PathObject
 
+try:
+    import pymel.core as pm
+    import maya.mel
+except ModuleNotFoundError:
+    print('running from command line')
 import click
 
 LIGHT_TYPES = [u'VRayLightDomeShape', u'VRayLightIESShape', u'VRayLightMesh', u'VRayLightMeshLightLinking',
@@ -71,6 +74,45 @@ def get_latest_publish():
         else:
             print('No Project Lighting Found at: {}, '
                   '\n\tPublish Light rigs!!!'.format(project_light_publish_render.path_root))
+
+
+def publish_renders(render_folder):
+    pub_folder = PathObject(render_folder).publish()
+    create_lighting_msd(pub_folder.path_root)
+
+
+def create_lighting_msd(pub_dir):
+    """
+
+    creates a lighting.msd file with the following structure
+    render_layer
+        aov
+            aov_name
+                file_sequence
+        light_pass
+            light_pass_name
+                file_sequence
+    """
+    import cgl.core.path as path
+    msd_object = path.PathObject(pub_dir).copy(context='render')
+    msd = {'defaultRenderLayer': {'aov': {},
+                                  'light_pass': {}
+                                  }
+           }
+    dirs = os.listdir(pub_dir)
+    for d in dirs:
+        if os.path.isdir(os.path.join(pub_dir, d)):
+            if 'RGB' in d:
+                type_ = 'light_pass'
+            else:
+                type_ = 'aov'
+
+            key = d
+            sequence = lj_list_dir(os.path.join(pub_dir, d))
+            msd['defaultRenderLayer'][type_][key] = os.path.join(pub_dir, d, sequence[0])
+    print('Saving {}'.format(msd_object.msd_path))
+    save_json(msd_object.msd_path, msd)
+    msd_object.update_project_msd()
 
 
 def get_render_folder():
@@ -272,9 +314,12 @@ def submit_render_to_farm():
 
 def get_render_layers():
     r_layers = []
-    for l in pm.nodetypes.RenderLayer.listAllRenderLayers():
-        r_layers.append(l.name())
-    return r_layers
+    try:
+        for l in pm.nodetypes.RenderLayer.listAllRenderLayers():
+            r_layers.append(l.name())
+        return r_layers
+    except NameError:
+        print('skipping get_render_layers outside of maya')
 
 
 class RenderDialog(LJDialog):
@@ -397,4 +442,8 @@ class RenderLayersDialog(MagicList):
             deadline.submit_to_deadline(render_layer=d)
         self.rendered = True
 
+
+if __name__ == '__main__':
+    render_folder = r'Z:\Projects\VFX\render\02BTH_2021_Kish\shots\001\0200\lite\publish\001.000\high'
+    create_lighting_msd(render_folder)
 

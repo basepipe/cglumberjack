@@ -1,5 +1,5 @@
 import os
-from cgl.apps.lumbermill.main import CGLumberjackWidget
+from cgl.apps.magic_browser.main import CGLumberjackWidget
 
 
 class BrowserWidget(CGLumberjackWidget):

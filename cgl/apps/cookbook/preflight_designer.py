@@ -1,4 +1,4 @@
-from cgl.apps.pipeline.designer import Designer
+from cgl.apps.cookbook.designer import Designer
 
 
 class PreflightDesigner(Designer):

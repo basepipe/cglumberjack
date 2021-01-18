@@ -3,7 +3,7 @@ import os
 import re
 import click
 from cgl.core.config.config import ProjectConfig, paths
-from cgl.core.utils.general import cgl_execute
+from cgl.core.utils.general import cgl_execute, write_to_cgl_data
 
 CONFIG = ProjectConfig().project_config  # all this needs to be better sorted out.
 PATHS = paths()
@@ -261,10 +261,10 @@ def create_web_mov(input_sequence, output, framerate=settings['frame_rate'], out
                                    command_name=command_name, WaitForJobID=dependent_job, new_window=new_window)
 
         process_info['file_out'] = fileout
-        try:
-            write_to_cgl_data(process_info)
-        except ValueError:
-            print('Skipping creation of cgl_data for %s' % fileout)
+        ##try:
+        #    write_to_cgl_data(process_info)
+        #except ValueError:
+        #    print('Skipping creation of cgl_data for %s' % fileout)
         return process_info
 
 

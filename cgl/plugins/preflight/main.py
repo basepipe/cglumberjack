@@ -86,7 +86,7 @@ class ItemTable(LJTableWidget):
 class Preflight(QtWidgets.QWidget):
     signal_one = QtCore.Signal(object)
 
-    def __init__(self, parent=None, software='lumbermill', preflight='', model=None, path_object=None,
+    def __init__(self, parent=None, software='magic_browser', preflight='', model=None, path_object=None,
                  current_selection=None, auto_show=True, **kwargs):
         QtWidgets.QWidget.__init__(self, parent)
         self.software = software

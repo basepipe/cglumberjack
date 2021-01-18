@@ -44,7 +44,7 @@ def set_machine_type(m_type=""):
     from cgl.core.config.config import ProjectConfig
     """
     sets the machine type for the current machine
-    a value of "" is used when a machine is using lumbermill but not syncthing.  This would be typical of a networked
+    a value of "" is used when a machine is using magic_browser but not syncthing.  This would be typical of a networked
     machine at the studio.
     :param m_type: valid types: "", "remote workstation", "server"
     :return:
@@ -221,7 +221,7 @@ def process_folder_naming(kill=False, folder_type='sendreceive'):
                     label = '%s-%s-%s (%s)' % (p_obj.asset, p_obj.task, p_obj.version, p_obj.context)
                 elif p_obj.scope == 'shots':
                     label = '%s_%s-%s-%s (%s)' % (p_obj.seq, p_obj.shot, p_obj.task, p_obj.version, p_obj.context)
-                print('changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder))
+                print('changing %s to magic_browser pathing: %s' % (child.get('id'), local_folder))
                 if not os.path.exists(local_folder):
                     print('Creating Local Folder for Syncing: %s' % local_folder)
                     os.makedirs(local_folder)
@@ -261,7 +261,7 @@ def get_folder_from_id(folder_id):
         local_path = '%s%s' % (value, the_rest)
         return local_path
     except ValueError:
-        print('Skipping %s, it is not a lumbermill share' % folder_id)
+        print('Skipping %s, it is not a magic_browser share' % folder_id)
         return None
 
 

@@ -24,6 +24,7 @@ def get_shots(company, project, scope='shots', task=False):
     if task:
         d_['task'] = '*'
     path_object = PathObject(d_)
+    print(path_object.path_root)
     glob_path = "{}".format(path_object.path_root)
     shots = glob.glob(glob_path)
     return shots
