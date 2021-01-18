@@ -1061,18 +1061,22 @@ def scene_elem(elem):
     return eval('bpy.data.{}'.format(elem))
 
 def get_object(name, namespace = None):
-    print(5555555555555)
-    print(name)
+
     import bpy
+    if isinstance(name,str):
 
-    if namespace:
-        name = '{}:{}'.format(namespace,name)
 
-    if name in bpy.data.objects:
-        return bpy.data.objects[name]
+        if namespace:
+            name = '{}:{}'.format(namespace,name)
+
+        if name in bpy.data.objects:
+            return bpy.data.objects[name]
+
+        else:
+            return None
 
     else:
-        return None
+        return name
 
 def get_collection(name, namespace = None):
     import bpy

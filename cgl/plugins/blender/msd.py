@@ -218,10 +218,11 @@ class AssetDescription(object):
         :return:
         """
         from cgl.plugins.blender.alchemy import PathObject
+        from cgl.core.config.config import ProjectConfig
 
         if not query:
             #TODO: check with tom distinction on rig objects.
-            root = app_config()['paths']['root']
+            root = ProjectConfig().paths['root']
             source_path = obj['source_path']
             reference_path = "%s\%s" % (root, source_path)
             path_root = PathObject(reference_path)

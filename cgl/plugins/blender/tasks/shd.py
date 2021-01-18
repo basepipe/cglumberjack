@@ -3,6 +3,10 @@ from cgl.ui.widgets.dialog import InputDialog
 from cgl.plugins.blender.utils import load_plugin
 from cgl.plugins.blender import alchemy as alc
 import bpy
+from ..alchemy import scene_object
+
+DEFAULT_SHADER = 'BSDF_PRINCIPLED'  # TODO - add this in the globals.
+
 
 
 class Task(SmartTask):
@@ -283,7 +287,7 @@ def get_material(name, create = False):
     scene_materials = get_materials_in_scene(string=True)
 
     if name in scene_materials:
-        material = get_material(name)
+        material = bpy.data.materials[name]
 
     if material is None and create:
         material = scene_materials.new(name = name)
@@ -435,5 +439,56 @@ def set_object_materials():
 
 def remove_empty_shd_group():
     print('empty')
+
+
+def set_preview_color(objects = None):
+    D = bpy.data
+    if objects == None:
+        objects = bpy.context.selected_objects
+
+
+    for obj in objects:
+        if obj.type == 'MESH':
+
+            for slot in obj.material_slots:
+                material = slot.material
+                try:
+                    image_file = material.node_tree.nodes['Image Texture'].image.name  # this refers to an image file loaded into Blender
+
+                    img = D.images[image_file]
+
+                    width = img.size[0]
+                    height = img.size[1]
+                    if (width != 0) and (height != 0):
+                        target = [150, 33]
+
+                        index = (target[1] * width + target[0]) * 4
+
+                        preview_color = [
+                            img.pixels[index],  # RED
+                            img.pixels[index + 1],  # GREEN
+                            img.pixels[index + 2],  # BLUE
+                            img.pixels[index + 3]  # ALPHA
+                        ]
+                except KeyError:
+                    if 'MILVIO' in scene_object().project:
+                        DEFAULT_SHADER = 'DEFAULTSHADER'
+
+                    default = material.node_tree.nodes[DEFAULT_SHADER]
+                    preview_color = [default.inputs[0].default_value[0],
+                                     default.inputs[0].default_value[1],
+                                     default.inputs[0].default_value[2],
+                                     1]
+
+
+                obj.material_slots[0].material.diffuse_color = (preview_color[0],
+                                                                preview_color[1],
+                                                                preview_color[2],
+                                                                preview_color[3])
+
+                from ..msd import tag_object
+                tag_object(obj,'PREVIEW_COLOR',str(preview_color))
+
+
 
 

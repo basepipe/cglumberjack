@@ -1719,7 +1719,7 @@ def remove_root(filepath):
     # TODO - move this function to PathObject - it really does belong there.
     path_object = PathObject(filepath)
     config = ProjectConfig(path_object)
-    root = config.project_config['paths']['root']
+    root = config.paths['root']
     filepath = filepath.replace('\\', '/')
     root = root.replace('\\', '/')
     return filepath.replace(root, '')
