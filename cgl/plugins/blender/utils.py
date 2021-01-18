@@ -871,9 +871,19 @@ def return_asset_name(obj):
         return name
 
 def get_lib_from_object(object):
-    if not object.isinstancer:
-        object = bpy.data.object[return_asset_name(object)]
-    library = object.instance_collection.library
+    import bpy
+    instancer = object.is_instancer
+    if not instancer:
+        try:
+            object = bpy.data.object[return_asset_name(object)]
+        except:
+            pass
+    try:
+
+        library = object.instance_collection.library
+    except AttributeError:
+        return None
+        pass
 
     return (library)
 
@@ -999,16 +1009,20 @@ def get_next_namespace(ns):
     latest = 0
 
     for i in sel:
-
         if ns in i.name:
-            num = re.findall(pattern, i.name)
-            if num:
-                if int(num[-1]) > latest:
-                    latest = int(num[-1])
-            next = True
+            split_namespace = i.name.split(':')
+            if ns == split_namespace[0]:
+                num = re.findall(pattern, i.name)
+                if num:
+                    if int(num[-1]) > latest:
+
+                        latest = int(num[-1])
+
+
+                next = True
 
     if next:
-        name = '{}{}'.format(ns, latest + 1)
+        name = '{}'.format(ns)
         return name
     else:
         return ns
@@ -1217,6 +1231,68 @@ def rename_collection(current_scene=None):
 def delete_object(object_to_delete):
     import bpy
     bpy.data.objects.remove(object_to_delete, do_unlink=True)
+
+
+def get_items(type):
+    import bpy
+    command = 'bpy.data.{}'.format(type)
+    return eval(command)
+
+
+def move_to_project(project, path_object=None):
+    context = ['source', 'render']
+    if path_object == None:
+        path_object = alc.scene_object()
+
+    for item in context:
+        fromDir = path_object.copy(context=item, filename=None).path_root
+        cgl_copy(fromDir, toDir)
+
+
+
+def move_linked_libraries_to_project(project= None):
+    import bpy
+    from cgl.core.path import PathObject
+    bpy.ops.file.make_paths_absolute()
+    for lib in bpy.data.libraries:
+        path_object = PathObject(lib.filepath)
+        print(path_object.path)
+        move_to_project(project,path_object)
+
+
+def update_libraries_project(project=None):
+    from cgl.core.path import PathObject
+    from cgl.plugins.blender.alchemy import scene_object
+
+    import bpy
+    if project == None:
+        project = scene_object().project
+
+    bpy.ops.file.make_paths_absolute()
+    for lib in bpy.data.libraries:
+        path_object = PathObject(lib.filepath)
+        new_path = path_object.copy(project=project)
+        lib.filepath = new_path.path_root
+        print(new_path.path_root)
+        lib.reload()
+
+
+def set_object_names_from_library():
+    from cgl.plugins.blender import utils
+    from cgl.core.path import PathObject
+    import bpy
+
+    from importlib import reload
+    reload(utils)
+
+    bpy.ops.file.make_paths_absolute()
+
+    for obj in get_instanced_objects():
+        # print(obj[0].name, obj[1].filepath)
+        path_object = PathObject(obj[1].filepath)
+        next_version_number = utils.get_next_namespace(path_object.asset)
+        obj[0].name = '{}:{}'.format(path_object.asset, next_version_number)
+
 
 if __name__ == '__main__':
     # create_menu_file('TomTest', 'Tom Test',

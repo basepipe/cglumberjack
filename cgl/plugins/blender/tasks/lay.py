@@ -106,7 +106,7 @@ def main_import(filepath, import_rigs = True,reference = True, latest = False):
 
         if latest:
             d2 = d2.latest_version(publish_=True)
-        ns2 = get_next_namespace(d2.shot)
+        ns2 = get_namespace(d2.shot)
         if reference == True:
 
 
