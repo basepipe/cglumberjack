@@ -45,7 +45,7 @@ class Task(SmartTask):
         import_obj = self._import(new_obj.path_root, reference=reference)
         return import_obj
 
-def get_materials_in_scene(string = False):
+def get_materials_in_scene(string = False,default_ns=False):
     import bpy
     materials = []
     if string:
@@ -282,9 +282,9 @@ def get_object_list(materials_dic = None):
                     object_list.append(obj)
     return object_list
 
-def get_material(name, create = False):
+def get_material(name, create = False,default_ns = False):
     material = None
-    scene_materials = get_materials_in_scene(string=True)
+    scene_materials = get_materials_in_scene(string=True,default_ns=default_ns)
 
     if name in scene_materials:
         material = bpy.data.materials[name]
@@ -295,7 +295,7 @@ def get_material(name, create = False):
 
     return material
 
-def get_valid_material_list(mat_group=False,mat_object = False):
+def get_valid_material_list(mat_group=False,mat_object = False,default_ns = False):
     """
 
     :return: list of materials names
@@ -304,7 +304,8 @@ def get_valid_material_list(mat_group=False,mat_object = False):
     from cgl.plugins.blender.tasks import  mdl
     from importlib import reload
 
-    materials = mdl.get_mdl_objects(groups=True)
+    materials = mdl.get_mdl_objects(groups=True,default_ns=default_ns)
+
     clean_list = []
 
     for mat in materials:

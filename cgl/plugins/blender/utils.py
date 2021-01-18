@@ -1240,12 +1240,14 @@ def get_items(type):
 
 
 def move_to_project(project, path_object=None):
+    from cgl.core.utils.general import  cgl_copy
     context = ['source', 'render']
     if path_object == None:
         path_object = alc.scene_object()
 
     for item in context:
         fromDir = path_object.copy(context=item, filename=None).path_root
+        toDir = path_object.copy(context=item, filename=None, project=project).path_root
         cgl_copy(fromDir, toDir)
 
 
