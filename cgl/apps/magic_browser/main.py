@@ -1049,7 +1049,7 @@ class CGLumberjack(LJMainWindow):
         reads syncthing_auto_launch setting from globals and sets text accordingly.
         :return:
         """
-        if "sync_thing_auto_launch" in self.cfg.user_config.keys()["sync_thing_auto_launch"]:
+        if "sync_thing_auto_launch" in self.cfg.user_config["sync_thing_auto_launch"]:
             if self.cfg.user_config["sync_thing_auto_launch"] == 'True':
                 self.auto_launch_setting.setText('Auto-Launch: On')
             else:
