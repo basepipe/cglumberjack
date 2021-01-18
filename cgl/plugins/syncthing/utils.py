@@ -495,6 +495,8 @@ def add_device_info_to_sheet(sheet, server = 'false'):
     :param sheet: The sheet object to be edited
     :return:
     """
+    from cgl.plugins.google.sheets import get_sheets_authentication
+    get_sheets_authentication()
     new_row = sheets.find_empty_row_in_sheet(sheet)
     device_dictionary = get_my_device_info()
     if not sheets.id_exists(device_dictionary['id'], sheet) and not sheets.name_exists(device_dictionary['name'],sheet):
@@ -920,6 +922,6 @@ if __name__ == "__main__":
     # print(get_my_device_info()['name'])
     #from cgl.core.utils.general import launch_lumber_watch
     #launch_lumber_watch()
-    #from cgl.plugins.google.sheets import get_sheets_authentication
-    #get_sheets_authentication()
+    from cgl.plugins.google.sheets import get_sheets_authentication
+    get_sheets_authentication()
     setup_workstation()
