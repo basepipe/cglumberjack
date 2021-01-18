@@ -930,7 +930,7 @@ class CGLumberjack(LJMainWindow):
                                 sync = False
                                 st_utils.kill_syncthing()
                                 if st_utils.syncthing_running():
-                                    self.change_sync_icon(syncing=True)
+                                    # self.change_sync_icon(syncing=True)
                                     sync = True
                                 else:
                                     self.change_sync_icon(syncing=False)
@@ -1049,7 +1049,7 @@ class CGLumberjack(LJMainWindow):
         reads syncthing_auto_launch setting from globals and sets text accordingly.
         :return:
         """
-        if "sync_thing_auto_launch" in self.cfg.user_config.keys():
+        if "sync_thing_auto_launch" in self.cfg.user_config.keys()["sync_thing_auto_launch"]:
             if self.cfg.user_config["sync_thing_auto_launch"] == 'True':
                 self.auto_launch_setting.setText('Auto-Launch: On')
             else:
@@ -1067,7 +1067,7 @@ class CGLumberjack(LJMainWindow):
                 logging.debug('Setting Auto Launch of LumberSync Off - Restart to see effects')
             else:
                 self.cfg.user_config["sync_thing_auto_launch"] = 'True'
-                save_json(user_config(), self.cfg.user_config)
+                self.cfg.save_user_config()
                 logging.debug('Setting Auto Launch of LumberSync On - Restart to see effects')
         self.set_auto_launch_text()
 
