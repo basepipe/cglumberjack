@@ -923,7 +923,7 @@ class CGLumberjack(LJMainWindow):
                 if self.cfg.user_config['sync']['syncthing']['sync_thing_url']:
 
                     # TODO - check for user config settings to use syncthing.
-                    if "sync_thing_auto_launch" in USERself.cfg.project_config.keys():
+                    if "sync_thing_auto_launch" in self.cfg.project_config.keys():
                         try:
 
                             if self.cfg.user_config["sync_thing_auto_launch"] == 'True':
