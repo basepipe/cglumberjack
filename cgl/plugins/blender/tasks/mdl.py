@@ -2,7 +2,11 @@ from cgl.plugins.blender.tasks.smart_task import SmartTask
 from cgl.plugins.blender import utils
 from cgl.plugins.blender import alchemy as alc
 import bpy
-
+import glob
+from cgl.plugins.blender.alchemy import selection, scene_object
+from cgl.plugins.blender.utils import create_shot_mask_info
+import os
+from cgl.core.path import PathObject
 
 class Task(SmartTask):
 
@@ -18,8 +22,7 @@ class Task(SmartTask):
             self.path_object = path_object
 
     def build(self):
-        from cgl.plugins.blender.alchemy import selection
-        from cgl.plugins.blender.utils import create_shot_mask_info
+
         task = 'mdl'
         selection(clear=True)
 
@@ -38,6 +41,33 @@ class Task(SmartTask):
         bpy.ops.object.correct_file_name()
         utils.create_shot_mask_info()
         defaultShotSettings()
+
+    def get_msd_info(self, mdl = None):
+
+        """
+        returns the msd dict for the given task.
+        :return:
+        """
+
+        dict_ = {}
+        meshes = []
+        groups = get_mtl_groups(mdl)
+        so = scene_object()
+        if groups:
+            for child in groups:
+                clean_name = str(child)
+                meshes.append(clean_name)
+        dict_['attrs'] = {'mtl_groups': meshes}
+        dict_['source_file'] = so.path
+        # find all the model exports:
+        render_object = so.copy(context='render', set_proper_filename=True, ext='*')
+        print(render_object.path_root)
+        files = glob.glob(render_object.path_root)
+        if files:
+            for f in files:
+                file_, ext_ = os.path.splitext(f)
+                dict_['attrs'][ext_] = PathObject(f).path
+        return dict_
 
 
 class CreateMaterialsGroups(bpy.types.Operator):
@@ -253,3 +283,41 @@ def remove_mdl_group():
     mdl_collection =get_collection('mdl',scene_object().asset)
     if mdl_collection:
         bpy.data.collections.remove(mdl_collection)
+
+
+
+def get_mtl_groups(mdl = None , res='high'):
+    from ..utils import get_object
+    if mdl == None:
+
+        sel = get_object(res)
+    else:
+        sel = get_object('{}:{}'.format(mdl,res))
+
+    mtl_groups = []
+    for child in sel.children:
+        mtl_groups.append(child.name)
+
+    return mtl_groups
+
+
+def get_msd_info(mesh):
+    """
+    gets the .msd info for a given mesh
+    :param mesh:
+    :return:
+    """
+    ref_path = pm.referenceQuery(mesh, filename=True, wcn=True)
+    path_object = PathObject(ref_path)
+    matrix = get_matrix(mesh)
+    matrix = str(matrix).replace('[', '').replace(']', '').replace(',', '')
+    translate, rotate, scale = get_transform_arrays(mesh)
+    mdl_dict = {}
+    mdl_dict['msd_path'] = path_object.relative_msd_path
+    mdl_dict['transform'] = {'matrix': matrix,
+                             'scale': scale,
+                             'rotate': rotate,
+                             'translate': translate
+                             }
+    return mdl_dict
+

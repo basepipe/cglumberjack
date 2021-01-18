@@ -90,7 +90,7 @@ def get_sheets_authentication():
     USER_GLOBALS = ProjectConfig().user_config
     #USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
     #GLOBALS = load_json(USER_GLOBALS['globals'])
-    GLOBALS = ProjectConfig().project_config
+    GLOBALS = ProjectConfig().user_config
     filepath = GLOBALS['sync']['syncthing']['sheets_config_path']
     if filepath.endswith('.json'):
         url = GLOBALS['sync']['syncthing']['sync_thing_url']

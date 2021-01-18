@@ -5,7 +5,7 @@ class PanelTemplate(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Panel Template'
-    bl_label = bl_category
+    bl_label = 'Alchemy'
 
     def draw(self, context):
         """
