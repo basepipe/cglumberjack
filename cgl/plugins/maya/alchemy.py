@@ -256,8 +256,6 @@ def clean_turntable():
 
 
 def render(preview=False):
-    task = get_task_class(scene_object().task)
-    task.render()
     if preview:
         basic_playblast(path_object=scene_object())
     else:
