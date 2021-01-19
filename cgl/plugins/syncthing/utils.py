@@ -324,8 +324,8 @@ def get_sheet():
     from cgl.core.config.config import ProjectConfig
     user_globals = ProjectConfig().user_config
     globals_ = ProjectConfig().project_config
-    client_file = globals_['sync']['syncthing']['sheets_config_path']
-    name_ = globals_['sync']['syncthing']['sheets_name'].split('_SYNC_THING')[0]
+    client_file = user_globals['sync']['syncthing']['sheets_config_path']
+    name_ = user_globals['sync']['syncthing']['sheets_name'].split('_SYNC_THING')[0]
     print('Syncing with %s' % name_)
     sheet_obj = None
     if not os.path.exists(client_file):
@@ -922,6 +922,6 @@ if __name__ == "__main__":
     # print(get_my_device_info()['name'])
     #from cgl.core.utils.general import launch_lumber_watch
     #launch_lumber_watch()
-    from cgl.plugins.google.sheets import get_sheets_authentication
-    get_sheets_authentication()
+    #from cgl.plugins.google.sheets import get_sheets_authentication
+    #get_sheets_authentication()
     setup_workstation()
