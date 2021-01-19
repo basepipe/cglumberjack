@@ -419,4 +419,25 @@ def remove_namespace(obj = None,namespace=None):
         object.name = object.name.split(':')[1]
 
 
+def set_source_path(task_object):
+    from cgl.plugins.blender.msd import tag_object
+    from cgl.plugins.blender import utils
+    from cgl.core.path import PathObject
+    import bpy
+    from .alchemy import scene_object
+    bpy.ops.file.make_paths_absolute()
 
+    if task_object == None:
+
+        task_object = utils.get_objects_in_hirarchy(utils.get_object(scene_object().task))
+
+    for obj in task_object:
+        obj_to_tag = utils.get_object(obj)
+
+        library = utils.get_lib_from_object(obj_to_tag)
+        if library:
+            filepath = library.filepath
+            path_object = PathObject(filepath)
+            tag_object(obj_to_tag, 'source_path', path_object.path)
+
+    bpy.ops.file.make_paths_relative()

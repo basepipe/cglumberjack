@@ -1,12 +1,14 @@
 import logging
 import os
-
+from cgl.core.config.config import ProjectConfig
 import stringcase
 import cgl.core.utils.read_write as read_write
 
 logger = logging.getLogger('qtutils')
 
+
 def get_menu_path(software, menu_name, menu_file=False, menu_type='menus', cfg = None):
+
     """
     returns the menu path for a menu with the given name
     :param cfg:
@@ -17,6 +19,8 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus', cfg =
     :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
+    if cfg == None:
+        cfg = ProjectConfig()
     if menu_file:
         if isinstance(menu_name, dict):
             menu_name = menu_name['name']
@@ -34,6 +38,9 @@ def get_button_path(software, menu_name, button_name, menu_type='menus',cfg = No
     :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
+    if cfg == None:
+        cfg = ProjectConfig()
+
     menu_folder = get_menu_path(software, menu_name, menu_type=menu_type,cfg= cfg)
     button_path = os.path.join(menu_folder, '%s.py' % button_name)
     return button_path
@@ -140,7 +147,7 @@ def add_buttons_to_menu(menu_name, cfg = None):
     :return:
     """
     menu_file = get_menu_path('blender', menu_name, '%s.py' % menu_name,cfg=cfg)
-    menu_config = os.path.join(get_cgl_tools(), 'blender', 'menus.cgl')
+    menu_config = os.path.join(ProjectConfig().cookbook_folder, 'blender', 'menus.cgl')
     menu_object = read_write.load_json(menu_config)
     biggest = get_last_button_number(menu_object, 'blender', menu_name)
     if biggest:

@@ -10,7 +10,7 @@ import copy
 import importlib
 from cgl.core.utils.general import split_all, cgl_copy, cgl_execute, clean_file_list
 from cgl.core.config.config import ProjectConfig, user_config, get_root, paths
-
+from cgl.core.utils.read_write import save_json
 # these should come from config ideally.
 SEQ_REGEX = re.compile("[0-9]{4,}\\.")
 SPLIT_SEQ_REGEX = re.compile(" \d{3,}-\d{3,}$")
@@ -168,7 +168,9 @@ class PathObject(object):
             self.relative_msd_path = ''
 
     def save_msd(self, msd_dict):
+
         print('Saving msd: {}'.format(self.msd_path))
+        from cgl.core.utils.read_write import save_json
         save_json(self.msd_path, msd_dict)
         self.update_project_msd()
         self.update_test_project_msd(attr='msd')

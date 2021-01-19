@@ -158,9 +158,8 @@ def create_high_group(materials):
     selection(clear=True)
     for m in materials:
         print('selecting material')
-        # pm.select(m, tgl=True)
+
     print('create group high')
-    # pm.group(name='high')
 
 
 def create_mdl_group(res='high'):
@@ -289,7 +288,6 @@ def remove_mdl_group():
 def get_mtl_groups(mdl = None , res='high'):
     from ..utils import get_object
     if mdl == None:
-
         sel = get_object(res)
     else:
         sel = get_object('{}:{}'.format(mdl,res))
@@ -301,13 +299,80 @@ def get_mtl_groups(mdl = None , res='high'):
     return mtl_groups
 
 
+
+def get_matrix(obj=None, query=False,rig_root = 'c_pos'):
+    from cgl.plugins.blender.utils import get_object
+    """
+    Returns a matrix of values relating to translate, scale, rotate.
+    :param obj:
+    :param query:
+    :return:
+    """
+    from cgl.plugins.blender.alchemy import PathObject
+    from cgl.core.config.config import ProjectConfig
+
+    if not query:
+        #TODO: check with tom distinction on rig objects.
+        root = ProjectConfig().paths['root']
+        source_path = obj['source_path']
+        reference_path = "%s\%s" % (root, source_path)
+        path_root = PathObject(reference_path)
+        object = get_object(obj)
+        if object:
+
+            obj_matrix = obj.matrix_world
+            if path_root.task == 'rig':
+                proxy = bpy.data.objects['{}_proxy'.format(obj.name)]
+                obj_matrix = proxy.pose.bones[rig_root].matrix_basis
+
+
+            attr = "%s.%s".format(obj, 'matrix')
+
+            matrix = [[obj_matrix.to_translation().x,
+                       obj_matrix.to_translation().y,
+                       obj_matrix.to_translation().z],
+                      [obj_matrix.to_euler().x,
+                       obj_matrix.to_euler().y,
+                       obj_matrix.to_euler().z],
+                      [obj_matrix.to_scale().x,
+                       obj_matrix.to_scale().y,
+                       obj_matrix.to_scale().z]]
+    #
+        else:
+            matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+        return matrix
+    else:
+        print('NO OBJECT _____________')
+        return [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+
+def get_transform_arrays(mesh_object):
+
+    """
+     convenience function, it gets all the transfors (translate, rotate, scale) as seperate entities
+     so we can add that to the scene description, it can be convenient to have in some 3d packages.
+     :param obj: object to find transform arrays for
+     :return: translate, rotate, scale arrays
+     """
+
+    translate = mesh_object.matrix_world.to_translation()
+    scale = mesh_object.matrix_world.to_scale()
+    rotate = mesh_object.matrix_world.to_euler()
+    t_array = [translate[0], translate[1], translate[2]]
+    r_array = [rotate[0], rotate[1], rotate[2]]
+    s_array = [scale[0], scale[1], scale[2]]
+    return t_array, r_array, s_array
+
 def get_msd_info(mesh):
     """
     gets the .msd info for a given mesh
     :param mesh:
     :return:
     """
-    ref_path = pm.referenceQuery(mesh, filename=True, wcn=True)
+    from cgl.core.config.config import ProjectConfig
+    from os.path import join
+
+    rel_path = mesh['source_path']
+    ref_path = join(ProjectConfig().root_folder, rel_path)
     path_object = PathObject(ref_path)
     matrix = get_matrix(mesh)
     matrix = str(matrix).replace('[', '').replace(']', '').replace(',', '')

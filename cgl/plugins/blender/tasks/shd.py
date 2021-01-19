@@ -295,7 +295,7 @@ def get_material(name, create = False,default_ns = False):
 
     return material
 
-def get_valid_material_list(mat_group=False,mat_object = False,default_ns = False):
+def get_valid_material_list(mat_group=False,mat_object = False,default_ns = True):
     """
 
     :return: list of materials names
