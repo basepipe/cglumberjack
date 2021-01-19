@@ -8,7 +8,7 @@ import sys
 import re
 import copy
 import importlib
-from cgl.core.utils.general import split_all, cgl_copy, cgl_execute, clean_file_list
+from cgl.core.utils.general import split_all, cgl_copy, cgl_execute, clean_file_list, save_json, load_json
 from cgl.core.config.config import ProjectConfig, user_config, get_root, paths
 from cgl.core.utils.read_write import save_json
 # these should come from config ideally.
@@ -39,6 +39,7 @@ class PathObject(object):
         self.project = None
         self.branch = None
         self.project_msd_path = None
+        self.msd_info = None
         self.seq = None
         self.shot = None
         self.scope = None
@@ -162,10 +163,19 @@ class PathObject(object):
                 base = self.path_root.replace('source', 'render')
                 rel_base = self.path.replace('source', 'render')
             self.msd_path = '%s/%s_%s_%s.%s' % (base, self.seq, self.shot, self.task, 'msd')
+            self.get_msd_info()
             self.relative_msd_path = '%s/%s_%s_%s.%s' % (rel_base, self.seq, self.shot, self.task, 'msd')
         else:
             self.msd_path = ''
             self.relative_msd_path = ''
+
+    def get_msd_info(self):
+        if os.path.exists(self.msd_path):
+            self.msd_info = load_json(self.msd_path)
+            return self.msd_info
+        else:
+            print('MSD file not yet created: {}'.format(self.msd_path))
+            return None
 
     def save_msd(self, msd_dict):
 
@@ -663,6 +673,21 @@ class PathObject(object):
         else:
             print('Attr: {} does not exist'.format(attr))
             return self.path_root
+
+    def get_branches(self):
+        """
+        Returns all the branches for the current project.
+        :return:
+        """
+        proj_root = self.split_after('project')
+        branches = glob.glob('{}/*'.format(proj_root))
+        clean_branches = []
+        for b in branches:
+            if '.' in b:
+                pass
+            else:
+                clean_branches.append(os.path.split(b)[-1])
+        return clean_branches
 
     def eliminate_wild_cards(self):
         """
