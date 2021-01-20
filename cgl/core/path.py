@@ -271,7 +271,8 @@ class PathObject(object):
             pass
         self.get_config_values(company, project)
         if 'branch' in self.project_config['templates']['assets']['render']['path']:
-            path_object['branch'] = 'master'
+            if 'branch' not in path_object.keys():
+                path_object['branch'] = 'master'
             if 'shot' in path_object.keys() or 'asset' in path_object.keys():
                 if 'variant' not in path_object.keys() and 'task' in path_object.keys():
                     path_object['variant'] = 'default'

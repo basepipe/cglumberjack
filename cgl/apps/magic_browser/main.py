@@ -10,7 +10,7 @@ from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 from cgl.ui.widgets.widgets import AdvComboBox
 import cgl.core.path as cglpath
 from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master, paths,\
-    get_user_config_file, get_root
+    get_user_config_file, get_root, user_config
 from cgl.core.utils.general import current_user, launch_lumber_watch, save_json
 from cgl.core.config.config import ProjectConfig, paths
 from cgl.apps.magic_browser.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
@@ -384,23 +384,26 @@ class LocationWidget(QtWidgets.QWidget):
         self.label_row.addWidget(self.branch_label)
         self.label_row.addWidget(self.branch_combo)
         self.path_changed(self.path_object)
-
         self.branch_combo.currentIndexChanged.connect(self.branch_changed)
 
+    def hide_branch(self):
+        self.branch_combo.hide()
+        self.branch_label.hide()
+
+    def show_branch(self):
+        self.branch_combo.show()
+        self.branch_label.show()
+
     def branch_changed(self):
-        print(self.path_object.company)
+        cfg = ProjectConfig(self.path_object)
         if self.branch_combo.currentText() == 'New Branch':
-            self.create_project_branch()
+            new_branch = self.create_project_branch()
         else:
-            self.path_object.set_attr(branch=self.branch_combo.currentText())
-            user_globals_dict = ProjectConfig(self.path_object).user_config()
-            if 'default_branch' in user_globals_dict.keys():
-                user_globals_dict['default_branch'][self.path_object.company][self.path_object.project] = self.branch_combo.currentText()
-            else:
-                user_globals_dict['default_branch'] = {self.path_object.company: {self.path_object.project: self.branch_combo.currentText()}}
-            print(user_globals_dict)
-            # send us back to the scope page.
-            print('Changing {} to branch: {}'.format(self.path_object.project, self.branch_combo.currentText()))
+            new_branch = self.branch_combo.currentText()
+            self.path_object.set_attr(branch=new_branch)
+            # TODO - refresh the widget
+        cfg.edit_user_config(['default_branch', self.path_object.company, self.path_object.project],
+                             new_branch)
 
     def create_project_branch(self):
         """
@@ -408,9 +411,10 @@ class LocationWidget(QtWidgets.QWidget):
         :return:
         """
         from cgl.apps.magic_browser.project_branch import CreateBranchDialog
-        print('Creating a new branch for {}'.format(self.current_selection()))
+        print('Creating a new branch for {}'.format(self.branch_combo.currentText()))
         dialog = CreateBranchDialog(self.path_object)
         dialog.exec_()
+        return dialog.branch_line_edit.text()
 
     def path_changed(self, path_object):
         if path_object.project:
@@ -489,6 +493,11 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if default_project:
                     proj = default_project
                     scp = '*'
+                    try:
+                        default_branch = user_config()['default_branch'][self.company][proj]
+                        print(default_branch)
+                    except KeyError:
+                        default_branch = 'master'
                 else:
                     proj = '*'
                     scp = None
@@ -496,7 +505,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                       "root": self.root,
                       "context": 'source',
                       "project": proj,
-                      "scope": scp
+                      "scope": scp,
+                      "branch": default_branch
                       }
 
                 self.path_object = cglpath.PathObject(d_, self.cfg)

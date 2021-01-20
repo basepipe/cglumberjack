@@ -143,18 +143,18 @@ def create_all_cgl_info_files(company, project, source=True, render=True, force=
     print('print(finished processing in %s minutes' % "{:.2f}".format(end_time/60))
 
 
-def create_full_project_cgl_info(company, project):
+def create_full_project_cgl_info(company, project, branch=None):
     start_time = time.time()
     # source
-    d = {"company": company, "project": project, "context": 'source'}
+    d = {"company": company, "project": project, "context": 'source', 'branch': branch}
     path_object = PathObject(d)
-    print(path_object.path_root)
-    build_folder_info(path_object.path_root, force=True)
-    # render
-    d = {"company": company, "project": project, "context": 'render'}
-    path_object = PathObject(d)
-    print(path_object.path_root)
-    build_folder_info(path_object.path_root, force=True)
+    source_folder = path_object.path_root
+    if branch:
+        if branch not in source_folder:
+            source_folder = '{}/{}'.format(source_folder, branch)
+    render_folder = source_folder.replace('/source/', '/render/')
+    build_folder_info(source_folder, force=True)
+    build_folder_info(render_folder, force=True)
     end_time = time.time()-start_time
     print('print(finished processing in %s minutes' % "{:.2f}".format(end_time/60))
 

@@ -580,9 +580,15 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path
     for each in list_:
         if size_path:
             temp_obj = PathObject(size_path, cfg).copy(project=each)
-            total_size = get_cgl_info_size(temp_obj.path_root, source=True, render=True)
-            source_size = get_cgl_info_size(temp_obj.path_root, source=True, render=False)
-            render_size = get_cgl_info_size(temp_obj.path_root, source=False, render=True)
+            folder = temp_obj.path_root
+            if 'branch' in cfg.project_config['templates']['assets']['render']['path']:
+                branch = cfg.user_config['default_branch'][temp_obj.company][each]
+                if branch:
+                    folder = '{}/{}'.format(folder, branch)
+                print(folder)
+            total_size = get_cgl_info_size(folder, source=True, render=True)
+            source_size = get_cgl_info_size(folder, source=True, render=False)
+            render_size = get_cgl_info_size(folder, source=False, render=True)
             if not total_size:
                 total_size = 'Not Calculated'
             else:
