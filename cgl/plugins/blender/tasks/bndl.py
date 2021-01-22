@@ -104,7 +104,7 @@ class Task(SmartTask):
         """
 
         """
-        print(88888888888)
+
         if not selected:
             print(self.path_object.msd_path)
             self.path_object.save_msd(self.get_msd_info(task_name))

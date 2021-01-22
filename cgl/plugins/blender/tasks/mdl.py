@@ -7,6 +7,7 @@ from cgl.plugins.blender.alchemy import selection, scene_object
 from cgl.plugins.blender.utils import create_shot_mask_info
 import os
 from cgl.core.path import PathObject
+from ..msd import get_matrix , get_transform_arrays
 
 class Task(SmartTask):
 
@@ -300,68 +301,6 @@ def get_mtl_groups(mdl = None , res='high'):
 
 
 
-def get_matrix(obj=None, query=False,rig_root = 'c_pos'):
-    from cgl.plugins.blender.utils import get_object
-    """
-    Returns a matrix of values relating to translate, scale, rotate.
-    :param obj:
-    :param query:
-    :return:
-    """
-    from cgl.plugins.blender.alchemy import PathObject
-    from cgl.core.config.config import ProjectConfig
-
-    if not query:
-        #TODO: check with tom distinction on rig objects.
-        root = ProjectConfig().paths['root']
-        source_path = obj['source_path']
-        reference_path = "%s\%s" % (root, source_path)
-        path_root = PathObject(reference_path)
-        object = get_object(obj)
-        if object:
-
-            obj_matrix = obj.matrix_world
-            if path_root.task == 'rig':
-                proxy = bpy.data.objects['{}_proxy'.format(obj.name)]
-                obj_matrix = proxy.pose.bones[rig_root].matrix_basis
-
-
-            attr = "%s.%s".format(obj, 'matrix')
-
-            matrix = [[obj_matrix.to_translation().x,
-                       obj_matrix.to_translation().y,
-                       obj_matrix.to_translation().z],
-                      [obj_matrix.to_euler().x,
-                       obj_matrix.to_euler().y,
-                       obj_matrix.to_euler().z],
-                      [obj_matrix.to_scale().x,
-                       obj_matrix.to_scale().y,
-                       obj_matrix.to_scale().z]]
-    #
-        else:
-            matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
-        return matrix
-    else:
-        print('NO OBJECT _____________')
-        return [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
-
-def get_transform_arrays(mesh_object):
-
-    """
-     convenience function, it gets all the transfors (translate, rotate, scale) as seperate entities
-     so we can add that to the scene description, it can be convenient to have in some 3d packages.
-     :param obj: object to find transform arrays for
-     :return: translate, rotate, scale arrays
-     """
-
-    translate = mesh_object.matrix_world.to_translation()
-    scale = mesh_object.matrix_world.to_scale()
-    rotate = mesh_object.matrix_world.to_euler()
-    t_array = [translate[0], translate[1], translate[2]]
-    r_array = [rotate[0], rotate[1], rotate[2]]
-    s_array = [scale[0], scale[1], scale[2]]
-    return t_array, r_array, s_array
-
 def get_msd_info(mesh):
     """
     gets the .msd info for a given mesh
@@ -370,19 +309,28 @@ def get_msd_info(mesh):
     """
     from cgl.core.config.config import ProjectConfig
     from os.path import join
+    from ..alchemy import set_relative_paths
+    set_relative_paths(True)
+    mdl_dict = {}
+    if mesh['layer']:
+        mdl_dict['layer'] = mesh['layer']
 
     rel_path = mesh['source_path']
+    print(mesh)
+    print(rel_path)
     ref_path = join(ProjectConfig().root_folder, rel_path)
     path_object = PathObject(ref_path)
     matrix = get_matrix(mesh)
     matrix = str(matrix).replace('[', '').replace(']', '').replace(',', '')
     translate, rotate, scale = get_transform_arrays(mesh)
-    mdl_dict = {}
+
     mdl_dict['msd_path'] = path_object.relative_msd_path
     mdl_dict['transform'] = {'matrix': matrix,
                              'scale': scale,
                              'rotate': rotate,
                              'translate': translate
                              }
+    mdl_dict['source_path'] = rel_path
+    set_relative_paths(False)
     return mdl_dict
 

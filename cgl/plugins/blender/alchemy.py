@@ -520,6 +520,20 @@ def import_task(task=None,file_path=None, reference=False, **kwargs):
     return class_().import_latest(task=task, reference=reference, file_path = file_path,**kwargs)
 
 
+def delete_task(task=None,file_path=None, **kwargs):
+    """
+    imports the latest version of the specified task into the scene.
+    :param task:
+    :param reference:
+    :return:
+    """
+    if not task:
+        task = scene_object().task
+    class_ = get_task_class(task)
+    return class_()._remove(task=task, reference=reference, file_path = file_path,**kwargs)
+
+
+
 def build(path_object=None):
     """
     runs build command for the specified task.

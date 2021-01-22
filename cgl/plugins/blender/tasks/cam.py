@@ -9,7 +9,7 @@ class Task(SmartTask):
     def __init__(self, path_object=None):
         if not path_object:
             from cgl.plugins.blender.alchemy import scene_object
-            self.path_object = scene_object().copy(task = 'cam')
+            self.path_object = scene_object().copy(task = 'cam',latest=True)
 
     def build(self):
         pass
@@ -46,6 +46,10 @@ class Task(SmartTask):
         
         set_shot_from_camera(cam = camera)
         pass
+
+    def _remove(self,**kwargs):
+        from ..utils import delete_object
+        delete_object("{}:cam".format(self.path_object.shot))
 
 
 def set_shot_from_camera(cam = None):
@@ -165,3 +169,23 @@ def publish_selected_camera(camera=None, mb=True, abc=False, fbx=False, unity=Fa
     # bpy.ops.export_scene.fbx(filepath = camFbxPath.path_root, use_selection = True)
 
 
+def get_msd_info(camera=None):
+    from cgl.plugins.blender.tasks.anim import get_keyframes
+    camDic = {}
+    currentScene = alc.scene_object()
+
+    # get all frames with assigned keyframes
+    if camera == None:
+        keyframes = get_keyframes(get_selected_camera())
+
+    else:
+        keyframes = get_keyframes(camera)
+
+    frame_start, frame_end = keyframes[0], keyframes[-1]
+
+    camDic[camera.name] = {'shot': camera.name,
+                           'frame_start': frame_start,
+                           'frame_end': frame_end,
+                           'source_layout': currentScene.path}
+
+    return camDic

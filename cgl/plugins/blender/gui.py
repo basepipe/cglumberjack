@@ -63,6 +63,7 @@ class QtWindowEventLoop(bpy.types.Operator):
         print(self._args)
         print(self._kwargs)
         print('--------------------')
+
         self.widget = self._widget(*self._args, **self._kwargs)
 
         logger.debug(self.app)

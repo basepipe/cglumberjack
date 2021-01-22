@@ -190,4 +190,40 @@ def remove_unused_weights(ob = None):
         if not used:
             obj.vertex_groups.remove(obj.vertex_groups[i])
 
+def get_msd_info(mesh):
+    """
+    gets the .msd info for a given mesh
+    :param mesh:
+    :return:
+    """
+    from cgl.core.config.config import ProjectConfig
+    from os.path import join
+    from ..alchemy import set_relative_paths
+    from cgl.core.path import PathObject
+    from..msd import get_matrix, get_transform_arrays
+    set_relative_paths(True)
+    rig_dict = {}
+    if mesh['layer']:
+        rig_dict['layer'] = mesh['layer']
+
+    rel_path = mesh['source_path']
+    print(mesh)
+    print(rel_path)
+    ref_path = join(ProjectConfig().root_folder, rel_path)
+    path_object = PathObject(ref_path)
+    matrix = get_matrix(mesh,rig_root = mesh['main_controller'])
+    matrix = str(matrix).replace('[', '').replace(']', '').replace(',', '')
+    translate, rotate, scale = get_transform_arrays(mesh)
+
+    rig_dict['msd_path'] = path_object.relative_msd_path
+    rig_dict['transform'] = {'matrix': matrix,
+                             'scale': scale,
+                             'rotate': rotate,
+                             'translate': translate
+                             }
+    rig_dict['main_controller'] = mesh['main_controller']
+    rig_dict['source_path'] = rel_path
+    set_relative_paths(False)
+    return rig_dict
+
 

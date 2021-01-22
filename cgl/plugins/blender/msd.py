@@ -419,7 +419,7 @@ def remove_namespace(obj = None,namespace=None):
         object.name = object.name.split(':')[1]
 
 
-def set_source_path(task_object):
+def set_source_path(task_object = None):
     from cgl.plugins.blender.msd import tag_object
     from cgl.plugins.blender import utils
     from cgl.core.path import PathObject
@@ -437,7 +437,98 @@ def set_source_path(task_object):
         library = utils.get_lib_from_object(obj_to_tag)
         if library:
             filepath = library.filepath
-            path_object = PathObject(filepath)
+            path_object = PathObject(filepath).copy()
             tag_object(obj_to_tag, 'source_path', path_object.path)
 
     bpy.ops.file.make_paths_relative()
+
+
+def tag_layer(task_object=None):
+    from cgl.plugins.blender.msd import tag_object
+    from cgl.plugins.blender import utils
+    from cgl.core.path import PathObject
+    import bpy
+    from cgl.plugins.blender.alchemy import scene_object
+    from cgl.plugins.blender.utils import get_object
+    # bpy.ops.file.make_paths_absolute()
+
+    if task_object == None:
+        task_object = utils.get_objects_in_hirarchy(utils.get_object(scene_object().task), levels=1)
+
+    task_object.remove(scene_object().task)
+
+    for obj in task_object:
+        layer = get_object(obj)
+        print(obj, '____________')
+        tag_object(layer, 'layer', layer.name)
+        for child in layer.children:
+            print(child.name)
+            tag_object(child, 'layer', layer.name)
+            for mdl in child.children:
+                tag_object(mdl, 'layer', layer.name)
+
+
+
+
+
+def get_matrix(obj=None, query=False,rig_root = 'c_pos'):
+    from cgl.plugins.blender.utils import get_object
+    """
+    Returns a matrix of values relating to translate, scale, rotate.
+    :param obj:
+    :param query:
+    :return:
+    """
+    from cgl.plugins.blender.alchemy import PathObject
+    from cgl.core.config.config import ProjectConfig
+
+    if not query:
+        #TODO: check with tom distinction on rig objects.
+        root = ProjectConfig().paths['root']
+        source_path = obj['source_path']
+        reference_path = "%s\%s" % (root, source_path)
+        path_root = PathObject(reference_path)
+        object = get_object(obj)
+        if object:
+
+            obj_matrix = obj.matrix_world
+            if path_root.task == 'rig':
+                proxy = bpy.data.objects['{}_proxy'.format(obj.name)]
+                obj_matrix = proxy.pose.bones[rig_root].matrix_basis
+
+
+            attr = "%s.%s".format(obj, 'matrix')
+
+            matrix = [[obj_matrix.to_translation().x,
+                       obj_matrix.to_translation().y,
+                       obj_matrix.to_translation().z],
+                      [obj_matrix.to_euler().x,
+                       obj_matrix.to_euler().y,
+                       obj_matrix.to_euler().z],
+                      [obj_matrix.to_scale().x,
+                       obj_matrix.to_scale().y,
+                       obj_matrix.to_scale().z]]
+    #
+        else:
+            matrix = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+        return matrix
+    else:
+        print('NO OBJECT _____________')
+        return [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+
+def get_transform_arrays(mesh_object):
+
+    """
+     convenience function, it gets all the transfors (translate, rotate, scale) as seperate entities
+     so we can add that to the scene description, it can be convenient to have in some 3d packages.
+     :param obj: object to find transform arrays for
+     :return: translate, rotate, scale arrays
+     """
+
+    translate = mesh_object.matrix_world.to_translation()
+    scale = mesh_object.matrix_world.to_scale()
+    rotate = mesh_object.matrix_world.to_euler()
+    t_array = [translate[0], translate[1], translate[2]]
+    r_array = [rotate[0], rotate[1], rotate[2]]
+    s_array = [scale[0], scale[1], scale[2]]
+    return t_array, r_array, s_array
