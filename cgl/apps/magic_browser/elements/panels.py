@@ -145,6 +145,7 @@ class ProjectPanel(QtWidgets.QWidget):
         self.project_filter.add_button.clicked.connect(self.on_create_project)
 
     def on_project_changed(self, data):
+        print('Project Changed')
         data = self.project_filter.data_table.items_
         logging.debug(data)
         if self.title == 'Projects':

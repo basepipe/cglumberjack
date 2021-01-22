@@ -104,7 +104,7 @@ class NavigationWidget(QtWidgets.QFrame):
     ingest_button_clicked = QtCore.Signal()
     refresh_button_clicked = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None, cfg=None):
+    def __init__(self, parent=None, path_object=None, cfg=None, label_widget=None):
         QtWidgets.QFrame.__init__(self, parent)
         if path_object:
             self.path_object = path_object
@@ -115,6 +115,8 @@ class NavigationWidget(QtWidgets.QFrame):
             self.cfg = ProjectConfig(self.path_object)
         else:
             self.cfg = cfg
+        self.label_widget = label_widget
+
         self.setProperty('class', 'light_grey')
         self.my_tasks_button = QtWidgets.QPushButton()
         self.my_tasks_button.setToolTip('My Tasks')
@@ -259,11 +261,13 @@ class NavigationWidget(QtWidgets.QFrame):
         self.projects_button.hide()
 
     def update_buttons(self, path_object=None):
+
         if not path_object:
             if self.path_object:
                 path_object = self.path_object
             else:
                 return
+
         if not path_object.company:
             self.show_none()
         elif path_object.company == '*':
@@ -280,6 +284,15 @@ class NavigationWidget(QtWidgets.QFrame):
             self.show_production()
         else:
             self.show_production()
+        if not path_object.branch:
+            self.label_widget.hide_branch()
+            print('\t project: {}'.format(path_object.project))
+            if path_object.project != '*' and path_object.project:
+                self.label_widget.show_branch()
+
+        else:
+            print('this')
+            self.label_widget.show_branch()
 
     def buttons_pressed(self):
         path = None
@@ -309,7 +322,6 @@ class NavigationWidget(QtWidgets.QFrame):
         path_object.set_attr(context='source')
         # if i'm a task, show me all the assets or shots
         last = path_object.get_last_attr()
-
         if last == 'filename':
             last = 'task'
         if last == 'resolution':
@@ -353,6 +365,7 @@ class NavigationWidget(QtWidgets.QFrame):
             logging.debug('Nothing built for %s' % last)
             return
         self.path_object = cglpath.PathObject(new_path)
+
         self.update_buttons()
         self.location_changed.emit(self.path_object)
 
@@ -472,8 +485,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.setContentsMargins(0, 0, 0, 0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         if path:
-            print('path')
-            print(path)
             try:
                 self.path_object = cglpath.PathObject(path, cfg=self.cfg)
                 if self.path_object.context == 'render':
@@ -495,7 +506,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                     scp = '*'
                     try:
                         default_branch = user_config()['default_branch'][self.company][proj]
-                        print(default_branch)
                     except KeyError:
                         default_branch = 'master'
                 else:
@@ -530,8 +540,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.task = ''
         self.resolution = ''
         self.in_file_tree = None
-        self.nav_widget = NavigationWidget(path_object=self.path_object, cfg=self.cfg)
         self.label_widget = LocationWidget(path_object=self.path_object)
+        self.nav_widget = NavigationWidget(path_object=self.path_object, cfg=self.cfg, label_widget=self.label_widget)
         self.path_widget = PathWidget(path_object=self.path_object, cfg=self.cfg)
         self.progress_bar = ProgressGif(cfg=self.cfg)
         self.progress_bar.hide()
@@ -563,7 +573,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def update_title(self):
         project = ""
         shot = ""
-        print(self.path_object.path_root)
         if self.path_object.asset:
             if self.path_object.asset != '*':
                 shot = self.path_object.asset

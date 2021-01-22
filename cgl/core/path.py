@@ -329,10 +329,7 @@ class PathObject(object):
         if self.context:
             if self.scope:
                 if self.scope == '*':
-                    if self.branch:
-                        self.path_template = ['company', 'context', 'project', 'branch', 'scope']
-                    else:
-                        self.path_template = ['company', 'context', 'project', 'scope']
+                    self.path_template = self.project_config['templates']['path_template']
                     return
                 path_template = self.project_config['templates'][self.scope][self.context]['path'].split('/')
                 self.path_template = self.clean_template(path_template)
@@ -434,7 +431,7 @@ class PathObject(object):
         :param path_string: string value representing a path.
         :return:
         """
-        scopes = ['IO', 'assets', 'shots']
+        scopes = ['IO', 'assets', 'shots', '*']
         path_string = os.path.normpath(path_string.split(self.company)[-1])
         path_ = os.path.normpath(path_string)
         path_parts = path_.split(os.sep)

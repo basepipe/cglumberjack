@@ -158,6 +158,7 @@ def create_full_project_cgl_info(company, project, branch=None):
     end_time = time.time()-start_time
     print('print(finished processing in %s minutes' % "{:.2f}".format(end_time/60))
 
+
 if __name__ == "__main__":
     create_all_cgl_info_files('loneCoconut', 'ILUCIA', force=True)
     # create_all_cgl_info_files('VFX', '16BTH_2020_Arena', source=False)

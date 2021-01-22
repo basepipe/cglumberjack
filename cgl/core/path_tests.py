@@ -36,19 +36,21 @@ print('Resolution {}'.format(path_object.resolution))
 print('filename {}'.format(path_object.filename))
 """
 
-# dict Tests
-d_ = {"company": company,
-      "context": 'source',
-      "project": project,
-      "scope": 'shots',
-      "seq": '003',
-      "shot": '0100',
-      "task": 'anim',
-      "user": 'cab18n',
-      "version": '002.000',
-      "resolution": 'high',
-      "filename": '003_0100_anim.mb'
-      }
+# # dict Tests
+# d_ = {"company": company,
+#       "context": 'source',
+#       "project": project,
+#       "scope": 'shots',
+#       "seq": '003',
+#       "shot": '0100',
+#       "task": 'anim',
+#       "user": 'cab18n',
+#       "version": '002.000',
+#       "resolution": 'high',
+#       "filename": '003_0100_anim.mb'
+#       }
 
-path_object = PathObject(d_)
+path_ = r'Z:/Projects/cmpa-animation/source/02BTH_2021_Kish/animonly/*'
+
+path_object = PathObject(path_)
 print(path_object.path_root)
