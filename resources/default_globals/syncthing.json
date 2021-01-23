@@ -1,0 +1,11 @@
+{
+  "sync": {
+    "syncthing": {
+      "aws_bucket_url": "https://fsu-cmpa.s3.amazonaws.com/sync_thing",
+      "aws_company_name": "fsu-cmpa",
+      "sheets_config_path": "C:\\Users\\tmiko\\Documents\\cglumberjack\\sync\\client.json",
+      "sheets_name": "FSU_CMPA_SYNC_THING",
+      "sync_thing_url": "https://fsu-cmpa.s3.amazonaws.com/sync_thing/client.json"
+    }
+  }
+}

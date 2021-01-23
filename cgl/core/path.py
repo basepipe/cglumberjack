@@ -129,17 +129,19 @@ class PathObject(object):
             # print('PathObject().get_config_values')
             self.cfg = ProjectConfig(company=company, project=project)
         self.project_config = self.cfg.project_config
-        self.proj_management = self.project_config['account_info']['project_management']
-        self.project_padding = self.project_config['default']['padding']
+        if self.project_config:
+            self.proj_management = self.project_config['account_info']['project_management']
+            self.project_padding = self.project_config['default']['padding']
+            self.ext_map = self.project_config['ext_map']
+            self.scope_list = self.project_config['rules']['scope_list']
+            self.context_list = self.project_config['rules']['context_list']
         try:
             self.processing_method = self.cfg.user_config['methodology']
         except AttributeError:
             print('methodology {} not found in user config {}'.format(self.processing_method, cfg.user_config_file))
             self.processing_method = 'local'
-        self.ext_map = self.project_config['ext_map']
         self.root = self.paths_dict['root'].replace('\\', '/')
-        self.scope_list = self.project_config['rules']['scope_list']
-        self.context_list = self.project_config['rules']['context_list']
+
 
     def set_status(self):
         if not self.status:
@@ -253,6 +255,7 @@ class PathObject(object):
         self.set_preview_path()
 
     def get_attrs_from_config(self):
+        print(self.cfg.project_config_file)
         attrs = []
         for key in self.project_config['rules']['path_variables']:
             attrs.append(key)

@@ -1378,7 +1378,10 @@ if __name__ == "__main__":
     cfg_ = ProjectConfig()
     if cfg_:
         project_management = cfg_.project_config['account_info']['project_management']
-        users = cfg_.project_config['project_management'][project_management]['users']
+        try:
+            users = cfg_.project_config['project_management'][project_management]['users']
+        except:
+            users = {current_user(): {}}
         app = QtWidgets.QApplication(sys.argv)
         main_window = CGLumberjack(user_info=users[current_user()], cfg=cfg_)
         main_window.setWindowTitle('CG Lumberjack: Nuke')

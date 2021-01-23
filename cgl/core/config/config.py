@@ -23,6 +23,14 @@ def user_config():
         print('Setting up Magic Browser')
 
 
+def get_sync_config_file():
+    """
+    gets the location of the sync config file.
+    :return:
+    """
+    return get_user_config_file().replace('user_globals.json', 'sync/syncthing.json')
+
+
 def paths():
     """
     returns paths to all the software used in the cookbook.
@@ -48,6 +56,7 @@ class ProjectConfig(object):
     shaders_config_file = None
     images_folder = None
     project_management = None
+    sync_config_file = get_sync_config_file()
 
     def __init__(self, path_object=None, company='master', project='master', print_cfg=False):
         self.print_cfg = print_cfg
@@ -65,7 +74,8 @@ class ProjectConfig(object):
         self.get_project_config()
         self.images_folder = os.path.join(self.paths['code_root'], 'resources', 'images')
         self.app_font_folder = os.path.join(self.paths['code_root'], 'resources', 'fonts')
-        self.project_management = self.project_config['account_info']['project_management']
+        if self.project_config:
+            self.project_management = self.project_config['account_info']['project_management']
 
     def set_globals_path(self):
         try:
@@ -84,6 +94,8 @@ class ProjectConfig(object):
             else:
                 project = self.project
             self.globals_root = os.path.join(self.root_folder, self.company, 'config', project)
+            if not os.path.exists(os.path.join(self.globals_root, 'globals.json')):
+                self.globals_root = self.master_globals_root
         except TypeError:
             self.globals_root = self.master_globals_root
         if not os.path.exists(company_globals_root):

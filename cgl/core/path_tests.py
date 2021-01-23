@@ -50,7 +50,7 @@ print('filename {}'.format(path_object.filename))
 #       "filename": '003_0100_anim.mb'
 #       }
 
-path_ = r'Z:/Projects/cmpa-animation/source/02BTH_2021_Kish/animonly/*'
+path_ = r'C:\CGLUMBERJACK\COMPANIES\cmpa-animation\config\master'
 
 path_object = PathObject(path_)
 print(path_object.path_root)

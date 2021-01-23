@@ -5,8 +5,8 @@ import logging
 import urllib.request
 import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
-from cgl.core.utils.general import save_json
-from cgl.core.config.config import get_user_config_file
+from cgl.core.utils.general import save_json, load_json, cgl_copy
+from cgl.core.config.config import get_user_config_file, get_sync_config_file, ProjectConfig, user_config
 
 DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
 DEFAULT_CODE_ROOT = os.path.join(os.path.expanduser("~"), 'PycharmProjects', 'cglumberjack')
@@ -71,10 +71,29 @@ class QuickSync(QtWidgets.QDialog):
         checks s3 for the existance of a globals file and alchemists_cookbook files.
         :return:
         """
-        create_user_globals(self.root_line_edit.text())
+        # create_user_globals(self.root_line_edit.text())
+        setup_sync()
         # set_up_workstation()
-        accept()
+        self.accept()
         # Launch Magic Browser
+
+
+def create_default_globals():
+    code_root = user_config()['paths']['code_root']
+    code_root = os.path.join(code_root, 'resources', 'default_globals')
+    cfg = ProjectConfig()
+    if not os.path.exists(cfg.project_config_file):
+        config_folder = os.path.dirname(cfg.project_config_file)
+        print('Copying {} to {}'.format(code_root, config_folder))
+        cgl_copy(code_root, config_folder)
+
+
+def setup_sync():
+    import cgl.plugins.syncthing.utils as st_utils
+    print('Setup Sync')
+    st_utils.setup_workstation()
+    st_utils.kill_syncthing()
+    st_utils.launch_syncthing(True)
 
 
 def create_user_globals(root=None):
@@ -126,7 +145,9 @@ def find_file_path(file_path):
 
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication([])
-    form = QuickSync()
-    form.show()
-    app.exec_()
+    #app = QtWidgets.QApplication([])
+    #form = QuickSync()
+    #form.show()
+    #app.exec_()
+    # setup_sync()
+    create_default_globals()
