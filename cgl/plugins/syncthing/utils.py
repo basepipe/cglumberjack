@@ -736,9 +736,7 @@ def share_files(path_object):
 
 def share_project(path_object):
     from cgl.ui.widgets.sync_master import SharingDialog
-    source = path_object
-    render = path_object.copy(context='render')
-    dialog_ = SharingDialog(publish_objects=[source, render], type_='sendreceive')
+    dialog_ = SharingDialog(path_object=path_object, type_='sendreceive')
     dialog_.exec_()
     if dialog_.button == 'Ok':
         launch_syncthing(verbose=True)

@@ -1124,7 +1124,7 @@ class CGLumberjack(LJMainWindow):
                 logging.debug('Setting Auto Launch of LumberSync Off - Restart to see effects')
             else:
                 self.cfg.user_config["sync_thing_auto_launch"] = 'True'
-                save_json(user_config(), self.cfg.user_config)
+                save_json(self.cfg.user_config_file, self.cfg.user_config)
                 logging.debug('Setting Auto Launch of LumberSync On - Restart to see effects')
         self.set_auto_launch_text()
 

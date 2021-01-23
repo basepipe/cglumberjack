@@ -163,12 +163,8 @@ class SyncMaster(LJDialog):
         publishes = []
         no_publishes = []
         for cs in self.current_selection:
-            these_publishes = find_latest_publish_objects(cs, source=self.source_check_box.isChecked(),
-                                                          render=self.render_check_box.isChecked())
-            if not these_publishes:
-                no_publishes.append(cs)
-            else:
-                publishes += these_publishes
+            print(cs)
+
         if no_publishes:
             message = 'No Publish versions found for:\n'
             for p in no_publishes:
@@ -183,10 +179,11 @@ class SyncMaster(LJDialog):
             dialog = InputDialog(title='Unable to Sync', message=message)
             dialog.exec_()
         if publishes:
-            dialog_sharing = SharingDialog(publish_objects=publishes)
-            dialog_sharing.exec_()
-            if dialog_sharing.button == 'Ok':
-                self.on_project_changed()
+            print(publishes, 'publishes')
+            ##dialog_sharing = SharingDialog(publish_objects=publishes)
+            #dialog_sharing.exec_()
+            #if dialog_sharing.button == 'Ok':
+            #    self.on_project_changed()
 
     def on_scope_changed(self):
         if self.shots_radio.isChecked():
@@ -335,11 +332,11 @@ class SharingDialog(LJDialog):
     """
     Allows someone to choose who they will share a folder with.
     """
-    def __init__(self, publish_objects, type_='sendonly'):
+    def __init__(self, path_object, type_='sendonly'):
         LJDialog.__init__(self)
         self.setWindowTitle('Sharing Options')
         self.type_ = type_
-        self.publish_objects = publish_objects
+        self.path_object = path_object
         self.root = user_config()['paths']['root']
         layout = QtWidgets.QVBoxLayout(self)
         grid = QtWidgets.QGridLayout()
@@ -395,8 +392,7 @@ class SharingDialog(LJDialog):
 
     def get_branches(self):
         branches = []
-        for p in self.publish_objects:
-            for each in os.listdir(p.path_root):
+        for each in os.listdir(self.path_object.path_root):
                 if each not in branches:
                     branches.append(each)
         return branches
@@ -412,10 +408,7 @@ class SharingDialog(LJDialog):
         print(self.device_list)
 
     def get_config_folder(self):
-        config_file = ''
-        for p in self.publish_objects:
-            if not config_file:
-                config_file = p.cfg.project_config_file
+        config_file = self.path_object.cfg.project_config_file
         config_folder = os.path.dirname(config_file)
         config_folder_id = config_folder.replace(self.root, '[root]')
         add_folder_to_config(config_folder_id, config_folder, self.device_list, type_=self.type_)
@@ -425,13 +418,18 @@ class SharingDialog(LJDialog):
         branch = self.branch_combo.currentText()
         if self.device_list:
             kill_syncthing()
-            if self.publish_objects:
+            if self.path_object:
                 self.get_config_folder()
-                for p in self.publish_objects:
-                    branch = '{}/{}'.format(p.path, branch).replace('/', '\\')
-                    folder_id = '[root]\\%s' % branch
-                    folder = branch
-                    add_folder_to_config(folder_id, folder, self.device_list, type_=self.type_)
+                branch_ = '{}/{}'.format(self.path_object.path, branch).replace('/', '\\')
+                folder_id = '[root]\\%s' % branch_
+                print(self.path_object.path_root)
+                folder = '{}/{}'.format(self.path_object.path_root, branch).replace('/', '\\')
+                print(folder_id)
+                print(folder)
+                render_folder_id = folder_id.replace('\\source\\', '\\render\\')
+                render_folder = folder.replace('\\source\\', '\\render\\')
+                add_folder_to_config(folder_id, folder, self.device_list, type_=self.type_)
+                add_folder_to_config(render_folder_id, render_folder, self.device_list, type_=self.type_)
             else:
                 print('no publish objects')
             launch_syncthing()

@@ -255,7 +255,6 @@ class PathObject(object):
         self.set_preview_path()
 
     def get_attrs_from_config(self):
-        print(self.cfg.project_config_file)
         attrs = []
         for key in self.project_config['rules']['path_variables']:
             attrs.append(key)

@@ -28,7 +28,12 @@ def get_sync_config_file():
     gets the location of the sync config file.
     :return:
     """
-    return get_user_config_file().replace('user_globals.json', 'sync/syncthing.json')
+    filepath = get_user_config_file().replace('user_globals.json', 'sync/syncthing.json')
+    if os.path.exists(filepath):
+        return filepath
+    else:
+        print('Sync config does not exist: {}'.format(filepath))
+        return None
 
 
 def paths():
@@ -82,32 +87,37 @@ class ProjectConfig(object):
             self.root_folder = self.user_config['paths']['root']
         except KeyError:
             self.root_folder = self.user_config['paths']['root']
-
-        self.master_globals_root = os.path.join(self.root_folder, 'master', 'config', 'master')
+        # set self.master_globals_root
+        master_globals = os.path.join(self.root_folder, 'master', 'config', 'master', 'globals.json')
+        if not os.path.exists(master_globals):
+            print('Cant find {}'.format(master_globals))
+            return
+        # see if we have a company master globals.
         try:
-            company_globals_root = os.path.join(self.root_folder, self.company, 'config', 'master')
+            company_globals = os.path.join(self.root_folder, self.company, 'config', 'master', 'globals.json')
+            if os.path.exists(company_globals):
+                master_globals = company_globals
         except TypeError:
-            company_globals_root = self.master_globals_root
+            pass
+
+        # see if we have project globals.
         try:
             if not self.project:
                 project = 'master'
             else:
                 project = self.project
-            self.globals_root = os.path.join(self.root_folder, self.company, 'config', project)
-            if not os.path.exists(os.path.join(self.globals_root, 'globals.json')):
-                self.globals_root = self.master_globals_root
+            project_globals = os.path.join(self.root_folder, self.company, 'config', project, 'globals.json')
+            if os.path.exists(project_globals):
+                master_globals = project_globals
         except TypeError:
-            self.globals_root = self.master_globals_root
-        if not os.path.exists(company_globals_root):
-            company_globals_root = self.master_globals_root
-        if not os.path.exists(self.globals_root):
-            self.globals_root = company_globals_root
+            pass
+        self.project_config_file = master_globals
+        self.globals_root = os.path.dirname(master_globals)
         self.css_folder = os.path.join(self.globals_root, 'css')
         self.default_files_folder = os.path.join(self.globals_root, 'default_files')
         self.hdri_folder = os.path.join(self.globals_root, 'hdri')
         self.hdri_settings_file = os.path.join(self.hdri_folder, 'settings.json')
         self.cookbook_folder = os.path.join(self.globals_root, 'cookbook')
-        self.project_config_file = os.path.join(self.globals_root, 'globals.json')
         self.shaders_config_file = os.path.join(self.globals_root, 'shaders.json')
 
     def print_variables(self):
