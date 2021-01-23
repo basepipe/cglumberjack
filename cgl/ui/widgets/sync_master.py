@@ -422,10 +422,7 @@ class SharingDialog(LJDialog):
                 self.get_config_folder()
                 branch_ = '{}/{}'.format(self.path_object.path, branch).replace('/', '\\')
                 folder_id = '[root]\\%s' % branch_
-                print(self.path_object.path_root)
                 folder = '{}/{}'.format(self.path_object.path_root, branch).replace('/', '\\')
-                print(folder_id)
-                print(folder)
                 render_folder_id = folder_id.replace('\\source\\', '\\render\\')
                 render_folder = folder.replace('\\source\\', '\\render\\')
                 add_folder_to_config(folder_id, folder, self.device_list, type_=self.type_)
