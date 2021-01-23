@@ -1,0 +1,52 @@
+{
+    "ingest": {
+        "default": {
+            "cgl_tools.ingest.pre_publish.default.MarkAsPublished": {
+                "label": "MarkAsPublished", 
+                "module": "cgl_tools.ingest.pre_publish.default.MarkAsPublished",
+                "name": "cgl_tools.ingest.pre_publish.default.MarkAsPublished",
+                "order": 2, 
+                "required": "True"
+            }, 
+            "cgl_tools.ingest.pre_publish.default.PublishFromIngestDataFrame": {
+                "label": "Publish From Ingest Tool", 
+                "module": "cgl_tools.ingest.pre_publish.default.PublishFromIngestDataFrame",
+                "name": "cgl_tools.ingest.pre_publish.default.PublishFromIngestDataFrame",
+                "order": 1, 
+                "required": "True"
+            }, 
+            "order": 1
+        }, 
+        "plate": {
+            "cgl_tools.ingest.pre_publish.plate.CreateHdMovie": {
+                "label": "CreateHdMovie", 
+                "module": "cgl_tools.ingest.pre_publish.plate.CreateHdMovie",
+                "name": "cgl_tools.ingest.pre_publish.plate.CreateHdMovie",
+                "order": 2, 
+                "required": "True"
+            }, 
+            "cgl_tools.ingest.pre_publish.plate.MarkAsPublished": {
+                "label": "MarkAsPublished", 
+                "module": "cgl_tools.ingest.pre_publish.plate.MarkAsPublished",
+                "name": "cgl_tools.ingest.pre_publish.plate.MarkAsPublished",
+                "order": 4, 
+                "required": "True"
+            }, 
+            "cgl_tools.ingest.pre_publish.plate.PublishPlate": {
+                "label": "PublishPlate", 
+                "module": "cgl_tools.ingest.pre_publish.plate.PublishPlate",
+                "name": "cgl_tools.ingest.pre_publish.plate.PublishPlate",
+                "order": 1, 
+                "required": "True"
+            }, 
+            "cgl_tools.ingest.pre_publish.plate.SendToFtrack": {
+                "label": "SendToFtrack", 
+                "module": "cgl_tools.ingest.pre_publish.plate.SendToFtrack",
+                "name": "cgl_tools.ingest.pre_publish.plate.SendToFtrack",
+                "order": 3, 
+                "required": "True"
+            }, 
+            "order": 2
+        }
+    }
+}

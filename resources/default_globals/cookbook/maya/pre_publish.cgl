@@ -1,0 +1,159 @@
+{
+    "maya": [
+        {
+            "buttons": [
+                {
+                    "label": "FixReferencedBundles",
+                    "module": "cookbook.maya.pre_publish.anim.FixReferencedBundles",
+                    "name": "FixReferencedBundles",
+                    "order": 1,
+                    "required": "True"
+                },
+                {
+                    "label": "UpdateReferences",
+                    "module": "cookbook.maya.pre_publish.anim.UpdateReferences",
+                    "name": "UpdateReferences",
+                    "order": 2,
+                    "required": "True"
+                },
+                {
+                    "label": "RemoveDoubleNamespaces",
+                    "module": "cookbook.maya.pre_publish.anim.RemoveDoubleNamespaces",
+                    "name": "RemoveDoubleNamespaces",
+                    "order": 3,
+                    "required": "True"
+                },
+                {
+                    "label": "OrganizeAnim",
+                    "module": "cookbook.maya.pre_publish.anim.OrganizeAnim",
+                    "name": "OrganizeAnim",
+                    "order": 4,
+                    "required": "True"
+                },
+                {
+                    "label": "FindStaticRigs",
+                    "module": "cookbook.maya.pre_publish.anim.FindStaticRigs",
+                    "name": "FindStaticRigs",
+                    "order": 5,
+                    "required": "True"
+                },
+                {
+                    "label": "VersionUp",
+                    "module": "cookbook.maya.pre_publish.anim.VersionUp",
+                    "name": "VersionUp",
+                    "order": 6,
+                    "required": "True"
+                },
+                {
+                    "label": "PublishCameras",
+                    "module": "cookbook.maya.pre_publish.anim.PublishCameras",
+                    "name": "PublishCameras",
+                    "order": 7,
+                    "required": "True"
+                },
+                {
+                    "label": "ExportAlembic",
+                    "module": "cookbook.maya.pre_publish.anim.ExportAlembic",
+                    "name": "ExportAlembic",
+                    "order": 8,
+                    "required": "True"
+                },
+                {
+                    "label": "Create MSD",
+                    "module": "cookbook.maya.pre_publish.anim.Createmsd",
+                    "name": "Createmsd",
+                    "order": 9,
+                    "required": "True"
+                },
+                {
+                    "label": "Exporteyesalembic",
+                    "module": "cookbook.maya.pre_publish.anim.Exporteyesalembic",
+                    "name": "Exporteyesalembic",
+                    "order": 10,
+                    "required": "True"
+                },
+                {
+                    "label": "ExportBundlAnimProxy",
+                    "module": "cookbook.maya.pre_publish.anim.ExportBundlAnimProxy",
+                    "name": "ExportBundlAnimProxy",
+                    "order": 11,
+                    "required": "True"
+                },
+                {
+                    "label": "Playblastexists",
+                    "module": "cookbook.maya.pre_publish.anim.Playblastexists",
+                    "name": "Playblastexists",
+                    "order": 12,
+                    "required": "True"
+                },
+                {
+                    "label": "ReviewExists",
+                    "module": "cookbook.maya.pre_publish.anim.ReviewExists",
+                    "name": "ReviewExists",
+                    "order": 13,
+                    "required": "True"
+                },
+                {
+                    "label": "Publish",
+                    "module": "cookbook.maya.pre_publish.anim.Publish",
+                    "name": "Publish",
+                    "order": 14,
+                    "required": "True"
+                }
+            ],
+            "name": "anim"
+        },
+        {
+            "buttons": [
+                {
+                    "label": "OrganizeLights",
+                    "module": "cookbook.maya.pre_publish.lite.OrganizeLights",
+                    "name": "OrganizeLights",
+                    "order": 1,
+                    "required": "True"
+                },
+                {
+                    "label": "ExportLightRig",
+                    "module": "cookbook.maya.pre_publish.lite.ExportLightRig",
+                    "name": "ExportLightRig",
+                    "order": 2,
+                    "required": "True"
+                },
+                {
+                    "label": "PublishLightRig",
+                    "module": "cookbook.maya.pre_publish.lite.PublishLightRig",
+                    "name": "PublishLightRig",
+                    "order": 3,
+                    "required": "True"
+                }
+            ],
+            "name": "lite"
+        },
+        {
+            "buttons": [
+                {
+                    "label": "Checkglobals",
+                    "module": "cookbook.maya.pre_publish.render.Checkglobals",
+                    "name": "Checkglobals",
+                    "order": 1,
+                    "required": "True"
+                },
+                {
+                    "label": "SaveScene",
+                    "module": "cookbook.maya.pre_publish.render.SaveScene",
+                    "name": "SaveScene",
+                    "order": 2,
+                    "required": "True"
+                },
+                {
+                    "label": "SubmitRender",
+                    "module": "cookbook.maya.pre_publish.render.SubmitRender",
+                    "name": "SubmitRender",
+                    "order": 3,
+                    "required": "True"
+                }
+            ],
+            "name": "render"
+        }
+    ]
+}

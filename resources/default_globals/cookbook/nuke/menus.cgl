@@ -1,0 +1,51 @@
+{
+    "nuke": [
+        {
+            "buttons": [
+                {
+                    "label": "Build",
+                    "module": "import cgl_tools.nuke.menus.Alchemy.Build as Build; Build.run()",
+                    "name": "Build",
+                    "order": 1
+                },
+                {
+                    "label": "Open",
+                    "module": "import cgl_tools.nuke.menus.Alchemy.Open as Open; Open.run()",
+                    "name": "Open",
+                    "order": 2
+                },
+                {
+                    "label": "Version Up",
+                    "module": "import cgl_tools.nuke.menus.Alchemy.VersionUp as VersionUp; VersionUp.run()",
+                    "name": "VersionUp",
+                    "order": 3
+                },
+                {
+                    "label": "Render",
+                    "module": "import cgl_tools.nuke.menus.Alchemy.Render as Render; Render.run()",
+                    "name": "Render",
+                    "order": 4
+                },
+                {
+                    "label": "Review",
+                    "module": "import cgl_tools.nuke.menus.Alchemy.Review as Review; Review.run()",
+                    "name": "Review",
+                    "order": 5
+                },
+                {
+                    "label": "Publish",
+                    "module": "import cgl_tools.nuke.menus.Alchemy.Publish as Publish; Publish.run()",
+                    "name": "Publish",
+                    "order": 6
+                },
+                {
+                    "label": "Thumbnail",
+                    "module": "import cgl_tools.nuke.menus.Alchemy.Thumbnail as Thumbnail; Thumbnail.run()",
+                    "name": "Thumbnail",
+                    "order": 7
+                }
+            ],
+            "name": "Alchemy"
+        }
+    ]
+}
