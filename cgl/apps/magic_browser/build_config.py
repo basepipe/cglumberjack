@@ -1,14 +1,17 @@
 import getpass
+import glob
 import os
 import logging
 import urllib.request
 import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.utils import read_write, web
+from cgl.core.config.config import get_user_config_file
+# from cgl.core.utils.general import current_user
 
 
 
-DEFAULT_ROOT = r"D:\CGLUMBERJACK\COMPANIES"
+DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
 DEFAULT_CODE_ROOT = os.path.join(os.path.expanduser("~"), 'PycharmProjects', 'cglumberjack')
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), 'Documents', 'cglumberjack')
 DEFAULT_USER_GLOBALS = os.path.join(DEFAULT_HOME, 'user_globals.json')
@@ -29,7 +32,7 @@ class PathItemWidget(QtWidgets.QWidget):
         self.user_dir = os.path.expanduser("~")
         self.user_name = self.get_user_name()
         self.cgl_dir = self.get_default_cgl_dir()
-        self.user_globals_path = self.get_user_config(self.cgl_dir)
+        self.user_globals_path = get_user_config_file()
         self.globals_label = QtWidgets.QLabel('Globals Locations')
         self.globals_label.setProperty('class', 'ultra_title')
         self.paths_label = QtWidgets.QLabel('CGL Tool Paths')
@@ -622,7 +625,7 @@ class QuickSync(QtWidgets.QDialog):
         QtWidgets.QDialog.__init__(self, parent)
         self.setMinimumWidth(1200)
         self.setMinimumHeight(800)
-        self.setWindowTitle('Lumbermill Quick Setup')
+        self.setWindowTitle('Magic Browser Quick Setup')
         self.default_globals = DEFAULT_GLOBALS
         self.default_user_globals = DEFAULT_USER_GLOBALS
         self.default_root = DEFAULT_ROOT
@@ -680,10 +683,10 @@ class QuickSync(QtWidgets.QDialog):
         self.globals_path = os.path.join(DEFAULT_HOME, 'downloads', 'globals.json')
         self.aws_globals = r'https://%s.s3.amazonaws.com/globals.json' % self.company_name_s3
         self.check_for_globals_button = QtWidgets.QPushButton('Check for Globals')
-        self.download_globals_button = QtWidgets.QPushButton('Set Up Lumbermill')
+        self.setup_mb_button = QtWidgets.QPushButton('Set Up Magic Browser')
 
         button_layout.addStretch(1)
-        button_layout.addWidget(self.download_globals_button)
+        button_layout.addWidget(self.setup_mb_button)
 
         grid_layout.addWidget(root_label, 2, 0)
         grid_layout.addWidget(self.root_line_edit, 2, 1)
@@ -715,7 +718,7 @@ class QuickSync(QtWidgets.QDialog):
 
         self.company_line_edit.editingFinished.connect(self.on_company_name_changed)
         self.root_line_edit.textChanged.connect(self.on_root_changed)
-        self.download_globals_button.clicked.connect(self.set_up_lumbermill)
+        self.setup_mb_button.clicked.connect(self.set_up_magic_browser)
         # self.projects_checkbox.clicked.connect(self.on_projects_checkbox_clicked)
         self.sync_thing_checkbox.clicked.connect(self.on_sync_thing_checkbox_clicked)
         # self.import_line_edit.editingFinished.connect(self.on_import_line_edit_changed)
@@ -773,6 +776,15 @@ class QuickSync(QtWidgets.QDialog):
 
 
     def on_company_name_changed(self):
+        """
+        Check for sync spreadsheet
+        :return:
+        """
+        self.company_name = self.company_line_edit.text()
+        print('Attempting sync with {}'.format(self.company_name))
+
+
+    def find_aws_globals(self):
         self.company_name = self.company_line_edit.text()
         if self.company_name:
             self.company_name_s3 = self.company_name.replace(' ', '-').replace('_', '-')
@@ -872,18 +884,19 @@ class QuickSync(QtWidgets.QDialog):
         dialog.exec_()
         # syncthing.setup(self.company_name_s3, 'LONE_COCONUT_SYNC_THING', sync_folders)
 
-    def set_up_lumbermill(self):
+    def set_up_magic_browser(self):
         """
         checks s3 for the existance of a globals file and alchemists_cookbook files.
         :return:
         """
-        if self.download_globals_from_cloud():
-            self.edit_globals_paths()
-            create_user_globals(self.default_user_globals, self.default_globals)
-            self.accept()
-        else:
-            dialog = ConfigDialog(company=self.company_line_edit.text(), root=self.default_root)
-            dialog.exec_()
+        create_user_globals(self.root_line_edit.text())
+        #if self.download_globals_from_cloud():
+        #    self.edit_globals_paths()
+        #    create_user_globals(self.default_user_globals, self.default_globals)
+        #    self.accept()
+        #else:
+        #    dialog = ConfigDialog(company=self.company_line_edit.text(), root=self.default_root)
+        #    dialog.exec_()
 
 
 class AWSDialog(QtWidgets.QDialog):
@@ -939,21 +952,51 @@ class AWSDialog(QtWidgets.QDialog):
         self.hide()
 
 
-def create_user_globals(user_globals, globals_path):
-    if user_globals:
+def create_user_globals(root=None):
+    print('Checking for root: {}'.format(root))
+    user_globals = user
+    if root:
         if not os.path.exists(os.path.dirname(user_globals)):
             os.makedirs(os.path.dirname(user_globals))
         d = {
-             "globals": globals_path,
              "previous_path": "",
              "previous_paths": {},
              "methodology": "local",
-             "my_tasks": {}
+             "my_tasks": {},
+             "paths": {"ari_convert": "arc_cmd",
+                        "code_root": find_glob_path(r"C:\\Users\\*\\PycharmProjects\\cglumberjack"),
+                        "convert": find_glob_path(r'C:\\*\\ImageMagick*\\magick.exe'),
+                        "deadline": find_glob_path(r"C:\\*\\Thinkbox\\Deadline10\\bin\\deadlinecommand.exe"),
+                        "ffmpeg": find_file_path("C:\\ProgramData\\chocolatey\\lib\\ffmpeg\\tools\\ffmpeg\\bin\\ffmpeg.exe"),
+                        "ffplay": find_file_path("C:\\ProgramData\\chocolatey\\lib\\ffmpeg\\tools\\ffmpeg\\bin\\ffplay.exe"),
+                        "ffprobe": find_file_path("C:\\ProgramData\\chocolatey\\lib\\ffmpeg\\tools\\ffmpeg\\bin\\ffprobe.exe"),
+                        "magick": find_glob_path(r"C:\\*\\ImageMagick*\\magick.exe"),
+                        "maketx": find_glob_path(r"C:\\*\\bin\\maketx.exe"),
+                        "mayapy": find_glob_path(r"C:\\*\\Autodesk\\Maya*\\bin\\mayapy.exe"),
+                        "nuke": find_glob_path(r"C:\\*\\Nuke*\\*.exe"),
+                        "oiiotool": find_glob_path(r"C:\\OpenImage*\\bin\\oiiotool.exe"),
+                        "root": root,
+                        "smedge": find_glob_path(r"C:\\*\\Smedge\\Submit.exe"),
+                        "wget": find_file_path("C:\\ProgramData\\chocolatey\\lib\\Wget\\tools\\wget.exe")
+                       }
              }
         logging.debug("saving user_globals to %s" % user_globals)
-        read_write.save_json(user_globals, d)
+        save_json(get_user_config_file(), d)
+
+
+def find_glob_path(glob_string):
+    file_ = glob.glob(glob_string)[0]
+    if file_:
+        return file_
     else:
-        logging.debug('No Root Defined, cannot save user globals')
+        return ""
+
+
+def find_file_path(file_path):
+    if os.path.exists(file_path):
+        return file_path
+    else:
+        return ""
 
 
 if __name__ == "__main__":

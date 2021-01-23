@@ -1371,14 +1371,19 @@ def sleeper():
 
 if __name__ == "__main__":
     import sys
+    cfg_ = None
+    root = None
+    user_globals = user_config()
+    root_dir = user_globals['paths']['root']
     cfg_ = ProjectConfig()
-    project_management = cfg_.project_config['account_info']['project_management']
-    users = cfg_.project_config['project_management'][project_management]['users']
-    app = QtWidgets.QApplication(sys.argv)
-    main_window = CGLumberjack(user_info=users[current_user()], cfg=cfg_)
-    main_window.setWindowTitle('CG Lumberjack: Nuke')
-    main_window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-    main_window.show()
-    app.exec_()
+    if cfg_:
+        project_management = cfg_.project_config['account_info']['project_management']
+        users = cfg_.project_config['project_management'][project_management]['users']
+        app = QtWidgets.QApplication(sys.argv)
+        main_window = CGLumberjack(user_info=users[current_user()], cfg=cfg_)
+        main_window.setWindowTitle('CG Lumberjack: Nuke')
+        main_window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        main_window.show()
+        app.exec_()
 
 

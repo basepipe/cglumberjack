@@ -17,7 +17,10 @@ def user_config():
     returns dictionary representing user config.
     :return:
     """
-    return load_json(get_user_config_file())
+    if os.path.exists(get_user_config_file()):
+        return load_json(get_user_config_file())
+    else:
+        print('Setting up Magic Browser')
 
 
 def paths():
@@ -178,8 +181,11 @@ class ProjectConfig(object):
         returns a dictionary for the current project config globals.
         :return:
         """
-        self.project_config = load_json(self.project_config_file)
-        return self.project_config
+        if os.path.exists(self.project_config_file):
+            self.project_config = load_json(self.project_config_file)
+            return self.project_config
+        else:
+            print('Project Config {} does not exist,  '.format(self.project_config_file))
 
     def get_shaders_config(self):
         """
@@ -304,9 +310,15 @@ def get_root(project='master'):
     return user_conf['paths']['root'].replace('\\', '/')
 
 
+
+
+
+
 if __name__ == '__main__':
-    project_config = ProjectConfig(company='bob')
-    print(project_config.globals_root)
+    print('bob')
+    #create_user_globals(root=None)
+    # project_config = ProjectConfig(company='bob')
+    # print(project_config.globals_root)
     # these return file paths
     # print(project_config.globals_file)
     # print(project_config.shaders_file)
