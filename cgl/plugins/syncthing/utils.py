@@ -28,14 +28,14 @@ def setup_server(clean=False):
     wipe_globals()
     user_globals = ProjectConfig().user_config_file
     set_machine_type('server')
-    cgl_tools_folder = ProjectConfig().project_config
+    # cgl_tools_folder = os.path.dirname(ProjectConfig().project_config_file)
 
     sheet_obj = get_sheet()
     add_device_info_to_sheet(sheet_obj, server='true')
     add_all_devices_to_config(sheet_obj)
-    #folder_id = r'[root]\_config\cgl_tools'
-    folder_id = r'[root]\master\config\master'
-    add_folder_to_config(folder_id, cgl_tools_folder, type_='sendonly')
+    # folder_id = r'[root]\_config\cgl_tools'
+    # folder_id = r'[root]\master\config\master'
+    # add_folder_to_config(folder_id, cgl_tools_folder, type_='sendonly')
     share_folders_to_devices()  # only if you're setting up main folders
     launch_syncthing()
 

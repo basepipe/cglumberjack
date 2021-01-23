@@ -6,8 +6,8 @@ from cgl.core.utils.general import current_user
 from cgl.core.cgl_info import get_cgl_info_size, create_all_cgl_info_files
 from cgl.ui.widgets.widgets import AdvComboBox
 from cgl.ui.widgets.dialog import InputDialog
+from cgl.core.config.config import user_config
 from cgl.core.path import PathObject, show_in_folder, get_folder_size, find_latest_publish_objects
-from cgl.core.config import get_globals
 from cgl.plugins.syncthing.utils import get_device_dict, get_my_device_info, kill_syncthing, launch_syncthing, \
     add_folder_to_config
 
@@ -20,13 +20,17 @@ class SyncMaster(LJDialog):
         self.setMinimumWidth(800)
         self.device_list = device_list
         self.setWindowTitle('Lumber Sync')
-        self.globals = get_globals()
         self.company = company
         self.project = project
         self.scope = scope
         self.current_selection = ''
-        self.path_object = PathObject(self.globals['paths']['root'])
+        self.root = user_config()['paths']['root']
+        self.path_object = PathObject(self.root)
         self.sync_folder_dict = self.get_sync_folder_dict()
+        print(1, self.root)
+        print(2, self.path_object.path_root)
+        print(3, self.sync_folder_dict)
+        return
 
         layout = QtWidgets.QVBoxLayout(self)
         grid_layout = QtWidgets.QGridLayout()
@@ -336,6 +340,7 @@ class SharingDialog(LJDialog):
         self.setWindowTitle('Sharing Options')
         self.type_ = type_
         self.publish_objects = publish_objects
+        self.root = user_config()['paths']['root']
         layout = QtWidgets.QVBoxLayout(self)
         grid = QtWidgets.QGridLayout()
         this_device = get_my_device_info()['id']
@@ -366,7 +371,13 @@ class SharingDialog(LJDialog):
                     self.device_list.append(device_id)
                 grid.addWidget(check_box, i, 0)
                 check_box.clicked.connect(self.on_checkbox_clicked)
-
+        self.branch_combo = AdvComboBox()
+        self.branch_combo.addItems(self.get_branches())
+        branch_label = QtWidgets.QLabel('Select Branch to Share:')
+        branch_row = QtWidgets.QHBoxLayout()
+        branch_row.addWidget(branch_label)
+        branch_row.addWidget(self.branch_combo)
+        branch_row.addStretch(1)
         message = QtWidgets.QLabel("Who do you want to share with?")
         button_row = QtWidgets.QHBoxLayout()
         ok_button = QtWidgets.QPushButton('Ok')
@@ -377,9 +388,18 @@ class SharingDialog(LJDialog):
         button_row.addStretch(1)
         button_row.addWidget(cancel_button)
         button_row.addWidget(ok_button)
+        layout.addLayout(branch_row)
         layout.addWidget(message)
         layout.addLayout(grid)
         layout.addLayout(button_row)
+
+    def get_branches(self):
+        branches = []
+        for p in self.publish_objects:
+            for each in os.listdir(p.path_root):
+                if each not in branches:
+                    branches.append(each)
+        return branches
 
     def on_checkbox_clicked(self):
         check_box = self.sender()
@@ -391,15 +411,26 @@ class SharingDialog(LJDialog):
             print(check_box.full_name)
         print(self.device_list)
 
+    def get_config_folder(self):
+        config_file = ''
+        for p in self.publish_objects:
+            if not config_file:
+                config_file = p.cfg.project_config_file
+        config_folder = os.path.dirname(config_file)
+        config_folder_id = config_folder.replace(self.root, '[root]')
+        add_folder_to_config(config_folder_id, config_folder, self.device_list, type_=self.type_)
+
     def on_ok_clicked(self):
         self.button = 'Ok'
+        branch = self.branch_combo.currentText()
         if self.device_list:
             kill_syncthing()
             if self.publish_objects:
-                print(1, self.publish_objects)
+                self.get_config_folder()
                 for p in self.publish_objects:
-                    folder_id = '[root]\\%s' % p.path.replace('/', '\\')
-                    folder = p.path_root.replace('/', '\\')
+                    branch = '{}/{}'.format(p.path, branch).replace('/', '\\')
+                    folder_id = '[root]\\%s' % branch
+                    folder = branch
                     add_folder_to_config(folder_id, folder, self.device_list, type_=self.type_)
             else:
                 print('no publish objects')
