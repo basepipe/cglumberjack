@@ -398,6 +398,20 @@ class LocationWidget(QtWidgets.QWidget):
         self.label_row.addWidget(self.branch_combo)
         self.path_changed(self.path_object)
         self.branch_combo.currentIndexChanged.connect(self.branch_changed)
+        self.new_live = True
+
+    def reload(self, path_object, branch):
+        self.new_live = False
+        self.path_object = path_object
+        self.branch_combo.clear()
+        branches = path_object.get_branches()
+        self.branch_combo.addItem('New Branch')
+        self.branch_combo.insertSeparator(1)
+        self.branch_combo.addItems(branches)
+        print('88888', branch)
+        index = self.branch_combo.findText(branch)
+        if index != -1:
+            self.branch_combo.setCurrentIndex(index)
 
     def hide_branch(self):
         self.branch_combo.hide()
@@ -410,13 +424,15 @@ class LocationWidget(QtWidgets.QWidget):
     def branch_changed(self):
         cfg = ProjectConfig(self.path_object)
         if self.branch_combo.currentText() == 'New Branch':
-            new_branch = self.create_project_branch()
+            if self.new_live:
+                new_branch = self.create_project_branch()
         else:
             new_branch = self.branch_combo.currentText()
             self.path_object.set_attr(branch=new_branch)
             # TODO - refresh the widget
-        cfg.edit_user_config(['default_branch', self.path_object.company, self.path_object.project],
-                             new_branch)
+        if self.new_live:
+            cfg.edit_user_config(['default_branch', self.path_object.company, self.path_object.project],
+                                 new_branch)
 
     def create_project_branch(self):
         """
@@ -430,7 +446,10 @@ class LocationWidget(QtWidgets.QWidget):
         return dialog.branch_line_edit.text()
 
     def path_changed(self, path_object):
+        print('path_changed', path_object.path_root)
         if path_object.project:
+            if path_object.branch:
+                print('branch', path_object.branch)
             if path_object.shot:
                 if path_object.variant == 'default' or path_object.variant == '*' or not path_object.variant:
                     shot = path_object.shot
@@ -657,7 +676,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.load_files_panel(path_object)
         if last == 'project':
             if path_object.project == '*':
-                self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box, cfg=self.cfg)
+                self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box,
+                                          branch_widget=self.label_widget, cfg=self.cfg)
             else:
                 self.panel = ProductionPanel(parent=self, path_object=path_object,
                                              search_box=self.nav_widget.search_box, cfg=self.cfg)
@@ -696,6 +716,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.panel.add_button.connect(self.add_task)
             else:
                 self.load_files_panel(path_object)
+        elif last == 'branch':
+            print('last is project')
         elif last == 'company':
             self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box, title='Companies',
                                       cfg=self.cfg)
