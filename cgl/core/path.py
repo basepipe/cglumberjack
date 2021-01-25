@@ -1821,11 +1821,11 @@ def get_file_icon(filepath):
 
 def remove_root(filepath):
     # TODO - move this function to PathObject - it really does belong there.
-    path_object = PathObject(filepath)
-    config = ProjectConfig(path_object)
-    root = config.project_config['paths']['root']
+    config = user_config()
+    root = config['paths']['root']
     filepath = filepath.replace('\\', '/')
     root = root.replace('\\', '/')
+    print(filepath, root)
     return filepath.replace(root, '')
 
 
