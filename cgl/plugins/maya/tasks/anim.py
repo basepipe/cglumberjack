@@ -37,6 +37,56 @@ class Task(SmartTask):
         self._import(this_obj.path_root)
 
 
+def test_get_msd_info():
+    bundles, children = get_bundles(children=True)
+    print('bundles', bundles)
+    meshes = get_meshes(ignore=children)
+    print('meshes', meshes)
+    print('No camera defined yet')
+    print('No anim publishes defined yet')
+
+
+def get_bundles(children=False):
+    """
+    gets all the bundles in the scene
+    :param children: if True it returns children as a seperate list.
+    :return:
+    """
+    bundles = []
+    bundle_ref_children = []
+    sel = pm.ls(type='transform')
+    for obj in sel:
+        if obj.hasAttr('BundlePath'):
+            bundles.append(obj)
+    if children:
+        for b in bundles:
+            children = pm.listRelatives(b, ad=True)
+            for child in children:
+                try:
+                    ref = pm.referenceQuery(child, filename=True, wcn=True)
+                    bundle_ref_children.append(ref)
+                except RuntimeError:
+                    print('%s is not a reference' % child)
+        return bundles, bundle_ref_children
+    else:
+        return bundles
+
+
+def get_meshes(ignore=None):
+    meshes = []
+    references = pm.listReferences(namespaces=True)
+    for ref in references:
+        if not pm.system.referenceQuery(ref[-1], isLoaded=True):
+            print('removing unloaded reference {}'.format(ref))
+            pm.system.FileReference(ref[-1]).remove()
+        else:
+            if ref[-1].path not in ignore:
+                meshes.append(ref)
+    return meshes
+
+
+
+
 def export_abc(file_out, geo, command_line=False):
     sframe = int(pm.playbackOptions(query=True, animationStartTime=True))
     eframe = int(pm.playbackOptions(query=True, animationEndTime=True))
