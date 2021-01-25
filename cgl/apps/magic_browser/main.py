@@ -882,6 +882,7 @@ class CGLumberjack(LJMainWindow):
         open_globals = QtWidgets.QAction('Go to Project Globals', self)
         open_user_globals = QtWidgets.QAction('Go to User Globals', self)
         open_default_files = QtWidgets.QAction("Go to Default Files", self)
+        upload_globals_to_cloud = QtWidgets.QAction("Update Studio Globals", self)
         create_project = QtWidgets.QAction('Import .csv', self)
         settings.setShortcut('Ctrl+,')
         alchemy_cookbook = QtWidgets.QAction("Alchemist's Cookbook", self)
@@ -909,6 +910,7 @@ class CGLumberjack(LJMainWindow):
         tools_menu.addAction(open_globals)
         tools_menu.addAction(open_user_globals)
         tools_menu.addAction(open_default_files)
+        tools_menu.addAction(upload_globals_to_cloud)
         tools_menu.addSeparator()
         tools_menu.addMenu(self.current_processing_method)
         tools_menu.addSeparator()
@@ -959,6 +961,7 @@ class CGLumberjack(LJMainWindow):
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
         open_default_files.triggered.connect(self.open_default_files)
+        upload_globals_to_cloud.triggered.connect(self.upload_globals)
         create_project.triggered.connect(self.open_create_project_dialog)
         settings.triggered.connect(self.on_settings_clicked)
         alchemy_cookbook.triggered.connect(self.on_alchemists_cookbook_clicked)
@@ -1308,6 +1311,13 @@ class CGLumberjack(LJMainWindow):
         print(self.cfg.globals_root)
         logging.debug(self.cfg.globals_root)
         cglpath.start(self.cfg.globals_root)
+
+    def upload_globals(self):
+        from cgl.ui.widgets.dialog import UploadGlobals
+        dialog = UploadGlobals(cfg=self.cfg, company=self.cfg.company, project=self.cfg.project)
+        dialog.exec_()
+        print('zip up the indicated globals')
+        print('upload the zip file')
 
     @staticmethod
     def open_user_globals():

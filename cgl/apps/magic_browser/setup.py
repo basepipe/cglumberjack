@@ -6,11 +6,13 @@ import urllib.request
 import requests
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
 from cgl.core.utils.general import save_json, load_json, cgl_copy
+from cgl.core.utils import read_write, web
 from cgl.core.config.config import get_user_config_file, get_sync_config_file, ProjectConfig, user_config
 
 DEFAULT_ROOT = r"C:\CGLUMBERJACK\COMPANIES"
 DEFAULT_CODE_ROOT = os.path.join(os.path.expanduser("~"), 'PycharmProjects', 'cglumberjack')
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), 'Documents', 'cglumberjack')
+AWS_PATH = os.path.join(os.path.expanduser("~"), ".aws")
 
 
 class QuickSync(QtWidgets.QDialog):
@@ -23,6 +25,13 @@ class QuickSync(QtWidgets.QDialog):
         self.default_user_globals = get_user_config_file()
         self.default_root = DEFAULT_ROOT
         self.default_code_root = DEFAULT_CODE_ROOT
+        self.client_file_download_path = "~\\Documents\\cglumberjack\\sync\\client.json"
+        self.config_folder_path = os.path.join(self.default_root, 'master', 'config', 'master')
+        self.aws_master_globals_url = ''
+        self.aws_client_file_url = ''
+        self.company_name_s3 = ''
+        self.company_name_disk = ''
+        self.aws_globals = ''
         size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         size_policy.setVerticalStretch(1)
         layout = QtWidgets.QVBoxLayout(self)
@@ -35,13 +44,14 @@ class QuickSync(QtWidgets.QDialog):
 
         self.company_line_edit = QtWidgets.QLineEdit()
         self.root_line_edit = QtWidgets.QLineEdit()
+        self.aws_globals_label = QtWidgets.QLabel()
 
         self.root_line_edit.setText(self.default_root)
         self.company_line_edit.setText('default')
 
         self.company_name = ''
         self.setup_mb_button = QtWidgets.QPushButton('Set Up Magic Browser')
-
+        button_layout.addWidget(self.aws_globals_label)
         button_layout.addStretch(1)
         button_layout.addWidget(self.setup_mb_button)
 
@@ -64,18 +74,127 @@ class QuickSync(QtWidgets.QDialog):
         :return:
         """
         self.company_name = self.company_line_edit.text()
-        print('Attempting sync with {}'.format(self.company_name))
+        if self.company_name:
+            self.company_name_s3 = self.company_name.replace(' ', '-').replace('_', '-')
+            self.company_name_disk = self.company_name_s3.replace('-', '_')
+            self.aws_client_file_url = "https://{}.s3.amazonaws.com/sync/client.json".format(self.company_name)
+            self.aws_master_globals_url = "https://{}.s3.amazonaws.com/config.zip".format(self.company_name)
+            if web.url_exists(self.aws_client_file_url):
+                self.aws_globals_label.setText('Found Company Sync Info on cloud')
+                self.aws_globals_label.setStyleSheet("color: rgb(0, 255, 0);")
+            else:
+                self.aws_globals_label.setText('No Shared Globals Found - skipping')
+                self.aws_globals_label.setStyleSheet("color: rgb(255, 0, 0);")
+            self.aws_globals_label.show()
+
+    def aws_download(self):
+        """
+        Pulls company specific information down for globals and syncing.
+        :return:
+        """
+        if self.aws_globals_label.text() == 'Found Shared Company Globals on Cloud':
+            if not os.path.exists(self.config_folder_path):
+                if web.url_exists(self.aws_master_globals_url):
+                    print('Downloading default globals to {}'.format(self.config_folder_path))
+                    # download the aws master globals for this company
+                    # we can save the config on AWS until we figure something out with Github.
 
     def set_up_magic_browser(self):
         """
         checks s3 for the existance of a globals file and alchemists_cookbook files.
         :return:
         """
-        # create_user_globals(self.root_line_edit.text())
+        create_user_globals(self.root_line_edit.text())
+        add_aws_credentials()
         setup_sync()
-        # set_up_workstation()
+        set_up_workstation()
         self.accept()
-        # Launch Magic Browser
+
+    def download_globals_from_cloud(self):
+
+        if self.aws_globals_label.text() == 'Found Shared Company Globals on Cloud':
+            globals_path = os.path.join(DEFAULT_HOME, 'downloads', 'globals.json')
+            cgl_tools_path = os.path.join(DEFAULT_HOME, 'downloads', 'cgl_tools.zip')
+            self.globals_path = globals_path
+            self.cgl_tools_path = cgl_tools_path
+            if not os.path.exists(os.path.dirname(globals_path)):
+                os.makedirs(os.path.dirname(globals_path))
+            if os.path.exists(globals_path):
+                os.remove(globals_path)
+            try:
+                # save the globals to globals_path
+                urllib.request.urlretrieve(self.aws_globals, globals_path)
+                return True
+            except ImportError:  # Python 2
+                r = requests.get(self.aws_globals, allow_redirects=True)
+                logging.debug(r.content)
+                if '<Error>' in str(r.content):
+                    logging.debug('No File %s for company: %s' % (self.aws_globals, self.company_name))
+                else:
+                    logging.debug('Saving Globals file to: %s' % globals_path)
+                    with open(globals_path, 'w+') as f:
+                        f.write(r.content)
+                self.accept()
+                return True
+            else:
+                logging.error('Problem downloading %s' % self.aws_globals)
+        else:
+            logging.debug('No Globals Found - Get your Studio to publish their globals, or Create new ones?')
+            return False
+    # Launch Magic Browser
+
+
+class AWSDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        QtWidgets.QDialog.__init__(self, parent)
+        self.setWindowTitle('Enter AWS Information')
+        self.layout = QtWidgets.QVBoxLayout(self)
+        grid_layout = QtWidgets.QGridLayout()
+        button_layout = QtWidgets.QHBoxLayout()
+
+        self.id_line_edit = QtWidgets.QLineEdit()
+        self.access_key_line_edit = QtWidgets.QLineEdit()
+        self.region_line_edit = QtWidgets.QLineEdit()
+        self.region_line_edit.setText("us-east-1")
+
+        id_label = QtWidgets.QLabel('aws_access_key_id: ')
+        access_key_label = QtWidgets.QLabel('aws_secret_access_key: ')
+        region_label = QtWidgets.QLabel('region: ')
+
+        self.submit_button = QtWidgets.QPushButton("Submit")
+
+        grid_layout.addWidget(id_label, 0, 0)
+        grid_layout.addWidget(self.id_line_edit, 0, 1)
+        grid_layout.addWidget(access_key_label, 1, 0)
+        grid_layout.addWidget(self.access_key_line_edit, 1, 1)
+        grid_layout.addWidget(region_label, 2, 0)
+        grid_layout.addWidget(self.region_line_edit, 2, 1)
+
+        button_layout.addWidget(self.submit_button)
+
+        self.layout.addLayout(grid_layout)
+        self.layout.addLayout(button_layout)
+
+        self.submit_button.clicked.connect(self.submit_pressed)
+
+    def submit_pressed(self):
+        if os.path.exists(AWS_PATH):
+            print("HE EXIST: %s" % AWS_PATH)
+        else:
+            os.mkdir(AWS_PATH)
+            print("HE GONE KID: %s" % AWS_PATH)
+
+        with open(os.path.join(AWS_PATH, "config"), "w") as openFile:
+            openFile.write("[default]\n")
+            openFile.write("region = %s" % self.region_line_edit.text())
+            openFile.close()
+
+        with open(os.path.join(AWS_PATH, "credentials"), "w") as openFile:
+            openFile.write("[default]\n")
+            openFile.write("aws_access_key_id = %s\n" % self.id_line_edit.text())
+            openFile.write("aws_secret_access_key = %s" % self.access_key_line_edit.text())
+
+        self.hide()
 
 
 def create_default_globals():
@@ -94,6 +213,23 @@ def setup_sync():
     st_utils.setup_workstation()
     st_utils.kill_syncthing()
     st_utils.launch_syncthing(True)
+
+
+def setup_sync_globals():
+    print('Make sure aws credentials are here')
+    print('Download the google docs json file')
+    print('create the sync.json file')
+    d_ = {
+            "sync": {
+                "syncthing": {
+                    "aws_bucket_url": "https://fsu-cmpa.s3.amazonaws.com/sync",
+                    "aws_company_name": "fsu-cmpa",
+                    "sheets_config_path": "~\\Documents\\cglumberjack\\sync\\client.json",
+                    "sheets_name": "FSU_CMPA_SYNC_THING",
+                    "sync_thing_url": "https://fsu-cmpa.s3.amazonaws.com/sync/client.json"
+                }
+            }
+         }
 
 
 def create_user_globals(root=None):
@@ -144,10 +280,22 @@ def find_file_path(file_path):
         return ""
 
 
+def add_aws_credentials():
+    """
+    Checks for AWS credentials, if it doesn't find them it launches a dialog
+    :return:
+    """
+    if not os.path.exists(os.path.join(AWS_PATH, 'credentials')):
+        dialog = AWSDialog()
+        dialog.exec_()
+    else:
+        print('Found AWS Credentials!')
+
+
 if __name__ == "__main__":
-    #app = QtWidgets.QApplication([])
-    #form = QuickSync()
-    #form.show()
-    #app.exec_()
+    app = QtWidgets.QApplication([])
+    form = QuickSync()
+    form.show()
+    app.exec_()
     # setup_sync()
-    create_default_globals()
+    # $create_default_globals()
