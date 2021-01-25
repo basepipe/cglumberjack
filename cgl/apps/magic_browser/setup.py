@@ -243,6 +243,7 @@ def create_user_globals(root=None):
              "previous_paths": {},
              "methodology": "local",
              "my_tasks": {},
+             "default_branch": {},
              "paths": {"ari_convert": "arc_cmd",
                         "code_root": find_glob_path(r"C:\\Users\\*\\PycharmProjects\\cglumberjack"),
                         "convert": find_glob_path(r'C:\\*\\ImageMagick*\\magick.exe'),

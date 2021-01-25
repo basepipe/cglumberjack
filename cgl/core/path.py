@@ -677,15 +677,19 @@ class PathObject(object):
         Returns all the branches for the current project.
         :return:
         """
-        proj_root = self.split_after('project')
-        branches = glob.glob('{}/*'.format(proj_root))
-        clean_branches = []
-        for b in branches:
-            if '.' in b:
-                pass
-            else:
-                clean_branches.append(os.path.split(b)[-1])
-        return clean_branches
+        if self.project:
+            proj_root = self.split_after('project')
+            branches = glob.glob('{}/*'.format(proj_root))
+            print('branches:', branches)
+            clean_branches = []
+            for b in branches:
+                if '.' in b:
+                    pass
+                else:
+                    clean_branches.append(os.path.split(b)[-1])
+            return clean_branches
+        else:
+            return []
 
     def eliminate_wild_cards(self):
         """
