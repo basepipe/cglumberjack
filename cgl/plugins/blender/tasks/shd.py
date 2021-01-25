@@ -305,6 +305,10 @@ def get_valid_material_list(mat_group=False,mat_object = False,default_ns = True
     from importlib import reload
 
     materials = mdl.get_mdl_objects(groups=True,default_ns=default_ns)
+    if materials == None:
+        materials = mdl.get_mdl_objects(groups=True, default_ns=False)
+        if materials ==None:
+            print('_'*5,'No Valid Materials Found','_'*5)
 
     clean_list = []
 

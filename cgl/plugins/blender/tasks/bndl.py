@@ -30,7 +30,7 @@ class Task(SmartTask):
         """
         bundle_import(filepath, layout_group)
 
-    def import_latest(self, asset, task='bndl', category='*', type='env'):
+    def import_latest(self, asset, task='bndl', category='*', type='env',reference = None,**kwargs):
         """
         imports the latest publish file for the given seq/shot combination
         :param task:
@@ -136,7 +136,7 @@ def bundle_import(filepath, layout_group=None):
     :return:
     """
     relative_path = None
-    root = ProjectConfig.project_management['paths']['root']
+    root = ProjectConfig().user_config['paths']['root']
     d = PathObject(filepath)
     ns = d.shot
     #    try:
@@ -158,16 +158,13 @@ def bundle_import(filepath, layout_group=None):
     group['outlinerColor']= '1, 1, 0'
     layout_data = load_json(filepath)
     print('LAYOUT DATA____________')
-    print(layout_data.keys())
 
-    for each in layout_data:
-        if layout_data[each]['source_path']:
-            if 'source_path' in layout_data[each]:
-                # this is a bundle, rather than a layout - unsure why this has changed so drastically
-                # TODO - look at what's going on here.
-                relative_path = layout_data[each]['source_path']
-                transforms = layout_data[each]['transform'].split(' ')
-            company = scene_object().company
+    meshes = layout_data['attrs']['meshes']
+    for each in meshes:
+
+        relative_path = meshes[each]['source_path']
+        transforms = meshes[each]['transform']['matrix'].split(' ')
+        company = scene_object().company
 
 
         if root not in relative_path:

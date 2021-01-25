@@ -29,7 +29,7 @@ class Task(SmartTask):
         :return:
         """
         from cgl.plugins.blender.alchemy import  set_relative_paths
-        main_import(filepath,import_rigs,reference=reference,latest=latest)
+        main_import(filepath,import_rigs,reference,latest)
         set_relative_paths(True)
 
     def build(self):
@@ -201,17 +201,15 @@ def get_namespace(filepath):
 
 
 
-def import_mdl(mesh,reference = True, latest = True):
+def import_mdl(mesh,reference = True, latest = True, bundle = None,parent = None):
     from pprint import pprint
     from cgl.core.config.config import ProjectConfig
     from cgl.plugins.blender.utils import get_next_namespace, read_matrix, parent_object, create_object
     from cgl.plugins.blender.alchemy import  reference_file, import_file
     from cgl.plugins.blender.msd import set_matrix
     from .anim import make_proxy
-    from ..msd import path_object_from_source_path
+    from ..msd import path_object_from_source_path, tag_object
     import bpy
-    print(11111111111111111)
-    print(mesh)
     relative_path = mesh['source_path']
     d2 = path_object_from_source_path(relative_path)
     ns2 = d2.shot
@@ -223,7 +221,7 @@ def import_mdl(mesh,reference = True, latest = True):
     float_transforms = [float(x) for x in transforms]
 
     if reference == True:
-        print('_' * 8, 'referencing files', '_' * 8)
+
         ref = reference_file(namespace=ns2, filepath=d2.path_root)
 
 
@@ -240,6 +238,8 @@ def import_mdl(mesh,reference = True, latest = True):
     layout = create_object('{}_{}:lay'.format(scene_object().seq, scene_object().asset))
     group = create_object('{}_{}:{}'.format(scene_object().seq, scene_object().asset,mesh['layer']), parent=layout)
     parent_object(ref,group)
+    if bundle:
+        tag_object(ref, tag  = 'bundle', value = bundle)
 
 def import_rig(rig_dictionary,reference = True, latest = True):
     from pprint import pprint
@@ -263,7 +263,7 @@ def import_rig(rig_dictionary,reference = True, latest = True):
     float_transforms = [float(x) for x in transforms]
 
     if reference == True:
-        print('_' * 8, 'referencing files', '_' * 8)
+
         ref = reference_file(namespace=ns2, filepath=path_object.path_root)
         layout_group = create_object(('{}_{}:FG'.format(scene_object().seq, scene_object().asset)))
         parent_object(child=ref, parent=layout_group)
@@ -276,8 +276,8 @@ def import_rig(rig_dictionary,reference = True, latest = True):
 
 
     else:
-        print('_'*8,'IMPORTING FILES','_'*8)
-        print(path_object.path_root)
+
+
         if task == 'rig':
             return
         ref = import_file(namespace=ns2, filepath=path_object.path_root)
@@ -314,6 +314,7 @@ def main_import(filepath= None ,reference = True, latest = False ,parent=None,**
     meshes = layout_data['attrs']['meshes']
     rigs = layout_data['attrs']['rigs']
     bundles = layout_data['attrs']['bundles']
+
     for mesh in meshes:
         dict = meshes[mesh]
         import_mdl(dict,reference = reference,latest = latest)
@@ -321,12 +322,20 @@ def main_import(filepath= None ,reference = True, latest = False ,parent=None,**
     for rig in layout_data['attrs']['rigs']:
 
         dict = rigs[rig]
-        print(dict)
         import_rig(dict)
-    for bundle in bundles:
-        for mesh in bundles[bundle]['meshes']:
 
-            import_mdl(bundles[bundle]['meshes'][mesh],reference = reference,latest = latest)
+    for bundle in bundles:
+        print('_' * 5, bundle)
+        print('_' * 8, 'BUNDLES', '_' * 8)
+        meshes = bundles[bundle]['meshes']
+        for mesh in meshes:
+            bndl_source= bundles[bundle]['source_path']
+
+            import_mdl(meshes[mesh],
+                       reference = reference,
+                       latest = latest,
+                       bundle = bndl_source,
+                       parent =  meshes[mesh]['layer'])
 
 
 

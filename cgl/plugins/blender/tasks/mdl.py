@@ -312,8 +312,15 @@ def get_msd_info(mesh):
     from ..alchemy import set_relative_paths
     set_relative_paths(True)
     mdl_dict = {}
-    if mesh['layer']:
-        mdl_dict['layer'] = mesh['layer']
+
+    try:
+
+        if mesh['layer']:
+            mdl_dict['layer'] = mesh['layer']
+    except KeyError:
+        mdl_dict['layer'] = 'MAIN'
+
+
 
     rel_path = mesh['source_path']
     print(mesh)
