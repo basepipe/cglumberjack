@@ -54,7 +54,9 @@ class Task(SmartTask):
         returns the msd dict for the given task.
         :return:
         """
-        return get_msd_info(bndl)
+        bndl_dict = get_msd_info(bndl)
+        bndl_dict['source_file'] = scene_object().path
+        return bndl_dict
 
 
 def get_msd_info(bndl):
@@ -66,7 +68,6 @@ def get_msd_info(bndl):
             clean_name = child.namespace().replace(':', '')
             meshes[clean_name] = mdl.get_msd_info(child)
     bndl_dict['attrs'] = {'meshes': meshes}
-    bndl_dict['source_file'] = scene_object().path
     return bndl_dict
 
 
