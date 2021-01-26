@@ -14,11 +14,26 @@ def load_cgl_env():
 
 
 def cam_msd(filepath):
-    print(filepath)
     import cgl.plugins.maya.tasks.cam as cam
     print('Opening: {}'.format(filepath))
     pm.openFile(filepath, f=True, loadReferenceDepth='all')
     cam.Task().export_msd()
+
+
+def fix_references(old_company, new_company, project):
+    refs = pm.listReferences()
+    for r in refs:
+        if project in r.path:
+            new_path = r.path.replace(old_company, new_company).replace(project, '{}/master'.format(project)).replace('/publish', '/default/publish')
+            r.replaceWith(new_path)
+
+
+def anim_msd(filepath):
+    import cgl.plugins.maya.tasks.anim as anim
+    pm.openFile(filepath, f=True, loadReferenceDepth='all')
+    fix_references('VFX', 'cmpa-animation', '02BTH_2021_Kish')
+    pm.saveFile()
+    anim.Task().export_msd()
 
 
 # RUN THE CODE
@@ -26,6 +41,8 @@ def run(filepath, task):
     load_cgl_env()
     if task == 'cam':
         cam_msd(filepath)
+    if task == 'anim':
+        anim_msd(filepath)
 
 
 if __name__ == '__main__':

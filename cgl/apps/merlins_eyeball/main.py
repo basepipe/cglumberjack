@@ -118,6 +118,9 @@ class MagicButtonWidget(QtWidgets.QWidget):
         self.latest_user_render_text = '{}'.format(self.latest_user_render_folder)
 
         button_dict = {'Open in Magic Browser': self.open_in_magic_browser,
+                       'separator4': None,
+                       'Update Publish MSD': None,
+                       'Update Preview': None,
                        'separator': None,
                        self.create_user_version_text: None,
                        'separator2': None,
@@ -189,14 +192,14 @@ class MagicButtonWidget(QtWidgets.QWidget):
         self.button.setStyleSheet(button_css)
 
     def create_default_file(self):
-        print('Creating tmikota version for task {}'.format(self.task))
+        print('Creating {} version for task {}'.format(self.user, self.task))
         current = self.path_object.copy(task=self.task, user=self.user, version='000.000', resolution='high',
-                                        context='source')
+                                        context='source', variant='default')
         next_minor = current.new_minor_version_object()
         next_minor.set_attr(filename='')
         next_minor.set_attr(ext='')
         CreateProductionData(next_minor, create_default_file=True)
-
+        self.set_latest_user_file(next_minor.path_root)
         with_filepath = PathObject(next_minor.path_root).copy(set_proper_filename=True, ext='*')
         file_name = glob.glob(with_filepath.path_root)[0]
         if file_name:
@@ -207,6 +210,14 @@ class MagicButtonWidget(QtWidgets.QWidget):
 
     def create_and_build_file(self):
         print('Creating a {} file and autobuilding'.format(self.task))
+
+    def set_latest_user_file(self, user_file):
+        self.latest_user_file = user_file
+        self.set_button_look()
+
+    def set_publish_file(self, filepath):
+        self.published_file = filepath
+        self.set_button_look()
 
     def open_latest_user_file(self):
         if self.latest_user_file:
@@ -224,7 +235,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
         print('Publishing {}'.format(self.latest_user_render_folder))
         render_object = PathObject(self.latest_user_render_folder).publish()
         self.latest_user_render_folder = render_object.path_root
-        self.published_file = render_object.copy(context='source').path_root
+        self.set_publish_file(render_object.copy(context='source').path_root)
         self.status = 'Published'
         self.set_button_look()
 
@@ -248,7 +259,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
             if self.published_folder:
                 raw_time = os.path.getctime(self.published_folder)
                 self.publish_date = datetime.fromtimestamp(raw_time).strftime(self.date_format)
-                self.published_file = self.add_root(self.task_dict['publish']['source']['source_file'])
+                self.set_publish_file(self.add_root(self.task_dict['publish']['source']['source_file']))
                 self.preview_path = self.add_root(self.task_dict['publish']['source']['preview_file'])
                 self.thumb_path = self.add_root(self.task_dict['publish']['source']['thumb_file'])
                 self.status = 'Published'
@@ -277,6 +288,12 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 self.latest_date = datetime.fromtimestamp(raw_time).strftime(self.date_format)
                 self.set_time_stuff()
                 self.set_button_look()
+            elif self.newest_version_file:
+                raw_time = os.path.getctime(self.newest_version_file)
+                self.latest_date = datetime.fromtimestamp(raw_time).strftime(self.date_format)
+                self.set_time_stuff()
+                self.status = 'In Progress'
+                self.set_button_look()
 
     def get_newest_version2(self):
         latest_glob_object = self.path_object.copy(task=self.task, context='source', user='*',
@@ -303,14 +320,14 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 self.newest_version_file = os.path.join(self.newest_version_folder,
                                                         self.newest_version_files[0]).replace('\\', '/')
                 if 'publish' in self.newest_version_file:
-                    self.published_file = self.newest_version_file
+                    self.set_publish_file(self.newest_version_file)
                     glob_text = self.newest_version_file.replace('publish', '*')
                     files = glob.glob(glob_text)
                     for each in files:
                         if 'publish' not in each:
-                            self.latest_user_file = each.replace('\\', '/')
+                            self.set_latest_user_file(each.replace('\\', '/'))
                 else:
-                    self.latest_user_file = self.newest_version_file
+                    self.set_latest_user_file(self.newest_version_file)
                     path_object = PathObject(self.latest_user_file)
 
                     self.latest_user_render_folder = os.path.dirname(self.latest_user_file).replace('/source/',

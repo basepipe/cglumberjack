@@ -36,11 +36,11 @@ class Task(SmartTask):
         self._import(this_obj.path_root)
 
     def get_msd_info(self, task_name):
-        info = test_get_msd_info()
+        info = get_msd_info()
         return info
 
 
-def test_get_msd_info():
+def get_msd_info():
     from cgl.plugins.maya.tasks.cam import get_latest
     so = alch.scene_object()
     anim_ignore, anim_dict = add_anim_to_msd()

@@ -192,38 +192,53 @@ class PathObject(object):
 
     def update_test_project_msd(self, attr='msd'):
         print('Update Project MSD: {}'.format(self.project_msd_path))
+        if self.user == 'publish':
+            user = 'publish'
+        else:
+            user = 'latest_user'
+        if attr == 'source_file':
+            context = 'source'
+            value = self.path
+        if attr == 'msd':
+            context = 'render'
+            value = self.relative_msd_path
+        if attr == 'preview':
+            context = 'source'
+            value = self.preview_path
         project_msd_file = self.project_msd_path
         if os.path.exists(project_msd_file):
-            print(project_msd_file, 'exists')
             msd_dict = load_json(self.project_msd_path)
-            if attr == 'msd':
-                if self.user == 'publish':
-                    print(999, self.relative_msd_path)
-                    msd_dict[self.scope][self.seq][self.shot][self.task]['publish']['render'][
-                        'msd'] = self.relative_msd_path
-                else:
-                    msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['render'][
-                        'msd'] = self.relative_msd_path
-            if attr == 'preview':
-                if self.user == 'publish':
-                    if os.path.exists(self.preview_path):
-                        msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['source'][
-                            'preview_file'] = self.preview_path
-                    if os.path.exists(self.thumb_path):
-                        msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['source'][
-                            'thumb_file'] = self.thumb_path
-                else:
-                    if os.path.exists(self.preview_path):
-                        msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['source'][
-                            'preview_file'] = self.preview_path
-                    if os.path.exists(self.thumb_path):
-                        msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['source'][
-                            'thumb_file'] = self.thumb_path
+            if self.task not in msd_dict[self.scope][self.seq][self.shot].keys():
+                msd_dict[self.scope][self.seq][self.shot][self.task] = {'publish': {'source': {"date": "",
+                                                                                                "folder": "",
+                                                                                                "preview_file": "",
+                                                                                                "size": "",
+                                                                                                "source_file": "",
+                                                                                                "source_files": "",
+                                                                                                "thumb_file": ""},
+                                                                                    'render': {"date": "",
+                                                                                                "folder": "",
+                                                                                                "msd": "",
+                                                                                                "size": {}}},
+                                                                        'latest_user': {'source': {"date": "",
+                                                                                                    "folder": "",
+                                                                                                    "preview_file": "",
+                                                                                                    "size": "",
+                                                                                                    "source_file": "",
+                                                                                                    "source_files": "",
+                                                                                                    "thumb_file": ""},
+                                                                                        'render': {"date": "",
+                                                                                                    "folder": "",
+                                                                                                    "msd": "",
+                                                                                                    "size": {}}}}
+            msd_dict[self.scope][self.seq][self.shot][self.task][user][context][attr] = value
             print('Saving Project.msd: {}'.format(project_msd_file))
             save_json(project_msd_file, msd_dict)
         else:
             print(project_msd_file, 'does not exist')
         time.sleep(10)
+
+
 
     def update_project_msd(self):
         from cgl.core.utils.general import load_json, save_json
@@ -1353,6 +1368,7 @@ class CreateProductionData(object):
                                                                     self.path_object.shot,
                                                                     self.path_object.task,
                                                                     ext))
+                self.path_object.update_test_project_msd(attr='source_file')
                 cgl_copy(default_file, self.path_object.path_root, methodology='local')
                 return self.path_object.path_root
         else:
