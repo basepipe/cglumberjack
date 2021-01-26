@@ -369,14 +369,16 @@ def screen_grab():
 def cl_update_msd(filepath):
     from cgl.core.utils.general import cgl_execute
     from cgl.core.config.config import user_config
-    msd_ready = ['cam']
+    msd_ready = ['cam', 'anim']
     path_object = PathObject(filepath).copy(context='source', set_proper_filename=True, ext='mb')
     task = path_object.task
     if task in msd_ready:
         mayapy = user_config()['paths']['mayapy']
-        update_msd = os.path.join(os.path.dirname(__file__), 'update_msd.py')
+        update_msd = os.path.join(os.path.dirname(__file__), 'cli', 'update_msd.py')
         command = "{} {} {} {}".format(mayapy, update_msd, path_object.path_root, path_object.task)
         cgl_execute(command, new_window=True)
+    else:
+        print('{} not found in tasks ready for command line msd update: {}'.format(task, msd_ready))
 
 
 def cl_create_preview(playblast=True):

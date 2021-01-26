@@ -108,6 +108,11 @@ class MagicButtonWidget(QtWidgets.QWidget):
         # self.context_menu.addSeparator()
         self.button.clicked.connect(self.button_clicked)
 
+    def update_publish_msd(self):
+        from cgl.plugins.maya.alchemy import cl_update_msd
+        po = PathObject(self.published_file)
+        cl_update_msd(self.published_file)
+
     def process_path_dict(self):
         self.get_published_path()
         self.get_newest_version()
@@ -119,7 +124,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
 
         button_dict = {'Open in Magic Browser': self.open_in_magic_browser,
                        'separator4': None,
-                       'Update Publish MSD': None,
+                       'Update Publish MSD': self.update_publish_msd,
                        'Update Preview': None,
                        'separator': None,
                        self.create_user_version_text: None,
