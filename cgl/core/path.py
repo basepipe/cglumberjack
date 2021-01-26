@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import glob
+import time
 import pyperclip
 import click
 import logging
@@ -157,16 +158,20 @@ class PathObject(object):
             self.priority = 'medium'
 
     def set_msd(self):
-        if self.resolution:
-            if self.filename:
-                base = os.path.dirname(self.path_root).replace('source', 'render')
-                rel_base = os.path.dirname(self.path).replace('source', 'render')
+        if self.version:
+            if self.resolution:
+                if self.filename:
+                    base = os.path.dirname(self.path_root).replace('source', 'render')
+                    rel_base = os.path.dirname(self.path).replace('source', 'render')
+                else:
+                    base = self.path_root.replace('source', 'render')
+                    rel_base = self.path.replace('source', 'render')
+                self.msd_path = '%s/%s_%s_%s.%s' % (base, self.seq, self.shot, self.task, 'msd')
+                self.get_msd_info()
+                self.relative_msd_path = '%s/%s_%s_%s.%s' % (rel_base, self.seq, self.shot, self.task, 'msd')
             else:
-                base = self.path_root.replace('source', 'render')
-                rel_base = self.path.replace('source', 'render')
-            self.msd_path = '%s/%s_%s_%s.%s' % (base, self.seq, self.shot, self.task, 'msd')
-            self.get_msd_info()
-            self.relative_msd_path = '%s/%s_%s_%s.%s' % (rel_base, self.seq, self.shot, self.task, 'msd')
+                self.msd_path = ''
+                self.relative_msd_path = ''
         else:
             self.msd_path = ''
             self.relative_msd_path = ''
@@ -182,22 +187,25 @@ class PathObject(object):
     def save_msd(self, msd_dict):
         print('Saving msd: {}'.format(self.msd_path))
         save_json(self.msd_path, msd_dict)
-        self.update_project_msd()
+        # self.update_project_msd()
         self.update_test_project_msd(attr='msd')
 
     def update_test_project_msd(self, attr='msd'):
-        project_msd_file = r'Z:\Projects\VFX\render\02BTH_2021_Kish\test_project_msd.msd'
+        print('Update Project MSD: {}'.format(self.project_msd_path))
+        project_msd_file = self.project_msd_path
         if os.path.exists(project_msd_file):
+            print(project_msd_file, 'exists')
             msd_dict = load_json(self.project_msd_path)
             if attr == 'msd':
-                if user == 'publish':
-                    msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['render'][
+                if self.user == 'publish':
+                    print(999, self.relative_msd_path)
+                    msd_dict[self.scope][self.seq][self.shot][self.task]['publish']['render'][
                         'msd'] = self.relative_msd_path
                 else:
                     msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['render'][
                         'msd'] = self.relative_msd_path
             if attr == 'preview':
-                if user == 'publish':
+                if self.user == 'publish':
                     if os.path.exists(self.preview_path):
                         msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['source'][
                             'preview_file'] = self.preview_path
@@ -213,6 +221,9 @@ class PathObject(object):
                             'thumb_file'] = self.thumb_path
             print('Saving Project.msd: {}'.format(project_msd_file))
             save_json(project_msd_file, msd_dict)
+        else:
+            print(project_msd_file, 'does not exist')
+        time.sleep(10)
 
     def update_project_msd(self):
         from cgl.core.utils.general import load_json, save_json
@@ -920,8 +931,8 @@ class PathObject(object):
         """
         self.project_config_path = self.cfg.project_config_file
         if self.project:
-            self.project_msd_path = os.path.join(self.split_after('project'),
-                                                 '{}.msd'.format(self.project)).replace('/source', '/render')
+            self.project_msd_path = os.path.join(self.split_after('branch'), 'project.msd').replace('/source', '/render')
+            self.project_msd_path = self.project_msd_path.replace('\\', '/')
 
     def set_command_base(self):
         """
@@ -1825,8 +1836,9 @@ def remove_root(filepath):
     root = config['paths']['root']
     filepath = filepath.replace('\\', '/')
     root = root.replace('\\', '/')
-    print(filepath, root)
-    return filepath.replace(root, '')
+    filey = filepath.replace(root, '')
+    filey = re.sub('^\/', '', filey)
+    return filey
 
 
 def hd_proxy_exists(hd_proxy_path, frame_range):

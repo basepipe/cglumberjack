@@ -1,13 +1,15 @@
 import os
 import time
 import glob
-from cgl.core.path import PathObject
+from cgl.core.path import PathObject, remove_root
 from cgl.core.utils.general import load_json, save_json
+from cgl.core.config.config import user_config
 
 
-def get_all(company, project):
+def get_all(company, project, branch):
     scope = ['assets', 'shots']
-    project_msd_file = r'Z:\Projects\VFX\render\02BTH_2021_Kish\test_project_msd.msd'
+    root = user_config()['paths']['root']
+    project_msd_file = r'{}\{}\render\{}\{}\project.msd'.format(root, company, project, branch)
     if os.path.exists(project_msd_file):
         project_msd = load_json(project_msd_file)
     else:
@@ -16,13 +18,13 @@ def get_all(company, project):
     for s in scope:
         dict = {'project': project,
                 'company': company,
+                'branch': branch,
                 'context': 'render',
                 'scope': s,
                 'seq': '*',
                 'shot': '*',
                 'task': '*'}
         base_path_object = PathObject(dict)
-        print(base_path_object.path_root)
         files = glob.glob(base_path_object.path_root)
         for i, f in enumerate(files):
             if '.' not in f:
@@ -79,6 +81,9 @@ def get_source_dict(path_object, user=False):
         modified = time.ctime(max(os.stat(root).st_mtime for root, _, _ in os.walk(folder)))
     path_object = path_object.copy(set_proper_filename=True, ext='jpg')
     source_files = glob.glob(path_object.path_root.replace('jpg', '*'))
+    source_files_clean = []
+    for s in source_files:
+        source_files_clean.append(remove_root(s))
     if len(source_files) == 1:
         source_file = source_files[0]
     size = {'bytes': "",
@@ -103,11 +108,11 @@ def get_source_dict(path_object, user=False):
             thumb_path = thumb
 
     dict_ = {'date': modified,
-             'folder': folder,
-             'source_file': source_file,
-             'preview_file': preview_path,
-             'thumb_file': thumb_path,
-             'source_files': source_files,
+             'folder': remove_root(folder),
+             'source_file': remove_root(source_file),
+             'preview_file': remove_root(preview_path),
+             'thumb_file': remove_root(thumb_path),
+             'source_files': source_files_clean,
              'size': size,
              }
     return dict_
@@ -161,13 +166,14 @@ def get_render_dict(path_object, user=False):
                     'gb': info[folder]['total_gb']}
         except KeyError:
             pass
-    msd_path = path_object.msd_path
-    if not os.path.exists(msd_path):
+    msd_path = path_object.relative_msd_path
+    if not os.path.exists(path_object.msd_path):
         msd_path = ""
     dict_ = {'date': modified,
              'msd': msd_path,
              'size': size,
-             'folder': folder}
+             'folder': remove_root(folder)}
     return dict_
 
-get_all('VFX', '02BTH_2021_Kish')
+get_all('cmpa-animation', '02BTH_2021_Kish', 'master')
+

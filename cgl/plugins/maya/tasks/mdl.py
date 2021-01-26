@@ -42,9 +42,9 @@ class Task(smart_task.SmartTask):
                 meshes.append(clean_name)
         dict_['attrs'] = {'mtl_groups': meshes}
         dict_['source_file'] = so.path
+        dict_['name'] = so.shot
         # find all the model exports:
         render_object = so.copy(context='render', set_proper_filename=True, ext='*')
-        print(render_object.path_root)
         files = glob.glob(render_object.path_root)
         if files:
             for f in files:

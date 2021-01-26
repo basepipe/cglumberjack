@@ -215,18 +215,19 @@ def setup_sync():
     st_utils.launch_syncthing(True)
 
 
-def setup_sync_globals():
+def setup_sync_globals(aws_company_name):
     print('Make sure aws credentials are here')
     print('Download the google docs json file')
     print('create the sync.json file')
+    config_folder = os.path.dirname(user_config())
+    sheets_name = '{}_SYNC_THING'.format(aws_company_name.upper().replace('-', '_'))
     d_ = {
             "sync": {
                 "syncthing": {
-                    "aws_bucket_url": "https://fsu-cmpa.s3.amazonaws.com/sync",
-                    "aws_company_name": "fsu-cmpa",
-                    "sheets_config_path": "~\\Documents\\cglumberjack\\sync\\client.json",
-                    "sheets_name": "FSU_CMPA_SYNC_THING",
-                    "sync_thing_url": "https://fsu-cmpa.s3.amazonaws.com/sync/client.json"
+                    "aws_bucket_url": "https://{}.s3.amazonaws.com".format(aws_company_name),
+                    "aws_company_name": aws_company_name,
+                    "sheets_config_path": "{}\\sync\\client.json".format(config_folder),
+                    "sheets_name": sheets_name,
                 }
             }
          }
