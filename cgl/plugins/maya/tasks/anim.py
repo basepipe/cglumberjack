@@ -35,20 +35,36 @@ class Task(SmartTask):
                                             set_proper_filename=True, ext='msd')
         self._import(this_obj.path_root)
 
+    def get_msd_info(self, task_name):
+        info = test_get_msd_info()
+        return info
+
 
 def test_get_msd_info():
     from cgl.plugins.maya.tasks.cam import get_latest
+    so = alch.scene_object()
     anim_ignore, anim_dict = add_anim_to_msd()
-    #bundle_ignore, bundle_dict = add_bundles_to_msd()
-    #ignore = anim_ignore + bundle_ignore
-
-    #mesh_dict = add_meshes_to_msd(ignore=ignore)
+    dict_ = {'anim': anim_dict}
+    bundle_ignore, bundle_dict = add_bundles_to_msd()
+    dict_['bndl'] = bundle_dict
+    dict_['source_file'] = so.path_root
+    for each in anim_ignore:
+        bundle_ignore.append(each)
+    # dict_['meshes'] = add_meshes_to_msd(ignore=bundle_ignore)
+    dict_['meshes'] = {}  # need to test this on something that has meshes.
+    dict_['camera'] = {'name': 'cam{}_{}'.format(so.seq, so.shot),
+                       'msd_path': get_latest('msd')}
+    return dict_
     #camera_dict = add_camera_to_msd()
 
 
-def add_meshes_to_dict(ignore):
+def add_meshes_to_msd(ignore):
     meshes = get_meshes(ignore)
-    return get_mesh_dict(meshes)
+    if meshes:
+        return get_mesh_dict(meshes)
+    else:
+        print(33)
+        return {}
 
 
 def add_anim_to_msd():
@@ -59,6 +75,7 @@ def add_anim_to_msd():
 
 def add_bundles_to_msd():
     bundles, children = get_bundles(children=True)
+    bundle_dict = get_bundles_dict(bundles)
     return children, bundle_dict
 
 
@@ -84,39 +101,53 @@ def get_anim_publishes():
 
 def get_anim_dict():
 
-    anim_dict = {'anim': {}}
+    anim_dict = {}
     for anim in get_anim_publishes():
         abc = remove_root(anim)
         asset_name = os.path.split(abc)[-1].replace('.abc', '')
         dict_ = {
-                 'transforms': {'scale': None,
+                 'transform': {'scale': None,
                                 'rotate': None,
                                 'transform': None,
                                 'matrix': None},
-                  'msd_path': alch.scene_object().relative_msd_path,
-                  'asset_name': asset_name,
+                  'name': asset_name,
                   'attrs': {'abc': abc}
                  }
-        anim_dict['anim'][asset_name] = dict_
+        anim_dict[asset_name] = dict_
     return anim_dict
 
 
 def get_bundles_dict(bundles=None):
+    import cgl.plugins.maya.tasks.bndl as bndls
+    reload(bndls)
+    bundles_dict = {}
     if not bundles:
         bundles = get_bundles()
     if bundles:
-        for bndl in bundles():
-            print('\t', bndl)
+        for bndl in bundles:
+            bundles_dict[str(bndl)] = bndls.get_msd_info(bndl)
+        return bundles_dict
     else:
         return None
 
 
 def get_mesh_dict(models):
-    from cgl.plugins.maya.tasks.mdl import Task
-    dict_ = {'meshes': {}}
+    from cgl.plugins.maya.tasks.mdl import get_msd_info
+    dict_ = {}
     for mdl in models:
-        info = Task().get_msd_info(mdl)
-        print(info)
+        this = get_mesh_name(mdl)
+        dict_[str(this)] = get_msd_info(this)
+    return dict_
+
+
+def get_mesh_name(ref):
+    try:
+        mesh_name = ref[-1].nodes()[0]
+    except IndexError:
+        pm.select(ref)
+        mesh_name = pm.ls(sl=True)[0]
+        print(mesh_object, 'doesnt have nodes fool')
+    return mesh_name
 
 
 def get_bundles(children=False):
@@ -153,7 +184,9 @@ def get_meshes(ignore=None):
             print('removing unloaded reference {}'.format(ref))
             pm.system.FileReference(ref[-1]).remove()
         else:
+            print(44)
             if ref[-1].path not in ignore:
+                print(55)
                 meshes.append(ref)
     return meshes
 

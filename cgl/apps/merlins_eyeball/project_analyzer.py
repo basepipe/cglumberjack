@@ -10,11 +10,17 @@ def get_all(company, project, branch):
     scope = ['assets', 'shots']
     root = user_config()['paths']['root']
     project_msd_file = r'{}\{}\render\{}\{}\project.msd'.format(root, company, project, branch)
+    asset_list, shot_list = get_all_assets_and_shots(PathObject(project_msd_file.replace('project.msd', '*')))
     if os.path.exists(project_msd_file):
         project_msd = load_json(project_msd_file)
+        project_msd['asset_list'] = asset_list
+        project_msd['shot_list'] = shot_list
     else:
+
         project_msd = {'assets': {},
-                       'shots': {}}
+                       'shots': {},
+                       'asset_list': asset_list,
+                       'shot_list': shot_list}
     for s in scope:
         dict = {'project': project,
                 'company': company,
@@ -135,6 +141,22 @@ def get_latest_user_folder(path_object):
     return latest_folder
 
 
+def get_all_assets_and_shots(path_object):
+    path = path_object.split_after('branch')
+    stuff = glob.glob('{}/*/*/*'.format(path))
+    assets = []
+    shots = []
+    for s in stuff:
+        s = s.replace('\\', '/')
+        s = remove_root(s)
+        if 'cgl_info' not in s:
+            if 'assets' in s:
+                assets.append(s)
+            elif 'shots' in s:
+                shots.append(s)
+    return assets, shots
+
+
 def get_render_dict(path_object, user=False):
     path_object = path_object.copy(latest=True, resolution='high', user='publish', context='render')
     folder = path_object.path_root
@@ -174,6 +196,9 @@ def get_render_dict(path_object, user=False):
              'size': size,
              'folder': remove_root(folder)}
     return dict_
+
+
+
 
 get_all('cmpa-animation', '02BTH_2021_Kish', 'master')
 

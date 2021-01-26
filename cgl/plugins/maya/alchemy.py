@@ -366,7 +366,7 @@ def screen_grab():
     screen_grab(scene_object())
 
 
-def update_msd(filepath):
+def cl_update_msd(filepath):
     from cgl.core.utils.general import cgl_execute
     from cgl.core.config.config import user_config
     msd_ready = ['cam']
@@ -377,6 +377,13 @@ def update_msd(filepath):
         update_msd = os.path.join(os.path.dirname(__file__), 'update_msd.py')
         command = "{} {} {} {}".format(mayapy, update_msd, path_object.path_root, path_object.task)
         cgl_execute(command, new_window=True)
+
+
+def cl_create_preview(playblast=True):
+    if playblast:
+        print('Creating a basic preview image')
+    else:
+        print('Creating a rendered image')
 
 
 if __name__ == '__main__':

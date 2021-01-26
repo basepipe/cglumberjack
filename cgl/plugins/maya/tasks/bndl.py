@@ -54,17 +54,20 @@ class Task(SmartTask):
         returns the msd dict for the given task.
         :return:
         """
+        return get_msd_info(bndl)
 
-        bndl_dict = {}
-        meshes = {}
-        children = pm.listRelatives(bndl, children=True)
-        if children:
-            for child in children:
-                clean_name = child.namespace().replace(':', '')
-                meshes[clean_name] = mdl.get_msd_info(child)
-        bndl_dict['attrs'] = {'meshes': meshes}
-        bndl_dict['source_file'] = scene_object().path
-        return bndl_dict
+
+def get_msd_info(bndl):
+    bndl_dict = {}
+    meshes = {}
+    children = pm.listRelatives(bndl, children=True)
+    if children:
+        for child in children:
+            clean_name = child.namespace().replace(':', '')
+            meshes[clean_name] = mdl.get_msd_info(child)
+    bndl_dict['attrs'] = {'meshes': meshes}
+    bndl_dict['source_file'] = scene_object().path
+    return bndl_dict
 
 
 def get_latest_publish(filepath, task='bndl', ext='.json'):

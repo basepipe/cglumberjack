@@ -306,6 +306,7 @@ def get_msd_info(mesh):
     translate, rotate, scale = get_transform_arrays(mesh)
     mdl_dict = {}
     mdl_dict['msd_path'] = path_object.relative_msd_path
+    mdl_dict['name'] = '{}_{}'.format(path_object.seq, path_object.shot)
     mdl_dict['transform'] = {'matrix': matrix,
                              'scale': scale,
                              'rotate': rotate,
