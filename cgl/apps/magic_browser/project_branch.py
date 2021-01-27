@@ -33,10 +33,14 @@ class CreateBranchDialog(LJDialog):
         self.migrate_row = QtWidgets.QHBoxLayout()
         self.migrate_label = QtWidgets.QLabel('New Company:')
         self.migrate_line_edit = QtWidgets.QLineEdit()
+        self.project_label = QtWidgets.QLabel('New Project:')
+        self.project_line_edit = QtWidgets.QLineEdit()
         self.migrate_create_branch = QtWidgets.QPushButton('Migrate Project to New Folder Structure')
         self.migrate_row.addStretch(1)
         self.migrate_row.addWidget(self.migrate_label)
         self.migrate_row.addWidget(self.migrate_line_edit)
+        self.migrate_row.addWidget(self.project_label)
+        self.migrate_row.addWidget(self.project_line_edit)
         self.migrate_row.addWidget(self.migrate_create_branch)
 
         self.button_row = QtWidgets.QHBoxLayout()
@@ -103,18 +107,23 @@ class CreateBranchDialog(LJDialog):
         print('Branch Creation Complete')
 
     def on_migrate_branch_clicked(self):
+        root = user_config()['paths']['root']
         for task in self.shots.selected_tasks:
+            task_source = '{}/{}'.format(root, task.source_path)
+            task_render = '{}/{}'.format(root, task.render_path)
             render_path, source_path = self.migrate_path(task)
-            if os.path.exists(task.render_path):
-                cgl_copy(task.render_path, render_path, verbose=True)
-            if os.path.exists(task.source_path):
-                cgl_copy(task.source_path, source_path, verbose=True)
+            if os.path.exists(task_render):
+                cgl_copy(task_render, render_path, verbose=True)
+            if os.path.exists(task_source):
+                cgl_copy(task_source, source_path, verbose=True)
         for task in self.assets.selected_tasks:
+            task_source = '{}/{}'.format(root, task.source_path)
+            task_render = '{}/{}'.format(root, task.render_path)
             render_path, source_path = self.migrate_path(task)
-            if os.path.exists(task.render_path):
-                cgl_copy(task.render_path, render_path, verbose=True)
-            if os.path.exists(task.source_path):
-                cgl_copy(task.source_path, source_path, verbose=True)
+            if os.path.exists(task_render):
+                cgl_copy(task_render, render_path, verbose=True)
+            if os.path.exists(task_source):
+                cgl_copy(task_source, source_path, verbose=True)
 
     def new_branch_path(self, task):
         new_branch = self.branch_line_edit.text()
@@ -134,9 +143,15 @@ class CreateBranchDialog(LJDialog):
             return render_path, source_path
 
     def migrate_path(self, task, new_branch='master'):
+        new_project = self.project_line_edit.text()
+        root = user_config()['paths']['root']
         render_path = None
         source_path = None
         new_company = self.migrate_line_edit.text()
+        if new_project:
+            project = new_project
+        else:
+            project = self.path_object.project
         if new_company:
             project_branch = '/{}/{}/'.format(self.path_object.project, new_branch)
             task_variant = '/{}/default/'.format(task.text())
@@ -146,6 +161,10 @@ class CreateBranchDialog(LJDialog):
             source_path = task.source_path.replace('/{}/'.format(self.path_object.project), project_branch)
             source_path = source_path.replace(self.path_object.company, new_company)
             source_path = source_path.replace('/{}/'.format(task.text()), task_variant)
+            source_path = '{}/{}'.format(root, source_path)
+            render_path = '{}/{}'.format(root, render_path)
+            print(render_path)
+            print(source_path)
             return render_path, source_path
         else:
             print('Nothing entered into "New Company Field"')
