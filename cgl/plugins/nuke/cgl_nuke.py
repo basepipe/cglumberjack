@@ -143,7 +143,7 @@ class NukePathObject(PathObject):
                     node_name = s.name()
                     file_name = s['file'].value()
                     dir_ = os.path.dirname(file_name)
-                    CreateProductionData(dir_, project_management='lumbermill')
+                    CreateProductionData(dir_, project_management='magic_browser')
                     sequence = Sequence(file_name)
                     if sequence.is_valid_sequence():
                         file_name = sequence.hash_sequence
@@ -470,7 +470,7 @@ def connect_z_nodes(connect_from_node='ANIM ZDefocus', connect_to_node='ENV ZDef
 
 def create_scene_write_node():
     """
-    This function specifically assumes the current file is in the pipeline and that you want to make a write node for
+    This function specifically assumes the current file is in the cookbook and that you want to make a write node for
     that.  We can get more complicated and tasks from here for sure.
     :return:
     """
@@ -611,7 +611,7 @@ def version_up(write_nodes=True):
     dialog = InputDialog(title='Version Up', message=message)
     dialog.exec_()
     if dialog.button == 'Ok':
-        CreateProductionData(next_minor, project_management='lumbermill')
+        CreateProductionData(next_minor, project_management='magic_browser')
         nuke.scriptSaveAs(next_minor.path_root)
         if write_nodes:
             match_scene_version()

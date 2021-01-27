@@ -1,0 +1,12 @@
+{
+    "lumbermill": {
+        "File": {
+            "ExportToDrive": {
+                "label": "Export To Drive", 
+                "module": "import cgl_tools.lumbermill.menus.File.ExportToDrive as ExportToDrive; ExportToDrive.run()", 
+                "order": 1
+            }, 
+            "order": 1
+        }
+    }
+}

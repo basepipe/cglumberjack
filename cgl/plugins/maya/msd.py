@@ -1,13 +1,16 @@
 import os
 import copy
 import glob
-import pymel.core as pm
-import cgl.plugins.MagicSceneDescription as msd
-reload(msd)
+import cgl.plugins.MagicSceneDescriptionOld as msd
 from cgl.core.path import PathObject
 from cgl.core.utils.read_write import load_json, save_json
 from cgl.plugins.maya.alchemy import get_scene_name, scene_object
 from cgl.plugins.maya.utils import load_plugin, select_reference
+try:
+    import pymel.core as pm
+except:
+    print('Skipping Pymel, outside of maya')
+
 
 DEFAULT_DATA = {
                     "asset": {
@@ -27,6 +30,8 @@ DEFAULT_DATA = {
                         "frame_end": 0
                     }
                 }
+
+
 
 
 class MagicSceneDescription(msd.MagicSceneDescription):

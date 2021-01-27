@@ -1,9 +1,10 @@
 from cgl.core.path import PathObject
+from cgl.core.utils.general import save_json
 
 
 class SmartTask(object):
     """
-    This is a template for a "task" within the pipeline.  It covers common areas when dealing with digital assets
+    This is a template for a "task" within the cookbook.  It covers common areas when dealing with digital assets
     specific to different tasks.
     """
     path_object = None
@@ -64,10 +65,35 @@ class SmartTask(object):
 
     def publish(self):
         """
-        publishes specific to the task at hand. by default we just do what's in the lumbermill plugin,
+        publishes specific to the task at hand. by default we just do what's in the magic_browser plugin,
         this allows us to customize at a more granular level if needed.
         :return:
         """
         from cgl.plugins.maya.alchemy import publish
         publish()
+
+    def get_msd_info(self, task_name):
+        """
+        creates the msd dictionary for the task being called.
+        :param task_name:
+        :return:
+        """
+        pass
+
+    def export_msd(self, task_name=None, selected=None):
+        """
+
+        """
+        if not selected:
+            print(self.path_object.msd_path)
+            self.path_object.save_msd(self.get_msd_info(task_name))
+            # update the project.msd
+            # update the project_test.msd
+
+    def render(self):
+        """
+
+        :return:
+        """
+        pass
 

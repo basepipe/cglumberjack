@@ -1,16 +1,15 @@
 import os
-import pymel.core as pm
 from .smart_task import SmartTask
 from cgl.core.path import PathObject
 from cgl.plugins.maya.alchemy import scene_object
 from cgl.ui.widgets.dialog import MagicList, InputDialog, FrameRange
 from cgl.plugins.maya.utils import get_shape_name, load_plugin
 import cgl.plugins.maya.msd as msd
-reload(msd)
+import glob
 try:
     import pymel.core as pm
     import maya.mel as mel
-except ModuleNotFoundError:
+except:
     print('Skipping pymel.core - outside of maya')
 
 TASKNAME = os.path.basename(__file__).split('.py')[0]
@@ -45,6 +44,50 @@ class Task(SmartTask):
             self._import(cam_path)
         else:
             print('Could not find camera at {}'.format(cam_path))
+
+    def get_msd_info(self, camera=None):
+        """
+        Gets msd info for the camera matching the scene.
+        :return:
+        """
+        dict_ = {}
+        if not camera:
+            so = scene_object()
+            camera = 'cam{}_{}'.format(so.seq, so.shot)
+            if pm.objExists(camera):
+                pm.select(camera)
+            else:
+                print('No {} found'.format(camera))
+                return
+        dict_['attrs'] = get_frame_range()
+        dict_['source_file'] = so.path
+        dict_['name'] = camera
+        # find all the model exports:
+        render_object = so.copy(context='render', set_proper_filename=True, ext='*')
+        print(render_object.path_root)
+        files = glob.glob(render_object.path_root)
+        if files:
+            for f in files:
+                file_, ext_ = os.path.splitext(f)
+                if ext_ != '.msd':
+                    dict_['attrs'][ext_] = PathObject(f).path
+        return dict_
+
+
+def get_render_globals_frange():
+    sframe = int(pm.getAttr('defaultRenderGlobals.fs'))
+    eframe = int(pm.getAttr('defaultRenderGlobals.ef'))
+    return '%s-%s' % (sframe, eframe)
+
+
+def get_frame_range():
+    dict_ = {
+            'start_frame': int(pm.playbackOptions(query=True, min=True)),
+            'end_frame': int(pm.playbackOptions(query=True, max=True)),
+            'handle_start': int(pm.playbackOptions(query=True, animationStartTime=True)),
+            'handle_end': int(pm.playbackOptions(query=True, animationEndTime=True))
+            }
+    return dict_
 
 
 def get_latest(ext='mb'):

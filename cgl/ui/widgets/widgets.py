@@ -564,6 +564,9 @@ class TaskWidget(QtWidgets.QWidget):
 
 
 class ProjectWidget(QtWidgets.QWidget):
+    """
+    Displays Projects within a company
+    """
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
@@ -655,12 +658,14 @@ class ProjectWidget(QtWidgets.QWidget):
 
     def calculate_project_size(self):
         from cgl.core.cgl_info import create_full_project_cgl_info
+        from cgl.core.config.config import user_config
         mdl_index = self.data_table.model().mapToSource(self.data_table.selectionModel().selectedRows()[0])
         mdl = self.data_table.model().sourceModel()
         row = mdl_index.row()
         project = mdl.data_[row][0]
         company = self.path_object.company
-        create_full_project_cgl_info(company=company, project=project)
+        branch = user_config()['default_branch'][company][project]
+        create_full_project_cgl_info(company=company, project=project, branch=branch)
 
     def share_project(self):
         from cgl.core.path import PathObject
@@ -721,6 +726,9 @@ class ProjectWidget(QtWidgets.QWidget):
 
 
 class AssetWidget(QtWidgets.QWidget):
+    """
+    GUI Element for Displaying shots, assets, and "my tasks"
+    """
     button_clicked = QtCore.Signal(object)
     filter_changed = QtCore.Signal()
     add_clicked = QtCore.Signal()
@@ -793,7 +801,6 @@ class AssetWidget(QtWidgets.QWidget):
         self.scope_layout.addWidget(self.add_button)
 
         v_list.addItem(QtWidgets.QSpacerItem(0, 3, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum))
-        # v_list.addWidget(self.search_box)
         v_list.addWidget(self.data_table, 1)
         self.v_layout.addLayout(self.scope_layout)
         self.v_layout.addWidget(self.message)
@@ -943,7 +950,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.proj_management_label = QtWidgets.QLabel('Project Management')
         layout = QtWidgets.QVBoxLayout(self)
         self.proj_management_combo = QtWidgets.QComboBox()
-        self.proj_management_combo.addItems(['lumbermill', 'ftrack', 'shotgun', 'google_docs'])
+        self.proj_management_combo.addItems(['magic_browser', 'ftrack', 'shotgun', 'google_docs'])
         self.red_palette, self.green_palette, self.black_palette = define_palettes()
 
         self.server_label = QtWidgets.QLabel('server url:')
@@ -1024,7 +1031,7 @@ class CreateProjectDialog(QtWidgets.QDialog):
         self.api_user_line_edit.show()
         
     def on_pm_changed(self):
-        if self.proj_management_combo.currentText() == 'lumbermill':
+        if self.proj_management_combo.currentText() == 'magic_browser':
             self.hide_api_info()
         else:
             self.show_api_info()

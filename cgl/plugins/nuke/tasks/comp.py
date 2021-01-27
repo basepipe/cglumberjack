@@ -1,36 +1,24 @@
+import os
+import nuke
+from cgl.core.path import PathObject, lj_list_dir, find_latest_publish_objects
 from cgl.plugins.nuke.tasks.smart_task import SmartTask
 from cgl.ui.widgets.dialog import InputDialog
 import cgl.plugins.nuke.alchemy as alc
-import nuke
-from cgl.core.path import PathObject, lj_list_dir, find_latest_publish_objects
-from cgl.core.config import app_config
-from cgl.plugins.nuke.alchemy import PathObject, import_directory, import_media, set_comp_default_settings
-import os
-
 
 
 class Task(SmartTask):
 
     def __init__(self, path_object=None):
         if not path_object:
-            from cgl.plugins.nuke.alchemy import scene_object
-            self.path_object = scene_object()
+            self.path_object = alc.scene_object()
 
     def build(self):
         """
-        1. Reference the latest model for this asset
-        2. Import latest textures for this asset (and assemble a shader network)
+        1. Get Lighting Renders
         :return:
         """
-        print('building comp')
-        if alc.scene_object().asset:
+        alc.import_task(task='lite')
 
-            dependencies = import_dependencies()
-            if dependencies:
-
-                set_comp_default_settings()
-            else:
-                print('no dependencies imported ')
     def _import(self, filepath):
         pass
 
@@ -63,7 +51,6 @@ def import_dependencies():
 
             filename = lj_list_dir(task_object.path_root)[0]
             sequence_path = task_object.copy(filename=filename)
-
             print(task_object.path)
             readNode = import_media(sequence_path.path_root, name=task_object.task)
             readNode.setSelected(True)
@@ -85,5 +72,4 @@ def import_dependencies():
                                         name='{} BACKDROP'.format(
                                             task_object.task.upper()),
                                         label=task_object.task.upper())
-
-    return(publish_objects)
+    return publish_objects

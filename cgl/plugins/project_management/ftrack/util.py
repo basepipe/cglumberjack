@@ -14,7 +14,7 @@ def setup():
 
     :return: Query Session object
     """
-    # TODO Figure out the delay when using this function in lumbermill
+    # TODO Figure out the delay when using this function in magic_browser
     server_url = CONFIG['project_management']['ftrack']['api']['server_url']
     api_key = CONFIG['project_management']['ftrack']['api']['api_key']
     api_user = CONFIG['project_management']['ftrack']['api']['api_user']

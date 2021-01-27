@@ -17,12 +17,28 @@ def user_config():
     returns dictionary representing user config.
     :return:
     """
-    return load_json(get_user_config_file())
+    if os.path.exists(get_user_config_file()):
+        return load_json(get_user_config_file())
+    else:
+        print('Setting up Magic Browser')
+
+
+def get_sync_config_file():
+    """
+    gets the location of the sync config file.
+    :return:
+    """
+    filepath = get_user_config_file().replace('user_globals.json', 'sync/syncthing.json')
+    if os.path.exists(filepath):
+        return filepath
+    else:
+        print('Sync config does not exist: {}'.format(filepath))
+        return None
 
 
 def paths():
     """
-    returns paths to all the software used in the pipeline.
+    returns paths to all the software used in the cookbook.
     :return:
     """
     return user_config()['paths']
@@ -45,6 +61,7 @@ class ProjectConfig(object):
     shaders_config_file = None
     images_folder = None
     project_management = None
+    sync_config_file = get_sync_config_file()
 
     def __init__(self, path_object=None, company='master', project='master', print_cfg=False):
         self.print_cfg = print_cfg
@@ -62,33 +79,45 @@ class ProjectConfig(object):
         self.get_project_config()
         self.images_folder = os.path.join(self.paths['code_root'], 'resources', 'images')
         self.app_font_folder = os.path.join(self.paths['code_root'], 'resources', 'fonts')
-        self.project_management = self.project_config['account_info']['project_management']
+        if self.project_config:
+            self.project_management = self.project_config['account_info']['project_management']
 
     def set_globals_path(self):
         try:
-            self.root_folder = self.user_config['root'][self.company]
+            self.root_folder = self.user_config['paths']['root']
         except KeyError:
-            self.root_folder = self.user_config['root']['master']
+            self.root_folder = self.user_config['paths']['root']
+        # set self.master_globals_root
+        master_globals = os.path.join(self.root_folder, 'master', 'config', 'master', 'globals.json')
+        if not os.path.exists(master_globals):
+            print('Cant find {}'.format(master_globals))
+            return
+        # see if we have a company master globals.
+        try:
+            company_globals = os.path.join(self.root_folder, self.company, 'config', 'master', 'globals.json')
+            if os.path.exists(company_globals):
+                master_globals = company_globals
+        except TypeError:
+            pass
 
-        self.master_globals_root = os.path.join(self.root_folder, 'master', 'config', 'master')
+        # see if we have project globals.
         try:
-            company_globals_root = os.path.join(self.root_folder, self.company, 'config', 'master')
+            if not self.project:
+                project = 'master'
+            else:
+                project = self.project
+            project_globals = os.path.join(self.root_folder, self.company, 'config', project, 'globals.json')
+            if os.path.exists(project_globals):
+                master_globals = project_globals
         except TypeError:
-            company_globals_root = self.master_globals_root
-        try:
-            self.globals_root = os.path.join(self.root_folder, self.company, 'config', self.project)
-        except TypeError:
-            self.globals_root = self.master_globals_root
-        if not os.path.exists(company_globals_root):
-            company_globals_root = self.master_globals_root
-        if not os.path.exists(self.globals_root):
-            self.globals_root = company_globals_root
+            pass
+        self.project_config_file = master_globals
+        self.globals_root = os.path.dirname(master_globals)
         self.css_folder = os.path.join(self.globals_root, 'css')
         self.default_files_folder = os.path.join(self.globals_root, 'default_files')
         self.hdri_folder = os.path.join(self.globals_root, 'hdri')
         self.hdri_settings_file = os.path.join(self.hdri_folder, 'settings.json')
         self.cookbook_folder = os.path.join(self.globals_root, 'cookbook')
-        self.project_config_file = os.path.join(self.globals_root, 'globals.json')
         self.shaders_config_file = os.path.join(self.globals_root, 'shaders.json')
 
     def print_variables(self):
@@ -174,8 +203,11 @@ class ProjectConfig(object):
         returns a dictionary for the current project config globals.
         :return:
         """
-        self.project_config = load_json(self.project_config_file)
-        return self.project_config
+        if os.path.exists(self.project_config_file):
+            self.project_config = load_json(self.project_config_file)
+            return self.project_config
+        else:
+            print('Project Config {} does not exist,  '.format(self.project_config_file))
 
     def get_shaders_config(self):
         """
@@ -297,16 +329,18 @@ def get_root(project='master'):
     :return:
     """
     user_conf = user_config()
-    if project in user_conf['root'].keys():
-        return user_conf['root'][project].replace('\\', '/')
-    else:
-        return user_conf['root']['master'].replace('\\', '/')
-    return
+    return user_conf['paths']['root'].replace('\\', '/')
+
+
+
+
 
 
 if __name__ == '__main__':
-    project_config = ProjectConfig(company='bob')
-    print(project_config.globals_root)
+    print('bob')
+    #create_user_globals(root=None)
+    # project_config = ProjectConfig(company='bob')
+    # print(project_config.globals_root)
     # these return file paths
     # print(project_config.globals_file)
     # print(project_config.shaders_file)

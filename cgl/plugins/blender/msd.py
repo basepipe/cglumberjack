@@ -6,7 +6,7 @@ import glob
 import importlib
 from cgl.core.config.config import ProjectConfig
 from cgl.core.utils.read_write import load_json, save_json
-import cgl.plugins.MagicSceneDescription as msd
+import cgl.plugins.MagicSceneDescriptionOld as msd
 importlib.reload(msd)
 import bpy
 from cgl.plugins.blender.alchemy import get_scene_name,scene_object

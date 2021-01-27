@@ -1,12 +1,16 @@
+import os
 import pymel.core as pm
-from cgl.core.utils.read_write import load_json
+from cgl.core.utils.read_write import load_json, save_json
 from .smart_task import SmartTask
 from cgl.core.path import PathObject
 from cgl.plugins.maya.alchemy import scene_object
 import cgl.plugins.maya.utils as utils
-reload(utils)
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.config.config import get_root
+import cgl.plugins.maya.tasks.mdl as mdl
+reload(mdl)
+
+TASKNAME = os.path.basename(__file__).split('.py')[0]
 
 
 class Task(SmartTask):
@@ -14,7 +18,7 @@ class Task(SmartTask):
     def __init__(self, path_object=None):
         if not path_object:
             self.path_object = scene_object()
-        print('Bndl, {}'.format(self.path_object))
+        print('Bndl, {}'.format(self.path_object.project_msd_path))
 
     def _import(self, filepath, layout_group=None):
         """
@@ -25,7 +29,7 @@ class Task(SmartTask):
         """
         bundle_import(filepath, layout_group)
 
-    def import_latest(self, asset, task='bndl', category='*'):
+    def import_published_msd(self):
         """
         imports the latest publish file for the given seq/shot combination
         :param task:
@@ -33,18 +37,38 @@ class Task(SmartTask):
         :param asset: Asset
         :return:
         """
-        import os
-        import glob
-        bundle_path = None
-        bndl_obj = scene_object().copy(task='bndl', seq=category, shot=asset, context='render',
-                                       user='publish', latest=True, filename='*', ext=None)
-        for each in glob.glob(bndl_obj.path_root):
-            if '.json' in each:
-                bundle_path = each
-        if bundle_path:
-            bundle_import(filepath=bundle_path)
-        else:
-            print('Could not glob bundle path at {}'.format(bundle_obj.path))
+        msd_dict = load_json(self.path_object.project_msd_path)
+        msd = msd_dict['assets'][self.path_object.seq][self.path_object.shot][self.path_object.task]
+        bundle_import(msd)
+
+    def export_msd(self, selected=None):
+        """
+
+        """
+        if not selected:
+            print(self.path_object.msd_path)
+            save_json(self.path_object.msd_path, get_msd_info(TASKNAME))
+
+    def get_msd_info(self, bndl):
+        """
+        returns the msd dict for the given task.
+        :return:
+        """
+        bndl_dict = get_msd_info(bndl)
+        bndl_dict['source_file'] = scene_object().path
+        return bndl_dict
+
+
+def get_msd_info(bndl):
+    bndl_dict = {}
+    meshes = {}
+    children = pm.listRelatives(bndl, children=True)
+    if children:
+        for child in children:
+            clean_name = child.namespace().replace(':', '')
+            meshes[clean_name] = mdl.get_msd_info(child)
+    bndl_dict['attrs'] = {'meshes': meshes}
+    return bndl_dict
 
 
 def get_latest_publish(filepath, task='bndl', ext='.json'):

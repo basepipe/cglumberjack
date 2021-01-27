@@ -25,7 +25,7 @@ STATUS = 12
 
 class PublishPlate(PreflightCheck):
     """
-    This Class is designed specifically to work with the lumbermill ingest tool.  It expects a lumbermill data frame
+    This Class is designed specifically to work with the magic_browser ingest tool.  It expects a magic_browser data frame
     in order to function. This is designed to work with only one selected row at the moment.
 
     """

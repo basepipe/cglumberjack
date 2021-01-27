@@ -452,6 +452,7 @@ def write_to_cgl_data(company, project, process_info):
         return
     save_json(cgl_data, data)
 
+
 def screen_grab(path_object):
     """
     1) takes a screen grab and saves it to the "preview_path" variable on PathObject()
@@ -464,6 +465,7 @@ def screen_grab(path_object):
     ppath = screen_grab.run(path_object=path_object)
     convert.create_image_thumb(ppath, path_object.thumb_path)
     print('Creating Preview at: {}'.format(ppath))
+    # path_object.update_test_project_msd(attr='preview')
 
 
 

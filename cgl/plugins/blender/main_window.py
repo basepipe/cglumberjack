@@ -69,7 +69,7 @@ class CGLumberjack(VFXWindow):
         request_feature_button = QtWidgets.QAction('Request Feature', self)
         tools_menu = self.menu_bar.addMenu('&Tools')
         self.sync_menu = self.menu_bar.addMenu('&Sync')
-        if self.project_management != 'lumbermill':
+        if self.project_management != 'magic_browser':
             self.proj_man_link = self.two_bar.addAction(proj_man)
         self.login_menu = self.two_bar.addAction(login)
         self.two_bar.addAction(time_tracking)
@@ -162,7 +162,7 @@ class CGLumberjack(VFXWindow):
         self.set_auto_launch_text()
         self.set_processing_method_text()
         # TODO how do i run this as a background process, or a parallell process?
-        # TODO - how do i grab the pid so i can close this when lumbermill closes potentially?
+        # TODO - how do i grab the pid so i can close this when magic_browser closes potentially?
         if sync_enabled:
             try:
                 if CONFIG['sync']['syncthing']['sync_thing_url']:
@@ -336,10 +336,10 @@ class CGLumberjack(VFXWindow):
     def load_pipeline_designer_menus(self):
         import json
         #
-        menus_json = os.path.join(CONFIG['paths']['cgl_tools'], 'lumbermill', 'menus.cgl')
+        menus_json = os.path.join(CONFIG['paths']['cgl_tools'], 'magic_browser', 'menus.cgl')
         if os.path.exists(menus_json):
             with open(menus_json, 'r') as stream:
-                self.pd_menus = json.load(stream)['lumbermill']
+                self.pd_menus = json.load(stream)['magic_browser']
                 software_menus = self.order_menus(self.pd_menus)
                 if software_menus:
                     for menu in software_menus:
@@ -519,7 +519,7 @@ class CGLumberjack(VFXWindow):
         pm = CONFIG['account_info']['project_management']
         def_schema = CONFIG['project_management'][pm]['api']['default_schema']
         schema = CONFIG['project_management'][pm]['tasks'][def_schema]
-        from cgl.apps.pipeline.designer import Designer
+        from cgl.apps.cookbook.designer import Designer
         dialog = Designer(self, pm_tasks=schema)
         dialog.setMinimumWidth(1200)
         dialog.setMinimumHeight(500)

@@ -2,9 +2,7 @@ import re
 import os
 from .smart_task import SmartTask
 from cgl.ui.widgets.dialog import InputDialog
-import pymel.core as pm
 import cgl.plugins.maya.utils as utils
-reload(utils)
 import cgl.plugins.maya.alchemy as lm
 try:
     import pymel.core as pm

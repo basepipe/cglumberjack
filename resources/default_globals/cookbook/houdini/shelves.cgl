@@ -1,0 +1,67 @@
+{
+    "houdini": [
+        {
+            "buttons": [
+                {
+                    "icon": "",
+                    "label": "Buttona",
+                    "module": "import cgl_tools.houdini.shelves.TestA.Buttona as Buttona; Buttona.run()",
+                    "name": "Buttona",
+                    "order": 1,
+                    "reference_path": null
+                },
+                {
+                    "icon": "",
+                    "label": "Buttonb",
+                    "module": "import cgl_tools.houdini.shelves.TestA.Buttonb as Buttonb; Buttonb.run()",
+                    "name": "Buttonb",
+                    "order": 2,
+                    "reference_path": null
+                }
+            ],
+            "name": "TestA"
+        },
+        {
+            "buttons": [
+                {
+                    "icon": "",
+                    "label": "Buttonc",
+                    "module": "import cgl_tools.houdini.shelves.TestB.Buttonc as Buttonc; Buttonc.run()",
+                    "name": "Buttonc",
+                    "order": 1,
+                    "reference_path": null
+                },
+                {
+                    "icon": "",
+                    "label": "Buttond",
+                    "module": "import cgl_tools.houdini.shelves.TestB.Buttond as Buttond; Buttond.run()",
+                    "name": "Buttond",
+                    "order": 2,
+                    "reference_path": null
+                }
+            ],
+            "name": "TestB"
+        },
+        {
+            "buttons": [
+                {
+                    "icon": "",
+                    "label": "Test A Button A",
+                    "module": "import cgl_tools.houdini.shelves.TestA.Buttona as Buttona; Buttona.run()",
+                    "name": "TestAButtonA",
+                    "order": 1,
+                    "reference_path": "Z:/Projects/VFX/COMPANIES/_config/cgl_tools/houdini/shelves/TestA/Buttona.py"
+                },
+                {
+                    "icon": "",
+                    "label": "Tom Test A Button A",
+                    "module": "import cgl_tools.houdini.shelves.TestA.Buttona as Buttona; Buttona.run()",
+                    "name": "TomTestAButtonA",
+                    "order": 2,
+                    "reference_path": "Z:/Projects/VFX/COMPANIES/_config/cgl_tools/houdini/shelves/TestA/Buttona.py"
+                }
+            ],
+            "name": "TestC"
+        }
+    ]
+}

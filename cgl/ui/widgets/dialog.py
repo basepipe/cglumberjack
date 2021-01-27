@@ -9,6 +9,7 @@ from cgl.ui.widgets.containers.table import LJTableWidget
 from cgl.ui.widgets.containers.menu import LJMenu
 from cgl.ui.widgets.base import LJDialog
 from cgl.core.utils.general import current_user
+from cgl.core.utils.read_write import zip_path
 
 
 class TimeTracker(LJDialog):
@@ -1132,6 +1133,67 @@ class ProjectCreator(LJDialog):
         show_in_project_management(path_object, self.cfg)
         self.accept()
         self.parent().centralWidget().update_location(path_object)
+
+
+class UploadGlobals(LJDialog):
+    def __init__(self, parent=None, cfg=None, company=None, project=None):
+        LJDialog.__init__(self, parent)
+        self.globals_root = cfg.globals_root
+        self.master_globals_root = cfg.master_globals_root
+        if not self.master_globals_root:
+            self.master_globals_root = self.globals_root.replace(company, 'master')
+            self.master_globals_root = self.master_globals_root.replace(project, 'master')
+        self.setWindowTitle('Update Studio Globals')
+        layout = QtWidgets.QVBoxLayout(self)
+        upload_existing_radio = QtWidgets.QRadioButton()
+        message = QtWidgets.QLabel('Which would you like to do?')
+        message2 = QtWidgets.QLabel('Studio Globals: {}'.format(self.master_globals_root))
+        message3 = QtWidgets.QLabel('Project Globals: {}'.format(self.globals_root))
+        upload_existing_radio.setText('Studio Globals -> Cloud')
+        update_radio = QtWidgets.QRadioButton()
+        update_radio.setText('Current Globals -> Studio Globals')
+        self.update = None
+
+        button_row = QtWidgets.QHBoxLayout()
+        self.button = QtWidgets.QPushButton('Update')
+        button_row.addStretch(1)
+        button_row.addWidget(self.button)
+        layout.addWidget(message)
+        layout.addWidget(upload_existing_radio)
+        layout.addWidget(message2)
+        layout.addWidget(update_radio)
+        layout.addWidget(message3)
+        layout.addLayout(button_row)
+
+        update_radio.clicked.connect(self.on_radio_clicked)
+        upload_existing_radio.clicked.connect(self.on_radio_clicked)
+        self.button.clicked.connect(self.on_button_clicked)
+
+    def on_radio_clicked(self):
+        print(self.sender().text())
+        if 'Cloud' in self.sender().text():
+            self.update = 'studio'
+        else:
+            self.update = 'current'
+
+    def on_button_clicked(self):
+        import os
+        from cgl.plugins.aws.s3 import upload_file
+        if self.update == 'studio':
+            print('Studio to Cloud')
+            print('zip {}'.format(self.master_globals_root))
+        else:
+            print('Project to Studio to Cloud')
+            print('delete current master {}'.format(self.master_globals_root))
+            print('copy {} to {}'.format(self.globals_root, self.master_globals_root))
+            zip_file = '{}.zip'.format(self.globals_root)
+            print('zip {} to {}'.format(self.globals_root, zip_file))
+            zip_path(self.globals_root, zip_file)
+            # TODO - as soon as i can grab the "aws company name" from the sync globals i'm good here.
+            # upload_file(zip_file, bucket)
+
+
+
 
 
 

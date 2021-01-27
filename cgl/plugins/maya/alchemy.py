@@ -1,7 +1,7 @@
 import os
 import glob
 from cgl.plugins.Qt import QtCore, QtWidgets
-from cgl.apps.lumbermill.main import CGLumberjack, CGLumberjackWidget
+from cgl.apps.magic_browser.main import CGLumberjack, CGLumberjackWidget
 from cgl.core.utils.general import current_user
 from cgl.ui.widgets.dialog import InputDialog
 import logging
@@ -11,7 +11,7 @@ from cgl.core.config.config import ProjectConfig
 from cgl.plugins.maya.utils import get_namespace, create_tt, clean_tt, basic_playblast
 try:
     import pymel.core as pm
-except ModuleNotFoundError:
+except:
     print('Skipping pymel.core, outside of maya')
 
 
@@ -364,6 +364,33 @@ def screen_grab():
     """
     from cgl.core.utils.general import screen_grab
     screen_grab(scene_object())
+
+
+def cl_update_msd(filepath):
+    from cgl.core.utils.general import cgl_execute
+    from cgl.core.config.config import user_config
+    msd_ready = ['cam', 'anim']
+    path_object = PathObject(filepath).copy(context='source', set_proper_filename=True, ext='mb')
+    task = path_object.task
+    if task in msd_ready:
+        mayapy = user_config()['paths']['mayapy']
+        update_msd = os.path.join(os.path.dirname(__file__), 'cli', 'update_msd.py')
+        command = "{} {} {} {}".format(mayapy, update_msd, path_object.path_root, path_object.task)
+        cgl_execute(command, new_window=True)
+    else:
+        print('{} not found in tasks ready for command line msd update: {}'.format(task, msd_ready))
+
+
+def cl_create_preview(playblast=True):
+    if playblast:
+        print('Creating a basic preview image')
+    else:
+        print('Creating a rendered image')
+
+
+if __name__ == '__main__':
+    filepath = r'Z:/Projects/cmpa-animation/render/02BTH_2021_Kish/master/shots/001/0600/cam/default/publish/018.000/high/001_0600_cam.msd'
+    update_msd(filepath)
 
 
 

@@ -705,7 +705,7 @@ def publish():
     :return:
     """
     publish_object = scene_object().publish()
-    # TODO - i'd like to have a lumbermill controlled popup here.  The blender one doesn't work.
+    # TODO - i'd like to have a magic_browser controlled popup here.  The blender one doesn't work.
     return publish_object
 
 

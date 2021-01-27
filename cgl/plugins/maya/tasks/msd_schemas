@@ -1,0 +1,23 @@
+mdl_structure:
+    source_file:
+    attrs: {mtl_groups: {},
+            fbx:,
+            mb:,
+            ma:,
+            obj:,
+            mtl:
+            }
+
+bndl_structure:
+    source_file:
+    attrs: {meshes: {}}
+
+tex_structure:
+    source_file:
+    attrs: {channels: {}}
+
+layout_structure:
+    source_file:
+    attrs: {bundles:
+            meshes:
+            }

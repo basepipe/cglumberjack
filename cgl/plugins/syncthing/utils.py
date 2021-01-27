@@ -28,14 +28,14 @@ def setup_server(clean=False):
     wipe_globals()
     user_globals = ProjectConfig().user_config_file
     set_machine_type('server')
-    cgl_tools_folder = ProjectConfig().project_config
+    # cgl_tools_folder = os.path.dirname(ProjectConfig().project_config_file)
 
     sheet_obj = get_sheet()
     add_device_info_to_sheet(sheet_obj, server='true')
     add_all_devices_to_config(sheet_obj)
-    #folder_id = r'[root]\_config\cgl_tools'
-    folder_id = r'[root]\master\config\master'
-    add_folder_to_config(folder_id, cgl_tools_folder, type_='sendonly')
+    # folder_id = r'[root]\_config\cgl_tools'
+    # folder_id = r'[root]\master\config\master'
+    # add_folder_to_config(folder_id, cgl_tools_folder, type_='sendonly')
     share_folders_to_devices()  # only if you're setting up main folders
     launch_syncthing()
 
@@ -44,7 +44,7 @@ def set_machine_type(m_type=""):
     from cgl.core.config.config import ProjectConfig
     """
     sets the machine type for the current machine
-    a value of "" is used when a machine is using lumbermill but not syncthing.  This would be typical of a networked
+    a value of "" is used when a machine is using magic_browser but not syncthing.  This would be typical of a networked
     machine at the studio.
     :param m_type: valid types: "", "remote workstation", "server"
     :return:
@@ -55,11 +55,11 @@ def set_machine_type(m_type=""):
 
 
 def clear_sync_thing_user_globals():
-    from cgl.core.config.config import ProjectConfig
-    user_globals = ProjectConfig().user_config
+    from cgl.core.config.config import user_config, get_user_config_file
+    user_globals = user_config()
     user_globals['sync_thing_config_modified'] = ""
     user_globals['sync_thing_machine_type'] = ""
-    save_json(ProjectConfig.user_config_file, user_globals)
+    save_json(get_user_config_file(), user_globals)
 
 
 def get_syncthing_state():
@@ -78,31 +78,27 @@ def setup_workstation():
     :return:
     """
     wipe_globals()
-    from cgl.core.config.config import ProjectConfig
-    USER_GLOBALS = ProjectConfig().user_config
-    GLOBALS = ProjectConfig().project_config
+    from cgl.core.config.config import ProjectConfig, get_sync_config_file
+    sync_config = load_json(get_sync_config_file())
     set_machine_type("remote workstation")
     # kill_syncthing()
     print(1, get_my_device_info())
     device_info = get_my_device_info()
     print('Setting Up Workstation for Syncing')
-    company = GLOBALS['account_info']['aws_company_name']
-    sheet_name = GLOBALS['sync']['syncthing']['sheets_name']
-    folder_id = r'[root]\master\config\master'
-    folder_path = ProjectConfig().cookbook_folder
+    print(sync_config)
+    company = sync_config['sync']['syncthing']['aws_company_name']
+    sheet_name = sync_config['sync']['syncthing']['sheets_name']
 
     sheet_obj = get_sheet()
     add_device_info_to_sheet(sheet_obj)
     add_all_devices_to_config(sheet_obj)
-
-    add_folder_to_config(folder_id, folder_path, type_='recieveonly')
-    launch_syncthing()
-
+    # add_folder_to_config(folder_id, folder_path, type_='recieveonly')
     from cgl.plugins.aws.cgl_sqs.utils import machine_added_message
     machine_added_message(device_id=device_info['id'],
                           device_name=device_info['name'],
                           message='%s added machine %s' % ('user', device_info['name']))
     launch_lumber_watch(new_window=True)
+
 
 
 def fix_folder_paths():
@@ -138,6 +134,7 @@ def process_pending_folders(folder_type='sendreceive'):
                     id_ = c.get('id')
                     print('found pending folder: %s' % id_)
                     local_folder = get_folder_from_id(id_)
+                    print('local folder is {}'.format(local_folder))
                     if local_folder:
                         if not os.path.exists(local_folder):
                             print('Creating Local Folder for Syncing: %s' % local_folder)
@@ -145,6 +142,7 @@ def process_pending_folders(folder_type='sendreceive'):
                         c.set('path', local_folder)
                         # need a device list here for the add folder to config part to work.
                         device_list = [device_id]
+                        print(local_folder)
                         local_path_object = PathObject(local_folder)
                         print(local_path_object.path_root)
                         print(local_path_object.scope)
@@ -221,7 +219,7 @@ def process_folder_naming(kill=False, folder_type='sendreceive'):
                     label = '%s-%s-%s (%s)' % (p_obj.asset, p_obj.task, p_obj.version, p_obj.context)
                 elif p_obj.scope == 'shots':
                     label = '%s_%s-%s-%s (%s)' % (p_obj.seq, p_obj.shot, p_obj.task, p_obj.version, p_obj.context)
-                print('changing %s to lumbermill pathing: %s' % (child.get('id'), local_folder))
+                print('changing %s to magic_browser pathing: %s' % (child.get('id'), local_folder))
                 if not os.path.exists(local_folder):
                     print('Creating Local Folder for Syncing: %s' % local_folder)
                     os.makedirs(local_folder)
@@ -261,7 +259,7 @@ def get_folder_from_id(folder_id):
         local_path = '%s%s' % (value, the_rest)
         return local_path
     except ValueError:
-        print('Skipping %s, it is not a lumbermill share' % folder_id)
+        print('Skipping %s, it is not a magic_browser share' % folder_id)
         return None
 
 
@@ -321,9 +319,8 @@ def get_sheet():
     :param sheet_name: Name of the google sheet being accessed
     :return: Sheet object
     """
-    from cgl.core.config.config import ProjectConfig
-    user_globals = ProjectConfig().user_config
-    globals_ = ProjectConfig().project_config
+    from cgl.core.config.config import get_sync_config_file
+    globals_ = load_json(get_sync_config_file())
     client_file = globals_['sync']['syncthing']['sheets_config_path']
     name_ = globals_['sync']['syncthing']['sheets_name'].split('_SYNC_THING')[0]
     print('Syncing with %s' % name_)
@@ -739,9 +736,7 @@ def share_files(path_object):
 
 def share_project(path_object):
     from cgl.ui.widgets.sync_master import SharingDialog
-    source = path_object
-    render = path_object.copy(context='render')
-    dialog_ = SharingDialog(publish_objects=[source, render], type_='sendreceive')
+    dialog_ = SharingDialog(path_object=path_object, type_='sendreceive')
     dialog_.exec_()
     if dialog_.button == 'Ok':
         launch_syncthing(verbose=True)
@@ -918,6 +913,7 @@ if __name__ == "__main__":
     # process_pending_devices()
     # print(get_all_devices_from_config())
     # print(get_my_device_info()['name'])
-    from cgl.core.utils.general import launch_lumber_watch
-    launch_lumber_watch()
-
+    #from cgl.core.utils.general import launch_lumber_watch
+    # launch_lumber_watch()
+    #launch_syncthing(True)
+    pass
