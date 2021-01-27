@@ -11,7 +11,7 @@ class SmartTask(object):
 
         :param path_object: must be a "PathObject"
         """
-        from cgl.plugins.maya.lumbermill import scene_object
+        from cgl.plugins.blender.alchemy import scene_object
         from cgl.core.path import PathObject
         if not path_object:
             self.path_object = scene_object()
@@ -63,4 +63,29 @@ class SmartTask(object):
         """
         from cgl.plugins.blender.alchemy import publish
         publish()
+
+    def get_msd_info(self, task_name):
+        """
+        creates the msd dictionary for the task being called.
+        :param task_name:
+        :return:
+        """
+        pass
+
+    def export_msd(self, task_name = None, selected=None):
+        """
+
+        """
+        if not selected:
+            print(self.path_object.msd_path)
+            self.path_object.save_msd(self.get_msd_info(task_name))
+            # update the project.msd
+            # update the project_test.msd
+
+    def render(self):
+        """
+
+        :return:
+        """
+        pass
 

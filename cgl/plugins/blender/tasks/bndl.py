@@ -11,7 +11,8 @@ from importlib import reload
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.plugins.blender.utils import load_plugin
 from cgl.core.config.config import ProjectConfig
-
+from .mdl import get_msd_info
+from . import mdl
 
 class Task(SmartTask):
 
@@ -29,7 +30,7 @@ class Task(SmartTask):
         """
         bundle_import(filepath, layout_group)
 
-    def import_latest(self, asset, task='bndl', category='*', type='env'):
+    def import_latest(self, asset, task='bndl', category='*', type='env',reference = None,**kwargs):
         """
         imports the latest publish file for the given seq/shot combination
         :param task:
@@ -56,8 +57,59 @@ class Task(SmartTask):
             print('Could not glob bundle path at {}'.format(bndl_obj.path))
 
     def build(self):
+        from ..utils import create_object, parent_object
+        bndl_group = create_object('bndl')
         model_ref = import_task(task='mdl', reference=True)
+        parent_object(model_ref,bndl_group)
 
+
+    def import_published_msd(self):
+        """
+        imports the latest publish file for the given seq/shot combination
+        :param task:
+        :param category: Asset Cateogry
+        :param asset: Asset
+        :return:
+        """
+        msd_dict = load_json(self.path_object.project_msd_path)
+        msd = msd_dict['assets'][self.path_object.seq][self.path_object.shot][self.path_object.task]
+        bundle_import(msd)
+
+    def export_msd(self, selected=None):
+        """
+
+        """
+        if not selected:
+            print(self.path_object.msd_path)
+            save_json(self.path_object.msd_path, get_msd_info(TASKNAME))
+
+    def get_msd_info(self, bndl= None ):
+        """
+        returns the msd dict for the given task.
+        :return:
+        """
+        from ..utils import get_object
+        bndl_dict = {}
+        meshes = {}
+        children = get_object('bndl').children
+        if children:
+            for child in children:
+                clean_name = child.name.split(":")[1]
+                meshes[clean_name] = mdl.get_msd_info(child)
+        bndl_dict['attrs'] = {'meshes': meshes}
+        bndl_dict['source_file'] = scene_object().path
+        return bndl_dict
+
+    def export_msd(self, task_name = None, selected=None):
+        """
+
+        """
+
+        if not selected:
+            print(self.path_object.msd_path)
+            self.path_object.save_msd(self.get_msd_info(task_name))
+            # update the project.msd
+            # update the project_test.msd
 
 def get_latest_publish(filepath, task='bndl', ext='.json'):
     """
@@ -84,7 +136,7 @@ def bundle_import(filepath, layout_group=None):
     :return:
     """
     relative_path = None
-    root = ProjectConfig.project_management['paths']['root']
+    root = ProjectConfig().user_config['paths']['root']
     d = PathObject(filepath)
     ns = d.shot
     #    try:
@@ -106,16 +158,13 @@ def bundle_import(filepath, layout_group=None):
     group['outlinerColor']= '1, 1, 0'
     layout_data = load_json(filepath)
     print('LAYOUT DATA____________')
-    print(layout_data.keys())
 
-    for each in layout_data:
-        if layout_data[each]['source_path']:
-            if 'source_path' in layout_data[each]:
-                # this is a bundle, rather than a layout - unsure why this has changed so drastically
-                # TODO - look at what's going on here.
-                relative_path = layout_data[each]['source_path']
-                transforms = layout_data[each]['transform'].split(' ')
-            company = scene_object().company
+    meshes = layout_data['attrs']['meshes']
+    for each in meshes:
+
+        relative_path = meshes[each]['source_path']
+        transforms = meshes[each]['transform']['matrix'].split(' ')
+        company = scene_object().company
 
 
         if root not in relative_path:

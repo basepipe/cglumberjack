@@ -3,6 +3,10 @@ from cgl.ui.widgets.dialog import InputDialog
 from cgl.plugins.blender.utils import load_plugin
 from cgl.plugins.blender import alchemy as alc
 import bpy
+from ..alchemy import scene_object
+
+DEFAULT_SHADER = 'BSDF_PRINCIPLED'  # TODO - add this in the globals.
+
 
 
 class Task(SmartTask):
@@ -18,8 +22,13 @@ class Task(SmartTask):
         2. Import latest textures for this asset (and assemble a shader network)
         :return:
         """
-        model_ref = alc.import_task(task='mdl', reference=True)
-        alc.import_task(task='tex', ref_node=model_ref)
+        from .mdl import remove_mdl_group
+        remove_mdl_group()
+        model_ref = alc.import_task(task='mdl', reference=False)
+
+        remove_materials()
+        alc.import_task(task='tex')
+        set_object_materials()
 
     def _import(self, file_path, reference=False,**kwargs):
         from cgl.plugins.blender.alchemy import PathObject
@@ -36,9 +45,16 @@ class Task(SmartTask):
         import_obj = self._import(new_obj.path_root, reference=reference)
         return import_obj
 
-def get_materials_in_scene():
+def get_materials_in_scene(string = False,default_ns=False):
     import bpy
-    return bpy.data.materials
+    materials = []
+    if string:
+        for mat in bpy.data.materials:
+            materials.append(mat.name)
+        return materials
+
+    else:
+        return bpy.data.materials
 
 def get_materials_dictionary(objects = None):
     """
@@ -66,7 +82,7 @@ def get_materials_dictionary(objects = None):
 def check_material_count(max_count = 1 ):
 
     dic = get_materials_dictionary()
-    material_count = []
+    assignmaterial_count = []
     for item in dic:
         print(item)
 
@@ -116,7 +132,6 @@ def assign_materials_from_shading_group():
         material_object = get_material(geo.parent.name,create=True)
         assign_material(material_object,geo,clear=True)
 
-
 def remove_materials(material_list = None ,keep_valid_materials =True):
     valid_material_list = get_valid_material_list()
 
@@ -141,9 +156,6 @@ def delete_duplicate_groups(node_name):
         if node.name.split('.')[0] == node_name:
             if not node.name == node_name:
                 bpy.data.node_groups.remove(node)
-
-
-
 
 def fix_material_names(namespace = None):
     from cgl.plugins.blender.tasks import mdl
@@ -245,7 +257,7 @@ def read_face_list(msd):
         index += 1
 
 def get_object_list(materials_dic = None):
-    from cgl.plugins.blender.lumbermill import scene_object
+    from cgl.plugins.blender.alchemy import scene_object
     import bpy
 
     if not materials_dic:
@@ -270,11 +282,12 @@ def get_object_list(materials_dic = None):
                     object_list.append(obj)
     return object_list
 
-def get_material(name, create = False):
+def get_material(name, create = False,default_ns = False):
     material = None
-    scene_materials = get_materials_in_scene()
+    scene_materials = get_materials_in_scene(string=True,default_ns=default_ns)
+
     if name in scene_materials:
-        material = scene_materials[name]
+        material = bpy.data.materials[name]
 
     if material is None and create:
         material = scene_materials.new(name = name)
@@ -282,7 +295,7 @@ def get_material(name, create = False):
 
     return material
 
-def get_valid_material_list(mat_group=False,mat_object = False):
+def get_valid_material_list(mat_group=False,mat_object = False,default_ns = True):
     """
 
     :return: list of materials names
@@ -291,7 +304,12 @@ def get_valid_material_list(mat_group=False,mat_object = False):
     from cgl.plugins.blender.tasks import  mdl
     from importlib import reload
 
-    materials = mdl.get_mdl_objects(groups=True)
+    materials = mdl.get_mdl_objects(groups=True,default_ns=default_ns)
+    if materials == None:
+        materials = mdl.get_mdl_objects(groups=True, default_ns=False)
+        if materials ==None:
+            print('_'*5,'No Valid Materials Found','_'*5)
+
     clean_list = []
 
     for mat in materials:
@@ -326,14 +344,23 @@ def material_dictionaries(task='mdl'):
 
 def assign_material_in_hirarchy(shader,asset):
     import bpy
-    from ..utils import get_object,selection
+    from ..alchemy import confirm_prompt
+    from ..utils import get_object,selection, objects_in_scene
     mtl_name = shader.replace('shd', 'mtl')
-
+    failed_materials  = []
     material_name = shader
     SG_path = bpy.data.materials[material_name]
 
-    object = get_object(mtl_name)
 
+
+    if mtl_name not in  objects_in_scene(string=True):
+        confirm_prompt(message="didn't find material group, rig is probably not up to date "
+                               "please fix rig, and export alembic again")
+
+        return
+
+
+    object = get_object(mtl_name)
     for obj in object.children:
         obj.material_slots[0].material = SG_path
 
@@ -351,7 +378,7 @@ def write_materials_msd(ref_object = None):
     save_json(outFile, data= get_materials_dictionary())
 
 def import_materials(filepath):
-
+    import bpy
     with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
         # data_to.cameras = [c for c in data_from.cameras if c.startswith(collection_name)]
         data_to.materials = [c for c in data_from.materials]
@@ -410,9 +437,63 @@ def read_materials_msd(filepath=None, mdl_group= None):
 
     return materials
 
-
 def set_object_materials():
     fix_material_names()
     assign_materials_from_shading_group()
     remove_materials()
+
+def remove_empty_shd_group():
+    print('empty')
+
+
+def set_preview_color(objects = None):
+    D = bpy.data
+    if objects == None:
+        objects = bpy.context.selected_objects
+
+
+    for obj in objects:
+        if obj.type == 'MESH':
+
+            for slot in obj.material_slots:
+                material = slot.material
+                try:
+                    image_file = material.node_tree.nodes['Image Texture'].image.name  # this refers to an image file loaded into Blender
+
+                    img = D.images[image_file]
+
+                    width = img.size[0]
+                    height = img.size[1]
+                    if (width != 0) and (height != 0):
+                        target = [150, 33]
+
+                        index = (target[1] * width + target[0]) * 4
+
+                        preview_color = [
+                            img.pixels[index],  # RED
+                            img.pixels[index + 1],  # GREEN
+                            img.pixels[index + 2],  # BLUE
+                            img.pixels[index + 3]  # ALPHA
+                        ]
+                except KeyError:
+                    if 'MILVIO' in scene_object().project:
+                        DEFAULT_SHADER = 'DEFAULTSHADER'
+
+                    default = material.node_tree.nodes[DEFAULT_SHADER]
+                    preview_color = [default.inputs[0].default_value[0],
+                                     default.inputs[0].default_value[1],
+                                     default.inputs[0].default_value[2],
+                                     1]
+
+
+                obj.material_slots[0].material.diffuse_color = (preview_color[0],
+                                                                preview_color[1],
+                                                                preview_color[2],
+                                                                preview_color[3])
+
+                from ..msd import tag_object
+                tag_object(obj,'PREVIEW_COLOR',str(preview_color))
+
+
+
 

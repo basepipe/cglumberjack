@@ -12,9 +12,7 @@ from cgl.core.path import PathObject
 CONFIG = ProjectConfig().project_config
 PROJ_MANAGEMENT = ProjectConfig().project_management
 PADDING = CONFIG['default']['padding']
-
 PROCESSING_METHOD = ProjectConfig().user_config['methodology']
-
 SOFTWARE = os.path.basename(os.path.dirname(__file__))
 
 
@@ -209,95 +207,65 @@ class InputDialog(bpy.types.Operator):
 
 
 
-def import_file(filepath, namespace=None, collection_name=None):
+def import_file(filepath, namespace=None, collection_name=None,type = 'Collection'):
     from cgl.plugins.blender import alchemy as alc
-    from .msd import add_source_path
-    from cgl.plugins.blender.utils import get_objects_in_hirarchy, parent_to_collection
+    from cgl.plugins.blender.msd import tag_object
+    from cgl.plugins.blender.utils import get_objects_in_hirarchy, parent_to_collection, get_collection, get_object
     from cgl.core.path import PathObject
-
+    import os
     import bpy
+
     path_object = PathObject(filepath)
 
-    if filepath.endswith('fbx'):
-        bpy.ops.import_scene.fbx(filepath=filepath)
-        for obj in bpy.context.selected_objects:
-            obj.name = '{}:{}'.format(obj.name, path_object.task)
+    if os.path.exists(filepath):
+        if filepath.endswith('fbx'):
+            bpy.ops.import_scene.fbx(filepath=filepath)
+            for obj in bpy.context.selected_objects:
+                obj.name = '{}:{}'.format(obj.name, path_object.task)
 
-    if filepath.endswith('abc'):
-        bpy.ops.wm.alembic_import(filepath=filepath)
+        if filepath.endswith('abc'):
+            bpy.ops.wm.alembic_import(filepath=filepath)
 
-    elif filepath.endswith('blend'):
+        elif filepath.endswith('blend'):
 
-        if collection_name == None:
-            collection_name = path_object.asset
+            if collection_name == None:
+                collection_name = path_object.asset
 
-        with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
-            # data_to.collections = [c for c in data_from.collections if c == collection_name]
+        bpy.ops.wm.append(
+            filepath=path_object.filename,
+            directory="{}\\{}\\".format(path_object.path_root,type),
+            filename=path_object.asset)
 
-            for c in data_from.collections:
-                if c == collection_name:
-                    print(c)
-                    data_to.collections = [c]
+        imported_collection = get_collection(collection_name)
 
-        imported_collection = bpy.data.collections[collection_name]
+        imported_objects_list = []
+        if namespace == None:
+            namespace = path_object.asset
+        for each_obj in imported_collection.objects:
+            each_obj.name = '{}:{}'.format(namespace, each_obj.name.split(':')[-1])
+            imported_objects_list.append(each_obj)
+            # parent_to_collection(each_obj, scene_collection_name)
+            # bpy.data.collections.remove(imported_collection)
 
-        scene_collection_name = '{}:{}'.format(path_object.asset,path_object.task)
+        name = '{}:{}'.format(namespace, path_object.task)
 
-        bpy.context.scene.collection.children.link(imported_collection)
+        if filepath.endswith('abc'):
+            name = bpy.data.objects[path_object.filename_base].name = '{}_{}:{}'.format(path_object.seq,
+                                                                                        path_object.shot,
+                                                                                        path_object.task)
 
-        if namespace:
-            imported_objects_list = []
-            for each_obj in imported_collection.objects:
-                each_obj.name = '{}:{}'.format(namespace, each_obj.name)
-                imported_objects_list.append(each_obj)
-                #parent_to_collection(each_obj, scene_collection_name)
-            #bpy.data.collections.remove(imported_collection)
+        imported_object = get_object(name)
 
-        imported_collection.name = scene_collection_name
-    name = '{}:{}'.format(namespace,path_object.task)
+        for i in get_objects_in_hirarchy(imported_object):
+            tag_object(get_object(i), 'source_path', path_object.path)
 
-    if filepath.endswith('blend') or filepath.endswith('fbx'):
-        imported_object_name = name
+        return imported_object
 
-    if filepath.endswith('abc'):
-        imported_object_name = bpy.data.objects[path_object.filename_base].name = '{}_{}:{}'.format(path_object.seq,
-                                                                                                    path_object.shot,
-                                                                                                    path_object.task)
-
-    imported_object = bpy.data.objects[imported_object_name]
-    add_source_path(imported_object, path_object)
-
-
-
-
-    return imported_object
-
-
-def render(preview=False, audio=False):
-    """
-    renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
-    :param preview: determines if exr is used or not
-    :param audio: if True renders an  mov and setups the audio settings
-    :return:
-    """
-    previewRenderTypes = ['anim', 'rig', 'mdl', 'lay']
-    file_out = scene_object().render_path.split('#')[0]
-
-    if preview:
-        bpy.context.scene.render.image_settings.file_format = 'JPEG'
-        bpy.context.scene.render.filepath = file_out
-
-        if audio:
-            bpy.context.scene.render.image_settings.file_format = 'FFMPEG'
-            bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
-            bpy.context.scene.render.ffmpeg.audio_codec = 'MP3'
-
-        bpy.ops.render.opengl('INVOKE_DEFAULT', animation=True, view_context=True)
 
     else:
-        bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR_MULTILAYER'
-        bpy.context.scene.render.filepath = file_out
-        bpy.ops.render.render(animation=True, use_viewport=True)
+        print('NO SUCH FILE')
+        confirm_prompt('ERROR', '{} FILE NOT FOUND'.format(path_object.filename))
+
 
 
 def reference_file(filepath, namespace=None, collection_name=None):
@@ -307,29 +275,33 @@ def reference_file(filepath, namespace=None, collection_name=None):
     import bpy
 
     path_object = PathObject(filepath)
+    if os.path.exists(filepath):
 
-    if collection_name == None:
-        collection_name = path_object.asset
+        if collection_name == None:
+            collection_name = path_object.asset
 
-    with bpy.data.libraries.load(filepath, link=True) as (data_from, data_to):
-        for c in data_from.collections:
-            if c == collection_name:
-                print(c)
-                data_to.collections = [c]
-    if namespace:
-        object_name = '{}:{}'.format(namespace, path_object.task)
+        with bpy.data.libraries.load(filepath, link=True) as (data_from, data_to):
+            for c in data_from.collections:
+                if c == collection_name:
+                    print(c)
+                    data_to.collections = [c]
+        if namespace:
+            object_name = '{}:{}'.format(namespace, path_object.task)
+        else:
+            object_name = path_object.task
+        obj = bpy.data.objects.new(object_name, None)
+        obj.instance_type = 'COLLECTION'
+        obj['source_path'] = path_object.path
+        obj.instance_collection = bpy.data.collections[collection_name]
+        bpy.context.collection.objects.link(obj)
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        tag_object([obj],'source_path',path_object.path)
+        return obj
+
     else:
-        object_name = path_object.task
-    obj = bpy.data.objects.new(object_name, None)
-    obj.instance_type = 'COLLECTION'
-    obj['source_path'] = path_object.path
-    obj.instance_collection = bpy.data.collections[collection_name]
-    bpy.context.collection.objects.link(obj)
-    bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True)
-    tag_object([obj],'source_path',path_object.path)
-    return obj
-
+        print('NO SUCH FILE')
+        confirm_prompt('ERROR', '{} FILE NOT FOUND'.format(path_object.filename))
 
 def open_file(filepath):
     """
@@ -382,8 +354,37 @@ def save_file_as(filepath):
     bpy.ops.wm.save_as_mainfile(filepath=filepath)
     return filepath
 
+def render(preview=False, audio=False):
+    """
+    renders the current scene.  Based on the task we can derive what kind of render and specific render settings.
+    :param preview: determines if exr is used or not
+    :param audio: if True renders an  mov and setups the audio settings
+    :return:
+    """
+
+
+
+    previewRenderTypes = ['anim', 'rig', 'mdl', 'lay']
+    file_out = scene_object().copy(ext = None).path_root
+
+    if preview:
+        bpy.context.scene.render.image_settings.file_format = 'JPEG'
+        bpy.context.scene.render.filepath = file_out
+
+        if audio:
+            bpy.context.scene.render.image_settings.file_format = 'FFMPEG'
+            bpy.context.scene.render.ffmpeg.format = 'QUICKTIME'
+            bpy.context.scene.render.ffmpeg.audio_codec = 'MP3'
+
+        bpy.ops.render.opengl('INVOKE_DEFAULT', animation=True, view_context=True)
+
+    else:
+        bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR_MULTILAYER'
+        bpy.context.scene.render.filepath = file_out
+        bpy.ops.render.render(animation=True, use_viewport=True)
 
 def get_scene_name():
+    import bpy
     """
     get current scene name
     :return:
@@ -491,7 +492,7 @@ def launch_preflight(task=None, software=None):
     bpy.ops.screen.preflight()
 
 
-def import_task(task=None,file_path=None, reference=False, **kwargs):
+def import_task(task=None,path_object=None, reference=False, **kwargs):
     """
     imports the latest version of the specified task into the scene.
     :param task:
@@ -504,7 +505,21 @@ def import_task(task=None,file_path=None, reference=False, **kwargs):
     print(class_)
 
     print(reference)
-    return class_().import_latest(task=task, reference=reference, file_path = file_path,**kwargs)
+    return class_().import_latest(task= task, reference=reference,path_object= path_object,**kwargs)
+
+
+def delete_task(task=None,file_path=None, **kwargs):
+    """
+    imports the latest version of the specified task into the scene.
+    :param task:
+    :param reference:
+    :return:
+    """
+    if not task:
+        task = scene_object().task
+    class_ = get_task_class(task)
+    return class_()._remove(task=task, reference=reference, file_path = file_path,**kwargs)
+
 
 
 def build(path_object=None):
@@ -662,3 +677,4 @@ def input_dialog(parent=None, title='Attention:', message="message",
 
 if __name__ == "__main__":
     print(SOFTWARE)
+

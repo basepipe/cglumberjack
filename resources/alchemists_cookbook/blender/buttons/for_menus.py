@@ -1,5 +1,5 @@
 import bpy
-# from cgl.plugins.blender import magic_browser as lm
+# from cgl.plugins.blender import alchemy as alc
 
 class ButtonTemplate(bpy.types.Operator):
     """

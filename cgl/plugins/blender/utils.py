@@ -1,12 +1,14 @@
 import logging
 import os
-
+from cgl.core.config.config import ProjectConfig
 import stringcase
 import cgl.core.utils.read_write as read_write
 
 logger = logging.getLogger('qtutils')
 
+
 def get_menu_path(software, menu_name, menu_file=False, menu_type='menus', cfg = None):
+
     """
     returns the menu path for a menu with the given name
     :param cfg:
@@ -17,6 +19,8 @@ def get_menu_path(software, menu_name, menu_file=False, menu_type='menus', cfg =
     :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
+    if cfg == None:
+        cfg = ProjectConfig()
     if menu_file:
         if isinstance(menu_name, dict):
             menu_name = menu_name['name']
@@ -34,6 +38,9 @@ def get_button_path(software, menu_name, button_name, menu_type='menus',cfg = No
     :param menu_type: menus, pre_publish, shelves, context-menus
     :return:
     """
+    if cfg == None:
+        cfg = ProjectConfig()
+
     menu_folder = get_menu_path(software, menu_name, menu_type=menu_type,cfg= cfg)
     button_path = os.path.join(menu_folder, '%s.py' % button_name)
     return button_path
@@ -140,7 +147,7 @@ def add_buttons_to_menu(menu_name, cfg = None):
     :return:
     """
     menu_file = get_menu_path('blender', menu_name, '%s.py' % menu_name,cfg=cfg)
-    menu_config = os.path.join(get_cgl_tools(), 'blender', 'menus.cgl')
+    menu_config = os.path.join(ProjectConfig().cookbook_folder, 'blender', 'menus.cgl')
     menu_object = read_write.load_json(menu_config)
     biggest = get_last_button_number(menu_object, 'blender', menu_name)
     if biggest:
@@ -871,9 +878,19 @@ def return_asset_name(obj):
         return name
 
 def get_lib_from_object(object):
-    if not object.isinstancer:
-        object = bpy.data.object[return_asset_name(object)]
-    library = object.instance_collection.library
+    import bpy
+    instancer = object.is_instancer
+    if not instancer:
+        try:
+            object = bpy.data.object[return_asset_name(object)]
+        except:
+            pass
+    try:
+
+        library = object.instance_collection.library
+    except AttributeError:
+        return None
+        pass
 
     return (library)
 
@@ -978,8 +995,16 @@ def return_object_list(task):
                 object_list.append(obj)
     return object_list
 
-def objects_in_scene():
+def objects_in_scene(string = False):
     import bpy
+
+    list_of_objects = []
+    if string == True:
+        for object in bpy.data.objects:
+            list_of_objects.append(object.name)
+
+        return list_of_objects
+
     return bpy.data.objects
 
 def get_next_namespace(ns):
@@ -991,16 +1016,20 @@ def get_next_namespace(ns):
     latest = 0
 
     for i in sel:
-
         if ns in i.name:
-            num = re.findall(pattern, i.name)
-            if num:
-                if int(num[-1]) > latest:
-                    latest = int(num[-1])
-            next = True
+            split_namespace = i.name.split(':')
+            if ns == split_namespace[0]:
+                num = re.findall(pattern, i.name)
+                if num:
+                    if int(num[-1]) > latest:
+
+                        latest = int(num[-1])
+
+
+                next = True
 
     if next:
-        name = '{}{}'.format(ns, latest + 1)
+        name = '{}'.format(ns)
         return name
     else:
         return ns
@@ -1052,11 +1081,52 @@ def scene_elem(elem):
     import bpy
     return eval('bpy.data.{}'.format(elem))
 
-def get_object(name, namespace = False):
+def get_object(name, namespace = None):
+
     import bpy
-    return bpy.data.objects[name]
+    if isinstance(name,str):
 
 
+        if namespace:
+            name = '{}:{}'.format(namespace,name)
+
+        if name in bpy.data.objects:
+            return bpy.data.objects[name]
+
+        else:
+            return None
+
+    else:
+        return name
+
+def get_layer(name, namespace= None, set_default_namespace = True):
+    from .alchemy import scene_object
+    scene = scene_object()
+
+    if set_default_namespace == True:
+
+        if namespace == None:
+            namespace = '{}_{}'.format(scene.seq, scene.shot)
+
+        layer_name = "{}:{}".format(namespace, name)
+    else:
+        layer_name = name
+
+    return get_object(layer_name)
+
+
+
+
+def get_collection(name, namespace = None):
+    import bpy
+
+    if namespace:
+        name = '{}:{}'.format(namespace,name)
+    if name in bpy.data.collections:
+
+        return bpy.data.collections[name]
+    else:
+        return None
 def set_framerange(start,end):
     import bpy
     bpy.context.scene.frame_start = start
@@ -1129,28 +1199,6 @@ def set_collection_name(obj = None):
         object = bpy.context.object
         object.users_collection[0].name = name
 
-def rename_collection(current_scene):
-    import bpy
-    if current_scene.scope == 'assets':
-        name = current_scene.asset
-    else:
-        name = current_scene.filename_base
-
-
-    obj = bpy.context.object
-
-    if obj:
-        if current_scene.asset in bpy.data.collections:
-            print('collection exist ')
-        object = bpy.context.object
-        object.users_collection[0].name = name
-
-    else:
-        if current_scene.asset in bpy.data.collections:
-            print('collection exist')
-
-        else:
-            bpy.data.collections['Collection'].name = name
 
 def set_context_view_3d():
     import bpy
@@ -1180,7 +1228,7 @@ def get_objects_in_hirarchy(obj, levels=10):
     return hirarchy
 
 def rename_collection(current_scene=None):
-
+    import bpy
     if current_scene is None:
         current_scene = alc.scene_object()
 
@@ -1203,6 +1251,74 @@ def rename_collection(current_scene=None):
 
         else:
             bpy.data.collections['Collection'].name = name
+
+
+def delete_object(object_to_delete):
+    import bpy
+    bpy.data.objects.remove(object_to_delete, do_unlink=True)
+
+
+def get_items(type):
+    import bpy
+    command = 'bpy.data.{}'.format(type)
+    return eval(command)
+
+
+def move_to_project(project, path_object=None):
+    from cgl.core.utils.general import  cgl_copy
+    context = ['source', 'render']
+    if path_object == None:
+        path_object = alc.scene_object()
+
+    for item in context:
+        fromDir = path_object.copy(context=item, filename=None).path_root
+        toDir = path_object.copy(context=item, filename=None, project=project).path_root
+        cgl_copy(fromDir, toDir)
+
+
+
+def move_linked_libraries_to_project(project= None):
+    import bpy
+    from cgl.core.path import PathObject
+    bpy.ops.file.make_paths_absolute()
+    for lib in bpy.data.libraries:
+        path_object = PathObject(lib.filepath)
+        print(path_object.path)
+        move_to_project(project,path_object)
+
+
+def update_libraries_project(project=None):
+    from cgl.core.path import PathObject
+    from cgl.plugins.blender.alchemy import scene_object
+
+    import bpy
+    if project == None:
+        project = scene_object().project
+
+    bpy.ops.file.make_paths_absolute()
+    for lib in bpy.data.libraries:
+        path_object = PathObject(lib.filepath)
+        new_path = path_object.copy(project=project)
+        lib.filepath = new_path.path_root
+        print(new_path.path_root)
+        lib.reload()
+
+
+def set_object_names_from_library():
+    from cgl.plugins.blender import utils
+    from cgl.core.path import PathObject
+    import bpy
+
+    from importlib import reload
+    reload(utils)
+
+    bpy.ops.file.make_paths_absolute()
+
+    for obj in get_instanced_objects():
+        # print(obj[0].name, obj[1].filepath)
+        path_object = PathObject(obj[1].filepath)
+        next_version_number = utils.get_next_namespace(path_object.asset)
+        obj[0].name = '{}:{}'.format(path_object.asset, next_version_number)
 
 
 if __name__ == '__main__':

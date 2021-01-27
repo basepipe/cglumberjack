@@ -17,14 +17,18 @@ class Task(SmartTask):
         """
         from cgl.plugins.blender.utils import create_shot_mask_info , rename_collection
         from cgl.plugins.blender.alchemy import scene_object
+        from cgl.plugins.blender.tasks.mdl import remove_mdl_group
         import bpy
 
         #bpy.ops.object.correct_file_name()
 
 
         #model = alc.scene_object().copy(task='mdl', set_proper_filename=True).latest_version()
-        print('hello we are building rig ')
+        print('Building rig ')
+
+        remove_mdl_group()
         alc.import_task(task='mdl')
+
         #bpy.ops.object.fix_collection_name()
         #assign_rig()
 
@@ -45,8 +49,38 @@ def get_rig(asset= None):
     object = get_object(asset_name)
     return object
 
+def tag_rig():
+    import bpy
+    from cgl.plugins.blender.tasks import mdl
+    from cgl.plugins.blender.alchemy import scene_object
+    from cgl.plugins.blender.msd import tag_object
+    mdl_objects = mdl.get_mdl_objects(namespace=scene_object().asset)
+    act = bpy.context.active_object
+    rig = get_rig()
 
-def assign_rig():
+    for obj in mdl_objects:
+        if obj != act:
+            if 'baseMesh' not in obj[0].name:
+                tag_object(obj[0], 'rig_layer', 'SECONDARY')
+
+            elif 'baseMesh' in obj[0].name:
+                tag_object(obj[0], 'rig_layer', 'BASEMESH')
+
+
+def copy_vertex_weights_from_basemesh():
+    from cgl.plugins.blender.tasks import mdl
+
+    from cgl.plugins.blender.tasks import rig
+    from cgl.plugins.blender.alchemy import scene_object
+
+    mdl_objects = mdl.get_mdl_objects(namespace=scene_object().asset)
+    for obj in mdl_objects:
+        if obj[0]['rig_layer'] == 'SECONDARY':
+            print(obj[0].name)
+            rig.copy_vertex_weight(rig.get_base_mesh(), obj[0])
+
+
+def add_armature_modifier(default =True ):
     import bpy
     from cgl.plugins.blender.tasks import mdl
     from cgl.plugins.blender.alchemy import scene_object
@@ -66,8 +100,13 @@ def assign_rig():
             armature_modifier = obj[0].modifiers["Armature"]
 
             armature_modifier.object = rig
-            if obj.name is not 'baseMesh':
-                tag_object(obj, 'rig_layer', 'SECONDARY')
+
+
+def assign_rig():
+    tag_rig()
+    copy_vertex_weights_from_basemesh()
+    add_armature_modifier()
+
 
 def get_mdl_mesh(arg = None, all = False):
     from cgl.plugins.blender.utils import get_object
@@ -85,9 +124,14 @@ def get_mdl_mesh(arg = None, all = False):
         return get_object(object_name)
 
 
-def copy_vertex_weight(source,dest):
-    objects = get_selection_order()
+def get_base_mesh():
+    from .mdl import get_mdl_objects
+    for obj in get_mdl_objects():
+        if  obj[0]['rig_layer'] =='BASEMESH' :
+            return obj[0]
 
+def copy_vertex_weight(source,dest):
+    import bpy
     try:
         obj = dest
         obj.data.use_auto_smooth = True
@@ -145,5 +189,41 @@ def remove_unused_weights(ob = None):
     for i, used in sorted(vgroup_used.items(), reverse=True):
         if not used:
             obj.vertex_groups.remove(obj.vertex_groups[i])
+
+def get_msd_info(mesh):
+    """
+    gets the .msd info for a given mesh
+    :param mesh:
+    :return:
+    """
+    from cgl.core.config.config import ProjectConfig
+    from os.path import join
+    from ..alchemy import set_relative_paths
+    from cgl.core.path import PathObject
+    from..msd import get_matrix, get_transform_arrays
+    set_relative_paths(True)
+    rig_dict = {}
+    if mesh['layer']:
+        rig_dict['layer'] = mesh['layer']
+
+    rel_path = mesh['source_path']
+    print(mesh)
+    print(rel_path)
+    ref_path = join(ProjectConfig().root_folder, rel_path)
+    path_object = PathObject(ref_path)
+    matrix = get_matrix(mesh,rig_root = mesh['main_controller'])
+    matrix = str(matrix).replace('[', '').replace(']', '').replace(',', '')
+    translate, rotate, scale = get_transform_arrays(mesh)
+
+    rig_dict['msd_path'] = path_object.relative_msd_path
+    rig_dict['transform'] = {'matrix': matrix,
+                             'scale': scale,
+                             'rotate': rotate,
+                             'translate': translate
+                             }
+    rig_dict['main_controller'] = mesh['main_controller']
+    rig_dict['source_path'] = rel_path
+    set_relative_paths(False)
+    return rig_dict
 
 

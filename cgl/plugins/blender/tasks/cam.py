@@ -9,30 +9,35 @@ class Task(SmartTask):
     def __init__(self, path_object=None):
         if not path_object:
             from cgl.plugins.blender.alchemy import scene_object
-            self.path_object = scene_object().copy(task = 'cam')
+
+            self.path_object = scene_object().copy(task='cam',
+                                                   latest=True,
+                                                   user = 'publish',
+                                                   context = 'render',
+                                                   set_proper_filename=True)
 
     def build(self):
         pass
 
     def _import(self, filepath = None, start_frame = 1000,**kwargs):
         from .anim import move_keyframes,get_keyframes
-        from ..utils import set_framerange
+        from ..utils import set_framerange, parent_object, get_object,get_layer
+        from cgl.plugins.blender.alchemy import scene_object ,import_file
+        from cgl.core.path import PathObject
 
         if not filepath:
             filepath = self.path_object.path_root
 
-        camFile = alc.PathObject(filepath)
-        print(filepath)
+        camFile = PathObject(filepath)
+
 
         fbx = camFile.copy(ext = 'fbx')
         json = camFile.copy(ext= 'json')
         camDic = load_json(json.path_root)
-
-
+        scene = scene_object()
 
         # Imports the fbx for the published camera
-        from cgl.plugins.blender.alchemy import scene_object
-        camera = alc.import_file(filepath = fbx.path_root,namespace=scene_object().shot)
+        camera = import_file(filepath = fbx.path_root,namespace=scene.shot)
         #camera = bpy.data.objects[camFile.shot]
 
         #Set Offset for the camera
@@ -42,10 +47,17 @@ class Task(SmartTask):
         start,end = camera_keyframes
 
 
+        layer_group = get_layer('MAIN')
+        parent_object(camera,layer_group)
         set_framerange(start,end)
         
         set_shot_from_camera(cam = camera)
+
         pass
+
+    def _remove(self,**kwargs):
+        from ..utils import delete_object
+        delete_object("{}:cam".format(self.path_object.shot))
 
 
 def set_shot_from_camera(cam = None):
@@ -165,3 +177,23 @@ def publish_selected_camera(camera=None, mb=True, abc=False, fbx=False, unity=Fa
     # bpy.ops.export_scene.fbx(filepath = camFbxPath.path_root, use_selection = True)
 
 
+def get_msd_info(camera=None):
+    from cgl.plugins.blender.tasks.anim import get_keyframes
+    camDic = {}
+    currentScene = alc.scene_object()
+
+    # get all frames with assigned keyframes
+    if camera == None:
+        keyframes = get_keyframes(get_selected_camera())
+
+    else:
+        keyframes = get_keyframes(camera)
+
+    frame_start, frame_end = keyframes[0], keyframes[-1]
+
+    camDic[camera.name] = {'shot': camera.name,
+                           'frame_start': frame_start,
+                           'frame_end': frame_end,
+                           'source_layout': currentScene.path}
+
+    return camDic

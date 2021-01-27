@@ -23,10 +23,9 @@ class Task(SmartTask):
         from cgl.plugins.blender.alchemy import scene_object
 
         rename_collection(scene_object())
-        camfile = alc.scene_object().copy(task = 'cam')
-        alc.import_task(file_path = camfile,  task='cam')
-        alc.import_task(task='lay', reference=True,latest = True)
 
+        alc.import_task(task='lay', reference=True,latest = True)
+        alc.import_task(task='cam')
 
         create_shot_mask_info()
         reset_lock_cursor()
