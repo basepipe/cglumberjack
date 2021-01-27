@@ -357,6 +357,7 @@ class PathObject(object):
         if self.context:
             if self.scope:
                 if self.scope == '*':
+                    print(self.cfg.project_config_file)
                     self.path_template = self.project_config['templates']['path_template']
                     return
                 path_template = self.project_config['templates'][self.scope][self.context]['path'].split('/')
@@ -946,8 +947,12 @@ class PathObject(object):
         """
         self.project_config_path = self.cfg.project_config_file
         if self.project:
-            self.project_msd_path = os.path.join(self.split_after('branch'), 'project.msd').replace('/source', '/render')
+            if self.branch:
+                self.project_msd_path = os.path.join(self.split_after('branch'), 'project.msd').replace('/source', '/render')
+            else:
+                self.project_msd_path = os.path.join(self.split_after('project'), 'project.msd').replace('/source', '/render')
             self.project_msd_path = self.project_msd_path.replace('\\', '/')
+
 
     def set_command_base(self):
         """
