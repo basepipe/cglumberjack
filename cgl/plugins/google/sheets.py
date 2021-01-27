@@ -17,24 +17,23 @@ def authorize_sheets():
     :param sheet_name: Title of the sheet being accessed
     :return: A google sheet object
     """
-    from cgl.core.config.config import ProjectConfig
+    from cgl.core.config.config import ProjectConfig, get_sync_config_file
     import gspread
     scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/spreadsheets',
              'https://www.googleapis.com/auth/drive']
-    user_globals =ProjectConfig().user_config
 
-    #user_globals = load_json(os.path.join(os.path.expanduser(r'~\Documents'), 'cglumberjack', 'user_globals.json'))
-    #globals_ = load_json(user_globals['globals'])
-    globals_ = ProjectConfig().project_config
-    user_globals = ProjectConfig().user_config
-    sheet_name = user_globals['sync']['syncthing']['sheets_name']
-    client_file = user_globals['sync']['syncthing']['sheets_config_path']
-    print('client file:{}'.format(client_file))
-    creds = ServiceAccountCredentials.from_json_keyfile_name(client_file, scope)
-    client = gspread.authorize(creds)
-    sheet = client.open(sheet_name).sheet1
-
-    return sheet
+    globals_ = load_json(get_sync_config_file())
+    sheet_name = globals_['sync']['syncthing']['sheets_name']
+    client_file = globals_['sync']['syncthing']['sheets_config_path']
+    if os.path.exists(client_file):
+        print('client file:{}'.format(client_file))
+        creds = ServiceAccountCredentials.from_json_keyfile_name(client_file, scope)
+        client = gspread.authorize(creds)
+        sheet = client.open(sheet_name).sheet1
+        return sheet
+    else:
+        print('No Client file found at: {}'.format(client_file))
+        return None
 
 
 def id_exists(id, sheet):
@@ -87,14 +86,13 @@ def get_sheets_authentication():
     :return: Returns the filepath to the local copy of the authentication file
     """
     # TODO - change this to read the ENV Variable once that's more stable/consistant.
-    from cgl.core.config.config import ProjectConfig
-    USER_GLOBALS = ProjectConfig().user_config
-    #USER_GLOBALS = load_json(os.path.join(os.path.expanduser('~\Documents'), 'cglumberjack', 'user_globals.json'))
-    #GLOBALS = load_json(USER_GLOBALS['globals'])
-    GLOBALS = ProjectConfig().user_config
-    filepath = GLOBALS['sync']['syncthing']['sheets_config_path']
+    from cgl.core.config.config import get_sync_config_file
+
+    sync_info = load_json(get_sync_config_file())
+    filepath = sync_info['sync']['syncthing']['sheets_config_path']
     if filepath.endswith('.json'):
-        url = GLOBALS['sync']['syncthing']['sync_thing_url']
+        url = sync_info['sync']['syncthing']['sync_thing_url']
+        print('url...', url)
         try:
             import urllib.request
             urllib.request.urlretrieve(url, filepath)

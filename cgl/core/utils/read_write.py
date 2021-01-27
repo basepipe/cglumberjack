@@ -1,7 +1,7 @@
 import json
 import xmltodict
 import os
-from zipfile import ZipFile
+from zipfile import ZipFile, ZIP_DEFLATED
 
 
 def unzip(zipped_file, destination, password=None):
@@ -16,6 +16,35 @@ def unzip(zipped_file, destination, password=None):
     with ZipFile(zipped_file, 'r') as zipObj:
         zipObj.extractall(path=destination, pwd=password)
     return destination
+
+
+def zip_path(source_path, zip_file):
+    """
+    built to handle both files and folders as "source_path"
+    :param source_path:
+    :param zip_file:
+    :return:
+    """
+
+    if os.path.isdir(source_path):
+        zipf = ZipFile(zip_file, 'w', ZIP_DEFLATED)
+        zip_dir(source_path, zipf)
+        zipf.close()
+
+
+def zip_dir(folder_path, zip_file, password=None):
+    """
+    zipes a file or folder
+    :param folder_path:
+    :param password:
+    :return:
+    """
+    if os.path.isdir(folder_path):
+        print('directory')
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+                zip_file.write(os.path.join(root, file),
+                               os.path.relpath(os.path.join(root, file), os.path.join(folder_path, '..')))
 
 
 def load_json(filepath):

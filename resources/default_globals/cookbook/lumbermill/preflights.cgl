@@ -1,0 +1,108 @@
+{
+    "lumbermill": [
+        {
+            "buttons": [
+                {
+                    "label": "Publish Files",
+                    "module": "cgl_tools.lumbermill.pre_publish.plate.CreatePublishFiles",
+                    "name": "CreatePublishFiles",
+                    "order": 1,
+                    "required": "True"
+                },
+                {
+                    "label": "Create Proxy",
+                    "module": "cgl_tools.lumbermill.pre_publish.plate.CreateProxy",
+                    "name": "CreateProxy",
+                    "order": 2,
+                    "required": "True"
+                },
+                {
+                    "label": "Create Proxy HD",
+                    "module": "cgl_tools.lumbermill.pre_publish.plate.CreateProxyHD",
+                    "name": "CreateProxyHD",
+                    "order": 3,
+                    "required": "True"
+                },
+                {
+                    "label": "Create Proxy Mov",
+                    "module": "cgl_tools.lumbermill.pre_publish.plate.CreateProxyMov",
+                    "name": "CreateProxyMov",
+                    "order": 4,
+                    "required": "True"
+                },
+                {
+                    "label": "Create Proxy Gif",
+                    "module": "cgl_tools.lumbermill.pre_publish.plate.CreateProxyGif",
+                    "name": "CreateProxyGif",
+                    "order": 5,
+                    "required": "True"
+                }
+            ],
+            "name": "plate"
+        },
+        {
+            "buttons": [
+                {
+                    "label": "Check Publish Files",
+                    "module": "cgl_tools.lumbermill.pre_publish.default.check_publish_files",
+                    "name": "check_publish_files",
+                    "order": 1,
+                    "required": "True"
+                },
+                {
+                    "label": "Publish Files",
+                    "module": "cgl_tools.lumbermill.pre_publish.default.publish_files",
+                    "name": "publish_files",
+                    "order": 2,
+                    "required": "True"
+                }
+            ],
+            "name": "default"
+        },
+        {
+            "buttons": [
+                {
+                    "label": "Publish From Ingest Tool",
+                    "module": "cgl_tools.lumbermill.pre_publish.ingest_default.PublishFromIngestDataFrame",
+                    "name": "PublishFromIngestDataFrame",
+                    "order": 1,
+                    "required": "True"
+                }
+            ],
+            "name": "ingest_default"
+        },
+        {
+            "buttons": [
+                {
+                    "label": "CheckTextureNaming",
+                    "module": "cgl_tools.lumbermill.pre_publish.tex.CheckTextureNaming",
+                    "name": "CheckTextureNaming",
+                    "order": 1,
+                    "required": "True"
+                },
+                {
+                    "label": "MakeTxFiles",
+                    "module": "cgl_tools.lumbermill.pre_publish.tex.MakeTxFiles",
+                    "name": "MakeTxFiles",
+                    "order": 2,
+                    "required": "True"
+                },
+                {
+                    "label": "Publish",
+                    "module": "cgl_tools.lumbermill.pre_publish.tex.Publish",
+                    "name": "Publish",
+                    "order": 3,
+                    "required": "True"
+                },
+                {
+                    "label": "Closewindow",
+                    "module": "cgl_tools.lumbermill.pre_publish.tex.Closewindow",
+                    "name": "Closewindow",
+                    "order": 4,
+                    "required": "True"
+                }
+            ],
+            "name": "tex"
+        }
+    ]
+}

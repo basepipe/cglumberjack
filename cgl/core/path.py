@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import glob
+import time
 import pyperclip
 import click
 import logging
@@ -10,7 +11,7 @@ import copy
 import importlib
 from cgl.core.utils.general import split_all, cgl_copy, cgl_execute, clean_file_list, save_json, load_json
 from cgl.core.config.config import ProjectConfig, user_config, get_root, paths
-from cgl.core.utils.read_write import save_json
+
 # these should come from config ideally.
 SEQ_REGEX = re.compile("[0-9]{4,}\\.")
 SPLIT_SEQ_REGEX = re.compile(" \d{3,}-\d{3,}$")
@@ -129,17 +130,19 @@ class PathObject(object):
             # print('PathObject().get_config_values')
             self.cfg = ProjectConfig(company=company, project=project)
         self.project_config = self.cfg.project_config
-        self.proj_management = self.project_config['account_info']['project_management']
-        self.project_padding = self.project_config['default']['padding']
+        if self.project_config:
+            self.proj_management = self.project_config['account_info']['project_management']
+            self.project_padding = self.project_config['default']['padding']
+            self.ext_map = self.project_config['ext_map']
+            self.scope_list = self.project_config['rules']['scope_list']
+            self.context_list = self.project_config['rules']['context_list']
         try:
             self.processing_method = self.cfg.user_config['methodology']
         except AttributeError:
             print('methodology {} not found in user config {}'.format(self.processing_method, cfg.user_config_file))
             self.processing_method = 'local'
-        self.ext_map = self.project_config['ext_map']
         self.root = self.paths_dict['root'].replace('\\', '/')
-        self.scope_list = self.project_config['rules']['scope_list']
-        self.context_list = self.project_config['rules']['context_list']
+
 
     def set_status(self):
         if not self.status:
@@ -155,16 +158,20 @@ class PathObject(object):
             self.priority = 'medium'
 
     def set_msd(self):
-        if self.resolution:
-            if self.filename:
-                base = os.path.dirname(self.path_root).replace('source', 'render')
-                rel_base = os.path.dirname(self.path).replace('source', 'render')
+        if self.version:
+            if self.resolution:
+                if self.filename:
+                    base = os.path.dirname(self.path_root).replace('source', 'render')
+                    rel_base = os.path.dirname(self.path).replace('source', 'render')
+                else:
+                    base = self.path_root.replace('source', 'render')
+                    rel_base = self.path.replace('source', 'render')
+                self.msd_path = '%s/%s_%s_%s.%s' % (base, self.seq, self.shot, self.task, 'msd')
+                self.get_msd_info()
+                self.relative_msd_path = '%s/%s_%s_%s.%s' % (rel_base, self.seq, self.shot, self.task, 'msd')
             else:
-                base = self.path_root.replace('source', 'render')
-                rel_base = self.path.replace('source', 'render')
-            self.msd_path = '%s/%s_%s_%s.%s' % (base, self.seq, self.shot, self.task, 'msd')
-            self.get_msd_info()
-            self.relative_msd_path = '%s/%s_%s_%s.%s' % (rel_base, self.seq, self.shot, self.task, 'msd')
+                self.msd_path = ''
+                self.relative_msd_path = ''
         else:
             self.msd_path = ''
             self.relative_msd_path = ''
@@ -178,41 +185,60 @@ class PathObject(object):
             return None
 
     def save_msd(self, msd_dict):
-
         print('Saving msd: {}'.format(self.msd_path))
-        from cgl.core.utils.read_write import save_json
         save_json(self.msd_path, msd_dict)
-        self.update_project_msd()
+        # self.update_project_msd()
         self.update_test_project_msd(attr='msd')
 
     def update_test_project_msd(self, attr='msd'):
-        project_msd_file = r'Z:\Projects\VFX\render\02BTH_2021_Kish\test_project_msd.msd'
+        print('Update Project MSD: {}'.format(self.project_msd_path))
+        if self.user == 'publish':
+            user = 'publish'
+        else:
+            user = 'latest_user'
+        if attr == 'source_file':
+            context = 'source'
+            value = self.path
+        if attr == 'msd':
+            context = 'render'
+            value = self.relative_msd_path
+        if attr == 'preview':
+            context = 'source'
+            value = self.preview_path
+        project_msd_file = self.project_msd_path
         if os.path.exists(project_msd_file):
             msd_dict = load_json(self.project_msd_path)
-            if attr == 'msd':
-                if user == 'publish':
-                    msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['render'][
-                        'msd'] = self.relative_msd_path
-                else:
-                    msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['render'][
-                        'msd'] = self.relative_msd_path
-            if attr == 'preview':
-                if user == 'publish':
-                    if os.path.exists(self.preview_path):
-                        msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['source'][
-                            'preview_file'] = self.preview_path
-                    if os.path.exists(self.thumb_path):
-                        msd_dict[self.scope][self.seq][self.shot][self.task][self.user]['source'][
-                            'thumb_file'] = self.thumb_path
-                else:
-                    if os.path.exists(self.preview_path):
-                        msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['source'][
-                            'preview_file'] = self.preview_path
-                    if os.path.exists(self.thumb_path):
-                        msd_dict[self.scope][self.seq][self.shot][self.task]['latest_user']['source'][
-                            'thumb_file'] = self.thumb_path
+            if self.task not in msd_dict[self.scope][self.seq][self.shot].keys():
+                msd_dict[self.scope][self.seq][self.shot][self.task] = {'publish': {'source': {"date": "",
+                                                                                                "folder": "",
+                                                                                                "preview_file": "",
+                                                                                                "size": "",
+                                                                                                "source_file": "",
+                                                                                                "source_files": "",
+                                                                                                "thumb_file": ""},
+                                                                                    'render': {"date": "",
+                                                                                                "folder": "",
+                                                                                                "msd": "",
+                                                                                                "size": {}}},
+                                                                        'latest_user': {'source': {"date": "",
+                                                                                                    "folder": "",
+                                                                                                    "preview_file": "",
+                                                                                                    "size": "",
+                                                                                                    "source_file": "",
+                                                                                                    "source_files": "",
+                                                                                                    "thumb_file": ""},
+                                                                                        'render': {"date": "",
+                                                                                                    "folder": "",
+                                                                                                    "msd": "",
+                                                                                                    "size": {}}}}
+            msd_dict[self.scope][self.seq][self.shot][self.task][user][context][attr] = value
             print('Saving Project.msd: {}'.format(project_msd_file))
             save_json(project_msd_file, msd_dict)
+        else:
+            print(project_msd_file, 'does not exist')
+        time.sleep(10)
+
+
 
     def update_project_msd(self):
         from cgl.core.utils.general import load_json, save_json
@@ -273,7 +299,8 @@ class PathObject(object):
             pass
         self.get_config_values(company, project)
         if 'branch' in self.project_config['templates']['assets']['render']['path']:
-            path_object['branch'] = 'master'
+            if 'branch' not in path_object.keys():
+                path_object['branch'] = 'master'
             if 'shot' in path_object.keys() or 'asset' in path_object.keys():
                 if 'variant' not in path_object.keys() and 'task' in path_object.keys():
                     path_object['variant'] = 'default'
@@ -330,10 +357,7 @@ class PathObject(object):
         if self.context:
             if self.scope:
                 if self.scope == '*':
-                    if self.branch:
-                        self.path_template = ['company', 'context', 'project', 'branch', 'scope']
-                    else:
-                        self.path_template = ['company', 'context', 'project', 'scope']
+                    self.path_template = self.project_config['templates']['path_template']
                     return
                 path_template = self.project_config['templates'][self.scope][self.context]['path'].split('/')
                 self.path_template = self.clean_template(path_template)
@@ -435,7 +459,7 @@ class PathObject(object):
         :param path_string: string value representing a path.
         :return:
         """
-        scopes = ['IO', 'assets', 'shots']
+        scopes = ['IO', 'assets', 'shots', '*']
         path_string = os.path.normpath(path_string.split(self.company)[-1])
         path_ = os.path.normpath(path_string)
         path_parts = path_.split(os.sep)
@@ -679,15 +703,19 @@ class PathObject(object):
         Returns all the branches for the current project.
         :return:
         """
-        proj_root = self.split_after('project')
-        branches = glob.glob('{}/*'.format(proj_root))
-        clean_branches = []
-        for b in branches:
-            if '.' in b:
-                pass
-            else:
-                clean_branches.append(os.path.split(b)[-1])
-        return clean_branches
+        if self.project:
+            proj_root = self.split_after('project')
+            branches = glob.glob('{}/*'.format(proj_root))
+            print('branches:', branches)
+            clean_branches = []
+            for b in branches:
+                if '.' in b:
+                    pass
+                else:
+                    clean_branches.append(os.path.split(b)[-1])
+            return clean_branches
+        else:
+            return []
 
     def eliminate_wild_cards(self):
         """
@@ -918,8 +946,8 @@ class PathObject(object):
         """
         self.project_config_path = self.cfg.project_config_file
         if self.project:
-            self.project_msd_path = os.path.join(self.split_after('project'),
-                                                 '{}.msd'.format(self.project)).replace('/source', '/render')
+            self.project_msd_path = os.path.join(self.split_after('branch'), 'project.msd').replace('/source', '/render')
+            self.project_msd_path = self.project_msd_path.replace('\\', '/')
 
     def set_command_base(self):
         """
@@ -1340,6 +1368,7 @@ class CreateProductionData(object):
                                                                     self.path_object.shot,
                                                                     self.path_object.task,
                                                                     ext))
+                self.path_object.update_test_project_msd(attr='source_file')
                 cgl_copy(default_file, self.path_object.path_root, methodology='local')
                 return self.path_object.path_root
         else:
@@ -1819,12 +1848,13 @@ def get_file_icon(filepath):
 
 def remove_root(filepath):
     # TODO - move this function to PathObject - it really does belong there.
-    path_object = PathObject(filepath)
-    config = ProjectConfig(path_object)
-    root = config.paths['root']
+    config = user_config()
+    root = config['paths']['root']
     filepath = filepath.replace('\\', '/')
     root = root.replace('\\', '/')
-    return filepath.replace(root, '')
+    filey = filepath.replace(root, '')
+    filey = re.sub('^\/', '', filey)
+    return filey
 
 
 def hd_proxy_exists(hd_proxy_path, frame_range):

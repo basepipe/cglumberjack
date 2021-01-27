@@ -1,0 +1,118 @@
+{
+  "textures": {
+    "substance_textures": {
+      "type": "texture",
+      "software": "Substance Painter",
+      "parameters": {
+        "diffuse": "basecolor",
+        "specGain": "",
+        "specRough": "roughness",
+        "disp": "height",
+        "bump": "height",
+        "normal": "normal",
+        "mask": ""
+      }
+    }
+  },
+  "shaders": {
+    "aiStandard": {
+      "type": "shader",
+      "software": "Arnold 4.2.14.0",
+      "default_shader_attrs": {
+          "Ks": 0.1
+      },
+      "parameters": {
+        "diffuse": {
+          "attr": "color",
+          "colorspace": "sRGB",
+          "name_match": ["Diffuse", "diffuse", "BaseColor"]
+        },
+        "specGain": {
+            "attr": "Ks",
+            "channel": "r",
+            "colorspace": "Raw"
+        },
+        "specColor": {
+            "attr": "KsColor",
+            "colorspace": "Raw",
+            "name_match": ["Specular", "spec", "specular", "specColor"]
+        },
+        "specRough": {
+            "attr": "specularRoughness",
+            "channel": "r",
+            "colorspace": "Raw",
+            "name_match": ["Roughness"]
+        },
+        "normal": {
+          "attr": "normalCamera",
+          "normal": "True",
+          "colorspace": "sRGB",
+          "name_match": [
+            "Normal"
+          ],
+          "shader_attrs": {
+            "bumpDepth": 0.1
+          }
+        },
+        "reflectance": {
+            "attr": "Ksn",
+            "channel": "r",
+            "colorspace": "Raw",
+            "name_match": ["Metalness"],
+            "shader_attrs":{
+                "specularDistribution": 1,
+                "specularFresnel": 1
+            }
+        }
+      }
+    },
+    "aiStandardSurface": {
+          "type": "shader",
+          "software": "mtoa 2.1.0.2",
+          "default_shader_attrs": {
+              "Ks": 0.1
+          },
+          "parameters": {
+              "diffuse": {
+                  "attr": "baseColor",
+                  "colorspace": "sRGB",
+                  "name_match": ["Diffuse", "diffuse", "BaseColor", "albedo"]
+              },
+              "specGain": {
+                  "attr": "specular",
+                  "channel": "r",
+                  "colorspace": "Raw",
+                  "name_match": ["SpecularColor", "specColor"]
+              },
+              "specColor": {
+                  "attr": "specularColor",
+                  "colorspace": "Raw",
+                  "name_match": ["Specular", "spec", "specular", "specColor"]
+              },
+              "specRough": {
+                  "attr": "specularRoughness",
+                  "channel": "r",
+                  "colorspace": "Raw",
+                  "name_match": ["Roughness"]
+              },
+              "normal": {
+                  "attr": "normalCamera",
+                  "normal": "True",
+                  "colorspace": "sRGB",
+                  "name_match": ["Normal"],
+                  "shader_attrs":{
+                      "bumpDepth": 0.1
+                  }
+              },
+              "metalness": {
+                  "attr": "metalness",
+                  "channel": "r",
+                  "colorspace": "Raw",
+                  "name_match": ["Metalness", "metalness"],
+                  "shader_attrs": {
+                  }
+              }
+          }
+      }
+  }
+}

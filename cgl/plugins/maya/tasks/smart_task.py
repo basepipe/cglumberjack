@@ -80,7 +80,7 @@ class SmartTask(object):
         """
         pass
 
-    def export_msd(self, task_name, selected=None):
+    def export_msd(self, task_name=None, selected=None):
         """
 
         """

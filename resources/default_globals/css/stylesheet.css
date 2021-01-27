@@ -1,0 +1,613 @@
+/*
+    background = white
+    borders =
+    line_edit =
+
+ */
+
+QLineEdit.medium_grey{ /*path bar */
+    background-color: #2E2E2E;
+    border: 0px;
+    color: #C3C7CB;
+    font-family: "DejaVuSans";
+    font-size: 8pt;
+    padding-left: 5px;
+    height: 28px;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    selection-background-color:#272829;
+
+}
+
+QPushButton.grey_border{ /*Top Icons*/
+    background-color: transparent;
+    border: 4px;
+    color: #383838;
+}
+
+QLineEdit.medium_grey_rounded{ /* searchbar */
+    background-color: #1e1e1e;
+    border: 0px;
+    border-radius: 8px;
+    padding: 4px;
+    color: #B0B0B0;
+    font-family: "ArcadeClassic";
+    font-size: 10pt;
+    text-transform: uppercase;
+    padding-left: 5px;
+    height: 28px;
+}
+
+QLineEdit.dark_grey{
+    background-color: #b0b0b0;
+    border: 0px;
+    color: #2d333d;
+}
+
+QFrame.tag_widget{
+    border: 1px solid #b0b0b0;
+    border-radius: 4px;
+    background-color: #3B3B3B;
+}
+
+QLineEdit.tag_entry{
+    background-color: transparent;
+    border: 0px;
+    font-size: 10pt;
+}
+
+QFrame.tag_red{
+    background-color: #E54A25;
+    margin: 5px;
+    padding: 0px 4px 0px 10px;
+    border: 0px;
+    border-radius: 10px;
+}
+
+QToolButton.tag{
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+    margin: 0px;
+    color: #2d333d;
+    font-family: "DejaVuSans";
+}
+
+QToolButton.tag:hover{
+    background-color: #2d333d;
+    padding: 0px;
+    margin: 0px;
+    color: #383838;
+    font-family: "DejaVuSans";
+    border: none;
+    border-radius: 7px;
+}
+
+
+QLabel.tag_text{
+    color: #2d333d;
+    margin: 0px;
+    padding: 0px;
+    font-family: "DejaVuSans";
+    font-size: 10pt;
+}
+
+
+QFrame.light_grey{  /* The Top menu frame  */
+    background-color: #424242;
+    border: 0px;
+}
+
+QFrame.medium_grey{
+    background-color: #3d3c3c;
+    border: 0px;
+}
+
+QFrame.dark_grey{
+    background-color: #b0b0b0;
+    border: 0px;
+}
+
+QPushButton.basic{ /*buttons Open Version Up  Review */
+    background-color:#595959;
+    border: none;
+    border-radius: 10px;
+    font-family: "DejaVuSans";
+    font-size: 10pt;
+    text-transform: uppercase;
+    color: #b0b0b0;
+    height: 34px;
+    width: 160px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+QPushButton.basic:disabled{
+    background-color: #2d333d;
+    border: 1px solid #595959;
+    font-family: "DejaVuSans";
+    font-size: 12pt;
+    color: #BFBFBF;
+    height: 24px;
+    width: 160px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+QToolButton.border{
+    background-color: #595959;
+    border: 2px solid #595959;
+    height: 24px;
+    width: 24px;
+    padding-left: 0px;
+    padding-right: 0px;
+}
+
+QToolButton.add_button{ /* add task */
+    background-color: #2E3133;
+    border: none;
+    font-family: "ArcadeClassic";
+    font-size: 12pt;
+    color: #b0b0b0;
+    height: 20px;
+    width: 170px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+
+
+
+QToolButton.add_button:disabled{ /*add button */
+    background-color: #424242;
+    font-family: "ArcadeClassic";
+    font-size: 14pt;
+    color: #424242;
+    height: 30px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border: none;
+}
+
+QToolButton.assign{
+    background-color: transparent;
+}
+
+QPushButton.empty_state{
+    background-color: #2d333d;
+    border: 3px dashed #b0b0b0;
+    font-family: "DejaVuSans";
+    font-size: 14pt;
+    color: #b0b0b0;
+}
+
+QPushButton.empty_state2{
+    background-color: #F5F5F5;
+    border: 3px solid #b0b0b0;
+    font-family: "DejaVuSans";
+    font-size: 14pt;
+    color: #b0b0b0;
+}
+
+QPushButton.ultra_button{/* Big tasks Buttons */
+    background-color: #2E3133;
+    border: none;
+    font-family: "Karmatic Arcade";
+    font-size: 18pt;
+    color: #888888;
+    height: 100px;
+    border-radius: 8px;
+    padding: 2px;
+}
+
+QLabel.title_text{
+    font-family: "ArcadeClassic";
+    font-size: 18pt;
+    color: #b0b0b0;
+}
+
+QLabel.ultra_title{
+    font-family: "Karmatic Arcade";
+    font-size: 16pt;
+    color: #b0b0b0;
+}
+
+QLabel.large{
+    font-family: "DejaVuSans";
+    font-size: 12pt;
+    color: #b0b0b0;
+}
+
+QLabel{ /* user version bar  */
+    font-family: "DejaVuSans-Bold";
+    font-size: 10pt;
+    border: none;
+    text-transform: uppercase;
+    color: #8C9B9B;
+}
+
+QLabel.warning{
+    font-family: "DejaVuSans";
+    font-size: 10pt;
+    color: #E24545;
+}
+
+QLabel.feedback{
+    background-color: #383838;
+    border: 1px solid #3d3c3c;
+    font-family: ArcadeClassic;
+    font-size: 18pt;
+    padding-left: 6px;
+    height: 80px;
+    color: #8e989c;
+}
+
+QLineEdit.feedback{
+    background-color: #383838;
+    border: 1px solid #3d3c3c;
+    font-family: "DejaVuSans";
+    font-size: 12pt;
+    padding-left: 6px;
+    height: 24px;
+    color: #E24545;
+}
+
+QLineEdit{
+    font-family: "DejaVuSans";
+}
+
+QLineEdit::placeholder{
+    color: red;
+}
+
+QListWidget{
+    font-family: "DejaVuSans";
+    font-size: 12pt;
+    color: #b0b0b0;
+    border: 2px solid #b0b0b0;
+
+}
+
+QTreeView{
+    font-family: "DejaVuSans";
+    background-color: 313233;
+    font-size: 12pt;
+    color: #666666;
+    border: 2px solid #b0b0b0;
+
+}
+
+QTreeView::item{
+    background-color: 313233;
+    height: 24px;
+    padding-left: 12px;
+}
+
+
+QTableView{ /* main item table files*/
+    font-family: "DejaVuSans-Bold";
+    font-size: 9pt;
+    color: #A3A3A3;
+    background-color: #1f1f1f;
+    border: none;
+    selection-background-color:#3C454E;
+    selection-color:grey ;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+
+
+    outline: 0;
+}
+
+QTableView::QHeaderView{
+    color: #A3A3A3;
+    background-color: #3B3B3B;
+
+}
+QTableView::horizontalHeader{
+   font-family: "DejaVuSans-Bold";
+}
+
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    border:red;
+    background-color:red;
+}
+
+QTableView::item:focus{
+    border: 0 px;
+    height: 24px;
+    padding-left: 12px;
+    background-color:#3C454E;
+    color: #b0b0b0;
+    outline: 0;
+}
+
+
+QCheckBox {
+   border: none;
+   color: #8E8C8D;
+   font-size: 10pt;
+   selected: red;
+
+}
+
+QCheckBox::indicator {
+    border: 3px solid #5A5A5A;
+    background: none;
+    color: white;
+    border-radius: 10px;
+
+
+}
+QCheckBox::indicator:checked{
+    background:#516A7E;
+    border: 3px solid white;
+}
+
+
+QCheckBox::checked {
+    color: white;
+    background: #3B3D40;
+}
+
+QComboBox{ /* user version resolution bar */
+
+    color: #B2B2B2;
+    selection-color: #ADB2BA;
+    background-color: #585858;
+    font-family: "DejaVuSans";
+
+    text-transform: uppercase;
+    border: none;
+    font-size: 8pt;
+
+    height: 25px;
+    width: 180px;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    padding: 4px 4px 4px 4px;
+    selection-background-color:#585858;
+    border: 0px;
+
+}
+
+
+
+QComboBox QAbstractItemView { /*items on list*/
+  border: 0;
+  font-family: "DejaVuSans-Bold";
+  color: #B0B0B0;
+  background: #3B3D40;
+  selection-background-color: #2E2E2E;
+  outline: 0;
+}
+
+QComboBox::drop-down
+{
+    background: transparent; /* This seems to replace the whole arrow of the combo box */
+}
+
+/* Define a new custom arrow icon for the combo box */
+QComboBox::down-arrow {
+    background-color: #3B3B3B;
+    image: url(resources/icons/arrow-right_12px.png);
+    width: 24px;
+    height: 30px;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+
+QHeaderView::section{/* source context */
+    background-color: #3B3D40;
+    height: 24px;
+    padding-left: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    font-family: "DejaVuSans";
+    text-transform: uppercase;
+    font-size: 8pt;
+    color: #b0b0b0;
+    border: none;
+}
+
+QHeaderView::section.output{ /* render context */
+    background-color: #3B3D40;
+    height: 24px;
+    padding-left: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    font-family: "DejaVuSans";
+    text-transform: uppercase;
+    font-size: 8pt;
+    color: #b0b0b0;
+    border: none;
+}
+
+QRadioButton{ /* radial buttons */
+    font-family: "DejaVuSans";
+    text-transform: uppercase;
+    font-size: 14pt;
+    padding : 5pt;
+    color:                  grey;
+}
+QRadioButton::indicator {
+    width:                  10px;
+    height:                 10px;
+    border-radius:          7px;
+}
+
+QRadioButton::indicator:checked {
+    background-color:       #516A7E;
+    border:                 2px solid #232528;
+}
+
+QRadioButton::indicator:unchecked {
+    background-color:       #3B3D40;
+    border:2px solid #232528;
+    border-radius:          7px;
+}
+
+QMenu{ /* upmost meny dropdown */
+    background-color: #2E3133;
+    color: white;
+    font-family: "DejaVuSans";
+    font-size: 15px;
+}
+
+QMenu::item:selected {
+    background-color: #505659;
+}
+QMenuBar{
+    background-color: #232323;
+    border: 0px;
+    font-family: "ArcadeClassic";
+    font-size: 30px;
+    padding: 5px;
+}
+
+QMenuBar::item{
+    background-color: #232323;
+    color: #969696;
+    color: #F5F5F5;
+    padding: 10px;
+}
+
+QMenuBar::item:QAbstractItemView{
+    background-color: #232323;
+    color: #969696;
+    color: #F5F5F5;
+    padding: 10px;
+}
+QMenuBar::item:selected{
+    background-color: #3d3c3c;
+    color: #506C8E;
+}
+
+
+QTabBar{
+    background-color: #2d333d;
+    color: #b0b0b0;
+    font-family: 'DejaVuSans';
+    font-size: 15px;
+
+
+}
+
+
+/* The Menu Tabs */
+QTabBar.add_button{
+    color: red;
+    font-family: 'DejaVuSans';
+    font-size: 15px;
+}
+
+QTabBar{/* Unselected Tabs On the Menu Bar*/
+    color: blue;
+
+    font-family: 'DejaVuSans';
+    font-size: 15px;
+
+}
+
+QTabBar::tab::selected{/* Selected Tabs On the Menu Bar*/
+    background-color: red;
+    font-family: 'DejaVuSans';
+    font-size: 15px;
+    color: red;
+}
+
+QTabBar::tab::unselected{/* Selected Tabs On the Menu Bar*/
+    background-color: #575656;
+    font-family: 'DejaVuSans';
+    font-size: 15px;
+    color: #F5F5F5;
+}
+
+QPlainTextEdit{
+    background-color: #383838;
+}
+
+QDialog{/* The Main popup Dialog */
+    background-color: #424242;
+}
+
+QPushButton.add_button{/* assign button */
+    background-color: #585858;
+    font-family: "ArcadeClassic";
+    font-size: 14pt;
+    color: #b0b0b0;
+    height: 30px;
+    padding-left: 15px;
+    padding-right: 15px;
+    border: none;
+}
+
+QPushButton.status_button{
+    background-color: #D8D8D8;
+    border-radius: 4px;
+    font-family: "ArcadeClassic";
+    font-weight: bold;
+    font-size: 8pt;
+    color: #2d333d;
+    height: 14px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 2px;
+}
+
+QPushButton.delete_button{
+    background-color: #E54A25;
+    border: 3px solid #b0b0b0;
+    font-family: "ArcadeClassic";
+    font-size: 14pt;
+    color: #b0b0b0;
+    height: 18px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+QMainWindow{ /* main Lumbermill window */
+    background-color: #424242;
+    border-radius: 150px;
+    border: 10px #ff2025;
+
+}
+
+
+QTextEdit.screen_play{
+    background-color: #2d333d;
+    font-family: "DejaVuSans";
+    font-size: 12px;
+    border: 0px;
+}
+
+QLineEdit.screen_play_title{
+    border: 0px;
+    background-color: #2d333d;
+    font-family: "DejaVuSans";
+    font-size: 18pt;
+    text-align: center;
+}
+
+QLineEdit.screen_play_edit{
+    border: 0px;
+    background-color: #2d333d;
+    font-family: "DejaVuSans";
+    font-size: 12pt;
+}
+
+QLabel.screen_play_edit{
+    font-family: "DejaVuSans";
+    font-size: 12pt;
+    background-color: #3B3B3B;
+}

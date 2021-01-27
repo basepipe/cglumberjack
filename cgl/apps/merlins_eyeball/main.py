@@ -5,7 +5,7 @@ from cgl.ui.widgets.widgets import AdvComboBox
 from cgl.core.config.config import user_config
 from datetime import datetime, date
 from cgl.core.path import start
-from cgl.core.utils.general import load_json
+from cgl.core.utils.general import load_json, current_user
 import copy
 import glob
 import os
@@ -28,12 +28,10 @@ LABEL_MAP = {'shots': SHOTS_LABEL_MAP,
 STATUS_COLORS = {'Not Started': '#BFBFBF',
                  'In Progress': '#F3D886',
                  'Published': '#52B434'}
-
 FILE_TYPES = {'maya': {'defaults': ['.mb', '.ma']},
               'houdini': {'defaults': ['']},
               'nuke': {'defaults': ['.nk']}}
-
-PROJECT_MSD = load_json(r'Z:\Projects\VFX\render\02BTH_2021_Kish\test_project_msd.msd')
+ROOT = user_config()['paths']['root'].replace('\\', '/')
 
 
 class ScopeList(QtWidgets.QWidget):
@@ -75,7 +73,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
     published_file = None
     latest_user_file = None
     latest_user_render_folder = None
-    user = 'tmikota'
+    user = current_user()
     thumb_path = None
     preview_path = None
 
@@ -110,6 +108,11 @@ class MagicButtonWidget(QtWidgets.QWidget):
         # self.context_menu.addSeparator()
         self.button.clicked.connect(self.button_clicked)
 
+    def update_publish_msd(self):
+        from cgl.plugins.maya.alchemy import cl_update_msd
+        po = PathObject(self.published_file)
+        cl_update_msd(self.published_file)
+
     def process_path_dict(self):
         self.get_published_path()
         self.get_newest_version()
@@ -120,6 +123,9 @@ class MagicButtonWidget(QtWidgets.QWidget):
         self.latest_user_render_text = '{}'.format(self.latest_user_render_folder)
 
         button_dict = {'Open in Magic Browser': self.open_in_magic_browser,
+                       'separator4': None,
+                       'Update Publish MSD': self.update_publish_msd,
+                       'Update Preview': None,
                        'separator': None,
                        self.create_user_version_text: None,
                        'separator2': None,
@@ -191,14 +197,14 @@ class MagicButtonWidget(QtWidgets.QWidget):
         self.button.setStyleSheet(button_css)
 
     def create_default_file(self):
-        print('Creating tmikota version for task {}'.format(self.task))
+        print('Creating {} version for task {}'.format(self.user, self.task))
         current = self.path_object.copy(task=self.task, user=self.user, version='000.000', resolution='high',
-                                        context='source')
+                                        context='source', variant='default')
         next_minor = current.new_minor_version_object()
         next_minor.set_attr(filename='')
         next_minor.set_attr(ext='')
         CreateProductionData(next_minor, create_default_file=True)
-
+        self.set_latest_user_file(next_minor.path_root)
         with_filepath = PathObject(next_minor.path_root).copy(set_proper_filename=True, ext='*')
         file_name = glob.glob(with_filepath.path_root)[0]
         if file_name:
@@ -209,6 +215,14 @@ class MagicButtonWidget(QtWidgets.QWidget):
 
     def create_and_build_file(self):
         print('Creating a {} file and autobuilding'.format(self.task))
+
+    def set_latest_user_file(self, user_file):
+        self.latest_user_file = user_file
+        self.set_button_look()
+
+    def set_publish_file(self, filepath):
+        self.published_file = filepath
+        self.set_button_look()
 
     def open_latest_user_file(self):
         if self.latest_user_file:
@@ -226,7 +240,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
         print('Publishing {}'.format(self.latest_user_render_folder))
         render_object = PathObject(self.latest_user_render_folder).publish()
         self.latest_user_render_folder = render_object.path_root
-        self.published_file = render_object.copy(context='source').path_root
+        self.set_publish_file(render_object.copy(context='source').path_root)
         self.status = 'Published'
         self.set_button_look()
 
@@ -245,32 +259,45 @@ class MagicButtonWidget(QtWidgets.QWidget):
 
     def get_published_path(self):
         if self.task_dict:
-            self.published_folder = self.task_dict['publish']['source']['folder']
+            self.published_folder = self.add_root(self.task_dict['publish']['source']['folder'])
             # raw_time = self.task_dict['publish']['source']['date']
             if self.published_folder:
                 raw_time = os.path.getctime(self.published_folder)
                 self.publish_date = datetime.fromtimestamp(raw_time).strftime(self.date_format)
-                self.published_file = self.task_dict['publish']['source']['source_file']
-                self.preview_path = self.task_dict['publish']['source']['preview_file']
-                self.thumb_path = self.task_dict['publish']['source']['thumb_file']
+                self.set_publish_file(self.add_root(self.task_dict['publish']['source']['source_file']))
+                self.preview_path = self.add_root(self.task_dict['publish']['source']['preview_file'])
+                self.thumb_path = self.add_root(self.task_dict['publish']['source']['thumb_file'])
                 self.status = 'Published'
                 self.set_button_look()
+                
+    def add_root(self, filepath):
+        if filepath:
+            new_path = '{}/{}'.format(ROOT, filepath)
+            return new_path
+        else:
+            return ""
 
     def get_newest_version(self):
         if self.task_dict:
             if not self.published_folder:
                 self.status = 'In Progress'
-            self.newest_version_folder = self.task_dict['latest_user']['source']['folder']
+            self.newest_version_folder = self.add_root(self.task_dict['latest_user']['source']['folder'])
             self.newest_version_files = self.task_dict['latest_user']['source']['source_files']
-            self.newest_version_file = self.task_dict['latest_user']['source']['source_file']
-            self.latest_user_render_folder = self.newest_version_folder.replace('/source/', '/render/')
-            self.preview_path = self.task_dict['latest_user']['source']['preview_file']
-            self.thumb_path = self.task_dict['latest_user']['source']['thumb_file']
+            self.newest_version_file = self.add_root(self.task_dict['latest_user']['source']['source_file'])
+            self.latest_user_render_folder = self.add_root(self.newest_version_folder.replace('/source/', '/render/'))
+            self.preview_path = self.add_root(self.task_dict['latest_user']['source']['preview_file'])
+            self.thumb_path = self.add_root(self.task_dict['latest_user']['source']['thumb_file'])
             #raw_time = self.task_dict['latest_user']['source']['date']
             if self.newest_version_folder:
                 raw_time = os.path.getctime(self.newest_version_folder)
                 self.latest_date = datetime.fromtimestamp(raw_time).strftime(self.date_format)
                 self.set_time_stuff()
+                self.set_button_look()
+            elif self.newest_version_file:
+                raw_time = os.path.getctime(self.newest_version_file)
+                self.latest_date = datetime.fromtimestamp(raw_time).strftime(self.date_format)
+                self.set_time_stuff()
+                self.status = 'In Progress'
                 self.set_button_look()
 
     def get_newest_version2(self):
@@ -298,14 +325,14 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 self.newest_version_file = os.path.join(self.newest_version_folder,
                                                         self.newest_version_files[0]).replace('\\', '/')
                 if 'publish' in self.newest_version_file:
-                    self.published_file = self.newest_version_file
+                    self.set_publish_file(self.newest_version_file)
                     glob_text = self.newest_version_file.replace('publish', '*')
                     files = glob.glob(glob_text)
                     for each in files:
                         if 'publish' not in each:
-                            self.latest_user_file = each.replace('\\', '/')
+                            self.set_latest_user_file(each.replace('\\', '/'))
                 else:
-                    self.latest_user_file = self.newest_version_file
+                    self.set_latest_user_file(self.newest_version_file)
                     path_object = PathObject(self.latest_user_file)
 
                     self.latest_user_render_folder = os.path.dirname(self.latest_user_file).replace('/source/',
@@ -368,7 +395,7 @@ class SkyView(LJDialog):
     base_path_object = None
     current_scope = 'shots'
 
-    def __init__(self, parent=None, company=None, project=None):
+    def __init__(self, parent=None, company=None, project=None, branch=None):
         """
         Frame Range Dialog.
         :param parent:
@@ -391,15 +418,22 @@ class SkyView(LJDialog):
         self.project = project
         if not self.project:
             return
+        self.branch = branch
+        if not self.branch:
+            return
         self.project_row = QtWidgets.QHBoxLayout()
         self.company_label = QtWidgets.QLabel("Company")
         self.project_label = QtWidgets.QLabel("Project")
+        self.branch_label = QtWidgets.QLabel("Branch")
         self.company_combo = AdvComboBox()
         self.project_combo = AdvComboBox()
+        self.branch_combo = AdvComboBox()
         self.project_row.addWidget(self.company_label)
         self.project_row.addWidget(self.company_combo)
         self.project_row.addWidget(self.project_label)
         self.project_row.addWidget(self.project_combo)
+        self.project_row.addWidget(self.branch_label)
+        self.project_row.addWidget(self.branch_combo)
         self.scope_list = ScopeList()
         self.scroll_area = QtWidgets.QScrollArea(self)
         self.scroll_area.setWidgetResizable(True)
@@ -417,6 +451,7 @@ class SkyView(LJDialog):
         self.scope_list.shots.clicked.connect(self.scope_changed)
         self.company_combo.currentIndexChanged.connect(self.on_company_selected)
         self.project_combo.currentIndexChanged.connect(self.on_project_selected)
+        self.branch_combo.currentIndexChanged.connect(self.on_branch_selected)
 
     def scope_changed(self):
         if self.scope_list.assets.isChecked():
@@ -433,22 +468,30 @@ class SkyView(LJDialog):
         self.dict = {'project': self.project,
                      'company': self.company,
                      'context': 'render',
+                     'branch': self.branch,
                      'scope': self.current_scope,
                      'seq': '*',
                      'shot': '*'}
         self.base_path_object = PathObject(self.dict)
+        self.project_msd = load_json(self.base_path_object.project_msd_path)
         self.get_shots()
 
     def get_shots(self):
-        files = glob.glob(self.base_path_object.path_root)
+        print(self.base_path_object.path_root)
+        if 'assets' in self.base_path_object.path_root:
+            files = self.project_msd['asset_list']
+        elif 'shots' in self.base_path_object.path_root:
+            # files = glob.glob(self.base_path_object.path_root)
+            files = self.project_msd['shot_list']
         for i, f in enumerate(files):
+            f = '{}/{}'.format(ROOT, f)
             ii = i+1
             if not f.endswith('.json'):
                 temp_obj = PathObject(f)
                 shot_name = '{}_{}'.format(temp_obj.seq, temp_obj.shot)
                 label = QtWidgets.QLabel(shot_name)
                 label.filepath = f
-                label.dict = PROJECT_MSD[self.current_scope][temp_obj.seq][temp_obj.shot]
+                label.dict = self.project_msd[self.current_scope][temp_obj.seq][temp_obj.shot]
                 self.grid_layout.addWidget(label, ii, 0)
                 self.add_row_buttons(ii, label)
 
@@ -481,15 +524,20 @@ class SkyView(LJDialog):
             self.on_company_selected()
         else:
             self.company_combo.setCurrentIndex(0)
-        # if 'default_project' in self.user_config.keys():
-        #     self.project = self.user_config['default_project']
         p_index = self.project_combo.findText(self.project)
         if p_index != -1:
             self.project_combo.setCurrentIndex(p_index)
         else:
             self.project_combo.setCurrentIndex(0)
+        self.get_branches()
+        b_index = self.branch_combo.findText(self.branch)
+        if b_index != -1:
+            self.branch_combo.setCurrentIndex(b_index)
+        else:
+            self.branch_combo.setCurrentIndex(0)
         self.dict = {'project': self.project,
                      'company': self.company,
+                     'branch': self.branch,
                      'context': 'render',
                      'scope': self.current_scope,
                      'seq': '*',
@@ -505,7 +553,24 @@ class SkyView(LJDialog):
         self.project_combo.addItems(projects)
 
     def on_project_selected(self):
+        print(99999)
         self.project = self.project_combo.currentText()
+        self.get_branches()
+        self.refresh()
+
+    def get_branches(self):
+        glob_string = '{}\{}\source\{}\*'.format(user_config()['paths']['root'], self.company, self.project)
+        bs = glob.glob(glob_string)
+        branches = []
+        for b in bs:
+            branches.append(os.path.basename(b))
+        branches.insert(0, '')
+        self.branch_combo.clear()
+        self.branch_combo.addItems(branches)
+        return branches
+
+    def on_branch_selected(self):
+        self.branch = self.branch_combo.currentText()
         self.refresh()
 
     def wipe_grid(self):
@@ -527,7 +592,7 @@ class SkyView(LJDialog):
 if __name__ == "__main__":
     from cgl.ui.startup import do_gui_init
     app = do_gui_init()
-    mw = SkyView(company='VFX', project='02BTH_2021_Kish')
+    mw = SkyView(company='cmpa-animation', project='02BTH_2021_Kish', branch='master')
     mw.show()
     mw.raise_()
     app.exec_()

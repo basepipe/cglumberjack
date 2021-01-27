@@ -8,7 +8,7 @@ from cgl.plugins.maya.alchemy import get_scene_name, scene_object
 from cgl.plugins.maya.utils import load_plugin, select_reference
 try:
     import pymel.core as pm
-except ModuleNotFoundError:
+except:
     print('Skipping Pymel, outside of maya')
 
 

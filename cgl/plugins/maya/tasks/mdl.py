@@ -42,9 +42,9 @@ class Task(smart_task.SmartTask):
                 meshes.append(clean_name)
         dict_['attrs'] = {'mtl_groups': meshes}
         dict_['source_file'] = so.path
+        dict_['name'] = so.shot
         # find all the model exports:
         render_object = so.copy(context='render', set_proper_filename=True, ext='*')
-        print(render_object.path_root)
         files = glob.glob(render_object.path_root)
         if files:
             for f in files:
@@ -306,6 +306,7 @@ def get_msd_info(mesh):
     translate, rotate, scale = get_transform_arrays(mesh)
     mdl_dict = {}
     mdl_dict['msd_path'] = path_object.relative_msd_path
+    mdl_dict['name'] = '{}_{}'.format(path_object.seq, path_object.shot)
     mdl_dict['transform'] = {'matrix': matrix,
                              'scale': scale,
                              'rotate': rotate,

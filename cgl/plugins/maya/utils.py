@@ -11,7 +11,7 @@ try:
     import maya.mel as mel
     import mtoa.core as aicore
     import maya.cmds as cmds
-except ModuleNotFoundError:
+except:
     print('Skipping pymel.core - outside of maya')
 
 

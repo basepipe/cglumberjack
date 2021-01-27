@@ -100,6 +100,7 @@ class CreateBranchDialog(LJDialog):
             if os.path.exists(task.source_path) and render_path:
                 # print('Copying {} to {}'.format(task.source_path, source_path))
                 cgl_copy(task.source_path, source_path, verbose=True)
+        print('Branch Creation Complete')
 
     def on_migrate_branch_clicked(self):
         for task in self.shots.selected_tasks:
@@ -117,6 +118,8 @@ class CreateBranchDialog(LJDialog):
 
     def new_branch_path(self, task):
         new_branch = self.branch_line_edit.text()
+        render_path = None
+        source_path = None
         if new_branch:
             if os.path.exists(task.render_path):
                 render_path = PathObject(task.render_path).copy(branch=new_branch).path_root
@@ -131,6 +134,8 @@ class CreateBranchDialog(LJDialog):
             return render_path, source_path
 
     def migrate_path(self, task, new_branch='master'):
+        render_path = None
+        source_path = None
         new_company = self.migrate_line_edit.text()
         if new_company:
             project_branch = '/{}/{}/'.format(self.path_object.project, new_branch)

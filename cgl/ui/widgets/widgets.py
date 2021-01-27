@@ -658,12 +658,14 @@ class ProjectWidget(QtWidgets.QWidget):
 
     def calculate_project_size(self):
         from cgl.core.cgl_info import create_full_project_cgl_info
+        from cgl.core.config.config import user_config
         mdl_index = self.data_table.model().mapToSource(self.data_table.selectionModel().selectedRows()[0])
         mdl = self.data_table.model().sourceModel()
         row = mdl_index.row()
         project = mdl.data_[row][0]
         company = self.path_object.company
-        create_full_project_cgl_info(company=company, project=project)
+        branch = user_config()['default_branch'][company][project]
+        create_full_project_cgl_info(company=company, project=project, branch=branch)
 
     def share_project(self):
         from cgl.core.path import PathObject

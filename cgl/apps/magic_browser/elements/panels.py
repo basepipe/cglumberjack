@@ -7,9 +7,9 @@ from cgl.ui.widgets.dialog import InputDialog
 from cgl.ui.widgets.containers.model import ListItemModel
 from cgl.core.path import PathObject, CreateProductionData
 from cgl.ui.widgets.widgets import ProjectWidget, AssetWidget, CreateProjectDialog
-from cgl.core.utils.general import current_user, clean_file_list
+from cgl.core.utils.general import current_user, clean_file_list, save_json
 from cgl.ui.widgets.progress_gif import process_method
-from cgl.core.config.config import ProjectConfig, get_root, copy_config, paths
+from cgl.core.config.config import ProjectConfig, get_root, copy_config, paths, user_config, get_user_config_file
 
 
 class CompanyPanel(QtWidgets.QWidget):
@@ -113,13 +113,14 @@ class ProjectPanel(QtWidgets.QWidget):
     """
     location_changed = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None, search_box=None, title='Projects', cfg=None):
+    def __init__(self, parent=None, path_object=None, search_box=None, title='Projects', branch_widget=None, cfg=None):
         QtWidgets.QWidget.__init__(self, parent)
         if cfg:
             self.cfg = cfg
         else:
             self.cfg = ProjectConfig(path_object)
         self.path_object = path_object
+        self.branch_widget = branch_widget
         self.project_management = self.cfg.project_config['account_info']['project_management']
         self.user_email = self.cfg.project_config['project_management'][self.project_management]['users'][current_user()]
         self.root = paths()['root']  # Company Specific
@@ -145,11 +146,18 @@ class ProjectPanel(QtWidgets.QWidget):
         self.project_filter.add_button.clicked.connect(self.on_create_project)
 
     def on_project_changed(self, data):
+
         data = self.project_filter.data_table.items_
         logging.debug(data)
         if self.title == 'Projects':
             self.path_object.set_attr(project=data[0][0])
             self.path_object.set_attr(scope='*')
+            this_branch = self.path_object.cfg.user_config['default_branch'][self.path_object.company][data[0][0]]
+            self.path_object.set_attr(branch=this_branch)
+            self.branch_widget.reload(path_object=self.path_object, branch=this_branch)
+            branches = self.path_object.get_branches()
+            print(branches, 'branches')
+            # TODO - update the branch widget here somehow.
             self.update_location(self.path_object)
         elif self.title == 'Companies':
             self.path_object.set_attr(company=data[0][0], context='source', project='*')
@@ -184,7 +192,7 @@ class ProjectPanel(QtWidgets.QWidget):
         self.project_filter.setup(ListItemModel(prep_list_for_table(projects,
                                                                     split_for_file=True,
                                                                     size_path=self.path_object.path_root,
-                                                                    cfg=self.cfg), ['Name', 'Size']))
+                                                                    cfg=self.cfg, parent=self), ['Name', 'Size']))
 
         self.update_location(self.path_object)
 
@@ -195,7 +203,8 @@ class ProjectPanel(QtWidgets.QWidget):
         clean_companies = []
         for c in companies:
             if '_config' not in c:
-                clean_companies.append(c)
+                if not c.endswith('\\master'):
+                    clean_companies.append(c)
         if not clean_companies:
             logging.debug('no companies')
             self.project_filter.data_table.setEnabled(False)
@@ -570,7 +579,7 @@ class ProductionPanel(QtWidgets.QWidget):
         clear_layout(self, layout=layout)
 
 
-def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path=False, cfg=None):
+def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path=False, cfg=None, parent=None):
     from cgl.core.cgl_info import get_cgl_info_size
     list_.sort()
     output_ = []
@@ -580,9 +589,34 @@ def prep_list_for_table(list_, path_filter=None, split_for_file=False, size_path
     for each in list_:
         if size_path:
             temp_obj = PathObject(size_path, cfg).copy(project=each)
-            total_size = get_cgl_info_size(temp_obj.path_root, source=True, render=True)
-            source_size = get_cgl_info_size(temp_obj.path_root, source=True, render=False)
-            render_size = get_cgl_info_size(temp_obj.path_root, source=False, render=True)
+            folder = temp_obj.path_root
+            if 'branch' in cfg.project_config['templates']['assets']['render']['path']:
+                try:
+                    this = cfg.user_config['default_branch'][temp_obj.company][each]
+                    if os.path.exists(os.path.join(temp_obj.path_root, this)):
+                        branch = this
+                    else:
+                        branch = os.listdir(temp_obj.path_root)[0]
+                        dict_ = user_config()
+                        dict_['default_branch'][temp_obj.company][each] = branch
+                        save_json(get_user_config_file(), dict_)
+                except KeyError:
+                    branch = 'master'
+                    dict_ = user_config()
+                    if 'default_branch' not in dict_.keys():
+                        dict_['default_branch'] = {temp_obj.company: {each: branch}}
+                    elif temp_obj.company not in dict_['default_branch'].keys():
+                        dict_['default_branch'][temp_obj.company] = {each: 'master'}
+                    elif each not in dict_['default_branch'][temp_obj.company].keys():
+                        dict_['default_branch'][temp_obj.company][each] = branch
+                    save_json(get_user_config_file(), dict_)
+
+                if branch:
+                    folder = '{}/{}'.format(folder, branch)
+                print(999, folder)
+            total_size = get_cgl_info_size(folder, source=True, render=True)
+            source_size = get_cgl_info_size(folder, source=True, render=False)
+            render_size = get_cgl_info_size(folder, source=False, render=True)
             if not total_size:
                 total_size = 'Not Calculated'
             else:

@@ -10,7 +10,7 @@ from cgl.ui.widgets.dialog import LoginDialog, InputDialog
 from cgl.ui.widgets.widgets import AdvComboBox
 import cgl.core.path as cglpath
 from cgl.core.config.config import ProjectConfig, check_for_latest_master, update_master, paths,\
-    get_user_config_file, get_root
+    get_user_config_file, get_root, user_config
 from cgl.core.utils.general import current_user, launch_lumber_watch, save_json
 from cgl.core.config.config import ProjectConfig, paths
 from cgl.apps.magic_browser.elements.panels import ProjectPanel, ProductionPanel, ScopePanel, TaskPanel
@@ -104,7 +104,7 @@ class NavigationWidget(QtWidgets.QFrame):
     ingest_button_clicked = QtCore.Signal()
     refresh_button_clicked = QtCore.Signal(object)
 
-    def __init__(self, parent=None, path_object=None, cfg=None):
+    def __init__(self, parent=None, path_object=None, cfg=None, label_widget=None):
         QtWidgets.QFrame.__init__(self, parent)
         if path_object:
             self.path_object = path_object
@@ -115,6 +115,8 @@ class NavigationWidget(QtWidgets.QFrame):
             self.cfg = ProjectConfig(self.path_object)
         else:
             self.cfg = cfg
+        self.label_widget = label_widget
+
         self.setProperty('class', 'light_grey')
         self.my_tasks_button = QtWidgets.QPushButton()
         self.my_tasks_button.setToolTip('My Tasks')
@@ -259,11 +261,13 @@ class NavigationWidget(QtWidgets.QFrame):
         self.projects_button.hide()
 
     def update_buttons(self, path_object=None):
+
         if not path_object:
             if self.path_object:
                 path_object = self.path_object
             else:
                 return
+
         if not path_object.company:
             self.show_none()
         elif path_object.company == '*':
@@ -280,6 +284,15 @@ class NavigationWidget(QtWidgets.QFrame):
             self.show_production()
         else:
             self.show_production()
+        if not path_object.branch:
+            self.label_widget.hide_branch()
+            print('\t project: {}'.format(path_object.project))
+            if path_object.project != '*' and path_object.project:
+                self.label_widget.show_branch()
+
+        else:
+            print('this')
+            self.label_widget.show_branch()
 
     def buttons_pressed(self):
         path = None
@@ -309,7 +322,6 @@ class NavigationWidget(QtWidgets.QFrame):
         path_object.set_attr(context='source')
         # if i'm a task, show me all the assets or shots
         last = path_object.get_last_attr()
-
         if last == 'filename':
             last = 'task'
         if last == 'resolution':
@@ -353,6 +365,7 @@ class NavigationWidget(QtWidgets.QFrame):
             logging.debug('Nothing built for %s' % last)
             return
         self.path_object = cglpath.PathObject(new_path)
+
         self.update_buttons()
         self.location_changed.emit(self.path_object)
 
@@ -384,23 +397,42 @@ class LocationWidget(QtWidgets.QWidget):
         self.label_row.addWidget(self.branch_label)
         self.label_row.addWidget(self.branch_combo)
         self.path_changed(self.path_object)
-
         self.branch_combo.currentIndexChanged.connect(self.branch_changed)
+        self.new_live = True
+
+    def reload(self, path_object, branch):
+        self.new_live = False
+        self.path_object = path_object
+        self.branch_combo.clear()
+        branches = path_object.get_branches()
+        self.branch_combo.addItem('New Branch')
+        self.branch_combo.insertSeparator(1)
+        self.branch_combo.addItems(branches)
+        print('88888', branch)
+        index = self.branch_combo.findText(branch)
+        if index != -1:
+            self.branch_combo.setCurrentIndex(index)
+
+    def hide_branch(self):
+        self.branch_combo.hide()
+        self.branch_label.hide()
+
+    def show_branch(self):
+        self.branch_combo.show()
+        self.branch_label.show()
 
     def branch_changed(self):
-        print(self.path_object.company)
+        cfg = ProjectConfig(self.path_object)
         if self.branch_combo.currentText() == 'New Branch':
-            self.create_project_branch()
+            if self.new_live:
+                new_branch = self.create_project_branch()
         else:
-            self.path_object.set_attr(branch=self.branch_combo.currentText())
-            user_globals_dict = ProjectConfig(self.path_object).user_config()
-            if 'default_branch' in user_globals_dict.keys():
-                user_globals_dict['default_branch'][self.path_object.company][self.path_object.project] = self.branch_combo.currentText()
-            else:
-                user_globals_dict['default_branch'] = {self.path_object.company: {self.path_object.project: self.branch_combo.currentText()}}
-            print(user_globals_dict)
-            # send us back to the scope page.
-            print('Changing {} to branch: {}'.format(self.path_object.project, self.branch_combo.currentText()))
+            new_branch = self.branch_combo.currentText()
+            self.path_object.set_attr(branch=new_branch)
+            # TODO - refresh the widget
+        if self.new_live:
+            cfg.edit_user_config(['default_branch', self.path_object.company, self.path_object.project],
+                                 new_branch)
 
     def create_project_branch(self):
         """
@@ -408,12 +440,16 @@ class LocationWidget(QtWidgets.QWidget):
         :return:
         """
         from cgl.apps.magic_browser.project_branch import CreateBranchDialog
-        print('Creating a new branch for {}'.format(self.current_selection()))
+        print('Creating a new branch for {}'.format(self.branch_combo.currentText()))
         dialog = CreateBranchDialog(self.path_object)
         dialog.exec_()
+        return dialog.branch_line_edit.text()
 
     def path_changed(self, path_object):
+        print('path_changed', path_object.path_root)
         if path_object.project:
+            if path_object.branch:
+                print('branch', path_object.branch)
             if path_object.shot:
                 if path_object.variant == 'default' or path_object.variant == '*' or not path_object.variant:
                     shot = path_object.shot
@@ -468,8 +504,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.setContentsMargins(0, 0, 0, 0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         if path:
-            print('path')
-            print(path)
             try:
                 self.path_object = cglpath.PathObject(path, cfg=self.cfg)
                 if self.path_object.context == 'render':
@@ -489,6 +523,10 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 if default_project:
                     proj = default_project
                     scp = '*'
+                    try:
+                        default_branch = user_config()['default_branch'][self.company][proj]
+                    except KeyError:
+                        default_branch = 'master'
                 else:
                     proj = '*'
                     scp = None
@@ -496,7 +534,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                       "root": self.root,
                       "context": 'source',
                       "project": proj,
-                      "scope": scp
+                      "scope": scp,
+                      "branch": default_branch
                       }
 
                 self.path_object = cglpath.PathObject(d_, self.cfg)
@@ -520,8 +559,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
         self.task = ''
         self.resolution = ''
         self.in_file_tree = None
-        self.nav_widget = NavigationWidget(path_object=self.path_object, cfg=self.cfg)
         self.label_widget = LocationWidget(path_object=self.path_object)
+        self.nav_widget = NavigationWidget(path_object=self.path_object, cfg=self.cfg, label_widget=self.label_widget)
         self.path_widget = PathWidget(path_object=self.path_object, cfg=self.cfg)
         self.progress_bar = ProgressGif(cfg=self.cfg)
         self.progress_bar.hide()
@@ -553,7 +592,6 @@ class CGLumberjackWidget(QtWidgets.QWidget):
     def update_title(self):
         project = ""
         shot = ""
-        print(self.path_object.path_root)
         if self.path_object.asset:
             if self.path_object.asset != '*':
                 shot = self.path_object.asset
@@ -638,7 +676,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
             self.load_files_panel(path_object)
         if last == 'project':
             if path_object.project == '*':
-                self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box, cfg=self.cfg)
+                self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box,
+                                          branch_widget=self.label_widget, cfg=self.cfg)
             else:
                 self.panel = ProductionPanel(parent=self, path_object=path_object,
                                              search_box=self.nav_widget.search_box, cfg=self.cfg)
@@ -677,6 +716,8 @@ class CGLumberjackWidget(QtWidgets.QWidget):
                 self.panel.add_button.connect(self.add_task)
             else:
                 self.load_files_panel(path_object)
+        elif last == 'branch':
+            print('last is project')
         elif last == 'company':
             self.panel = ProjectPanel(path_object=path_object, search_box=self.nav_widget.search_box, title='Companies',
                                       cfg=self.cfg)
@@ -863,6 +904,7 @@ class CGLumberjack(LJMainWindow):
         open_globals = QtWidgets.QAction('Go to Project Globals', self)
         open_user_globals = QtWidgets.QAction('Go to User Globals', self)
         open_default_files = QtWidgets.QAction("Go to Default Files", self)
+        upload_globals_to_cloud = QtWidgets.QAction("Update Studio Globals", self)
         create_project = QtWidgets.QAction('Import .csv', self)
         settings.setShortcut('Ctrl+,')
         alchemy_cookbook = QtWidgets.QAction("Alchemist's Cookbook", self)
@@ -890,6 +932,7 @@ class CGLumberjack(LJMainWindow):
         tools_menu.addAction(open_globals)
         tools_menu.addAction(open_user_globals)
         tools_menu.addAction(open_default_files)
+        tools_menu.addAction(upload_globals_to_cloud)
         tools_menu.addSeparator()
         tools_menu.addMenu(self.current_processing_method)
         tools_menu.addSeparator()
@@ -940,6 +983,7 @@ class CGLumberjack(LJMainWindow):
         open_globals.triggered.connect(self.open_company_globals)
         open_user_globals.triggered.connect(self.open_user_globals)
         open_default_files.triggered.connect(self.open_default_files)
+        upload_globals_to_cloud.triggered.connect(self.upload_globals)
         create_project.triggered.connect(self.open_create_project_dialog)
         settings.triggered.connect(self.on_settings_clicked)
         alchemy_cookbook.triggered.connect(self.on_alchemists_cookbook_clicked)
@@ -961,14 +1005,14 @@ class CGLumberjack(LJMainWindow):
                 if self.cfg.user_config['sync']['syncthing']['sync_thing_url']:
 
                     # TODO - check for user config settings to use syncthing.
-                    if "sync_thing_auto_launch" in self.cfg.project_config.keys():
+                    if "sync_thing_auto_launch" in USERself.cfg.project_config.keys():
                         try:
 
                             if self.cfg.user_config["sync_thing_auto_launch"] == 'True':
                                 sync = False
                                 st_utils.kill_syncthing()
                                 if st_utils.syncthing_running():
-                                    # self.change_sync_icon(syncing=True)
+                                    self.change_sync_icon(syncing=True)
                                     sync = True
                                 else:
                                     self.change_sync_icon(syncing=False)
@@ -1087,7 +1131,7 @@ class CGLumberjack(LJMainWindow):
         reads syncthing_auto_launch setting from globals and sets text accordingly.
         :return:
         """
-        if "sync_thing_auto_launch" in self.cfg.user_config:
+        if "sync_thing_auto_launch" in self.cfg.user_config.keys():
             if self.cfg.user_config["sync_thing_auto_launch"] == 'True':
                 self.auto_launch_setting.setText('Auto-Launch: On')
             else:
@@ -1101,11 +1145,11 @@ class CGLumberjack(LJMainWindow):
         if "sync_thing_auto_launch" in self.cfg.user_config.keys():
             if self.cfg.user_config["sync_thing_auto_launch"] == 'True':
                 self.cfg.user_config["sync_thing_auto_launch"] = 'False'
-                save_json(self.cfg.user_config_file, self.cfg.user_config)
+                save_json(user_config(), self.cfg.user_config)
                 logging.debug('Setting Auto Launch of LumberSync Off - Restart to see effects')
             else:
                 self.cfg.user_config["sync_thing_auto_launch"] = 'True'
-                self.cfg.save_user_config()
+                save_json(self.cfg.user_config_file, self.cfg.user_config)
                 logging.debug('Setting Auto Launch of LumberSync On - Restart to see effects')
         self.set_auto_launch_text()
 
@@ -1290,6 +1334,13 @@ class CGLumberjack(LJMainWindow):
         logging.debug(self.cfg.globals_root)
         cglpath.start(self.cfg.globals_root)
 
+    def upload_globals(self):
+        from cgl.ui.widgets.dialog import UploadGlobals
+        dialog = UploadGlobals(cfg=self.cfg, company=self.cfg.company, project=self.cfg.project)
+        dialog.exec_()
+        print('zip up the indicated globals')
+        print('upload the zip file')
+
     @staticmethod
     def open_user_globals():
         logging.debug(os.path.dirname(get_user_config_file()))
@@ -1352,14 +1403,22 @@ def sleeper():
 
 if __name__ == "__main__":
     import sys
+    cfg_ = None
+    root = None
+    user_globals = user_config()
+    root_dir = user_globals['paths']['root']
     cfg_ = ProjectConfig()
-    project_management = cfg_.project_config['account_info']['project_management']
-    users = cfg_.project_config['project_management'][project_management]['users']
-    app = QtWidgets.QApplication(sys.argv)
-    main_window = CGLumberjack(user_info=users[current_user()], cfg=cfg_)
-    main_window.setWindowTitle('CG Lumberjack: Nuke')
-    main_window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-    main_window.show()
-    app.exec_()
+    if cfg_:
+        project_management = cfg_.project_config['account_info']['project_management']
+        try:
+            users = cfg_.project_config['project_management'][project_management]['users']
+        except:
+            users = {current_user(): {}}
+        app = QtWidgets.QApplication(sys.argv)
+        main_window = CGLumberjack(user_info=users[current_user()], cfg=cfg_)
+        main_window.setWindowTitle('CG Lumberjack: Nuke')
+        main_window.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        main_window.show()
+        app.exec_()
 
 
