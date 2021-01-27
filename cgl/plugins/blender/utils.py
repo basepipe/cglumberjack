@@ -1099,6 +1099,24 @@ def get_object(name, namespace = None):
     else:
         return name
 
+def get_layer(name, namespace= None, set_default_namespace = True):
+    from .alchemy import scene_object
+    scene = scene_object()
+
+    if set_default_namespace == True:
+
+        if namespace == None:
+            namespace = '{}_{}'.format(scene.seq, scene.shot)
+
+        layer_name = "{}:{}".format(namespace, name)
+    else:
+        layer_name = name
+
+    return get_object(layer_name)
+
+
+
+
 def get_collection(name, namespace = None):
     import bpy
 

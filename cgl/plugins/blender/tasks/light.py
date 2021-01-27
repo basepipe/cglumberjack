@@ -19,10 +19,10 @@ class Task(SmartTask):
         from cgl.plugins.blender.alchemy import scene_object, import_task
 
         rename_collection(scene_object())
-        camfile = alc.scene_object().copy(task = 'cam')
 
-        import_task(task='cam',file_path = camfile)
+
         import_task(task='lay', import_rigs = False, reference = False,latest = True)
+        import_task(task='cam')
         import_task(task='anim')
 
 

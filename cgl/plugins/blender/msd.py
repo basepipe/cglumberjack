@@ -1,14 +1,12 @@
 import bpy
 
+import bpy
 import os
 import copy
 import glob
 import importlib
 from cgl.core.config.config import ProjectConfig
 from cgl.core.utils.read_write import load_json, save_json
-import cgl.plugins.MagicSceneDescriptionOld as msd
-importlib.reload(msd)
-import bpy
 from cgl.plugins.blender.alchemy import get_scene_name,scene_object
 
 from cgl.core.path import PathObject
@@ -16,7 +14,7 @@ CONFIG = ProjectConfig().project_config
 
 
 
-class MagicSceneDescription(msd.MagicSceneDescription):
+class MagicSceneDescription():
     scene_object = None
     path = None
     scene_file = None
@@ -121,6 +119,22 @@ class MagicSceneDescription(msd.MagicSceneDescription):
             return bundles, bundle_ref_children
         else:
             return bundles
+
+    def create_msd(self):
+        self.load_description_classes()
+        self.set_scene_file()
+        self.set_path_object_details()
+        self.set_scene_data()
+
+    def set_path_object_details(self):
+        self.data['name'] = self.path_object.shot
+        self.data['source_path'] = self.path_object.path
+        self.data['task'] = self.path_object.task
+        if self.path_object.task == 'rig':
+
+            self.data['rig_root'] = 'c_pos' #TODO this sholdn't be hardcoded move to globals
+
+
 
 class AssetDescription(object):
     name = None

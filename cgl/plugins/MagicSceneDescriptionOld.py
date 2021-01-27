@@ -67,6 +67,7 @@ class MagicSceneDescription(object):
         # from cgl.plugins.SOFTWARE.magic_browser import get_scene_file
         # self.scene_file = get_scene_file()
         # use the above code to set this
+
         pass
 
     def set_path_object_details(self):

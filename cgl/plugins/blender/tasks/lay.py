@@ -214,7 +214,7 @@ def import_mdl(mesh,reference = True, latest = True, bundle = None,parent = None
     d2 = path_object_from_source_path(relative_path)
     ns2 = d2.shot
     if latest:
-        d2 = d2.latest_version(publish_=True)
+        d2 = d2.copy(latest=True, project = scene_object().project, user = 'publish')
 
     task = d2.task
     transforms = mesh['transform']['matrix'].split(' ')
@@ -227,9 +227,6 @@ def import_mdl(mesh,reference = True, latest = True, bundle = None,parent = None
 
     else:
         print('_'*8,'IMPORTING FILES','_'*8)
-        print(d2.path_root)
-        if task == 'rig':
-            return
         ref = import_file(namespace=ns2, filepath=d2.path_root)
 
 
@@ -277,7 +274,6 @@ def import_rig(rig_dictionary,reference = True, latest = True):
 
     else:
 
-
         if task == 'rig':
             return
         ref = import_file(namespace=ns2, filepath=path_object.path_root)
@@ -288,7 +284,7 @@ def import_rig(rig_dictionary,reference = True, latest = True):
     parent_object(get_object('{}:rig_proxy'.format(path_object.asset)), group)
 
 
-def main_import(filepath= None ,reference = True, latest = False ,parent=None,**kwargs):
+def main_import(filepath= None ,reference = True, latest = False ,parent=None,import_rigs =True, **kwargs):
     """
 
     :param filepath:
@@ -320,9 +316,10 @@ def main_import(filepath= None ,reference = True, latest = False ,parent=None,**
         import_mdl(dict,reference = reference,latest = latest)
 
     for rig in layout_data['attrs']['rigs']:
+        if import_rigs == True:
 
-        dict = rigs[rig]
-        import_rig(dict)
+            dict = rigs[rig]
+            import_rig(dict)
 
     for bundle in bundles:
         print('_' * 5, bundle)

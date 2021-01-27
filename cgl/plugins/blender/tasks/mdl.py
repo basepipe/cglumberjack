@@ -4,12 +4,12 @@ from cgl.plugins.blender import alchemy as alc
 import bpy
 import glob
 from cgl.plugins.blender.alchemy import selection, scene_object
-from cgl.plugins.blender.utils import create_shot_mask_info
 import os
 from cgl.core.path import PathObject
-from ..msd import get_matrix , get_transform_arrays
+from cgl.plugins.blender.utils import create_shot_mask_info
 
 class Task(SmartTask):
+
 
     def __init__(self, path_object=None):
 
@@ -40,7 +40,7 @@ class Task(SmartTask):
 
         bpy.ops.object.fix_collection_name()
         bpy.ops.object.correct_file_name()
-        utils.create_shot_mask_info()
+        create_shot_mask_info()
         defaultShotSettings()
 
     def get_msd_info(self, mdl = None):
@@ -310,6 +310,8 @@ def get_msd_info(mesh):
     from cgl.core.config.config import ProjectConfig
     from os.path import join
     from ..alchemy import set_relative_paths
+    from ..msd import get_matrix, get_transform_arrays
+
     set_relative_paths(True)
     mdl_dict = {}
 
