@@ -1,5 +1,5 @@
 from cgl.plugins.Qt import QtCore, QtGui, QtWidgets
-from cgl.core.config.config import ProjectConfig
+from cgl.core.config.config import ProjectConfig, user_config
 from cgl.core.path import PathObject
 from cgl.core.utils.general import load_json, cgl_copy
 from cgl.ui.widgets.base import LJDialog
@@ -158,7 +158,17 @@ class AssetChooser(QtWidgets.QWidget):
     def __init__(self, path_object, scope='assets'):
         QtWidgets.QWidget.__init__(self)
         self.cfg = path_object.project_config
-        self.project_msd = load_json(r'Z:\Projects\cmpa-animation\render\02BTH_2021_Kish\master\project.msd')
+        root = user_config()['paths']['root']
+        if not hasattr(path_object, 'project_msd'):
+            if path_object.branch:
+                project_msd_file = r'{}\{}\render\{}\{}\project.msd'.format(root, path_object.company,
+                                                                            path_object.project, path_object.branch)
+            else:
+                project_msd_file = r'{}\{}\render\{}\project.msd'.format(root, path_object.company,
+                                                                         path_object.project)
+        else:
+            project_msd_file = path_object.project_msd
+        self.project_msd = load_json(project_msd_file)
         self.scope = scope
         proj_man = self.cfg['account_info']['project_management']
         self.project_management = self.cfg['project_management'][proj_man]

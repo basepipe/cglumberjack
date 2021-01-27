@@ -6,10 +6,13 @@ from cgl.core.utils.general import load_json, save_json
 from cgl.core.config.config import user_config
 
 
-def get_all(company, project, branch):
+def get_all(company, project, branch=None):
     scope = ['assets', 'shots']
     root = user_config()['paths']['root']
-    project_msd_file = r'{}\{}\render\{}\{}\project.msd'.format(root, company, project, branch)
+    if branch:
+        project_msd_file = r'{}\{}\render\{}\{}\project.msd'.format(root, company, project, branch)
+    else:
+        project_msd_file = r'{}\{}\render\{}\project.msd'.format(root, company, project)
     asset_list, shot_list = get_all_assets_and_shots(PathObject(project_msd_file.replace('project.msd', '*')))
     if os.path.exists(project_msd_file):
         project_msd = load_json(project_msd_file)
@@ -22,16 +25,26 @@ def get_all(company, project, branch):
                        'asset_list': asset_list,
                        'shot_list': shot_list}
     for s in scope:
-        dict = {'project': project,
-                'company': company,
-                'branch': branch,
-                'context': 'render',
-                'scope': s,
-                'seq': '*',
-                'shot': '*',
-                'task': '*'}
+        if branch:
+            dict = {'project': project,
+                    'company': company,
+                    'branch': branch,
+                    'context': 'render',
+                    'scope': s,
+                    'seq': '*',
+                    'shot': '*',
+                    'task': '*'}
+        else:
+            dict = {'project': project,
+                    'company': company,
+                    'context': 'render',
+                    'scope': s,
+                    'seq': '*',
+                    'shot': '*',
+                    'task': '*'}
         base_path_object = PathObject(dict)
         files = glob.glob(base_path_object.path_root)
+        print(base_path_object.path_root)
         for i, f in enumerate(files):
             if '.' not in f:
                 po = PathObject(f)
@@ -142,8 +155,12 @@ def get_latest_user_folder(path_object):
 
 
 def get_all_assets_and_shots(path_object):
-    path = path_object.split_after('branch')
-    stuff = glob.glob('{}/*/*/*'.format(path))
+    if path_object.branch:
+        path = path_object.split_after('branch')
+        stuff = glob.glob('{}/*/*/*'.format(path))
+    else:
+        path = path_object.split_after('project')
+        stuff = glob.glob('{}/*/*'.format(path))
     assets = []
     shots = []
     for s in stuff:
@@ -200,5 +217,6 @@ def get_render_dict(path_object, user=False):
 
 
 
-get_all('cmpa-animation', '02BTH_2021_Kish', 'master')
+#get_all('cmpa-animation', '02BTH_2021_Kish', 'master')
+get_all('VFX', '02BTH_2021_Kish')
 
