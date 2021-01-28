@@ -908,6 +908,7 @@ class CGLumberjack(LJMainWindow):
         create_project = QtWidgets.QAction('Import .csv', self)
         settings.setShortcut('Ctrl+,')
         alchemy_cookbook = QtWidgets.QAction("Alchemist's Cookbook", self)
+        merlins_eyeball = QtWidgets.QAction("Merlin's Eyeball", self)
         set_up_sync_thing_server = QtWidgets.QAction('Set up Server', self)
         set_up_sync_thing_workstation = QtWidgets.QAction('Set Up Workstation', self)
         # check_machines_action = QtWidgets.QAction('Check for new Machines', self)
@@ -927,6 +928,7 @@ class CGLumberjack(LJMainWindow):
 
         # add actions to the file menu
         tools_menu.addAction(alchemy_cookbook)
+        tools_menu.addAction(merlins_eyeball)
         tools_menu.addSeparator()
         tools_menu.addAction(settings)
         tools_menu.addAction(open_globals)
@@ -987,6 +989,7 @@ class CGLumberjack(LJMainWindow):
         create_project.triggered.connect(self.open_create_project_dialog)
         settings.triggered.connect(self.on_settings_clicked)
         alchemy_cookbook.triggered.connect(self.on_alchemists_cookbook_clicked)
+        merlins_eyeball.triggered.connect(self.on_merlins_eyeball_clicked)
         login.triggered.connect(self.on_login_clicked)
         proj_man.triggered.connect(self.on_proj_man_menu_clicked)
         update_button.triggered.connect(self.update_lumbermill_clicked)
@@ -1373,6 +1376,12 @@ class CGLumberjack(LJMainWindow):
     @staticmethod
     def on_settings_clicked():
         logging.debug('settings clicked')
+
+    def on_merlins_eyeball_clicked(self):
+        from cgl.apps.merlins_eyeball.main import SkyView
+        branch = 'master'
+        dialog = SkyView(company=self.company, project=self.project, branch=branch)
+        dialog.exec_()
 
     def on_alchemists_cookbook_clicked(self):
         from cgl.apps.cookbook.designer import Designer
