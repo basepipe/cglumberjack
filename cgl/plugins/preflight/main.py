@@ -91,10 +91,9 @@ class Preflight(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
         self.software = software
         self.preflight = preflight
-        self.software_dir = os.path.join(ProjectConfig().cookbook_folder, software)
+        self.software_dir = os.path.join(ProjectConfig(path_object).cookbook_folder, software)
         self.preflight_dir = os.path.join(self.software_dir, 'pre_publish')
         if self.preflight not in os.listdir(self.preflight_dir):
-            print('test')
             if software == 'maya':
                 from cgl.ui.widgets.dialog import InputDialog
                 print(self.preflight_dir, 'looking for :', self.preflight)

@@ -277,13 +277,13 @@ def launch_preflight(path_object=None, task=None):
     :param path_object:
     :return:
     """
-    from cgl.plugins.preflight.main import Preflight
+    import cgl.plugins.preflight.main as main
+    reload(main)
     if not path_object:
         path_object = scene_object()
     if not task:
         task = path_object.task
-    print(task)
-    pf_mw = Preflight(parent=None, software='maya', preflight=task, path_object=path_object)
+    pf_mw = main.Preflight(parent=None, software='maya', preflight=task, path_object=path_object)
     pf_mw.show()
 
 
