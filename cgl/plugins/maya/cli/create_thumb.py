@@ -15,19 +15,21 @@ def load_cgl_env():
 
 def create_thumbnail(filepath):
     from cgl.plugins.maya.utils import create_thumb
+    import time
     print('Opening: {}'.format(filepath))
     pm.openFile(filepath, f=True, loadReferenceDepth='all')
     create_thumb()
+    time.sleep(10)
 
 
 # RUN THE CODE
-def run(path_object):
+def run(filepath, task):
     load_cgl_env()
     previs = ['rig', 'mdl', 'anim', 'lay']
     render = ['shd', 'lite']
-    if path_object.task in previs:
-        create_thumbnail(path_object.thumb_path)
-    if path_object.task == render:
+    if task in previs:
+        create_thumbnail(filepath)
+    if task == render:
         print('need arnold render script')
 
 

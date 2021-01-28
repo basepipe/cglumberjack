@@ -214,20 +214,25 @@ def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=Fals
 
 def create_thumb():
     from cgl.plugins.maya.alchemy import scene_object
+    print('Creating Thumbnail')
+    # TODO - this is useless on command line, we need to do a single frame render at HD, and convert a thumbnail
+    # just like we're doing on general.screen_grab, but we'll need to do an arnold render, which means we'll have to
+    # toss in a default light and deleted it when we're done.
     path_object = scene_object()
     ct = pm.currentTime(query=True)
-    panels = pm.getPanel(vis=True)
+    panels = pm.getPanel(type='modelPanel')
     for p in panels:
-        if 'model' in p:
-            model = p
-    pm.modelEditor(model, edit=True, displayAppearance='smoothShaded', camera=get_shot_cam())
+        pm.modelEditor(p, edit=True, displayAppearance='smoothShaded', camera=get_shot_cam())
+        break
     maya_thumb = pm.playblast(st=ct, et=ct, w=198, h=108, p=100, v=False, fmt='image', fo=True,
                               f=path_object.thumb_path)
     maya_thumb = maya_thumb.replace('####', '*')
     maya_thumb = glob.glob(maya_thumb)[0]
+    print(maya_thumb, 'created')
     if os.path.exists(path_object.thumb_path):
         os.remove(path_object.thumb_path)
     os.rename(maya_thumb, path_object.thumb_path)
+    path_object.update_test_project_msd(attr='thumb_file')
 
 
 def get_hdri_json_path(return_config=False):

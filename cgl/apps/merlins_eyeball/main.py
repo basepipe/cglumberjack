@@ -110,8 +110,14 @@ class MagicButtonWidget(QtWidgets.QWidget):
 
     def update_publish_msd(self):
         from cgl.plugins.maya.alchemy import cl_update_msd
-        po = PathObject(self.published_file)
-        cl_update_msd(self.published_file)
+        if self.published_file:
+            cl_update_msd(self.published_file)
+
+    def update_thumb(self):
+        print('Updating Thumbnail')
+        from cgl.plugins.maya.alchemy import cl_create_thumb
+        if self.published_file:
+            cl_create_thumb(self.published_file)
 
     def process_path_dict(self):
         self.get_published_path()
@@ -125,7 +131,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
         button_dict = {'Open in Magic Browser': self.open_in_magic_browser,
                        'separator4': None,
                        'Update Publish MSD': self.update_publish_msd,
-                       'Update Preview': None,
+                       'Update Thumb': self.update_thumb,
                        'separator': None,
                        self.create_user_version_text: None,
                        'separator2': None,
@@ -269,7 +275,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 self.thumb_path = self.add_root(self.task_dict['publish']['source']['thumb_file'])
                 self.status = 'Published'
                 self.set_button_look()
-                
+
     def add_root(self, filepath):
         if filepath:
             new_path = '{}/{}'.format(ROOT, filepath)

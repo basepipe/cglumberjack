@@ -2,12 +2,12 @@ import os
 import glob
 from cgl.plugins.Qt import QtCore, QtWidgets
 from cgl.apps.magic_browser.main import CGLumberjack, CGLumberjackWidget
-from cgl.core.utils.general import current_user
+from cgl.core.utils.general import current_user, cgl_execute
 from cgl.ui.widgets.dialog import InputDialog
 import logging
 from cgl.core.utils.general import create_file_dirs, cgl_copy
 from cgl.core.path import PathObject
-from cgl.core.config.config import ProjectConfig
+from cgl.core.config.config import ProjectConfig, user_config
 from cgl.plugins.maya.utils import get_namespace, create_tt, clean_tt, basic_playblast
 try:
     import pymel.core as pm
@@ -367,8 +367,7 @@ def screen_grab():
 
 
 def cl_update_msd(filepath):
-    from cgl.core.utils.general import cgl_execute
-    from cgl.core.config.config import user_config
+
     msd_ready = ['cam', 'anim']
     path_object = PathObject(filepath).copy(context='source', set_proper_filename=True, ext='mb')
     task = path_object.task
@@ -385,7 +384,7 @@ def cl_create_thumb(filepath):
     path_object = PathObject(filepath)
     mayapy = user_config()['paths']['mayapy']
     update_preview = os.path.join(os.path.dirname(__file__), 'cli', 'create_thumb.py')
-    command = "{} {} {} {}".format(mayapy, update_preview, path_object)
+    command = "{} {} {} {}".format(mayapy, update_preview, filepath, path_object.task)
     cgl_execute(command, new_window=True)
 
 
