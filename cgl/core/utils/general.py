@@ -460,12 +460,14 @@ def screen_grab(path_object):
     3) updates ftrack or shotgun with the new thumbnail.
     :return:
     """
-    import cgl.core.screen_grab as screen_grab
+    import cgl.core.screen_grab as sg
     import cgl.core.convert as convert
-    ppath = screen_grab.run(path_object=path_object)
+    ppath = sg.run(path_object=path_object)
     convert.create_image_thumb(ppath, path_object.thumb_path)
     print('Creating Preview at: {}'.format(ppath))
-    # path_object.update_test_project_msd(attr='preview')
+    print('Creating thumb at: {}'.format(path_object.thumb_path))
+    path_object.update_test_project_msd(attr='preview_file')
+    path_object.update_test_project_msd(attr='thumb_file')
 
 
 

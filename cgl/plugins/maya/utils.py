@@ -141,6 +141,13 @@ def get_current_camera():
         return None
 
 
+def get_shot_cam():
+    from cgl.plugins.maya.alchemy import scene_object
+    so = scene_object()
+    camera = 'cam{}_{}'.format(so.seq, so.shot)
+    return camera
+
+
 def confirm_prompt(title='title', message='message', button='Ok'):
     """
     standard confirm prompt, this is an easy wrapper that allows us to do
@@ -203,6 +210,24 @@ def basic_playblast(path_object, appearance='smoothShaded', cam=None, audio=Fals
         pm.refresh(su=False)
     else:
         print('Playblast not set up for audio yet')
+
+
+def create_thumb():
+    from cgl.plugins.maya.alchemy import scene_object
+    path_object = scene_object()
+    ct = pm.currentTime(query=True)
+    panels = pm.getPanel(vis=True)
+    for p in panels:
+        if 'model' in p:
+            model = p
+    pm.modelEditor(model, edit=True, displayAppearance='smoothShaded', camera=get_shot_cam())
+    maya_thumb = pm.playblast(st=ct, et=ct, w=198, h=108, p=100, v=False, fmt='image', fo=True,
+                              f=path_object.thumb_path)
+    maya_thumb = maya_thumb.replace('####', '*')
+    maya_thumb = glob.glob(maya_thumb)[0]
+    if os.path.exists(path_object.thumb_path):
+        os.remove(path_object.thumb_path)
+    os.rename(maya_thumb, path_object.thumb_path)
 
 
 def get_hdri_json_path(return_config=False):

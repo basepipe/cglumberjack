@@ -2,11 +2,11 @@ import logging
 import os
 import re
 import click
-from cgl.core.config.config import ProjectConfig, paths
+from cgl.core.config.config import ProjectConfig, user_config
 from cgl.core.utils.general import cgl_execute, write_to_cgl_data
 
 CONFIG = ProjectConfig().project_config  # all this needs to be better sorted out.
-PATHS = paths()
+PATHS = user_config()['paths']
 PADDING = CONFIG['default']['padding']
 settings = CONFIG['default']
 thumb_res = settings['resolution']['thumb']
@@ -110,10 +110,10 @@ def create_proxy_sequence(input_sequence, output_sequence, width='1920', height=
         print(fileout)
         print('-----------')
         print(process_info)
-        try:
-            write_to_cgl_data(process_info)
-        except ValueError:
-            print('Skipping write to cgl_data: %s' % process_info)
+        #try:
+        #    write_to_cgl_data(process_info)
+        #except ValueError:
+        #    print('Skipping write to cgl_data: %s' % process_info)
         return process_info
     else:
         print('----------------------------')
@@ -313,17 +313,18 @@ def create_movie_thumb(input_file, output_file, processing_method='local', comma
                                    command_name=command_name, new_window=True,
                                    WaitForJobID=dependent_job)
         process_info['file_out'] = output_file
-        try:
-            write_to_cgl_data(process_info)
-        except ValueError:
-            print('Error writing to cgl_data for: %s' % output_file)
+        #try:
+        #    write_to_cgl_data(process_info)
+        #except ValueError:
+        #    print('Error writing to cgl_data for: %s' % output_file)
         return process_info
 
 
 def create_image_thumb(input_image, output_image, height=90):
     command = '{} -define jpeg:size=500x500, "{}" ' \
               '-auto-orient -thumbnail 250x{} -unsharp 0x.5 "{}"'.format(PATHS['convert'], input_image, height, output_image)
-    os.makedirs(os.path.dirname(output_image))
+    if not os.path.exists(os.path.dirname(output_image)):
+        os.makedirs(os.path.dirname(output_image))
     cgl_execute(command)
 
 

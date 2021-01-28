@@ -381,16 +381,17 @@ def cl_update_msd(filepath):
         print('{} not found in tasks ready for command line msd update: {}'.format(task, msd_ready))
 
 
-def cl_create_preview(playblast=True):
-    if playblast:
-        print('Creating a basic preview image')
-    else:
-        print('Creating a rendered image')
+def cl_create_thumb(filepath):
+    path_object = PathObject(filepath)
+    mayapy = user_config()['paths']['mayapy']
+    update_preview = os.path.join(os.path.dirname(__file__), 'cli', 'create_thumb.py')
+    command = "{} {} {} {}".format(mayapy, update_preview, path_object)
+    cgl_execute(command, new_window=True)
 
 
 if __name__ == '__main__':
     filepath = r'Z:/Projects/cmpa-animation/render/02BTH_2021_Kish/master/shots/001/0600/cam/default/publish/018.000/high/001_0600_cam.msd'
-    update_msd(filepath)
+    cl_create_thumb(filepath)
 
 
 

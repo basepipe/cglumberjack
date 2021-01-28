@@ -202,9 +202,13 @@ class PathObject(object):
         if attr == 'msd':
             context = 'render'
             value = self.relative_msd_path
-        if attr == 'preview':
+        if attr == 'preview_file':
+            print('Saving Preview File {}'.format(self.preview_path))
             context = 'source'
-            value = self.preview_path
+            value = self.preview_path.replace(self.root, '')
+        if attr == 'thumb_file':
+            context = 'source'
+            value = self.thumb_path.replace(self.root, '')
         project_msd_file = self.project_msd_path
         if os.path.exists(project_msd_file):
             msd_dict = load_json(self.project_msd_path)

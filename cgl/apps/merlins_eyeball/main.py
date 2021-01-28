@@ -225,9 +225,9 @@ class MagicButtonWidget(QtWidgets.QWidget):
         self.set_button_look()
 
     def open_latest_user_file(self):
-        if self.latest_user_file:
-            print("Open: {}".format(self.latest_user_file))
-            cmd = "cmd /c start {}".format(self.latest_user_file)
+        if self.newest_version_file:
+            print("Open: {}".format(self.newest_version_file))
+            cmd = "cmd /c start {}".format(self.newest_version_file)
             os.system(cmd)
 
     def open_latest_user_render(self):
@@ -279,11 +279,13 @@ class MagicButtonWidget(QtWidgets.QWidget):
 
     def get_newest_version(self):
         if self.task_dict:
-            if not self.published_folder:
-                self.status = 'In Progress'
+
             self.newest_version_folder = self.add_root(self.task_dict['latest_user']['source']['folder'])
             self.newest_version_files = self.task_dict['latest_user']['source']['source_files']
-            self.newest_version_file = self.add_root(self.task_dict['latest_user']['source']['source_file'])
+            newest_version_file = self.add_root(self.task_dict['latest_user']['source']['source_file'])
+            if not newest_version_file and self.newest_version_files:
+                newest_version_file = self.add_root(self.newest_version_files[0])
+            self.newest_version_file = newest_version_file
             self.latest_user_render_folder = self.add_root(self.newest_version_folder.replace('/source/', '/render/'))
             self.preview_path = self.add_root(self.task_dict['latest_user']['source']['preview_file'])
             self.thumb_path = self.add_root(self.task_dict['latest_user']['source']['thumb_file'])
@@ -299,50 +301,8 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 self.set_time_stuff()
                 self.status = 'In Progress'
                 self.set_button_look()
-
-    def get_newest_version2(self):
-        latest_glob_object = self.path_object.copy(task=self.task, context='source', user='*',
-                                                   resolution='high', version='*')
-        versions = glob.glob(latest_glob_object.path_root)
-        if versions:
-            self.newest_version_files = []
-            latest = 0
-            latest_folder = ''
             if not self.published_folder:
                 self.status = 'In Progress'
-            for each in versions:
-                raw_time = os.path.getctime(each)
-                if raw_time > latest:
-                    latest = raw_time
-                    latest_folder = each
-            self.latest_date = datetime.fromtimestamp(latest).strftime(self.date_format)
-            self.newest_version_folder = latest_folder
-            for f in os.listdir(latest_folder):
-                _, ext = os.path.splitext(f)
-                if ext in FILE_TYPES['maya']['defaults']:
-                    self.newest_version_files.append(f)
-            if len(self.newest_version_files) == 1:
-                self.newest_version_file = os.path.join(self.newest_version_folder,
-                                                        self.newest_version_files[0]).replace('\\', '/')
-                if 'publish' in self.newest_version_file:
-                    self.set_publish_file(self.newest_version_file)
-                    glob_text = self.newest_version_file.replace('publish', '*')
-                    files = glob.glob(glob_text)
-                    for each in files:
-                        if 'publish' not in each:
-                            self.set_latest_user_file(each.replace('\\', '/'))
-                else:
-                    self.set_latest_user_file(self.newest_version_file)
-                    path_object = PathObject(self.latest_user_file)
-
-                    self.latest_user_render_folder = os.path.dirname(self.latest_user_file).replace('/source/',
-                                                                                                    '/render/')
-
-            self.set_time_stuff()
-            self.set_button_look()
-        else:
-            self.status = 'Not Started'
-            self.set_button_look()
 
     def set_time_stuff(self):
         today = date.today()
@@ -351,11 +311,15 @@ class MagicButtonWidget(QtWidgets.QWidget):
         date3 = self.publish_date
         self.last_updated = datetime.strptime(date1, self.date_format) - \
                             datetime.strptime(date2, self.date_format)
-        self.last_updated = str(self.last_updated).split(' days')[0]
+        self.last_updated = str(self.last_updated).split(' day')[0]
+        if self.last_updated == "0:00:00":
+            self.last_updated = "0"
         if date3:
             self.last_published = datetime.strptime(date1, self.date_format) - \
                                   datetime.strptime(date3, self.date_format)
-            self.last_published = str(self.last_published).split(' days')[0]
+            self.last_published = str(self.last_published).split(' day')[0]
+            if int(self.last_published) > int(self.last_updated):
+                self.status = 'In Progress'
 
     def set_tool_tip(self):
         tool_tip = 'Status: {}\nTask Info:\n'.format(self.status)
@@ -370,20 +334,22 @@ class MagicButtonWidget(QtWidgets.QWidget):
 
     def button_clicked(self):
         if self.status == 'Not Started':
-            if self.latest_user_file:
-                cmd = "cmd /c start {}".format(self.latest_user_file)
+            if self.newest_version_file:
+                print('Opening User File {}'.format(self.newest_version_file))
+                cmd = "cmd /c start {}".format(self.newest_version_file)
                 os.system(cmd)
             else:
                 self.create_default_file()
-        else:
-            if self.latest_user_file:
-                cmd = "cmd /c start {}".format(self.latest_user_file)
+        elif self.status == 'In Progress':
+            if self.newest_version_file:
+                print('Opening User File {}'.format(self.newest_version_file))
+                cmd = "cmd /c start {}".format(self.newest_version_file)
                 os.system(cmd)
-            else:
-                if self.newest_version_files:
-                    print('\tNewest Files: {}'.format(self.newest_version_files))
-                else:
-                    print('Creating a new version for the current user')
+        elif self.status == 'Published':
+            if self.published_file:
+                print('Opening Publish File {}'.format(self.published_file))
+                cmd = "cmd /c start {}".format(self.published_file)
+                os.system(cmd)
 
 
 class SkyView(LJDialog):
