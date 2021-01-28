@@ -13,23 +13,18 @@ def load_cgl_env():
     sys.path.insert(0, python_dev_packages)
 
 
-def anim_preview(filepath):
-    print(filepath)
-    import cgl.plugins.maya.tasks.anim as anim
+def create_preview(filepath, task):
+    from cgl.plugins.maya.utils import create_still_preview
+    print('Opening: {}'.format(filepath))
     pm.openFile(filepath, f=True, loadReferenceDepth='all')
-    anim.Task().export_msd()
+    create_still_preview(task)
 
 
 # RUN THE CODE
 def run(filepath, task):
     load_cgl_env()
-    if task == 'cam':
-        cam_msd(filepath)
+    create_preview(filepath, task)
 
 
 if __name__ == '__main__':
     run(sys.argv[1], sys.argv[2])
-
-
-
-

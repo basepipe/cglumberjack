@@ -217,6 +217,16 @@ def set_render_globals(gui=True):
         this = RenderDialog(auto_set=True)
         this.exec_()
     else:
+        pm.mel.setMayaSoftwareFrameExt(3, 0)
+        pm.setAttr("defaultRenderGlobals.extensionPadding", 4)
+        pm.setAttr('defaultRenderGlobals.extensionPadding', 4)
+        pm.setAttr("defaultRenderGlobals.fs", get_frame_start())
+        pm.setAttr("defaultRenderGlobals.ef", get_frame_end())
+        pm.setAttr('defaultResolution.w', int(1920))
+        pm.setAttr('defaultResolution.h', int(1080))
+        # pm.workspace(fileRule=['images', path])
+        # skipping render cam - expecting it somewhere else in this mode
+        # skipping setting file path - possibility for somewhere else in thismode.
         print('this is what happens if gui mode is false')
     pass
 

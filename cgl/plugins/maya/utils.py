@@ -1,6 +1,7 @@
 import re
 import os
 import glob
+import time
 from cgl.core.path import PathObject
 from cgl.core.config.config import ProjectConfig
 from cgl.core.utils.read_write import load_json
@@ -97,7 +98,7 @@ def create_tt(length, tt_object):
             pm.playbackOptions(maxTime=length, animationEndTime=length)
             pm.animation.setKeyframe('turntable', v=0, t=-1, itt='linear', ott='linear', at='rotateY')
             pm.animation.setKeyframe('turntable', v=360, t=length, itt='linear', ott='linear', at='rotateY')
-
+            # TODO - figure out workarounds for cli for these two lines.
             mel.eval('lookThru turntable_camera1 perspView;')
             pm.viewFit(tt_object)
             # correction
@@ -235,6 +236,44 @@ def create_thumb():
     path_object.update_test_project_msd(attr='thumb_file')
 
 
+def create_still_preview(task='mdl'):
+    """
+    creates a still preview, as is this is built for assets that have turntables.
+    :param task:
+    :return:
+    """
+    import cgl.plugins.maya.tasks.lite as lite
+    reload(lite)
+    import cgl.plugins.maya.alchemy as alc
+    import cgl.core.convert as convert
+    from mtoa.cmds.arnoldRender import arnoldRender
+
+    tt_tasks = ['mdl', 'shd', 'rig']
+    pm.select(task)
+    so = alc.scene_object()
+
+    lite.set_renderer()
+    lite.turn_off_env_bg()
+    lite.set_render_globals(gui=False)
+    lite.set_file_type('jpeg')
+    pm.setAttr("defaultArnoldDriver.pre", so.preview_path, type="string")
+
+    if task in tt_tasks:
+        alc.create_turntable()
+        create_env_light('Soft1Front2Backs')
+    # time.sleep(1)
+    # camera = pm.ls('turntable_cam*', type='transform')[0]
+    arnoldRender(1920, 1080, True, True, 'turntable_camera1', ' -layer defaultRenderLayer')
+    preview = glob.glob('{}*'.format(so.preview_path))[0]
+    os.rename(preview, so.preview_path)
+    convert.create_image_thumb(so.preview_path, so.thumb_path)
+    so.update_test_project_msd(attr='preview_file')
+    so.update_test_project_msd(attr='thumb_file')
+    if task in tt_tasks:
+        clean_tt()
+        pm.delete('env_light')
+
+
 def get_hdri_json_path(return_config=False):
     from cgl.plugins.maya.alchemy import scene_object
     cfg = ProjectConfig(scene_object())
@@ -257,7 +296,11 @@ def hdri_widget():
 
 
 def create_env_light(tex_name):
-    d, cfg = load_json(get_hdri_json_path(return_config=True))
+
+    path, cfg = get_hdri_json_path(return_config=True)
+    d = load_json(path)
+    print(d)
+    print(cfg)
     rotation = 0
     delete_existing = True
     rotate_set = False

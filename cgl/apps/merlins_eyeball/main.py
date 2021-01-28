@@ -115,9 +115,9 @@ class MagicButtonWidget(QtWidgets.QWidget):
 
     def update_thumb(self):
         print('Updating Thumbnail')
-        from cgl.plugins.maya.alchemy import cl_create_thumb
+        from cgl.plugins.maya.alchemy import cl_create_preview
         if self.published_file:
-            cl_create_thumb(self.published_file)
+            cl_create_preview(self.published_file)
 
     def process_path_dict(self):
         self.get_published_path()

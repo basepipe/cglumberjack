@@ -388,6 +388,14 @@ def cl_create_thumb(filepath):
     cgl_execute(command, new_window=True)
 
 
+def cl_create_preview(filepath):
+    path_object = PathObject(filepath)
+    mayapy = user_config()['paths']['mayapy']
+    update_preview = os.path.join(os.path.dirname(__file__), 'cli', 'create_preview.py')
+    command = "{} {} {} {}".format(mayapy, update_preview, filepath, path_object.task)
+    cgl_execute(command, new_window=True)
+
+
 if __name__ == '__main__':
     filepath = r'Z:/Projects/cmpa-animation/render/02BTH_2021_Kish/master/shots/001/0600/cam/default/publish/018.000/high/001_0600_cam.msd'
     cl_create_thumb(filepath)
