@@ -218,5 +218,5 @@ def get_render_dict(path_object, user=False):
 
 
 #get_all('cmpa-animation', '02BTH_2021_Kish', 'master')
-get_all('VFX', '02BTH_2021_Kish')
+#get_all('VFX', '02BTH_2021_Kish')
 

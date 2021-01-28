@@ -1099,7 +1099,10 @@ class PathObject(object):
                     print("Making Preview Media")
                     review_res = self.project_config['default']['resolution']['video_review']
                     proxy_info = self.make_proxy(resolution=review_res, ext='jpg', job_id=job_id)
-                    job_id = proxy_info['job_id']
+                    if proxy_info:
+                        job_id = proxy_info['job_id']
+                    else:
+                        print('job_id not properly set')
             # Step 2) Create the web preview & Thumbnail with .make_preview()
 
             job_info = self.make_preview(job_id=job_id)

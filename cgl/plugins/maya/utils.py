@@ -41,9 +41,12 @@ def get_selected_namespace():
 def select_reference(ref_node):
     # TODO - this needs to be more robust to handle some of the strange things that happen in production.
     objects = pm.ls(regex='%s:[a-z]{3}|%s:CAMERAS' % (ref_node.namespace, ref_node.namespace))
-    pm.select(objects[0])
-
-    return objects[0]
+    print(objects)
+    if objects:
+        pm.select(objects[0])
+        return objects[0]
+    else:
+        return None
 
 
 def get_ref_node(reference):

@@ -35,6 +35,7 @@ ROOT = user_config()['paths']['root'].replace('\\', '/')
 
 
 class ScopeList(QtWidgets.QWidget):
+    update_clicked = QtCore.Signal()
 
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
@@ -43,6 +44,7 @@ class ScopeList(QtWidgets.QWidget):
         self.shots = QtWidgets.QRadioButton('shots')
         self.key_label = QtWidgets.QLabel('Key: ')
         self.button_dict = {}
+        self.update_button = QtWidgets.QPushButton('Refresh')
 
         self.row.addWidget(self.assets)
         self.row.addWidget(self.shots)
@@ -55,6 +57,13 @@ class ScopeList(QtWidgets.QWidget):
             self.button_dict[status] = button
             self.row.addWidget(button)
         self.shots.setChecked(True)
+        self.row.addWidget(self.update_button)
+
+        self.update_button.clicked.connect(self.on_update_clicked)
+
+    def on_update_clicked(self):
+        self.update_clicked.emit()
+
 
 
 class MagicButtonWidget(QtWidgets.QWidget):
@@ -309,7 +318,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 self.latest_date = datetime.fromtimestamp(raw_time).strftime(self.date_format)
                 self.set_time_stuff()
                 self.set_button_look()
-            elif self.newest_version_file:
+            if self.newest_version_file:
                 raw_time = os.path.getctime(self.newest_version_file)
                 self.latest_date = datetime.fromtimestamp(raw_time).strftime(self.date_format)
                 self.set_time_stuff()
@@ -332,6 +341,8 @@ class MagicButtonWidget(QtWidgets.QWidget):
             self.last_published = datetime.strptime(date1, self.date_format) - \
                                   datetime.strptime(date3, self.date_format)
             self.last_published = str(self.last_published).split(' day')[0]
+            if self.last_published == '0:00:00':
+                self.last_published = '0'
             if int(self.last_published) > int(self.last_updated):
                 self.status = 'In Progress'
 
@@ -429,9 +440,13 @@ class SkyView(LJDialog):
         self.scroll_area.setWidget(self.scroll_area_widget_contents)
         self.scope_list.assets.clicked.connect(self.scope_changed)
         self.scope_list.shots.clicked.connect(self.scope_changed)
+        self.scope_list.update_clicked.connect(self.on_update_clicked)
         self.company_combo.currentIndexChanged.connect(self.on_company_selected)
         self.project_combo.currentIndexChanged.connect(self.on_project_selected)
         self.branch_combo.currentIndexChanged.connect(self.on_branch_selected)
+
+    def on_update_clicked(self):
+        self.refresh(reload=True)
 
     def scope_changed(self):
         if self.scope_list.assets.isChecked():
@@ -443,7 +458,7 @@ class SkyView(LJDialog):
         self.refresh()
         self.get_shots()
 
-    def refresh(self):
+    def refresh(self, reload=False):
         self.wipe_grid()
         self.dict = {'project': self.project,
                      'company': self.company,
@@ -453,11 +468,15 @@ class SkyView(LJDialog):
                      'seq': '*',
                      'shot': '*'}
         self.base_path_object = PathObject(self.dict)
+        if reload:
+            import cgl.apps.merlins_eyeball.project_analyzer as pa
+            pa.get_all(self.company, self.project, self.branch)
         self.project_msd = load_json(self.base_path_object.project_msd_path)
         self.get_shots()
 
     def get_shots(self):
         print(self.base_path_object.path_root)
+        print(self.base_path_object.project_msd_path)
         if 'assets' in self.base_path_object.path_root:
             files = self.project_msd['asset_list']
         elif 'shots' in self.base_path_object.path_root:

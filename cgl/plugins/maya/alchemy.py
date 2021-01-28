@@ -204,6 +204,9 @@ def version_up(vtype='minor', copy_render=False):
     if copy_render:
         print('Copying {} to {}'.format(current_render_folder, new_render_folder))
         cgl_copy(current_render_folder, new_render_folder)
+        po = PathObject(new_source_folder).copy(set_proper_filename=True, ext='.mb')
+        po.update_test_project_msd(attr='folder')
+        po.update_test_project_msd(attr='source_file')
     return save_file_as(new_source.path_root)
 
 

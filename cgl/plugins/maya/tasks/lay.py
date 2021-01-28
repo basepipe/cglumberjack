@@ -96,6 +96,7 @@ def find_static_rigs():
     static_rigs = []
 
     for r in refs:
+        print(r)
         node = select_reference(r[-1])
         if node not in anim_children and node not in bundle_children and str(node).endswith('rig'):
             static_rigs.append(node)
