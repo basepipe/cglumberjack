@@ -128,7 +128,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
         self.create_user_version_text = 'Create {} version'.format(self.user)
         self.latest_user_render_text = '{}'.format(self.latest_user_render_folder)
 
-        button_dict = {'Open in Magic Browser': self.open_in_magic_browser,
+        button_dict = {'Show File Location': self.open_in_magic_browser,
                        'separator4': None,
                        'Update Publish MSD': self.update_publish_msd,
                        'Update Thumb': self.update_thumb,
@@ -257,8 +257,16 @@ class MagicButtonWidget(QtWidgets.QWidget):
             os.system(cmd)
 
     def open_in_magic_browser(self):
-        cmd = "cmd /c start {}".format(self.published_folder)
-        os.system(cmd)
+        folder = ''
+        if self.published_folder:
+            folder = self.published_folder
+        elif self.newest_version_file:
+            folder = os.path.dirname(self.newest_version_file)
+        if folder:
+            cmd = "cmd /c start {}".format(folder)
+            os.system(cmd)
+        else:
+            print('No Folder to Go to')
 
     def on_context_menu(self, point):
         self.context_menu.exec_(self.button.mapToGlobal(point))

@@ -196,6 +196,9 @@ class PathObject(object):
             user = 'publish'
         else:
             user = 'latest_user'
+        if attr == 'folder':
+            context = 'source'
+            value = os.path.dirname(self.path)
         if attr == 'source_file':
             context = 'source'
             value = self.path
@@ -1145,6 +1148,8 @@ class PathObject(object):
         cgl_copy(current_render, next_major_render)
         logging.debug('Publishing %s to %s' % (current_render, publish_render))
         cgl_copy(current_render, publish_render)
+        self.update_test_project_msd(attr='source_file')
+        self.update_test_project_msd(attr='folder')
         logging.debug('--------- Finished Publishing')
         return publish_render_object
 
@@ -1378,6 +1383,7 @@ class CreateProductionData(object):
                                                                     self.path_object.task,
                                                                     ext))
                 self.path_object.update_test_project_msd(attr='source_file')
+                print('Copying Default File {} to {}'.format(default_file, self.path_object.path_root))
                 cgl_copy(default_file, self.path_object.path_root, methodology='local')
                 return self.path_object.path_root
         else:
