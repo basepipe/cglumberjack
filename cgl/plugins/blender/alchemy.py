@@ -231,21 +231,21 @@ def import_file(filepath, namespace=None, collection_name=None,type = 'Collectio
             if collection_name == None:
                 collection_name = path_object.asset
 
-        bpy.ops.wm.append(
-            filepath=path_object.filename,
-            directory="{}\\{}\\".format(path_object.path_root,type),
-            filename=path_object.asset)
+            bpy.ops.wm.append(
+                filepath=path_object.filename,
+                directory="{}\\{}\\".format(path_object.path_root,type),
+                filename=path_object.asset)
 
-        imported_collection = get_collection(collection_name)
+            imported_collection = get_collection(collection_name)
 
-        imported_objects_list = []
-        if namespace == None:
-            namespace = path_object.asset
-        for each_obj in imported_collection.objects:
-            each_obj.name = '{}:{}'.format(namespace, each_obj.name.split(':')[-1])
-            imported_objects_list.append(each_obj)
-            # parent_to_collection(each_obj, scene_collection_name)
-            # bpy.data.collections.remove(imported_collection)
+            imported_objects_list = []
+            if namespace == None:
+                namespace = path_object.asset
+            for each_obj in imported_collection.objects:
+                each_obj.name = '{}:{}'.format(namespace, each_obj.name.split(':')[-1])
+                imported_objects_list.append(each_obj)
+                # parent_to_collection(each_obj, scene_collection_name)
+                # bpy.data.collections.remove(imported_collection)
 
         name = '{}:{}'.format(namespace, path_object.task)
 
@@ -258,12 +258,17 @@ def import_file(filepath, namespace=None, collection_name=None,type = 'Collectio
 
         for i in get_objects_in_hirarchy(imported_object):
             tag_object(get_object(i), 'source_path', path_object.path)
+            parent_to_collection(get_object(i),get_collection(scene_object().filename_base).name)
+
+        if filepath.endswith('blend'):
+            bpy.data.collections.remove(imported_collection)
+
 
         return imported_object
 
 
     else:
-        print('NO SUCH FILE')
+        print('ERROR', '{} FILE NOT FOUND'.format(path_object.path_root))
         confirm_prompt('ERROR', '{} FILE NOT FOUND'.format(path_object.filename))
 
 
@@ -300,7 +305,7 @@ def reference_file(filepath, namespace=None, collection_name=None):
         return obj
 
     else:
-        print('NO SUCH FILE')
+        print('ERROR', '{} FILE NOT FOUND'.format(path_object.path_root))
         confirm_prompt('ERROR', '{} FILE NOT FOUND'.format(path_object.filename))
 
 def open_file(filepath):

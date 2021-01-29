@@ -47,7 +47,7 @@ class Task(SmartTask):
         start,end = camera_keyframes
 
 
-        layer_group = get_layer('MAIN')
+        layer_group = get_layer('CAMERAS')
         parent_object(camera,layer_group)
         set_framerange(start,end)
         

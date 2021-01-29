@@ -1,6 +1,5 @@
 import os
 from vfxwindow import VFXWindow
-#from cgl.core.config import app_config, UserConfig, user_config
 from cgl.core.config.config import ProjectConfig
 from cgl.plugins.blender.cgl_browser_widget import BrowserWidget
 from PySide2 import QtWidgets, QtCore, QtGui
@@ -37,6 +36,7 @@ class CGLumberjack(VFXWindow):
         self.pd_menus = {}
         self.menu_dict = {}
         self.menus = {}
+        self.cfg = ProjectConfig()
         self.setCentralWidget(BrowserWidget(self, project_management=self.project_management,
                                                   user_email=self.user_info,
                                                   company=self.company,
@@ -336,7 +336,7 @@ class CGLumberjack(VFXWindow):
     def load_pipeline_designer_menus(self):
         import json
         #
-        menus_json = os.path.join(CONFIG['paths']['cgl_tools'], 'magic_browser', 'menus.cgl')
+        menus_json = os.path.join(self.cfg.cookbook_folder, 'magic_browser', 'menus.cgl')
         if os.path.exists(menus_json):
             with open(menus_json, 'r') as stream:
                 self.pd_menus = json.load(stream)['magic_browser']

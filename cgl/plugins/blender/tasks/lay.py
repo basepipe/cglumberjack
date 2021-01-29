@@ -29,7 +29,7 @@ class Task(SmartTask):
         :return:
         """
         from cgl.plugins.blender.alchemy import  set_relative_paths
-        main_import(filepath,import_rigs,reference,latest)
+        main_import(filepath= filepath,import_rigs= import_rigs,reference=reference,latest=latest)
         set_relative_paths(True)
 
     def build(self):
@@ -211,23 +211,23 @@ def import_mdl(mesh,reference = True, latest = True, bundle = None,parent = None
     from ..msd import path_object_from_source_path, tag_object
     import bpy
     relative_path = mesh['source_path']
-    d2 = path_object_from_source_path(relative_path)
-    ns2 = d2.shot
+    path_object = path_object_from_source_path(relative_path)
+    ns2 = get_next_namespace(path_object.shot)
     if latest:
-        d2 = d2.copy(latest=True, project = scene_object().project, user = 'publish')
+        path_object = path_object.copy(latest=True,usert = 'publish')
 
-    task = d2.task
     transforms = mesh['transform']['matrix'].split(' ')
     float_transforms = [float(x) for x in transforms]
 
     if reference == True:
 
-        ref = reference_file(namespace=ns2, filepath=d2.path_root)
+        ref = reference_file(namespace=ns2, filepath=path_object.path_root)
 
 
     else:
         print('_'*8,'IMPORTING FILES','_'*8)
-        ref = import_file(namespace=ns2, filepath=d2.path_root)
+        print(path_object.path_root)
+        ref = import_file(namespace=ns2, filepath=path_object.path_root)
 
 
     set_matrix(ref, float_transforms)
@@ -251,7 +251,8 @@ def import_rig(rig_dictionary,reference = True, latest = True):
 
     relative_path = rig_dictionary['source_path']
     path_object = path_object_from_source_path(relative_path)
-    ns2 = path_object.shot
+    ns2 = get_next_namespace(path_object.shot)
+    print('______NAMESPACE_________')
     if latest:
         path_object = path_object.latest_version(publish_=True)
 
@@ -261,8 +262,12 @@ def import_rig(rig_dictionary,reference = True, latest = True):
 
     if reference == True:
 
+
+
         ref = reference_file(namespace=ns2, filepath=path_object.path_root)
+
         layout_group = create_object(('{}_{}:FG'.format(scene_object().seq, scene_object().asset)))
+
         parent_object(child=ref, parent=layout_group)
 
         print('________IMPORTING RIG_____________')
@@ -270,7 +275,6 @@ def import_rig(rig_dictionary,reference = True, latest = True):
         rig_root = rig_dictionary['main_controller']
         proxy = bpy.data.objects['{}:rig_proxy'.format(ns2)]
         ref = proxy.pose.bones[rig_root]
-
 
     else:
 
@@ -287,6 +291,8 @@ def import_rig(rig_dictionary,reference = True, latest = True):
 def main_import(filepath= None ,reference = True, latest = False ,parent=None,import_rigs =True, **kwargs):
     """
 
+    :param import_rigs:
+    :type import_rigs:
     :param filepath:
     :return:
     """
@@ -315,9 +321,9 @@ def main_import(filepath= None ,reference = True, latest = False ,parent=None,im
         dict = meshes[mesh]
         import_mdl(dict,reference = reference,latest = latest)
 
-    for rig in layout_data['attrs']['rigs']:
-        if import_rigs == True:
-
+    if import_rigs == True:
+        for rig in layout_data['attrs']['rigs']:
+            print(111111111111111111111111111111111111)
             dict = rigs[rig]
             import_rig(dict)
 
@@ -328,6 +334,9 @@ def main_import(filepath= None ,reference = True, latest = False ,parent=None,im
         for mesh in meshes:
             bndl_source= bundles[bundle]['source_path']
 
+            print(meshes[mesh])
+            print(8888888888888888888888)
+            print(meshes[mesh]['source_path'])
             import_mdl(meshes[mesh],
                        reference = reference,
                        latest = latest,

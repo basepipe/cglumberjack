@@ -1007,32 +1007,49 @@ def objects_in_scene(string = False):
 
     return bpy.data.objects
 
-def get_next_namespace(ns):
+
+def get_next_namespace(ns, sel=None, type='lay'):
     import re
     import bpy
+    from cgl.plugins.blender.alchemy import scene_object
+
     pattern = '[0-9]+'
     next = False
-    sel = bpy.data.objects
+
     latest = 0
 
-    for i in sel:
+    if sel == None:
+        scene = scene_object()
+        name = '{}_{}:{}'.format(scene.seq, scene.shot, type)
+        layer = get_object(name)
+        print(layer)
+        sel = get_objects_in_hirarchy(layer, levels=2)
+
+    for name in sel:
+        i = get_object(name)
         if ns in i.name:
-            split_namespace = i.name.split(':')
-            if ns == split_namespace[0]:
+            name = i.name.split(ns)
+            if name[1].startswith('_'):
+
+                # print(i.name)
+
+                split_namespace = i.name.split(':')
+
                 num = re.findall(pattern, i.name)
+                print(num)
                 if num:
                     if int(num[-1]) > latest:
+                        print(num)
+                        latest = int(num[-1]) + 1
 
-                        latest = int(num[-1])
-
-
-                next = True
+                    next = True
 
     if next:
-        name = '{}'.format(ns)
+        name = '{}_{}'.format(ns, latest)
         return name
     else:
         return ns
+
 
 def set_framerange(start=1, end=1, current=False):
     import bpy
