@@ -204,7 +204,7 @@ def get_namespace(filepath):
 def import_mdl(mesh,reference = True, latest = True, bundle = None,parent = None):
     from pprint import pprint
     from cgl.core.config.config import ProjectConfig
-    from cgl.plugins.blender.utils import get_next_namespace, read_matrix, parent_object, create_object
+    from cgl.plugins.blender.utils import get_next_namespace, read_matrix, parent_object, create_object,get_object
     from cgl.plugins.blender.alchemy import  reference_file, import_file
     from cgl.plugins.blender.msd import set_matrix
     from .anim import make_proxy
@@ -212,7 +212,9 @@ def import_mdl(mesh,reference = True, latest = True, bundle = None,parent = None
     import bpy
     relative_path = mesh['source_path']
     path_object = path_object_from_source_path(relative_path)
-    ns2 = get_next_namespace(path_object.shot)
+    ns2 = get_next_namespace(path_object.asset)
+    print('____________importing__________')
+    print('namespace' + ns2)
     if latest:
         path_object = path_object.copy(latest=True,usert = 'publish')
 
@@ -225,18 +227,26 @@ def import_mdl(mesh,reference = True, latest = True, bundle = None,parent = None
 
 
     else:
-        print('_'*8,'IMPORTING FILES','_'*8)
-        print(path_object.path_root)
         ref = import_file(namespace=ns2, filepath=path_object.path_root)
 
 
     set_matrix(ref, float_transforms)
 
-    layout = create_object('{}_{}:lay'.format(scene_object().seq, scene_object().asset))
-    group = create_object('{}_{}:{}'.format(scene_object().seq, scene_object().asset,mesh['layer']), parent=layout)
-    parent_object(ref,group)
-    if bundle:
-        tag_object(ref, tag  = 'bundle', value = bundle)
+    if parent == None:
+        layout = create_object('{}_{}:lay'.format(scene_object().seq, scene_object().asset))
+        group = create_object('{}_{}:{}'.format(scene_object().seq, scene_object().asset,mesh['layer']), parent=layout)
+        parent_object(ref,group)
+    else:
+
+        if 'bndl' in parent:
+            bundle_obj = get_object(parent)
+            tag_object(ref, tag  = 'bundle', value = bundle_obj['source_path'])
+        parent_object(ref,bundle_obj)
+
+def get_bundle(name):
+    from cgl.plugins.blender.utils import create_object
+
+    bundle = create_object()
 
 def import_rig(rig_dictionary,reference = True, latest = True):
     from pprint import pprint
@@ -251,7 +261,7 @@ def import_rig(rig_dictionary,reference = True, latest = True):
 
     relative_path = rig_dictionary['source_path']
     path_object = path_object_from_source_path(relative_path)
-    ns2 = get_next_namespace(path_object.shot)
+    ns2 = get_next_namespace(path_object.asset)
     print('______NAMESPACE_________')
     if latest:
         path_object = path_object.latest_version(publish_=True)
@@ -323,7 +333,7 @@ def main_import(filepath= None ,reference = True, latest = False ,parent=None,im
 
     if import_rigs == True:
         for rig in layout_data['attrs']['rigs']:
-            print(111111111111111111111111111111111111)
+
             dict = rigs[rig]
             import_rig(dict)
 
@@ -331,17 +341,26 @@ def main_import(filepath= None ,reference = True, latest = False ,parent=None,im
         print('_' * 5, bundle)
         print('_' * 8, 'BUNDLES', '_' * 8)
         meshes = bundles[bundle]['meshes']
-        for mesh in meshes:
-            bndl_source= bundles[bundle]['source_path']
 
-            print(meshes[mesh])
-            print(8888888888888888888888)
-            print(meshes[mesh]['source_path'])
+        layout = create_object('{}_{}:lay'.format(scene_object().seq, scene_object().asset))
+        group = create_object('{}_{}:{}'.format(scene_object().seq,
+                                                scene_object().asset,
+                                                bundles[bundle]['layer']), parent=layout)
+
+        bundle_geo = create_object(bundle,parent=group)
+        from ..msd import tag_object
+        tag_object(bundle_geo,'source_path', bundles[bundle]['source_path'])
+        for mesh in meshes:
+            bndl_source= bundles[bundle]
+
+            #print(meshes[mesh])
+
+            print(mesh)
+            #print(meshes[mesh])
             import_mdl(meshes[mesh],
                        reference = reference,
                        latest = latest,
-                       bundle = bndl_source,
-                       parent =  meshes[mesh]['layer'])
+                       parent =  bundle)
 
 
 

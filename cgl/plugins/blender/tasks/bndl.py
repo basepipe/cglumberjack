@@ -7,7 +7,7 @@ from cgl.plugins.blender.alchemy import PathObject, scene_object, import_task, r
 from cgl.plugins.blender.utils import create_object, parent_object, read_matrix
 from importlib import reload
 
-# from cgl.plugins.blender.utils import get_next_namespace, select_reference
+from cgl.plugins.blender.utils import get_next_namespace, select_reference
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.plugins.blender.utils import load_plugin
 from cgl.core.config.config import ProjectConfig
@@ -187,28 +187,6 @@ def bundle_import(filepath, layout_group=None):
 
     if layout_group:
         parent_object(group,layout_group)
-
-def get_next_namespace(ns):
-    import re
-    pattern = '[0-9]+'
-    next = False
-    sel = bpy.data.objects
-    latest = 0
-
-    for i in sel:
-
-        if ns in i.name:
-            num = re.findall(pattern, i.name)
-            if num:
-                if int(num[-1]) > latest:
-                    latest = int(num[-1])
-            next = True
-
-    if next:
-        name = '{}{}'.format(ns, latest + 1)
-        return name
-    else:
-        return ns
 
 def remove_selected_bundle():
     bndl = pm.ls(sl=True)[0]
