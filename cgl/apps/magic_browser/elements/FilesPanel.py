@@ -1,7 +1,7 @@
 import os
 import logging
 import glob
-from cgl.plugins.Qt import QtCore, QtWidgets
+from cgl.plugins.Qt import QtCore, QtWidgets, QtGui
 from cgl.ui.widgets.dialog import InputDialog
 from cgl.core.utils.general import current_user, cgl_copy, clean_file_list
 from cgl.ui.widgets.progress_gif import process_method, ProgressDialog
@@ -181,6 +181,10 @@ class FilesPanel(QtWidgets.QWidget):
         task_widget.files_area.export_files_table.show_in_folder.connect(self.show_selected_in_folder)
         task_widget.files_area.work_files_table.doubleClicked.connect(self.on_open_clicked)
         task_widget.files_area.open_button.clicked.connect(self.on_open_clicked)
+        task_widget.files_area.open_button.setToolTip('Open File (Enter)')
+        task_widget.files_area.open_button.shortcut_open_signal = QtWidgets.QShortcut(QtGui.QKeySequence('Return'),
+                                                                                      self)
+        task_widget.files_area.open_button.shortcut_open_signal.activated.connect(self.on_open_clicked)
         task_widget.files_area.import_button.clicked.connect(self.on_import_clicked)
         task_widget.files_area.reference_button.clicked.connect(self.on_reference_clicked)
         task_widget.versions.currentIndexChanged.connect(self.on_task_info_changed)

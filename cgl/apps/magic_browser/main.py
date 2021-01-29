@@ -160,7 +160,8 @@ class NavigationWidget(QtWidgets.QFrame):
         self.sync_popup.addAction(QtWidgets.QAction('Stop Sync', self))
 
         self.back_button = QtWidgets.QPushButton()
-        self.back_button.setToolTip('Go back')
+        self.back_button.setToolTip('Go back (Alt + Up arrow)')
+        self.shortcut_back_button = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+Up'), self)
         self.projects_button = QtWidgets.QPushButton()
         self.projects_button.setToolTip('Go to Projects')
         self.companies_button = QtWidgets.QPushButton()
@@ -206,6 +207,7 @@ class NavigationWidget(QtWidgets.QFrame):
         # self.sync_button.clicked.connect(self.sync_clicked)
         self.refresh_button.clicked.connect(self.refresh_clicked)
         self.back_button.clicked.connect(self.back_button_pressed)
+        self.shortcut_back_button.activated.connect(self.back_button_pressed)
         self.companies_button.clicked.connect(self.buttons_pressed)
         self.projects_button.clicked.connect(self.buttons_pressed)
         self.set_text(self.path_object.path_root)
@@ -318,10 +320,14 @@ class NavigationWidget(QtWidgets.QFrame):
             logging.debug('Please Choose a Company and a Project before pushing the ingest button')
 
     def back_button_pressed(self):
+        print(3333333)
         path_object = cglpath.PathObject(self.current_location_line_edit.text())
         path_object.set_attr(context='source')
         # if i'm a task, show me all the assets or shots
+
         last = path_object.get_last_attr()
+        print(222222222222)
+        print(last)
         if last == 'filename':
             last = 'task'
         if last == 'resolution':
@@ -332,14 +338,24 @@ class NavigationWidget(QtWidgets.QFrame):
             else:
                 last = 'task'
         if last == 'user':
+            last = 'variant'
+        if last == 'variant':
             last = 'task'
+
         if last == 'task':
             if path_object.task == '*':
                 new_path = self.format_new_path(path_object, 'scope')
             else:
                 # send them to the tasks page
                 new_path = self.format_new_path(path_object, 'shot')
-        elif last == 'seq' or last == 'type':
+
+        elif last == 'variant':
+            print(11111111111111111)
+            if path_object.variant == '*':
+                new_path = self.format_new_path(path_object, 'scope')
+            new_path = self.format_new_path(path_object, split_after='variant')
+
+        elif last == 'seq' or last == 'type' :
             if path_object.seq == '*' or path_object.type == '*':
                 # send them to the projects page
                 new_path = self.format_new_path(path_object, split_after='project')
