@@ -48,6 +48,7 @@ class ScopeList(QtWidgets.QWidget):
 
         self.row.addWidget(self.assets)
         self.row.addWidget(self.shots)
+        self.row.addWidget(self.update_button)
         self.row.addStretch(1)
         self.row.addWidget(self.key_label)
         for status in STATUS_COLORS:
@@ -57,7 +58,7 @@ class ScopeList(QtWidgets.QWidget):
             self.button_dict[status] = button
             self.row.addWidget(button)
         self.shots.setChecked(True)
-        self.row.addWidget(self.update_button)
+
 
         self.update_button.clicked.connect(self.on_update_clicked)
 
@@ -322,18 +323,20 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 raw_time = os.path.getctime(self.newest_version_file)
                 self.latest_date = datetime.fromtimestamp(raw_time).strftime(self.date_format)
                 self.set_time_stuff()
-                self.status = 'In Progress'
                 self.set_button_look()
             if not self.published_folder:
                 self.status = 'In Progress'
 
     def set_time_stuff(self):
+        self.last_published = 0
+        self.last_updated = 0
         today = date.today()
         date1 = today.strftime(self.date_format)
         date2 = self.latest_date
         date3 = self.publish_date
         self.last_updated = datetime.strptime(date1, self.date_format) - \
                             datetime.strptime(date2, self.date_format)
+
         self.last_updated = str(self.last_updated).split(' day')[0]
         if self.last_updated == "0:00:00":
             self.last_updated = "0"
@@ -343,8 +346,11 @@ class MagicButtonWidget(QtWidgets.QWidget):
             self.last_published = str(self.last_published).split(' day')[0]
             if self.last_published == '0:00:00':
                 self.last_published = '0'
-            if int(self.last_published) > int(self.last_updated):
-                self.status = 'In Progress'
+        if int(self.last_published) <= int(self.last_updated):
+            self.status = 'Published'
+        else:
+            self.status = 'In Progress'
+
 
     def set_tool_tip(self):
         tool_tip = 'Status: {}\nTask Info:\n'.format(self.status)
@@ -377,7 +383,7 @@ class MagicButtonWidget(QtWidgets.QWidget):
                 os.system(cmd)
 
 
-class SkyView(LJDialog):
+class MerlinsEyeball(LJDialog):
     cancel_signal = QtCore.Signal()
     button = True
     company = None
@@ -402,6 +408,8 @@ class SkyView(LJDialog):
         LJDialog.__init__(self, parent)
         self.user_config = user_config()
         self.setWindowTitle("Project View")
+        self.setMinimumWidth(1200)
+        self.setMinimumHeight(800)
         layout = QtWidgets.QVBoxLayout(self)
         self.company = company
         if not self.company:
@@ -591,7 +599,7 @@ class SkyView(LJDialog):
 if __name__ == "__main__":
     from cgl.ui.startup import do_gui_init
     app = do_gui_init()
-    mw = SkyView(company='cmpa-animation', project='02BTH_2021_Kish', branch='master')
+    mw = MerlinsEyeball(company='cmpa-animation', project='02BTH_2021_Kish', branch='master')
     mw.show()
     mw.raise_()
     app.exec_()

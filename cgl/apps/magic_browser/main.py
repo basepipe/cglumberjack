@@ -1378,9 +1378,9 @@ class CGLumberjack(LJMainWindow):
         logging.debug('settings clicked')
 
     def on_merlins_eyeball_clicked(self):
-        from cgl.apps.merlins_eyeball.main import SkyView
+        from cgl.apps.merlins_eyeball.main import MerlinsEyeball
         branch = 'master'
-        dialog = SkyView(company=self.company, project=self.project, branch=branch)
+        dialog = MerlinsEyeball(company=self.company, project=self.project, branch=branch)
         dialog.exec_()
 
     def on_alchemists_cookbook_clicked(self):
